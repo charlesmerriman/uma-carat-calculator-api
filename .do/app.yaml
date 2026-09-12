@@ -202,9 +202,13 @@ services:
   source_dir: /
 static_sites:
 - build_command: npm install && npm run build
-  # SPA fallback: serve index.html for any path with no matching file,
-  # so client-side routes (/app, /app/timeline) survive refresh/direct links
-  catchall_document: index.html
+  # Catch-all for any path with no document of its own. `spa.html` is the EMPTY app
+  # shell the frontend build keeps next to its prerendered pages (scripts/prerender.mjs
+  # in the web repo); `index.html` is the prerendered HOMEPAGE and must not be the
+  # fallback, or every unknown path would hydrate the home page's markup.
+  # ORDER MATTERS on the live app: change this only AFTER a frontend deploy that ships
+  # spa.html is ACTIVE, or every deep link 404s until one does.
+  catchall_document: spa.html
   environment_slug: node-js
   envs:
   - key: VITE_API_URL
