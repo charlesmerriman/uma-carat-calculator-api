@@ -32,6 +32,19 @@
 # module changed. Newest entry first is conventional here but not required — the
 # page sorts by date.
 
+- key: carat-guide
+  date: 2026-09-12
+  title: "How your carats are worked out, in one guide"
+  version: "v1.3"
+  changes:
+    - added: "A guide to how the calculator works out your carats: every income source and its schedule, a day-by-day example, and how pulls get paid for. It is in the footer as Carat Guide."
+    - added: "The footer now reaches the FAQ, the changelog and the feedback form from every page."
+    - added: "A few lines under the calculator, the Timeline and the Selectors page on how to read each one."
+    - added: "Banners we recommend are marked in gold on the Timeline and get a star in the planner's banner list. Hover or tap a card on the Timeline to see what it is for."
+    - changed: "League of Heroes #1 pays out at Platinum 1 now, as the spreadsheet does. Estimates from April 2027 on come out a little lower."
+    - changed: "Sharing a link to a page now previews that page."
+    - fixed: "The browser tab names the page straight away."
+
 - key: patreon-sign-in
   date: 2026-09-09
   title: "Sign in with Patreon"
