@@ -21,6 +21,7 @@ from .league_of_heroes import LeagueOfHeroes
 from .changelog_entry import ChangelogEntry
 from .changelog_change import ChangelogChange
 from .social_account import SocialAccount
+from .user_oshi import UserOshi, OSHI_SLOT_CAP
 from .anniversary_event import AnniversaryEvent
 from .anniversary_event_banner import AnniversaryEventBanner
 from .anniversary_event_product import AnniversaryEventProduct

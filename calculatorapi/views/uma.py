@@ -42,7 +42,7 @@ class UmaOptionSerializer(serializers.ModelSerializer):
 class UmaViewSet(viewsets.ReadOnlyModelViewSet):  # pylint: disable=too-many-ancestors
     """GET /umas — the uma catalogue as picker options. Public.
 
-    Exists for the avatar picker on /account. That page sits outside the
+    Exists for the oshi picker on /account. That page sits outside the
     calculator provider, so the catalogue in /calculator-data is not in the
     client there, and fetching the largest payload the API serves to fill a
     picker would be the wrong trade — this is three fields a row.

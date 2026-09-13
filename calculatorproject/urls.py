@@ -49,7 +49,7 @@ router.register(r"changelog", ChangelogEntryViewSet, basename="changelog")
 # Public thank-you list for the home page. Read-only by construction — the
 # viewset has no write actions at all, not merely permission-gated ones.
 router.register(r"supporters", PatreonSupporterViewSet, basename="supporter")
-# The uma catalogue as picker options (id, name, image), for the avatar picker
+# The uma catalogue as picker options (id, name, image), for the oshi picker
 # on /account — a page that never loads /calculator-data. Read-only, public.
 router.register(r"umas", UmaViewSet, basename="uma")
 

@@ -221,11 +221,7 @@ def social_auth_complete(request):
         created = False
 
     social.last_login_at = timezone.now()
-    # Written on EVERY sign-in, including to "": the avatar follows whatever the
-    # person currently has at the provider, and someone who removed theirs
-    # should not keep seeing the old one here.
-    social.avatar_url = identity.avatar_url
-    social.save(update_fields=["last_login_at", "avatar_url"])
+    social.save(update_fields=["last_login_at"])
 
     # Someone signing in with Patreon may already be a known patron. This is a
     # LOCAL lookup only — no request to Patreon — because sign-in is the hot

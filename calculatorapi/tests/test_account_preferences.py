@@ -1,33 +1,28 @@
-"""Account preferences: display name and uma avatar via PATCH /account, and the /umas picker catalogue."""
+"""Account preferences: the display name via PATCH /account, the whitelist, and the /umas picker catalogue.
+
+The other preference, `oshis`, has its own module (test_oshi)."""
 
 from io import StringIO
+from unittest.mock import patch
 
 from django.core.management import call_command
+from django.db import IntegrityError, transaction
 from django.test import override_settings
 from rest_framework.test import APIClient
 
-from calculatorapi.models import CustomUser, SocialAccount, Uma
+from calculatorapi.models import CustomUser, Uma
+from calculatorapi.views.account import AccountPreferencesSerializer
 from calculatorapi.tests.base import CalculatorTestCase, PLAIN_TEST_STORAGES
 from calculatorapi.tests.factories import auth_client, make_user
 
-PICTURE = "https://lh3.googleusercontent.com/a/ACg8ocJ-avatar=s96-c"
 
-
-# FileSystemStorage rather than the Spaces backend: `uma.image.url` has to
-# resolve without credentials for the precedence assertions below. The tests
-# compare against `uma.image.url` itself rather than a literal, so they hold
-# whatever the storage's URL shape is.
 @override_settings(STORAGES=PLAIN_TEST_STORAGES)
 class AccountPreferencesTests(CalculatorTestCase):  # pylint: disable=too-many-public-methods
-    """PATCH /account: the two fields, their validation, and what GET says after."""
+    """PATCH /account: the display name, its validation, and what GET says after."""
 
     def setUp(self):
         self.user = make_user("user_a3f9c1")
         self.client, _ = auth_client(self.user)
-        # Assigning a name to the ImageField is enough: nothing here opens the
-        # file, and the storage is never asked to save one.
-        self.uma = Uma.objects.create(name="Special Week", image="umas/special-week.png")
-        self.bare_uma = Uma.objects.create(name="No Picture")
 
     def _get(self):
         return self.client.get("/account")
@@ -35,17 +30,13 @@ class AccountPreferencesTests(CalculatorTestCase):  # pylint: disable=too-many-p
     def _patch(self, body):
         return self.client.patch("/account", body, format="json")
 
-    def _google(self, user=None, avatar_url=PICTURE):
-        return SocialAccount.objects.create(
-            user=user or self.user, provider="google", subject_id="g-1", avatar_url=avatar_url
-        )
-
     # the shape ───────────────────────────────────────────────────────────────
 
     def test_get_reports_empty_preferences_by_default(self):
         body = self._get().json()
         self.assertEqual(body["display_name"], "")
-        self.assertIsNone(body["avatar_uma"])
+        self.assertEqual(body["oshis"], [])
+        self.assertEqual(body["oshi_slots"], 0)
         self.assertIsNone(body["avatar_url"])
 
     def test_patch_answers_with_the_full_account_summary(self):
@@ -53,7 +44,8 @@ class AccountPreferencesTests(CalculatorTestCase):  # pylint: disable=too-many-p
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             set(response.json()),
-            {"username", "display_name", "avatar_url", "avatar_uma", "linked_providers", "supporter"},
+            {"username", "display_name", "avatar_url", "oshis", "oshi_slots",
+             "linked_providers", "supporter"},
         )
 
     # display name ────────────────────────────────────────────────────────────
@@ -106,71 +98,78 @@ class AccountPreferencesTests(CalculatorTestCase):  # pylint: disable=too-many-p
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["display_name"], "")
 
-    def test_display_name_is_not_unique(self):
+    # uniqueness: names will be visible to other users, so nobody takes another's ─
+
+    def test_display_name_taken_by_another_account_is_refused(self):
         other = make_user("user_b7e2d0")
         other_client, _ = auth_client(other)
         self.assertEqual(self._patch({"display_name": "Rhondal"}).status_code, 200)
+
         response = other_client.patch("/account", {"display_name": "Rhondal"}, format="json")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            CustomUser.objects.filter(display_name="Rhondal").count(), 2
-        )
 
-    # avatar uma ──────────────────────────────────────────────────────────────
-
-    def test_avatar_uma_wins_over_the_provider_picture(self):
-        self._google()
-        response = self._patch({"avatar_uma": self.uma.id})
-        self.assertEqual(response.status_code, 200)
-        body = response.json()
-        self.assertEqual(body["avatar_uma"], self.uma.id)
-        self.assertEqual(body["avatar_url"], self.uma.image.url)
-        # The per-provider picture is still reported on its row: the
-        # sign-in-methods list shows which picture came from where.
-        self.assertEqual(body["linked_providers"][0]["avatar_url"], PICTURE)
-
-    def test_avatar_uma_null_returns_to_the_provider_picture(self):
-        self._google()
-        self._patch({"avatar_uma": self.uma.id})
-        response = self._patch({"avatar_uma": None})
-        self.assertEqual(response.status_code, 200)
-        self.assertIsNone(response.json()["avatar_uma"])
-        self.assertEqual(response.json()["avatar_url"], PICTURE)
-
-    def test_avatar_url_is_null_with_neither_uma_nor_provider_picture(self):
-        self._google(avatar_url="")
-        self.assertIsNone(self._get().json()["avatar_url"])
-
-    def test_avatar_uma_without_a_picture_is_refused(self):
-        response = self._patch({"avatar_uma": self.bare_uma.id})
         self.assertEqual(response.status_code, 400)
-        self.assertIn("avatar_uma", response.json())
-        self.user.refresh_from_db()
-        self.assertIsNone(self.user.avatar_uma_id)
+        self.assertEqual(response.json()["display_name"], ["That name is taken."])
+        other.refresh_from_db()
+        self.assertEqual(other.display_name, "")
 
-    def test_unknown_avatar_uma_is_refused(self):
-        response = self._patch({"avatar_uma": 999_999})
+    def test_display_name_uniqueness_ignores_case(self):
+        other = make_user("user_b7e2d0")
+        other_client, _ = auth_client(other)
+        self._patch({"display_name": "Rhondal"})
+
+        response = other_client.patch("/account", {"display_name": "rHONDAL"}, format="json")
+
         self.assertEqual(response.status_code, 400)
-        self.assertIn("avatar_uma", response.json())
+        self.assertIn("display_name", response.json())
 
-    def test_deleting_the_chosen_uma_falls_back_to_the_provider(self):
-        self._google()
-        self._patch({"avatar_uma": self.uma.id})
-        self.uma.delete()
-        body = self._get().json()
-        self.assertIsNone(body["avatar_uma"])
-        self.assertEqual(body["avatar_url"], PICTURE)
+    def test_resaving_your_own_name_is_not_a_collision(self):
+        self._patch({"display_name": "Rhondal"})
+        self.assertEqual(self._patch({"display_name": "Rhondal"}).status_code, 200)
+        self.assertEqual(self._patch({"display_name": "rhondal"}).status_code, 200)
 
-    def test_uma_whose_picture_was_removed_falls_back_to_the_provider(self):
-        # An editor can clear the image after the pick was made. The FK stays
-        # (the pick is still theirs), but the URL must not be a broken tile.
-        self._google()
-        self._patch({"avatar_uma": self.uma.id})
-        self.uma.image = None
-        self.uma.save()
-        body = self._get().json()
-        self.assertEqual(body["avatar_uma"], self.uma.id)
-        self.assertEqual(body["avatar_url"], PICTURE)
+    def test_a_name_freed_by_its_owner_can_be_taken(self):
+        other = make_user("user_b7e2d0")
+        other_client, _ = auth_client(other)
+        self._patch({"display_name": "Rhondal"})
+        self._patch({"display_name": ""})
+
+        response = other_client.patch("/account", {"display_name": "Rhondal"}, format="json")
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_many_accounts_may_have_no_name(self):
+        other = make_user("user_b7e2d0")
+        other_client, _ = auth_client(other)
+        self.assertEqual(self._patch({"display_name": ""}).status_code, 200)
+        self.assertEqual(other_client.patch("/account", {"display_name": ""}, format="json").status_code, 200)
+        self.assertEqual(CustomUser.objects.filter(display_name="").count(), 2)
+
+    def test_another_accounts_handle_is_refused_as_a_name(self):
+        """A chosen "user_b7e2d0" would impersonate whoever holds that handle."""
+        make_user("user_b7e2d0")
+
+        response = self._patch({"display_name": "USER_B7E2D0"})
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["display_name"], ["That name is taken."])
+
+    def test_your_own_handle_is_allowed_as_your_name(self):
+        self.assertEqual(self._patch({"display_name": "user_a3f9c1"}).status_code, 200)
+
+    def test_the_database_refuses_a_duplicate_the_view_did_not_see(self):
+        """The constraint is the backstop against two people claiming a name in
+        the same instant. Ignoring case, and only among non-blank names."""
+        CustomUser.objects.filter(pk=self.user.pk).update(display_name="Rhondal")
+        other = make_user("user_b7e2d0")
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                CustomUser.objects.filter(pk=other.pk).update(display_name="rhondal")
+
+    def test_a_race_on_the_same_name_answers_400_not_500(self):
+        with patch.object(AccountPreferencesSerializer, "save", side_effect=IntegrityError("dup")):
+            response = self._patch({"display_name": "Rhondal"})
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["display_name"], ["That name is taken."])
 
     # the whitelist ───────────────────────────────────────────────────────────
 
@@ -193,10 +192,18 @@ class AccountPreferencesTests(CalculatorTestCase):  # pylint: disable=too-many-p
         self.assertEqual(self.user.email, "user_a3f9c1@test.com")
 
     def test_patching_one_preference_leaves_the_other_alone(self):
-        self._patch({"display_name": "Rhondal", "avatar_uma": self.uma.id})
+        # A supporter with one slot, so the oshi half of the body is accepted.
+        # The interplay itself is test_oshi's business; this pins only that
+        # a later name-only PATCH does not clear the list.
+        from calculatorapi.models import PatreonSupporter, PatreonTier  # pylint: disable=import-outside-toplevel
+        tier = PatreonTier.objects.create(name="Junior Class", order=3)
+        PatreonSupporter.objects.create(display_name="R", patreon_user_id="7", tier=tier,
+                                        is_active=True, linked_user=self.user)
+        uma = Uma.objects.create(name="Special Week", image="umas/special-week.png")
+        self._patch({"display_name": "Rhondal", "oshis": [uma.id]})
         response = self._patch({"display_name": "Rho"})
         self.assertEqual(response.json()["display_name"], "Rho")
-        self.assertEqual(response.json()["avatar_uma"], self.uma.id)
+        self.assertEqual([row["id"] for row in response.json()["oshis"]], [uma.id])
 
     def test_empty_patch_changes_nothing(self):
         self._patch({"display_name": "Rhondal"})
@@ -219,13 +226,12 @@ class AccountPreferencesTests(CalculatorTestCase):  # pylint: disable=too-many-p
 
     # the purge ───────────────────────────────────────────────────────────────
 
-    def test_purge_blanks_the_display_name_and_keeps_the_uma(self):
-        self._patch({"display_name": "Rhondal", "avatar_uma": self.uma.id})
+    def test_purge_blanks_the_display_name(self):
+        self._patch({"display_name": "Rhondal"})
         out = StringIO()
         call_command("purge_user_pii", "--no-input", stdout=out)
         self.user.refresh_from_db()
         self.assertEqual(self.user.display_name, "")
-        self.assertEqual(self.user.avatar_uma_id, self.uma.id)
         self.assertIn("holding a display name:  1", out.getvalue())
 
 

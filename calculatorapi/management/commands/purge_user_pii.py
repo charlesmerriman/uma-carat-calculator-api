@@ -9,10 +9,8 @@ for rows that already exist rather than only for new ones.
 For every user with is_staff=False it:
   - blanks email / first_name / last_name
   - blanks display_name, the name they chose on their account page. A chosen
-    name is personal data in a way the generated handle is not. The uma they
-    picked as a picture (avatar_uma) is the site's own art and is left alone.
-  - blanks the avatar URL on each of their linked provider rows -- the one
-    profile attribute a social account holds (models/social_account.py)
+    name is personal data in a way the generated handle is not. The oshis they
+    picked (models/user_oshi.py) are the site's own art and are left alone.
   - replaces the password hash with Django's unusable-password marker
   - deletes their API token, so any key still sitting in a browser's
     localStorage stops working immediately
@@ -54,7 +52,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from rest_framework.authtoken.models import Token
 
-from calculatorapi.models import CustomUser, PatreonSupporter, SocialAccount
+from calculatorapi.models import CustomUser, PatreonSupporter
 
 CONFIRM_PHRASE = "purge"
 
@@ -108,9 +106,6 @@ class Command(BaseCommand):
         with_pii = targets.exclude(email="", first_name="", last_name="").count()
         with_password = sum(1 for user in targets.only("password") if user.has_usable_password())
         token_count = Token.objects.filter(user__in=targets).count()
-        avatar_count = (
-            SocialAccount.objects.filter(user__in=targets).exclude(avatar_url="").count()
-        )
 
         self.stdout.write(f"Non-staff accounts:        {total}")
         self.stdout.write(f"  holding email/name:      {with_pii}")
@@ -118,7 +113,6 @@ class Command(BaseCommand):
             f"  holding a display name:  {targets.exclude(display_name='').count()}"
         )
         self.stdout.write(f"  holding a usable password: {with_password}")
-        self.stdout.write(f"  holding an avatar URL:   {avatar_count}")
         self.stdout.write(f"  API tokens to delete:    {token_count}")
         self.stdout.write(f"  Patreon links to clear:  {linked_supporters}")
         self.stdout.write(
@@ -169,13 +163,10 @@ class Command(BaseCommand):
 
             CustomUser.objects.bulk_update(users, PII_FIELDS + ["password"])
 
-            # The provider rows themselves stay (they are the (provider,
+            # The provider rows stay untouched: they are the (provider,
             # subject_id) pairs that make a returning sign-in resolve to this
-            # account); only the picture goes, because a picture is personal
-            # data and the pair is not.
-            SocialAccount.objects.filter(user__in=targets).exclude(avatar_url="").update(
-                avatar_url=""
-            )
+            # account, and the pair identifies nobody without the provider's
+            # own database.
 
             # Always, not behind --include-patreon: this severs a link, it does
             # not touch supporter data. Leaving it would keep entitlement alive
@@ -190,8 +181,7 @@ class Command(BaseCommand):
                 PatreonSupporter.objects.exclude(email="").update(email="")
 
         self.stdout.write(self.style.SUCCESS(
-            f"\nPurged {len(users)} account(s), blanked {avatar_count} avatar URL(s) "
-            f"and deleted {token_count} token(s)."
+            f"\nPurged {len(users)} account(s) and deleted {token_count} token(s)."
         ))
         if linked_supporters:
             self.stdout.write(self.style.SUCCESS(

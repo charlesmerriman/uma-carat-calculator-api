@@ -175,12 +175,7 @@ def _attach_identity(user, provider, identity):
     if owner is not None:
         if owner.user_id == user.pk:
             # Already linked — a double submit, or a refreshed callback.
-            # Idempotent rather than an error: nothing is wrong. The avatar is
-            # still refreshed, because the provider was just consulted and
-            # this is the same "follow the current picture" rule sign-in uses.
-            if owner.avatar_url != identity.avatar_url:
-                owner.avatar_url = identity.avatar_url
-                owner.save(update_fields=["avatar_url"])
+            # Idempotent rather than an error: nothing is wrong.
             return Response(LinkedProviderSerializer(owner).data, status=status.HTTP_200_OK)
         # Someone else owns this identity, and we do NOT move it. Reassigning
         # would let anyone who can complete a consent screen strip another
@@ -200,7 +195,6 @@ def _attach_identity(user, provider, identity):
                 user=user,
                 provider=provider,
                 subject_id=subject_id,
-                avatar_url=identity.avatar_url,
             )
     except IntegrityError:
         # Lost a race against a concurrent completion of the same identity. The

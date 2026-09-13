@@ -18,28 +18,45 @@ Concretely, a non-staff `CustomUser` row carries:
 - blank `email`, `first_name`, `last_name`
 - an unusable password
 - a generated `user_xxxxxx` username
-- and, since 2026-09-13, two **preferences** the person may set on their account
-  page: `display_name` and `avatar_uma` (see below)
+- and, since 2026-09-13, a **preference** the person may set on their account
+  page: `display_name` (see below)
 
 The linked `SocialAccount` row stores `(provider, subject_id)` — unique together —
-and, since 2026-09-12, `avatar_url`: the https URL of the person's profile picture
-on the provider's own CDN. That URL is the **one profile attribute** the site
-holds. It is shown to the account owner alone (navbar, account page), refreshed
-every time they sign in or link *through that provider*, blanked by
-`purge_user_pii`, and never serialized anywhere public. The opaque `subject_id`
-remains the only *identifying* value stored anywhere in the system.
+and **nothing else about the person**. No name, no email, no picture. The opaque
+`subject_id` is the only *identifying* value stored anywhere in the system.
 An account may hold **several** rows (one per provider); `SocialAccount.user` is a
 ForeignKey, not a OneToOne, precisely so that linking is possible.
 
+> For one unshipped day (2026-09-12 to 2026-09-13) the provider's profile
+> picture was stored on this row and Google's `profile` scope was requested for
+> it. Both were removed before reaching production: the account picture is now
+> a **supporter perk** drawn from the site's own art (see "Oshis" below), and
+> free accounts have no picture. Any future profile attribute needs the same
+> explicit decision this one got, and a policy edit first.
+
 **Preferences are not profile attributes.** `CustomUser.display_name` (a name
-shown beside the handle) and `CustomUser.avatar_uma` (a uma from the catalogue
-used as the picture instead of the provider's) are things the person *tells* us
-through `PATCH /account`, never things we *learn* from a provider — the scopes
-and `oauth.Identity` are untouched by them. The handle stays the row's identity;
-the name sits beside it and is not unique. The display name is personal data
-(a chosen name is) and is served only to its owner and blanked by
-`purge_user_pii`; the uma pick is the site's own art, is not personal data, and
-survives the purge. Neither reaches any public route.
+shown beside the handle) and a supporter's **oshis** (`UserOshi`: an ordered
+list of umas from the catalogue, the first of which is their picture) are things
+the person *tells* us through `PATCH /account`, never things we *learn* from a
+provider — the scopes and `oauth.Identity` are untouched by them. The handle
+stays the row's identity; the name sits beside it and is unique (ignoring case,
+because it will be visible to other users one day). The display
+name is personal data (a chosen name is) and is served only to its owner and
+blanked by `purge_user_pii`; the oshis are the site's own art, are not personal
+data, and survive the purge. Neither reaches any public route today. (Oshis
+**will** be shown publicly by a future feature; whatever route does so must join
+through `PatreonSupporter.linked_user`, honour `is_public`, and never carry the
+display name or handle alongside.)
+
+**Oshis are entitlement-gated, and entitlement is derived.** How many a person
+may hold is `benefits.oshi_slots(user)` — 5 / 3 / 1 by tier via
+`OSHI_SLOT_LADDER`, 0 for a free account — resolved on every request from the
+linked `PatreonSupporter` row, never stored. A lapse or a downgrade **keeps every
+row** and simply stops covering some of them: `GET /account` still lists them
+all, the picture is the first one only while `oshi_slots >= 1`, and `PATCH`
+refuses only a list that **adds** past the slot count (reordering and removing
+among what is already held is always allowed). → `views/account.py`,
+`models/user_oshi.py`
 
 Staff accounts are the exception: they keep password login so `/admin` and the
 analytics dashboard remain reachable.
@@ -67,22 +84,23 @@ better than putting a long-lived token in a URL.
 
 ## Invariants
 
-### Scopes are the narrowest that yield an id and an avatar — do not widen them
+### Scopes are the narrowest that yield an id — do not widen them
 
-- Google: `openid profile` — `profile` is what puts `picture` in the id_token. It
-  also puts the name and locale there; `oauth._google_identity` reads `sub` and
-  `picture` and drops everything else before it leaves the module.
-- Discord: `identify` — id, username, avatar hash, …; `id` and `avatar` are read.
-- Patreon: `identity` — the sparse fieldset asks for `thumb_url` and nothing else,
-  so the response carries the id, the avatar, and no other attribute. (It must
-  name *something*: an empty `fields[user]=` is an HTTP 400 from Patreon, which
-  took sign-in down on 2026-09-09; with no fieldset at all Patreon sends the full
-  default profile.)
+- Google: `openid` — yields `sub` and nothing about the person. `profile` (name,
+  picture, locale) and `email` are separate scopes and are not requested.
+- Discord: `identify` — id, username, avatar hash, …; only `id` is read. Discord
+  has no narrower scope that yields the id.
+- Patreon: `identity` — the sparse fieldset names one throwaway boolean
+  (`hide_pledges`), so the response carries the id and nothing about the person.
+  (It must name *something*: an empty `fields[user]=` is an HTTP 400 from
+  Patreon, which took sign-in down on 2026-09-09; with no fieldset at all
+  Patreon sends the full default profile, picture included.)
 
-None of them transmits an email address to us. `exchange_code()` returns an
-`oauth.Identity(subject_id, avatar_url)` — a two-field `NamedTuple`, so a third
-value cannot ride through without editing the type. Widening a scope or an
-extractor changes what the privacy policy promises; change the policy first.
+None of them transmits an email address, a name or a picture we keep.
+`exchange_code()` returns an `oauth.Identity(subject_id)` — a one-field
+`NamedTuple`, so a second value cannot ride through without editing the type.
+Widening a scope or an extractor changes what the privacy policy promises;
+change the policy first.
 
 **Patreon's email has its own scope, `identity[email]`. Never request it.** Unlike
 the creator token used by the supporters sync — which carries every v2 scope
@@ -152,9 +170,9 @@ Enforced server-side. Hiding the button is a suggestion; this has to be a rule.
 ### Deleting an account is self-serve and takes the person's data with it
 
 `DELETE /account` (`views/account.py`) exists because an account that holds no
-email has no other way to ask. It deletes the `CustomUser` (display name and uma
-pick with it) and lets the models' `on_delete` rules decide the rest: the token, the `SocialAccount` rows (and their
-avatar URLs) and the whole plan cascade; feedback and the `PatreonSupporter` row
+email has no other way to ask. It deletes the `CustomUser` (display name with it)
+and lets the models' `on_delete` rules decide the rest: the token, the
+`SocialAccount` rows, the oshis and the whole plan cascade; feedback and the `PatreonSupporter` row
 are `SET_NULL` and survive with their pointer cleared — the same treatment a
 pledge gets on an unlink, a lapse or a purge. Staff are refused (`403`); admin
 accounts are deleted in the admin, deliberately and logged. There is no undo.
@@ -241,10 +259,10 @@ python manage.py purge_user_pii             # prompts for confirmation
 ```
 
 Strips email, name, password and the chosen `display_name` from all non-staff
-accounts, and blanks the `avatar_url` on each of their `SocialAccount` rows (the
-rows themselves survive — the `(provider, subject_id)` pair identifies nobody
-without the provider's own database). The uma pick (`avatar_uma`) is left alone:
-it is the site's art, not personal data. **Irreversible.** After it runs, those accounts cannot sign in at all —
+accounts. The `SocialAccount` rows survive untouched — the `(provider,
+subject_id)` pair identifies nobody without the provider's own database — and
+so do the oshis: they are the site's art, not personal data. **Irreversible.**
+After it runs, those accounts cannot sign in at all —
 their plans stay in the database but are unreachable. Intended to be run once in
 production.
 

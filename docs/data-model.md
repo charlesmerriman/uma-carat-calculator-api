@@ -19,7 +19,6 @@ erDiagram
         int id PK
         string username
         string display_name
-        int avatar_uma_id FK
         string email
         int current_carat
         int current_paid_carat
@@ -229,7 +228,8 @@ erDiagram
         int wit_recommendation
     }
 
-    CustomUser }o--|| Uma : "avatar_uma"
+    UserOshi }o--|| CustomUser : "user"
+    UserOshi }o--|| Uma : "uma"
     CustomUser }o--|| ClubRank : "club_rank"
     CustomUser }o--|| TeamTrialsRank : "team_trials_rank"
     CustomUser }o--|| ChampionsMeetingRank : "champions_meeting_rank"
@@ -268,25 +268,61 @@ erDiagram
 
 ## Key Constraints and Design Notes
 
-### `CustomUser.display_name` / `avatar_uma` — preferences beside the handle
+### `CustomUser.display_name` — a preference beside the handle
 
 The generated `user_xxxxxx` username is the row's identity (the admin, every
-`__str__`) and nothing can change it. Since 2026-09-13 two preferences sit
-**beside** it, both written only by `PATCH /account`:
+`__str__`) and nothing can change it. Since 2026-09-13 a preference sits
+**beside** it, written only by `PATCH /account`: `display_name`,
+`CharField(32, blank=True, default="")`. **Unique, ignoring case, among
+non-blank names** (`unique_display_name_ci`: `Lower("display_name")` with a
+partial condition, so the many blank rows do not collide). Decided 2026-09-13
+because display names will be visible to other users through future features,
+so nobody may take a name another account goes by; the serializer also refuses
+a name equal to any account's *handle*, which would impersonate it. The
+serializer's pre-check gives the friendly 400 ("That name is taken."), the
+constraint is the backstop for a race, and the view maps that `IntegrityError`
+to the same 400. Migration `0057` blanks later duplicates before adding the
+constraint (insurance for local databases; prod never held a name before it).
+Personal data (a chosen name is), so `purge_user_pii` blanks it and it is never
+serialized anywhere public today.
 
-- `display_name` — `CharField(32, blank=True, default="")`. **Not unique**, for
-  the same reason `PatreonSupporter.display_name` only has a partial constraint:
-  two people may choose the same name, and collapsing duplicates costs someone
-  their identity. Personal data (a chosen name is), so `purge_user_pii` blanks it
-  and it is never serialized anywhere public.
-- `avatar_uma` — nullable FK to `Uma`, `SET_NULL`, `related_name="+"`. Only a uma
-  **with an image** may be chosen (the serializer's queryset enforces it, and
-  `GET /umas` offers nothing else); `GET /account` still checks the image at read
-  time, since an editor can clear it later, and falls back to the provider picture
-  rather than a broken tile. The site's own art, so not PII: the purge leaves it.
+→ [auth-and-privacy.md](auth-and-privacy.md) for why this is not a profile
+attribute, and [api-reference.md](api-reference.md) for the route.
 
-→ [auth-and-privacy.md](auth-and-privacy.md) for why these are not profile
-attributes, and [api-reference.md](api-reference.md) for the route.
+### `UserOshi` — the supporter-only picture
+
+The umas a Patreon supporter picked as their "oshis", one row each:
+`user` (FK, CASCADE, `related_name="oshis"`), `uma` (FK, **CASCADE**), `position`
+(0-based). Unique on `(user, position)` and on `(user, uma)`. **The first one is
+their picture** in the navbar and on the account page; free accounts have no
+picture at all — the perk *is* the picture. `OSHI_SLOT_CAP = 5` is the table's
+ceiling and equals the top rung of `benefits.OSHI_SLOT_LADDER` (asserted at
+import).
+
+- **Written only by `PATCH /account`**, which replaces the whole list and
+  renumbers from 0 inside one transaction, so "the first" is always position 0
+  among the rows that exist.
+- **Entitlement is not stored here.** How many rows the current tier covers is
+  `benefits.oshi_slots(user)` (5 / 3 / 1 / 0), derived per request like every
+  other benefit. **A lapse or downgrade keeps every row**: `GET /account` lists
+  them all, shows the picture only while `oshi_slots >= 1`, and `PATCH` refuses
+  only a list that *adds* past the count — a subset of what is already held may
+  always be kept, reordered or trimmed.
+- **CASCADE on the uma, not SET_NULL**: a slot with no uma is nothing, and the
+  list will one day be shown publicly, where a dangling slot would be a blank
+  tile. The remaining rows keep their positions; the view reads "first by
+  position", so a gap is harmless.
+- Only a uma **with an image** may be chosen (the serializer's queryset, and
+  `GET /umas` offers nothing else). If an editor clears an image later the row
+  stays, its `image` is `""` on the wire, and the picture falls through to the
+  next oshi rather than to a broken tile.
+- **Not personal data.** The site's own art; `purge_user_pii` leaves it. Decided
+  2026-09-13 that oshis **will** appear publicly in a future feature, so the table
+  is built to be joined from the supporter side; that route must go through
+  `PatreonSupporter.linked_user`, honour `is_public`, and never carry the display
+  name or handle.
+- Admin: a read-only inline (removal allowed) on the user page. Not editable
+  there because the entitlement check lives in the serializer.
 
 ### `CalculationConstants` — the projection's tunables
 
