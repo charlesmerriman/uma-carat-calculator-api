@@ -1,5 +1,6 @@
 """
-GET /account — who the caller is, and what they are entitled to.
+GET    /account — who the caller is, and what they are entitled to.
+DELETE /account — remove the caller's account and everything that is theirs.
 
 WHY THIS IS ITS OWN ROUTE
 -------------------------
@@ -52,10 +53,19 @@ a specific one is decided in one place on the server, and adding a benefit later
 does not change the response SHAPE, only its contents.
 
 See patreon-accounts-plan.md, Phase 2.
+
+DELETING AN ACCOUNT
+-------------------
+Self-serve, on the same route, because an account that holds no email has no
+other way to ask. See _delete_account for exactly what goes and what stays —
+the short version is that everything the PERSON entered goes with them, and
+the two rows that are about someone else's records (their feedback, their
+Patreon pledge) lose only their pointer to the account.
 """
 
+from django.db import transaction
 from django.utils import timezone
-from rest_framework import permissions, serializers
+from rest_framework import permissions, serializers, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
@@ -135,10 +145,46 @@ def _supporter_block(user):
     }
 
 
-@api_view(["GET"])
+def _delete_account(user):
+    """Delete `user` and everything that is theirs. 204, or 403 for staff.
+
+    WHAT GOES: the CustomUser row and, by cascade, its API token, its
+    SocialAccount rows (avatar URLs included) and every planned banner,
+    purchase and step-up selection. Signing in again with the same provider
+    creates a fresh, empty account — the (provider, subject_id) pair is gone,
+    so nothing resolves back to this one. There is no undo and no recovery
+    path: we hold no email to send anything to, by design, which is why the
+    account page makes the person type a confirmation before it sends this.
+
+    WHAT STAYS, with its pointer cleared:
+      * Feedback they sent (user FK is SET_NULL). The report is still useful
+        to the site and identifies nobody on its own.
+      * Their PatreonSupporter row (linked_user is SET_NULL). It is a fact
+        about a pledge, not about this account: it keeps its publication
+        consent and pledge date exactly as it does on an unlink, a lapse or a
+        purge. That table is not ours to delete from.
+    Both are the model's on_delete rules doing the work, so this function
+    cannot drift from them; the tests pin the outcome rather than the code.
+
+    STAFF ARE REFUSED. Their accounts carry a real password and admin
+    permissions and are managed in the admin, where a deletion is deliberate
+    and logged. A route reachable with a bearer token should not be able to
+    remove an administrator.
+    """
+    if user.is_staff:
+        return Response(
+            {"error": "Staff accounts are managed in the admin."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+    with transaction.atomic():
+        user.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(["GET", "DELETE"])
 @permission_classes([permissions.IsAuthenticated])
 def account_detail(request):
-    """The signed-in user's account summary.
+    """The signed-in user's account summary, or — on DELETE — its removal.
 
     401 for anonymous callers, which is what makes this usable as the client's
     source of truth: a token that has expired or been revoked server-side gets a
@@ -149,6 +195,9 @@ def account_detail(request):
     SocialAccount rows at all, which simply makes `linked_providers` empty —
     a correct answer, not an error, and worth a test so it stays that way.
     """
+    if request.method == "DELETE":
+        return _delete_account(request.user)
+
     user = request.user
 
     # Evaluated once: the serializer and _current_avatar_url both walk it.

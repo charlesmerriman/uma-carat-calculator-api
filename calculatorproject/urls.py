@@ -55,10 +55,10 @@ urlpatterns = [
     # There is intentionally no "register" route — see views/user.py.
     path("login", user_login, name="login"),
     path("logout", user_logout, name="logout"),
-    # Who the caller is, and what they are entitled to. Authenticated-only and
-    # never cached — it is the SPA's source of truth for "am I signed in?",
+    # GET: who the caller is, and what they are entitled to. Authenticated-only
+    # and never cached — it is the SPA's source of truth for "am I signed in?",
     # replacing a localStorage token check that could only describe the browser.
-    # The `supporter` block is a deliberate stub until Phase 2; see the view.
+    # DELETE: remove the caller's account (staff refused). → views/account.py
     path("account", account_detail, name="account"),
     # Attaching a provider identity to an account that is ALREADY signed in.
     # Separate from /auth/* above and deliberately so: those create accounts,
