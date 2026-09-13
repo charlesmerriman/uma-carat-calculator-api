@@ -189,7 +189,7 @@ def social_auth_complete(request):
     redirect_uri = state_payload.get("r") or settings.OAUTH_REDIRECT_URI
 
     try:
-        subject_id = oauth.exchange_code(provider, code, redirect_uri)
+        identity = oauth.exchange_code(provider, code, redirect_uri)
     except oauth.OAuthError:
         # Expired/replayed code, provider outage, or a redirect_uri mismatch.
         # The CLIENT gets one generic message -- distinguishing these would only
@@ -200,6 +200,8 @@ def social_auth_complete(request):
         # complaints, so it is safe to log.
         logger.warning("OAuth sign-in failed for %s", provider, exc_info=True)
         return Response(GENERIC_AUTH_ERROR, status=status.HTTP_400_BAD_REQUEST)
+
+    subject_id = identity.subject_id
 
     # get_or_create on (provider, subject_id) is what makes a returning user
     # resolve to their existing account -- and the DB's unique constraint is
@@ -219,7 +221,11 @@ def social_auth_complete(request):
         created = False
 
     social.last_login_at = timezone.now()
-    social.save(update_fields=["last_login_at"])
+    # Written on EVERY sign-in, including to "": the avatar follows whatever the
+    # person currently has at the provider, and someone who removed theirs
+    # should not keep seeing the old one here.
+    social.avatar_url = identity.avatar_url
+    social.save(update_fields=["last_login_at", "avatar_url"])
 
     # Someone signing in with Patreon may already be a known patron. This is a
     # LOCAL lookup only — no request to Patreon — because sign-in is the hot

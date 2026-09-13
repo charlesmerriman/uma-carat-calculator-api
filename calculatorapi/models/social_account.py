@@ -7,11 +7,11 @@ class SocialAccount(models.Model):
 
     This is the whole personal footprint of a non-staff account. Sign-in goes
     through the provider (see calculatorapi/oauth.py), which verifies the
-    password on their side and hands us back one opaque number. We deliberately
-    request the narrowest scope each provider allows -- "openid" for Google,
-    "identify" for Discord, "identity" for Patreon -- so no email address or
-    display name is ever sent to us, and therefore none can be stored here by
-    accident.
+    password on their side and hands us back one opaque number and the URL of
+    the person's profile picture. The scopes -- "openid profile" for Google,
+    "identify" for Discord, "identity" for Patreon -- are the narrowest that
+    yield both, and oauth.py reads exactly those two values from each response,
+    so no email address or display name is ever stored here by accident.
 
     A row can arrive two ways, and they are NOT the same operation:
 
@@ -60,6 +60,15 @@ class SocialAccount(models.Model):
     subject_id = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
     last_login_at = models.DateTimeField(null=True, blank=True)
+    # The ONE profile attribute this project holds: an https URL on the
+    # provider's own CDN, shown to the account owner in their navbar and on
+    # their account page, and to nobody else. "" means they have no picture.
+    # Refreshed every time they sign in or link THROUGH this provider, so it
+    # follows the avatar they set there rather than freezing the first one.
+    # Blanked by purge_user_pii along with the rest of an account's data.
+    # 500 rather than the URLField default of 200 because Google picture URLs
+    # run long; oauth.AVATAR_URL_MAX_LENGTH mirrors this value.
+    avatar_url = models.URLField(max_length=500, blank=True, default="")
 
     class Meta:
         verbose_name = "Social Account"

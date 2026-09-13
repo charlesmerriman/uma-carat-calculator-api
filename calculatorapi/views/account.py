@@ -32,6 +32,14 @@ PatreonSupporterSerializer's does for the supporter email: it is the one thing
 standing between a private column and a response body. Add a field to it only
 with a reason that survives being written down.
 
+The avatar IS returned, and only here. `avatar_url` is the one profile attribute
+the account holds (models/social_account.py), it belongs to the caller, and this
+endpoint answers only to the caller. It appears twice: per linked provider, so
+the account page can show which picture came from where, and once at the top
+level as THE avatar for the navbar — the one from the provider most recently
+signed in with, so it follows the login the person actually uses. Nothing
+public (GET /supporters, the thank-you list) ever carries an avatar.
+
 SUPPORTER STATUS IS DERIVED ON EVERY REQUEST
 --------------------------------------------
 `supporter` is computed from the linked PatreonSupporter row each time, never
@@ -76,11 +84,29 @@ class LinkedProviderSerializer(serializers.ModelSerializer):
     class Meta:
         model = SocialAccount
         # THE PRIVACY BOUNDARY — read the module docstring before adding to it.
-        # `subject_id` and the internal row id are absent deliberately.
-        fields = ["provider", "linked_at"]
+        # `subject_id` and the internal row id are absent deliberately;
+        # `avatar_url` is present deliberately (see the docstring).
+        fields = ["provider", "linked_at", "avatar_url"]
 
     def get_linked_at(self, obj):
         return timezone.localdate(obj.created_at)
+
+
+def _current_avatar_url(linked):
+    """The avatar to show in the navbar, or None.
+
+    The picture from the provider the person most recently SIGNED IN with, so
+    the avatar follows the login they actually use: someone who joined with
+    Google and now always signs in with Discord sees their Discord picture. A
+    provider they only ever linked (never signed in through) has no
+    last_login_at, so its creation time stands in. Providers with no picture
+    are skipped rather than winning the tie with an empty string.
+    """
+    with_avatar = [row for row in linked if row.avatar_url]
+    if not with_avatar:
+        return None
+    newest = max(with_avatar, key=lambda row: row.last_login_at or row.created_at)
+    return newest.avatar_url
 
 
 def _supporter_block(user):
@@ -125,7 +151,8 @@ def account_detail(request):
     """
     user = request.user
 
-    linked = SocialAccount.objects.filter(user=user).order_by("created_at")
+    # Evaluated once: the serializer and _current_avatar_url both walk it.
+    linked = list(SocialAccount.objects.filter(user=user).order_by("created_at"))
 
     return Response(
         {
@@ -133,6 +160,9 @@ def account_detail(request):
             # sign-in deliberately never learns one. Included so the account
             # page has something to show and two accounts can be told apart.
             "username": user.username,
+            # null, not "", when there is no picture: the client draws its own
+            # fallback on null and would try to load "" as an image.
+            "avatar_url": _current_avatar_url(linked),
             "linked_providers": LinkedProviderSerializer(linked, many=True).data,
             "supporter": _supporter_block(user),
         }

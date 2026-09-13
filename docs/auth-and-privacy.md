@@ -19,8 +19,13 @@ Concretely, a non-staff `CustomUser` row carries:
 - an unusable password
 - a generated `user_xxxxxx` username
 
-The linked `SocialAccount` row stores `(provider, subject_id)` — unique together.
-That opaque `subject_id` is the only identifying value stored anywhere in the system.
+The linked `SocialAccount` row stores `(provider, subject_id)` — unique together —
+and, since 2026-09-12, `avatar_url`: the https URL of the person's profile picture
+on the provider's own CDN. That URL is the **one profile attribute** the site
+holds. It is shown to the account owner alone (navbar, account page), refreshed
+every time they sign in or link *through that provider*, blanked by
+`purge_user_pii`, and never serialized anywhere public. The opaque `subject_id`
+remains the only *identifying* value stored anywhere in the system.
 An account may hold **several** rows (one per provider); `SocialAccount.user` is a
 ForeignKey, not a OneToOne, precisely so that linking is possible.
 
@@ -50,14 +55,22 @@ better than putting a long-lived token in a URL.
 
 ## Invariants
 
-### Scopes are the narrowest each provider allows — do not widen them
+### Scopes are the narrowest that yield an id and an avatar — do not widen them
 
-- Google: `openid`
-- Discord: `identify`
-- Patreon: `identity`
+- Google: `openid profile` — `profile` is what puts `picture` in the id_token. It
+  also puts the name and locale there; `oauth._google_identity` reads `sub` and
+  `picture` and drops everything else before it leaves the module.
+- Discord: `identify` — id, username, avatar hash, …; `id` and `avatar` are read.
+- Patreon: `identity` — the sparse fieldset asks for `thumb_url` and nothing else,
+  so the response carries the id, the avatar, and no other attribute. (It must
+  name *something*: an empty `fields[user]=` is an HTTP 400 from Patreon, which
+  took sign-in down on 2026-09-09; with no fieldset at all Patreon sends the full
+  default profile.)
 
-None of them transmits an email address to us. Widening these would break the
-privacy constraint above at the source.
+None of them transmits an email address to us. `exchange_code()` returns an
+`oauth.Identity(subject_id, avatar_url)` — a two-field `NamedTuple`, so a third
+value cannot ride through without editing the type. Widening a scope or an
+extractor changes what the privacy policy promises; change the policy first.
 
 **Patreon's email has its own scope, `identity[email]`. Never request it.** Unlike
 the creator token used by the supporters sync — which carries every v2 scope
@@ -205,9 +218,12 @@ python manage.py purge_user_pii --dry-run   # report only
 python manage.py purge_user_pii             # prompts for confirmation
 ```
 
-Strips email, name, and password from all non-staff accounts. **Irreversible.** After it
-runs, those accounts cannot sign in at all — their plans stay in the database but are
-unreachable. Intended to be run once in production.
+Strips email, name, and password from all non-staff accounts, and blanks the
+`avatar_url` on each of their `SocialAccount` rows (the rows themselves survive —
+the `(provider, subject_id)` pair identifies nobody without the provider's own
+database). **Irreversible.** After it runs, those accounts cannot sign in at all —
+their plans stay in the database but are unreachable. Intended to be run once in
+production.
 
 **It always clears `PatreonSupporter.linked_user` for the accounts it purges**,
 flag or no flag. The command's job is to make an account unreachable, and a

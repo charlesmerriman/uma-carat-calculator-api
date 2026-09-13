@@ -113,8 +113,11 @@ meaning anything instead of rendering a signed-in shell around nothing.
 ```json
 {
   "username": "user_a3f9c1",
+  "avatar_url": "https://lh3.googleusercontent.com/a/ACg8ocJ…=s96-c",
   "linked_providers": [
-    { "provider": "google", "linked_at": "2026-07-02" }
+    { "provider": "google", "linked_at": "2026-07-02",
+      "avatar_url": "https://lh3.googleusercontent.com/a/ACg8ocJ…=s96-c" },
+    { "provider": "patreon", "linked_at": "2026-09-08", "avatar_url": "" }
   ],
   "supporter": { "is_supporter": true, "tier": "Junior Class", "benefits": ["ad_free"] }
 }
@@ -122,6 +125,14 @@ meaning anything instead of rendering a signed-in shell around nothing.
 
 - `linked_providers` is empty for staff, who sign in with a password and hold no
   `SocialAccount` rows. That is a correct answer, not an error.
+- **`avatar_url`** (top level) is the picture to show in the navbar: the one from
+  the provider the person most recently **signed in** with (a link-only provider
+  counts by its link date), skipping providers with no picture. **`null`** when no
+  linked provider has one — null rather than `""`, so a client draws its fallback
+  instead of loading an empty `src`. Per provider, `avatar_url` is `""` when that
+  provider has no picture. Refreshed on every sign-in or link through that
+  provider; it is the one profile attribute the account holds, and it is only
+  ever served here, to its owner. → [auth-and-privacy.md](auth-and-privacy.md)
 - **`subject_id` is never serialized, for any provider.** The serializer's
   explicit field list is the only thing keeping it off the wire — the same role
   `PatreonSupporterSerializer`'s list plays for the supporter email.
@@ -170,9 +181,10 @@ Protected. Redeems the one-time code and attaches the identity.
 **Request** `{ "code": "...", "state": "..." }`
 
 **Response `201`** (linked) or **`200`** (already linked — completing twice is not
-an error):
+an error, and it refreshes the stored avatar):
 ```json
-{ "provider": "patreon", "linked_at": "2026-09-08" }
+{ "provider": "patreon", "linked_at": "2026-09-08",
+  "avatar_url": "https://c10.patreonusercontent.com/…/thumb.png" }
 ```
 
 - `409` — that identity belongs to a different account, **or** this account
