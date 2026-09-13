@@ -32,6 +32,23 @@
 # module changed. Newest entry first is conventional here but not required — the
 # page sorts by date.
 
+- key: accounts-and-oshis
+  date: 2026-09-13
+  title: "Your account page, and oshis for supporters"
+  version: "v1.4"
+  changes:
+    - added: "An Account page. Open it from your picture in the top right."
+    - added: "You can connect Google, Discord and Patreon to the same account and sign in with any of them. If you lose one, the others still get you in."
+    - added: "Pick a display name. It sits beside the random user_ handle, and no two people can have the same one."
+    - added: "Patreon supporters can pick their oshis, and the first one becomes their picture on the site. Junior Class gets one, Classic Class three, Senior Class five. Everyone else gets the grey silhouette."
+    - added: "The Account page shows your supporter tier and what comes with it."
+    - added: "You can delete your account yourself, from the Account page. It takes your plan with it and can't be undone."
+    - changed: "Logout is now inside the account menu, under your picture."
+    - changed: "The home page, navbar and footer have been tidied up. Flatter bar, fewer boxes."
+    - changed: "Loading and saving now spin a derpy Oguri instead of a plain ring."
+    - changed: "The short notes under the calculator, Timeline and Selectors pages are gone again."
+    - changed: "The About page and the privacy policy say what we actually store now: an anonymous account reference, your display name if you set one, your oshis if you pick any, and nothing else."
+
 - key: carat-guide
   date: 2026-09-12
   title: "How your carats are worked out, in one guide"
