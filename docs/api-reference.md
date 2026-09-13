@@ -113,7 +113,9 @@ meaning anything instead of rendering a signed-in shell around nothing.
 ```json
 {
   "username": "user_a3f9c1",
+  "display_name": "Rhondal",
   "avatar_url": "https://lh3.googleusercontent.com/a/ACg8ocJ…=s96-c",
+  "avatar_uma": null,
   "linked_providers": [
     { "provider": "google", "linked_at": "2026-07-02",
       "avatar_url": "https://lh3.googleusercontent.com/a/ACg8ocJ…=s96-c" },
@@ -125,14 +127,22 @@ meaning anything instead of rendering a signed-in shell around nothing.
 
 - `linked_providers` is empty for staff, who sign in with a password and hold no
   `SocialAccount` rows. That is a correct answer, not an error.
-- **`avatar_url`** (top level) is the picture to show in the navbar: the one from
-  the provider the person most recently **signed in** with (a link-only provider
-  counts by its link date), skipping providers with no picture. **`null`** when no
-  linked provider has one — null rather than `""`, so a client draws its fallback
-  instead of loading an empty `src`. Per provider, `avatar_url` is `""` when that
-  provider has no picture. Refreshed on every sign-in or link through that
-  provider; it is the one profile attribute the account holds, and it is only
-  ever served here, to its owner. → [auth-and-privacy.md](auth-and-privacy.md)
+- **`display_name`** is the name the person chose on their account page, or `""`
+  when they have not (the client shows the handle instead). Set through
+  `PATCH /account` below. **Served only here, to its owner** — it never appears
+  on `/supporters` or any other public route. Not unique.
+- **`avatar_uma`** is the id of the uma they picked as their picture, or `null`.
+  Also set through `PATCH`; the catalogue to pick from is `GET /umas`.
+- **`avatar_url`** (top level) is the picture to show in the navbar, resolved in
+  this order: the chosen uma's image if `avatar_uma` is set and that uma still
+  has one; else the picture from the provider the person most recently
+  **signed in** with (a link-only provider counts by its link date), skipping
+  providers with no picture; else **`null`** — null rather than `""`, so a
+  client draws its fallback instead of loading an empty `src`. Per provider,
+  `avatar_url` is `""` when that provider has no picture. Provider pictures are
+  refreshed on every sign-in or link through that provider; a provider picture
+  is the one profile attribute the account holds, and it is only ever served
+  here, to its owner. → [auth-and-privacy.md](auth-and-privacy.md)
 - **`subject_id` is never serialized, for any provider.** The serializer's
   explicit field list is the only thing keeping it off the wire — the same role
   `PatreonSupporterSerializer`'s list plays for the supporter email.
@@ -155,6 +165,34 @@ Deliberately its own route rather than a key on `/calculator-data`: that payload
 is not fetched on the home page, the FAQ or the changelog, and everything in it
 but the four user-scoped keys is served from a shared process-wide cache, which
 entitlement must never be answerable from.
+
+---
+
+### `PATCH /account`
+
+Protected. Changes the two preferences an account has. Partial: send one field
+or both. **Responds `200` with the same body as `GET /account`**, already
+reflecting the write.
+
+**Request** — any subset of:
+```json
+{ "display_name": "Rhondal", "avatar_uma": 42 }
+```
+
+- **`display_name`** — stripped of surrounding whitespace, at most 32
+  characters, `""` to clear. `400` for a name containing control or invisible
+  characters (zero-width spaces, bidi overrides and the like); the zero-width
+  joiner is allowed so multi-person emoji work. Not unique: two people may
+  choose the same name.
+- **`avatar_uma`** — the id of a uma **with an image**, or `null` to go back to
+  the provider picture. `400` for an unknown id or a uma with no image (the
+  picker never offers one).
+- **The field list is the whitelist.** Any other key in the body — `username`,
+  `is_staff`, a calculator stat — is ignored, not applied. Calculator stats
+  have their own route (`PATCH /calculator-data`).
+- Errors come back in DRF's per-field shape, `{"display_name": ["…"]}`, unlike
+  the `{"error": "…"}` of the other account routes: this one backs a form.
+- `401` anonymous. Staff may set both like anyone else.
 
 ---
 
@@ -365,6 +403,7 @@ These endpoints return static rank tables. All are public and support `list` and
 | `GET /events` | Game events, including their own reward amounts |
 | `GET /changelog` | Patch-note entries (newest first) with nested, ordered change lines |
 | `GET /supporters` | Patreon thank-you list — **not** an array, see below |
+| `GET /umas` | The uma catalogue as picker options: `{ id, name, image }`, umas **with an image only**, sorted by name. Feeds the avatar picker on `/account`, which never loads `/calculator-data`. Nothing else from the uma row (no `admin_comments`, no selector gates). |
 
 All list responses return an array of the resource object, **except `/supporters`** (an object — the anonymous count is not derivable from the rows). Retrieve by appending `/<id>`; `/supporters` has no retrieve action.
 

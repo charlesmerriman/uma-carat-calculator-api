@@ -12,7 +12,7 @@ from .rank_viewsets import (
     LeagueOfHeroesRankViewSet,
 )
 from .calculator import CalculatorViewSet
-from .uma import UmaSerializer
+from .uma import UmaSerializer, UmaViewSet
 from .support_card import SupportCardSerializer
 from .banner_uma import BannerUmaSerializer
 from .banner_support import BannerSupportSerializer

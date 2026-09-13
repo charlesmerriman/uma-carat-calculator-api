@@ -8,6 +8,9 @@ for rows that already exist rather than only for new ones.
 
 For every user with is_staff=False it:
   - blanks email / first_name / last_name
+  - blanks display_name, the name they chose on their account page. A chosen
+    name is personal data in a way the generated handle is not. The uma they
+    picked as a picture (avatar_uma) is the site's own art and is left alone.
   - blanks the avatar URL on each of their linked provider rows -- the one
     profile attribute a social account holds (models/social_account.py)
   - replaces the password hash with Django's unusable-password marker
@@ -55,9 +58,10 @@ from calculatorapi.models import CustomUser, PatreonSupporter, SocialAccount
 
 CONFIRM_PHRASE = "purge"
 
-# Blanked rather than nulled: AbstractUser declares these as non-null CharFields
-# with blank=True, so "" is the correct empty value.
-PII_FIELDS = ["email", "first_name", "last_name"]
+# Blanked rather than nulled: AbstractUser declares the first three as non-null
+# CharFields with blank=True, and display_name follows the same shape, so ""
+# is the correct empty value for all four.
+PII_FIELDS = ["email", "first_name", "last_name", "display_name"]
 
 
 class Command(BaseCommand):
@@ -110,6 +114,9 @@ class Command(BaseCommand):
 
         self.stdout.write(f"Non-staff accounts:        {total}")
         self.stdout.write(f"  holding email/name:      {with_pii}")
+        self.stdout.write(
+            f"  holding a display name:  {targets.exclude(display_name='').count()}"
+        )
         self.stdout.write(f"  holding a usable password: {with_password}")
         self.stdout.write(f"  holding an avatar URL:   {avatar_count}")
         self.stdout.write(f"  API tokens to delete:    {token_count}")
@@ -155,6 +162,7 @@ class Command(BaseCommand):
                 user.email = ""
                 user.first_name = ""
                 user.last_name = ""
+                user.display_name = ""
                 # Writes the "!" marker; check_password() then rejects every
                 # input, including "!" itself.
                 user.set_unusable_password()
