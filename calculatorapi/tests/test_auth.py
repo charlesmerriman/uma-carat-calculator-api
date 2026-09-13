@@ -308,7 +308,9 @@ class AccountEndpointTests(CalculatorTestCase):
 
         self.assertEqual(res.status_code, 200)
         self.assertEqual(
-            set(res.data), {'username', 'avatar_url', 'linked_providers', 'supporter'})
+            set(res.data),
+            {'username', 'display_name', 'avatar_url', 'avatar_uma', 'linked_providers', 'supporter'},
+        )
         self.assertEqual(res.data['username'], 'accountuser')
 
     def test_lists_linked_providers_oldest_first(self):
