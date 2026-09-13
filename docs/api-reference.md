@@ -158,6 +158,25 @@ entitlement must never be answerable from.
 
 ---
 
+### `DELETE /account`
+
+Protected. Removes the caller's account. **`204`**, no body.
+
+- **Gone, by cascade:** the account row, its API token (the request's own token
+  stops working immediately), its `SocialAccount` rows (avatar URLs included)
+  and every planned banner, purchase and step-up selection. Signing in again
+  with the same provider creates a fresh, empty account.
+- **Kept, with the pointer to the account cleared:** feedback the person sent
+  (`user` → null) and their `PatreonSupporter` row (`linked_user` → null — the
+  same treatment as an unlink, a lapse or a purge; that table is not ours to
+  delete from).
+- `403` for staff — their accounts are managed in the admin. `401` anonymous.
+- No confirmation body. The account page makes the person type a phrase first;
+  the request carries the token of the very account it deletes, and there is no
+  recovery afterwards (no email is held to send a reset to, by design).
+
+---
+
 ### `GET /account/link/<provider>/start`
 
 Protected, throttled to **20/hour per user**. Returns a consent URL for attaching

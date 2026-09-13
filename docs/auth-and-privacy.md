@@ -137,6 +137,16 @@ password-less account with no providers. Staff are exempt — their password wor
 
 Enforced server-side. Hiding the button is a suggestion; this has to be a rule.
 
+### Deleting an account is self-serve and takes the person's data with it
+
+`DELETE /account` (`views/account.py`) exists because an account that holds no
+email has no other way to ask. It deletes the `CustomUser` and lets the models'
+`on_delete` rules decide the rest: the token, the `SocialAccount` rows (and their
+avatar URLs) and the whole plan cascade; feedback and the `PatreonSupporter` row
+are `SET_NULL` and survive with their pointer cleared — the same treatment a
+pledge gets on an unlink, a lapse or a purge. Staff are refused (`403`); admin
+accounts are deleted in the admin, deliberately and logged. There is no undo.
+
 ### Google's `id_token` is decoded without signature verification
 
 In `_decode_jwt_payload`. This is Google's documented approach for the authorization-code
