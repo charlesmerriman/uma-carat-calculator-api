@@ -14,6 +14,7 @@ from calculatorapi.views import (
     GameEventViewSet,
     ChangelogEntryViewSet,
     PatreonSupporterViewSet,
+    UmaViewSet,
 )
 from calculatorapi.views.admin_images import admin_image_library
 from calculatorapi.views.analytics import analytics_dashboard
@@ -48,6 +49,9 @@ router.register(r"changelog", ChangelogEntryViewSet, basename="changelog")
 # Public thank-you list for the home page. Read-only by construction — the
 # viewset has no write actions at all, not merely permission-gated ones.
 router.register(r"supporters", PatreonSupporterViewSet, basename="supporter")
+# The uma catalogue as picker options (id, name, image), for the avatar picker
+# on /account — a page that never loads /calculator-data. Read-only, public.
+router.register(r"umas", UmaViewSet, basename="uma")
 
 urlpatterns = [
     path("", include(router.urls)),

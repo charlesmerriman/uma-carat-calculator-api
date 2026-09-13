@@ -757,13 +757,29 @@ class CustomUserAdmin(UserAdmin, ModelAdmin):
     form = UserChangeForm
     add_form = UserCreationForm
     change_password_form = AdminPasswordChangeForm
-    list_display = ("username", "is_staff", "date_joined")
+    list_display = ("username", "display_name", "is_staff", "date_joined")
+    # UserAdmin's default searches email and the real-name fields, which
+    # ordinary accounts never hold. The handle and the chosen name are the
+    # two things a person can quote from their account page.
+    search_fields = ("username", "display_name")
+    # UmaAdmin declares search_fields, which is what makes this widget work.
+    autocomplete_fields = ("avatar_uma",)
     # Ordinary accounts sign in through Google/Discord and deliberately hold no
     # email or name (see models/social_account.py), so those fields are dropped
     # from the form rather than sitting there inviting someone to fill them in.
     # Staff still need a password, which is why UserAdmin's auth fieldset stays.
     fieldsets = (
         (None, {"fields": ("username", "password")}),
+        # Editable, not read-only: both are the person's own choices, set from
+        # their account page, and the one reason to touch them here is to
+        # blank a display name that should not stand.
+        ("Profile", {
+            "fields": ("display_name", "avatar_uma"),
+            "description": (
+                "What the person chose on their account page. Shown to them "
+                "alone; neither appears anywhere public."
+            ),
+        }),
         ("Permissions", {
             "fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions"),
         }),

@@ -18,6 +18,8 @@ Concretely, a non-staff `CustomUser` row carries:
 - blank `email`, `first_name`, `last_name`
 - an unusable password
 - a generated `user_xxxxxx` username
+- and, since 2026-09-13, two **preferences** the person may set on their account
+  page: `display_name` and `avatar_uma` (see below)
 
 The linked `SocialAccount` row stores `(provider, subject_id)` — unique together —
 and, since 2026-09-12, `avatar_url`: the https URL of the person's profile picture
@@ -28,6 +30,16 @@ every time they sign in or link *through that provider*, blanked by
 remains the only *identifying* value stored anywhere in the system.
 An account may hold **several** rows (one per provider); `SocialAccount.user` is a
 ForeignKey, not a OneToOne, precisely so that linking is possible.
+
+**Preferences are not profile attributes.** `CustomUser.display_name` (a name
+shown beside the handle) and `CustomUser.avatar_uma` (a uma from the catalogue
+used as the picture instead of the provider's) are things the person *tells* us
+through `PATCH /account`, never things we *learn* from a provider — the scopes
+and `oauth.Identity` are untouched by them. The handle stays the row's identity;
+the name sits beside it and is not unique. The display name is personal data
+(a chosen name is) and is served only to its owner and blanked by
+`purge_user_pii`; the uma pick is the site's own art, is not personal data, and
+survives the purge. Neither reaches any public route.
 
 Staff accounts are the exception: they keep password login so `/admin` and the
 analytics dashboard remain reachable.
@@ -140,8 +152,8 @@ Enforced server-side. Hiding the button is a suggestion; this has to be a rule.
 ### Deleting an account is self-serve and takes the person's data with it
 
 `DELETE /account` (`views/account.py`) exists because an account that holds no
-email has no other way to ask. It deletes the `CustomUser` and lets the models'
-`on_delete` rules decide the rest: the token, the `SocialAccount` rows (and their
+email has no other way to ask. It deletes the `CustomUser` (display name and uma
+pick with it) and lets the models' `on_delete` rules decide the rest: the token, the `SocialAccount` rows (and their
 avatar URLs) and the whole plan cascade; feedback and the `PatreonSupporter` row
 are `SET_NULL` and survive with their pointer cleared — the same treatment a
 pledge gets on an unlink, a lapse or a purge. Staff are refused (`403`); admin
@@ -228,10 +240,11 @@ python manage.py purge_user_pii --dry-run   # report only
 python manage.py purge_user_pii             # prompts for confirmation
 ```
 
-Strips email, name, and password from all non-staff accounts, and blanks the
-`avatar_url` on each of their `SocialAccount` rows (the rows themselves survive —
-the `(provider, subject_id)` pair identifies nobody without the provider's own
-database). **Irreversible.** After it runs, those accounts cannot sign in at all —
+Strips email, name, password and the chosen `display_name` from all non-staff
+accounts, and blanks the `avatar_url` on each of their `SocialAccount` rows (the
+rows themselves survive — the `(provider, subject_id)` pair identifies nobody
+without the provider's own database). The uma pick (`avatar_uma`) is left alone:
+it is the site's art, not personal data. **Irreversible.** After it runs, those accounts cannot sign in at all —
 their plans stay in the database but are unreachable. Intended to be run once in
 production.
 

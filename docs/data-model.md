@@ -11,6 +11,8 @@ erDiagram
     CustomUser {
         int id PK
         string username
+        string display_name
+        int avatar_uma_id FK
         string email
         int current_carat
         int current_paid_carat
@@ -220,6 +222,7 @@ erDiagram
         int wit_recommendation
     }
 
+    CustomUser }o--|| Uma : "avatar_uma"
     CustomUser }o--|| ClubRank : "club_rank"
     CustomUser }o--|| TeamTrialsRank : "team_trials_rank"
     CustomUser }o--|| ChampionsMeetingRank : "champions_meeting_rank"
@@ -257,6 +260,26 @@ erDiagram
 ---
 
 ## Key Constraints and Design Notes
+
+### `CustomUser.display_name` / `avatar_uma` — preferences beside the handle
+
+The generated `user_xxxxxx` username is the row's identity (the admin, every
+`__str__`) and nothing can change it. Since 2026-09-13 two preferences sit
+**beside** it, both written only by `PATCH /account`:
+
+- `display_name` — `CharField(32, blank=True, default="")`. **Not unique**, for
+  the same reason `PatreonSupporter.display_name` only has a partial constraint:
+  two people may choose the same name, and collapsing duplicates costs someone
+  their identity. Personal data (a chosen name is), so `purge_user_pii` blanks it
+  and it is never serialized anywhere public.
+- `avatar_uma` — nullable FK to `Uma`, `SET_NULL`, `related_name="+"`. Only a uma
+  **with an image** may be chosen (the serializer's queryset enforces it, and
+  `GET /umas` offers nothing else); `GET /account` still checks the image at read
+  time, since an editor can clear it later, and falls back to the provider picture
+  rather than a broken tile. The site's own art, so not PII: the purge leaves it.
+
+→ [auth-and-privacy.md](auth-and-privacy.md) for why these are not profile
+attributes, and [api-reference.md](api-reference.md) for the route.
 
 ### `CalculationConstants` — the projection's tunables
 
