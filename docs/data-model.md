@@ -2,6 +2,13 @@
 
 Entity-relationship overview for the `calculatorapi` app. All models live in `calculatorapi/models/`, one file per entity.
 
+For the complete diagram, paste [database-schema.dbml](database-schema.dbml) into
+[dbdiagram.io](https://dbdiagram.io). The DBML snapshot includes all 35 application
+models, 3 automatic join tables, and 7 framework tables, with all 345 columns and
+47 foreign-key relationships as of 2026-09-13. It uses PostgreSQL types and documents
+Django defaults, deletion behavior, and partial unique indexes in notes. Update the
+snapshot when models change; the Mermaid diagram below is a selected overview.
+
 ---
 
 ## ERD

@@ -1,0 +1,870 @@
+// Paste this entire file into the dbdiagram.io DBML editor.
+// Generated 2026-09-10 from current Django 6.0 model definitions, without database access.
+// Updated 2026-09-13 for migrations 0054-0055: SocialAccount.avatar_url, CustomUser.display_name and avatar_uma_id.
+// 35 application models + 3 automatic join tables + 7 framework tables = 45 tables.
+// Physical PostgreSQL table/column names; aliases are the Django model names.
+// PostgreSQL types are used; local development may use SQLite.
+// Django defaults, choices, validators and on_delete behavior are application rules,
+// documented in notes rather than misrepresented as SQL defaults/enums/cascades.
+// Partial unique indexes are documented in table notes; DBML has no index WHERE setting.
+// This is a schema diagram, not a replacement for Django migrations or a live DB audit.
+// Derived API fields, abstract models and proxy models do not create extra tables.
+// DBML reference: https://dbml.dbdiagram.io/docs/
+
+Project UmaMusumeCalculator {
+  database_type: 'PostgreSQL'
+  Note: 'Complete model diagram: 45 tables, 342 columns. Model definitions only; no stored data. Physical tables use Django model aliases. Application defaults/deletion behavior and partial unique indexes are documented in notes.'
+}
+
+// Accounts and Plans
+
+Table calculatorapi_customuser as CustomUser {
+  id bigint [pk, increment, not null]
+  password varchar(128) [not null]
+  last_login "timestamp with time zone" [null]
+  is_superuser boolean [not null, note: 'Django default: False. Designates that this user has all permissions without explicitly assigning them.']
+  username varchar(150) [not null, unique, note: 'Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.']
+  first_name varchar(150) [not null]
+  last_name varchar(150) [not null]
+  email varchar(254) [not null]
+  is_staff boolean [not null, note: 'Django default: False. Designates whether the user can log into this admin site.']
+  is_active boolean [not null, note: 'Django default: True. Designates whether this user should be treated as active. Unselect this instead of deleting accounts.']
+  date_joined "timestamp with time zone" [not null, note: 'Django default: django.utils.timezone.now().']
+  club_rank_id bigint [null, note: 'Django on_delete: SET_NULL.']
+  champions_meeting_rank_id bigint [null, note: 'Django on_delete: SET_NULL.']
+  team_trials_rank_id bigint [null, note: 'Django on_delete: SET_NULL.']
+  league_of_heroes_rank_id bigint [null, note: 'Django on_delete: SET_NULL.']
+  sr_shards integer [not null, note: 'Django default: 0.']
+  sr_crystals integer [not null, note: 'Django default: 0.']
+  ssr_shards integer [not null, note: 'Django default: 0.']
+  ssr_crystals integer [not null, note: 'Django default: 0.']
+  daily_carat boolean [not null, note: 'Django default: False.']
+  training_pass boolean [not null, note: 'Django default: False.']
+  misc_earnings boolean [not null, note: 'Django default: True.']
+  monthly_shop_tickets boolean [not null, note: 'Django default: True.']
+  discounted_paid_pulls boolean [not null, note: 'Django default: True.']
+  full_price_paid_pulls boolean [not null, note: 'Django default: True.']
+  include_purchases_in_projection boolean [not null, note: 'Django default: False.']
+  webstore_bonus boolean [not null, note: 'Django default: False.']
+  current_carat integer [not null, note: 'Django default: 0.']
+  current_paid_carat integer [not null, note: 'Django default: 0.']
+  uma_ticket integer [not null, note: 'Django default: 0.']
+  support_ticket integer [not null, note: 'Django default: 0.']
+  uma_selector_ticket integer [not null, note: 'Django default: 0.']
+  support_selector_ticket integer [not null, note: 'Django default: 0.']
+  display_name varchar(32) [not null, note: 'Django default: "". A name the person chose on their account page, shown to them alone. Not unique. Blanked by purge_user_pii.']
+  avatar_uma_id bigint [null, note: 'Django on_delete: SET_NULL. The uma used as their picture instead of the provider avatar; null means the provider picture.']
+
+  indexes {
+    club_rank_id
+    champions_meeting_rank_id
+    team_trials_rank_id
+    league_of_heroes_rank_id
+    avatar_uma_id
+  }
+
+  Note: 'Django model: calculatorapi.CustomUser. Source: calculatorapi/models/custom_user.py. Includes inherited AbstractUser authentication fields. Non-staff accounts use anonymous handles; supporter entitlement is derived, not stored. display_name and avatar_uma_id are account preferences written only by PATCH /account.'
+}
+
+Table calculatorapi_socialaccount as SocialAccount {
+  id bigint [pk, increment, not null]
+  user_id bigint [not null, note: 'Django on_delete: CASCADE.']
+  provider varchar(20) [not null, note: 'Django choices: google (Google); discord (Discord); patreon (Patreon).']
+  subject_id varchar(255) [not null]
+  created_at "timestamp with time zone" [not null, note: 'Django sets this timestamp on creation.']
+  last_login_at "timestamp with time zone" [null]
+  avatar_url varchar(500) [not null, note: 'Django default: "". The profile picture URL on the provider CDN; refreshed on every sign-in or link through this provider; blanked by purge_user_pii. Served only to the account owner.']
+
+  indexes {
+    (provider, subject_id) [unique, name: 'unique_provider_subject']
+    user_id
+  }
+
+  Note: 'Django model: calculatorapi.SocialAccount. Source: calculatorapi/models/social_account.py.'
+}
+
+Table calculatorapi_userplannedbanner as UserPlannedBanner {
+  id bigint [pk, increment, not null]
+  user_id bigint [not null, note: 'Django on_delete: CASCADE.']
+  banner_uma_id bigint [null, note: 'Django on_delete: CASCADE.']
+  banner_support_id bigint [null, note: 'Django on_delete: CASCADE.']
+  banner_step_up_id bigint [null, note: 'Django on_delete: CASCADE.']
+  number_of_pulls integer [not null]
+  reserved_copies integer [not null, note: 'Django default: 0.']
+
+  indexes {
+    user_id
+    banner_uma_id
+    banner_support_id
+    banner_step_up_id
+  }
+
+  checks {
+    `(("banner_step_up_id" IS NULL AND "banner_support_id" IS NULL AND "banner_uma_id" IS NOT NULL) OR ("banner_step_up_id" IS NULL AND "banner_support_id" IS NOT NULL AND "banner_uma_id" IS NULL) OR ("banner_step_up_id" IS NOT NULL AND "banner_support_id" IS NULL AND "banner_uma_id" IS NULL))` [name: 'exactly_one_banner_target']
+  }
+
+  Note: 'Django model: calculatorapi.UserPlannedBanner. Source: calculatorapi/models/user_planned_banner.py. Exactly one of the three banner FKs must be set. number_of_pulls stores STEPS for step-up rows and pulls otherwise. reserved_copies are copies obtained without pulling.'
+}
+
+Table calculatorapi_userplannedpurchase as UserPlannedPurchase {
+  id bigint [pk, increment, not null]
+  user_id bigint [not null, note: 'Django on_delete: CASCADE.']
+  product_id bigint [not null, note: 'Django on_delete: CASCADE.']
+  quantity integer [not null, check: `"quantity" >= 0`, note: 'Django default: 1.']
+  target_uma_id bigint [null, note: 'Django on_delete: SET_NULL.']
+  target_support_id bigint [null, note: 'Django on_delete: SET_NULL.']
+
+  indexes {
+    user_id
+    product_id
+    target_uma_id
+    target_support_id
+  }
+
+  checks {
+    `("target_uma_id" IS NULL OR "target_support_id" IS NULL)` [name: 'at_most_one_selector_target']
+  }
+
+  Note: 'Django model: calculatorapi.UserPlannedPurchase. Source: calculatorapi/models/user_planned_purchase.py. At most one selector target may be set; neither is valid for an unchosen target or a carat pack.'
+}
+
+Table calculatorapi_userstepupselection as UserStepUpSelection {
+  id bigint [pk, increment, not null]
+  user_id bigint [not null, note: 'Django on_delete: CASCADE.']
+  banner_step_up_id bigint [not null, note: 'Django on_delete: CASCADE.']
+  uma_id bigint [null, note: 'Django on_delete: CASCADE.']
+  support_id bigint [null, note: 'Django on_delete: CASCADE.']
+  slot integer [not null, check: `"slot" >= 0`, note: 'Which of the 10 selection slots, 1-based.']
+  is_target boolean [not null, note: 'Django default: False. The step 5 pick -- the copy the player chooses outright.']
+
+  indexes {
+    (user_id, banner_step_up_id, slot) [unique, name: 'unique_step_up_selection_slot']
+    user_id
+    banner_step_up_id
+    uma_id
+    support_id
+  }
+
+  checks {
+    `(("support_id" IS NULL AND "uma_id" IS NOT NULL) OR ("support_id" IS NOT NULL AND "uma_id" IS NULL))` [name: 'exactly_one_selection_card']
+  }
+
+  Note: 'Django model: calculatorapi.UserStepUpSelection. Source: calculatorapi/models/user_step_up_selection.py. One filled slot per user and step-up. Slots 1..10 and matching card_type are validated in application code. Selections survive deleting a planned banner. An empty slot has no row. Partial unique index one_step_up_target_per_banner: UNIQUE (user_id, banner_step_up_id) WHERE "is_target".'
+}
+
+Table authtoken_token as Token {
+  key varchar(40) [pk, not null]
+  user_id bigint [not null, unique, note: 'Django on_delete: CASCADE.']
+  created "timestamp with time zone" [not null, note: 'Django sets this timestamp on creation.']
+
+  Note: 'Django model: authtoken.Token. DRF authentication token. TokenProxy is a proxy over this same table and has no separate table.'
+}
+
+// Ranks
+
+Table calculatorapi_clubrank as ClubRank {
+  id bigint [pk, increment, not null]
+  name varchar(255) [not null]
+  income_amount integer [not null]
+
+  Note: 'Django model: calculatorapi.ClubRank. Source: calculatorapi/models/club_rank.py.'
+}
+
+Table calculatorapi_teamtrialsrank as TeamTrialsRank {
+  id bigint [pk, increment, not null]
+  name varchar(255) [not null]
+  income_amount integer [not null]
+
+  Note: 'Django model: calculatorapi.TeamTrialsRank. Source: calculatorapi/models/team_trials_rank.py.'
+}
+
+Table calculatorapi_championsmeetingrank as ChampionsMeetingRank {
+  id bigint [pk, increment, not null]
+  name varchar(255) [not null]
+  income_amount integer [not null]
+  uma_ticket_amount integer [not null, note: 'Django default: 0.']
+  support_ticket_amount integer [not null, note: 'Django default: 0.']
+  ssr_shard_amount integer [not null, note: 'Django default: 0.']
+  sr_shard_amount integer [not null, note: 'Django default: 0.']
+  sort_order integer [not null, note: 'Django default: 0.']
+
+  Note: 'Django model: calculatorapi.ChampionsMeetingRank. Source: calculatorapi/models/champions_meeting_rank.py.'
+}
+
+Table calculatorapi_leagueofheroesrank as LeagueOfHeroesRank {
+  id bigint [pk, increment, not null]
+  name varchar(255) [not null]
+  income_amount integer [not null]
+  uma_ticket_amount integer [not null, note: 'Django default: 0.']
+  support_ticket_amount integer [not null, note: 'Django default: 0.']
+  ssr_shard_amount integer [not null, note: 'Django default: 0.']
+  sr_shard_amount integer [not null, note: 'Django default: 0.']
+
+  Note: 'Django model: calculatorapi.LeagueOfHeroesRank. Source: calculatorapi/models/league_of_heroes_rank.py.'
+}
+
+// Banners and Cards
+
+Table calculatorapi_bannertimeline as BannerTimeline {
+  id bigint [pk, increment, not null]
+  name varchar(255) [not null]
+  banner_category varchar(32) [not null, note: 'Django default: "standard". Django choices: standard (Standard); race_prep_support (Race prep support rerun); golden_week_revival (Golden Week revival); rerun (Rerun). What kind of banner window this is. Drives the timeline card\'s layout and the category filter. Leave as Standard unless this is a revival, a rerun, or a race-prep support batch.']
+  jp_start_date "timestamp with time zone" [null]
+  jp_end_date "timestamp with time zone" [null]
+  global_start_date "timestamp with time zone" [null]
+  global_end_date "timestamp with time zone" [null]
+  schedule_offset_days integer [not null, note: 'Django default: 0. Days to push this and every later date forward. Leave at 0 unless global has slipped its schedule. Ignored once global dates are confirmed.']
+  image varchar(100) [null, note: 'Stored file path, not binary image data.']
+
+  Note: 'Django model: calculatorapi.BannerTimeline. Source: calculatorapi/models/banner_timeline.py. Stores JP dates and confirmed global dates. Effective start/end dates and applied schedule offsets are computed. banner_category is separate from a planner row kind (Uma, Support, Step Up).'
+}
+
+Table calculatorapi_banneruma as BannerUma {
+  id bigint [pk, increment, not null]
+  banner_timeline_id bigint [not null, note: 'Django on_delete: CASCADE.']
+  name varchar(255) [not null]
+  admin_comments text [null, note: 'Notes for editors.']
+  free_pulls integer [not null, note: 'Django default: 0. Free pulls players get on this banner — the calculator counts these toward affordability.']
+  is_recommended boolean [not null, note: 'Django default: False. Tick when this banner is exceptionally worth pulling on. Highlights it on the Timeline and in the calculator\'s banner dropdown.']
+
+  indexes {
+    banner_timeline_id
+  }
+
+  Note: 'Django model: calculatorapi.BannerUma. Source: calculatorapi/models/banner_uma.py.'
+}
+
+Table calculatorapi_bannersupport as BannerSupport {
+  id bigint [pk, increment, not null]
+  banner_timeline_id bigint [not null, note: 'Django on_delete: CASCADE.']
+  name varchar(255) [not null]
+  admin_comments text [null, note: 'Notes for editors.']
+  free_pulls integer [not null, note: 'Django default: 0. Free pulls players get on this banner — the calculator counts these toward affordability.']
+  is_recommended boolean [not null, note: 'Django default: False. Tick when this banner is exceptionally worth pulling on. Highlights it on the Timeline and in the calculator\'s banner dropdown.']
+
+  indexes {
+    banner_timeline_id
+  }
+
+  Note: 'Django model: calculatorapi.BannerSupport. Source: calculatorapi/models/banner_support.py.'
+}
+
+Table calculatorapi_bannerstepup as BannerStepUp {
+  id bigint [pk, increment, not null]
+  banner_timeline_id bigint [not null, note: 'The campaign part this step-up runs alongside — normally Part 2. Supplies the dates the projection uses. Django on_delete: CASCADE.']
+  anniversary_event_id bigint [not null, note: 'The campaign selling it. Supplies the JP cutoff for candidates. Django on_delete: CASCADE.']
+  name varchar(255) [not null, note: 'As shown on the planner, e.g. \'5th Anniversary SSR Select Step-Up\'.']
+  card_type varchar(10) [not null, note: 'Django default: "support". Django choices: uma (★3 Uma); support (SSR Support). Which pool this step-up draws from. Drives the odds labels.']
+  banner_count integer [not null, check: `"banner_count" >= 0`, note: 'Django default: 1. How many banners of this card type the campaign sells. This is the hard ceiling on steps: banner_count x 5. Application validator: MinValueValidator(1).']
+  image varchar(100) [null, note: 'Stored file path, not binary image data.']
+  admin_comments text [null, note: 'Notes for editors.']
+  order integer [not null, check: `"order" >= 0`, note: 'Django default: 0. Sort order within a campaign, e.g. to put ★3 before SSR.']
+
+  indexes {
+    banner_timeline_id
+    anniversary_event_id
+  }
+
+  Note: 'Django model: calculatorapi.BannerStepUp. Source: calculatorapi/models/banner_step_up.py. Paid-carats-only ladder. max_steps = banner_count * 5 is computed, not stored. Application validation requires banner_timeline to be a part of anniversary_event.'
+}
+
+Table calculatorapi_uma as Uma {
+  id bigint [pk, increment, not null]
+  name varchar(255) [not null]
+  image varchar(100) [null, note: 'Stored file path, not binary image data.']
+  admin_comments text [null, note: 'Notes for editors.']
+  purpose varchar(100) [not null, note: 'Django default: "". Shown publicly when a player hovers this uma\'s art on the Timeline, e.g. "Great pace parent." Leave blank to show nothing. Notes for other editors go in Admin comments instead.']
+  is_time_limited boolean [not null, note: 'Django default: False. Only obtainable during a limited window, so selector tickets and step-ups can never take them. Hides this uma from every selector picker and stops a selector funding a banner it is featured on.']
+  is_three_star boolean [not null, note: 'Django default: True. Uncheck for ★1/★2 units. Selectors and step-ups only grant ★3 umas, so anything unchecked here is hidden from the pickers.']
+
+  Note: 'Django model: calculatorapi.Uma. Source: calculatorapi/models/uma.py.'
+}
+
+Table calculatorapi_supportcard as SupportCard {
+  id bigint [pk, increment, not null]
+  name varchar(255) [not null]
+  game_id integer [null, unique, check: `"game_id" >= 0`, note: 'Numeric card id from the reference game data (e.g. 30024). Anchors this card\'s image filename in the DO Space.']
+  image varchar(100) [null, note: 'Stored file path, not binary image data.']
+  admin_comments text [null, note: 'Notes for editors.']
+  purpose varchar(100) [not null, note: 'Django default: "". Shown publicly when a player hovers this card\'s art on the Timeline, e.g. "Great for front runners." Leave blank to show nothing. Notes for other editors go in Admin comments instead.']
+
+  Note: 'Django model: calculatorapi.SupportCard. Source: calculatorapi/models/support_card.py.'
+}
+
+Table calculatorapi_umasonumabanner as UmasOnUmaBanner {
+  id bigint [pk, increment, not null]
+  banner_uma_id bigint [not null, note: 'Django on_delete: CASCADE.']
+  uma_id bigint [not null, note: 'Django on_delete: CASCADE.']
+  recommendation text [null, note: 'Optional recommendation text for this uma on this banner.']
+
+  indexes {
+    banner_uma_id
+    uma_id
+  }
+
+  Note: 'Django model: calculatorapi.UmasOnUmaBanner. Source: calculatorapi/models/umas_on_uma_banner.py.'
+}
+
+Table calculatorapi_supportsonsupportbanner as SupportsOnSupportBanner {
+  id bigint [pk, increment, not null]
+  banner_support_id bigint [not null, note: 'Django on_delete: CASCADE.']
+  support_card_id bigint [not null, note: 'Django on_delete: CASCADE.']
+  recommendation text [null, note: 'Optional recommendation text for this card on this banner.']
+
+  indexes {
+    banner_support_id
+    support_card_id
+  }
+
+  Note: 'Django model: calculatorapi.SupportsOnSupportBanner. Source: calculatorapi/models/supports_on_support_banner.py.'
+}
+
+// Events and Campaigns
+
+Table calculatorapi_anniversaryevent as AnniversaryEvent {
+  id bigint [pk, increment, not null]
+  name varchar(255) [not null]
+  event_type varchar(20) [not null, note: 'Django default: "anniversary". Django choices: anniversary (Anniversary); new_year (New Year); campaign (Campaign). Drives the timeline strip\'s label and styling.']
+  jp_cutoff_date date [null, note: 'Selectors from this campaign can only pick cards released on JP on or before this date. Leave blank for no restriction.']
+  image varchar(100) [null, note: 'Stored file path, not binary image data.']
+  accent_label varchar(60) [not null, note: 'Optional short badge text for the timeline strip, e.g. \'Guaranteed SSR\'.']
+
+  Note: 'Django model: calculatorapi.AnniversaryEvent. Source: calculatorapi/models/anniversary_event.py. Campaign parts are linked through AnniversaryEventBanner. Start, end and main_start_date are derived from those parts, not database columns.'
+}
+
+Table calculatorapi_anniversaryeventbanner as AnniversaryEventBanner {
+  id bigint [pk, increment, not null]
+  anniversary_event_id bigint [not null, note: 'Django on_delete: CASCADE.']
+  banner_timeline_id bigint [not null, note: 'Django on_delete: CASCADE.']
+  part_number integer [not null, check: `"part_number" >= 0`, note: 'Django default: 1. The sheet\'s Part number within this campaign (1, 2, 3, ...).']
+
+  indexes {
+    (anniversary_event_id, banner_timeline_id) [unique, name: 'unique_anniversary_event_banner']
+    anniversary_event_id
+    banner_timeline_id
+  }
+
+  Note: 'Django model: calculatorapi.AnniversaryEventBanner. Source: calculatorapi/models/anniversary_event_banner.py.'
+}
+
+Table calculatorapi_anniversaryeventproduct as AnniversaryEventProduct {
+  id bigint [pk, increment, not null]
+  anniversary_event_id bigint [not null, note: 'Django on_delete: CASCADE.']
+  product_type varchar(20) [not null, note: 'Django default: "carat_pack". Django choices: carat_pack (Carat pack); uma_selector (Uma selector); support_selector (Support selector).']
+  name varchar(255) [not null, note: 'As shown to the user, e.g. \'7500 Carat Pack\' or \'$21 Uma Selector\'.']
+  usd_cost numeric(7,2) [not null, note: 'Django default: 0.']
+  paid_carat_amount integer [not null, note: 'Django default: 0. Paid carats granted per unit, before any webstore bonus.']
+  webstore_multiplier numeric(3,2) [not null, note: 'Django default: 1.0. Carat multiplier when bought via the webstore. 1.00 = no bonus.']
+  max_quantity integer [not null, check: `"max_quantity" >= 0`, note: 'Django default: 1. Purchase limit for this campaign. Selectors are normally 1.']
+  jp_cutoff_date date [null, note: 'Leave blank to inherit the campaign\'s cutoff.']
+  order integer [not null, check: `"order" >= 0`, note: 'Django default: 0.']
+
+  indexes {
+    anniversary_event_id
+  }
+
+  Note: 'Django model: calculatorapi.AnniversaryEventProduct. Source: calculatorapi/models/anniversary_event_product.py.'
+}
+
+Table calculatorapi_gameevent as GameEvent {
+  id bigint [pk, increment, not null]
+  name varchar(255) [not null]
+  image varchar(100) [null, note: 'Stored file path, not binary image data.']
+  banner_timeline_id bigint [null, note: 'Django on_delete: SET_NULL.']
+  carat_amount integer [not null, note: 'Django default: 0.']
+  carats_throughout integer [not null, note: 'Django default: 0.']
+  support_ticket_amount integer [not null, note: 'Django default: 0.']
+  uma_ticket_amount integer [not null, note: 'Django default: 0.']
+  sr_shard_amount integer [not null, note: 'Django default: 0.']
+  sr_crystal_amount integer [not null, note: 'Django default: 0.']
+  ssr_shard_amount integer [not null, note: 'Django default: 0.']
+  ssr_crystal_amount integer [not null, note: 'Django default: 0.']
+
+  indexes {
+    banner_timeline_id
+  }
+
+  Note: 'Django model: calculatorapi.GameEvent. Source: calculatorapi/models/game_event.py. Dates are derived from the linked BannerTimeline; reward amounts are stored directly on this table.'
+}
+
+Table calculatorapi_scenario as Scenario {
+  id bigint [pk, increment, not null]
+  name varchar(255) [not null]
+  image varchar(100) [null, note: 'Stored file path, not binary image data.']
+  banner_timeline_id bigint [null, note: 'The banner this scenario launches alongside — supplies its start date. A scenario has no end date. Django on_delete: SET_NULL.']
+
+  indexes {
+    banner_timeline_id
+  }
+
+  Note: 'Django model: calculatorapi.Scenario. Source: calculatorapi/models/scenario.py. Training scenario release. Its start is derived from BannerTimeline. It has no end date.'
+}
+
+Table calculatorapi_championsmeeting as ChampionsMeeting {
+  id bigint [pk, increment, not null]
+  name varchar(255) [not null]
+  cm_number integer [not null]
+  jp_start_date "timestamp with time zone" [null]
+  jp_end_date "timestamp with time zone" [null]
+  global_start_date "timestamp with time zone" [null]
+  global_end_date "timestamp with time zone" [null]
+  schedule_offset_days integer [not null, note: 'Django default: 0. Days to push this and every later date forward. Leave at 0 unless global has slipped its schedule. Ignored once global dates are confirmed.']
+  image varchar(100) [null, note: 'Stored file path, not binary image data.']
+  track varchar(255) [not null]
+  surface_type varchar(255) [not null]
+  distance varchar(255) [not null]
+  length varchar(255) [not null]
+  track_condition varchar(255) [not null]
+  season varchar(255) [not null]
+  weather varchar(255) [not null]
+  direction varchar(255) [not null]
+  speed_recommendation integer [not null]
+  stamina_recommendation integer [not null]
+  power_recommendation integer [not null]
+  guts_recommendation integer [not null]
+  wit_recommendation integer [not null]
+
+  Note: 'Django model: calculatorapi.ChampionsMeeting. Source: calculatorapi/models/champions_meeting.py.'
+}
+
+Table calculatorapi_leagueofheroes as LeagueOfHeroes {
+  id bigint [pk, increment, not null]
+  name varchar(255) [not null]
+  loh_number integer [not null, note: 'Django default: 0.']
+  jp_start_date "timestamp with time zone" [null]
+  jp_end_date "timestamp with time zone" [null]
+  global_start_date "timestamp with time zone" [null]
+  global_end_date "timestamp with time zone" [null]
+  schedule_offset_days integer [not null, note: 'Django default: 0. Days to push this and every later date forward. Leave at 0 unless global has slipped its schedule. Ignored once global dates are confirmed.']
+  image varchar(100) [null, note: 'Stored file path, not binary image data.']
+  track varchar(255) [not null, note: 'Django default: "TBD".']
+  surface_type varchar(255) [not null, note: 'Django default: "TBD".']
+  distance varchar(255) [not null, note: 'Django default: "TBD".']
+  length varchar(255) [not null, note: 'Django default: "TBD".']
+  track_condition varchar(255) [not null, note: 'Django default: "TBD".']
+  season varchar(255) [not null, note: 'Django default: "TBD".']
+  weather varchar(255) [not null, note: 'Django default: "TBD".']
+  direction varchar(255) [not null, note: 'Django default: "TBD".']
+  speed_recommendation integer [not null, note: 'Django default: 0.']
+  stamina_recommendation integer [not null, note: 'Django default: 0.']
+  power_recommendation integer [not null, note: 'Django default: 0.']
+  guts_recommendation integer [not null, note: 'Django default: 0.']
+  wit_recommendation integer [not null, note: 'Django default: 0.']
+
+  Note: 'Django model: calculatorapi.LeagueOfHeroes. Source: calculatorapi/models/league_of_heroes.py.'
+}
+
+Table calculatorapi_championsmeetingumarecommendation as ChampionsMeetingUmaRecommendation {
+  id bigint [pk, increment, not null]
+  uma_id bigint [not null, note: 'Django on_delete: CASCADE.']
+  champions_meeting_id bigint [not null, note: 'Django on_delete: CASCADE.']
+
+  indexes {
+    uma_id
+    champions_meeting_id
+  }
+
+  Note: 'Django model: calculatorapi.ChampionsMeetingUmaRecommendation. Source: calculatorapi/models/champions_meeting_uma_recommendation.py.'
+}
+
+// Configuration and Changelog
+
+Table calculatorapi_calculationconstants as CalculationConstants {
+  id bigint [pk, increment, not null]
+  daily_base_carats integer [not null, note: 'Django default: 75. Carats from daily quests, every day. Sheet: the 75 in AN42. Application validator: MinValueValidator(0).']
+  weekly_bonus_carats integer [not null, note: 'Django default: 150. TOTAL login bonus carats per week, spread evenly across the seven days rather than paid on specific ones. Sheet: the 150 in AN42\'s 75 + 150/7. Application validator: MinValueValidator(0).']
+  daily_carat_pack_per_day integer [not null, note: 'Django default: 50. Daily Carat Pack drip, credited as FREE carats. Sheet: AR42. Application validator: MinValueValidator(0).']
+  daily_carat_pack_paid_carats integer [not null, note: 'Django default: 500. Daily Carat Pack repurchase bonus, credited as PAID carats — the balance that funds discounted pulls. Sheet: AZ42. Application validator: MinValueValidator(0).']
+  daily_carat_pack_cycle_days integer [not null, note: 'Django default: 30. Days between Daily Carat Pack repurchases. Application validator: MinValueValidator(1).']
+  training_pass_start_date date [not null, note: 'Django default: "2027-08-15". The date the Training Pass feature launches on Global. Nothing is earned from it before this.']
+  training_pass_monthly_free_carats integer [not null, note: 'Django default: 1850. FREE half of the paid Training Pass\'s monthly carats. With the paid half below this totals the pass\'s headline figure. Sheet: AQ42. Application validator: MinValueValidator(0).']
+  training_pass_monthly_paid_carats integer [not null, note: 'Django default: 350. PAID half of the paid Training Pass\'s monthly carats. Sheet: BA42. Application validator: MinValueValidator(0).']
+  monthly_base_reward integer [not null, note: 'Django default: 500. Monthly carats for an account WITHOUT the paid Training Pass. Replaced by the paid figures above, never added to them. Application validator: MinValueValidator(0).']
+  training_pass_free_uma_tickets integer [not null, note: 'Django default: 2. Monthly uma tickets every account gets once the pass launches. Application validator: MinValueValidator(0).']
+  training_pass_free_support_tickets integer [not null, note: 'Django default: 2. Monthly support tickets every account gets once the pass launches. Application validator: MinValueValidator(0).']
+  training_pass_paid_bonus_uma_tickets integer [not null, note: 'Django default: 2. EXTRA monthly uma tickets from the paid pass, added to the free tier\'s. Application validator: MinValueValidator(0).']
+  training_pass_paid_bonus_support_tickets integer [not null, note: 'Django default: 2. EXTRA monthly support tickets from the paid pass, added to the free tier\'s. Application validator: MinValueValidator(0).']
+  training_pass_paid_ssr_shards integer [not null, note: 'Django default: 1. Monthly SSR uncap shards from an ACTIVE paid Training Pass. The free tier earns none, so unlike the tickets above there is no free counterpart to add this to. Delivered on the same monthly clock as the pass\'s carats and tickets. Application validator: MinValueValidator(0).']
+  misc_earnings_monthly integer [not null, note: 'Django default: 1800. Monthly approximation of gifts, career and Team Trials extras, dripped daily as monthly/30. Toggled per user. The live value is 2700 (90 a day), set here in the admin; this field default is only what a fresh database starts from. For reference the source sheet\'s own figure (Timeline!AW1) is 3000. Application validator: MinValueValidator(0).']
+  misc_earnings_delay_days integer [not null, note: 'Django default: 30. Ramp-in before misc earnings start, counted from today. Sheet: AV42. Application validator: MinValueValidator(0).']
+  fifty_day_login_carats integer [not null, note: 'Django default: 150. Carats per completed login-campaign cycle. Sheet: AU42. Application validator: MinValueValidator(0).']
+  fifty_day_login_cycle_days integer [not null, note: 'Django default: 50. Length of that login campaign cycle, in days. Application validator: MinValueValidator(1).']
+  valentines_carats integer [not null, note: 'Django default: 500. Valentine\'s Day gift. Universal — no toggle. Application validator: MinValueValidator(0).']
+  valentines_month integer [not null, note: 'Django default: 2. Month of the Valentine\'s gift, 1-12. Application validator: MinValueValidator(1). Application validator: MaxValueValidator(12).']
+  valentines_day integer [not null, note: 'Django default: 14. Day of month of the Valentine\'s gift. Application validator: MinValueValidator(1). Application validator: MaxValueValidator(31).']
+  white_day_carats integer [not null, note: 'Django default: 500. White Day gift. Universal — no toggle. Application validator: MinValueValidator(0).']
+  white_day_month integer [not null, note: 'Django default: 3. Month of the White Day gift, 1-12. Application validator: MinValueValidator(1). Application validator: MaxValueValidator(12).']
+  white_day_day integer [not null, note: 'Django default: 14. Day of month of the White Day gift. Application validator: MinValueValidator(1). Application validator: MaxValueValidator(31).']
+  monthly_shop_uma_tickets integer [not null, note: 'Django default: 4. Uma tickets in the monthly shop bundle. Off by default per user. Application validator: MinValueValidator(0).']
+  monthly_shop_support_tickets integer [not null, note: 'Django default: 4. Support tickets in the monthly shop bundle. Application validator: MinValueValidator(0).']
+  monthly_shop_restock_day integer [not null, note: 'Django default: 2. Day of month the shop restocks. Counting from here rather than the 1st stops a banner ending on the 1st being credited a bundle the player cannot buy yet. Sheet: BG42. Application validator: MinValueValidator(1). Application validator: MaxValueValidator(28).']
+  pull_cost_carats integer [not null, note: 'Django default: 150. Carats per full-price pull. Application validator: MinValueValidator(1).']
+  discounted_pull_cost_carats integer [not null, note: 'Django default: 50. Carats per discounted pull. PAID carats only, and capped at one per day of a banner\'s run. Application validator: MinValueValidator(1).']
+  shards_per_crystal integer [not null, note: 'Django default: 20. Shards that combine into one uncap crystal. Application validator: MinValueValidator(1).']
+  step_up_cost_step_1 integer [not null, note: 'Django default: 500. Paid carats for step 1 of a Select Step-Up ladder. Sheet: AL360. Application validator: MinValueValidator(0).']
+  step_up_cost_step_2 integer [not null, note: 'Django default: 700. Paid carats for step 2. Application validator: MinValueValidator(0).']
+  step_up_cost_step_3 integer [not null, note: 'Django default: 1000. Paid carats for step 3 (first guaranteed card). Application validator: MinValueValidator(0).']
+  step_up_cost_step_4 integer [not null, note: 'Django default: 1300. Paid carats for step 4 (second guaranteed card). Application validator: MinValueValidator(0).']
+  step_up_cost_step_5 integer [not null, note: 'Django default: 1500. Paid carats for step 5, where the player CHOOSES the guaranteed card. The five together total 5,000 for one completed banner. Application validator: MinValueValidator(0).']
+  step_up_pulls_per_step integer [not null, note: 'Django default: 10. Pulls per step. Each step is a 10-pull. Application validator: MinValueValidator(1).']
+  step_up_target_rate numeric(6,4) [not null, note: 'Django default: "0.0030". Per-pull chance of the ONE card the player is chasing. Derived: the game\'s ~3% total ★3/SSR rate spread across the 10 cards they selected. Change it only if the pool size or the headline rate changes — it is not an independent dial. Application validator: MinValueValidator(0). Application validator: MaxValueValidator(1).']
+  step_up_max_rounds integer [not null, note: 'Django default: 7. Safety bound on completed ladders, NOT the live constraint. Real cost and odds clamp at a banner\'s own banner_count x 5, which is always lower. The source sheet\'s 35-step cap is an artifact of its lookup table\'s extent rather than a game rule. Application validator: MinValueValidator(1).']
+  throughout_end_offset_days integer [not null, note: 'Django default: 4. Days trimmed off a banner\'s end before the decay curve is measured. Sheet: end_date - (\'Carat Calculator\'!G25 + 1). Application validator: MinValueValidator(0).']
+  throughout_filter_grace_days integer [not null, note: 'Django default: 4. Grace window deciding which banners can still reach an event\'s throughout carats. Sheet: AQ32, which reads 3 — ours was fitted to 4 against published per-banner figures, so one of the offsets above may be absorbing a day. Confirm with the parity harness before treating either as authoritative. Application validator: MinValueValidator(0).']
+  throughout_decay_k numeric(4,2) [not null, note: 'Django default: "2.00". Steepness of the curve\'s early exponential leg. Higher front-loads more of the pool into the first days of a banner. Application validator: MinValueValidator(0).']
+  throughout_decay_linear_slope numeric(4,2) [not null, note: 'Django default: "0.80". Slope of the curve\'s slower linear leg, which governs the tail. Application validator: MinValueValidator(0).']
+  prediction_factor numeric(5,3) [not null, note: 'Django default: "0.664". Global covers JP\'s back catalogue faster than real time; each day of JP gap maps to this many days of Global gap. Raising it pushes every unconfirmed banner LATER. Retune if the observed cadence shifts. Application validator: MinValueValidator(0). Application validator: MaxValueValidator(2).']
+  game_event_end_buffer_days integer [not null, note: 'Django default: 4. Days a game event\'s end trails its linked banner\'s end by. Used both to date events and to recover the banner window the decay curve runs over. Application validator: MinValueValidator(0).']
+
+  Note: 'Django model: calculatorapi.CalculationConstants. Source: calculatorapi/models/calculation_constants.py. Singleton: model save() pins pk=1 and instance delete() does nothing. These are application rules, not database check constraints.'
+}
+
+Table calculatorapi_changelogentry as ChangelogEntry {
+  id bigint [pk, increment, not null]
+  title varchar(255) [not null]
+  version varchar(50) [not null]
+  date date [not null]
+  key varchar(100) [null, unique, note: 'Leave blank. A key means this entry is written in the repository (calculatorapi/data/changelog.yaml) and edits made here are replaced on the next deploy — edit the file instead.']
+
+  Note: 'Django model: calculatorapi.ChangelogEntry. Source: calculatorapi/models/changelog_entry.py.'
+}
+
+Table calculatorapi_changelogchange as ChangelogChange {
+  id bigint [pk, increment, not null]
+  entry_id bigint [not null, note: 'Django on_delete: CASCADE.']
+  category varchar(10) [not null, note: 'Django default: "changed". Django choices: added (Added); fixed (Fixed); changed (Changed).']
+  text varchar(500) [not null]
+  order integer [not null, check: `"order" >= 0`, note: 'Django default: 0.']
+
+  indexes {
+    entry_id
+  }
+
+  Note: 'Django model: calculatorapi.ChangelogChange. Source: calculatorapi/models/changelog_change.py.'
+}
+
+// Patreon
+
+Table calculatorapi_patreontier as PatreonTier {
+  id bigint [pk, increment, not null]
+  name varchar(50) [not null, unique]
+  order smallint [not null, check: `"order" >= 0`, note: 'Django default: 0. Lower numbers appear first on the site. Ties fall back to name.']
+
+  Note: 'Django model: calculatorapi.PatreonTier. Source: calculatorapi/models/patreon_tier.py.'
+}
+
+Table calculatorapi_patreonsupporter as PatreonSupporter {
+  id bigint [pk, increment, not null]
+  display_name varchar(100) [not null, note: 'The name to thank them by. Use their Patreon handle, never a billing name.']
+  email varchar(254) [not null, note: 'Django default: "". Admin only — never shown on the website. Used to tell supporters with similar or changed display names apart.']
+  patreon_user_id varchar(64) [not null, note: 'Django default: "". Admin only — never shown on the website. Patreon\'s own id for this person; filled by the API sync and used to match them to a site account.']
+  linked_user_id bigint [null, unique, note: 'The site account this patron signed in with, if they have linked one. Django on_delete: SET_NULL.']
+  tier_id bigint [null, note: 'Django on_delete: SET_NULL.']
+  is_public boolean [not null, note: 'Django default: False. Off by default. While off they are counted anonymously instead. Only tick this for a name they chose to be shown by.']
+  is_active boolean [not null, note: 'Django default: True. Untick when a pledge lapses. Keeps the row instead of deleting it.']
+  patron_since date [null, note: 'Optional. Used only to order supporters within a tier, longest-standing first.']
+
+  indexes {
+    tier_id
+  }
+
+  Note: 'Django model: calculatorapi.PatreonSupporter. Source: calculatorapi/models/patreon_supporter.py. linked_user is optional and one-to-one. Account or tier deletion preserves the supporter. Entitlement is derived from linked_user, is_active and tier. patreon_user_id is matched to SocialAccount.subject_id for provider=patreon in application code; there is no FK between those strings. Partial unique index unique_patreon_supporter_patreon_user_id: UNIQUE (patreon_user_id) WHERE NOT ("patreon_user_id" = \'\'). Partial unique index unique_patreon_supporter_display_name: UNIQUE (LOWER("display_name")) WHERE "patreon_user_id" = \'\'.'
+}
+
+Table calculatorapi_patreoncredentials as PatreonCredentials {
+  id bigint [pk, increment, not null]
+  access_token varchar(255) [not null, note: 'Django default: "". Current Patreon access token. Rotated automatically; do not edit.']
+  refresh_token varchar(255) [not null, note: 'Django default: "". Used to mint the next access token. Single-use — rotated on every refresh.']
+  expires_at "timestamp with time zone" [null, note: 'When the current access token stops working.']
+  campaign_id varchar(64) [not null, note: 'Django default: "". Resolved from the API on first use and cached here.']
+  last_synced_at "timestamp with time zone" [null, note: 'Last time a sync completed and wrote changes.']
+  last_sync_error text [not null, note: 'Django default: "". Message from the last failed sync. Cleared when one succeeds.']
+
+  Note: 'Django model: calculatorapi.PatreonCredentials. Source: calculatorapi/models/patreon_credentials.py. Singleton: model save() pins pk=1 and instance delete() does nothing. Stores the rotating credential pair; never registered in admin. This diagram includes field definitions only.'
+}
+
+// Analytics and Feedback
+
+Table calculatorapi_dailyvisit as DailyVisit {
+  id bigint [pk, increment, not null]
+  date date [not null, unique]
+  page_views integer [not null, check: `"page_views" >= 0`, note: 'Django default: 0.']
+  unique_visitors integer [not null, check: `"unique_visitors" >= 0`, note: 'Django default: 0.']
+
+  Note: 'Django model: calculatorapi.DailyVisit. Source: calculatorapi/models/site_visit.py. Permanent daily aggregate counters; no relationship to individual users.'
+}
+
+Table calculatorapi_monthlyvisit as MonthlyVisit {
+  id bigint [pk, increment, not null]
+  month date [not null, unique]
+  page_views integer [not null, check: `"page_views" >= 0`, note: 'Django default: 0.']
+  unique_visitors integer [not null, check: `"unique_visitors" >= 0`, note: 'Django default: 0.']
+
+  Note: 'Django model: calculatorapi.MonthlyVisit. Source: calculatorapi/models/site_visit.py. Permanent monthly aggregate counters. month represents the first day of the month. Monthly uniques are not the sum of daily uniques.'
+}
+
+Table calculatorapi_visitorhash as VisitorHash {
+  id bigint [pk, increment, not null]
+  date date [not null]
+  visitor_hash varchar(32) [not null]
+
+  indexes {
+    (visitor_hash, date) [name: 'visitor_hash_date_idx']
+    (date, visitor_hash) [unique, name: 'unique_visitor_hash_per_day']
+    date
+    visitor_hash
+  }
+
+  Note: 'Django model: calculatorapi.VisitorHash. Source: calculatorapi/models/site_visit.py. Temporary visitor deduplication rows. Stores month-scoped salted digests, not IP addresses. No user FK.'
+}
+
+Table calculatorapi_feedback as Feedback {
+  id bigint [pk, increment, not null]
+  category varchar(20) [not null, note: 'Django default: "other". Django choices: bug (Bug); feature (Feature idea); data (Data correction); other (Other).']
+  message text [not null]
+  user_id bigint [null, note: 'Django on_delete: SET_NULL.']
+  source_path varchar(200) [not null]
+  submitted_at "timestamp with time zone" [not null, note: 'Django sets this timestamp on creation.']
+  is_resolved boolean [not null, note: 'Django default: False.']
+
+  indexes {
+    user_id
+  }
+
+  Note: 'Django model: calculatorapi.Feedback. Source: calculatorapi/models/feedback.py. Optional account link; account deletion preserves feedback. No separate IP address or contact-details columns.'
+}
+
+// Django Infrastructure
+
+Table auth_group as Group {
+  id integer [pk, increment, not null]
+  name varchar(150) [not null, unique]
+
+  Note: 'Django model: auth.Group.'
+}
+
+Table auth_permission as Permission {
+  id integer [pk, increment, not null]
+  name varchar(255) [not null]
+  content_type_id integer [not null, note: 'Django on_delete: CASCADE.']
+  codename varchar(100) [not null]
+
+  indexes {
+    (content_type_id, codename) [unique]
+    content_type_id
+  }
+
+  Note: 'Django model: auth.Permission.'
+}
+
+Table auth_group_permissions as Group_permissions {
+  id integer [pk, increment, not null]
+  group_id integer [not null, note: 'Django on_delete: CASCADE.']
+  permission_id integer [not null, note: 'Django on_delete: CASCADE.']
+
+  indexes {
+    (group_id, permission_id) [unique]
+    group_id
+    permission_id
+  }
+
+  Note: 'Django model: auth.Group_permissions. Automatic Django many-to-many join table.'
+}
+
+Table calculatorapi_customuser_groups as CustomUser_groups {
+  id bigint [pk, increment, not null]
+  customuser_id bigint [not null, note: 'Django on_delete: CASCADE.']
+  group_id integer [not null, note: 'Django on_delete: CASCADE.']
+
+  indexes {
+    (customuser_id, group_id) [unique]
+    customuser_id
+    group_id
+  }
+
+  Note: 'Django model: calculatorapi.CustomUser_groups. Automatic Django many-to-many join table.'
+}
+
+Table calculatorapi_customuser_user_permissions as CustomUser_user_permissions {
+  id bigint [pk, increment, not null]
+  customuser_id bigint [not null, note: 'Django on_delete: CASCADE.']
+  permission_id integer [not null, note: 'Django on_delete: CASCADE.']
+
+  indexes {
+    (customuser_id, permission_id) [unique]
+    customuser_id
+    permission_id
+  }
+
+  Note: 'Django model: calculatorapi.CustomUser_user_permissions. Automatic Django many-to-many join table.'
+}
+
+Table django_content_type as ContentType {
+  id integer [pk, increment, not null]
+  app_label varchar(100) [not null]
+  model varchar(100) [not null]
+
+  indexes {
+    (app_label, model) [unique]
+  }
+
+  Note: 'Django model: contenttypes.ContentType.'
+}
+
+Table django_admin_log as LogEntry {
+  id integer [pk, increment, not null]
+  action_time "timestamp with time zone" [not null, note: 'Django default: django.utils.timezone.now().']
+  user_id bigint [not null, note: 'Django on_delete: CASCADE.']
+  content_type_id integer [null, note: 'Django on_delete: SET_NULL.']
+  object_id text [null]
+  object_repr varchar(200) [not null]
+  action_flag smallint [not null, check: `"action_flag" >= 0`, note: 'Django choices: 1 (Addition); 2 (Change); 3 (Deletion).']
+  change_message text [not null]
+
+  indexes {
+    user_id
+    content_type_id
+  }
+
+  Note: 'Django model: admin.LogEntry. Django admin audit log. object_id identifies an object of content_type; it is a generic identifier, not a database FK to that object.'
+}
+
+Table django_session as Session {
+  session_key varchar(40) [pk, not null]
+  session_data text [not null]
+  expire_date "timestamp with time zone" [not null]
+
+  indexes {
+    expire_date
+  }
+
+  Note: 'Django model: sessions.Session.'
+}
+
+Table django_migrations as Migration {
+  id bigint [pk, increment, not null]
+  app varchar(255) [not null]
+  name varchar(255) [not null]
+  applied "timestamp with time zone" [not null, note: 'Django default: django.utils.timezone.now().']
+
+  Note: 'Django model: migrations.Migration. Django migration bookkeeping model, included explicitly because it lives outside the installed-app model registry.'
+}
+
+// Foreign keys. One-to-one relationships put the FK on the right.
+// Django on_delete rules are documented on each FK column.
+Ref: CustomUser.club_rank_id > ClubRank.id
+Ref: CustomUser.champions_meeting_rank_id > ChampionsMeetingRank.id
+Ref: CustomUser.team_trials_rank_id > TeamTrialsRank.id
+Ref: CustomUser.league_of_heroes_rank_id > LeagueOfHeroesRank.id
+Ref: CustomUser.avatar_uma_id > Uma.id
+Ref: SocialAccount.user_id > CustomUser.id
+Ref: UserPlannedBanner.user_id > CustomUser.id
+Ref: UserPlannedBanner.banner_uma_id > BannerUma.id
+Ref: UserPlannedBanner.banner_support_id > BannerSupport.id
+Ref: UserPlannedBanner.banner_step_up_id > BannerStepUp.id
+Ref: UserPlannedPurchase.user_id > CustomUser.id
+Ref: UserPlannedPurchase.product_id > AnniversaryEventProduct.id
+Ref: UserPlannedPurchase.target_uma_id > Uma.id
+Ref: UserPlannedPurchase.target_support_id > SupportCard.id
+Ref: UserStepUpSelection.user_id > CustomUser.id
+Ref: UserStepUpSelection.banner_step_up_id > BannerStepUp.id
+Ref: UserStepUpSelection.uma_id > Uma.id
+Ref: UserStepUpSelection.support_id > SupportCard.id
+Ref: CustomUser.id - Token.user_id
+Ref: BannerUma.banner_timeline_id > BannerTimeline.id
+Ref: BannerSupport.banner_timeline_id > BannerTimeline.id
+Ref: BannerStepUp.banner_timeline_id > BannerTimeline.id
+Ref: BannerStepUp.anniversary_event_id > AnniversaryEvent.id
+Ref: UmasOnUmaBanner.banner_uma_id > BannerUma.id
+Ref: UmasOnUmaBanner.uma_id > Uma.id
+Ref: SupportsOnSupportBanner.banner_support_id > BannerSupport.id
+Ref: SupportsOnSupportBanner.support_card_id > SupportCard.id
+Ref: AnniversaryEventBanner.anniversary_event_id > AnniversaryEvent.id
+Ref: AnniversaryEventBanner.banner_timeline_id > BannerTimeline.id
+Ref: AnniversaryEventProduct.anniversary_event_id > AnniversaryEvent.id
+Ref: GameEvent.banner_timeline_id > BannerTimeline.id
+Ref: Scenario.banner_timeline_id > BannerTimeline.id
+Ref: ChampionsMeetingUmaRecommendation.uma_id > Uma.id
+Ref: ChampionsMeetingUmaRecommendation.champions_meeting_id > ChampionsMeeting.id
+Ref: ChangelogChange.entry_id > ChangelogEntry.id
+Ref: CustomUser.id - PatreonSupporter.linked_user_id
+Ref: PatreonSupporter.tier_id > PatreonTier.id
+Ref: Feedback.user_id > CustomUser.id
+Ref: Permission.content_type_id > ContentType.id
+Ref: Group_permissions.group_id > Group.id
+Ref: Group_permissions.permission_id > Permission.id
+Ref: CustomUser_groups.customuser_id > CustomUser.id
+Ref: CustomUser_groups.group_id > Group.id
+Ref: CustomUser_user_permissions.customuser_id > CustomUser.id
+Ref: CustomUser_user_permissions.permission_id > Permission.id
+Ref: LogEntry.user_id > CustomUser.id
+Ref: LogEntry.content_type_id > ContentType.id
+
+TableGroup Accounts_and_Plans {
+  CustomUser
+  SocialAccount
+  UserPlannedBanner
+  UserPlannedPurchase
+  UserStepUpSelection
+  Token
+}
+
+TableGroup Ranks {
+  ClubRank
+  TeamTrialsRank
+  ChampionsMeetingRank
+  LeagueOfHeroesRank
+}
+
+TableGroup Banners_and_Cards {
+  BannerTimeline
+  BannerUma
+  BannerSupport
+  BannerStepUp
+  Uma
+  SupportCard
+  UmasOnUmaBanner
+  SupportsOnSupportBanner
+}
+
+TableGroup Events_and_Campaigns {
+  AnniversaryEvent
+  AnniversaryEventBanner
+  AnniversaryEventProduct
+  GameEvent
+  Scenario
+  ChampionsMeeting
+  LeagueOfHeroes
+  ChampionsMeetingUmaRecommendation
+}
+
+TableGroup Configuration_and_Changelog {
+  CalculationConstants
+  ChangelogEntry
+  ChangelogChange
+}
+
+TableGroup Patreon {
+  PatreonTier
+  PatreonSupporter
+  PatreonCredentials
+}
+
+TableGroup Analytics_and_Feedback {
+  DailyVisit
+  MonthlyVisit
+  VisitorHash
+  Feedback
+}
+
+TableGroup Django_Infrastructure {
+  Group
+  Permission
+  Group_permissions
+  CustomUser_groups
+  CustomUser_user_permissions
+  ContentType
+  LogEntry
+  Session
+  Migration
+}
