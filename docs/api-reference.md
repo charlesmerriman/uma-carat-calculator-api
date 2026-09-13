@@ -113,15 +113,43 @@ meaning anything instead of rendering a signed-in shell around nothing.
 ```json
 {
   "username": "user_a3f9c1",
-  "linked_providers": [
-    { "provider": "google", "linked_at": "2026-07-02" }
+  "display_name": "Rhondal",
+  "avatar_url": "https://…/media/umas/special-week.png",
+  "oshis": [
+    { "position": 0, "id": 42, "name": "Special Week", "image": "https://…/media/umas/special-week.png" }
   ],
-  "supporter": { "is_supporter": true, "tier": "Junior Class", "benefits": ["ad_free"] }
+  "oshi_slots": 1,
+  "linked_providers": [
+    { "provider": "google", "linked_at": "2026-07-02" },
+    { "provider": "patreon", "linked_at": "2026-09-08" }
+  ],
+  "supporter": { "is_supporter": true, "tier": "Junior Class", "benefits": ["ad_free", "oshi"] }
 }
 ```
 
 - `linked_providers` is empty for staff, who sign in with a password and hold no
   `SocialAccount` rows. That is a correct answer, not an error.
+- **`display_name`** is the name the person chose on their account page, or `""`
+  when they have not (the client shows the handle instead). Set through
+  `PATCH /account` below. **Served only here, to its owner** — it never appears
+  on `/supporters` or any other public route today. **Unique**, ignoring case.
+- **`oshis`** is the ordered list of umas a supporter picked (`position` is
+  0-based; `image` is the storage URL, or `""` if an editor has since cleared
+  the picture). **Every stored row is listed, covered by the current tier or
+  not**, so a page can grey out what a downgrade stopped covering. Empty for a
+  free account. Set through `PATCH`; the catalogue to pick from is `GET /umas`.
+- **`oshi_slots`** is how many oshis the current tier covers: 5, 3 or 1 by
+  tier, **0 for a free account**. A count the server has already resolved from
+  `benefits.OSHI_SLOT_LADDER`, not a tier order — a client should draw that
+  many tiles and do no arithmetic. Top-level rather than inside `supporter`
+  because `0` is a real answer the page needs even when there is no
+  entitlement block to put it in.
+- **`avatar_url`** (top level) is the picture to show in the navbar: the first
+  oshi's `image` **while `oshi_slots >= 1`** (skipping any whose picture was
+  cleared), else **`null`** — null rather than `""`, so a client draws its
+  default instead of loading an empty `src`. Free accounts always get `null`:
+  the picture is the perk. No provider picture is ever held or served.
+  → [auth-and-privacy.md](auth-and-privacy.md)
 - **`subject_id` is never serialized, for any provider.** The serializer's
   explicit field list is the only thing keeping it off the wire — the same role
   `PatreonSupporterSerializer`'s list plays for the supporter email.
@@ -144,6 +172,60 @@ Deliberately its own route rather than a key on `/calculator-data`: that payload
 is not fetched on the home page, the FAQ or the changelog, and everything in it
 but the four user-scoped keys is served from a shared process-wide cache, which
 entitlement must never be answerable from.
+
+---
+
+### `PATCH /account`
+
+Protected. Changes the two preferences an account has. Partial: send one field
+or both. **Responds `200` with the same body as `GET /account`**, already
+reflecting the write.
+
+**Request** — any subset of:
+```json
+{ "display_name": "Rhondal", "oshis": [42, 7, 113] }
+```
+
+- **`display_name`** — stripped of surrounding whitespace, at most 32
+  characters, `""` to clear. `400` for a name containing control or invisible
+  characters (zero-width spaces, bidi overrides and the like); the zero-width
+  joiner is allowed so multi-person emoji work. **Unique, ignoring case**: `400`
+  with `"That name is taken."` if another account goes by it or has it as their
+  handle. Re-saving your own name is fine; blank never collides.
+- **`oshis`** — the **whole ordered list** of uma ids, replacing what was
+  stored; the first becomes the picture. `[]` clears them. `400` for an unknown
+  id, a uma with no image (the picker never offers one), a repeated id, or a
+  list longer than five. **Entitlement:** a list longer than `oshi_slots` is
+  `400` *unless every id in it is already stored* — so a supporter whose tier
+  dropped may still reorder, trim or keep what they hold, and a lapsed one may
+  clear the list, but nobody can *add* past their count. A free account
+  (`oshi_slots` 0) can only ever send `[]` or its existing rows. Messages:
+  "Picking an oshi is a Patreon supporter perk." / "Your tier covers 3 oshis."
+- **The field list is the whitelist.** Any other key in the body — `username`,
+  `is_staff`, a calculator stat — is ignored, not applied. Calculator stats
+  have their own route (`PATCH /calculator-data`).
+- Errors come back in DRF's per-field shape, `{"display_name": ["…"]}`, unlike
+  the `{"error": "…"}` of the other account routes: this one backs a form.
+- `401` anonymous. Staff may set both like anyone else.
+
+---
+
+### `DELETE /account`
+
+Protected. Removes the caller's account. **`204`**, no body.
+
+- **Gone, by cascade:** the account row, its API token (the request's own token
+  stops working immediately), its `SocialAccount` rows, its oshis
+  and every planned banner, purchase and step-up selection. Signing in again
+  with the same provider creates a fresh, empty account.
+- **Kept, with the pointer to the account cleared:** feedback the person sent
+  (`user` → null) and their `PatreonSupporter` row (`linked_user` → null — the
+  same treatment as an unlink, a lapse or a purge; that table is not ours to
+  delete from).
+- `403` for staff — their accounts are managed in the admin. `401` anonymous.
+- No confirmation body. The account page makes the person type a phrase first;
+  the request carries the token of the very account it deletes, and there is no
+  recovery afterwards (no email is held to send a reset to, by design).
 
 ---
 
@@ -334,6 +416,7 @@ These endpoints return static rank tables. All are public and support `list` and
 | `GET /events` | Game events, including their own reward amounts |
 | `GET /changelog` | Patch-note entries (newest first) with nested, ordered change lines |
 | `GET /supporters` | Patreon thank-you list — **not** an array, see below |
+| `GET /umas` | The uma catalogue as picker options: `{ id, name, image }`, umas **with an image only**, sorted by name. Feeds the oshi picker on `/account`, which never loads `/calculator-data`. Nothing else from the uma row (no `admin_comments`, no selector gates). |
 
 All list responses return an array of the resource object, **except `/supporters`** (an object — the anonymous count is not derivable from the rows). Retrieve by appending `/<id>`; `/supporters` has no retrieve action.
 

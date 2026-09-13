@@ -241,7 +241,7 @@ class PatreonLinkEntitlementTests(CalculatorTestCase):
         )
 
     def _complete(self, subject_id="7"):
-        with patch.object(oauth, "exchange_code", return_value=subject_id):
+        with patch.object(oauth, "exchange_code", return_value=oauth.Identity(subject_id)):
             return self.client.post(
                 "/account/link/patreon/complete",
                 {"code": "abc", "state": self._state()},
@@ -337,7 +337,7 @@ class PatreonLinkEntitlementTests(CalculatorTestCase):
                  "u": self.user.pk},
                 salt=LINK_STATE_SALT,
             )
-            with patch.object(oauth, "exchange_code", return_value="g-1"):
+            with patch.object(oauth, "exchange_code", return_value=oauth.Identity("g-1")):
                 response = self.client.post(
                     "/account/link/google/complete",
                     {"code": "abc", "state": state}, format="json")
@@ -380,7 +380,7 @@ class PatreonSignInEntitlementTests(CalculatorTestCase):
             {"p": "patreon", "n": "n", "r": "http://localhost:5173/auth/callback"},
             salt=STATE_SALT,
         )
-        with patch.object(oauth, "exchange_code", return_value=subject_id):
+        with patch.object(oauth, "exchange_code", return_value=oauth.Identity(subject_id)):
             return self.client.post(
                 "/auth/social",
                 {"provider": "patreon", "code": "abc", "state": state},

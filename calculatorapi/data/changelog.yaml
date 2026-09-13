@@ -32,6 +32,23 @@
 # module changed. Newest entry first is conventional here but not required — the
 # page sorts by date.
 
+- key: accounts-and-oshis
+  date: 2026-09-13
+  title: "Your account page, and oshis for supporters"
+  version: "v1.4"
+  changes:
+    - added: "An Account page. Open it from your picture in the top right."
+    - added: "You can connect Google, Discord and Patreon to the same account and sign in with any of them. If you lose one, the others still get you in."
+    - added: "Pick a display name. It sits beside the random user_ handle, and no two people can have the same one."
+    - added: "Patreon supporters can pick their oshis, and the first one becomes their picture on the site. Junior Class gets one, Classic Class three, Senior Class five. Everyone else gets the grey silhouette."
+    - added: "The Account page shows your supporter tier and what comes with it."
+    - added: "You can delete your account yourself, from the Account page. It takes your plan with it and can't be undone."
+    - changed: "Logout is now inside the account menu, under your picture."
+    - changed: "The home page, navbar and footer have been tidied up. Flatter bar, fewer boxes."
+    - changed: "Loading and saving now spin a derpy Oguri instead of a plain ring."
+    - changed: "The short notes under the calculator, Timeline and Selectors pages are gone again."
+    - changed: "The About page and the privacy policy say what we actually store now: an anonymous account reference, your display name if you set one, your oshis if you pick any, and nothing else."
+
 - key: carat-guide
   date: 2026-09-12
   title: "How your carats are worked out, in one guide"
@@ -51,7 +68,7 @@
   version: "v1.2.1"
   changes:
     - added: "Patreon joins Google and Discord on the sign-in page."
-    - changed: "Choosing Patreon starts a fresh account. If you already have a plan saved under Google or Discord, sign in the way you always have \u2014 the login page says the same thing under the buttons."
+    - changed: "Choosing Patreon starts a fresh account. If you already have a plan saved under Google or Discord, sign in the way you always have. The login page says the same thing under the buttons."
     - changed: "Time-limited umas, and anything under three stars, no longer show up in the selector pickers. A ticket cannot take them."
     - fixed: "Selector tickets stop paying for a reserved copy on banners where nothing they could actually take is featured. Those banners were coming out cheaper than they are, and the ticket was being used up on them."
 
@@ -60,7 +77,7 @@
   title: "Faster loading, and the selector tickets redone"
   version: "v1.2"
   changes:
-    - changed: "The calculator opens a lot faster. The page frame is up from the first moment and the data is already on its way while you are still reading the home page \u2014 clicking through used to mean a few seconds of blank spinner."
+    - changed: "The calculator opens a lot faster. The page frame is up from the first moment and the data is already on its way while you are still reading the home page. Clicking through used to mean a few seconds of blank spinner."
     - changed: "Selector tickets are a checkbox column now, with the cards you picked in a strip beside them. Click a card to change it. Campaign rows lost about half their height, which you will feel most on a phone."
     - changed: "New icons for the banner types and for the income ranks."
     - added: "Staged rows have the bulk-adjust pad now, and the keyboard shortcuts that go with it."
@@ -90,7 +107,7 @@
     - changed: "The uncap banner picker lists names, not end dates."
     - changed: "Campaign rows on the Selectors page lost a lot of empty space. Card art doubled in size."
     - fixed: "Clearing a Timeline search or filter keeps your place. It used to fling you back to the top."
-    - fixed: "Light theme \u2014 text in the banner dropdown was near unreadable, and the step-up button looked out of place."
+    - fixed: "Light theme: text in the banner dropdown was near unreadable, and the step-up button looked out of place."
     - fixed: "The Misc Earnings toggle was quoting 60 carats a day. It reads the live number now."
     - fixed: "A mistyped address gets a proper page-not-found."
 
@@ -103,7 +120,7 @@
     - added: "Step-up banners. Plan them like any other banner, pick the ten cards you are aiming at, and the step costs and odds are handled for you."
     - added: "New FAQ page, covering where the numbers come from."
     - added: "A feedback form, if something looks wrong and you want to tell me about it."
-    - added: "You can filter the Timeline now — by banner type, training scenario, or campaign."
+    - added: "You can filter the Timeline now, by banner type, training scenario, or campaign."
     - added: "Banners running at the same time share a single Timeline card."
     - added: "Jump straight from a banner in your plan to its spot on the Timeline. Campaigns link through to their packs on the Selectors page."
     - added: "There is a thank-you list on the home page for everyone supporting the site."

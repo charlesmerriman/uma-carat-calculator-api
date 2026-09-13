@@ -2,8 +2,9 @@
 OAuth2 authorization-code flow for Google, Discord and Patreon sign-in.
 
 Ordinary users never give us a password. The provider verifies who they are and
-hands back one opaque, provider-scoped id (Google's `sub`, Discord's user `id`),
-which is the only thing we persist -- see models/social_account.py.
+hands back one opaque, provider-scoped id (Google's `sub`, Discord's user `id`,
+Patreon's user `id`). That id is ALL that is persisted -- see
+models/social_account.py.
 
 The flow, end to end:
 
@@ -13,18 +14,31 @@ The flow, end to end:
    `code`. That code is worthless on its own: it is single-use, expires in
    seconds, and cannot be redeemed without our client secret.
 3. `exchange_code()` redeems it server-to-server (no browser involved, secret
-   never leaves this process) and returns the subject id.
+   never leaves this process) and returns an `Identity`.
 
 This module is pure provider logic -- no Django views, no ORM -- mirroring the
 split used by predictions.py and analytics.py. Everything that can go wrong
 raises OAuthError so the view can collapse the lot into one generic 400 rather
 than leaking provider internals to the client.
 
-PRIVACY NOTE: the scopes below are the narrowest each provider allows. Google's
-"openid" yields only `sub`; Discord's "identify" yields a small profile object
-we read one field from; Patreon's "identity" yields a JSON:API user resource we
-read the `id` of. None of them sends an email address, so none can be stored
-here by accident. Do not widen these without a deliberate reason.
+PRIVACY NOTE: the scopes below are the narrowest that yield a subject id, and
+each extractor reads exactly that one value from what comes back:
+
+  Google   "openid"     the id_token carries `sub` and the token metadata and
+                        nothing about the person. No "profile": that is the
+                        scope that adds the name and picture.
+  Discord  "identify"   id/username/avatar hash/etc.; only `id` is read.
+                        Discord has no narrower scope that yields the id.
+  Patreon  "identity"   a JSON:API user resource; the sparse fieldset names one
+                        throwaway boolean, so the response carries the id and
+                        no attribute about the person.
+
+None of them sends an email address, a name or a picture we keep, so none can
+be stored here by accident. NO profile attribute is held: for one unshipped day
+(2026-09-12 to 2026-09-13) the provider picture was, and it was removed before
+it reached production -- the account picture is a supporter perk now
+(models/user_oshi.py). Do not widen these scopes or the extractors without
+changing the privacy policy first: it promises this exact list.
 
 In particular: Patreon puts the email behind a SEPARATE "identity[email]" scope.
 Never request it. Adding it would put an address in the response for every
@@ -35,6 +49,7 @@ import base64
 import binascii
 import json
 import time
+from typing import NamedTuple
 from urllib.parse import urlencode
 
 import requests
@@ -47,18 +62,38 @@ GOOGLE = "google"
 DISCORD = "discord"
 PATREON = "patreon"
 
+# The ONLY user attribute the Patreon identity call asks for: a throwaway
+# boolean that says nothing about the person. See _patreon_identity for why
+# the fieldset can be neither absent nor empty.
+PATREON_USER_FIELDS = "hide_pledges"
+
 
 class OAuthError(Exception):
     """Any failure during the OAuth exchange (network, provider, or malformed
     response). Deliberately carries no provider detail toward the client."""
 
 
+class Identity(NamedTuple):
+    """What exchange_code() hands back about the person who just consented.
+
+    One field. A NamedTuple rather than a bare string so a call site reads
+    `identity.subject_id` and not a naked value, and rather than a dict so it
+    cannot quietly grow a second: adding one means editing this class, which is
+    the review moment the privacy boundary needs. Everything else a provider
+    returns dies in the extractor.
+    """
+
+    # The provider's permanent, opaque id for this person.
+    subject_id: str
+
+
 def _google_config():
     return {
         "authorize_url": "https://accounts.google.com/o/oauth2/v2/auth",
         "token_url": "https://oauth2.googleapis.com/token",
-        # Minimum Google permits. Adding "email"/"profile" would make Google
-        # send us PII we have promised not to hold.
+        # "openid" alone: it yields `sub` and nothing about the person. NOT
+        # "profile" (adds the name, picture and locale) and NOT "email" (an
+        # address for every person who signs in).
         "scope": "openid",
         "client_id": settings.GOOGLE_OAUTH_CLIENT_ID,
         "client_secret": settings.GOOGLE_OAUTH_CLIENT_SECRET,
@@ -71,7 +106,7 @@ def _discord_config():
         "authorize_url": "https://discord.com/oauth2/authorize",
         "token_url": "https://discord.com/api/oauth2/token",
         # "identify" returns id/username/avatar but NOT email (that would need
-        # the separate "email" scope). We read only `id`.
+        # the separate "email" scope). We read `id` and nothing else.
         "scope": "identify",
         "client_id": settings.DISCORD_OAUTH_CLIENT_ID,
         "client_secret": settings.DISCORD_OAUTH_CLIENT_SECRET,
@@ -84,10 +119,10 @@ def _patreon_config():
         "authorize_url": "https://www.patreon.com/oauth2/authorize",
         "token_url": "https://www.patreon.com/api/oauth2/token",
         # "identity" returns the user resource WITHOUT the email -- that lives
-        # behind "identity[email]", which we must never ask for. A later phase
-        # adds "identity.memberships" to the LINK flow so a new supporter is
-        # recognised immediately rather than at the next daily sync; it is not
-        # requested yet because nothing reads it yet.
+        # behind "identity[email]", which we must never ask for. Entitlement is
+        # deliberately NOT read from this token (no "identity.memberships"):
+        # the creator-side sync is the one path into it. See
+        # views/account_linking.py.
         "scope": "identity",
         "client_id": settings.PATREON_OAUTH_CLIENT_ID,
         # NOT settings.PATREON_CLIENT_SECRET -- that is the creator app used by
@@ -208,7 +243,7 @@ def _decode_jwt_payload(token):
         raise OAuthError("Could not decode id_token payload") from exc
 
 
-def _google_subject_id(config, token_data):
+def _google_identity(config, token_data):
     id_token = token_data.get("id_token")
     if not id_token:
         raise OAuthError("Google response contained no id_token")
@@ -228,10 +263,14 @@ def _google_subject_id(config, token_data):
     subject_id = claims.get("sub")
     if not subject_id:
         raise OAuthError("id_token contained no subject")
-    return str(subject_id)
+
+    # Whatever else is in `claims` (Google adds `picture`, `name` and `locale`
+    # under a wider scope) is not read, logged or returned -- `claims` goes out
+    # of scope on this line, and Identity has no field to carry it in.
+    return Identity(str(subject_id))
 
 
-def _discord_subject_id(_config, token_data):
+def _discord_identity(_config, token_data):
     access_token = token_data.get("access_token")
     if not access_token:
         raise OAuthError("Discord response contained no access_token")
@@ -256,37 +295,32 @@ def _discord_subject_id(_config, token_data):
     subject_id = profile.get("id")
     if not subject_id:
         raise OAuthError("Discord profile contained no id")
-    # Everything else in `profile` (username, avatar, ...) is intentionally
-    # dropped here and never stored or logged.
-    return str(subject_id)
+    # Everything else in `profile` (username, global_name, avatar hash,
+    # banner, ...) is intentionally dropped here and never stored or logged.
+    return Identity(str(subject_id))
 
 
-def _patreon_subject_id(_config, token_data):
+def _patreon_identity(_config, token_data):
     """The caller's Patreon user id, from the JSON:API identity resource.
 
-    STILL UNVERIFIED AGAINST THE LIVE API. Everything else in this module was
-    written against a response someone had actually seen; this was written from
-    the documentation, because the app had not been registered yet. The shape
-    below is what Patreon documents -- {"data": {"type": "user", "id": "..."}} --
-    and `data.id` is the only part we use, which is the least likely part to be
-    wrong. Every real sign-in so far failed at the request itself (see below),
-    so nobody has seen a 200 body yet: confirm it on the first successful
-    sign-in and delete this paragraph.
+    The shape is Patreon's documented one -- {"data": {"type": "user",
+    "id": "...", "attributes": {...}}} -- and was confirmed against the live API
+    by a real sign-in on 2026-09-12.
 
     THE FIELDSET IS NOT OPTIONAL AND MUST NOT BE EMPTY. It was `fields[user]=`
     (empty) from 2026-09-09 to 2026-09-10, and Patreon answered every sign-in
     with a flat HTTP 400 -- the same parameter took the supporter sync down at
     the same time, since patreon_api.py asks for the sideloaded user the same
     way. A JSON:API sparse fieldset has to name at least one attribute, so it
-    names the most useless one Patreon offers: `hide_pledges`, a scope-free
-    boolean saying whether the user keeps their pledges private. Nothing reads
-    it. Dropping the parameter is the other wrong fix -- with no fieldset at all
-    Patreon sends its DEFAULT user attributes (full name, vanity URL, avatar,
-    social handles), which is personal data we have no use for and no wish to
-    receive.
+    names `hide_pledges`, a boolean that says nothing about the person. (For
+    one day it named `thumb_url`, while the avatar was being stored; that is
+    gone.) Dropping the parameter is the other wrong fix -- with no fieldset at
+    all Patreon sends its DEFAULT user attributes (full name, vanity URL,
+    picture, social handles), which is personal data we have no use for and no
+    wish to receive.
 
-    Either way the extractor reads `data.id` and drops the rest, the same
-    discipline _discord_subject_id already applies to username and avatar.
+    The extractor reads `data.id` and drops the rest, the same discipline
+    _discord_identity applies to the username.
     """
     access_token = token_data.get("access_token")
     if not access_token:
@@ -296,9 +330,9 @@ def _patreon_subject_id(_config, token_data):
         response = requests.get(
             "https://www.patreon.com/api/oauth2/v2/identity",
             headers={"Authorization": f"Bearer {access_token}"},
-            # One throwaway boolean. NOT "" (Patreon 400s) and NOT absent
+            # Exactly one attribute. NOT "" (Patreon 400s) and NOT absent
             # (Patreon sends the whole default profile). See the docstring.
-            params={"fields[user]": "hide_pledges"},
+            params={"fields[user]": PATREON_USER_FIELDS},
             timeout=HTTP_TIMEOUT_SECONDS,
         )
     except requests.RequestException as exc:
@@ -322,23 +356,27 @@ def _patreon_subject_id(_config, token_data):
     subject_id = data.get("id")
     if not subject_id:
         raise OAuthError("Patreon identity resource contained no id")
-    return str(subject_id)
+
+    # `attributes` holds only the throwaway boolean the fieldset asked for; it
+    # is not read.
+    return Identity(str(subject_id))
 
 
-_SUBJECT_EXTRACTORS = {
-    GOOGLE: _google_subject_id,
-    DISCORD: _discord_subject_id,
-    PATREON: _patreon_subject_id,
+_IDENTITY_EXTRACTORS = {
+    GOOGLE: _google_identity,
+    DISCORD: _discord_identity,
+    PATREON: _patreon_identity,
 }
 
 
 def exchange_code(provider, code, redirect_uri=None):
-    """Redeem a one-time authorization code and return the provider's opaque
-    subject id. Raises OAuthError on every failure path.
+    """Redeem a one-time authorization code and return the person's Identity:
+    the provider's opaque subject id and nothing else. Raises OAuthError on
+    every failure path.
 
     `redirect_uri` must be the SAME value build_authorize_url() was given, or
     the provider rejects the exchange.
     """
     config = get_config(provider)
     token_data = _post_token_request(config, code, redirect_uri)
-    return _SUBJECT_EXTRACTORS[provider](config, token_data)
+    return _IDENTITY_EXTRACTORS[provider](config, token_data)

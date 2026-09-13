@@ -14,6 +14,7 @@ from calculatorapi.views import (
     GameEventViewSet,
     ChangelogEntryViewSet,
     PatreonSupporterViewSet,
+    UmaViewSet,
 )
 from calculatorapi.views.admin_images import admin_image_library
 from calculatorapi.views.analytics import analytics_dashboard
@@ -48,6 +49,9 @@ router.register(r"changelog", ChangelogEntryViewSet, basename="changelog")
 # Public thank-you list for the home page. Read-only by construction — the
 # viewset has no write actions at all, not merely permission-gated ones.
 router.register(r"supporters", PatreonSupporterViewSet, basename="supporter")
+# The uma catalogue as picker options (id, name, image), for the oshi picker
+# on /account — a page that never loads /calculator-data. Read-only, public.
+router.register(r"umas", UmaViewSet, basename="uma")
 
 urlpatterns = [
     path("", include(router.urls)),
@@ -55,10 +59,10 @@ urlpatterns = [
     # There is intentionally no "register" route — see views/user.py.
     path("login", user_login, name="login"),
     path("logout", user_logout, name="logout"),
-    # Who the caller is, and what they are entitled to. Authenticated-only and
-    # never cached — it is the SPA's source of truth for "am I signed in?",
+    # GET: who the caller is, and what they are entitled to. Authenticated-only
+    # and never cached — it is the SPA's source of truth for "am I signed in?",
     # replacing a localStorage token check that could only describe the browser.
-    # The `supporter` block is a deliberate stub until Phase 2; see the view.
+    # DELETE: remove the caller's account (staff refused). → views/account.py
     path("account", account_detail, name="account"),
     # Attaching a provider identity to an account that is ALREADY signed in.
     # Separate from /auth/* above and deliberately so: those create accounts,

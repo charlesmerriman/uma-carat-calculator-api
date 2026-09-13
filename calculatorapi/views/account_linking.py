@@ -160,7 +160,7 @@ def _owned_elsewhere_response(provider):
     )
 
 
-def _attach_identity(user, provider, subject_id):
+def _attach_identity(user, provider, identity):
     """Bind a verified provider identity to `user`, or explain why not.
 
     Split out from the view so that view reads as the three things it does —
@@ -170,6 +170,7 @@ def _attach_identity(user, provider, subject_id):
     NEVER creates a CustomUser. That is the invariant separating linking from
     sign-in, and it is one `create` call away from being violated.
     """
+    subject_id = identity.subject_id
     owner = SocialAccount.objects.filter(provider=provider, subject_id=subject_id).first()
     if owner is not None:
         if owner.user_id == user.pk:
@@ -191,7 +192,9 @@ def _attach_identity(user, provider, subject_id):
     try:
         with transaction.atomic():
             link = SocialAccount.objects.create(
-                user=user, provider=provider, subject_id=subject_id
+                user=user,
+                provider=provider,
+                subject_id=subject_id,
             )
     except IntegrityError:
         # Lost a race against a concurrent completion of the same identity. The
@@ -293,20 +296,20 @@ def account_link_complete(request, provider):
     redirect_uri = state_payload.get("r") or settings.OAUTH_REDIRECT_URI
 
     try:
-        subject_id = oauth.exchange_code(provider, code, redirect_uri)
+        identity = oauth.exchange_code(provider, code, redirect_uri)
     except oauth.OAuthError:
         # Generic to the client, detailed in the log -- see the same handler in
         # social_auth.py for why both halves are deliberate.
         logger.warning("OAuth link failed for %s", provider, exc_info=True)
         return Response(GENERIC_LINK_ERROR, status=status.HTTP_400_BAD_REQUEST)
 
-    response = _attach_identity(request.user, provider, subject_id)
+    response = _attach_identity(request.user, provider, identity)
 
     # Only on a successful attach, and only for Patreon: a 409 means the
     # identity belongs to someone else, and resolving entitlement off it would
     # be reading a pledge that is not this user's.
     if provider == SocialAccount.PROVIDER_PATREON and response.status_code < 400:
-        _resolve_patreon_entitlement(request.user, subject_id)
+        _resolve_patreon_entitlement(request.user, identity.subject_id)
 
     return response
 

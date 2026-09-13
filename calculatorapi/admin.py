@@ -74,6 +74,7 @@ from .models import (
     CalculationConstants,
     Feedback,
     PatreonTier, PatreonSupporter, PatreonCredentials,
+    UserOshi,
 )
 
 # ── 1. Site branding ─────────────────────────────────────────────────────────
@@ -745,6 +746,19 @@ class LeagueOfHeroesRankAdmin(ModelAdmin):
     ordering = ("income_amount",)
 
 
+class UserOshiInline(TabularInline):
+    """A supporter's oshis, in order; the first is their picture. Read-only
+    apart from removal: the picks are the person's own, and the list is
+    entitlement-checked by PATCH /account, which this form would bypass."""
+    model = UserOshi
+    fields = ("position", "uma")
+    readonly_fields = ("position", "uma")
+    extra = 0
+    can_delete = True
+    verbose_name = "Oshi"
+    verbose_name_plural = "Oshis (the first is their picture)"
+
+
 # ── 6. User data (owner-only) ────────────────────────────────────────────────
 
 @admin.register(CustomUser)
@@ -757,13 +771,29 @@ class CustomUserAdmin(UserAdmin, ModelAdmin):
     form = UserChangeForm
     add_form = UserCreationForm
     change_password_form = AdminPasswordChangeForm
-    list_display = ("username", "is_staff", "date_joined")
+    list_display = ("username", "display_name", "is_staff", "date_joined")
+    # UserAdmin's default searches email and the real-name fields, which
+    # ordinary accounts never hold. The handle and the chosen name are the
+    # two things a person can quote from their account page.
+    search_fields = ("username", "display_name")
+    inlines = (UserOshiInline,)
     # Ordinary accounts sign in through Google/Discord and deliberately hold no
     # email or name (see models/social_account.py), so those fields are dropped
     # from the form rather than sitting there inviting someone to fill them in.
     # Staff still need a password, which is why UserAdmin's auth fieldset stays.
     fieldsets = (
         (None, {"fields": ("username", "password")}),
+        # Editable, not read-only: it is the person's own choice, set from
+        # their account page, and the one reason to touch it here is to
+        # blank a display name that should not stand. Their oshis (the
+        # picture) are the inline below.
+        ("Profile", {
+            "fields": ("display_name",),
+            "description": (
+                "What the person chose on their account page. Shown to them "
+                "alone; it appears nowhere public."
+            ),
+        }),
         ("Permissions", {
             "fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions"),
         }),

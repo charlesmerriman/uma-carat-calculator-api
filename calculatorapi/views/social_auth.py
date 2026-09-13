@@ -189,7 +189,7 @@ def social_auth_complete(request):
     redirect_uri = state_payload.get("r") or settings.OAUTH_REDIRECT_URI
 
     try:
-        subject_id = oauth.exchange_code(provider, code, redirect_uri)
+        identity = oauth.exchange_code(provider, code, redirect_uri)
     except oauth.OAuthError:
         # Expired/replayed code, provider outage, or a redirect_uri mismatch.
         # The CLIENT gets one generic message -- distinguishing these would only
@@ -200,6 +200,8 @@ def social_auth_complete(request):
         # complaints, so it is safe to log.
         logger.warning("OAuth sign-in failed for %s", provider, exc_info=True)
         return Response(GENERIC_AUTH_ERROR, status=status.HTTP_400_BAD_REQUEST)
+
+    subject_id = identity.subject_id
 
     # get_or_create on (provider, subject_id) is what makes a returning user
     # resolve to their existing account -- and the DB's unique constraint is
