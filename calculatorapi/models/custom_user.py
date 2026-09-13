@@ -1,5 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.db.models import Q
+from django.db.models.functions import Lower
 from .club_rank import ClubRank
 from .champions_meeting_rank import ChampionsMeetingRank
 from .team_trials_rank import TeamTrialsRank
@@ -18,17 +20,19 @@ class CustomUser(AbstractUser):
     # display_name sits BESIDE the generated `user_xxxxxx` handle, never in
     # place of it. The handle is the row's identity in the admin and in every
     # __str__, and nothing can change it; the name is what the person wants to
-    # be called. NOT unique on purpose -- two people may pick the same name,
-    # exactly as Patreon allows (see the partial display-name constraint on
-    # PatreonSupporter for what collapsing duplicates costs). It IS personal
-    # data in a way the handle is not, so purge_user_pii blanks it.
+    # be called. UNIQUE, case-insensitively, among non-blank names (the
+    # constraint in Meta): display names will be visible to other users through
+    # future features (decided 2026-09-13), so nobody may take a name someone
+    # else already goes by. It IS personal data in a way the handle is not, so
+    # purge_user_pii blanks it. The serializer also refuses a name that matches
+    # any account's HANDLE, so a chosen "user_b7e2d0" cannot impersonate one.
     display_name = models.CharField(
         max_length=32,
         blank=True,
         default="",
         help_text=(
-            "A name the person chose for themselves, shown to them alone. "
-            "Blank means they use the handle. Not unique."
+            "A name the person chose for themselves. Blank means they use the "
+            "handle. Unique among non-blank names, ignoring case."
         ),
     )
     # Additional fields for the user profile
@@ -93,6 +97,20 @@ class CustomUser(AbstractUser):
     support_selector_ticket = models.IntegerField(default=0)
 
     # No Meta needed: AbstractUser already sets verbose_name "user" / "users".
+
+    class Meta(AbstractUser.Meta):
+        constraints = [
+            # Two people may not go by the same name, whatever the case. Partial
+            # over non-blank names because "" is the default and most rows hold
+            # it. Lower() rather than a collation so SQLite (dev) and PostgreSQL
+            # (prod) agree. The serializer checks first for a friendly 400; this
+            # is the backstop against a race.
+            models.UniqueConstraint(
+                Lower("display_name"),
+                name="unique_display_name_ci",
+                condition=~Q(display_name=""),
+            ),
+        ]
 
     def __str__(self):
         return self.username

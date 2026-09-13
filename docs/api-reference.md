@@ -132,7 +132,7 @@ meaning anything instead of rendering a signed-in shell around nothing.
 - **`display_name`** is the name the person chose on their account page, or `""`
   when they have not (the client shows the handle instead). Set through
   `PATCH /account` below. **Served only here, to its owner** — it never appears
-  on `/supporters` or any other public route. Not unique.
+  on `/supporters` or any other public route today. **Unique**, ignoring case.
 - **`oshis`** is the ordered list of umas a supporter picked (`position` is
   0-based; `image` is the storage URL, or `""` if an editor has since cleared
   the picture). **Every stored row is listed, covered by the current tier or
@@ -189,8 +189,9 @@ reflecting the write.
 - **`display_name`** — stripped of surrounding whitespace, at most 32
   characters, `""` to clear. `400` for a name containing control or invisible
   characters (zero-width spaces, bidi overrides and the like); the zero-width
-  joiner is allowed so multi-person emoji work. Not unique: two people may
-  choose the same name.
+  joiner is allowed so multi-person emoji work. **Unique, ignoring case**: `400`
+  with `"That name is taken."` if another account goes by it or has it as their
+  handle. Re-saving your own name is fine; blank never collides.
 - **`oshis`** — the **whole ordered list** of uma ids, replacing what was
   stored; the first becomes the picture. `[]` clears them. `400` for an unknown
   id, a uma with no image (the picker never offers one), a repeated id, or a

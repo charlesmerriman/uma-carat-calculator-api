@@ -273,11 +273,18 @@ erDiagram
 The generated `user_xxxxxx` username is the row's identity (the admin, every
 `__str__`) and nothing can change it. Since 2026-09-13 a preference sits
 **beside** it, written only by `PATCH /account`: `display_name`,
-`CharField(32, blank=True, default="")`. **Not unique**, for the same reason
-`PatreonSupporter.display_name` only has a partial constraint: two people may
-choose the same name, and collapsing duplicates costs someone their identity.
+`CharField(32, blank=True, default="")`. **Unique, ignoring case, among
+non-blank names** (`unique_display_name_ci`: `Lower("display_name")` with a
+partial condition, so the many blank rows do not collide). Decided 2026-09-13
+because display names will be visible to other users through future features,
+so nobody may take a name another account goes by; the serializer also refuses
+a name equal to any account's *handle*, which would impersonate it. The
+serializer's pre-check gives the friendly 400 ("That name is taken."), the
+constraint is the backstop for a race, and the view maps that `IntegrityError`
+to the same 400. Migration `0057` blanks later duplicates before adding the
+constraint (insurance for local databases; prod never held a name before it).
 Personal data (a chosen name is), so `purge_user_pii` blanks it and it is never
-serialized anywhere public.
+serialized anywhere public today.
 
 → [auth-and-privacy.md](auth-and-privacy.md) for why this is not a profile
 attribute, and [api-reference.md](api-reference.md) for the route.

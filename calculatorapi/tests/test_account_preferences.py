@@ -3,12 +3,15 @@
 The other preference, `oshis`, has its own module (test_oshi)."""
 
 from io import StringIO
+from unittest.mock import patch
 
 from django.core.management import call_command
+from django.db import IntegrityError, transaction
 from django.test import override_settings
 from rest_framework.test import APIClient
 
 from calculatorapi.models import CustomUser, Uma
+from calculatorapi.views.account import AccountPreferencesSerializer
 from calculatorapi.tests.base import CalculatorTestCase, PLAIN_TEST_STORAGES
 from calculatorapi.tests.factories import auth_client, make_user
 
@@ -95,15 +98,78 @@ class AccountPreferencesTests(CalculatorTestCase):  # pylint: disable=too-many-p
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["display_name"], "")
 
-    def test_display_name_is_not_unique(self):
+    # uniqueness: names will be visible to other users, so nobody takes another's ─
+
+    def test_display_name_taken_by_another_account_is_refused(self):
         other = make_user("user_b7e2d0")
         other_client, _ = auth_client(other)
         self.assertEqual(self._patch({"display_name": "Rhondal"}).status_code, 200)
+
         response = other_client.patch("/account", {"display_name": "Rhondal"}, format="json")
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["display_name"], ["That name is taken."])
+        other.refresh_from_db()
+        self.assertEqual(other.display_name, "")
+
+    def test_display_name_uniqueness_ignores_case(self):
+        other = make_user("user_b7e2d0")
+        other_client, _ = auth_client(other)
+        self._patch({"display_name": "Rhondal"})
+
+        response = other_client.patch("/account", {"display_name": "rHONDAL"}, format="json")
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("display_name", response.json())
+
+    def test_resaving_your_own_name_is_not_a_collision(self):
+        self._patch({"display_name": "Rhondal"})
+        self.assertEqual(self._patch({"display_name": "Rhondal"}).status_code, 200)
+        self.assertEqual(self._patch({"display_name": "rhondal"}).status_code, 200)
+
+    def test_a_name_freed_by_its_owner_can_be_taken(self):
+        other = make_user("user_b7e2d0")
+        other_client, _ = auth_client(other)
+        self._patch({"display_name": "Rhondal"})
+        self._patch({"display_name": ""})
+
+        response = other_client.patch("/account", {"display_name": "Rhondal"}, format="json")
+
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            CustomUser.objects.filter(display_name="Rhondal").count(), 2
-        )
+
+    def test_many_accounts_may_have_no_name(self):
+        other = make_user("user_b7e2d0")
+        other_client, _ = auth_client(other)
+        self.assertEqual(self._patch({"display_name": ""}).status_code, 200)
+        self.assertEqual(other_client.patch("/account", {"display_name": ""}, format="json").status_code, 200)
+        self.assertEqual(CustomUser.objects.filter(display_name="").count(), 2)
+
+    def test_another_accounts_handle_is_refused_as_a_name(self):
+        """A chosen "user_b7e2d0" would impersonate whoever holds that handle."""
+        make_user("user_b7e2d0")
+
+        response = self._patch({"display_name": "USER_B7E2D0"})
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["display_name"], ["That name is taken."])
+
+    def test_your_own_handle_is_allowed_as_your_name(self):
+        self.assertEqual(self._patch({"display_name": "user_a3f9c1"}).status_code, 200)
+
+    def test_the_database_refuses_a_duplicate_the_view_did_not_see(self):
+        """The constraint is the backstop against two people claiming a name in
+        the same instant. Ignoring case, and only among non-blank names."""
+        CustomUser.objects.filter(pk=self.user.pk).update(display_name="Rhondal")
+        other = make_user("user_b7e2d0")
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                CustomUser.objects.filter(pk=other.pk).update(display_name="rhondal")
+
+    def test_a_race_on_the_same_name_answers_400_not_500(self):
+        with patch.object(AccountPreferencesSerializer, "save", side_effect=IntegrityError("dup")):
+            response = self._patch({"display_name": "Rhondal"})
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["display_name"], ["That name is taken."])
 
     # the whitelist ───────────────────────────────────────────────────────────
 

@@ -39,7 +39,8 @@ shown beside the handle) and a supporter's **oshis** (`UserOshi`: an ordered
 list of umas from the catalogue, the first of which is their picture) are things
 the person *tells* us through `PATCH /account`, never things we *learn* from a
 provider — the scopes and `oauth.Identity` are untouched by them. The handle
-stays the row's identity; the name sits beside it and is not unique. The display
+stays the row's identity; the name sits beside it and is unique (ignoring case,
+because it will be visible to other users one day). The display
 name is personal data (a chosen name is) and is served only to its owner and
 blanked by `purge_user_pii`; the oshis are the site's own art, are not personal
 data, and survive the purge. Neither reaches any public route today. (Oshis

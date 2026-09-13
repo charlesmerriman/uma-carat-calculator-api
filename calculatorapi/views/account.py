@@ -101,7 +101,7 @@ Patreon pledge) lose only their pointer to the account.
 
 import unicodedata
 
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.utils import timezone
 from rest_framework import permissions, serializers, status
 from rest_framework.decorators import api_view, permission_classes
@@ -143,6 +143,10 @@ class LinkedProviderSerializer(serializers.ModelSerializer):
 # that glues multi-person emoji together. Every other invisible or control
 # character is refused below.
 _ZERO_WIDTH_JOINER = "\u200d"
+
+# One message for both the pre-check and the constraint backstop, so a race
+# reads the same as an ordinary collision.
+DISPLAY_NAME_TAKEN = "That name is taken."
 
 
 class AccountPreferencesSerializer(serializers.ModelSerializer):
@@ -219,7 +223,7 @@ class AccountPreferencesSerializer(serializers.ModelSerializer):
         return instance
 
     def validate_display_name(self, value):
-        """Refuse invisible and control characters.
+        """Refuse invisible and control characters, and a name someone else has.
 
         DRF has already stripped surrounding whitespace (CharField's default
         trim_whitespace) and enforced the model's 32-character cap. What is
@@ -228,12 +232,26 @@ class AccountPreferencesSerializer(serializers.ModelSerializer):
         and bidi overrides (Cf), surrogates (Cs), private use (Co) and
         unassigned code points (Cn). The zero-width joiner is the one Cf
         character let through, because family and profession emoji need it.
+
+        Then uniqueness, ignoring case: display names will be visible to other
+        users through future features, so nobody may take a name another
+        account already goes by, and nobody may take another account's HANDLE
+        either (a chosen "user_b7e2d0" would impersonate whoever holds it).
+        The model's constraint is the backstop for a race; this check is what
+        turns it into a friendly 400 with the field named. Blank is exempt,
+        and re-saving your own name is not a collision.
         """
         for char in value:
             if unicodedata.category(char).startswith("C") and char != _ZERO_WIDTH_JOINER:
                 raise serializers.ValidationError(
                     "That name has characters that can't be shown."
                 )
+        if value:
+            others = CustomUser.objects.exclude(pk=self.instance.pk)
+            if others.filter(display_name__iexact=value).exists() or others.filter(
+                username__iexact=value
+            ).exists():
+                raise serializers.ValidationError(DISPLAY_NAME_TAKEN)
         return value
 
 
@@ -380,7 +398,17 @@ def _update_preferences(request):
         request.user, data=request.data, partial=True
     )
     serializer.is_valid(raise_exception=True)
-    serializer.save()
+    try:
+        serializer.save()
+    except IntegrityError:
+        # Two people claimed the same display name in the same instant and the
+        # pre-check in validate_display_name saw neither. The constraint
+        # decided; answer as the pre-check would have. (The oshi write cannot
+        # collide: its constraints are per user, and the rows are replaced
+        # inside one transaction.)
+        return Response(
+            {"display_name": [DISPLAY_NAME_TAKEN]}, status=status.HTTP_400_BAD_REQUEST
+        )
     return Response(_account_summary(request.user))
 
 
