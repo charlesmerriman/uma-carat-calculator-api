@@ -4,15 +4,16 @@ from .club_rank import ClubRank
 from .champions_meeting_rank import ChampionsMeetingRank
 from .team_trials_rank import TeamTrialsRank
 from .league_of_heroes_rank import LeagueOfHeroesRank
-from .uma import Uma
 
 
 class CustomUser(AbstractUser):
-    # ACCOUNT PREFERENCES -- the two things a person can choose about how their
-    # account looks to THEMSELVES. Both are set through PATCH /account and
-    # served only by GET /account (views/account.py); neither reaches any
-    # public route. Neither is provider data: they do not touch the OAuth
-    # scopes or oauth.Identity, which stay as narrow as they are.
+    # ACCOUNT PREFERENCE -- the one thing a person can choose about how their
+    # account looks to THEMSELVES. Set through PATCH /account and served only by
+    # GET /account (views/account.py); it never reaches any public route. Not
+    # provider data: it does not touch the OAuth scopes or oauth.Identity.
+    #
+    # The picture is NOT here. Supporters pick "oshis" (models/user_oshi.py)
+    # and the first one is their picture; free accounts have none.
     #
     # display_name sits BESIDE the generated `user_xxxxxx` handle, never in
     # place of it. The handle is the row's identity in the admin and in every
@@ -30,23 +31,6 @@ class CustomUser(AbstractUser):
             "Blank means they use the handle. Not unique."
         ),
     )
-    # A uma to use as their picture instead of the provider avatar. A
-    # PREFERENCE, not a profile attribute: the picture is the site's own art,
-    # so it is not PII and purge_user_pii leaves it alone. SET_NULL so deleting
-    # an uma in the admin quietly puts the person back on their provider
-    # picture. related_name="+" because nothing asks "who chose this uma".
-    avatar_uma = models.ForeignKey(
-        Uma,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="+",
-        help_text=(
-            "The uma this person picked as their picture. Takes precedence "
-            "over the provider avatar. Blank means the provider picture."
-        ),
-    )
-
     # Additional fields for the user profile
     club_rank = models.ForeignKey(
         ClubRank, on_delete=models.SET_NULL, null=True, blank=True

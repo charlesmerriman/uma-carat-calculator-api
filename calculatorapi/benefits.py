@@ -41,7 +41,7 @@ import logging
 from django.db import IntegrityError, transaction
 from rest_framework import permissions
 
-from calculatorapi.models import PatreonSupporter, SocialAccount
+from calculatorapi.models import OSHI_SLOT_CAP, PatreonSupporter, SocialAccount
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +55,9 @@ ANY_PAID_TIER = None
 # a <SupporterOnly> boundary keys off, so it is part of the contract: rename one
 # and the frontend silently stops gating.
 AD_FREE = "ad_free"
+# May pick oshis, the first of which is their account picture. The boolean
+# half of the perk; HOW MANY is the ladder below.
+OSHI = "oshi"
 
 # feature key -> the tier order a supporter must be at or above, or
 # ANY_PAID_TIER. Nothing but the keys defined above belongs here; an unknown key
@@ -62,7 +65,29 @@ AD_FREE = "ad_free"
 # the first request instead of a feature that quietly refuses everyone.
 BENEFITS = {
     AD_FREE: ANY_PAID_TIER,
+    OSHI: ANY_PAID_TIER,
 }
+
+# ── Oshi slots ───────────────────────────────────────────────────────────────
+# The one benefit that is a COUNT rather than a yes/no: 5 oshis on the top tier,
+# 3 on the next, 1 on any other paid tier. Rungs are (tier order threshold,
+# slots), read top down, and the first rung the supporter clears wins -- the
+# same `order <= threshold` test BENEFITS uses, so a tier added below the
+# current bottom gets 1 and a tier renumbered above the top gets 5. The
+# thresholds are the prod tiers' orders as of 2026-09-13: Senior Class 1,
+# Classic Class 2, Junior Class 3.
+#
+# In code and not on PatreonTier for the same reason BENEFITS is: a paywall
+# boundary should move through a reviewable diff, not an admin form.
+OSHI_SLOT_LADDER = (
+    (1, 5),
+    (2, 3),
+    (ANY_PAID_TIER, 1),
+)
+
+# The model caps `position` at OSHI_SLOT_CAP - 1, so the ladder must never
+# grant more than the table can hold.
+assert max(slots for _, slots in OSHI_SLOT_LADDER) == OSHI_SLOT_CAP
 
 
 def entitled_supporter(user):
@@ -118,6 +143,21 @@ def benefit_keys_for(supporter):
 def benefit_keys(user):
     """Every benefit key this user currently holds, sorted for a stable body."""
     return benefit_keys_for(entitled_supporter(user))
+
+
+def oshi_slots_for(supporter):
+    """How many oshis an already-resolved supporter row is entitled to; 0 for None."""
+    for threshold, slots in OSHI_SLOT_LADDER:
+        if _meets(supporter, threshold):
+            return slots
+    return 0
+
+
+def oshi_slots(user):
+    """How many oshis `user` may hold right now. 0 for everyone who is not a
+    supporter, which is what makes "has a picture" and "has at least one slot"
+    the same question."""
+    return oshi_slots_for(entitled_supporter(user))
 
 
 class IsSupporter(permissions.BasePermission):

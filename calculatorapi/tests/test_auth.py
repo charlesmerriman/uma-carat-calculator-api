@@ -183,7 +183,7 @@ class SocialAuthRedirectUriTests(CalculatorTestCase):
         to repeat the one used at the start -- not the canonical default."""
         state = self._start(redirect_uri=DEV_REDIRECT).json()["state"]
 
-        with patch("calculatorapi.oauth.exchange_code", return_value=oauth.Identity("sub-1", "")) as mocked:
+        with patch("calculatorapi.oauth.exchange_code", return_value=oauth.Identity("sub-1")) as mocked:
             response = self.client.post(
                 "/auth/social",
                 {"provider": "google", "code": "CODE", "state": state},
@@ -196,7 +196,7 @@ class SocialAuthRedirectUriTests(CalculatorTestCase):
     def test_completion_uses_the_canonical_uri_when_none_was_requested(self):
         state = self._start().json()["state"]
 
-        with patch("calculatorapi.oauth.exchange_code", return_value=oauth.Identity("sub-2", "")) as mocked:
+        with patch("calculatorapi.oauth.exchange_code", return_value=oauth.Identity("sub-2")) as mocked:
             self.client.post(
                 "/auth/social",
                 {"provider": "google", "code": "CODE", "state": state},
@@ -211,7 +211,7 @@ class SocialAuthRedirectUriTests(CalculatorTestCase):
         rather than 400 on a field that did not exist when it was minted."""
         legacy_state = signing.dumps({"p": "google", "n": "nonce"}, salt=STATE_SALT)
 
-        with patch("calculatorapi.oauth.exchange_code", return_value=oauth.Identity("sub-3", "")) as mocked:
+        with patch("calculatorapi.oauth.exchange_code", return_value=oauth.Identity("sub-3")) as mocked:
             response = self.client.post(
                 "/auth/social",
                 {"provider": "google", "code": "CODE", "state": legacy_state},
@@ -309,7 +309,8 @@ class AccountEndpointTests(CalculatorTestCase):
         self.assertEqual(res.status_code, 200)
         self.assertEqual(
             set(res.data),
-            {'username', 'display_name', 'avatar_url', 'avatar_uma', 'linked_providers', 'supporter'},
+            {'username', 'display_name', 'avatar_url', 'oshis', 'oshi_slots',
+             'linked_providers', 'supporter'},
         )
         self.assertEqual(res.data['username'], 'accountuser')
 
@@ -330,14 +331,14 @@ class AccountEndpointTests(CalculatorTestCase):
         providers = [row['provider'] for row in res.data['linked_providers']]
         self.assertEqual(providers, ['discord', 'google'])
 
-    def test_a_linked_provider_carries_provider_date_and_avatar(self):
+    def test_a_linked_provider_carries_provider_and_date_only(self):
         SocialAccount.objects.create(
             user=self.user, provider='google', subject_id='google-111')
 
         res = self.client.get('/account')
 
         row = res.data['linked_providers'][0]
-        self.assertEqual(set(row), {'provider', 'linked_at', 'avatar_url'})
+        self.assertEqual(set(row), {'provider', 'linked_at'})
 
     def test_subject_id_never_reaches_the_response(self):
         """The one that matters.
@@ -453,15 +454,14 @@ class PatreonOAuthProviderTests(CalculatorTestCase):
 
         self.assertEqual(result.subject_id, "1234567")
 
-    def test_it_requests_exactly_one_user_attribute_the_avatar(self):
+    def test_it_requests_exactly_one_throwaway_user_attribute(self):
         """A minimal sparse fieldset, and both halves of it matter.
 
         Absent, Patreon returns its default attribute set — full name, vanity
-        URL, social handles — none of which we want to receive, let alone
-        store. EMPTY, Patreon returns HTTP 400 and no one can sign in, which is
-        exactly what shipped on 2026-09-09. So it names exactly one attribute:
-        `thumb_url`, the avatar, which is the one this project actually wants
-        (it replaced a throwaway boolean on 2026-09-12).
+        URL, picture, social handles — none of which we want to receive, let
+        alone store. EMPTY, Patreon returns HTTP 400 and no one can sign in,
+        which is exactly what shipped on 2026-09-09. So it names exactly one
+        attribute, a boolean that says nothing about the person.
         """
         payload = {"data": {"id": "1234567"}}
 
@@ -471,7 +471,7 @@ class PatreonOAuthProviderTests(CalculatorTestCase):
             oauth._patreon_identity({}, {"access_token": "at-1"})  # pylint: disable=protected-access
 
         params = mocked.call_args.kwargs["params"]
-        self.assertEqual(params, {"fields[user]": "thumb_url"})
+        self.assertEqual(params, {"fields[user]": "hide_pledges"})
         # The point of the assertion above, spelled out so a future edit that
         # "tidies" the value has to argue with it.
         self.assertNotEqual(params["fields[user]"], "")
@@ -590,7 +590,7 @@ class AccountLinkCompleteTests(CalculatorTestCase):
 
     def _complete(self, state, code="CODE", provider="patreon", subject_id="patreon-1",
                   client=None):
-        with patch("calculatorapi.oauth.exchange_code", return_value=oauth.Identity(subject_id, "")) as mocked:
+        with patch("calculatorapi.oauth.exchange_code", return_value=oauth.Identity(subject_id)) as mocked:
             response = (client or self.client).post(
                 f"/account/link/{provider}/complete",
                 {"code": code, "state": state},
@@ -799,7 +799,7 @@ class PatreonSignInTests(CalculatorTestCase):
             user=user, provider="patreon", subject_id="patreon-1")
         state = self.client.get("/auth/patreon/start").json()["state"]
 
-        with patch("calculatorapi.oauth.exchange_code", return_value=oauth.Identity("patreon-1", "")):
+        with patch("calculatorapi.oauth.exchange_code", return_value=oauth.Identity("patreon-1")):
             response = self.client.post(
                 "/auth/social",
                 {"provider": "patreon", "code": "CODE", "state": state},
@@ -814,7 +814,7 @@ class PatreonSignInTests(CalculatorTestCase):
         before = CustomUser.objects.count()
         state = self.client.get("/auth/patreon/start").json()["state"]
 
-        with patch("calculatorapi.oauth.exchange_code", return_value=oauth.Identity("patreon-new", "")):
+        with patch("calculatorapi.oauth.exchange_code", return_value=oauth.Identity("patreon-new")):
             response = self.client.post(
                 "/auth/social",
                 {"provider": "patreon", "code": "CODE", "state": state},
@@ -848,8 +848,7 @@ class AccountDeleteTests(CalculatorTestCase):
         self.user.save()
         self.client, self.token = auth_client(self.user)
         SocialAccount.objects.create(
-            user=self.user, provider='google', subject_id='g-del',
-            avatar_url='https://lh3.googleusercontent.com/a/x')
+            user=self.user, provider='google', subject_id='g-del')
 
     def test_anonymous_callers_are_rejected(self):
         self.assertEqual(APIClient().delete('/account').status_code, 401)
@@ -883,7 +882,7 @@ class AccountDeleteTests(CalculatorTestCase):
         self.client.delete('/account')
         state = APIClient().get('/auth/google/start').json()['state']
 
-        with patch('calculatorapi.oauth.exchange_code', return_value=oauth.Identity('g-del', '')):
+        with patch('calculatorapi.oauth.exchange_code', return_value=oauth.Identity('g-del')):
             response = APIClient().post(
                 '/auth/social',
                 {'provider': 'google', 'code': 'CODE', 'state': state},

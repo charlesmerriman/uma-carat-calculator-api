@@ -1,7 +1,8 @@
 """
 GET    /account — who the caller is, and what they are entitled to.
 PATCH  /account — change the two preferences an account has: a display name
-                  and a uma to use as the picture.
+                  and, for supporters, the list of oshis whose first entry is
+                  their picture.
 DELETE /account — remove the caller's account and everything that is theirs.
 
 WHY THIS IS ITS OWN ROUTE
@@ -35,13 +36,9 @@ PatreonSupporterSerializer's does for the supporter email: it is the one thing
 standing between a private column and a response body. Add a field to it only
 with a reason that survives being written down.
 
-The avatar IS returned, and only here. `avatar_url` is the one profile attribute
-the account holds (models/social_account.py), it belongs to the caller, and this
-endpoint answers only to the caller. It appears twice: per linked provider, so
-the account page can show which picture came from where, and once at the top
-level as THE avatar for the navbar — the one from the provider most recently
-signed in with, so it follows the login the person actually uses. Nothing
-public (GET /supporters, the thank-you list) ever carries an avatar.
+No provider picture either. The account holds NO profile attribute
+(models/social_account.py); `avatar_url` here is the site's own art — the first
+of the person's oshis — or null.
 
 SUPPORTER STATUS IS DERIVED ON EVERY REQUEST
 --------------------------------------------
@@ -58,22 +55,40 @@ See patreon-accounts-plan.md, Phase 2.
 
 ACCOUNT PREFERENCES
 -------------------
-PATCH takes `display_name` and/or `avatar_uma` and nothing else. The
-serializer's field list is the whitelist: `username` is the row's identity and
-is never editable, and every calculator stat has its own route
-(/calculator-data). One write route for account preferences rather than one per
-field, so the account page has one form to submit and one error shape to show.
+PATCH takes `display_name` and/or `oshis` and nothing else. The serializer's
+field list is the whitelist: `username` is the row's identity and is never
+editable, and every calculator stat has its own route (/calculator-data). One
+write route for account preferences rather than one per field, so the account
+page has one form to submit and one error shape to show.
 
 Neither preference is provider data. The display name is something the person
-typed and the uma is the site's own art, so the OAuth scopes and oauth.Identity
-are untouched by this — the "one profile attribute" rule in
+typed and the oshis are the site's own art, so the OAuth scopes and
+oauth.Identity are untouched by this — the no-profile-attribute rule in
 models/social_account.py is about what we LEARN from a provider, and these are
 things the person TELLS us. The display name is still personal data (a chosen
-name is), so purge_user_pii blanks it; the uma pick is not, and survives.
+name is), so purge_user_pii blanks it; the oshis are not, and survive.
 
 The display name is served only here, to its owner. It never reaches
 GET /supporters or any other public route — the thank-you list stays the
 Patreon-side name with Patreon-side consent.
+
+OSHIS: THE PICTURE IS A SUPPORTER PERK
+--------------------------------------
+`oshis` is the ordered list of umas a supporter picked; the FIRST is their
+picture. How many they may hold is `benefits.oshi_slots(user)` — 1, 3 or 5 by
+tier, 0 for a free account — and GET reports it as `oshi_slots` so the page can
+draw that many tiles. It is a count the server has already resolved, not a tier
+order for the client to do arithmetic on.
+
+A lapse or a downgrade never deletes a pick and never rejects a save the
+person could have made before it (the same rule /calculator-data applies to
+premium rows). Every stored row is returned regardless of entitlement, so the
+page can show the ones no longer covered; the picture is the first row only
+while `oshi_slots >= 1`, so a lapsed supporter is back on the default picture
+until the sync sees the pledge again. PATCH refuses only what is NEW: a list
+longer than the slot count is a 400 unless every id in it is already stored —
+reordering and removing among rows you already hold is always allowed, adding
+past your entitlement never is.
 
 DELETING AN ACCOUNT
 -------------------
@@ -93,7 +108,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
 from calculatorapi import benefits
-from calculatorapi.models import CustomUser, SocialAccount, Uma
+from calculatorapi.models import OSHI_SLOT_CAP, CustomUser, SocialAccount, Uma, UserOshi
 
 
 class LinkedProviderSerializer(serializers.ModelSerializer):
@@ -117,9 +132,8 @@ class LinkedProviderSerializer(serializers.ModelSerializer):
     class Meta:
         model = SocialAccount
         # THE PRIVACY BOUNDARY — read the module docstring before adding to it.
-        # `subject_id` and the internal row id are absent deliberately;
-        # `avatar_url` is present deliberately (see the docstring).
-        fields = ["provider", "linked_at", "avatar_url"]
+        # `subject_id` and the internal row id are absent deliberately.
+        fields = ["provider", "linked_at"]
 
     def get_linked_at(self, obj):
         return timezone.localdate(obj.created_at)
@@ -142,18 +156,67 @@ class AccountPreferencesSerializer(serializers.ModelSerializer):
     Always used with partial=True: sending one field leaves the other alone.
     """
 
-    # Only a uma with a picture may be chosen. A pick that renders blank is a
-    # worse experience than a 400, and the picker (GET /umas) never offers
-    # one, so a request that names one is not coming from the page.
-    avatar_uma = serializers.PrimaryKeyRelatedField(
-        queryset=Uma.objects.exclude(image="").exclude(image__isnull=True),
-        allow_null=True,
+    # The whole ordered list, replaced on every write. Only umas with a
+    # picture may be chosen: a pick that renders blank is a worse experience
+    # than a 400, and the picker (GET /umas) never offers one, so a request
+    # that names one is not coming from the page. The cap is the table's, not
+    # the person's — their own limit is checked in validate_oshis, where the
+    # entitlement rule can explain itself.
+    oshis = serializers.ListField(
+        child=serializers.PrimaryKeyRelatedField(
+            queryset=Uma.objects.exclude(image="").exclude(image__isnull=True)
+        ),
         required=False,
+        max_length=OSHI_SLOT_CAP,
     )
 
     class Meta:
         model = CustomUser
-        fields = ["display_name", "avatar_uma"]
+        fields = ["display_name", "oshis"]
+
+    def validate_oshis(self, umas):
+        """Distinct, and never MORE than the person is entitled to hold.
+
+        The entitlement check is deliberately a subset test rather than a
+        length test. A supporter whose tier dropped from five slots to three
+        still owns five rows; refusing every save until they delete two would
+        make the page unusable exactly when it should be helping them tidy up.
+        So a list longer than the slot count is fine as long as it introduces
+        nothing new — reorder, remove, keep — and a 400 the moment it adds.
+        """
+        ids = [uma.pk for uma in umas]
+        if len(set(ids)) != len(ids):
+            raise serializers.ValidationError("The same uma can't be picked twice.")
+
+        slots = benefits.oshi_slots(self.instance)
+        if len(ids) > slots:
+            stored = set(self.instance.oshis.values_list("uma_id", flat=True))
+            if not set(ids) <= stored:
+                if slots == 0:
+                    message = "Picking an oshi is a Patreon supporter perk."
+                else:
+                    message = f"Your tier covers {slots} oshi{'s' if slots != 1 else ''}."
+                raise serializers.ValidationError(message)
+        return umas
+
+    def update(self, instance, validated_data):
+        """Write the display name through the ModelSerializer, the oshis by hand.
+
+        Replace-all rather than a diff: the list is at most five long, the
+        positions have to be renumbered from 0 anyway so that "the first" is
+        always position 0, and a delete-then-insert inside one transaction
+        cannot leave a half-applied order behind.
+        """
+        umas = validated_data.pop("oshis", None)
+        with transaction.atomic():
+            instance = super().update(instance, validated_data)
+            if umas is not None:
+                instance.oshis.all().delete()
+                UserOshi.objects.bulk_create(
+                    UserOshi(user=instance, uma=uma, position=position)
+                    for position, uma in enumerate(umas)
+                )
+        return instance
 
     def validate_display_name(self, value):
         """Refuse invisible and control characters.
@@ -174,35 +237,44 @@ class AccountPreferencesSerializer(serializers.ModelSerializer):
         return value
 
 
-def _current_avatar_url(user, linked):
-    """The avatar to show in the navbar, or None.
+def _oshi_rows(user):
+    """Every stored oshi, first to last, as the wire shape.
 
-    A uma the person picked wins outright: it is the one thing here they chose
-    on purpose. `avatar_uma` is only ever set to a uma WITH a picture (the
-    serializer above refuses one without), but an editor can clear the image
-    later, so the check is on the image and not just the FK — the fallback
-    then is the provider picture, not a broken tile.
-
-    Otherwise, the picture from the provider the person most recently SIGNED
-    IN with, so the avatar follows the login they actually use: someone who
-    joined with Google and now always signs in with Discord sees their Discord
-    picture. A provider they only ever linked (never signed in through) has no
-    last_login_at, so its creation time stands in. Providers with no picture
-    are skipped rather than winning the tie with an empty string.
+    All of them, not just the covered ones: the page greys out what the
+    current tier no longer covers rather than pretending it is gone. `image`
+    is the storage URL, like GET /umas, and "" if an editor has since cleared
+    the picture — the row is still theirs, the client just has nothing to draw.
     """
-    uma = user.avatar_uma
-    if uma is not None and uma.image:
-        return uma.image.url
+    return [
+        {
+            "position": position,
+            "id": row.uma.pk,
+            "name": row.uma.name,
+            "image": row.uma.image.url if row.uma.image else "",
+        }
+        for position, row in enumerate(
+            user.oshis.select_related("uma").order_by("position")
+        )
+    ]
 
-    with_avatar = [row for row in linked if row.avatar_url]
-    if not with_avatar:
+
+def _current_avatar_url(oshis, slots):
+    """The picture for the navbar: the first oshi's art, or None.
+
+    None — not "" — when there is nothing to show, so the client draws its
+    default rather than loading an empty src. Nothing while `slots` is 0: a
+    lapsed supporter keeps their rows (see the module docstring) but the
+    picture is the perk, and the perk is off. The first row with an image,
+    rather than strictly position 0, so an editor clearing one uma's picture
+    degrades to the next pick instead of to a broken tile.
+    """
+    if slots < 1:
         return None
-    newest = max(with_avatar, key=lambda row: row.last_login_at or row.created_at)
-    return newest.avatar_url
+    return next((row["image"] for row in oshis if row["image"]), None)
 
 
-def _supporter_block(user):
-    """The caller's Patreon entitlement.
+def _supporter_block(supporter):
+    """The caller's Patreon entitlement, from the already-resolved row (or None).
 
     When there is no entitlement the block carries `is_supporter` and NOTHING
     ELSE — no null tier fields, no empty benefits list. A null tier name sitting
@@ -214,7 +286,6 @@ def _supporter_block(user):
     use for any of it, and it is the same field-list discipline the linked
     providers are under above.
     """
-    supporter = benefits.entitled_supporter(user)
     if supporter is None:
         return {"is_supporter": False}
     return {
@@ -231,8 +302,8 @@ def _delete_account(user):
     """Delete `user` and everything that is theirs. 204, or 403 for staff.
 
     WHAT GOES: the CustomUser row and, by cascade, its API token, its
-    SocialAccount rows (avatar URLs included) and every planned banner,
-    purchase and step-up selection. Signing in again with the same provider
+    SocialAccount rows, its oshis and every planned banner, purchase and
+    step-up selection. Signing in again with the same provider
     creates a fresh, empty account — the (provider, subject_id) pair is gone,
     so nothing resolves back to this one. There is no undo and no recovery
     path: we hold no email to send anything to, by design, which is why the
@@ -270,8 +341,12 @@ def _account_summary(user):
     SocialAccount rows at all, which simply makes `linked_providers` empty —
     a correct answer, not an error, and worth a test so it stays that way.
     """
-    # Evaluated once: the serializer and _current_avatar_url both walk it.
-    linked = list(SocialAccount.objects.filter(user=user).order_by("created_at"))
+    linked = SocialAccount.objects.filter(user=user).order_by("created_at")
+    # One entitlement lookup feeds the supporter block, the slot count and the
+    # picture, so the three can never disagree within one response.
+    supporter = benefits.entitled_supporter(user)
+    slots = benefits.oshi_slots_for(supporter)
+    oshis = _oshi_rows(user)
 
     return {
         # The generated handle ("user_a3f9c1"), never a real name — social
@@ -283,12 +358,14 @@ def _account_summary(user):
         "display_name": user.display_name,
         # null, not "", when there is no picture: the client draws its own
         # fallback on null and would try to load "" as an image.
-        "avatar_url": _current_avatar_url(user, linked),
-        # The id of the uma they picked, or null, so the page can show the
-        # current pick and offer the provider picture as the way back.
-        "avatar_uma": user.avatar_uma_id,
+        "avatar_url": _current_avatar_url(oshis, slots),
+        # Every pick, in order, covered or not; and how many the current tier
+        # covers. 0 slots for a free account — a real answer the page needs,
+        # which is why it is top-level and not inside the supporter block.
+        "oshis": oshis,
+        "oshi_slots": slots,
         "linked_providers": LinkedProviderSerializer(linked, many=True).data,
-        "supporter": _supporter_block(user),
+        "supporter": _supporter_block(supporter),
     }
 
 

@@ -3,8 +3,8 @@ OAuth2 authorization-code flow for Google, Discord and Patreon sign-in.
 
 Ordinary users never give us a password. The provider verifies who they are and
 hands back one opaque, provider-scoped id (Google's `sub`, Discord's user `id`,
-Patreon's user `id`) and, since 2026-09-12, the URL of their profile picture.
-Those two values are ALL that is persisted -- see models/social_account.py.
+Patreon's user `id`). That id is ALL that is persisted -- see
+models/social_account.py.
 
 The flow, end to end:
 
@@ -21,25 +21,24 @@ split used by predictions.py and analytics.py. Everything that can go wrong
 raises OAuthError so the view can collapse the lot into one generic 400 rather
 than leaking provider internals to the client.
 
-PRIVACY NOTE: the scopes below are the narrowest that yield a subject id AND an
-avatar, and each extractor reads exactly those two values from what comes back:
+PRIVACY NOTE: the scopes below are the narrowest that yield a subject id, and
+each extractor reads exactly that one value from what comes back:
 
-  Google   "openid profile"   "profile" also puts name, given/family name and
-                              locale in the id_token; only `sub` and `picture`
-                              are read. "openid" alone carries no picture, and
-                              that is the one reason "profile" is requested.
-  Discord  "identify"         id/username/avatar hash/etc.; only `id` and
-                              `avatar` are read. Unchanged since sign-in shipped.
-  Patreon  "identity"         a JSON:API user resource; the sparse fieldset asks
-                              for `thumb_url` and nothing else, so the response
-                              carries the id, the avatar, and no other attribute.
+  Google   "openid"     the id_token carries `sub` and the token metadata and
+                        nothing about the person. No "profile": that is the
+                        scope that adds the name and picture.
+  Discord  "identify"   id/username/avatar hash/etc.; only `id` is read.
+                        Discord has no narrower scope that yields the id.
+  Patreon  "identity"   a JSON:API user resource; the sparse fieldset names one
+                        throwaway boolean, so the response carries the id and
+                        no attribute about the person.
 
-None of them sends an email address, so none can be stored here by accident.
-The avatar is the ONE profile attribute this project holds -- the account owner
-asked to see it in their own navbar (2026-09-12) -- and everything else in each
-response is dropped before it leaves this module. Do not widen these scopes or
-the extractors without changing the privacy policy first: it promises this
-exact list.
+None of them sends an email address, a name or a picture we keep, so none can
+be stored here by accident. NO profile attribute is held: for one unshipped day
+(2026-09-12 to 2026-09-13) the provider picture was, and it was removed before
+it reached production -- the account picture is a supporter perk now
+(models/user_oshi.py). Do not widen these scopes or the extractors without
+changing the privacy policy first: it promises this exact list.
 
 In particular: Patreon puts the email behind a SEPARATE "identity[email]" scope.
 Never request it. Adding it would put an address in the response for every
@@ -49,7 +48,6 @@ person who signs in, which is the exact thing this design exists to avoid.
 import base64
 import binascii
 import json
-import re
 import time
 from typing import NamedTuple
 from urllib.parse import urlencode
@@ -64,19 +62,10 @@ GOOGLE = "google"
 DISCORD = "discord"
 PATREON = "patreon"
 
-# Matches SocialAccount.avatar_url's max_length. A provider URL is well under
-# this; the cap exists so an unexpected payload cannot fail the row save.
-AVATAR_URL_MAX_LENGTH = 500
-
-DISCORD_CDN = "https://cdn.discordapp.com"
-# Discord avatar hashes are hex, with an "a_" prefix for animated ones. The
-# hash is interpolated into a URL, so anything else is refused rather than
-# passed through.
-_DISCORD_AVATAR_HASH = re.compile(r"(a_)?[0-9a-fA-F]+")
-
-# The ONLY user attribute the Patreon identity call asks for. See
-# _patreon_identity for why the fieldset can be neither absent nor empty.
-PATREON_USER_FIELDS = "thumb_url"
+# The ONLY user attribute the Patreon identity call asks for: a throwaway
+# boolean that says nothing about the person. See _patreon_identity for why
+# the fieldset can be neither absent nor empty.
+PATREON_USER_FIELDS = "hide_pledges"
 
 
 class OAuthError(Exception):
@@ -87,29 +76,25 @@ class OAuthError(Exception):
 class Identity(NamedTuple):
     """What exchange_code() hands back about the person who just consented.
 
-    A NamedTuple rather than a bare tuple so a call site cannot swap the two
-    fields, and rather than a dict so it cannot quietly grow a third: adding
-    one means editing this class, which is the review moment the privacy
-    boundary needs. Everything else a provider returns dies in the extractor.
+    One field. A NamedTuple rather than a bare string so a call site reads
+    `identity.subject_id` and not a naked value, and rather than a dict so it
+    cannot quietly grow a second: adding one means editing this class, which is
+    the review moment the privacy boundary needs. Everything else a provider
+    returns dies in the extractor.
     """
 
     # The provider's permanent, opaque id for this person.
     subject_id: str
-    # An https URL on the provider's own CDN, or "" when they have no picture
-    # (or the provider sent something that is not a usable URL).
-    avatar_url: str
 
 
 def _google_config():
     return {
         "authorize_url": "https://accounts.google.com/o/oauth2/v2/auth",
         "token_url": "https://oauth2.googleapis.com/token",
-        # "openid" yields `sub`. "profile" is what makes Google add `picture`
-        # to the id_token -- it also adds the name and locale, which
-        # _google_identity reads past. Still no "email": that is a third,
-        # separate scope, and asking for it would hand us an address for every
-        # person who signs in.
-        "scope": "openid profile",
+        # "openid" alone: it yields `sub` and nothing about the person. NOT
+        # "profile" (adds the name, picture and locale) and NOT "email" (an
+        # address for every person who signs in).
+        "scope": "openid",
         "client_id": settings.GOOGLE_OAUTH_CLIENT_ID,
         "client_secret": settings.GOOGLE_OAUTH_CLIENT_SECRET,
         "extra_authorize_params": {},
@@ -121,7 +106,7 @@ def _discord_config():
         "authorize_url": "https://discord.com/oauth2/authorize",
         "token_url": "https://discord.com/api/oauth2/token",
         # "identify" returns id/username/avatar but NOT email (that would need
-        # the separate "email" scope). We read `id` and the avatar hash.
+        # the separate "email" scope). We read `id` and nothing else.
         "scope": "identify",
         "client_id": settings.DISCORD_OAUTH_CLIENT_ID,
         "client_secret": settings.DISCORD_OAUTH_CLIENT_SECRET,
@@ -258,22 +243,6 @@ def _decode_jwt_payload(token):
         raise OAuthError("Could not decode id_token payload") from exc
 
 
-def _clean_avatar_url(value):
-    """A provider-supplied avatar URL, or "" if it is not one we will store.
-
-    The value ends up in an <img src> on the account owner's own page and in a
-    500-character column, so it must be an https URL of sane length. A missing
-    picture is the normal case for a fresh Discord account and is not an error:
-    "" simply means "no picture", and the client draws its own fallback.
-    """
-    if not isinstance(value, str):
-        return ""
-    value = value.strip()
-    if not value.lower().startswith("https://") or len(value) > AVATAR_URL_MAX_LENGTH:
-        return ""
-    return value
-
-
 def _google_identity(config, token_data):
     id_token = token_data.get("id_token")
     if not id_token:
@@ -295,23 +264,10 @@ def _google_identity(config, token_data):
     if not subject_id:
         raise OAuthError("id_token contained no subject")
 
-    # `picture` is here because of the "profile" scope, which also puts
-    # `name`, `given_name`, `family_name` and `locale` into these claims. None
-    # of those is read, logged or returned -- `claims` goes out of scope on
-    # this line, and Identity has no field to carry them in.
-    return Identity(str(subject_id), _clean_avatar_url(claims.get("picture")))
-
-
-def _discord_avatar_url(user_id, avatar_hash):
-    """Discord sends an avatar HASH, not a URL; the CDN path is documented and
-    stable. A null hash means no custom avatar. Discord's default silhouettes
-    are deliberately NOT substituted for it -- "" lets the client draw its own
-    fallback, which reads as "no picture" rather than as a Discord logo."""
-    if not isinstance(avatar_hash, str) or not _DISCORD_AVATAR_HASH.fullmatch(avatar_hash):
-        return ""
-    # size=128 is the smallest power of two comfortably above a 2x-density
-    # navbar avatar. An animated hash ("a_" prefix) still serves a static PNG.
-    return f"{DISCORD_CDN}/avatars/{user_id}/{avatar_hash}.png?size=128"
+    # Whatever else is in `claims` (Google adds `picture`, `name` and `locale`
+    # under a wider scope) is not read, logged or returned -- `claims` goes out
+    # of scope on this line, and Identity has no field to carry it in.
+    return Identity(str(subject_id))
 
 
 def _discord_identity(_config, token_data):
@@ -339,32 +295,32 @@ def _discord_identity(_config, token_data):
     subject_id = profile.get("id")
     if not subject_id:
         raise OAuthError("Discord profile contained no id")
-    subject_id = str(subject_id)
-    # Everything else in `profile` (username, global_name, banner, ...) is
-    # intentionally dropped here and never stored or logged.
-    return Identity(subject_id, _discord_avatar_url(subject_id, profile.get("avatar")))
+    # Everything else in `profile` (username, global_name, avatar hash,
+    # banner, ...) is intentionally dropped here and never stored or logged.
+    return Identity(str(subject_id))
 
 
 def _patreon_identity(_config, token_data):
-    """The caller's Patreon user id and avatar, from the JSON:API identity resource.
+    """The caller's Patreon user id, from the JSON:API identity resource.
 
     The shape is Patreon's documented one -- {"data": {"type": "user",
     "id": "...", "attributes": {...}}} -- and was confirmed against the live API
-    by a real sign-in on 2026-09-12, after the fieldset fix below.
+    by a real sign-in on 2026-09-12.
 
     THE FIELDSET IS NOT OPTIONAL AND MUST NOT BE EMPTY. It was `fields[user]=`
     (empty) from 2026-09-09 to 2026-09-10, and Patreon answered every sign-in
     with a flat HTTP 400 -- the same parameter took the supporter sync down at
     the same time, since patreon_api.py asks for the sideloaded user the same
-    way. A JSON:API sparse fieldset has to name at least one attribute. Until
-    2026-09-12 it named a throwaway boolean (`hide_pledges`); now it names
-    `thumb_url`, the avatar, which is the one attribute this project actually
-    wants. Dropping the parameter is the other wrong fix -- with no fieldset at
-    all Patreon sends its DEFAULT user attributes (full name, vanity URL, social
-    handles), which is personal data we have no use for and no wish to receive.
+    way. A JSON:API sparse fieldset has to name at least one attribute, so it
+    names `hide_pledges`, a boolean that says nothing about the person. (For
+    one day it named `thumb_url`, while the avatar was being stored; that is
+    gone.) Dropping the parameter is the other wrong fix -- with no fieldset at
+    all Patreon sends its DEFAULT user attributes (full name, vanity URL,
+    picture, social handles), which is personal data we have no use for and no
+    wish to receive.
 
-    The extractor reads `data.id` and `data.attributes.thumb_url` and drops the
-    rest, the same discipline _discord_identity applies to the username.
+    The extractor reads `data.id` and drops the rest, the same discipline
+    _discord_identity applies to the username.
     """
     access_token = token_data.get("access_token")
     if not access_token:
@@ -401,10 +357,9 @@ def _patreon_identity(_config, token_data):
     if not subject_id:
         raise OAuthError("Patreon identity resource contained no id")
 
-    attributes = data.get("attributes")
-    if not isinstance(attributes, dict):
-        attributes = {}
-    return Identity(str(subject_id), _clean_avatar_url(attributes.get("thumb_url")))
+    # `attributes` holds only the throwaway boolean the fieldset asked for; it
+    # is not read.
+    return Identity(str(subject_id))
 
 
 _IDENTITY_EXTRACTORS = {
@@ -416,8 +371,8 @@ _IDENTITY_EXTRACTORS = {
 
 def exchange_code(provider, code, redirect_uri=None):
     """Redeem a one-time authorization code and return the person's Identity:
-    the provider's opaque subject id and their avatar URL ("" if none).
-    Raises OAuthError on every failure path.
+    the provider's opaque subject id and nothing else. Raises OAuthError on
+    every failure path.
 
     `redirect_uri` must be the SAME value build_authorize_url() was given, or
     the provider rejects the exchange.
