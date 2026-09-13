@@ -136,3 +136,40 @@ class PurgeUserPiiTests(CalculatorTestCase):
         self._run()
         self.assertTrue(SocialAccount.objects.filter(pk=link.pk).exists())
         self.assertEqual(SocialAccount.objects.get(pk=link.pk).user_id, social_user.pk)
+
+    def test_purge_blanks_social_avatars_but_keeps_the_link(self):
+        """The avatar URL is the one profile attribute a social account holds,
+        so the purge blanks it. The (provider, subject_id) row itself survives:
+        it is what makes a returning sign-in resolve to the account, and it
+        identifies nobody without the provider's own database."""
+        social_user = CustomUser.objects.create_user(username='user_def456')
+        social_user.set_unusable_password()
+        social_user.save()
+        link = SocialAccount.objects.create(
+            user=social_user, provider='discord', subject_id='SUB-DEF',
+            avatar_url='https://cdn.discordapp.com/avatars/1/ab.png?size=128')
+        staff_link = SocialAccount.objects.create(
+            user=self.staff, provider='google', subject_id='SUB-STAFF',
+            avatar_url='https://lh3.googleusercontent.com/a/staff')
+
+        output = self._run()
+
+        link.refresh_from_db()
+        staff_link.refresh_from_db()
+        self.assertEqual(link.avatar_url, '')
+        self.assertEqual(link.user_id, social_user.pk)
+        # Staff are untouched by the purge, avatar included.
+        self.assertEqual(staff_link.avatar_url, 'https://lh3.googleusercontent.com/a/staff')
+        self.assertIn('blanked 1 avatar URL(s)', output)
+
+    def test_dry_run_reports_avatars_without_blanking_them(self):
+        social_user = CustomUser.objects.create_user(username='user_def456')
+        link = SocialAccount.objects.create(
+            user=social_user, provider='google', subject_id='SUB-DEF',
+            avatar_url='https://lh3.googleusercontent.com/a/x')
+
+        output = self._run(dry_run=True)
+
+        link.refresh_from_db()
+        self.assertEqual(link.avatar_url, 'https://lh3.googleusercontent.com/a/x')
+        self.assertIn('holding an avatar URL:   1', output)

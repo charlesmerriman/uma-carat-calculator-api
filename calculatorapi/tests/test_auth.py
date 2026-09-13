@@ -181,7 +181,7 @@ class SocialAuthRedirectUriTests(CalculatorTestCase):
         to repeat the one used at the start -- not the canonical default."""
         state = self._start(redirect_uri=DEV_REDIRECT).json()["state"]
 
-        with patch("calculatorapi.oauth.exchange_code", return_value="sub-1") as mocked:
+        with patch("calculatorapi.oauth.exchange_code", return_value=oauth.Identity("sub-1", "")) as mocked:
             response = self.client.post(
                 "/auth/social",
                 {"provider": "google", "code": "CODE", "state": state},
@@ -194,7 +194,7 @@ class SocialAuthRedirectUriTests(CalculatorTestCase):
     def test_completion_uses_the_canonical_uri_when_none_was_requested(self):
         state = self._start().json()["state"]
 
-        with patch("calculatorapi.oauth.exchange_code", return_value="sub-2") as mocked:
+        with patch("calculatorapi.oauth.exchange_code", return_value=oauth.Identity("sub-2", "")) as mocked:
             self.client.post(
                 "/auth/social",
                 {"provider": "google", "code": "CODE", "state": state},
@@ -209,7 +209,7 @@ class SocialAuthRedirectUriTests(CalculatorTestCase):
         rather than 400 on a field that did not exist when it was minted."""
         legacy_state = signing.dumps({"p": "google", "n": "nonce"}, salt=STATE_SALT)
 
-        with patch("calculatorapi.oauth.exchange_code", return_value="sub-3") as mocked:
+        with patch("calculatorapi.oauth.exchange_code", return_value=oauth.Identity("sub-3", "")) as mocked:
             response = self.client.post(
                 "/auth/social",
                 {"provider": "google", "code": "CODE", "state": legacy_state},
@@ -305,7 +305,8 @@ class AccountEndpointTests(CalculatorTestCase):
         res = self.client.get('/account')
 
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(set(res.data), {'username', 'linked_providers', 'supporter'})
+        self.assertEqual(
+            set(res.data), {'username', 'avatar_url', 'linked_providers', 'supporter'})
         self.assertEqual(res.data['username'], 'accountuser')
 
     def test_lists_linked_providers_oldest_first(self):
@@ -325,14 +326,14 @@ class AccountEndpointTests(CalculatorTestCase):
         providers = [row['provider'] for row in res.data['linked_providers']]
         self.assertEqual(providers, ['discord', 'google'])
 
-    def test_a_linked_provider_carries_only_provider_and_date(self):
+    def test_a_linked_provider_carries_provider_date_and_avatar(self):
         SocialAccount.objects.create(
             user=self.user, provider='google', subject_id='google-111')
 
         res = self.client.get('/account')
 
         row = res.data['linked_providers'][0]
-        self.assertEqual(set(row), {'provider', 'linked_at'})
+        self.assertEqual(set(row), {'provider', 'linked_at', 'avatar_url'})
 
     def test_subject_id_never_reaches_the_response(self):
         """The one that matters.
@@ -442,30 +443,31 @@ class PatreonOAuthProviderTests(CalculatorTestCase):
         payload = {"data": {"type": "user", "id": "1234567", "attributes": {}}}
 
         with patch("calculatorapi.oauth.requests.get", return_value=FakeResponse(payload)):
-            result = oauth._patreon_subject_id(  # pylint: disable=protected-access
+            result = oauth._patreon_identity(  # pylint: disable=protected-access
                 {}, {"access_token": "at-1"}
             )
 
-        self.assertEqual(result, "1234567")
+        self.assertEqual(result.subject_id, "1234567")
 
-    def test_it_requests_one_throwaway_user_attribute(self):
+    def test_it_requests_exactly_one_user_attribute_the_avatar(self):
         """A minimal sparse fieldset, and both halves of it matter.
 
         Absent, Patreon returns its default attribute set — full name, vanity
-        URL, avatar, social handles — none of which we want to receive, let
-        alone store. EMPTY, Patreon returns HTTP 400 and no one can sign in,
-        which is exactly what shipped on 2026-09-09. So it names one boolean
-        that tells us nothing about the user and that nothing here reads.
+        URL, social handles — none of which we want to receive, let alone
+        store. EMPTY, Patreon returns HTTP 400 and no one can sign in, which is
+        exactly what shipped on 2026-09-09. So it names exactly one attribute:
+        `thumb_url`, the avatar, which is the one this project actually wants
+        (it replaced a throwaway boolean on 2026-09-12).
         """
         payload = {"data": {"id": "1234567"}}
 
         with patch(
             "calculatorapi.oauth.requests.get", return_value=FakeResponse(payload)
         ) as mocked:
-            oauth._patreon_subject_id({}, {"access_token": "at-1"})  # pylint: disable=protected-access
+            oauth._patreon_identity({}, {"access_token": "at-1"})  # pylint: disable=protected-access
 
         params = mocked.call_args.kwargs["params"]
-        self.assertEqual(params, {"fields[user]": "hide_pledges"})
+        self.assertEqual(params, {"fields[user]": "thumb_url"})
         # The point of the assertion above, spelled out so a future edit that
         # "tidies" the value has to argue with it.
         self.assertNotEqual(params["fields[user]"], "")
@@ -479,7 +481,7 @@ class PatreonOAuthProviderTests(CalculatorTestCase):
                     "calculatorapi.oauth.requests.get", return_value=FakeResponse(payload)
                 ):
                     with self.assertRaises(oauth.OAuthError):
-                        oauth._patreon_subject_id(  # pylint: disable=protected-access
+                        oauth._patreon_identity(  # pylint: disable=protected-access
                             {}, {"access_token": "at-1"}
                         )
 
@@ -488,7 +490,7 @@ class PatreonOAuthProviderTests(CalculatorTestCase):
             "calculatorapi.oauth.requests.get", return_value=FakeResponse({}, status_code=401)
         ):
             with self.assertRaises(oauth.OAuthError):
-                oauth._patreon_subject_id({}, {"access_token": "at-1"})  # pylint: disable=protected-access
+                oauth._patreon_identity({}, {"access_token": "at-1"})  # pylint: disable=protected-access
 
 
 @override_settings(
@@ -584,7 +586,7 @@ class AccountLinkCompleteTests(CalculatorTestCase):
 
     def _complete(self, state, code="CODE", provider="patreon", subject_id="patreon-1",
                   client=None):
-        with patch("calculatorapi.oauth.exchange_code", return_value=subject_id) as mocked:
+        with patch("calculatorapi.oauth.exchange_code", return_value=oauth.Identity(subject_id, "")) as mocked:
             response = (client or self.client).post(
                 f"/account/link/{provider}/complete",
                 {"code": code, "state": state},
@@ -793,7 +795,7 @@ class PatreonSignInTests(CalculatorTestCase):
             user=user, provider="patreon", subject_id="patreon-1")
         state = self.client.get("/auth/patreon/start").json()["state"]
 
-        with patch("calculatorapi.oauth.exchange_code", return_value="patreon-1"):
+        with patch("calculatorapi.oauth.exchange_code", return_value=oauth.Identity("patreon-1", "")):
             response = self.client.post(
                 "/auth/social",
                 {"provider": "patreon", "code": "CODE", "state": state},
@@ -808,7 +810,7 @@ class PatreonSignInTests(CalculatorTestCase):
         before = CustomUser.objects.count()
         state = self.client.get("/auth/patreon/start").json()["state"]
 
-        with patch("calculatorapi.oauth.exchange_code", return_value="patreon-new"):
+        with patch("calculatorapi.oauth.exchange_code", return_value=oauth.Identity("patreon-new", "")):
             response = self.client.post(
                 "/auth/social",
                 {"provider": "patreon", "code": "CODE", "state": state},
