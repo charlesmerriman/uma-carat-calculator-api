@@ -32,6 +32,19 @@
 # module changed. Newest entry first is conventional here but not required — the
 # page sorts by date.
 
+- key: timeline-filters-and-fixes
+  date: 2026-09-14
+  title: "Timeline filters and a few fixes"
+  version: "v1.5"
+  changes:
+    - added: "Recommended banners on the Timeline now have their own filter."
+    - added: "A \"back to top\" button, now on the home and Selectors pages too."
+    - added: "The Timeline shows a banner's free pulls right in its title now."
+    - added: "The income form has its own \"Include Selector Purchases\" switch now, matching the one already on the Selectors page."
+    - changed: "Same-day scenarios and campaigns now share one card on the Timeline."
+    - changed: "\"10 Select 2 Scout\" banners are named for what they are now, not \"Race Prep Support.\" Golden Week revivals are just \"Golden Week.\""
+    - fixed: "Each page keeps its own scroll position now. Switching from the calculator to the Timeline no longer drops you where you left off on a different page."
+
 - key: accounts-and-oshis
   date: 2026-09-13
   title: "Your account page, and oshis for supporters"

@@ -304,7 +304,11 @@ import).
   among the rows that exist.
 - **Entitlement is not stored here.** How many rows the current tier covers is
   `benefits.oshi_slots(user)` (5 / 3 / 1 / 0), derived per request like every
-  other benefit. **A lapse or downgrade keeps every row**: `GET /account` lists
+  other benefit — except staff, who get `OSHI_SLOT_CAP` regardless of tier
+  (`oshi_slots_for(supporter, is_staff=...)`). That bypass reads `is_staff`,
+  CustomUser's own field, so it adds no second copy of Patreon entitlement; it
+  only unlocks the slot count, `supporter`/`is_supporter` in the `/account`
+  response is untouched. **A lapse or downgrade keeps every row**: `GET /account` lists
   them all, shows the picture only while `oshi_slots >= 1`, and `PATCH` refuses
   only a list that *adds* past the count — a subset of what is already held may
   always be kept, reordered or trimmed.
