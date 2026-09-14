@@ -92,6 +92,16 @@ class OshiLadderTests(OshiTestCase):
         self.assertTrue(benefits.has_benefit(self.user, benefits.OSHI))
         self.assertIn(benefits.OSHI, self._get()["supporter"]["benefits"])
 
+    def test_staff_get_full_slots_with_no_pledge(self):
+        staff = make_user("staffer", is_staff=True)
+        self.assertEqual(benefits.oshi_slots(staff), OSHI_SLOT_CAP)
+
+    def test_staff_slots_are_not_reduced_by_a_lower_tier(self):
+        """Staff is a bypass, not a rung: a junior pledge does not cap them at 1."""
+        staff = make_user("staffer", is_staff=True)
+        self._pledge(self.junior, user=staff, patreon_user_id="8")
+        self.assertEqual(benefits.oshi_slots(staff), OSHI_SLOT_CAP)
+
 
 class OshiPictureTests(OshiTestCase):
     """GET /account: the first oshi is the picture, and only while it is covered."""
@@ -187,6 +197,21 @@ class OshiPictureTests(OshiTestCase):
         self._patch({"oshis": self._ids(0, 1)})
         call_command("purge_user_pii", "--no-input", stdout=StringIO())
         self.assertEqual(self._stored_ids(), self._ids(0, 1))
+
+    def test_staff_have_full_oshi_access_with_no_pledge(self):
+        """Staff unlock the slot count without becoming a Patreon supporter."""
+        staff = make_user("staffer", is_staff=True)
+        client, _ = auth_client(staff)
+
+        get_body = client.get("/account").json()
+        self.assertEqual(get_body["oshi_slots"], OSHI_SLOT_CAP)
+        self.assertFalse(get_body["supporter"]["is_supporter"])
+
+        patch_body = client.patch(
+            "/account", {"oshis": self._ids(0, 1, 2, 3, 4)}, format="json"
+        ).json()
+        self.assertEqual(patch_body["avatar_url"], self.umas[0].image.url)
+        self.assertEqual(len(patch_body["oshis"]), 5)
 
 
 class OshiWriteTests(OshiTestCase):
