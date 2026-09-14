@@ -72,13 +72,17 @@ The display name is served only here, to its owner. It never reaches
 GET /supporters or any other public route — the thank-you list stays the
 Patreon-side name with Patreon-side consent.
 
-OSHIS: THE PICTURE IS A SUPPORTER PERK
---------------------------------------
+OSHIS: THE PICTURE IS A SUPPORTER PERK (AND A STAFF ONE)
+----------------------------------------------------------
 `oshis` is the ordered list of umas a supporter picked; the FIRST is their
 picture. How many they may hold is `benefits.oshi_slots(user)` — 1, 3 or 5 by
-tier, 0 for a free account — and GET reports it as `oshi_slots` so the page can
-draw that many tiles. It is a count the server has already resolved, not a tier
-order for the client to do arithmetic on.
+tier, 0 for a free account, and OSHI_SLOT_CAP for staff regardless of tier —
+and GET reports it as `oshi_slots` so the page can draw that many tiles. It is
+a count the server has already resolved, not a tier order for the client to
+do arithmetic on. Staff get full oshi access on top of, not instead of, a real
+Patreon entitlement — `supporter` in the response is unaffected, so a staff
+member who is not a patron still sees `is_supporter: false` there; only the
+slot count (and therefore the picture and the picker) is unlocked.
 
 A lapse or a downgrade never deletes a pick and never rejects a save the
 person could have made before it (the same rule /calculator-data applies to
@@ -363,7 +367,7 @@ def _account_summary(user):
     # One entitlement lookup feeds the supporter block, the slot count and the
     # picture, so the three can never disagree within one response.
     supporter = benefits.entitled_supporter(user)
-    slots = benefits.oshi_slots_for(supporter)
+    slots = benefits.oshi_slots_for(supporter, is_staff=user.is_staff)
     oshis = _oshi_rows(user)
 
     return {

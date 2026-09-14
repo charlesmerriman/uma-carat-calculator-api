@@ -145,8 +145,19 @@ def benefit_keys(user):
     return benefit_keys_for(entitled_supporter(user))
 
 
-def oshi_slots_for(supporter):
-    """How many oshis an already-resolved supporter row is entitled to; 0 for None."""
+def oshi_slots_for(supporter, *, is_staff=False):
+    """How many oshis an already-resolved supporter row is entitled to; 0 for None.
+
+    `is_staff` is a full bypass of the ladder, capped at OSHI_SLOT_CAP rather
+    than at the top rung's 5 for the same reason the ladder asserts against
+    the cap on import: if the top rung ever grows, staff access grows with it
+    without a second number to keep in sync here. This is NOT a case of the
+    "entitlement is derived, never stored" rule bending -- `is_staff` is
+    already CustomUser's own single source of truth for staff-ness, not a
+    copy of Patreon's, so reading it here creates no second truth to drift.
+    """
+    if is_staff:
+        return OSHI_SLOT_CAP
     for threshold, slots in OSHI_SLOT_LADDER:
         if _meets(supporter, threshold):
             return slots
@@ -155,9 +166,10 @@ def oshi_slots_for(supporter):
 
 def oshi_slots(user):
     """How many oshis `user` may hold right now. 0 for everyone who is not a
-    supporter, which is what makes "has a picture" and "has at least one slot"
-    the same question."""
-    return oshi_slots_for(entitled_supporter(user))
+    supporter and not staff, which is what makes "has a picture" and "has at
+    least one slot" the same question."""
+    is_staff = user is not None and user.is_authenticated and user.is_staff
+    return oshi_slots_for(entitled_supporter(user), is_staff=is_staff)
 
 
 class IsSupporter(permissions.BasePermission):
