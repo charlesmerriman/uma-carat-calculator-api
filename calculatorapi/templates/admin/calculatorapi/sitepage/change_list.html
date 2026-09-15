@@ -1,0 +1,21 @@
+{% extends "admin/change_list.html" %}
+{% comment %}
+Adds the "Rebuild website" button to the Pages changelist toolbar. A POST form
+rather than a link: pressing it starts a deployment, which is not something a
+GET (a prefetch, a crawler, a browser restoring tabs) should be able to do.
+{{ block.super }} keeps unfold's stock toolbar; there is no "Add" button here
+because SitePageAdmin refuses adds.
+{% endcomment %}
+
+{% block object-tools-items %}
+  <li>
+    <form method="post" action="{% url 'admin:calculatorapi_sitepage_rebuild_website' %}" style="display: inline;">
+      {% csrf_token %}
+      <button type="submit" class="button"
+              title="Rebuilds the public site so search engines see your edits. Visitors already see them.">
+        Rebuild website
+      </button>
+    </form>
+  </li>
+  {{ block.super }}
+{% endblock %}

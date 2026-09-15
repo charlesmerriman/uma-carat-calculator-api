@@ -87,6 +87,9 @@ _IRRELEVANT_MODELS = frozenset({
     "patreontier",
     "patreonsupporter",
     "patreoncredentials",
+    "sitepage",
+    "faqcategory",
+    "faqitem",
     # Analytics counters. These are written on EVERY visit -- leaving them out
     # of the denylist would invalidate the cache continuously and make the whole
     # thing a no-op.

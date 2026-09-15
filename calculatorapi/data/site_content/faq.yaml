@@ -1,0 +1,126 @@
+# Seed for the FAQ: the rows a fresh database starts with.
+#
+# Read ONCE by the migration that created the FAQ tables (get_or_create by
+# slug), and never again. After that the admin owns the questions, so an edit
+# here reaches nothing already deployed. Change it only to change what a new
+# database starts from.
+#
+# COPY OWNERSHIP: the first two categories are transcribed word for word from
+# the maintainer's FAQ document. Don't reword them against the code; if an
+# answer disagrees with behaviour, raise it. The last two are ours.
+#
+# Answers are markdown. A blank line separates paragraphs; links are
+# [text](/path); bold is **text**.
+
+- slug: using-the-calculator
+  title: Using the calculator
+  items:
+    - slug: what-does-this-calculator-actually-do
+      question: What does this calculator actually do?
+      answer: |
+        It projects how many carats and tickets you will have by the end date of each banner. You tell it what your resources are today and which income sources apply to you, add the banners you are planning for, and it walks forward through the calendar, adding up everything the game will give you between now and then.
+
+        The point is to answer the question you actually have, "Can I afford to go for both of these, or do I have to pick one?", before the banner arrives rather than after.
+    - slug: do-i-need-an-account
+      question: Do I need an account?
+      show_on_homepage: true
+      answer: |
+        The calculator is fully usable as a guest; an account only adds one thing: saving. As a guest, your plan lives in your browser for as long as the tab is open and is discarded when you leave or reload the page.
+
+        If you create an account the plan built with your guest account will not be lost. It will be transferred to your account.
+    - slug: how-do-i-get-started
+      question: How do I get started?
+      answer: |
+        Open the calculator and enter your current carats and tickets, then set your income ranks so the forecast matches how much you actually earn. Add the banners you want to plan for, set how many pulls you plan on performing on each, and read the forecasted results.
+    - slug: what-is-the-difference-between-free-and
+      question: What is the difference between free and paid carats?
+      answer: |
+        **Paid carats** are carats that have been purchased. Unlike free carats, they can be used for daily discounted pulls and step-up banners. The calculator tracks them separately and the spending of paid carats can be toggled in the settings menu.
+    - slug: what-do-the-colours-on-the-pulls
+      question: What do the colors on the "# Pulls" box mean?
+      answer: |
+        **Bright green** means the number is at a pity threshold (a multiple of 200). **Faded green** means it is not at the pity threshold.
+
+        **Red** means the calculator estimates that you will not have enough resources for your plan. The calculator tends to underestimate, so if you are only a few pulls off, you will likely earn enough for your plan. The longer the time period, the more true that is.
+
+- slug: the-numbers
+  title: The numbers
+  items:
+    - slug: where-do-the-carat-numbers-come-from
+      question: Where do the carat numbers come from?
+      answer: |
+        From the income sources you set, game events, and an estimation for miscellaneous earnings. Daily login pays every day, Team Trials pays weekly on Mondays, club rank pays monthly on the 1st, Champions Meeting pays when finals open, and League of Heroes pays on the event's end date.
+
+        Game events include every known event, login bonus, and mission with their carat, ticket, and shard rewards. Tickets and shards are always awarded on the first day of the banner. Carats are either rewarded on the first day or throughout the banner. Most carats are awarded throughout, and the amount given is reduced each day to estimate progress through an event.
+
+        Miscellaneous Earnings gives 90 carats per day starting 30 days from now. It attempts to accurately capture carat earnings that could not be included in fixed data, such as gifts from Cygames, Team Trials rank-ups and win rewards, carats from career races, uma stories, main missions, and archive level-ups. This tool keeps the calculator accurate over long periods of time.
+
+        A few sources are toggles because they depend on what you buy or how you play: the Daily Carat Pack, the Training Pass, Misc Earnings, and Monthly Shop Tickets. Turn on the ones that apply to you and leave the rest off.
+    - slug: why-does-this-not-match-what-i
+      question: Why does this not match what I have in the game?
+      show_on_homepage: true
+      answer: |
+        The usual reasons it drifts: Your starting balance is whatever you typed, so if that is outdated, estimates will be inaccurate. Misc Earnings is a flat average rather than your real gifts and career clears. If you outearn or are outearned by the estimate, predictions will drift over time. Event income models typical play, so clearing an event on day one puts you ahead of the projection, while leaving it until the last weekend puts you behind.
+
+        Dates for unannounced banners are predictions based on the Japanese server's schedule, and anything predicted can move. The calculator's date estimates are kept fast to cause a slight underestimation and prevent drops from banners releasing earlier than expected.
+    - slug: what-does-average-monthly-income-mean
+      question: What does "average monthly income" mean?
+      answer: |
+        It is a flat average over a fixed window. The calculator totals every carat, ticket and shard your current settings earn over the next five months, starting today, and divides by five. Nothing is deducted along the way. Pull costs never enter it, so it is what you earn, not what you have left over.
+
+        It runs on the same income ledger as the banner rows below it, so the headline figure and the per-banner forecasts cannot disagree. Carats are reported as a single number here rather than split into free and paid, because that split only matters where the two balances buy pulls at different prices. One deliberate exception: planner purchases are left out.
+    - slug: how-do-step-up-banners-work-here
+      question: How do step-up banners work?
+      answer: |
+        Step-up banners are paid-only banners. You select 10 characters or support cards to populate the ★3/SSR drop pool. There are 5 steps with a total cost of 5,000 paid carats. Each step is a 10-pull with certain guaranteed rewards.
+
+        Steps 1 and 2 are standard 10-pulls. Steps 3 and 4 have a guaranteed ★3/SSR card from your selection. On Step 5, you choose which ★3/SSR card to guarantee. With 50 total pulls, the odds of spooking an extra ★3/SSR from your selection are high.
+
+        The inputs for step-up banners are capped by the number offered on the Japanese server.
+    - slug: why-can-i-not-use-a-selector
+      question: Why can I not select certain characters or support cards?
+      answer: |
+        Selector tickets have a cutoff date: you can only pick a card that was released on or before that date. The calculator works that out from each card's Japanese release date and compares it to the cutoff date, so a card released after the cutoff is not selectable.
+
+        Separately, some characters are considered **semi-limited**; this means they can only be obtained through gacha, either on their release banner or through spooks. You cannot select them on step-up banners or selector tickets.
+
+        The restricted list currently includes Jungle Pocket, Gentildona, Orfevre, Still in Love, Oguri Cap (Anime Collab), Stay Gold, Almond Eye, and Epiphaneia.
+    - slug: how-far-ahead-can-i-plan
+      question: How far ahead can I plan?
+      answer: |
+        As far as the timeline goes. Banners that have been officially announced carry their real dates; further out, dates are predicted from the Japanese server's schedule. Predicted entries are marked as such. They are good enough to plan against, but treat them as likely rather than fixed.
+
+- slug: account-and-privacy
+  title: Your account and privacy
+  items:
+    - slug: what-do-you-store-about-me
+      question: What do you store about me?
+      answer: |
+        As little as possible. If you sign in with Google, Discord or Patreon we receive an anonymous account reference and nothing else: no email address, no real name, no display name, no profile picture, and never a password. Your username is randomly generated by us. Alongside that we store the planning data you enter, so your plan is there when you come back, and any display name or oshis you choose on the Account page.
+
+        Visits are counted without cookies and without ever storing your IP address. You can delete your account, and everything stored with it, from the Account page at any time. The full detail is in the [Privacy Policy](/privacy-policy).
+    - slug: i-lost-access-to-my-google-or
+      question: I lost access to the account I sign in with. Can I get my plan back?
+      answer: |
+        Only if you connected another sign-in first. An account here can have Google, Discord and Patreon linked to it from the Account page, and any one of them gets you back in. If the one you lost was the only one, then unfortunately not: because we hold no email address, there is no password reset and no way for us to confirm that an account was yours. That is the deliberate trade-off for holding none of your personal data: the same design that means a breach here exposes nothing about you also means we cannot vouch for you.
+
+        If it happens, you would need to start a new plan. Linking a second sign-in while you still have the first is the insurance.
+    - slug: is-this-site-affiliated-with-cygames
+      question: Is this site affiliated with Cygames?
+      show_on_homepage: true
+      answer: |
+        No. This is an unofficial fan-made planning tool with no connection to Cygames or Uma Musume Pretty Derby. All game names and assets belong to their owners. Nothing here is official, and no projection it produces should be read as a statement from the game.
+
+- slug: about-the-site
+  title: About the site
+  items:
+    - slug: how-do-i-report-a-bug-or
+      question: How do I report a bug or suggest a feature?
+      answer: |
+        Use the [Feedback](/feedback) form. No account is needed, and you can tag it as a bug, a feature idea or a data correction. Bug reports are much easier to act on with the specifics: which banner or screen, what you expected, and what you saw instead.
+
+        The form asks for nothing but the message itself (no name, no email address), so it is one-way and you will not get a reply to it.
+    - slug: how-often-is-the-data-updated
+      question: How often is the data updated?
+      answer: |
+        Banner and event data is updated as the game announces it, and the underlying income figures are corrected whenever they are found to have drifted. Recent changes are listed on the [Changelog](/changelog).

@@ -745,6 +745,40 @@ be able to keep the API from booting. `--strict` inverts that for local checks,
 and `ShippedChangelogFileTests` validates the committed file so a broken one
 never reaches a deploy in the first place.
 
+### `SitePage`, `FaqCategory`, `FaqItem` — the prose the team edits
+
+The About page, the carat income guide and the FAQ. They used to ship in the
+frontend bundle; since 2026-09-15 they are rows the admin edits and
+`GET /site-content` serves (→ `api-reference.md`). Terms and the Privacy Policy
+are **not** here and should not be moved here: they make claims the code has to
+keep true, so they change with the code.
+
+`SitePage.slug` is a `choices` field (`about`, `carat-income-guide`), and
+`SitePageAdmin` refuses add and delete. A page only exists because the frontend
+has a route for it, and a route is code; adding a page is a new choice, a seed
+file and a frontend route, never an admin action. `FaqCategory` and `FaqItem` are
+fully editable: an item's `slug` is its deep-link anchor on the FAQ page and is
+`unique` across the whole FAQ, so a link never needs to know the category.
+`FaqItem.show_on_homepage` is what the homepage teaser reads; the frontend shows
+however many are ticked, in FAQ order.
+
+Why typed models and not a generic key/value table: the same reasoning as
+`CalculationConstants`. Real forms, ordering fields, the homepage flag, and no
+stringly-typed lookups on the client. Why markdown and not HTML: the site
+already rendered markdown, it is plain text in the database, and react-markdown
+does not render raw HTML by default, so a row can never put script on the site.
+
+**The seed runs once.** Migration `0058_site_content` creates the tables and
+then `get_or_create`s the rows from `calculatorapi/data/site_content/`
+(`about.md`, `carat-income-guide.md`, `faq.yaml`) through
+`calculatorapi/site_content_seed.py`. From then on the database owns the text;
+editing a seed file changes what the *next* fresh database starts from and
+nothing already deployed. That is the opposite of the changelog's arrangement
+below, on purpose: patch notes describe the code, these pages do not.
+
+All three are in `public_payload_cache._IRRELEVANT_MODELS`, since they have
+their own endpoint and are absent from `/calculator-data`.
+
 ### `Feedback` — visitor-submitted, deliberately unattributable
 
 One message from the public feedback form (`POST /feedback`). Unusual among the

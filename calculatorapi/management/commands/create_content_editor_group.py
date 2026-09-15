@@ -34,6 +34,7 @@ from calculatorapi.models import (
     AnniversaryEvent, AnniversaryEventBanner, AnniversaryEventProduct,
     Scenario,
     PatreonTier, PatreonSupporter,
+    SitePage, FaqCategory, FaqItem,
 )
 
 GROUP_NAME = "Content editors"
@@ -62,6 +63,10 @@ CONTENT_MODELS = [
     # importer cannot publish a name, so the consent decision stays a separate
     # tick either way.
     PatreonTier, PatreonSupporter,
+    # The About page, the carat income guide and the FAQ. Pages are change-only
+    # in the admin whatever the permissions say (SitePageAdmin refuses add and
+    # delete); FAQ questions and categories are fully editable.
+    SitePage, FaqCategory, FaqItem,
 ]
 
 

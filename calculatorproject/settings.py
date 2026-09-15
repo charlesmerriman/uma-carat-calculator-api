@@ -248,6 +248,16 @@ UNFOLD = {
                 "collapsible": True,
                 "items": [
                     {
+                        "title": _("Pages"),
+                        "icon": "article",
+                        "link": reverse_lazy("admin:calculatorapi_sitepage_changelist"),
+                    },
+                    {
+                        "title": _("FAQ"),
+                        "icon": "quiz",
+                        "link": reverse_lazy("admin:calculatorapi_faqcategory_changelist"),
+                    },
+                    {
                         "title": _("Changelog"),
                         "icon": "history",
                         "link": reverse_lazy("admin:calculatorapi_changelogentry_changelist"),
@@ -407,6 +417,12 @@ PATREON_CLIENT_SECRET = os.getenv("PATREON_CLIENT_SECRET", "")
 # switched off -- there is no half-configured state in which the endpoint exists
 # but accepts anything.
 PATREON_SYNC_SECRET = os.getenv("PATREON_SYNC_SECRET", "")
+
+# The admin's "Rebuild website" button (calculatorapi/digitalocean_api.py). A
+# personal access token scoped to apps, and this app's id. Both blank locally;
+# the button then says it is not configured instead of calling anything.
+DO_API_TOKEN = os.getenv("DO_API_TOKEN", "")
+DO_APP_ID = os.getenv("DO_APP_ID", "")
 
 # Where the SPA lives. In production the ingress serves it from the same host
 # as the API; in dev it is the Vite server on :5173.
