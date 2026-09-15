@@ -330,11 +330,11 @@ A few things worth knowing:
 
 Creating a content-editor account:
 
-1. Make sure the permission group exists — run once per environment:
+1. Make sure the permission group exists. Production creates and refreshes it on
+   every deploy, so there is nothing to do there. Locally, run it once:
    ```bash
    python manage.py create_content_editor_group
    ```
-   (In production: DigitalOcean → API component → Console tab.)
 2. In the admin as a superuser: **Users → Add** → set username/password →
    on the next screen check **Staff status** and add the **Content editors**
    group → Save.
@@ -345,9 +345,9 @@ permissions to exactly the intended set (see
 `calculatorapi/management/commands/create_content_editor_group.py`).
 
 The **Rebuild website** button needs two environment variables on the API
-component: `DO_API_TOKEN` (a DigitalOcean personal access token scoped to
-apps) and `DO_APP_ID`. Until both are set the button explains that it is not
-configured and does nothing. Any staff account can press it once it is.
+component: `DO_APP_ID` (set) and `DO_API_TOKEN` (a DigitalOcean personal access
+token that can manage apps). Until the token is set the button explains that it
+is not configured and does nothing. Any staff account can press it once it is.
 
 ## One page to leave alone
 

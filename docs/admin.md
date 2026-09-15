@@ -59,6 +59,10 @@ Champions Meeting → recommended umas), autocomplete pickers, image previews, a
 python manage.py create_content_editor_group   # create or refresh the group
 ```
 
+Production runs it on every deploy, in the run command right after `migrate`
+(`.do/app.yaml`), so adding a model to `CONTENT_MODELS` needs no console step. Locally
+it still has to be run by hand, after `migrate`.
+
 ---
 
 ## Image fields: picker as well as upload
