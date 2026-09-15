@@ -28,6 +28,7 @@ from calculatorapi.views.account_linking import (
 from calculatorapi.views.visits import site_visit
 from calculatorapi.views.feedback import submit_feedback
 from calculatorapi.views.patreon_supporters import patreon_sync
+from calculatorapi.views.site_content import site_content
 from calculatorapi.views.social_auth import social_auth_start, social_auth_complete
 
 router = routers.SimpleRouter(trailing_slash=False)
@@ -94,6 +95,10 @@ urlpatterns = [
     # Authorised by a shared secret header, and 404s entirely while
     # PATREON_SYNC_SECRET is unset. Cannot publish a name — see the view.
     path("patreon/sync", patreon_sync, name="patreon-sync"),
+    # The admin-editable pages and FAQ, in one public read-only response. The
+    # frontend build bakes it into the prerendered HTML; a loaded page fetches
+    # it once more to pick up edits made since. → views/site_content.py
+    path("site-content", site_content, name="site-content"),
     # Social sign-in (Google / Discord). The <provider> segment is validated by
     # the view against oauth.SUPPORTED_PROVIDERS rather than by a URL regex, so
     # an unknown provider gets a JSON 404 instead of Django's HTML one.

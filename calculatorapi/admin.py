@@ -15,6 +15,8 @@ Layout of this file:
   7. Calculation constants (the projection's tunable numbers, one singleton row)
   8. Feedback (read-only inbox for the public form; triage only, no authoring)
   9. Patreon supporters (the public thank-you list, plus its CSV importer)
+ 10. Site content (the About page, the carat income guide and the FAQ, plus
+     the "Rebuild website" button that re-bakes them into the public site)
 
 The three join models (UmasOnUmaBanner, SupportsOnSupportBanner,
 ChampionsMeetingUmaRecommendation) are deliberately NOT registered top-level —
@@ -34,7 +36,7 @@ permissions on them for the inlines to save.
 # admin_content.py is worth doing as its own change.
 # pylint: disable=too-many-lines
 
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.contrib.auth.admin import GroupAdmin as BaseGroupAdmin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import Group
@@ -47,11 +49,11 @@ from django.utils.html import format_html
 # django-unfold themes the admin, but only for admins that inherit its base
 # classes — a plain admin.ModelAdmin would render unstyled under unfold's
 # templates. Hence every ModelAdmin/TabularInline below extends unfold's.
-from unfold.admin import ModelAdmin, TabularInline
+from unfold.admin import ModelAdmin, StackedInline, TabularInline
 from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
 
 from .admin_image_picker import SpacesImagePickerMixin
-from . import patreon_api
+from . import digitalocean_api, patreon_api
 from .admin_patreon_import import (
     PatreonCsvImportForm,
     PatreonSyncForm,
@@ -75,6 +77,7 @@ from .models import (
     Feedback,
     PatreonTier, PatreonSupporter, PatreonCredentials,
     UserOshi,
+    SitePage, FaqCategory, FaqItem,
 )
 
 # ── 1. Site branding ─────────────────────────────────────────────────────────
@@ -1305,3 +1308,144 @@ class PatreonSupporterAdmin(ModelAdmin):
         return TemplateResponse(
             request, "admin/calculatorapi/patreonsupporter/sync_patreon.html", context
         )
+
+
+# ── 10. Site content ─────────────────────────────────────────────────────────
+
+@admin.register(SitePage)
+class SitePageAdmin(ModelAdmin):
+    """The prose pages: About and the carat income guide.
+
+    CHANGE ONLY. A page exists because the frontend has a route for it, and a
+    route is code, so there is nothing an editor could add here that would
+    appear on the site, and deleting a row would leave a live route with no
+    words. Same posture as CalculationConstants: the rows exist; you edit them.
+
+    The words a visitor sees update the moment a page is saved (the site
+    fetches this content after it loads). Search engines see the copy baked
+    into the site at its last build, which is what the "Rebuild website"
+    button on the changelist is for. See rebuild_website_view.
+    """
+
+    change_list_template = "admin/calculatorapi/sitepage/change_list.html"
+
+    list_display = ("title", "slug", "updated_at")
+    readonly_fields = ("slug", "updated_at")
+    fieldsets = (
+        (None, {
+            "description": (
+                "Saving changes the page for visitors straight away. Search engines "
+                "keep seeing the old text until the site is rebuilt, so when you "
+                "are done editing for the day press \"Rebuild website\" on the "
+                "Pages list. Terms and the Privacy Policy are not here on purpose: "
+                "they describe what the site does, so they change with the code."
+            ),
+            "fields": ("slug", "title", "meta_description"),
+        }),
+        ("Text", {
+            "description": (
+                "Markdown. A blank line starts a new paragraph, ## starts a "
+                "section, **bold**, *italic*, and a link is [the words](/faq). "
+                "Links to other pages on this site start with a slash."
+            ),
+            "fields": ("body", "updated_at"),
+        }),
+    )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def get_urls(self):
+        # Registered under this model's namespace so admin_view() applies the
+        # usual staff check; the view then gates on is_staff explicitly too.
+        return [
+            path(
+                "rebuild-website/",
+                self.admin_site.admin_view(self.rebuild_website_view),
+                name="calculatorapi_sitepage_rebuild_website",
+            ),
+            *super().get_urls(),
+        ]
+
+    def rebuild_website_view(self, request):
+        """Start a production rebuild so the baked pages pick up the edits.
+
+        Gated on `is_staff` alone, not on a model permission: every staff
+        account may press it, whatever it can edit, because a rebuild changes
+        no content. It only republishes what is already saved. POST only; a
+        GET just lands back on the list.
+
+        The DigitalOcean call and its two guards (not configured, already
+        running) live in digitalocean_api. Both surface here as a message
+        rather than an error page: an editor should never see a 500 for
+        pressing a button whose worst case is "not right now".
+        """
+        # Where to land afterwards. The list needs view permission on Pages,
+        # which a staff account allowed to press this button may not have, so
+        # such an account goes back to the dashboard with the message instead.
+        back = (
+            reverse("admin:calculatorapi_sitepage_changelist")
+            if self.has_view_permission(request)
+            else reverse("admin:index")
+        )
+        if not request.user.is_staff or request.method != "POST":
+            return redirect(back)
+        try:
+            digitalocean_api.trigger_rebuild()
+        except digitalocean_api.RebuildError as exc:
+            self.message_user(request, str(exc), level=messages.WARNING)
+        else:
+            self.message_user(
+                request,
+                "Rebuild started. The site updates in about 5 to 10 minutes.",
+            )
+        return redirect(back)
+
+
+class FaqItemInline(StackedInline):
+    """The questions in a category, edited on the category's page.
+
+    Stacked rather than tabular: an answer is a few paragraphs of markdown,
+    and a tabular row is too narrow to write one in.
+    """
+    model = FaqItem
+    fields = ("order", "question", "slug", "answer", "show_on_homepage")
+    ordering = ("order", "id")
+    extra = 0
+
+
+@admin.register(FaqCategory)
+class FaqCategoryAdmin(ModelAdmin):
+    """The FAQ: categories with their questions inline.
+
+    Fully editable, unlike the pages above. A question's slug is its anchor on
+    the FAQ page and is linked to from elsewhere on the site, so the field's
+    help text asks editors not to change it once published.
+    """
+
+    list_display = ("title", "slug", "order", "question_count")
+    list_editable = ("order",)
+    ordering = ("order", "id")
+    inlines = (FaqItemInline,)
+    fieldsets = (
+        (None, {
+            "description": (
+                "Each category is a section on the FAQ page, with its questions "
+                "underneath. Tick \"Show on homepage\" on a question to put it in "
+                "the short FAQ teaser on the homepage. Edits are live as soon as "
+                "you save; press \"Rebuild website\" on the Pages list when you are "
+                "done so search engines see them too."
+            ),
+            "fields": ("title", "slug", "order"),
+        }),
+    )
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).annotate(_question_count=Count("items"))
+
+    @admin.display(description="Questions", ordering="_question_count")
+    def question_count(self, obj):
+        return obj._question_count  # pylint: disable=protected-access

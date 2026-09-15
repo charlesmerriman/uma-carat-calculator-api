@@ -144,6 +144,56 @@ a **Rewards** section. There are two carat fields:
 Both directly affect players' projections, so keep the amounts accurate to the
 in-game event.
 
+## Site pages and FAQ
+
+The **About** page, the **carat income guide** and the whole **FAQ** are edited
+here, under **Site content** in the sidebar.
+
+**Pages** has one row per page. Open it, change the **title**, the **meta
+description** (the one or two sentences search engines show under the title;
+it is not on the page itself) and the **text**, then save. You cannot add or
+delete a page: each one has a route in the site's code, so a new page is a
+request to whoever maintains the code. The page shows "Last updated" from the
+date you saved, so there is no date to type.
+
+**FAQ** is a list of categories. Each category is a section on the FAQ page,
+with its questions edited underneath it on the same screen. Add, reorder
+(lower **order** numbers come first) and delete freely. Tick **Show on
+homepage** on a question to put it in the short FAQ teaser on the homepage;
+the homepage shows every ticked question, in FAQ order, so three or four is
+about right.
+
+**Don't change a question's slug once it is published.** The slug is the part
+after `#` in a link straight to that question (`/faq#do-i-need-an-account`),
+and other pages link to some of them. Reword the question all you like; leave
+the slug.
+
+**The text is written in markdown**, which is plain text with a few marks:
+
+| You type | You get |
+|---|---|
+| a blank line between two blocks of text | two paragraphs |
+| `## Where the numbers come from` | a section heading |
+| `**bold words**` | **bold words** |
+| `*italic words*` | *italic words* |
+| `[the FAQ](/faq)` | a link to the FAQ page (links to this site start with `/`) |
+| `[the sheet](https://docs.google.com/...)` | a link to another site |
+| `- one thing` on each of several lines | a bulleted list |
+| `1. first step` on each of several lines | a numbered list |
+
+Anything else you type shows up as written. You cannot break the site with a
+typo here; the worst case is a page that reads oddly, and you can fix it by
+saving again.
+
+**When you save, visitors see the change straight away.** Search engines are
+the exception: they read a copy of each page that is baked in when the site is
+built. So when you are done editing for the day, go to **Pages** and press
+**Rebuild website**. It takes about 5 to 10 minutes, and it picks up every edit
+saved before you pressed it, so press it once at the end rather than after
+each save. If you press it while a rebuild is already running, it tells you and
+does nothing. If it says it is not set up, that is a message for the site
+owner (see the technical section below).
+
 ## Changelog (patch notes)
 
 **Changelog entries** are the update notes shown on the public Changelog page.
@@ -289,10 +339,15 @@ Creating a content-editor account:
    on the next screen check **Staff status** and add the **Content editors**
    group → Save.
 
-The group grants add/change/delete/view on all game content and rank tables,
-and nothing else. Rerunning the command is safe — it resets the group's
+The group grants add/change/delete/view on all game content, rank tables and
+site content (pages and FAQ), and nothing else. Rerunning the command is safe — it resets the group's
 permissions to exactly the intended set (see
 `calculatorapi/management/commands/create_content_editor_group.py`).
+
+The **Rebuild website** button needs two environment variables on the API
+component: `DO_API_TOKEN` (a DigitalOcean personal access token scoped to
+apps) and `DO_APP_ID`. Until both are set the button explains that it is not
+configured and does nothing. Any staff account can press it once it is.
 
 ## One page to leave alone
 
