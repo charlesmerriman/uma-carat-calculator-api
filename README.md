@@ -175,7 +175,7 @@ result depends on which tests ran before it.
 | Command | What it does |
 |---|---|
 | `sync_changelog` | Writes `calculatorapi/data/changelog.yaml` into the changelog table. Runs on every deploy; use `--dry-run --strict` locally to validate the file |
-| `create_content_editor_group` | Creates or refreshes the "Content editors" permission group. Run it after `migrate` |
+| `create_content_editor_group` | Creates or refreshes the "Content editors" permission group. Runs on every deploy after `migrate`; locally run it by hand, after `migrate` |
 | `seed_anniversary_campaigns` | Creates or refreshes the anniversary campaigns from the source sheet. Idempotent |
 | `sync_patreon_supporters` | Syncs supporters from the Patreon API; the daily Action reaches the same reconcile over HTTP |
 | `set_patreon_tier_order` | Sets supporter tier order from `NAME=ORDER` pairs |
