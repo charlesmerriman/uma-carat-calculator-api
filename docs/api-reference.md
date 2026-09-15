@@ -415,10 +415,11 @@ These endpoints return static rank tables. All are public and support `list` and
 | `GET /leagueofheroesranks` | League of Heroes rank tiers and income amounts |
 | `GET /events` | Game events, including their own reward amounts |
 | `GET /changelog` | Patch-note entries (newest first) with nested, ordered change lines |
+| `GET /site-content` | The admin-editable pages (About, the carat income guide) and the whole FAQ, in one object — **not** an array, see below |
 | `GET /supporters` | Patreon thank-you list — **not** an array, see below |
 | `GET /umas` | The uma catalogue as picker options: `{ id, name, image }`, umas **with an image only**, sorted by name. Feeds the oshi picker on `/account`, which never loads `/calculator-data`. Nothing else from the uma row (no `admin_comments`, no selector gates). |
 
-All list responses return an array of the resource object, **except `/supporters`** (an object — the anonymous count is not derivable from the rows). Retrieve by appending `/<id>`; `/supporters` has no retrieve action.
+All list responses return an array of the resource object, **except `/supporters`** (an object — the anonymous count is not derivable from the rows) **and `/site-content`** (an object with two halves; it is a plain view, not a viewset). Retrieve by appending `/<id>`; `/supporters` and `/site-content` have no retrieve action.
 
 ---
 
@@ -949,6 +950,48 @@ unset). `category` is one of `"added"`, `"fixed"`, `"changed"`.
       "category": "added",
       "text": "string",
       "order": 0
+    }
+  ]
+}
+```
+
+### `SiteContent` (from `GET /site-content`)
+
+Public, read-only, uncached. Everything the admin's **Site content → Pages** and
+**FAQ** hold, in one response. The frontend build fetches it once and bakes the
+words into the prerendered HTML (`scripts/prerender.mjs`); a loaded page fetches
+it once more after hydration and swaps in anything edited since. Writes happen
+only in the Django admin.
+
+`pages` is ordered by `slug`. `faq` is ordered by category `order`, then each
+category's `items` by their `order`. `body` and `answer` are markdown. `slug` on a
+FAQ item is its anchor on the FAQ page (`/faq#do-i-need-an-account`); on a page it
+is one of a fixed set (`about`, `carat-income-guide`) that the frontend routes
+by. `updated_at` is the last save, shown on the page as "Last updated".
+
+```json
+{
+  "pages": [
+    {
+      "slug": "about",
+      "title": "About",
+      "meta_description": "string",
+      "body": "markdown",
+      "updated_at": "YYYY-MM-DDTHH:MM:SS.ffffffZ"
+    }
+  ],
+  "faq": [
+    {
+      "slug": "using-the-calculator",
+      "title": "Using the calculator",
+      "items": [
+        {
+          "slug": "do-i-need-an-account",
+          "question": "string",
+          "answer": "markdown",
+          "show_on_homepage": true
+        }
+      ]
     }
   ]
 }

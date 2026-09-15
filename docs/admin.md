@@ -121,6 +121,44 @@ The repo-side half is `calculatorapi/data/changelog.yaml` plus
 `manage.py sync_changelog` — see `backend/docs/data-model.md`, "The changelog is
 authored in the repo, and synced on deploy".
 
+## Site content: Pages and FAQ, and the Rebuild button
+
+**Site content → Pages** holds the About page and the carat income guide as
+markdown (`SitePage`); **Site content → FAQ** holds the categories with their
+questions as a `StackedInline` (`FaqCategory` / `FaqItem`). Stacked rather than
+tabular because an answer is a few paragraphs and a tabular row is too narrow to
+write one in. Both are in `CONTENT_MODELS`.
+
+`SitePageAdmin` is change-only: `has_add_permission` and `has_delete_permission`
+return `False` for everyone, superusers included, the same posture as
+`CalculationConstants`. The rows exist because the frontend routes to them; you
+edit their text. → `backend/docs/data-model.md` ("`SitePage`, `FaqCategory`, `FaqItem`")
+
+The Pages changelist carries a **Rebuild website** button, wired like the Patreon
+buttons (`get_urls` + an `object-tools-items` override in
+`templates/admin/calculatorapi/sitepage/change_list.html`) but as a **POST form**,
+because pressing it starts a deployment and a GET should never be able to. The
+view is `SitePageAdmin.rebuild_website_view`; the DigitalOcean call is
+`calculatorapi/digitalocean_api.py`:
+
+- Gated on `is_staff` only, not on a model permission: a rebuild changes no
+  content, it republishes what is already saved. A staff account without view
+  permission on Pages lands on the dashboard afterwards instead of the list.
+- Reads `DO_API_TOKEN` and `DO_APP_ID` from the environment. Unset, the button
+  says it is not configured rather than calling anything.
+- Looks at the latest deployment first and refuses while one is
+  `PENDING_BUILD` / `BUILDING` / `PENDING_DEPLOY` / `DEPLOYING`, so an eager
+  editor cannot queue five rebuilds.
+- Then `POST /v2/apps/<id>/deployments {"force_build": true}`, the same call as
+  `doctl apps create-deployment --force-rebuild`. Every outcome, including an API
+  error, is an admin message, never a 500.
+
+Why a button and not rebuild-on-save: a rebuild takes 5 to 10 minutes and
+redeploys the whole app, API included (`migrate` and `sync_changelog` rerun, both
+idempotent, and the LocMem cache clears). Editors save many times per session,
+and visitors see an edit as soon as it is saved anyway (the site fetches
+`/site-content` after it loads); the rebuild is only for what crawlers read.
+
 ## Patreon import: two buttons, one reconcile
 
 `PatreonSupporterAdmin` adds **Sync from Patreon** and **Import Patreon CSV** to its

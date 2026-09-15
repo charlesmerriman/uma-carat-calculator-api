@@ -32,3 +32,6 @@ from .feedback import Feedback, FeedbackCategory, MESSAGE_MAX_LENGTH
 from .patreon_tier import PatreonTier
 from .patreon_supporter import PatreonSupporter
 from .patreon_credentials import PatreonCredentials
+from .site_page import SitePage
+from .faq_category import FaqCategory
+from .faq_item import FaqItem
