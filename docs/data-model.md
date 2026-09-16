@@ -816,6 +816,43 @@ report" out of reach.
 
 ---
 
+## The game's master database (`master.mdb`) and the committed snapshot
+
+The skills work imports from the global game client's own database rather than a fan
+site. The Steam client keeps it as a plain SQLite file that it re-downloads on every
+update (`.../AppData/LocalLow/Cygames/Umamusume/master/master.mdb`, about 16 MB, English
+text, global content only). `scripts/extract_master_snapshot.py` reads it and writes the
+slice this project needs to `scripts/data/master_snapshot/*.json`, which **is committed**;
+the mdb never is. `manage.py import_game_data` reads the JSON, so an import is reviewable
+as a diff and reproducible on a machine without the game. `meta.json` records the mdb's
+size and modification time and every file's row count.
+
+The tables the extractor reads, and the two places the schema is not what it looks like:
+
+| Need | Table | Notes |
+|---|---|---|
+| skills | `skill_data` (718 rows) | `rarity` 1 white, 2 gold, 3/4 the pre- and post-★3 uniques of a ★1/★2 character, 5 unique. No 6 (evolved) on global yet. `group_id` groups white with gold; `group_rate` is the tier (1 white, 2 gold, -1 the × penalty version). `icon_id` is one of 63. `condition_1` is the activation condition, kept verbatim |
+| skill text | `text_data` cat 47 (name), 48 (description) | keyed by skill id; every skill has both |
+| skill point cost | `single_mode_skill_need_point` | absent for every unique and 18 white/gold skills, so nullable |
+| uma outfits | `card_data` (105, of which 2 are tutorial variants above id 9,000,000, skipped) | `default_rarity` is the initial star count; `running_style` 1 front, 2 pace, 3 late, 4 end; `talent_*` are the growth bonuses in percent |
+| per-star stats and aptitudes | `card_rarity_data` (334) | one row per outfit per star. `speed`..`wiz` are the base stats at that star; `max_*` is the cap (1200 everywhere); `proper_*` aptitudes on the game's 1..8 scale (G F E D C B A S). **`skill_set` is not a skill id**: it keys the `skill_set` table, whose `skill_id1` is the unique skill that star carries |
+| innate and awakening skills | `available_skill_set` (721) | keyed by `card_data.available_skill_set_id`; `need_rank` 0 innate, 2..5 the awakening level |
+| outfit text | `text_data` cat 4 (full), 5 (title), 6 (character name by character id) | |
+| support cards | `support_card_data` (253) | `rarity` 1 R, 2 SR, 3 SSR; `command_id` 101 speed, 102 stamina, 103 power, 105 guts, 106 wit, and 0 with `support_card_type` 2 friend / 3 group |
+| support card hints | `single_mode_hint_gain` (2063) | **keyed per card by `support_card_id`**, not by the card's `skill_set_id` (several cards of one character share that as `hint_id`, with different rows each). `hint_gain_type` 0 rows are skills (`hint_value_1`); type 1 are stat hints, skipped. 15 cards have none: friend, group and Haru Urara cards |
+| support card text | `text_data` cat 75 (full), 76 (title), 77 (character) | |
+
+What the ids encode, which the import asserts on: an outfit id `100101` is character
+`1001`, outfit `01`, so the character is `id // 100`; a support id's leading digit is its
+rarity; a unique skill id embeds the character (`100011` is Special Week's base outfit,
+`110011` her second, `120011` her third), and a ★1/★2 character carries a rarity-3 unique
+(`10271`) until ★3, when the rarity-4 one (`100271`) replaces it. `card_skills.json`
+therefore lists two `unique` rows for those 17 outfits, with `level` the star at which
+each first applies.
+
+Support card **event** skills are not in any clean table (they come from story choice
+data); gametora's per-card pages are the agreed fallback for that one piece.
+
 ## `PatreonTier` / `PatreonSupporter`
 
 The public thank-you list on the home page (`GET /supporters`), authored in the
