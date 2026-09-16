@@ -181,6 +181,7 @@ result depends on which tests ran before it.
 | `set_patreon_tier_order` | Sets supporter tier order from `NAME=ORDER` pairs |
 | `prune_visitor_hashes` | Deletes visitor de-duplication hashes older than the retention window |
 | `purge_user_pii` | Blanks email, name and password on every non-staff account. **Irreversible**, so run it with `--dry-run` first |
+| `merge_duplicate_umas` | Folds a `(Rerun)` copy of an uma into the original by image id, re-pointing every row that referenced it. Run before any migration that makes uma ids unique; `--dry-run` first |
 
 Four more are one-off data repairs, kept for the record: `classify_banner_categories`,
 `backfill_race_prep_supports`, `fix_support_card_variants` and `repair_launch_banner`.
