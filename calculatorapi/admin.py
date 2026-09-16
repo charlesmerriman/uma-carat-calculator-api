@@ -437,14 +437,16 @@ PURPOSE_FILTER = ("purpose", admin.EmptyFieldListFilter)
 
 @admin.register(Uma)
 class UmaAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
-    list_display = ("image_preview", "name", "is_time_limited", "is_three_star")
+    list_display = ("image_preview", "name", "game_id", "is_time_limited", "is_three_star")
     list_display_links = ("name",)
     list_filter = ("is_time_limited", "is_three_star", PURPOSE_FILTER)
     ordering = ("name",)
-    search_fields = ("name",)  # required: autocomplete source for banner inlines
+    # required: autocomplete source for banner inlines. `=game_id` is an exact
+    # match, so typing an id finds one row rather than every name containing it.
+    search_fields = ("name", "=game_id")
     readonly_fields = ("image_preview",)
     fieldsets = (
-        (None, {"fields": ("name", "image", "image_preview", "admin_comments")}),
+        (None, {"fields": ("name", "game_id", "image", "image_preview", "admin_comments")}),
         PURPOSE_FIELDSET,
         ("Selector availability", {
             "fields": ("is_time_limited", "is_three_star"),

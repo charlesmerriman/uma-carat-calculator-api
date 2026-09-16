@@ -1,8 +1,12 @@
-"""Umas as rows: the duplicate merge that runs before game ids arrive."""
+"""Umas as rows: the game id, its backfill, and the duplicate merge that runs first."""
 
+from contextlib import redirect_stdout
+from importlib import import_module
 from io import StringIO
 
+from django.apps import apps
 from django.core.management import call_command
+from django.db import IntegrityError
 
 from calculatorapi.models import (
     AnniversaryEventProduct,
@@ -13,6 +17,7 @@ from calculatorapi.models import (
     UserPlannedPurchase,
     UserStepUpSelection,
 )
+from calculatorapi.models.uma import game_id_from_image
 from calculatorapi.tests.base import CalculatorTestCase
 from calculatorapi.tests.factories import (
     make_anniversary_event,
@@ -213,3 +218,94 @@ class MergeDuplicateUmasRelationTests(CalculatorTestCase):
             sorted([cm.pk, other_cm.pk]),
         )
         self.assertEqual(ChampionsMeetingUmaRecommendation.objects.count(), 2)
+
+
+class GameIdFromImageTests(CalculatorTestCase):
+    """The filename convention the backfill and the merge both read."""
+
+    def test_plain_filename(self):
+        self.assertEqual(game_id_from_image("umas/102001-Seiun-Sky.png"), 102001)
+
+    def test_rarity_prefixed_filename(self):
+        # 17 prod rows on 2026-09-16 carry the star count first.
+        self.assertEqual(game_id_from_image("umas/3-111801-Admire-Groove.png"), 111801)
+
+    def test_no_dash_after_the_id_is_not_an_id(self):
+        # The prod "(All)" placeholder: `1-101000.png`.
+        self.assertIsNone(game_id_from_image("umas/1-101000.png"))
+
+    def test_id_must_open_the_filename(self):
+        self.assertIsNone(game_id_from_image("umas/Seiun-Sky-102001-alt.png"))
+
+    def test_empty(self):
+        self.assertIsNone(game_id_from_image(""))
+        self.assertIsNone(game_id_from_image(None))
+
+
+class GameIdColumnTests(CalculatorTestCase):
+
+    def test_is_unique(self):
+        Uma.objects.create(name="Seiun Sky", game_id=102001)
+        with self.assertRaises(IntegrityError):
+            Uma.objects.create(name="Seiun Sky (Rerun)", game_id=102001)
+
+    def test_null_is_not_a_value(self):
+        # Placeholder rows have no id and there can be several of them.
+        Uma.objects.create(name="(All)")
+        Uma.objects.create(name="(All) 2")
+        self.assertEqual(Uma.objects.filter(game_id__isnull=True).count(), 2)
+
+
+class GameIdBackfillTests(CalculatorTestCase):
+    """
+    0059's RunPython, exercised against the live registry. The historical
+    model it asks for has the same two fields it reads, so the function runs
+    unchanged.
+    """
+
+    @staticmethod
+    def _backfill():
+        migration = import_module("calculatorapi.migrations.0059_uma_game_id")
+        out = StringIO()
+        with redirect_stdout(out):
+            migration.backfill_game_ids(apps, None)
+        return out.getvalue()
+
+    def test_fills_from_the_image_filename(self):
+        plain = Uma.objects.create(name="Seiun Sky", image="umas/102001-Seiun-Sky.png")
+        prefixed = Uma.objects.create(
+            name="Admire Groove", image="umas/3-111801-Admire-Groove.png",
+        )
+
+        self._backfill()
+
+        plain.refresh_from_db()
+        prefixed.refresh_from_db()
+        self.assertEqual(plain.game_id, 102001)
+        self.assertEqual(prefixed.game_id, 111801)
+
+    def test_leaves_the_later_duplicate_null_instead_of_failing(self):
+        original = Uma.objects.create(name="Seiun Sky", image="umas/102001-Seiun-Sky.png")
+        rerun = Uma.objects.create(
+            name="Seiun Sky (Rerun)", image="umas/102001-Seiun-Sky.png",
+        )
+
+        out = self._backfill()
+
+        original.refresh_from_db()
+        rerun.refresh_from_db()
+        self.assertEqual(original.game_id, 102001)
+        self.assertIsNone(rerun.game_id)
+        self.assertIn("run merge_duplicate_umas", out)
+
+    def test_rows_without_an_id_stay_null_and_are_listed(self):
+        placeholder = Uma.objects.create(name="(All)", image="umas/1-101000.png")
+        bare = Uma.objects.create(name="No Picture")
+
+        out = self._backfill()
+
+        placeholder.refresh_from_db()
+        bare.refresh_from_db()
+        self.assertIsNone(placeholder.game_id)
+        self.assertIsNone(bare.game_id)
+        self.assertIn("2 uma(s) left without a game_id", out)

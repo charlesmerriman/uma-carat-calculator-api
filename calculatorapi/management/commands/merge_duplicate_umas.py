@@ -15,7 +15,10 @@ nothing and writes nothing; local databases and the fixtures still hold five.
 
 HOW A DUPLICATE IS RECOGNISED: two Uma rows whose image filenames start with the
 same six-digit card id (`102001-Seiun-Sky.png`, optionally behind a `<rarity>-`
-prefix as the newer uploads have). Same id, same outfit. The row that KEEPS is the
+prefix as the newer uploads have; `game_id_from_image` on the model). Same id,
+same outfit. Once `Uma.game_id` is populated this is the same id, but the
+command keeps reading the filename so it works on a database that has not
+been backfilled yet, which is exactly when it is needed. The row that KEEPS is the
 one whose name does not end in "(Rerun)"; if the group has no such row, or more
 than one, it is reported and left alone. Rows without an image are never grouped.
 
@@ -48,13 +51,9 @@ from calculatorapi.models import (
     Uma,
     UmasOnUmaBanner,
 )
+from calculatorapi.models.uma import game_id_from_image
 
 CONFIRM_PHRASE = "merge"
-
-# The six-digit card id at the front of an uma image filename. The optional
-# leading `<digit>-` is the star rarity some newer uploads carry
-# (`3-111801-Admire-Groove.png`); it is not part of the id.
-IMAGE_GAME_ID = re.compile(r"^(?:\d-)?(\d{6})-")
 
 RERUN_SUFFIX = re.compile(r"\s*\(rerun\)\s*$", re.IGNORECASE)
 
@@ -67,15 +66,6 @@ UNCONSTRAINED_JUNCTIONS = {
     UmasOnUmaBanner: "banner_uma",
     ChampionsMeetingUmaRecommendation: "champions_meeting",
 }
-
-
-def image_game_id(uma):
-    """The six-digit card id an uma's image filename starts with, or None."""
-    if not uma.image:
-        return None
-    filename = uma.image.name.rsplit("/", 1)[-1]
-    match = IMAGE_GAME_ID.match(filename)
-    return match.group(1) if match else None
 
 
 def uma_relations():
@@ -143,7 +133,7 @@ class Command(BaseCommand):
         """
         groups = defaultdict(list)
         for uma in Uma.objects.order_by("pk"):
-            game_id = image_game_id(uma)
+            game_id = game_id_from_image(uma.image.name if uma.image else None)
             if game_id is not None:
                 groups[game_id].append(uma)
 

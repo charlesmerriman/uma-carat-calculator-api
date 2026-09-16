@@ -92,6 +92,7 @@ erDiagram
     Uma {
         int id PK
         string name
+        int game_id "unique, nullable; the game's card id, e.g. 102001 = character 1020 outfit 01. The join key for imported game data; the image filename starts with it"
         string image
         string admin_comments
         string purpose "PUBLIC, max 100, never null; the Timeline tile's hover overlay"
