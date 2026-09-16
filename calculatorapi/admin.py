@@ -62,7 +62,7 @@ from .admin_patreon_import import (
 )
 from .predictions import GAME_EVENT_END_DATE_BUFFER
 from .models import (
-    CustomUser, Uma, Skill, SupportCard, UserPlannedBanner,
+    CustomUser, Uma, Skill, UmaSkill, SupportCard, UserPlannedBanner,
     TeamTrialsRank, ClubRank, ChampionsMeetingRank, LeagueOfHeroesRank,
     BannerTimeline, BannerUma, BannerSupport, BannerStepUp,
     ChampionsMeeting, ChampionsMeetingUmaRecommendation,
@@ -139,6 +139,14 @@ class SupportOnBannerInline(TabularInline):
     model = SupportsOnSupportBanner
     autocomplete_fields = ("support_card",)
     extra = 1
+
+
+class UmaSkillInline(TabularInline):
+    """The skills an outfit carries, on the uma's page. Filled by the import."""
+    model = UmaSkill
+    autocomplete_fields = ("skill",)
+    fields = ("skill", "source", "level", "notes")
+    extra = 0
 
 
 class RecommendedUmaInline(TabularInline):
@@ -437,6 +445,7 @@ PURPOSE_FILTER = ("purpose", admin.EmptyFieldListFilter)
 
 @admin.register(Uma)
 class UmaAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
+    inlines = (UmaSkillInline,)
     list_display = ("image_preview", "name", "game_id", "is_time_limited", "is_three_star")
     list_display_links = ("name",)
     list_filter = ("is_time_limited", "is_three_star", PURPOSE_FILTER)

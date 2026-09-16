@@ -124,6 +124,15 @@ erDiagram
         string admin_comments
     }
 
+    UmaSkill {
+        int id PK
+        int uma FK
+        int skill FK
+        string source "unique | innate | awakening | evolved"
+        int level "awakening rank 2..5, or the star a unique applies from; null for innate"
+        string notes
+    }
+
     SupportCard {
         int id PK
         string name
@@ -860,6 +869,13 @@ game itself uses: the white (○), gold (◎) and penalty (×) versions of one e
 the siblings. `evolves_from` is the other relationship, for evolved skills, and stays empty
 until global has skill evolution (the model and the extractor are ready; the import will
 need the `skill_upgrade_*` tables then).
+
+`UmaSkill` records which outfit carries which skill and how (`source`), unique on
+`(uma, skill, source)`. `level` is one nullable column with a per-source meaning: the
+awakening rank for `awakening` rows, the star count a unique applies from for `unique` rows
+(so a ★1/★2 outfit has two `unique` rows, at 1 and at 3), null for `innate`. The import adds
+rows and updates a level but never deletes, so a row an editor adds by hand survives.
+Edited as an inline on the uma's admin page.
 
 `description` is the game's own text and is what a page should show by default;
 `description_detailed` is gametora's fan translation with the concrete numbers, imported

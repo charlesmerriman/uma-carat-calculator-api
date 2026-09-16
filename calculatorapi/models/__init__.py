@@ -8,6 +8,7 @@ from .user_planned_banner import UserPlannedBanner
 from .support_card import SupportCard, SupportCardType
 from .uma import Uma, Rarity, RunningStyle, Aptitude
 from .skill import Skill, SkillRarity, SkillTier
+from .uma_skill import UmaSkill, UmaSkillSource
 from .champions_meeting import ChampionsMeeting
 from .banner_uma import BannerUma
 from .banner_support import BannerSupport
