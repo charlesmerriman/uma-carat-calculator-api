@@ -585,6 +585,7 @@ class ImportGameDataSupportCardTests(CalculatorTestCase):
         directory = Path(self.tmp.name)
         (directory / "skills.json").write_text("[]", encoding="utf-8")
         (directory / "cards.json").write_text("[]", encoding="utf-8")
+        (directory / "card_skills.json").write_text("[]", encoding="utf-8")
         (directory / "support_cards.json").write_text(json.dumps([card]), encoding="utf-8")
         return directory
 

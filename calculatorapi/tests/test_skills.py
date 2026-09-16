@@ -11,7 +11,7 @@ from django.core.management import call_command
 from django.test import override_settings
 from django.urls import reverse
 
-from calculatorapi.models import CustomUser, Skill
+from calculatorapi.models import CustomUser, Skill, Uma, UmaSkill
 from calculatorapi.tests.base import CalculatorTestCase, PLAIN_TEST_STORAGES
 
 SNAPSHOT_DIR = Path(__file__).resolve().parents[2] / "scripts" / "data" / "master_snapshot"
@@ -31,10 +31,11 @@ def snapshot_skill(skill_id=200012, name="Right-Handed ○", **overrides):
     return skill
 
 
-def write_snapshot(directory, skills):
+def write_snapshot(directory, skills, card_skills=()):
     directory = Path(directory)
     (directory / "skills.json").write_text(json.dumps(list(skills)), encoding="utf-8")
     (directory / "cards.json").write_text("[]", encoding="utf-8")
+    (directory / "card_skills.json").write_text(json.dumps(list(card_skills)), encoding="utf-8")
     (directory / "support_cards.json").write_text("[]", encoding="utf-8")
     return directory
 
@@ -246,3 +247,115 @@ class SkillAdminTests(CalculatorTestCase):
 
         self.assertContains(res, "Right-Handed ○")
         self.assertContains(res, "Right-Handed ◎")
+
+
+class UmaSkillImportTests(CalculatorTestCase):
+    """The junction rows: which outfit carries which skill, and how."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()  # pylint: disable=consider-using-with
+        self.addCleanup(self.tmp.cleanup)
+        self.ryan = Uma.objects.create(name="Mejiro Ryan", game_id=102701)
+        self.skills = [
+            snapshot_skill(10271, "Feel the Burn!", rarity=3, group_id=1027, cost=None),
+            snapshot_skill(100271, "Let's Pump Some Iron!", rarity=4, group_id=10027, cost=None),
+            snapshot_skill(200232, "Innate One"),
+            snapshot_skill(200472, "Awakened One"),
+        ]
+        self.links = [
+            {"card_id": 102701, "skill_id": 10271, "source": "unique", "level": 1},
+            {"card_id": 102701, "skill_id": 100271, "source": "unique", "level": 3},
+            {"card_id": 102701, "skill_id": 200232, "source": "innate", "level": None},
+            {"card_id": 102701, "skill_id": 200472, "source": "awakening", "level": 2},
+        ]
+
+    def test_links_unique_innate_and_awakening_in_one_run(self):
+        # Skills and their links land in the same run: the links resolve
+        # against skills created moments earlier in the same transaction.
+        write_snapshot(self.tmp.name, self.skills, self.links)
+
+        out = import_game_data(self.tmp.name)
+
+        rows = list(self.ryan.skills.values_list("skill__game_id", "source", "level"))
+        self.assertEqual(sorted(rows), [
+            (10271, "unique", 1), (100271, "unique", 3),
+            (200232, "innate", None), (200472, "awakening", 2),
+        ])
+        self.assertIn("uma skills: adding 4", out)
+
+    def test_skips_an_outfit_we_do_not_have(self):
+        write_snapshot(self.tmp.name, self.skills, [
+            {"card_id": 100101, "skill_id": 200232, "source": "innate", "level": None},
+        ])
+
+        import_game_data(self.tmp.name)
+
+        self.assertEqual(UmaSkill.objects.count(), 0)
+
+    def test_skips_an_outfit_whose_id_failed_the_name_check(self):
+        self.ryan.name = "Special Week"
+        self.ryan.save()
+        cards = [{
+            "id": 102701, "chara_id": 1027, "chara_name": "Mejiro Ryan",
+            "name": "[Down the Line] Mejiro Ryan", "title": "[Down the Line]",
+            "default_rarity": 1, "running_style": "late",
+            "growth": {"speed": 0, "stamina": 0, "power": 20, "guts": 0, "wit": 10},
+            "stars": [],
+        }]
+        write_snapshot(self.tmp.name, self.skills, self.links)
+        (Path(self.tmp.name) / "cards.json").write_text(json.dumps(cards), encoding="utf-8")
+
+        out = import_game_data(self.tmp.name)
+
+        self.assertEqual(UmaSkill.objects.count(), 0)
+        self.assertIn("name mismatch 1", out)
+
+    def test_never_deletes_a_hand_added_row(self):
+        write_snapshot(self.tmp.name, self.skills, self.links)
+        import_game_data(self.tmp.name)
+        extra = Skill.objects.create(
+            game_id=999999, name="Editor's pick", rarity=1, group_id=99999, tier=1, icon_id=10011,
+        )
+        UmaSkill.objects.create(uma=self.ryan, skill=extra, source="innate", notes="by hand")
+
+        out = import_game_data(self.tmp.name)
+
+        self.assertEqual(self.ryan.skills.count(), 5)
+        self.assertIn("already current 4", out)
+
+    def test_level_change_is_applied(self):
+        write_snapshot(self.tmp.name, self.skills, self.links)
+        import_game_data(self.tmp.name)
+        self.links[3]["level"] = 5
+        write_snapshot(self.tmp.name, self.skills, self.links)
+
+        out = import_game_data(self.tmp.name)
+
+        self.assertEqual(self.ryan.skills.get(source="awakening").level, 5)
+        self.assertIn("updating 1", out)
+
+    def test_dry_run_adds_nothing(self):
+        write_snapshot(self.tmp.name, self.skills, self.links)
+
+        out = import_game_data(self.tmp.name, "--dry-run")
+
+        self.assertEqual(UmaSkill.objects.count(), 0)
+        self.assertIn("would add 4", out)
+
+    def test_the_committed_snapshot_links_every_outfit(self):
+        cards = json.loads((SNAPSHOT_DIR / "cards.json").read_text(encoding="utf-8"))
+        Uma.objects.bulk_create([
+            Uma(name=card["chara_name"], game_id=card["id"])
+            for card in cards if card["id"] != self.ryan.game_id
+        ])
+
+        import_game_data(SNAPSHOT_DIR)
+
+        self.assertEqual(UmaSkill.objects.count(), 841)
+        self.assertEqual(UmaSkill.objects.filter(source="unique").count(), 120)
+        # 17 ★1/★2 outfits carry two uniques; every other outfit exactly one.
+        two_uniques = [
+            uma for uma in Uma.objects.all() if uma.skills.filter(source="unique").count() == 2
+        ]
+        self.assertEqual(len(two_uniques), 17)
+        self.assertFalse(Uma.objects.filter(skills__isnull=True).exists())
