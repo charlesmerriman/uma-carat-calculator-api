@@ -62,7 +62,7 @@ from .admin_patreon_import import (
 )
 from .predictions import GAME_EVENT_END_DATE_BUFFER
 from .models import (
-    CustomUser, Uma, SupportCard, UserPlannedBanner,
+    CustomUser, Uma, Skill, SupportCard, UserPlannedBanner,
     TeamTrialsRank, ClubRank, ChampionsMeetingRank, LeagueOfHeroesRank,
     BannerTimeline, BannerUma, BannerSupport, BannerStepUp,
     ChampionsMeeting, ChampionsMeetingUmaRecommendation,
@@ -473,6 +473,51 @@ class UmaAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
             ),
         }),
     )
+
+
+@admin.register(Skill)
+class SkillAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
+    """
+    Skills are imported, so this page is mostly for looking things up and for
+    the two editor-owned columns (image, admin comments). "Versions" answers
+    "is this the gold version of something" from group_id without a second table.
+    """
+    list_display = ("image_preview", "name", "game_id", "rarity", "tier", "cost", "versions")
+    list_display_links = ("name",)
+    list_filter = ("rarity", "tier")
+    ordering = ("name",)
+    search_fields = ("name", "=game_id", "=group_id")
+    readonly_fields = ("image_preview", "versions")
+    autocomplete_fields = ("evolves_from",)
+    fieldsets = (
+        (None, {"fields": ("name", "game_id", "image", "image_preview", "admin_comments")}),
+        ("Text", {"fields": ("description", "description_detailed")}),
+        ("Versions", {
+            "description": (
+                "The white, gold and × versions of one effect share a group id. "
+                "Evolved skills point at the skill they evolved from."
+            ),
+            "fields": ("rarity", "group_id", "tier", "versions", "evolves_from"),
+        }),
+        ("Game data", {
+            "classes": ("collapse",),
+            "description": "Filled by the game-data import and overwritten by the next one.",
+            "fields": ("icon_id", "cost", "precondition", "condition"),
+        }),
+    )
+
+    @admin.display(description="Versions")
+    def versions(self, obj):
+        """The other tiers of this effect, plus the evolution link when set."""
+        if obj.pk is None:
+            return "—"
+        parts = [
+            f"{sibling.get_tier_display()} {sibling.name} ({sibling.game_id})"
+            for sibling in obj.siblings()
+        ]
+        if obj.evolves_from_id:
+            parts.append(f"evolved from {obj.evolves_from.name} ({obj.evolves_from.game_id})")
+        return ", ".join(parts) if parts else "—"
 
 
 @admin.register(SupportCard)

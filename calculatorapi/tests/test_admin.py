@@ -50,6 +50,7 @@ class AdminSmokeTests(CalculatorTestCase):
         'admin:calculatorapi_bannerstepup',
         'admin:calculatorapi_uma',
         'admin:calculatorapi_supportcard',
+        'admin:calculatorapi_skill',
         'admin:calculatorapi_gameevent',
         'admin:calculatorapi_championsmeeting',
         'admin:calculatorapi_leagueofheroes',
@@ -215,6 +216,7 @@ class ImageLibraryTests(CalculatorTestCase):
                 'umas/', 'support_cards/', 'banner_timelines/',
                 'game_events/', 'champions_meetings/', 'league_of_heroes/',
                 'anniversary_events/', 'step_up_banners/', 'scenarios/',
+                'skills/',
             }),
         )
 

@@ -106,6 +106,24 @@ erDiagram
         int growth_speed "five growth_* bonuses in percent"
     }
 
+    Skill {
+        int id PK
+        int game_id "unique; the game's skill id"
+        string name "global English"
+        string description "the game's text, shown by default"
+        string description_detailed "fan translation with numbers; from gametora, optional"
+        int rarity "1 white 2 gold 3/4 the two halves of a star-1/2 unique 5 unique 6 evolved (none yet)"
+        int group_id "white, gold and x versions of one effect share it"
+        int tier "-1 penalty 1 white 2 gold"
+        int icon_id "one of 63 generic icons"
+        int cost "skill points; null for uniques"
+        string precondition "raw game string"
+        string condition "raw game string, for a later parser"
+        int evolves_from FK "self, nullable; empty until global has evolution"
+        string image "skills/<icon_id>.png, set by link_skill_images"
+        string admin_comments
+    }
+
     SupportCard {
         int id PK
         string name
@@ -826,6 +844,26 @@ not authoring, and making that structural keeps "accidentally reword a user's
 report" out of reach.
 
 ---
+
+### `Skill` is imported, and "versions" are a group, not a table
+
+Every `Skill` row comes from `manage.py import_game_data` reading the committed snapshot,
+which creates missing skills and overwrites the game-owned columns on every run. The two
+editor-owned columns are `image` and `admin_comments`. `image` is set in bulk by
+`manage.py link_skill_images` from `icon_id` (63 generic icons cover 718 skills, hosted on
+the Space under `skills/<icon_id>.png` by `scripts/fetch_skill_icons.py --upload`); a
+hand-picked image survives re-runs because the linker only fills empty ones.
+
+"Is this the gold version of something" is answered by `group_id` and `tier`, which the
+game itself uses: the white (○), gold (◎) and penalty (×) versions of one effect share a
+`group_id`, and `tier` says which this row is. The admin's read-only "Versions" column lists
+the siblings. `evolves_from` is the other relationship, for evolved skills, and stays empty
+until global has skill evolution (the model and the extractor are ready; the import will
+need the `skill_upgrade_*` tables then).
+
+`description` is the game's own text and is what a page should show by default;
+`description_detailed` is gametora's fan translation with the concrete numbers, imported
+only when `--gametora skills.json` is passed, for a future "detailed" toggle.
 
 ## The game's master database (`master.mdb`) and the committed snapshot
 

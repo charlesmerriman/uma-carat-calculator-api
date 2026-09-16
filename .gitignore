@@ -222,3 +222,6 @@ db.sqlite3
 /staticfiles/
 /media/
 .VSCodeCounter/
+
+# Skill icons fetched by scripts/fetch_skill_icons.py; they live in the Space, not the repo
+scripts/data/skill_icons/
