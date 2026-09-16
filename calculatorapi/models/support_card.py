@@ -1,5 +1,17 @@
 from django.db import models
 
+
+class SupportCardType(models.TextChoices):
+    """The stat a support card trains, or friend / group for the ones that train none."""
+    SPEED = "speed", "Speed"
+    STAMINA = "stamina", "Stamina"
+    POWER = "power", "Power"
+    GUTS = "guts", "Guts"
+    WIT = "wit", "Wit"
+    FRIEND = "friend", "Friend"
+    GROUP = "group", "Group"
+
+
 class SupportCard(models.Model):
     name = models.CharField(max_length=255)
     game_id = models.PositiveIntegerField(
@@ -26,6 +38,29 @@ class SupportCard(models.Model):
             "e.g. \"Great for front runners.\" Leave blank to show nothing. Notes "
             "for other editors go in Admin comments instead."
         ),
+    )
+
+    # ---- Game data, filled by `manage.py import_game_data`. ----
+    card_type = models.CharField(
+        max_length=10,
+        blank=True,
+        default="",
+        choices=SupportCardType.choices,
+        help_text="What the card trains. Blank until imported.",
+    )
+    # The game's character id, a plain number rather than a FK to Uma: a
+    # character is not an outfit, so "this character's outfits" is
+    # Uma.objects.filter(game_id__range=(id * 100, id * 100 + 99)).
+    character_id = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="The game's character id (e.g. 1006 for Oguri Cap). Not an uma row.",
+    )
+    title = models.CharField(
+        max_length=100,
+        blank=True,
+        default="",
+        help_text="The card's title from the game, e.g. \"[Get Lots of Hugs for Me]\".",
     )
 
     def __str__(self):

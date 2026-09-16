@@ -96,12 +96,23 @@ erDiagram
         string image
         string admin_comments
         string purpose "PUBLIC, max 100, never null; the Timeline tile's hover overlay"
+        bool is_time_limited
+        bool is_three_star "set from rarity by import_game_data; what the selector pickers read"
+        string title "IMPORTED from here down (import_game_data overwrites): the outfit's [Title]"
+        int rarity "initial stars 1..3"
+        int running_style "1 front 2 pace 3 late 4 end"
+        int apt_turf "ten apt_* grades on the game's 1..8 scale (G..S): turf dirt short mile medium long front pace late end"
+        int base_speed "five base_* stats at the initial star count"
+        int growth_speed "five growth_* bonuses in percent"
     }
 
     SupportCard {
         int id PK
         string name
         int game_id "unique, nullable; anchors image to the DO Space file. ALSO ENCODES RARITY: 1xxxx R, 2xxxx SR, 3xxxx SSR — banners may only link 3xxxx"
+        string card_type "IMPORTED: speed stamina power guts wit friend group; blank until imported"
+        int character_id "IMPORTED: the game's character id, a number not a FK"
+        string title "IMPORTED: the card's [Title]"
         string image
         string admin_comments
         string purpose "PUBLIC, max 100, never null; the Timeline tile's hover overlay"

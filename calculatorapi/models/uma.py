@@ -18,6 +18,43 @@ def game_id_from_image(image_name):
     return int(match.group(1)) if match else None
 
 
+class Rarity(models.IntegerChoices):
+    """An outfit's initial star count. The number IS the game's value."""
+    ONE = 1, "★1"
+    TWO = 2, "★2"
+    THREE = 3, "★3"
+
+
+class RunningStyle(models.IntegerChoices):
+    """The game's `running_style` numbering, kept as-is so the import is a copy."""
+    FRONT = 1, "Front runner"
+    PACE = 2, "Pace chaser"
+    LATE = 3, "Late surger"
+    END = 4, "End closer"
+
+
+class Aptitude(models.IntegerChoices):
+    """Aptitude grades on the game's 1..8 scale, stored as the game stores them."""
+    G = 1, "G"
+    F = 2, "F"
+    E = 3, "E"
+    D = 4, "D"
+    C = 5, "C"
+    B = 6, "B"
+    A = 7, "A"
+    S = 8, "S"
+
+
+# Columns the game-data import owns on Uma, in the order the admin shows them.
+# Everything here is filled by `manage.py import_game_data` from the committed
+# snapshot and is nullable so "not imported yet" is distinguishable from a
+# real value (a growth bonus of 0 is real).
+def _game_int(help_text, choices=None):
+    return models.PositiveSmallIntegerField(
+        null=True, blank=True, choices=choices, help_text=help_text,
+    )
+
+
 class Uma(models.Model):
     name = models.CharField(max_length=255)
     # The game's own id for this outfit: character `1020` outfit `01` is
@@ -80,6 +117,45 @@ class Uma(models.Model):
             "umas, so anything unchecked here is hidden from the pickers."
         ),
     )
+
+    # ---- Game data, imported. See the note above _game_int. ----
+    title = models.CharField(
+        max_length=100,
+        blank=True,
+        default="",
+        help_text="The outfit's title from the game, e.g. \"[Special Dreamer]\".",
+    )
+    rarity = _game_int(
+        "Initial star count. Sets \"Is ★3\" on import; that box is what the "
+        "selector pickers read.",
+        choices=Rarity.choices,
+    )
+    running_style = _game_int("Default strategy.", choices=RunningStyle.choices)
+    apt_turf = _game_int("Turf aptitude.", choices=Aptitude.choices)
+    apt_dirt = _game_int("Dirt aptitude.", choices=Aptitude.choices)
+    apt_short = _game_int("Short distance aptitude.", choices=Aptitude.choices)
+    apt_mile = _game_int("Mile aptitude.", choices=Aptitude.choices)
+    apt_medium = _game_int("Medium distance aptitude.", choices=Aptitude.choices)
+    apt_long = _game_int("Long distance aptitude.", choices=Aptitude.choices)
+    apt_front = _game_int("Front runner aptitude.", choices=Aptitude.choices)
+    apt_pace = _game_int("Pace chaser aptitude.", choices=Aptitude.choices)
+    apt_late = _game_int("Late surger aptitude.", choices=Aptitude.choices)
+    apt_end = _game_int("End closer aptitude.", choices=Aptitude.choices)
+    base_speed = _game_int("Speed at the initial star count.")
+    base_stamina = _game_int("Stamina at the initial star count.")
+    base_power = _game_int("Power at the initial star count.")
+    base_guts = _game_int("Guts at the initial star count.")
+    base_wit = _game_int("Wit at the initial star count.")
+    growth_speed = _game_int("Speed growth bonus, percent.")
+    growth_stamina = _game_int("Stamina growth bonus, percent.")
+    growth_power = _game_int("Power growth bonus, percent.")
+    growth_guts = _game_int("Guts growth bonus, percent.")
+    growth_wit = _game_int("Wit growth bonus, percent.")
+
+    @property
+    def character_id(self):
+        """The game's character id: an outfit id is `<character><outfit>`."""
+        return self.game_id // 100 if self.game_id else None
 
     def __str__(self):
         return f"{self.name}"

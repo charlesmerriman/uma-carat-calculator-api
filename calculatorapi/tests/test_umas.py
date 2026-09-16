@@ -1,8 +1,11 @@
 """Umas as rows: the game id, its backfill, and the duplicate merge that runs first."""
 
+import json
+import tempfile
 from contextlib import redirect_stdout
 from importlib import import_module
 from io import StringIO
+from pathlib import Path
 
 from django.apps import apps
 from django.core.management import call_command
@@ -309,3 +312,178 @@ class GameIdBackfillTests(CalculatorTestCase):
         self.assertIsNone(placeholder.game_id)
         self.assertIsNone(bare.game_id)
         self.assertIn("2 uma(s) left without a game_id", out)
+
+
+def write_snapshot(directory, cards=(), support_cards=()):
+    """A minimal snapshot directory in the shape extract_master_snapshot.py writes."""
+    directory = Path(directory)
+    (directory / "cards.json").write_text(json.dumps(list(cards)), encoding="utf-8")
+    (directory / "support_cards.json").write_text(
+        json.dumps(list(support_cards)), encoding="utf-8",
+    )
+    return directory
+
+
+def snapshot_card(card_id=102701, chara_name="Mejiro Ryan", default_rarity=1, **overrides):
+    """One outfit as the snapshot describes it, ★1 Mejiro Ryan by default."""
+    def star(number, speed):
+        return {
+            "star": number, "unique_skill_id": 10271,
+            "stats": {"speed": speed, "stamina": 90, "power": 100, "guts": 80, "wit": 70},
+            "max_stats": {"speed": 1200, "stamina": 1200, "power": 1200, "guts": 1200, "wit": 1200},
+            "aptitude": {
+                "turf": 7, "dirt": 1, "short": 2, "mile": 5, "medium": 7, "long": 7,
+                "front": 1, "pace": 5, "late": 7, "end": 7,
+            },
+        }
+    card = {
+        "id": card_id, "chara_id": card_id // 100, "chara_name": chara_name,
+        "name": f"[Down the Line] {chara_name}", "title": "[Down the Line]",
+        "default_rarity": default_rarity, "running_style": "late",
+        "growth": {"speed": 0, "stamina": 0, "power": 20, "guts": 0, "wit": 10},
+        "stars": [star(1, 87), star(2, 93), star(3, 98)],
+    }
+    card.update(overrides)
+    return card
+
+
+def import_game_data(directory, *flags):
+    out = StringIO()
+    call_command("import_game_data", "--no-input", "--snapshot", str(directory), *flags, stdout=out)
+    return out.getvalue()
+
+
+class ImportGameDataUmaTests(CalculatorTestCase):
+    """`import_game_data` filling the Uma columns from a snapshot directory."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()  # pylint: disable=consider-using-with
+        self.addCleanup(self.tmp.cleanup)
+        self.uma = Uma.objects.create(name="Mejiro Ryan", game_id=102701)
+
+    def test_fills_every_game_column_from_the_initial_star_row(self):
+        write_snapshot(self.tmp.name, cards=[snapshot_card()])
+
+        import_game_data(self.tmp.name)
+
+        self.uma.refresh_from_db()
+        self.assertEqual(self.uma.title, "[Down the Line]")
+        self.assertEqual(self.uma.rarity, 1)
+        self.assertEqual(self.uma.running_style, 3)
+        self.assertEqual(self.uma.apt_turf, 7)
+        self.assertEqual(self.uma.apt_dirt, 1)
+        self.assertEqual(self.uma.apt_end, 7)
+        # Base stats come from the ★1 row, the card's initial star count.
+        self.assertEqual(self.uma.base_speed, 87)
+        self.assertEqual(self.uma.growth_power, 20)
+        self.assertEqual(self.uma.growth_speed, 0)
+        self.assertEqual(self.uma.character_id, 1027)
+
+    def test_sets_is_three_star_from_the_rarity(self):
+        # The checkbox the selector pickers read. It defaults to True, so a
+        # ★1 card that was never unticked would otherwise stay selectable.
+        write_snapshot(self.tmp.name, cards=[snapshot_card()])
+
+        import_game_data(self.tmp.name)
+
+        self.uma.refresh_from_db()
+        self.assertFalse(self.uma.is_three_star)
+
+    def test_three_star_card_ticks_the_box_back(self):
+        self.uma.is_three_star = False
+        self.uma.save()
+        write_snapshot(self.tmp.name, cards=[snapshot_card(default_rarity=3)])
+
+        import_game_data(self.tmp.name)
+
+        self.uma.refresh_from_db()
+        self.assertTrue(self.uma.is_three_star)
+        self.assertEqual(self.uma.base_speed, 98)
+
+    def test_never_touches_the_editor_columns(self):
+        self.uma.purpose = "Great pace parent."
+        self.uma.admin_comments = "keep"
+        self.uma.image = "umas/102701-Mejiro-Ryan.png"
+        self.uma.is_time_limited = True
+        self.uma.save()
+        write_snapshot(self.tmp.name, cards=[snapshot_card()])
+
+        import_game_data(self.tmp.name)
+
+        self.uma.refresh_from_db()
+        self.assertEqual(self.uma.name, "Mejiro Ryan")
+        self.assertEqual(self.uma.purpose, "Great pace parent.")
+        self.assertEqual(self.uma.admin_comments, "keep")
+        self.assertEqual(self.uma.image.name, "umas/102701-Mejiro-Ryan.png")
+        self.assertTrue(self.uma.is_time_limited)
+
+    def test_never_creates_an_uma(self):
+        write_snapshot(self.tmp.name, cards=[snapshot_card(card_id=100101, chara_name="Special Week")])
+
+        out = import_game_data(self.tmp.name)
+
+        self.assertEqual(Uma.objects.count(), 1)
+        self.assertIn("not in database 1", out)
+        self.assertIn("100101", out)
+
+    def test_name_mismatch_is_skipped_and_reported(self):
+        # A wrong game_id would otherwise overwrite this row with another
+        # card's numbers.
+        write_snapshot(self.tmp.name, cards=[snapshot_card(chara_name="Special Week")])
+
+        out = import_game_data(self.tmp.name)
+
+        self.uma.refresh_from_db()
+        self.assertIsNone(self.uma.rarity)
+        self.assertIn("name mismatch 1", out)
+        self.assertIn("check the id", out)
+
+    def test_name_check_ignores_punctuation(self):
+        # Our rows spell it "TM Opera O"; the game spells it "T.M. Opera O".
+        self.uma.name = "TM Opera O (New Year)"
+        self.uma.save()
+        write_snapshot(self.tmp.name, cards=[snapshot_card(chara_name="T.M. Opera O")])
+
+        import_game_data(self.tmp.name)
+
+        self.uma.refresh_from_db()
+        self.assertEqual(self.uma.rarity, 1)
+
+    def test_alt_outfit_names_still_match_on_the_character(self):
+        self.uma.name = "Mejiro Ryan (Summer)"
+        self.uma.save()
+        write_snapshot(self.tmp.name, cards=[snapshot_card()])
+
+        import_game_data(self.tmp.name)
+
+        self.uma.refresh_from_db()
+        self.assertEqual(self.uma.rarity, 1)
+
+    def test_dry_run_writes_nothing(self):
+        write_snapshot(self.tmp.name, cards=[snapshot_card()])
+
+        out = import_game_data(self.tmp.name, "--dry-run")
+
+        self.uma.refresh_from_db()
+        self.assertIsNone(self.uma.rarity)
+        self.assertTrue(self.uma.is_three_star)
+        self.assertIn("would update 1", out)
+        self.assertIn("Dry run", out)
+
+    def test_second_run_finds_everything_current(self):
+        write_snapshot(self.tmp.name, cards=[snapshot_card()])
+        import_game_data(self.tmp.name)
+
+        out = import_game_data(self.tmp.name)
+
+        self.assertIn("already current 1", out)
+        self.assertIn("Nothing to write", out)
+
+    def test_the_committed_snapshot_is_readable(self):
+        # The real files, so a malformed commit fails here and not in prod.
+        out = import_game_data(
+            Path(__file__).resolve().parents[2] / "scripts" / "data" / "master_snapshot",
+            "--dry-run",
+        )
+        self.assertIn("umas:", out)
+        self.assertIn("support cards:", out)
