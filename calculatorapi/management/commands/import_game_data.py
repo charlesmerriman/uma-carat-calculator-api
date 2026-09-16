@@ -24,6 +24,11 @@ WHAT IT WRITES, and what it leaves alone:
                and awakening skills, with `level` (see the model). Rows are
                ADDED and never deleted, so a hand-added row survives. An
                outfit not in our database is skipped along with its rows.
+  SupportCardSkill  `hint` rows from the snapshot's support_hints.json (the
+               game's own data) and `event` rows from support_events.json
+               (gametora, via scripts/fetch_support_events.py; optional, so a
+               snapshot without it imports hints alone). Same add-never-delete
+               rule, matched on the card's game_id.
 
   Never: name, image, admin_comments, purpose, is_time_limited. Those are the
   editors'. Never creates an Uma or SupportCard either: a card needs art, and a
@@ -63,7 +68,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from calculatorapi import public_payload_cache
-from calculatorapi.models import Rarity, Skill, SupportCard, Uma, UmaSkill
+from calculatorapi.models import Rarity, Skill, SupportCard, SupportCardSkill, Uma, UmaSkill
 
 CONFIRM_PHRASE = "import"
 
@@ -85,11 +90,16 @@ def load_snapshot(directory):
     if not directory.is_dir():
         raise CommandError(f"snapshot directory not found: {directory}")
     files = {}
-    for name in ("skills", "cards", "card_skills", "support_cards"):
+    for name in ("skills", "cards", "card_skills", "support_cards", "support_hints"):
         path = directory / f"{name}.json"
         if not path.is_file():
             raise CommandError(f"snapshot file missing: {path}")
         files[name] = json.loads(path.read_text(encoding="utf-8"))
+    # Event skills come from gametora, not the game, so the file is optional.
+    events = directory / "support_events.json"
+    files["support_events"] = (
+        json.loads(events.read_text(encoding="utf-8")) if events.is_file() else []
+    )
     return files
 
 
@@ -161,6 +171,38 @@ def support_values(card):
     }
 
 
+class JunctionSpec:
+    """One skill junction table: who owns the rows and whether they carry a level."""
+
+    def __init__(self, label, owner_model, model, owner_field):
+        self.label = label
+        self.owner_model = owner_model
+        self.model = model
+        self.owner_field = owner_field
+        self.has_level = any(field.name == "level" for field in model._meta.fields)  # pylint: disable=protected-access
+
+    def existing_levels(self):
+        """{(owner game_id, skill game_id, source): level} for every row in the table."""
+        columns = [f"{self.owner_field}__game_id", "skill__game_id", "source"]
+        if self.has_level:
+            columns.append("level")
+        return {
+            tuple(values[:3]): (values[3] if self.has_level else None)
+            for values in self.model.objects.values_list(*columns)
+        }
+
+    def fields(self, owner, skill, source, level=None):
+        """Constructor / filter kwargs for one row."""
+        fields = {self.owner_field: owner, "skill": skill, "source": source}
+        if self.has_level and level is not None:
+            fields["level"] = level
+        return fields
+
+
+UMA_SKILLS = JunctionSpec("uma skill", Uma, UmaSkill, "uma")
+SUPPORT_CARD_SKILLS = JunctionSpec("support card skill", SupportCard, SupportCardSkill, "support_card")
+
+
 def _letters(text):
     """Lowercase letters and digits only, so "TM Opera O" and "T.M. Opera O" agree."""
     return "".join(ch for ch in text.lower() if ch.isalnum())
@@ -197,12 +239,32 @@ class Command(BaseCommand):
         detailed = load_gametora(options["gametora"])
 
         uma_plan = self._plan("uma", Uma, snapshot["cards"], uma_values)
+        support_plan = self._plan(
+            "support card", SupportCard, snapshot["support_cards"], support_values,
+        )
+        known_skills = {skill["id"] for skill in snapshot["skills"]}
         plans = [
             self._plan_skills(snapshot["skills"], detailed),
             uma_plan,
-            self._plan("support card", SupportCard, snapshot["support_cards"], support_values),
-            self._plan_uma_skills(
-                snapshot["card_skills"], snapshot["skills"], distrusted=uma_plan["distrusted"],
+            support_plan,
+            self._plan_junction(
+                UMA_SKILLS,
+                [
+                    (row["card_id"], row["skill_id"], row["source"], row["level"])
+                    for row in snapshot["card_skills"]
+                ],
+                known_skills, distrusted=uma_plan["distrusted"],
+            ),
+            self._plan_junction(
+                SUPPORT_CARD_SKILLS,
+                [
+                    (row["support_card_id"], row["skill_id"], "hint", None)
+                    for row in snapshot["support_hints"]
+                ] + [
+                    (row["support_card_id"], row["skill_id"], "event", None)
+                    for row in snapshot["support_events"]
+                ],
+                known_skills, distrusted=support_plan["distrusted"],
             ),
         ]
         self._report(plans, options["dry_run"])
@@ -291,60 +353,62 @@ class Command(BaseCommand):
         }
 
     @staticmethod
-    def _plan_uma_skills(card_skills, skills, distrusted=frozenset()):
+    def _plan_junction(spec, rows, known_skills, distrusted=frozenset()):
         """
-        Junction rows to add, as (uma game_id, skill game_id, source, level).
+        Junction rows to add or update, as (owner game_id, skill game_id, source, level).
 
+        Shared by UmaSkill and SupportCardSkill (whose `level` is always None).
         Skills are resolved by game_id at write time, after the skill rows of
         this same run exist, so a first run does not report every skill as
-        missing. What can be missing is the uma: a snapshot outfit with no row
-        here is reported once by the uma plan, so its skills are skipped quietly.
-        So is an outfit the uma plan `distrusted`: an id the name check rejected
-        is no better a key for its skills than for its stats.
+        missing. What can be missing is the owner: a snapshot card with no row
+        here is reported once by its own plan, so its skills are skipped
+        quietly. So is a card that plan `distrusted`: an id the name check
+        rejected is no better a key for its skills than for its stats.
         """
-        uma_ids = set(
-            Uma.objects.exclude(game_id__isnull=True).values_list("game_id", flat=True)
+        owner_ids = set(
+            spec.owner_model.objects.exclude(game_id__isnull=True)
+            .values_list("game_id", flat=True)
         ) - set(distrusted)
-        known_skills = {skill["id"] for skill in skills} | set(
-            Skill.objects.values_list("game_id", flat=True)
-        )
-        existing = {
-            (uma_game_id, skill_game_id, source): level
-            for uma_game_id, skill_game_id, source, level in UmaSkill.objects.values_list(
-                "uma__game_id", "skill__game_id", "source", "level",
-            )
+        known = known_skills | set(Skill.objects.values_list("game_id", flat=True))
+        existing = spec.existing_levels()
+
+        plan = {
+            "label": spec.label, "changed": [], "created": [], "unchanged": 0,
+            "missing": [], "mismatched": [], "junction": spec,
         }
-        created, changed, unchanged, missing = [], [], 0, []
-        for row in card_skills:
-            key = (row["card_id"], row["skill_id"], row["source"])
-            if row["card_id"] not in uma_ids:
-                continue
-            if row["skill_id"] not in known_skills:
-                missing.append(f"skill {row['skill_id']} for uma {row['card_id']} is in no snapshot")
-                continue
-            if key not in existing:
-                created.append((*key, row["level"]))
-            elif existing[key] != row["level"]:
-                changed.append((*key, row["level"]))
+        seen = set()
+        for owner_id, skill_id, source, level in rows:
+            key = (owner_id, skill_id, source)
+            if key in seen or owner_id not in owner_ids:
+                continue  # a duplicate pairing (a hint in two groups), or no row
+            seen.add(key)
+            if skill_id not in known:
+                plan["missing"].append(
+                    f"skill {skill_id} for {spec.label} {owner_id} is in no snapshot"
+                )
+            elif key not in existing:
+                plan["created"].append((*key, level))
+            elif spec.has_level and existing[key] != level:
+                plan["changed"].append((*key, level))
             else:
-                unchanged += 1
-        return {
-            "label": "uma skill", "changed": changed, "created": created,
-            "unchanged": unchanged, "missing": missing, "mismatched": [], "junction": True,
-        }
+                plan["unchanged"] += 1
+        return plan
 
     @staticmethod
-    def _write_uma_skills(plan):
+    def _write_junction(plan):
         """Resolve the game ids to rows now that every skill exists, then add."""
-        umas = {uma.game_id: uma for uma in Uma.objects.exclude(game_id__isnull=True)}
+        spec = plan["junction"]
+        owners = {
+            row.game_id: row for row in spec.owner_model.objects.exclude(game_id__isnull=True)
+        }
         skills = {skill.game_id: skill for skill in Skill.objects.all()}
-        UmaSkill.objects.bulk_create([
-            UmaSkill(uma=umas[uma_id], skill=skills[skill_id], source=source, level=level)
-            for uma_id, skill_id, source, level in plan["created"]
+        spec.model.objects.bulk_create([
+            spec.model(**spec.fields(owners[owner_id], skills[skill_id], source, level))
+            for owner_id, skill_id, source, level in plan["created"]
         ])
-        for uma_id, skill_id, source, level in plan["changed"]:
-            UmaSkill.objects.filter(
-                uma=umas[uma_id], skill=skills[skill_id], source=source,
+        for owner_id, skill_id, source, level in plan["changed"]:
+            spec.model.objects.filter(
+                **spec.fields(owners[owner_id], skills[skill_id], source)
             ).update(level=level)
         return len(plan["created"]) + len(plan["changed"])
 
@@ -358,7 +422,7 @@ class Command(BaseCommand):
         with transaction.atomic():
             for plan in plans:
                 if plan.get("junction"):
-                    written += Command._write_uma_skills(plan)
+                    written += Command._write_junction(plan)
                     continue
                 for row, diff in plan["changed"]:
                     for column, value in diff.items():

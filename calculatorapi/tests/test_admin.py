@@ -89,7 +89,8 @@ class AdminSmokeTests(CalculatorTestCase):
     def test_join_models_not_registered_top_level(self):
         # Edited via inlines only — their changelists should not exist.
         for name in ['umasonumabanner', 'supportsonsupportbanner',
-                     'championsmeetingumarecommendation', 'umaskill']:
+                     'championsmeetingumarecommendation', 'umaskill',
+                     'supportcardskill']:
             with self.subTest(model=name):
                 with self.assertRaises(NoReverseMatch):
                     reverse(f'admin:calculatorapi_{name}_changelist')

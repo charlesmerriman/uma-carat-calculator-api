@@ -11,7 +11,7 @@ from django.core.management import call_command
 from django.test import override_settings
 from django.urls import reverse
 
-from calculatorapi.models import CustomUser, Skill, Uma, UmaSkill
+from calculatorapi.models import CustomUser, Skill, SupportCard, SupportCardSkill, Uma, UmaSkill
 from calculatorapi.tests.base import CalculatorTestCase, PLAIN_TEST_STORAGES
 
 SNAPSHOT_DIR = Path(__file__).resolve().parents[2] / "scripts" / "data" / "master_snapshot"
@@ -31,12 +31,15 @@ def snapshot_skill(skill_id=200012, name="Right-Handed ○", **overrides):
     return skill
 
 
-def write_snapshot(directory, skills, card_skills=()):
+def write_snapshot(directory, skills, card_skills=(), hints=(), events=None):
     directory = Path(directory)
     (directory / "skills.json").write_text(json.dumps(list(skills)), encoding="utf-8")
     (directory / "cards.json").write_text("[]", encoding="utf-8")
     (directory / "card_skills.json").write_text(json.dumps(list(card_skills)), encoding="utf-8")
     (directory / "support_cards.json").write_text("[]", encoding="utf-8")
+    (directory / "support_hints.json").write_text(json.dumps(list(hints)), encoding="utf-8")
+    if events is not None:
+        (directory / "support_events.json").write_text(json.dumps(list(events)), encoding="utf-8")
     return directory
 
 
@@ -359,3 +362,74 @@ class UmaSkillImportTests(CalculatorTestCase):
         ]
         self.assertEqual(len(two_uniques), 17)
         self.assertFalse(Uma.objects.filter(skills__isnull=True).exists())
+
+
+class SupportCardSkillImportTests(CalculatorTestCase):
+    """Hints from the game's data, events from gametora's file, on one inline."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()  # pylint: disable=consider-using-with
+        self.addCleanup(self.tmp.cleanup)
+        self.card = SupportCard.objects.create(name="Oguri Cap", game_id=30024)
+        self.skills = [snapshot_skill(200222, "Hinted"), snapshot_skill(200562, "From an event")]
+        self.hints = [
+            {"support_card_id": 30024, "skill_id": 200222, "hint_group": 1},
+            # The same skill in a second hint group must not become two rows.
+            {"support_card_id": 30024, "skill_id": 200222, "hint_group": 4},
+        ]
+        self.events = [{"support_card_id": 30024, "skill_id": 200562}]
+
+    def test_hints_and_events_land_with_their_source(self):
+        write_snapshot(self.tmp.name, self.skills, hints=self.hints, events=self.events)
+
+        out = import_game_data(self.tmp.name)
+
+        rows = sorted(self.card.skills.values_list("skill__game_id", "source"))
+        self.assertEqual(rows, [(200222, "hint"), (200562, "event")])
+        self.assertIn("support card skills: adding 2", out)
+
+    def test_events_file_is_optional(self):
+        write_snapshot(self.tmp.name, self.skills, hints=self.hints)
+
+        import_game_data(self.tmp.name)
+
+        self.assertEqual(list(self.card.skills.values_list("source", flat=True)), ["hint"])
+
+    def test_skips_a_card_we_do_not_have(self):
+        write_snapshot(self.tmp.name, self.skills, hints=[
+            {"support_card_id": 30025, "skill_id": 200222, "hint_group": 1},
+        ])
+
+        import_game_data(self.tmp.name)
+
+        self.assertEqual(SupportCardSkill.objects.count(), 0)
+
+    def test_never_deletes_and_is_idempotent(self):
+        write_snapshot(self.tmp.name, self.skills, hints=self.hints, events=self.events)
+        import_game_data(self.tmp.name)
+        extra = Skill.objects.create(
+            game_id=999999, name="Editor's pick", rarity=1, group_id=99999, tier=1, icon_id=10011,
+        )
+        SupportCardSkill.objects.create(support_card=self.card, skill=extra, source="event")
+
+        out = import_game_data(self.tmp.name)
+
+        self.assertEqual(self.card.skills.count(), 3)
+        self.assertIn("already current 2", out)
+
+    def test_the_committed_snapshot_links_every_card(self):
+        cards = json.loads((SNAPSHOT_DIR / "support_cards.json").read_text(encoding="utf-8"))
+        SupportCard.objects.bulk_create([
+            SupportCard(name=card["chara_name"], game_id=card["id"])
+            for card in cards if card["id"] != self.card.game_id
+        ])
+
+        import_game_data(SNAPSHOT_DIR)
+
+        events = json.loads((SNAPSHOT_DIR / "support_events.json").read_text(encoding="utf-8"))
+        self.assertEqual(SupportCardSkill.objects.filter(source="hint").count(), 1529)
+        self.assertEqual(SupportCardSkill.objects.filter(source="event").count(), len(events))
+        # 15 cards have no hints (friend, group, Haru Urara).
+        self.assertEqual(
+            SupportCard.objects.exclude(skills__source="hint").distinct().count(), 15,
+        )

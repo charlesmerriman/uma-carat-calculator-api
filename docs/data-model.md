@@ -133,6 +133,14 @@ erDiagram
         string notes
     }
 
+    SupportCardSkill {
+        int id PK
+        int support_card FK
+        int skill FK
+        string source "hint (game data) | event (gametora)"
+        string notes
+    }
+
     SupportCard {
         int id PK
         string name
@@ -877,6 +885,12 @@ awakening rank for `awakening` rows, the star count a unique applies from for `u
 rows and updates a level but never deletes, so a row an editor adds by hand survives.
 Edited as an inline on the uma's admin page.
 
+`SupportCardSkill` does the same for support cards, unique on `(support_card, skill,
+source)`: `hint` rows come from the game's own hint table in the snapshot, `event` rows from
+gametora's per-card pages (`scripts/fetch_support_events.py` writes
+`support_events.json` next to the snapshot; the game has no clean table for them). A hint
+listed under two hint groups is one row. Edited as an inline on the support card's page.
+
 `description` is the game's own text and is what a page should show by default;
 `description_detailed` is gametora's fan translation with the concrete numbers, imported
 only when `--gametora skills.json` is passed, for a future "detailed" toggle.
@@ -916,7 +930,10 @@ therefore lists two `unique` rows for those 17 outfits, with `level` the star at
 each first applies.
 
 Support card **event** skills are not in any clean table (they come from story choice
-data); gametora's per-card pages are the agreed fallback for that one piece.
+data); gametora's per-card pages are the agreed source for that one piece, fetched by
+`scripts/fetch_support_events.py` into `support_events.json` in the same folder (their
+Next.js data endpoint, slug `<id>-<gametora name>`; 648 rows across 249 cards on
+2026-09-16).
 
 ## `PatreonTier` / `PatreonSupporter`
 
