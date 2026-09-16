@@ -62,7 +62,7 @@ from .admin_patreon_import import (
 )
 from .predictions import GAME_EVENT_END_DATE_BUFFER
 from .models import (
-    CustomUser, Uma, Skill, UmaSkill, SupportCard, UserPlannedBanner,
+    CustomUser, Uma, Skill, UmaSkill, SupportCardSkill, SupportCard, UserPlannedBanner,
     TeamTrialsRank, ClubRank, ChampionsMeetingRank, LeagueOfHeroesRank,
     BannerTimeline, BannerUma, BannerSupport, BannerStepUp,
     ChampionsMeeting, ChampionsMeetingUmaRecommendation,
@@ -146,6 +146,14 @@ class UmaSkillInline(TabularInline):
     model = UmaSkill
     autocomplete_fields = ("skill",)
     fields = ("skill", "source", "level", "notes")
+    extra = 0
+
+
+class SupportCardSkillInline(TabularInline):
+    """The skills a support card gives, by hint or event. Filled by the import."""
+    model = SupportCardSkill
+    autocomplete_fields = ("skill",)
+    fields = ("skill", "source", "notes")
     extra = 0
 
 
@@ -531,6 +539,7 @@ class SkillAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
 
 @admin.register(SupportCard)
 class SupportCardAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
+    inlines = (SupportCardSkillInline,)
     list_display = ("image_preview", "name", "game_id", "card_type")
     list_display_links = ("name",)
     list_filter = ("card_type", PURPOSE_FILTER)

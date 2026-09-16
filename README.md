@@ -182,6 +182,7 @@ result depends on which tests ran before it.
 | `prune_visitor_hashes` | Deletes visitor de-duplication hashes older than the retention window |
 | `purge_user_pii` | Blanks email, name and password on every non-staff account. **Irreversible**, so run it with `--dry-run` first |
 | `import_game_data` | Fills the game-data columns on Uma and SupportCard and creates or updates every Skill from `scripts/data/master_snapshot/`. `--dry-run` first; `--gametora skills.json` adds the detailed descriptions |
+| `import_game_data` also reads `support_events.json`, written by `scripts/fetch_support_events.py` from gametora (the game has no clean table for support card event skills) |
 | `link_skill_images` | Points every Skill without an image at `skills/<icon_id>.png` in the Space, after `scripts/fetch_skill_icons.py --upload` put the files there |
 | `merge_duplicate_umas` | Folds a `(Rerun)` copy of an uma into the original by image id, re-pointing every row that referenced it. Run before any migration that makes uma ids unique; `--dry-run` first |
 

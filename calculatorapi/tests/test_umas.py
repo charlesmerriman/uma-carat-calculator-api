@@ -320,6 +320,7 @@ def write_snapshot(directory, cards=(), support_cards=()):
     (directory / "skills.json").write_text("[]", encoding="utf-8")
     (directory / "cards.json").write_text(json.dumps(list(cards)), encoding="utf-8")
     (directory / "card_skills.json").write_text("[]", encoding="utf-8")
+    (directory / "support_hints.json").write_text("[]", encoding="utf-8")
     (directory / "support_cards.json").write_text(
         json.dumps(list(support_cards)), encoding="utf-8",
     )
