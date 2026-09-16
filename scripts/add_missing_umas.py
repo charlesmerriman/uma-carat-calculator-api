@@ -12,7 +12,7 @@ the Uma table was never backfilled with the characters those banners feature
 `umas/{card_id}-...png`, so card_id is the reliable join key across all three
 sources.
 
-The Uma model only stores a display name + image, so the name is derived from
+Besides the game id, the Uma model needs a display name + image; the name is derived from
 the master card list: `name_en` for base cards, `name_en (version_en)` for alt
 outfits — matching the convention already used in umas.json (e.g.
 "Vivlos (Summer)", "Grass Wonder (New Year)").
@@ -118,6 +118,7 @@ def main() -> None:
             "pk": next_pk,
             "fields": {
                 "name": display_name(card),
+                "game_id": card_id,
                 "image": key,
                 "admin_comments": "",
             },
