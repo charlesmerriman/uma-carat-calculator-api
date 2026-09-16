@@ -8,6 +8,13 @@ never matched and never touched.
 
 WHAT IT WRITES, and what it leaves alone:
 
+  Skill        every column the game owns: name, description, rarity, group,
+               tier, icon, cost, conditions. Matched on `game_id`, and CREATED
+               when missing: a skill needs no art of its own (63 generic icons
+               are linked afterwards by `link_skill_images`), so there is no
+               reason to make an editor add 718 rows by hand. Never touches
+               image or admin_comments. `description_detailed` is written only
+               when `--gametora FILE` is given (see below).
   Uma          title, rarity, running_style, the ten apt_* grades, the five
                base_* stats at the initial star count, the five growth_*
                bonuses, and `is_three_star` (= rarity is 3), which the selector
@@ -30,6 +37,11 @@ A miss almost always means the row's game_id is wrong (a mislabeled image), so
 the row is reported and skipped rather than overwritten with another card's
 numbers.
 
+THE DETAILED DESCRIPTIONS come from a separate file, gametora's skills.json,
+whose `desc_en` carries the concrete numbers the game text leaves out. Pass it
+with `--gametora path/to/skills.json`: a list of objects with an `id` and a
+`desc_en`. Without it that column is left as it is.
+
 Usage:
     python manage.py import_game_data --dry-run    # report only
     python manage.py import_game_data              # prompts
@@ -47,7 +59,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from calculatorapi import public_payload_cache
-from calculatorapi.models import Rarity, SupportCard, Uma
+from calculatorapi.models import Rarity, Skill, SupportCard, Uma
 
 CONFIRM_PHRASE = "import"
 
@@ -69,7 +81,7 @@ def load_snapshot(directory):
     if not directory.is_dir():
         raise CommandError(f"snapshot directory not found: {directory}")
     files = {}
-    for name in ("cards", "support_cards"):
+    for name in ("skills", "cards", "support_cards"):
         path = directory / f"{name}.json"
         if not path.is_file():
             raise CommandError(f"snapshot file missing: {path}")
@@ -101,6 +113,41 @@ def uma_values(card):
     return values
 
 
+def load_gametora(path):
+    """{skill id: desc_en} from gametora's skills.json, or {} when no path is given."""
+    if not path:
+        return {}
+    path = Path(path)
+    if not path.is_file():
+        raise CommandError(f"gametora file not found: {path}")
+    entries = json.loads(path.read_text(encoding="utf-8"))
+    detailed = {}
+    for entry in entries:
+        try:
+            detailed[int(entry["id"])] = entry.get("desc_en") or ""
+        except (KeyError, TypeError, ValueError) as exc:
+            raise CommandError(f"gametora entry without a usable id: {entry!r}") from exc
+    return detailed
+
+
+def skill_values(skill, detailed):
+    """The Skill column values one snapshot skill implies."""
+    values = {
+        "name": skill["name"],
+        "description": skill["description"],
+        "rarity": skill["rarity"],
+        "group_id": skill["group_id"],
+        "tier": skill["group_rate"],
+        "icon_id": skill["icon_id"],
+        "cost": skill["cost"],
+        "precondition": skill["precondition_1"],
+        "condition": skill["condition_1"],
+    }
+    if skill["id"] in detailed:
+        values["description_detailed"] = detailed[skill["id"]]
+    return values
+
+
 def support_values(card):
     """The SupportCard column values one snapshot support card implies."""
     return {
@@ -129,6 +176,10 @@ class Command(BaseCommand):
             help="Directory holding the snapshot JSON (default: scripts/data/master_snapshot).",
         )
         parser.add_argument(
+            "--gametora", default=None,
+            help="gametora's skills.json, for description_detailed. Optional.",
+        )
+        parser.add_argument(
             "--dry-run", action="store_true",
             help="Report what would change without writing anything.",
         )
@@ -139,14 +190,16 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         snapshot = load_snapshot(options["snapshot"])
+        detailed = load_gametora(options["gametora"])
 
         plans = [
+            self._plan_skills(snapshot["skills"], detailed),
             self._plan("uma", Uma, snapshot["cards"], uma_values),
             self._plan("support card", SupportCard, snapshot["support_cards"], support_values),
         ]
         self._report(plans, options["dry_run"])
 
-        if not any(plan["changed"] for plan in plans):
+        if not any(plan["changed"] or plan.get("created") for plan in plans):
             self.stdout.write(self.style.SUCCESS("\nNothing to write."))
             return
 
@@ -201,6 +254,33 @@ class Command(BaseCommand):
         }
 
     @staticmethod
+    def _plan_skills(skills, detailed):
+        """
+        Like _plan, but a skill with no row is CREATED rather than reported:
+        `created` holds unsaved Skill instances, `changed` (row, diff) pairs.
+        """
+        by_game_id = {row.game_id: row for row in Skill.objects.all()}
+        changed, created, unchanged = [], [], 0
+        for skill in skills:
+            values = skill_values(skill, detailed)
+            row = by_game_id.get(skill["id"])
+            if row is None:
+                created.append(Skill(game_id=skill["id"], **values))
+                continue
+            diff = {
+                column: value for column, value in values.items()
+                if getattr(row, column) != value
+            }
+            if diff:
+                changed.append((row, diff))
+            else:
+                unchanged += 1
+        return {
+            "label": "skill", "changed": changed, "created": created,
+            "unchanged": unchanged, "missing": [], "mismatched": [],
+        }
+
+    @staticmethod
     def _write(plans):
         """
         Every row in one transaction, so a crash halfway leaves the columns as
@@ -214,6 +294,9 @@ class Command(BaseCommand):
                         setattr(row, column, value)
                     row.save(update_fields=list(diff))
                     written += 1
+                new_rows = plan.get("created", [])
+                Skill.objects.bulk_create(new_rows)
+                written += len(new_rows)
         # Per-row saves already fire the invalidation signal, but the invariant
         # is that a bulk writer drops the cache itself, so this does too.
         public_payload_cache.invalidate()
@@ -223,12 +306,21 @@ class Command(BaseCommand):
         verb = "Would update" if dry_run else "Updating"
         for plan in plans:
             label = plan["label"]
-            self.stdout.write(
-                f"\n{label}s: {verb.lower()} {len(plan['changed'])}, "
-                f"already current {plan['unchanged']}, "
-                f"not in database {len(plan['missing'])}, "
-                f"name mismatch {len(plan['mismatched'])}"
-            )
+            created = plan.get("created")
+            if created is not None:
+                # Skills: created rather than reported missing.
+                self.stdout.write(
+                    f"\n{label}s: {verb.lower()} {len(plan['changed'])}, "
+                    f"{'would create' if dry_run else 'creating'} {len(created)}, "
+                    f"already current {plan['unchanged']}"
+                )
+            else:
+                self.stdout.write(
+                    f"\n{label}s: {verb.lower()} {len(plan['changed'])}, "
+                    f"already current {plan['unchanged']}, "
+                    f"not in database {len(plan['missing'])}, "
+                    f"name mismatch {len(plan['mismatched'])}"
+                )
             for row, diff in plan["changed"]:
                 columns = ", ".join(sorted(diff))
                 self.stdout.write(f"    pk={row.pk:<5} {row.name[:40]:<40} {columns}")

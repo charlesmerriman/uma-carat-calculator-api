@@ -317,6 +317,7 @@ class GameIdBackfillTests(CalculatorTestCase):
 def write_snapshot(directory, cards=(), support_cards=()):
     """A minimal snapshot directory in the shape extract_master_snapshot.py writes."""
     directory = Path(directory)
+    (directory / "skills.json").write_text("[]", encoding="utf-8")
     (directory / "cards.json").write_text(json.dumps(list(cards)), encoding="utf-8")
     (directory / "support_cards.json").write_text(
         json.dumps(list(support_cards)), encoding="utf-8",
