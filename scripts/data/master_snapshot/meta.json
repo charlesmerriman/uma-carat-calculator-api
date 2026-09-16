@@ -1,0 +1,12 @@
+{
+ "extracted_at": "2026-09-16T22:16:13+00:00",
+ "mdb_size_bytes": 16773120,
+ "mdb_modified_at": "2026-09-13T03:31:31+00:00",
+ "counts": {
+  "skills": 718,
+  "cards": 103,
+  "card_skills": 841,
+  "support_cards": 253,
+  "support_hints": 1529
+ }
+}
