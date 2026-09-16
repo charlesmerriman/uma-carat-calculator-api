@@ -457,14 +457,29 @@ class UmaAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
                 "campaign cutoff dates."
             ),
         }),
+        ("Game data", {
+            "classes": ("collapse",),
+            "description": (
+                "Filled by the game-data import and overwritten by the next one, "
+                "so edits here do not stick. Fix the source instead."
+            ),
+            "fields": (
+                "title", "rarity", "running_style",
+                ("apt_turf", "apt_dirt"),
+                ("apt_short", "apt_mile", "apt_medium", "apt_long"),
+                ("apt_front", "apt_pace", "apt_late", "apt_end"),
+                ("base_speed", "base_stamina", "base_power", "base_guts", "base_wit"),
+                ("growth_speed", "growth_stamina", "growth_power", "growth_guts", "growth_wit"),
+            ),
+        }),
     )
 
 
 @admin.register(SupportCard)
 class SupportCardAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
-    list_display = ("image_preview", "name", "game_id")
+    list_display = ("image_preview", "name", "game_id", "card_type")
     list_display_links = ("name",)
-    list_filter = (PURPOSE_FILTER,)
+    list_filter = ("card_type", PURPOSE_FILTER)
     ordering = ("name",)
     search_fields = ("name", "=game_id")  # required: autocomplete source for banner inlines
     readonly_fields = ("image_preview",)
@@ -473,6 +488,14 @@ class SupportCardAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
     fieldsets = (
         (None, {"fields": ("name", "game_id", "image", "image_preview", "admin_comments")}),
         PURPOSE_FIELDSET,
+        ("Game data", {
+            "classes": ("collapse",),
+            "description": (
+                "Filled by the game-data import and overwritten by the next one, "
+                "so edits here do not stick. Fix the source instead."
+            ),
+            "fields": ("title", "card_type", "character_id"),
+        }),
     )
 
 
