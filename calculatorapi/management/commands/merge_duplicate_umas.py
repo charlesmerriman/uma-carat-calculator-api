@@ -68,23 +68,34 @@ UNCONSTRAINED_JUNCTIONS = {
 }
 
 
-def uma_relations():
-    """
-    Every (model, fk_field_name) that points at Uma, discovered at runtime.
-
-    Reverse relations rather than a hand-written list so a model added later is
-    merged too. M2M entries are skipped: `BannerUma.umas` goes through
-    UmasOnUmaBanner, whose own FK is already in this list.
-    """
-    return [
-        (relation.related_model, relation.field.name)
-        for relation in Uma._meta.related_objects  # pylint: disable=protected-access
-        if not relation.many_to_many
-    ]
-
-
 class Command(BaseCommand):
     help = "Merge duplicate Uma rows (the '(Rerun)' copies) into the original."
+
+    # What `merge_duplicate_support_cards` overrides: the same merge over a
+    # different card model. Everything below reads these three, never Uma.
+    model = Uma
+    noun = "uma"
+    unconstrained_junctions = UNCONSTRAINED_JUNCTIONS
+
+    @staticmethod
+    def image_game_id(image_name):
+        """The card id an image filename starts with, or None."""
+        return game_id_from_image(image_name)
+
+    def relations(self):
+        """
+        Every (model, fk_field_name) that points at the card model, discovered
+        at runtime.
+
+        Reverse relations rather than a hand-written list so a model added later
+        is merged too. M2M entries are skipped: `BannerUma.umas` goes through
+        UmasOnUmaBanner, whose own FK is already in this list.
+        """
+        return [
+            (relation.related_model, relation.field.name)
+            for relation in self.model._meta.related_objects  # pylint: disable=protected-access
+            if not relation.many_to_many
+        ]
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -119,8 +130,8 @@ class Command(BaseCommand):
         moved, dropped = self._write(planned)
         self.stdout.write(
             self.style.SUCCESS(
-                f"\nMerged {len(planned)} uma(s): re-pointed {moved} row(s), "
-                f"dropped {dropped} row(s) the kept uma already had."
+                f"\nMerged {len(planned)} {self.noun}(s): re-pointed {moved} row(s), "
+                f"dropped {dropped} row(s) the kept {self.noun} already had."
             )
         )
 
@@ -132,8 +143,8 @@ class Command(BaseCommand):
         pairs; problems are groups this command will not decide for itself.
         """
         groups = defaultdict(list)
-        for uma in Uma.objects.order_by("pk"):
-            game_id = game_id_from_image(uma.image.name if uma.image else None)
+        for uma in self.model.objects.order_by("pk"):
+            game_id = self.image_game_id(uma.image.name if uma.image else None)
             if game_id is not None:
                 groups[game_id].append(uma)
 
@@ -167,7 +178,7 @@ class Command(BaseCommand):
         moved = dropped = 0
         with transaction.atomic():
             for kept, duplicate in planned:
-                for model, field_name in uma_relations():
+                for model, field_name in self.relations():
                     rows = model.objects.filter(**{field_name: duplicate})
                     for row in rows:
                         if self._repoint(row, field_name, kept, model):
@@ -177,11 +188,11 @@ class Command(BaseCommand):
                             dropped += 1
 
                 # Nothing may still cascade from this delete. If something
-                # does, uma_relations() missed a relation, and that is a bug
+                # does, self.relations() missed a relation, and that is a bug
                 # to fix rather than data to lose.
                 leftovers = [
                     model.__name__
-                    for model, field_name in uma_relations()
+                    for model, field_name in self.relations()
                     if model.objects.filter(**{field_name: duplicate}).exists()
                 ]
                 if leftovers:
@@ -196,13 +207,12 @@ class Command(BaseCommand):
         public_payload_cache.invalidate()
         return moved, dropped
 
-    @staticmethod
-    def _repoint(row, field_name, kept, model):
+    def _repoint(self, row, field_name, kept, model):
         """
         Point one row at the kept uma. Returns False when the kept uma already
         has an equivalent row, in which case the caller drops this one.
         """
-        partner_field = UNCONSTRAINED_JUNCTIONS.get(model)
+        partner_field = self.unconstrained_junctions.get(model)
         if partner_field is not None:
             partner = getattr(row, partner_field)
             if model.objects.filter(**{partner_field: partner, field_name: kept}).exists():
@@ -226,7 +236,7 @@ class Command(BaseCommand):
             for kept, duplicate in planned:
                 references = sum(
                     model.objects.filter(**{field_name: duplicate}).count()
-                    for model, field_name in uma_relations()
+                    for model, field_name in self.relations()
                 )
                 self.stdout.write(
                     f"    pk={duplicate.pk:<5} '{duplicate.name}' -> "
