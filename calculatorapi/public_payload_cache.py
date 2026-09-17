@@ -13,7 +13,7 @@ and none of it varies per visitor.
 So the public half is built once, rendered to JSON bytes, and kept. A guest is
 then answered with those bytes verbatim -- no queries, no serializers, no JSON
 rendering. A signed-in user pays a ``json.loads`` on them (single-digit ms) and
-gets their own four collections merged in, still skipping the whole catalogue.
+gets their own user-scoped keys merged in, still skipping the whole catalogue.
 
 WHY IT IS SAFE TO HOLD INDEFINITELY
 -----------------------------------

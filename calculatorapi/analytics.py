@@ -121,6 +121,15 @@ def _banner_popularity(fk_name):
     `excluded` reports how many rows were dropped from those two figures, so a
     surprising average can be checked against the count that caused it instead
     of being reverse-engineered from the arithmetic.
+
+    ACTIVE PLANS ONLY. An account can hold several plans, and the spare ones
+    are what-ifs: someone comparing "200 pulls" against "skip it" on the same
+    banner intends ONE of those. Summing every plan would report 200 pulls of
+    demand from a person who may intend none, and would let one user with five
+    copies of a plan move an average five times. The active plan is the one
+    they have open, so it is the best single answer to "what does this person
+    plan to do", and it keeps every figure here meaning what it meant when an
+    account had exactly one plan.
     """
     # Non-null ints, so ~sane is a clean complement with no third case.
     sane = Q(number_of_pulls__lte=SANE_MAX_PULLS)
@@ -128,6 +137,10 @@ def _banner_popularity(fk_name):
         UserPlannedBanner.objects
         # Only this banner type, and never count staff/admin test accounts.
         .filter(**{f"{fk_name}__isnull": False}, user__is_staff=False)
+        # TRANSITIONAL: the isnull half goes with release 2 of multi-plan. Until
+        # `plan` is NOT NULL, a row the old code wrote during the deploy window
+        # has no plan yet (plans._adopt_planless_rows) and is still a real row.
+        .filter(Q(plan__is_active=True) | Q(plan__isnull=True))
         # values() before annotate() = GROUP BY these fields. Including the
         # FK id guarantees two banners that share a name never merge.
         .values(

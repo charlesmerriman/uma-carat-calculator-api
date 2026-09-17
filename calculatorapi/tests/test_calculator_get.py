@@ -39,6 +39,7 @@ _EXPECTED_GET_KEYS = {
     'events_data', 'user_stats_data', 'banner_timeline_data',
     'anniversary_event_data', 'scenario_data', 'user_planned_purchase_data',
     'user_step_up_selection_data',
+    'user_plans', 'active_plan_id',
     'income_ledger', 'calculation_constants',
 }
 

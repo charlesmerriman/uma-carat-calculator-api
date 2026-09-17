@@ -170,7 +170,7 @@ meaning anything instead of rendering a signed-in shell around nothing.
 
 Deliberately its own route rather than a key on `/calculator-data`: that payload
 is not fetched on the home page, the FAQ or the changelog, and everything in it
-but the four user-scoped keys is served from a shared process-wide cache, which
+but the user-scoped keys is served from a shared process-wide cache, which
 entitlement must never be answerable from.
 
 ---
@@ -282,9 +282,15 @@ Protected. Detaches the provider. **`204`** on success.
 
 Public. Returns a single aggregated payload containing all reference data and user-specific state. The frontend calls this once on mount.
 
-For anonymous requests, all reference keys are populated as usual but the user-scoped keys are empty: `user_stats_data` is `null`, and `user_planned_banner_data` / `user_planned_purchase_data` / `user_step_up_selection_data` are `[]`. The frontend uses the `null` stats to detect guest mode and seed local defaults.
+For anonymous requests, all reference keys are populated as usual but the user-scoped keys are empty: `user_stats_data` and `active_plan_id` are `null`, and `user_plans` / `user_planned_banner_data` / `user_planned_purchase_data` / `user_step_up_selection_data` are `[]`. The frontend uses the `null` stats to detect guest mode and seed local defaults.
 
-**Everything except the four user-scoped keys is cached server-side.** The reference half is
+**`user_planned_banner_data` is the ACTIVE plan's rows.** `user_plans` lists every plan the
+account holds (`Plan` shape below) and `active_plan_id` says which one the rows belong to.
+Stats, purchases and step-up selections belong to the account and are the same whichever
+plan is open. A signed-in account with no plan yet is given its "Main plan" by this request.
+To read another plan's rows without refetching the catalogue, use `GET /plans/<id>`.
+
+**Everything except the six user-scoped keys is cached server-side.** The reference half is
 built once, kept as rendered JSON, and reused until a content write drops it — so a cache hit
 runs no catalogue queries for either a guest or a signed-in user. The user-scoped keys are
 always read fresh per request and never enter the cache. Invalidation hangs off
@@ -327,11 +333,35 @@ assumption it rests on, in `calculatorapi/public_payload_cache.py`.
 Protected. Upserts the user's planned banners, planned purchases and step-up card
 selections, and updates their stats, in one request.
 
+**`plan_id` names the plan the banner rows belong to, and a client that knows about plans
+must always send it.** The reconcile deletes every row the body does not name, and
+auto-save fires five seconds after the last edit, so "whichever plan is active when the save
+arrives" would be a data-loss bug:
+
+| Time | What happens |
+|---|---|
+| 12:00:00 | the user edits a row in plan A; the auto-save timer starts |
+| 12:00:03 | they switch to plan B |
+| 12:00:05 | the timer fires with A's rows |
+
+Written to "the active plan", A's rows would land in B and B's own rows would be deleted.
+With `plan_id: A` in the body they land in A and B is untouched. A `plan_id` that is not
+the caller's (or not a number) is a `404` and writes nothing. A row `id` belonging to a
+*different* plan of the same user is also `404`: one body reconciles one plan.
+
+An **absent** `plan_id` means the active plan. That exists only for a tab left open across
+the deploy that introduced plans, whose bundle has never heard of them.
+
+`plan_id` scopes `user_planned_banner_data` only. Purchases and selections are the
+account's and reconcile against all of the user's rows as before. A row's own `plan` field
+is read-only; only the top-level `plan_id` decides where a row lands.
+
 **Upsert semantics** — identical for `user_planned_banner_data`, `user_planned_purchase_data`
 and `user_step_up_selection_data`:
 - Key absent from the body → that collection is left completely alone
 - Key present as `[]` → every row in that collection is deleted
-- Row with `id` → update that row (`404` if the id isn't this user's)
+- Row with `id` → update that row (`404` if the id isn't this user's, or for a banner row,
+  isn't in the plan named by `plan_id`)
 - Row without `id` → create new row
 - Any row in the database not present in the payload → deleted
 
@@ -350,6 +380,7 @@ exits it normally, so Django would otherwise commit the accepted half.
 **Request body** (all keys are optional)
 ```json
 {
+  "plan_id": 12,
   "user_stats_data": {
     "current_carat":          0,
     "current_paid_carat":     0,
@@ -400,6 +431,65 @@ effective cutoff — see `calculatorapi/eligibility.py`.
 ```json
 { "message": "Data updated successfully" }
 ```
+
+---
+
+## Plans
+
+All protected. A guest has one unnamed plan in memory and never calls these. Banner **rows**
+are not written here: they are saved by `PATCH /calculator-data` with a `plan_id`, because
+the auto-save sends stats, banners, purchases and selections as one transaction.
+
+Every `<id>` is resolved through `plans.get_owned_plan()`. Somebody else's plan is a `404`,
+identical to one that does not exist.
+
+### `GET /plans`
+
+The caller's plans, oldest first. Never empty: an account with none is given its "Main plan".
+
+**Response `200`** `[ Plan ]`
+
+### `POST /plans`
+
+Creates a plan, blank or as a copy. The new plan is **not** made active; the client switches
+to it with a `PATCH` once it has flushed any pending save for the plan it is leaving.
+
+```json
+{ "name": "Anniversary route", "copy_from": 12 }
+```
+
+`copy_from` is optional and must be one of the caller's own plans (`404` otherwise). `name`
+is required, at most 40 characters, and has runs of whitespace collapsed.
+
+**Response `201`** `PlanWithRows` · **`400`** on a blank name, or at the cap
+(`{"error": "You can keep up to 5 plans."}`)
+
+### `GET /plans/<id>`
+
+One plan and its banner rows. This is what switching fetches, so a switch never re-downloads
+the catalogue half of `/calculator-data`.
+
+**Response `200`** `PlanWithRows`
+
+### `PATCH /plans/<id>`
+
+Renames the plan and/or makes it the active one. Both keys optional.
+
+```json
+{ "name": "F2P", "is_active": true }
+```
+
+Only `is_active: true` means anything. There is no deactivate: an account always has exactly
+one active plan, so the way to leave a plan is to activate another.
+
+**Response `200`** `Plan`
+
+### `DELETE /plans/<id>`
+
+Deletes the plan and its rows. The account's last plan is refused (`400`). Deleting the
+active plan promotes the oldest survivor.
+
+**Response `200`** `{ "active_plan_id": 12 }`
 
 ---
 
@@ -578,14 +668,35 @@ card outright and never funds a pull. They are the user's current holdings and a
 treated as unrestricted (no JP cutoff); tickets projected from campaigns carry their
 campaign's cutoff instead.
 
+### `Plan` (from `user_plans`, and the `/plans` routes)
+
+```json
+{ "id": 12, "name": "Main plan", "is_active": true, "updated_at": "2026-09-17T18:04:11Z" }
+```
+
+`name` is the only writable field. There is deliberately no `user`: the owner is always the
+caller. `updated_at` moves when the plan is renamed, activated, or has its rows saved.
+
+### `PlanWithRows` (from `POST /plans` and `GET /plans/<id>`)
+
+```json
+{
+  "plan": Plan,
+  "user_planned_banner_data": [ UserPlannedBanner ]
+}
+```
+
+The rows are shaped and ordered exactly as the same key on `GET /calculator-data`.
+
 ### `UserPlannedBanner` (response)
 
-On GET, `banner_uma` and `banner_support` are expanded to nested objects (not IDs). On PATCH request bodies they must be integer IDs.
+On GET, `banner_uma` and `banner_support` are expanded to nested objects (not IDs). On PATCH request bodies they must be integer IDs. `user` and `plan` are read-only.
 
 ```json
 {
   "id": 1,
   "user": 1,
+  "plan": 12,
   "number_of_pulls": 20,
   "reserved_copies": 0,
   "banner_uma": { ... BannerUma object ... },
