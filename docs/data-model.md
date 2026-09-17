@@ -902,7 +902,16 @@ listed under two hint groups is one row. Edited as an inline on the support card
 
 `description` is the game's own text and is what a page should show by default;
 `description_detailed` is gametora's fan translation with the concrete numbers, imported
-only when `--gametora skills.json` is passed, for a future "detailed" toggle.
+only when `--gametora skills.json` is passed, for a future "detailed" toggle. It has never
+been imported, and stays that way until the user confirms gametora's text may be used.
+
+**"On global" is derived, never stored.** A skill is on global when the game gives it an
+English description: `Skill.objects.on_global()` / `.not_on_global()` and the
+`Skill.is_on_global` property (`SkillQuerySet` in `models/skill.py`), with a read-only
+admin column and an "On global" filter. A skill that is not there yet may sit in the
+backend, but anything that shows skills to a player (the CM planner, a skill page) must go
+through `on_global()`. Every skill in the global client has a description today, so the
+filter's "Not yet" side is empty; the rule exists so it holds when that changes.
 
 ## The game's master database (`master.mdb`) and the committed snapshot
 
@@ -926,7 +935,7 @@ The tables the extractor reads, and the two places the schema is not what it loo
 | per-star stats and aptitudes | `card_rarity_data` (334) | one row per outfit per star. `speed`..`wiz` are the base stats at that star; `max_*` is the cap (1200 everywhere); `proper_*` aptitudes on the game's 1..8 scale (G F E D C B A S). **`skill_set` is not a skill id**: it keys the `skill_set` table, whose `skill_id1` is the unique skill that star carries |
 | innate and awakening skills | `available_skill_set` (721) | keyed by `card_data.available_skill_set_id`; `need_rank` 0 innate, 2..5 the awakening level |
 | outfit text | `text_data` cat 4 (full), 5 (title), 6 (character name by character id) | |
-| support cards | `support_card_data` (253) | `rarity` 1 R, 2 SR, 3 SSR; `command_id` 101 speed, 102 stamina, 103 power, 105 guts, 106 wit, and 0 with `support_card_type` 2 friend / 3 group |
+| support cards | `support_card_data` | `rarity` 1 R, 2 SR, 3 SSR; `command_id` is the training command, named by `text_data` category 55 and read from there by the extractor (101 speed, 102 **power**, 103 **guts**, 105 **stamina**, 106 wit: not stat order), and 0 with `support_card_type` 2 friend / 3 group |
 | support card hints | `single_mode_hint_gain` (2063) | **keyed per card by `support_card_id`**, not by the card's `skill_set_id` (several cards of one character share that as `hint_id`, with different rows each). `hint_gain_type` 0 rows are skills (`hint_value_1`); type 1 are stat hints, skipped. 15 cards have none: friend, group and Haru Urara cards |
 | support card text | `text_data` cat 75 (full), 76 (title), 77 (character) | |
 
@@ -942,7 +951,14 @@ Support card **event** skills are not in any clean table (they come from story c
 data); gametora's per-card pages are the agreed source for that one piece, fetched by
 `scripts/fetch_support_events.py` into `support_events.json` in the same folder (their
 Next.js data endpoint, slug `<id>-<gametora name>`; 648 rows across 249 cards on
-2026-09-16).
+2026-09-16). Ids only: no gametora name or description is stored.
+
+`scripts/check_against_gametora.py` is the other use of gametora, and it stores nothing:
+`--numbers` compares every snapshot card's rarity, stats, growth, aptitudes and support
+type with their pages, and `--stale` lists cards whose global release date has passed but
+which the snapshot lacks (so: launch the game, re-extract). Its first run, 2026-09-17,
+found the extractor's hand-typed `command_id` table had stamina, power and guts rotated;
+the extractor now reads the command names from the game (`text_data` category 55).
 
 ## `PatreonTier` / `PatreonSupporter`
 

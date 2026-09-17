@@ -62,6 +62,7 @@ TEXT_CARD_FULL = 4          # "[Special Dreamer] Special Week"
 TEXT_CARD_TITLE = 5         # "[Special Dreamer]"
 TEXT_CHARA_NAME = 6         # "Special Week", by character id
 TEXT_SKILL_NAME = 47
+TEXT_COMMAND_NAME = 55      # "Speed", by training command id (101, 102, ...)
 TEXT_SKILL_DESC = 48
 TEXT_SUPPORT_FULL = 75      # "[Get Lots of Hugs for Me] Oguri Cap"
 TEXT_SUPPORT_TITLE = 76
@@ -71,9 +72,13 @@ TUTORIAL_CARD_MIN_ID = 9_000_000
 
 RUNNING_STYLES = {1: "front", 2: "pace", 3: "late", 4: "end"}
 
-# support_card_data.command_id names the trained stat; 0 with
-# support_card_type 2 is a friend card and 3 a group card.
-COMMAND_TYPES = {101: "speed", 102: "stamina", 103: "power", 105: "guts", 106: "wit"}
+# support_card_data.command_id is the training command the card boosts; 0 with
+# support_card_type 2 is a friend card and 3 a group card. Which stat a command
+# id means is READ FROM THE GAME (TEXT_COMMAND_NAME), never listed here: the ids
+# are not in stat order (102 is Power, 103 Guts, 105 Stamina), and a hand-typed
+# table had three of the five wrong until 2026-09-17, which put every stamina,
+# power and guts card under the wrong type.
+STAT_TYPES = {"speed", "stamina", "power", "guts", "wit"}
 SUPPORT_CARD_TYPES = {2: "friend", 3: "group"}
 
 HINT_GAIN_SKILL = 0   # hint_value_1 is a skill id; type 1 rows are stat hints
@@ -206,6 +211,19 @@ def extract_support_cards(conn):
     titles = text_map(conn, TEXT_SUPPORT_TITLE)
     chara_names = text_map(conn, TEXT_SUPPORT_CHARA)
 
+    # {101: "speed", ...} in the game's own words, kept to the five stats so an
+    # unrelated command name can never become a card type.
+    command_types = {
+        command_id: name.lower()
+        for command_id, name in text_map(conn, TEXT_COMMAND_NAME).items()
+        if name.lower() in STAT_TYPES
+    }
+    if set(command_types.values()) != STAT_TYPES:
+        raise SystemExit(
+            f"text_data category {TEXT_COMMAND_NAME} no longer names all five training "
+            f"commands (found {sorted(command_types.values())}); check the category id"
+        )
+
     cards = []
     for row in conn.execute("SELECT * FROM support_card_data ORDER BY id"):
         card_id = row["id"]
@@ -217,7 +235,7 @@ def extract_support_cards(conn):
             "title": titles.get(card_id, ""),
             "rarity": row["rarity"],
             "card_type": (
-                COMMAND_TYPES.get(row["command_id"])
+                command_types.get(row["command_id"])
                 or SUPPORT_CARD_TYPES.get(row["support_card_type"], "?")
             ),
             "skill_set_id": row["skill_set_id"],

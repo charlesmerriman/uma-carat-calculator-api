@@ -184,6 +184,7 @@ result depends on which tests ran before it.
 | `import_game_data` | Fills the game-data columns on Uma and SupportCard and creates or updates every Skill from `scripts/data/master_snapshot/`. `--dry-run` first; `--gametora skills.json` adds the detailed descriptions |
 | `import_game_data` also reads `support_events.json`, written by `scripts/fetch_support_events.py` from gametora (the game has no clean table for support card event skills) |
 | `link_skill_images` | Points every Skill without an image at `skills/<icon_id>.png` in the Space, after `scripts/fetch_skill_icons.py --upload` put the files there |
+| `merge_duplicate_support_cards` | The same merge for support cards (it subclasses the uma command): folds "Daiichi Ruby (Rerun)", which has no `game_id` and so can never be reached by the import, into the card with the same image id. `--dry-run` first |
 | `merge_duplicate_umas` | Folds a `(Rerun)` copy of an uma into the original by image id, re-pointing every row that referenced it. Run before any migration that makes uma ids unique; `--dry-run` first |
 
 Four more are one-off data repairs, kept for the record: `classify_banner_categories`,

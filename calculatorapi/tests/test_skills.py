@@ -252,6 +252,51 @@ class SkillAdminTests(CalculatorTestCase):
         self.assertContains(res, "Right-Handed ◎")
 
 
+@override_settings(STORAGES=PLAIN_TEST_STORAGES)
+class SkillOnGlobalTests(CalculatorTestCase):
+    """A skill is on global when the game gives it a description. Derived, never stored."""
+
+    def setUp(self):
+        # A group each: the admin's "Versions" column prints a skill's siblings,
+        # which would put the released id on the unreleased skill's row.
+        common = {"rarity": 1, "tier": 1, "icon_id": 10011}
+        self.released = Skill.objects.create(
+            game_id=200012, name="Right-Handed ○", description="Moderately increases...",
+            group_id=20001, **common,
+        )
+        self.unreleased = Skill.objects.create(game_id=200992, name="", group_id=20099, **common)
+        # Whitespace is not a description.
+        self.blank = Skill.objects.create(
+            game_id=200993, name="", description="  \n", group_id=20098, **common,
+        )
+
+    def test_the_property_and_the_queryset_agree(self):
+        self.assertTrue(self.released.is_on_global)
+        self.assertFalse(self.unreleased.is_on_global)
+        self.assertFalse(self.blank.is_on_global)
+        self.assertEqual(list(Skill.objects.on_global()), [self.released])
+        self.assertCountEqual(Skill.objects.not_on_global(), [self.unreleased, self.blank])
+
+    def test_a_description_arriving_puts_the_skill_on_global(self):
+        # Nothing to flip and nothing to forget: the next import's text is enough.
+        self.unreleased.description = "Slightly increases..."
+        self.unreleased.save()
+
+        self.assertEqual(Skill.objects.on_global().count(), 2)
+
+    def test_admin_filter_lists_the_unreleased(self):
+        self.client.force_login(CustomUser.objects.create_superuser(username="boss", password="x"))
+        url = reverse("admin:calculatorapi_skill_changelist")
+
+        not_yet = self.client.get(url, {"on_global": "no"})
+        released = self.client.get(url, {"on_global": "yes"})
+
+        self.assertContains(not_yet, "200992")
+        self.assertNotContains(not_yet, "200012")
+        self.assertContains(released, "200012")
+        self.assertNotContains(released, "200992")
+
+
 class UmaSkillImportTests(CalculatorTestCase):
     """The junction rows: which outfit carries which skill, and how."""
 

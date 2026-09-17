@@ -6,7 +6,7 @@
   "name": "[Tracen Academy] Special Week",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081001
  },
  {
@@ -46,7 +46,7 @@
   "name": "[Tracen Academy] Oguri Cap",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081006
  },
  {
@@ -56,7 +56,7 @@
   "name": "[Tracen Academy] Gold Ship",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081007
  },
  {
@@ -66,7 +66,7 @@
   "name": "[Tracen Academy] Vodka",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081008
  },
  {
@@ -86,7 +86,7 @@
   "name": "[Tracen Academy] Grass Wonder",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081011
  },
  {
@@ -96,7 +96,7 @@
   "name": "[Tracen Academy] Mejiro McQueen",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081013
  },
  {
@@ -106,7 +106,7 @@
   "name": "[Tracen Academy] El Condor Pasa",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081014
  },
  {
@@ -116,7 +116,7 @@
   "name": "[Tracen Academy] T.M. Opera O",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081015
  },
  {
@@ -136,7 +136,7 @@
   "name": "[Tracen Academy] Seiun Sky",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081020
  },
  {
@@ -146,7 +146,7 @@
   "name": "[Tracen Academy] Rice Shower",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081030
  },
  {
@@ -156,7 +156,7 @@
   "name": "[Tracen Academy] Winning Ticket",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081035
  },
  {
@@ -186,7 +186,7 @@
   "name": "[Tracen Academy] Super Creek",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081045
  },
  {
@@ -196,7 +196,7 @@
   "name": "[Tracen Academy] Haru Urara",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081052
  },
  {
@@ -236,7 +236,7 @@
   "name": "[Tracen Academy] Hishi Amazon",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081012
  },
  {
@@ -246,7 +246,7 @@
   "name": "[Tracen Academy] Air Groove",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081018
  },
  {
@@ -256,7 +256,7 @@
   "name": "[Tracen Academy] Agnes Digital",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081019
  },
  {
@@ -266,7 +266,7 @@
   "name": "[Tracen Academy] Tamamo Cross",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081021
  },
  {
@@ -286,7 +286,7 @@
   "name": "[Tracen Academy] Biwa Hayahide",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081023
  },
  {
@@ -296,7 +296,7 @@
   "name": "[Tracen Academy] Mayano Top Gun",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081024
  },
  {
@@ -306,7 +306,7 @@
   "name": "[Tracen Academy] Manhattan Cafe",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081025
  },
  {
@@ -316,7 +316,7 @@
   "name": "[Tracen Academy] Mihono Bourbon",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081026
  },
  {
@@ -326,7 +326,7 @@
   "name": "[Tracen Academy] Mejiro Ryan",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081027
  },
  {
@@ -336,7 +336,7 @@
   "name": "[Tracen Academy] Yukino Bijin",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081029
  },
  {
@@ -346,7 +346,7 @@
   "name": "[Tracen Academy] Ines Fujin",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081031
  },
  {
@@ -386,7 +386,7 @@
   "name": "[Tracen Academy] Smart Falcon",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081046
  },
  {
@@ -446,7 +446,7 @@
   "name": "[Tracen Academy] Meisho Doto",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081058
  },
  {
@@ -466,7 +466,7 @@
   "name": "[Tracen Academy] Nice Nature",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081060
  },
  {
@@ -516,7 +516,7 @@
   "name": "[Tracen Academy] Daitaku Helios",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081065
  },
  {
@@ -536,7 +536,7 @@
   "name": "[Tracen Academy] Mejiro Palmer",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081064
  },
  {
@@ -556,7 +556,7 @@
   "name": "[Tracen Academy] Satono Diamond",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081067
  },
  {
@@ -566,7 +566,7 @@
   "name": "[Tracen Academy] Matikanetannhauser",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081062
  },
  {
@@ -576,7 +576,7 @@
   "name": "[Tracen Academy] Yaeno Muteki",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081072
  },
  {
@@ -586,7 +586,7 @@
   "name": "[Tracen Academy] Zenno Rob Roy",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081047
  },
  {
@@ -606,7 +606,7 @@
   "name": "[Tracen Academy] Seeking the Pearl",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081042
  },
  {
@@ -616,7 +616,7 @@
   "name": "[Tracen Academy] Sakura Chiyono O",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081069
  },
  {
@@ -636,7 +636,7 @@
   "name": "[Tracen Academy] Hishi Akebono",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081028
  },
  {
@@ -646,7 +646,7 @@
   "name": "[Tracen Academy] Bamboo Memory",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081053
  },
  {
@@ -666,7 +666,7 @@
   "name": "[Tracen Academy] Nakayama Festa",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081049
  },
  {
@@ -676,7 +676,7 @@
   "name": "[Tracen Academy] Inari One",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081034
  },
  {
@@ -696,7 +696,7 @@
   "name": "[Tracen Academy] Tosen Jordan",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081048
  },
  {
@@ -706,7 +706,7 @@
   "name": "[Tracen Academy] Sirius Symboli",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081070
  },
  {
@@ -746,7 +746,7 @@
   "name": "[Tracen Academy] Admire Vega",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081033
  },
  {
@@ -756,7 +756,7 @@
   "name": "[Tracen Academy] Mejiro Bright",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081074
  },
  {
@@ -786,7 +786,7 @@
   "name": "[Tracen Academy] Daiichi Ruby",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081085
  },
  {
@@ -796,7 +796,7 @@
   "name": "[Tracen Academy] K.S.Miracle",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081093
  },
  {
@@ -806,7 +806,7 @@
   "name": "[Tracen Academy] Tsurumaru Tsuyoshi",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081073
  },
  {
@@ -816,7 +816,7 @@
   "name": "[Tracen Academy] Symboli Kris S",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081083
  },
  {
@@ -836,7 +836,7 @@
   "name": "[Tracen Academy] Tanino Gimlet",
   "title": "[Tracen Academy]",
   "rarity": 1,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081084
  },
  {
@@ -866,7 +866,7 @@
   "name": "[Reach the Top!] Hishi Amazon",
   "title": "[Reach the Top!]",
   "rarity": 2,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081012
  },
  {
@@ -876,7 +876,7 @@
   "name": "[Nothing Escapes the Vice Prez] Air Groove",
   "title": "[Nothing Escapes the Vice Prez]",
   "rarity": 2,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081018
  },
  {
@@ -886,7 +886,7 @@
   "name": "[Digital's Recharge Station] Agnes Digital",
   "title": "[Digital's Recharge Station]",
   "rarity": 2,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081019
  },
  {
@@ -896,7 +896,7 @@
   "name": "[Trial Initiation] Biwa Hayahide",
   "title": "[Trial Initiation]",
   "rarity": 2,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081023
  },
  {
@@ -906,7 +906,7 @@
   "name": "[Cute + Cute = ?] Mayano Top Gun",
   "title": "[Cute + Cute = ?]",
   "rarity": 2,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081024
  },
  {
@@ -916,7 +916,7 @@
   "name": "[My Solo Drawn to Raindrop Drums] Manhattan Cafe",
   "title": "[My Solo Drawn to Raindrop Drums]",
   "rarity": 2,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081025
  },
  {
@@ -926,7 +926,7 @@
   "name": "[Pal-Assisted Training] Mihono Bourbon",
   "title": "[Pal-Assisted Training]",
   "rarity": 2,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081026
  },
  {
@@ -936,7 +936,7 @@
   "name": "[On and Off the Court] Mejiro Ryan",
   "title": "[On and Off the Court]",
   "rarity": 2,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081027
  },
  {
@@ -946,7 +946,7 @@
   "name": "[City Girl 101] Yukino Bijin",
   "title": "[City Girl 101]",
   "rarity": 2,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081029
  },
  {
@@ -1006,7 +1006,7 @@
   "name": "[Fighting for Fortune] Meisho Doto",
   "title": "[Fighting for Fortune]",
   "rarity": 2,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081058
  },
  {
@@ -1026,7 +1026,7 @@
   "name": "[It's Just Water] Nice Nature",
   "title": "[It's Just Water]",
   "rarity": 2,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081060
  },
  {
@@ -1056,7 +1056,7 @@
   "name": "[Now Dat's What I Call Grilled Squid!] Tamamo Cross",
   "title": "[Now Dat's What I Call Grilled Squid!]",
   "rarity": 2,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081021
  },
  {
@@ -1076,7 +1076,7 @@
   "name": "[Let's Get This Party Lit!] Daitaku Helios",
   "title": "[Let's Get This Party Lit!]",
   "rarity": 2,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081065
  },
  {
@@ -1106,7 +1106,7 @@
   "name": "[Lifting Your Spirits] Nishino Flower",
   "title": "[Lifting Your Spirits]",
   "rarity": 2,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081051
  },
  {
@@ -1116,7 +1116,7 @@
   "name": "[The Perfect Book for You] Zenno Rob Roy",
   "title": "[The Perfect Book for You]",
   "rarity": 2,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081047
  },
  {
@@ -1126,7 +1126,7 @@
   "name": "[The World's My Oyster] Seeking the Pearl",
   "title": "[The World's My Oyster]",
   "rarity": 2,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081042
  },
  {
@@ -1156,7 +1156,7 @@
   "name": "[Laughing through the Mud] Inari One",
   "title": "[Laughing through the Mud]",
   "rarity": 2,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081034
  },
  {
@@ -1186,7 +1186,7 @@
   "name": "[Turf as Nails] Tosen Jordan",
   "title": "[Turf as Nails]",
   "rarity": 2,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081048
  },
  {
@@ -1196,7 +1196,7 @@
   "name": "[Grma, Ramen ♪] Fine Motion",
   "title": "[Grma, Ramen ♪]",
   "rarity": 2,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081022
  },
  {
@@ -1206,7 +1206,7 @@
   "name": "[The Brightest Star Shines On] Sirius Symboli",
   "title": "[The Brightest Star Shines On]",
   "rarity": 2,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081070
  },
  {
@@ -1226,7 +1226,7 @@
   "name": "[Hot Hearts and Cool Drinks] Mejiro Ryan",
   "title": "[Hot Hearts and Cool Drinks]",
   "rarity": 2,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081027
  },
  {
@@ -1236,7 +1236,7 @@
   "name": "[Aim for the Brightest] Admire Vega",
   "title": "[Aim for the Brightest]",
   "rarity": 2,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081033
  },
  {
@@ -1246,7 +1246,7 @@
   "name": "[The Perfect Morning Greeting!] Sakura Bakushin O",
   "title": "[The Perfect Morning Greeting!]",
   "rarity": 2,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081041
  },
  {
@@ -1256,7 +1256,7 @@
   "name": "[At the End of the Day] Special Week",
   "title": "[At the End of the Day]",
   "rarity": 2,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081001
  },
  {
@@ -1276,7 +1276,7 @@
   "name": "[Almost... an Umadol?! ♡] Smart Falcon",
   "title": "[Almost... an Umadol?! ♡]",
   "rarity": 2,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081046
  },
  {
@@ -1296,7 +1296,7 @@
   "name": "[Step! Smile! Wink!] Tokai Teio",
   "title": "[Step! Smile! Wink!]",
   "rarity": 2,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081003
  },
  {
@@ -1306,7 +1306,7 @@
   "name": "[I Love You... Dear Food] Oguri Cap",
   "title": "[I Love You... Dear Food]",
   "rarity": 2,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081006
  },
  {
@@ -1336,7 +1336,7 @@
   "name": "[The 3rd Miracle] K.S.Miracle",
   "title": "[The 3rd Miracle]",
   "rarity": 2,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081093
  },
  {
@@ -1346,7 +1346,7 @@
   "name": "[Go, Go! Tsuyoshi!] Tsurumaru Tsuyoshi",
   "title": "[Go, Go! Tsuyoshi!]",
   "rarity": 2,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081073
  },
  {
@@ -1356,7 +1356,7 @@
   "name": "[Stop, Prez!] Narita Top Road",
   "title": "[Stop, Prez!]",
   "rarity": 2,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081077
  },
  {
@@ -1366,7 +1366,7 @@
   "name": "[The Brightest Star in Japan!] Special Week",
   "title": "[The Brightest Star in Japan!]",
   "rarity": 3,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081001
  },
  {
@@ -1396,7 +1396,7 @@
   "name": "[Breakaway Battleship] Gold Ship",
   "title": "[Breakaway Battleship]",
   "rarity": 3,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081007
  },
  {
@@ -1406,7 +1406,7 @@
   "name": "[Wild Rider] Vodka",
   "title": "[Wild Rider]",
   "rarity": 3,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081008
  },
  {
@@ -1416,7 +1416,7 @@
   "name": "[Fairest Fleur] Grass Wonder",
   "title": "[Fairest Fleur]",
   "rarity": 3,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081011
  },
  {
@@ -1426,7 +1426,7 @@
   "name": "[Champion's Passion] El Condor Pasa",
   "title": "[Champion's Passion]",
   "rarity": 3,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081014
  },
  {
@@ -1436,7 +1436,7 @@
   "name": "[Foolproof Plan] Seiun Sky",
   "title": "[Foolproof Plan]",
   "rarity": 3,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081020
  },
  {
@@ -1446,7 +1446,7 @@
   "name": "[Split the Sky, White Lightning!] Tamamo Cross",
   "title": "[Split the Sky, White Lightning!]",
   "rarity": 3,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081021
  },
  {
@@ -1466,7 +1466,7 @@
   "name": "[Watch My Star Fly!] Ines Fujin",
   "title": "[Watch My Star Fly!]",
   "rarity": 3,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081031
  },
  {
@@ -1476,7 +1476,7 @@
   "name": "[BNWinner!] Winning Ticket",
   "title": "[BNWinner!]",
   "rarity": 3,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081035
  },
  {
@@ -1516,7 +1516,7 @@
   "name": "[Piece of Mind] Super Creek",
   "title": "[Piece of Mind]",
   "rarity": 3,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081045
  },
  {
@@ -1526,7 +1526,7 @@
   "name": "[My Umadol Way! ☆] Smart Falcon",
   "title": "[My Umadol Way! ☆]",
   "rarity": 3,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081046
  },
  {
@@ -1546,7 +1546,7 @@
   "name": "[Urara's Day Off!] Haru Urara",
   "title": "[Urara's Day Off!]",
   "rarity": 3,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081052
  },
  {
@@ -1576,7 +1576,7 @@
   "name": "[Your Team Ace] Mejiro McQueen",
   "title": "[Your Team Ace]",
   "rarity": 3,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081013
  },
  {
@@ -1586,7 +1586,7 @@
   "name": "[Showered in Joy] Rice Shower",
   "title": "[Showered in Joy]",
   "rarity": 3,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081030
  },
  {
@@ -1596,7 +1596,7 @@
   "name": "[Get Lots of Hugs for Me] Oguri Cap",
   "title": "[Get Lots of Hugs for Me]",
   "rarity": 3,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081006
  },
  {
@@ -1626,7 +1626,7 @@
   "name": "[Go Ahead and Laugh] Mejiro Palmer",
   "title": "[Go Ahead and Laugh]",
   "rarity": 3,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081064
  },
  {
@@ -1646,7 +1646,7 @@
   "name": "[The Will to Overtake] Satono Diamond",
   "title": "[The Will to Overtake]",
   "rarity": 3,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081067
  },
  {
@@ -1656,7 +1656,7 @@
   "name": "[Just Keep Going] Matikanetannhauser",
   "title": "[Just Keep Going]",
   "rarity": 3,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081062
  },
  {
@@ -1676,7 +1676,7 @@
   "name": "[Fiery Discipline] Yaeno Muteki",
   "title": "[Fiery Discipline]",
   "rarity": 3,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081072
  },
  {
@@ -1686,7 +1686,7 @@
   "name": "[Dreams <I>Do</I> Come True!] Winning Ticket",
   "title": "[Dreams <I>Do</I> Come True!]",
   "rarity": 3,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081035
  },
  {
@@ -1696,7 +1696,7 @@
   "name": "[Happiness Just around the Bend] Rice Shower",
   "title": "[Happiness Just around the Bend]",
   "rarity": 3,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081030
  },
  {
@@ -1716,7 +1716,7 @@
   "name": "[Peak Sakura Season] Sakura Chiyono O",
   "title": "[Peak Sakura Season]",
   "rarity": 3,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081069
  },
  {
@@ -1736,7 +1736,7 @@
   "name": "[Who Wants the First Bite?] Hishi Akebono",
   "title": "[Who Wants the First Bite?]",
   "rarity": 3,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081028
  },
  {
@@ -1756,7 +1756,7 @@
   "name": "[Head-on Fight!] Bamboo Memory",
   "title": "[Head-on Fight!]",
   "rarity": 3,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081053
  },
  {
@@ -1766,7 +1766,7 @@
   "name": "[43, 8, 1] Nakayama Festa",
   "title": "[43, 8, 1]",
   "rarity": 3,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081049
  },
  {
@@ -1796,7 +1796,7 @@
   "name": "[Full-Blown Tantrum] Winning Ticket",
   "title": "[Full-Blown Tantrum]",
   "rarity": 3,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081035
  },
  {
@@ -1806,7 +1806,7 @@
   "name": "[Mini☆Vacation] Daiwa Scarlet",
   "title": "[Mini☆Vacation]",
   "rarity": 3,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081009
  },
  {
@@ -1816,7 +1816,7 @@
   "name": "[Winning Pitch] Mejiro Ryan",
   "title": "[Winning Pitch]",
   "rarity": 3,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081027
  },
  {
@@ -1866,7 +1866,7 @@
   "name": "[Tonight, We Waltz] King Halo",
   "title": "[Tonight, We Waltz]",
   "rarity": 3,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081061
  },
  {
@@ -1886,7 +1886,7 @@
   "name": "[Regal Racers] Tokai Teio",
   "title": "[Regal Racers]",
   "rarity": 3,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081003
  },
  {
@@ -1896,7 +1896,7 @@
   "name": "[Fugue of Fortune] Mihono Bourbon",
   "title": "[Fugue of Fortune]",
   "rarity": 3,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081026
  },
  {
@@ -1906,7 +1906,7 @@
   "name": "[Constellation of Stars] Twin Turbo",
   "title": "[Constellation of Stars]",
   "rarity": 3,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081066
  },
  {
@@ -1926,7 +1926,7 @@
   "name": "[Winning Dream] Silence Suzuka",
   "title": "[Winning Dream]",
   "rarity": 3,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081002
  },
  {
@@ -1936,7 +1936,7 @@
   "name": "[Warm Heart, Soft Steps] Ikuno Dictus",
   "title": "[Warm Heart, Soft Steps]",
   "rarity": 3,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081063
  },
  {
@@ -1946,7 +1946,7 @@
   "name": "[Beware! Halloween Night!] Tamamo Cross",
   "title": "[Beware! Halloween Night!]",
   "rarity": 3,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081021
  },
  {
@@ -1996,7 +1996,7 @@
   "name": "[The Whistling Arrow's Taunt] Narita Brian",
   "title": "[The Whistling Arrow's Taunt]",
   "rarity": 3,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081016
  },
  {
@@ -2006,7 +2006,7 @@
   "name": "[Dancing Light into the Night] Yukino Bijin",
   "title": "[Dancing Light into the Night]",
   "rarity": 3,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081029
  },
  {
@@ -2016,7 +2016,7 @@
   "name": "[Make! Some! NOISE!] Daitaku Helios",
   "title": "[Make! Some! NOISE!]",
   "rarity": 3,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081065
  },
  {
@@ -2046,7 +2046,7 @@
   "name": "[Dazzling Day in the Snow] Marvelous Sunday",
   "title": "[Dazzling Day in the Snow]",
   "rarity": 3,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081055
  },
  {
@@ -2056,7 +2056,7 @@
   "name": "[My Solo Spun in Spiraling Runs] Manhattan Cafe",
   "title": "[My Solo Spun in Spiraling Runs]",
   "rarity": 3,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081025
  },
  {
@@ -2076,7 +2076,7 @@
   "name": "[Lucky Star in the Sky] Admire Vega",
   "title": "[Lucky Star in the Sky]",
   "rarity": 3,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081033
  },
  {
@@ -2096,7 +2096,7 @@
   "name": "[Leaping into the Unknown] Meisho Doto",
   "title": "[Leaping into the Unknown]",
   "rarity": 3,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081058
  },
  {
@@ -2136,7 +2136,7 @@
   "name": "[Super! Sonic! Flower Power!] Sakura Bakushin O",
   "title": "[Super! Sonic! Flower Power!]",
   "rarity": 3,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081041
  },
  {
@@ -2156,7 +2156,7 @@
   "name": "[A Fan's Joy] Agnes Digital",
   "title": "[A Fan's Joy]",
   "rarity": 3,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081019
  },
  {
@@ -2176,7 +2176,7 @@
   "name": "[Little by Little] Mejiro Bright",
   "title": "[Little by Little]",
   "rarity": 3,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081074
  },
  {
@@ -2196,7 +2196,7 @@
   "name": "[A MORE MARVELOUS WORLD! ☆] Marvelous Sunday",
   "title": "[A MORE MARVELOUS WORLD! ☆]",
   "rarity": 3,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081055
  },
  {
@@ -2206,7 +2206,7 @@
   "name": "[Enchaînement] Symboli Rudolf",
   "title": "[Enchaînement]",
   "rarity": 3,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081017
  },
  {
@@ -2236,7 +2236,7 @@
   "name": "[Number 1 Outfit] Daiwa Scarlet",
   "title": "[Number 1 Outfit]",
   "rarity": 3,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081009
  },
  {
@@ -2246,7 +2246,7 @@
   "name": "[Make These Feelings Reach You!] Bamboo Memory",
   "title": "[Make These Feelings Reach You!]",
   "rarity": 3,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081053
  },
  {
@@ -2266,7 +2266,7 @@
   "name": "[Go Go☆Princess!] Kawakami Princess",
   "title": "[Go Go☆Princess!]",
   "rarity": 3,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081039
  },
  {
@@ -2286,7 +2286,7 @@
   "name": "[Sunny Passion ♪] Haru Urara",
   "title": "[Sunny Passion ♪]",
   "rarity": 3,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081052
  },
  {
@@ -2296,7 +2296,7 @@
   "name": "[Beloved Orchid Bouquet] Ikuno Dictus",
   "title": "[Beloved Orchid Bouquet]",
   "rarity": 3,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081063
  },
  {
@@ -2326,7 +2326,7 @@
   "name": "[Twinkle in Your Eyes ∞] El Condor Pasa",
   "title": "[Twinkle in Your Eyes ∞]",
   "rarity": 3,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081014
  },
  {
@@ -2346,7 +2346,7 @@
   "name": "[\"Rhodonite and the Dreamstone\"] Zenno Rob Roy",
   "title": "[\"Rhodonite and the Dreamstone\"]",
   "rarity": 3,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081047
  },
  {
@@ -2356,7 +2356,7 @@
   "name": "[Take Hold of Our Dreams!] Special Week",
   "title": "[Take Hold of Our Dreams!]",
   "rarity": 3,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081001
  },
  {
@@ -2366,7 +2366,7 @@
   "name": "[Tailwind to My Goals] Air Groove",
   "title": "[Tailwind to My Goals]",
   "rarity": 3,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081018
  },
  {
@@ -2396,7 +2396,7 @@
   "name": "[A Good Heart Blossoms to Its Fullest] Sakura Chiyono O",
   "title": "[A Good Heart Blossoms to Its Fullest]",
   "rarity": 3,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081069
  },
  {
@@ -2406,7 +2406,7 @@
   "name": "[It's on the House] Manhattan Cafe",
   "title": "[It's on the House]",
   "rarity": 3,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081025
  },
  {
@@ -2426,7 +2426,7 @@
   "name": "[TT Ignition!] Twin Turbo",
   "title": "[TT Ignition!]",
   "rarity": 3,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081066
  },
  {
@@ -2436,7 +2436,7 @@
   "name": "[Uchronia Architect] Biwa Hayahide",
   "title": "[Uchronia Architect]",
   "rarity": 3,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081023
  },
  {
@@ -2446,7 +2446,7 @@
   "name": "[Ah, Such Majesty] Daiichi Ruby",
   "title": "[Ah, Such Majesty]",
   "rarity": 3,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081085
  },
  {
@@ -2456,7 +2456,7 @@
   "name": "[Moonlit Devil ♪] Mejiro Palmer",
   "title": "[Moonlit Devil ♪]",
   "rarity": 3,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081064
  },
  {
@@ -2476,7 +2476,7 @@
   "name": "[Onwards, Demon Queen Lackeys!] Shinko Windy",
   "title": "[Onwards, Demon Queen Lackeys!]",
   "rarity": 3,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081043
  },
  {
@@ -2486,7 +2486,7 @@
   "name": "[A Win Foreshadowed] Symboli Kris S",
   "title": "[A Win Foreshadowed]",
   "rarity": 3,
-  "card_type": "guts",
+  "card_type": "stamina",
   "skill_set_id": 9081083
  },
  {
@@ -2506,7 +2506,7 @@
   "name": "[Pious Flame, Heavens Scorcher] Yaeno Muteki",
   "title": "[Pious Flame, Heavens Scorcher]",
   "rarity": 3,
-  "card_type": "power",
+  "card_type": "guts",
   "skill_set_id": 9081072
  },
  {
@@ -2536,7 +2536,7 @@
   "name": "[Welcome to Umayuru] Tanino Gimlet",
   "title": "[Welcome to Umayuru]",
   "rarity": 3,
-  "card_type": "stamina",
+  "card_type": "power",
   "skill_set_id": 9081084
  },
  {
