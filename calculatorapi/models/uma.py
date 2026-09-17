@@ -73,6 +73,17 @@ class Uma(models.Model):
         ),
     )
     image = models.ImageField(upload_to="umas/", blank=True, null=True)
+    # A second art asset, not a replacement: the same card art without the
+    # rarity border. Nothing renders it yet; it exists so the borderless files
+    # can be attached to the same uma row (matched on game_id) as they arrive.
+    # Its own folder in the Space, so the picker lists the two sets apart.
+    image_borderless = models.ImageField(
+        upload_to="umas_borderless/",
+        blank=True,
+        null=True,
+        verbose_name="borderless image",
+        help_text="The same art without the rarity border. Optional.",
+    )
     admin_comments = models.TextField(blank=True, null=True, help_text="Notes for editors.")
 
     # PUBLIC, and rendered -- unlike admin_comments above, which nothing on the
