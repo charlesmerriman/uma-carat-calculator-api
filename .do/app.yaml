@@ -213,7 +213,7 @@ services:
   # to CONTENT_MODELS is granted on the deploy that creates its table, with no
   # console step to remember. Idempotent, and it runs AFTER migrate on purpose:
   # before the table exists the model has no permissions to grant.
-  run_command: python manage.py migrate && python manage.py create_content_editor_group && python manage.py sync_changelog && gunicorn calculatorproject.wsgi:application --bind 0.0.0.0:8080
+  run_command: python manage.py migrate && python manage.py create_content_editor_group && python manage.py sync_changelog && python manage.py import_game_data --no-input && python manage.py link_skill_images && gunicorn calculatorproject.wsgi:application --bind 0.0.0.0:8080
   source_dir: /
 static_sites:
 - build_command: npm install && npm run build
