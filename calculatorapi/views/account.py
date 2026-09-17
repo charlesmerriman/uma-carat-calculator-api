@@ -264,7 +264,8 @@ def _oshi_rows(user):
 
     All of them, not just the covered ones: the page greys out what the
     current tier no longer covers rather than pretending it is gone. `image`
-    is the storage URL, like GET /umas, and "" if an editor has since cleared
+    is the storage URL of the uma's portrait (borderless art, else the
+    bordered art), like GET /umas, and "" if an editor has since cleared
     the picture — the row is still theirs, the client just has nothing to draw.
     """
     return [
@@ -272,7 +273,7 @@ def _oshi_rows(user):
             "position": position,
             "id": row.uma.pk,
             "name": row.uma.name,
-            "image": row.uma.image.url if row.uma.image else "",
+            "image": row.uma.portrait.url if row.uma.portrait else "",
         }
         for position, row in enumerate(
             user.oshis.select_related("uma").order_by("position")

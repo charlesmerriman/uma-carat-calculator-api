@@ -74,8 +74,9 @@ class Uma(models.Model):
     )
     image = models.ImageField(upload_to="umas/", blank=True, null=True)
     # A second art asset, not a replacement: the same card art without the
-    # rarity border. Nothing renders it yet; it exists so the borderless files
-    # can be attached to the same uma row (matched on game_id) as they arrive.
+    # rarity border. Rendered by the oshi picker and the account picture, via
+    # `portrait` below; attached to the row (matched on game_id) by
+    # `manage.py link_borderless_umas`.
     # Its own folder in the Space, so the picker lists the two sets apart.
     image_borderless = models.ImageField(
         upload_to="umas_borderless/",
@@ -160,6 +161,19 @@ class Uma(models.Model):
     def character_id(self):
         """The game's character id: an outfit id is `<character><outfit>`."""
         return self.game_id // 100 if self.game_id else None
+
+    @property
+    def portrait(self):
+        """The art to draw when the uma stands for a PERSON: the borderless cut
+        if there is one, else the bordered card art.
+
+        The oshi picker and the account picture crop the art into a circle,
+        where the rarity border only shows as clipped corners. Falling back
+        keeps every uma pickable while the borderless set has gaps (a new
+        outfit gets its bordered art first). One property so GET /umas and
+        GET /account cannot disagree about which file a pick shows.
+        """
+        return self.image_borderless or self.image
 
     @property
     def is_three_star(self):
