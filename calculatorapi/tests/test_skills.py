@@ -354,13 +354,20 @@ class UmaSkillImportTests(CalculatorTestCase):
 
         import_game_data(SNAPSHOT_DIR)
 
-        self.assertEqual(UmaSkill.objects.count(), 841)
-        self.assertEqual(UmaSkill.objects.filter(source="unique").count(), 120)
-        # 17 ★1/★2 outfits carry two uniques; every other outfit exactly one.
+        # Expected counts come from the snapshot itself, never a literal: the
+        # file grows with every game update, and a pinned number fails the
+        # refresh PR for no reason.
+        rows = json.loads((SNAPSHOT_DIR / "card_skills.json").read_text(encoding="utf-8"))
+        uniques = [row for row in rows if row["source"] == "unique"]
+        self.assertEqual(UmaSkill.objects.count(), len(rows))
+        self.assertEqual(UmaSkill.objects.filter(source="unique").count(), len(uniques))
+        # A ★1/★2 outfit carries two uniques (the weaker one until ★3); every
+        # other outfit exactly one.
         two_uniques = [
             uma for uma in Uma.objects.all() if uma.skills.filter(source="unique").count() == 2
         ]
-        self.assertEqual(len(two_uniques), 17)
+        below_three_star = [card for card in cards if card["default_rarity"] < 3]
+        self.assertEqual(len(two_uniques), len(below_three_star))
         self.assertFalse(Uma.objects.filter(skills__isnull=True).exists())
 
 
@@ -427,9 +434,16 @@ class SupportCardSkillImportTests(CalculatorTestCase):
         import_game_data(SNAPSHOT_DIR)
 
         events = json.loads((SNAPSHOT_DIR / "support_events.json").read_text(encoding="utf-8"))
-        self.assertEqual(SupportCardSkill.objects.filter(source="hint").count(), 1529)
-        self.assertEqual(SupportCardSkill.objects.filter(source="event").count(), len(events))
-        # 15 cards have no hints (friend, group, Haru Urara).
+        hints = json.loads((SNAPSHOT_DIR / "support_hints.json").read_text(encoding="utf-8"))
+        # One row per (card, skill): a skill in two hint groups is still one row.
+        hint_pairs = {(hint["support_card_id"], hint["skill_id"]) for hint in hints}
         self.assertEqual(
-            SupportCard.objects.exclude(skills__source="hint").distinct().count(), 15,
+            SupportCardSkill.objects.filter(source="hint").count(), len(hint_pairs),
+        )
+        self.assertEqual(SupportCardSkill.objects.filter(source="event").count(), len(events))
+        # Some cards have no hints at all (friend, group, Haru Urara).
+        hintless = {card["id"] for card in cards} - {card_id for card_id, _ in hint_pairs}
+        self.assertEqual(
+            SupportCard.objects.exclude(skills__source="hint").distinct().count(),
+            len(hintless),
         )

@@ -3920,6 +3920,31 @@
   "hint_group": 5
  },
  {
+  "support_card_id": 20053,
+  "skill_id": 200012,
+  "hint_group": 1
+ },
+ {
+  "support_card_id": 20053,
+  "skill_id": 200142,
+  "hint_group": 2
+ },
+ {
+  "support_card_id": 20053,
+  "skill_id": 200152,
+  "hint_group": 3
+ },
+ {
+  "support_card_id": 20053,
+  "skill_id": 200572,
+  "hint_group": 4
+ },
+ {
+  "support_card_id": 20053,
+  "skill_id": 200582,
+  "hint_group": 5
+ },
+ {
   "support_card_id": 30001,
   "skill_id": 200162,
   "hint_group": 1
@@ -7553,6 +7578,41 @@
   "support_card_id": 30121,
   "skill_id": 201252,
   "hint_group": 6
+ },
+ {
+  "support_card_id": 30122,
+  "skill_id": 200132,
+  "hint_group": 1
+ },
+ {
+  "support_card_id": 30122,
+  "skill_id": 201142,
+  "hint_group": 2
+ },
+ {
+  "support_card_id": 30122,
+  "skill_id": 201382,
+  "hint_group": 3
+ },
+ {
+  "support_card_id": 30122,
+  "skill_id": 201392,
+  "hint_group": 4
+ },
+ {
+  "support_card_id": 30122,
+  "skill_id": 201402,
+  "hint_group": 5
+ },
+ {
+  "support_card_id": 30122,
+  "skill_id": 201542,
+  "hint_group": 6
+ },
+ {
+  "support_card_id": 30122,
+  "skill_id": 202082,
+  "hint_group": 7
  },
  {
   "support_card_id": 30145,

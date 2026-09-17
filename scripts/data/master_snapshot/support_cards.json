@@ -1350,6 +1350,16 @@
   "skill_set_id": 9081073
  },
  {
+  "id": 20053,
+  "chara_id": 1077,
+  "chara_name": "Narita Top Road",
+  "name": "[Stop, Prez!] Narita Top Road",
+  "title": "[Stop, Prez!]",
+  "rarity": 2,
+  "card_type": "stamina",
+  "skill_set_id": 9081077
+ },
+ {
   "id": 30001,
   "chara_id": 1001,
   "chara_name": "Special Week",
@@ -2508,6 +2518,16 @@
   "rarity": 3,
   "card_type": "speed",
   "skill_set_id": 9081026
+ },
+ {
+  "id": 30122,
+  "chara_id": 1037,
+  "chara_name": "Eishin Flash",
+  "name": "[Danke Schön] Eishin Flash",
+  "title": "[Danke Schön]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081037
  },
  {
   "id": 30145,

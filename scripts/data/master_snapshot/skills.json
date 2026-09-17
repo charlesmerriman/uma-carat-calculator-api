@@ -945,6 +945,21 @@
   "condition_2": ""
  },
  {
+  "id": 100491,
+  "name": "Laugh at the Odds",
+  "description": "Increase velocity when well-positioned with 400m or less remaining after trying to pass another runner on the final corner or later. If unfavored, greatly increase velocity instead.",
+  "rarity": 5,
+  "group_id": 10049,
+  "group_rate": 1,
+  "icon_id": 20013,
+  "skill_category": 5,
+  "cost": null,
+  "precondition_1": "is_finalcorner==1&is_overtake==1",
+  "condition_1": "remain_distance<=400&order_rate>=30&order_rate<=50&popularity>=4",
+  "precondition_2": "is_finalcorner==1&is_overtake==1",
+  "condition_2": "remain_distance<=400&order_rate>=30&order_rate<=50&popularity<4"
+ },
+ {
   "id": 100501,
   "name": "Nemesis",
   "description": "Increase velocity with smoldering ambition when moving up from midpack on the final corner or later.",
@@ -1258,6 +1273,21 @@
   "condition_1": "is_lastspurt==1&order_rate<=40&order_rate>=30&ground_type==2&lastspurt==2",
   "precondition_2": "phase==1&blocked_side_continuetime>=2&corner!=0",
   "condition_2": "is_lastspurt==1&order_rate<=40&order_rate>=30&ground_type==2"
+ },
+ {
+  "id": 101001,
+  "name": "Never Say Never",
+  "description": "Moderately increase velocity when positioned toward the front with 300m remaining. If it's a dirt race and the skill user is close to the lead, also moderately surge ahead.",
+  "rarity": 5,
+  "group_id": 10100,
+  "group_rate": 1,
+  "icon_id": 20013,
+  "skill_category": 5,
+  "cost": null,
+  "precondition_1": "",
+  "condition_1": "remain_distance>=299&remain_distance<=301&order_rate>=20&order_rate<=40&distance_diff_top<=5&ground_type==2",
+  "precondition_2": "",
+  "condition_2": "remain_distance>=299&remain_distance<=301&order_rate>=20&order_rate<=40"
  },
  {
   "id": 110011,
@@ -6135,6 +6165,21 @@
   "condition_2": ""
  },
  {
+  "id": 201383,
+  "name": "Sharp Streak",
+  "description": "Increase velocity on a straight. (Late Surger)",
+  "rarity": 2,
+  "group_id": 20138,
+  "group_rate": 3,
+  "icon_id": 20012,
+  "skill_category": 4,
+  "cost": 150,
+  "precondition_1": "",
+  "condition_1": "running_style==3&straight_random==1",
+  "precondition_2": "",
+  "condition_2": ""
+ },
+ {
   "id": 201391,
   "name": "Late Surger Corners ◎",
   "description": "Moderately increase velocity on a corner. (Late Surger)",
@@ -8445,6 +8490,21 @@
   "condition_2": "popularity>=4&random_lot==60"
  },
  {
+  "id": 202442,
+  "name": "Risk-Taker",
+  "description": "Very occasionally tap into untold inner strength, moderately increasing Speed, Power, and Guts. More likely to activate when skill user is unfavored.",
+  "rarity": 1,
+  "group_id": 20244,
+  "group_rate": 1,
+  "icon_id": 10011,
+  "skill_category": 0,
+  "cost": 180,
+  "precondition_1": "",
+  "condition_1": "popularity<=3&random_lot==15",
+  "precondition_2": "",
+  "condition_2": "popularity>=4&random_lot==30"
+ },
+ {
   "id": 202451,
   "name": "Top Gear",
   "description": "Greatly increase velocity when positioned 2nd or further back within 4 lengths of the lead on the final straight. (Late Surger)",
@@ -9825,6 +9885,21 @@
   "condition_2": ""
  },
  {
+  "id": 900491,
+  "name": "Laugh at the Odds",
+  "description": "Slightly increase velocity when well-positioned with 400m or less remaining after trying to pass another runner on the final corner or later. If unfavored, moderately increase velocity instead.",
+  "rarity": 1,
+  "group_id": 90049,
+  "group_rate": 2,
+  "icon_id": 20011,
+  "skill_category": 5,
+  "cost": 200,
+  "precondition_1": "is_finalcorner==1&is_overtake==1",
+  "condition_1": "remain_distance<=400&order_rate>=30&order_rate<=50&popularity>=4",
+  "precondition_2": "is_finalcorner==1&is_overtake==1",
+  "condition_2": "remain_distance<=400&order_rate>=30&order_rate<=50&popularity<4"
+ },
+ {
   "id": 900501,
   "name": "Nemesis",
   "description": "Slightly increase velocity when moving up from midpack on the final corner or later.",
@@ -10123,6 +10198,21 @@
   "condition_1": "phase_laterhalf_random==1",
   "precondition_2": "",
   "condition_2": ""
+ },
+ {
+  "id": 901001,
+  "name": "Never Say Never",
+  "description": "Very slightly increase velocity when positioned toward the front with 300m remaining. If it's a dirt race and the skill user is close to the lead, also very slightly surge ahead.",
+  "rarity": 1,
+  "group_id": 90100,
+  "group_rate": 2,
+  "icon_id": 20011,
+  "skill_category": 5,
+  "cost": 200,
+  "precondition_1": "",
+  "condition_1": "remain_distance>=299&remain_distance<=301&order_rate>=20&order_rate<=40&distance_diff_top<=5&ground_type==2",
+  "precondition_2": "",
+  "condition_2": "remain_distance>=299&remain_distance<=301&order_rate>=20&order_rate<=40"
  },
  {
   "id": 910011,
@@ -10766,6 +10856,36 @@
   "cost": null,
   "precondition_1": "",
   "condition_1": "distance_type==2&ground_type==1",
+  "precondition_2": "",
+  "condition_2": ""
+ },
+ {
+  "id": 1200041,
+  "name": "Sprint Race Enthusiast",
+  "description": "Increase performance in turf sprint races. (Event Exclusive)",
+  "rarity": 1,
+  "group_id": 120004,
+  "group_rate": 1,
+  "icon_id": 10011,
+  "skill_category": 0,
+  "cost": null,
+  "precondition_1": "",
+  "condition_1": "distance_type==1&ground_type==1",
+  "precondition_2": "",
+  "condition_2": ""
+ },
+ {
+  "id": 1200051,
+  "name": "Dirt Race Enthusiast",
+  "description": "Increase performance in medium-distance dirt races. (Event Exclusive)",
+  "rarity": 1,
+  "group_id": 120005,
+  "group_rate": 1,
+  "icon_id": 10041,
+  "skill_category": 0,
+  "cost": null,
+  "precondition_1": "",
+  "condition_1": "distance_type==3&ground_type==2",
   "precondition_2": "",
   "condition_2": ""
  }
