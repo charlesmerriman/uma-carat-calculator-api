@@ -301,6 +301,12 @@ UNFOLD = {
                         "permission": _requires_perm("calculatorapi.view_customuser"),
                     },
                     {
+                        "title": _("Plans"),
+                        "icon": "folder_copy",
+                        "link": reverse_lazy("admin:calculatorapi_plan_changelist"),
+                        "permission": _requires_perm("calculatorapi.view_plan"),
+                    },
+                    {
                         "title": _("Planned banners"),
                         "icon": "checklist",
                         "link": reverse_lazy("admin:calculatorapi_userplannedbanner_changelist"),

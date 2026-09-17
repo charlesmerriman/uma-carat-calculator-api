@@ -19,7 +19,7 @@ It is deliberately NOT a key on /calculator-data, for two reasons:
   * That response is already the largest the API serves, and the answer is
     needed on the home page, the FAQ and the changelog — none of which fetch
     calculator data at all.
-  * Everything in it but four user-scoped keys is served out of a shared
+  * Everything in it but the user-scoped keys is served out of a shared
     process-wide cache (see public_payload_cache.py). Entitlement must never
     be answerable from a cache keyed on anything but the requesting user.
 

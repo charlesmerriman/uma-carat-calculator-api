@@ -34,9 +34,11 @@
 
 - key: borderless-oshis
   date: 2026-09-17
-  title: "Cleaner oshi pictures and a free pulls filter"
+  title: "Multiple plans, cleaner oshi pictures and a free pulls filter"
   version: "v1.6"
   changes:
+    - added: "Signed in, you can keep up to 5 plans now. There's a new Plan menu above your banners where you switch between them, start a new one, copy the one you're on, rename it or delete it."
+    - added: "Each plan has its own banners. Your carats, ranks and purchases are shared by all of them."
     - added: "A Free pulls filter on the Timeline. It shows every banner that gives pulls away."
     - changed: "Oshi pictures use new art without the card border. The picker and your picture in the top right both get it."
     - changed: "The free pulls tag on the Timeline is bigger now. Same size as the title next to it."

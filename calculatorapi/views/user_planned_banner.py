@@ -23,13 +23,18 @@ class UserPlannedBannerSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "user",
+            "plan",
             "number_of_pulls",
             "reserved_copies",
             "banner_uma",
             "banner_support",
             "banner_step_up",
         )
-        read_only_fields = ("user",)
+        # Neither is writable from a row body. Which plan a row lands in comes
+        # from the PATCH's top-level plan_id, resolved through
+        # plans.get_owned_plan() -- a writable `plan` here would let a row name
+        # somebody else's plan and skip that check entirely.
+        read_only_fields = ("user", "plan")
 
     def to_representation(self, instance):
         # For GET requests, return nested objects

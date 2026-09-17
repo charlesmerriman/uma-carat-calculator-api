@@ -21,9 +21,11 @@ from calculatorapi.image_library import (
     normalize_prefix,
 )
 from calculatorapi.management.commands.create_content_editor_group import CONTENT_MODELS
-from calculatorapi.models import CustomUser, Uma, SocialAccount
+from calculatorapi.models import (
+    CustomUser, Uma, SocialAccount, Plan, UserPlannedBanner,
+)
 from calculatorapi.tests.base import CalculatorTestCase, PLAIN_TEST_STORAGES
-from calculatorapi.tests.factories import make_user
+from calculatorapi.tests.factories import make_uma_banner, make_user
 
 
 # Smallest valid PNG (1x1, transparent). ImageField runs Pillow over uploads,
@@ -78,6 +80,32 @@ class AdminSmokeTests(CalculatorTestCase):
             with self.subTest(url=f'{base}_add'):
                 res = self.client.get(reverse(f'{base}_add'))
                 self.assertEqual(res.status_code, 200)
+
+    def test_plan_pages_render(self):
+        """The user-data pages the plan work added or touched. Not in
+        CONTENT_URL_NAMES: they are account data, not content an editor adds."""
+        user = make_user(username='planner')
+        plan = Plan.objects.create(user=user, name='Main plan', is_active=True)
+        UserPlannedBanner.objects.create(
+            user=user, plan=plan, banner_uma=make_uma_banner(), number_of_pulls=10)
+        for name in ('plan', 'userplannedbanner'):
+            with self.subTest(model=name):
+                res = self.client.get(reverse(f'admin:calculatorapi_{name}_changelist'))
+                self.assertEqual(res.status_code, 200)
+
+    def test_planned_by_counts_people_not_rows(self):
+        """One person with the same banner in two plans is one planner."""
+        banner = make_uma_banner(name='Twice Planned')
+        user = make_user(username='planner')
+        for plan_name, active in (('Main plan', True), ('What if', False)):
+            plan = Plan.objects.create(user=user, name=plan_name, is_active=active)
+            UserPlannedBanner.objects.create(
+                user=user, plan=plan, banner_uma=banner, number_of_pulls=10)
+
+        res = self.client.get(reverse('admin:calculatorapi_banneruma_changelist'))
+
+        self.assertContains(res, '1 user')
+        self.assertNotContains(res, '2 users')
 
     def test_index_shows_friendly_names(self):
         res = self.client.get(reverse('admin:index'))
