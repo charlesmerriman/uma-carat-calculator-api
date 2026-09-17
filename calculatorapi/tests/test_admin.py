@@ -217,7 +217,7 @@ class ImageLibraryTests(CalculatorTestCase):
                 'umas/', 'support_cards/', 'banner_timelines/',
                 'game_events/', 'champions_meetings/', 'league_of_heroes/',
                 'anniversary_events/', 'step_up_banners/', 'scenarios/',
-                'skills/',
+                'skills/', 'umas_borderless/',
             }),
         )
 

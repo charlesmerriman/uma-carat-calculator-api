@@ -461,9 +461,12 @@ class UmaAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
     # required: autocomplete source for banner inlines. `=game_id` is an exact
     # match, so typing an id finds one row rather than every name containing it.
     search_fields = ("name", "=game_id")
-    readonly_fields = ("image_preview",)
+    readonly_fields = ("image_preview", "borderless_preview")
     fieldsets = (
-        (None, {"fields": ("name", "game_id", "image", "image_preview", "admin_comments")}),
+        (None, {"fields": (
+            "name", "game_id", "image", "image_preview",
+            "image_borderless", "borderless_preview", "admin_comments",
+        )}),
         PURPOSE_FIELDSET,
         ("Selector availability", {
             "fields": ("is_time_limited", "is_three_star"),
@@ -490,6 +493,16 @@ class UmaAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
             ),
         }),
     )
+
+
+    @admin.display(description="Borderless preview")
+    def borderless_preview(self, obj):
+        if obj.image_borderless:
+            return format_html(
+                '<img src="{}" style="height: 48px; border-radius: 4px;" />',
+                obj.image_borderless.url,
+            )
+        return "—"
 
 
 @admin.register(Skill)

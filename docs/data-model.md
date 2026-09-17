@@ -94,6 +94,7 @@ erDiagram
         string name
         int game_id "unique, nullable; the game's card id, e.g. 102001 = character 1020 outfit 01. The join key for imported game data; the image filename starts with it"
         string image
+        string image_borderless "the same art without the rarity border; umas_borderless/ in the Space; nothing renders it yet"
         string admin_comments
         string purpose "PUBLIC, max 100, never null; the Timeline tile's hover overlay"
         bool is_time_limited
