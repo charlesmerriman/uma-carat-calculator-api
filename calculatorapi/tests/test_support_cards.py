@@ -606,6 +606,24 @@ class ImportGameDataSupportCardTests(CalculatorTestCase):
         self.assertEqual(self.card.title, "[Get Lots of Hugs for Me]")
         self.assertEqual(self.card.name, "Oguri Cap")
 
+    def test_rarity_is_read_off_the_game_id_on_save(self):
+        # A card an editor adds by hand never meets the import (it may not be on
+        # global yet), so the id's first digit is the only source it has.
+        self.assertEqual(self.card.rarity, 3)
+        self.assertEqual(SupportCard.objects.create(name="SR", game_id=20012).rarity, 2)
+        self.assertEqual(SupportCard.objects.create(name="R", game_id=10001).rarity, 1)
+        self.assertIsNone(SupportCard.objects.create(name="No id yet").rarity)
+
+    def test_import_writes_the_games_own_rarity(self):
+        # Wipe the save()-time guess so the assertion can only pass on the
+        # import's write. update() skips save().
+        SupportCard.objects.filter(pk=self.card.pk).update(rarity=None)
+
+        self._run(self._snapshot())
+
+        self.card.refresh_from_db()
+        self.assertEqual(self.card.rarity, 3)
+
     def test_friend_and_group_types_round_trip(self):
         group = SupportCard.objects.create(name="Heirs to the Throne", game_id=30067)
         directory = self._snapshot(

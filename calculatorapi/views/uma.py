@@ -5,6 +5,10 @@ from .mixins import FirstJpDateMixin
 
 class UmaSerializer(FirstJpDateMixin, serializers.ModelSerializer):
     context_key = "uma_first_jp_dates"
+    # Not a column any more: Uma.is_three_star is a property over `rarity`
+    # (unknown rarity counts as ★3). Declared because ModelSerializer only
+    # maps model FIELDS by itself; the wire name and values are unchanged.
+    is_three_star = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Uma

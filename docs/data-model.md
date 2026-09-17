@@ -98,9 +98,8 @@ erDiagram
         string admin_comments
         string purpose "PUBLIC, max 100, never null; the Timeline tile's hover overlay"
         bool is_time_limited
-        bool is_three_star "set from rarity by import_game_data; what the selector pickers read"
         string title "IMPORTED from here down (import_game_data overwrites): the outfit's [Title]"
-        int rarity "initial stars 1..3"
+        int rarity "initial stars 1..3; the selector ★ gate reads it via the is_three_star property, null = ★3"
         int running_style "1 front 2 pace 3 late 4 end"
         int apt_turf "ten apt_* grades on the game's 1..8 scale (G..S): turf dirt short mile medium long front pace late end"
         int base_speed "five base_* stats at the initial star count"
@@ -147,6 +146,7 @@ erDiagram
         string name
         int game_id "unique, nullable; anchors image to the DO Space file. ALSO ENCODES RARITY: 1xxxx R, 2xxxx SR, 3xxxx SSR — banners may only link 3xxxx"
         string card_type "IMPORTED: speed stamina power guts wit friend group; blank until imported"
+        int rarity "1 R 2 SR 3 SSR; IMPORTED, else the first digit of game_id on save"
         int character_id "IMPORTED: the game's character id, a number not a FK"
         string title "IMPORTED: the card's [Title]"
         string image
@@ -555,10 +555,18 @@ it rather than `is_eligible()` alone.
 
 #### The intrinsic gate is stored, on `Uma`
 
-`Uma.is_time_limited` (default `False`) and `Uma.is_three_star` (default `True`) mark
-units a selector can **never** take at any cutoff. Neither is derivable: a time-limited or
-★1/★2 unit sits on ordinary banners and is indistinguishable from a selectable one from
-the banner data alone. Editors set them in the admin, under "Selector availability".
+`Uma.is_time_limited` (default `False`) and `Uma.rarity` mark units a selector can
+**never** take at any cutoff. Neither is derivable: a time-limited or ★1/★2 unit sits on
+ordinary banners and is indistinguishable from a selectable one from the banner data
+alone. Both sit in the admin under "Selector availability".
+
+The ★ half is read through the `Uma.is_three_star` **property**: `rarity` is 3, **or
+null**. Null counts as ★3 so an uma nobody has game data for (anything not on global yet)
+stays selectable. `import_game_data` writes `rarity` for every uma in the global snapshot
+and overwrites a hand edit there; for an uma that is not on global, an editor sets it by
+hand and the import leaves it alone until the uma releases. There was a stored "Is ★3"
+checkbox until migration 0065, which carried each hand-unticked row with no rarity
+forward as ★2, since the box never said which of ★1/★2 it was.
 
 This gate is **independent of the cutoff and bites even when the cutoff is `null`**, which
 the temporal gate waves through. That is why neither serializer backstop may early-return
