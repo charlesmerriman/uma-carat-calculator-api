@@ -15,6 +15,7 @@ whose plan is still NULL are ever touched.
 """
 
 from django.db import migrations
+from django.db.models import OuterRef, Subquery
 
 # A copy, not an import of models.plan.DEFAULT_PLAN_NAME: this migration must
 # keep doing what it did on the day it ran even if that constant changes.
@@ -47,20 +48,22 @@ def backfill_main_plans(apps, schema_editor):
             for user_id in sorted(user_ids - set(existing))
         ]
     )
-    # Re-read rather than trusting bulk_create to hand back primary keys, which
-    # it does on PostgreSQL but not on every backend.
-    plan_by_user = dict(
-        Plan.objects.filter(user_id__in=user_ids, is_active=True)
-        .values_list("user_id", "id")
+    # ONE UPDATE for every row, however many users there are: each plan-less
+    # row takes the id of its own user's active plan, looked up by a correlated
+    # subquery. A loop with one UPDATE per user would be thousands of round
+    # trips against the networked production database, all of them BEFORE the
+    # app boots (the run command is `migrate && gunicorn`), which is time the
+    # deploy's health check is counting.
+    #
+    # UserPlannedBanner is user-owned data and is not part of the
+    # /calculator-data public cache, so bypassing post_save with update()
+    # needs no public_payload_cache.invalidate().
+    active_plan_of_owner = Plan.objects.filter(
+        user_id=OuterRef("user_id"), is_active=True
+    ).values("id")[:1]
+    UserPlannedBanner.objects.filter(plan__isnull=True).update(
+        plan_id=Subquery(active_plan_of_owner)
     )
-
-    # One UPDATE per user. UserPlannedBanner is user-owned data and is not part
-    # of the /calculator-data public cache, so bypassing post_save with
-    # update() needs no public_payload_cache.invalidate().
-    for user_id, plan_id in plan_by_user.items():
-        UserPlannedBanner.objects.filter(
-            user_id=user_id, plan__isnull=True
-        ).update(plan_id=plan_id)
 
 
 def remove_plans(apps, schema_editor):
