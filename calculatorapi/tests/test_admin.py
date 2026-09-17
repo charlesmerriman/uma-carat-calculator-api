@@ -50,6 +50,7 @@ class AdminSmokeTests(CalculatorTestCase):
         'admin:calculatorapi_bannerstepup',
         'admin:calculatorapi_uma',
         'admin:calculatorapi_supportcard',
+        'admin:calculatorapi_skill',
         'admin:calculatorapi_gameevent',
         'admin:calculatorapi_championsmeeting',
         'admin:calculatorapi_leagueofheroes',
@@ -88,7 +89,8 @@ class AdminSmokeTests(CalculatorTestCase):
     def test_join_models_not_registered_top_level(self):
         # Edited via inlines only — their changelists should not exist.
         for name in ['umasonumabanner', 'supportsonsupportbanner',
-                     'championsmeetingumarecommendation']:
+                     'championsmeetingumarecommendation', 'umaskill',
+                     'supportcardskill']:
             with self.subTest(model=name):
                 with self.assertRaises(NoReverseMatch):
                     reverse(f'admin:calculatorapi_{name}_changelist')
@@ -215,6 +217,7 @@ class ImageLibraryTests(CalculatorTestCase):
                 'umas/', 'support_cards/', 'banner_timelines/',
                 'game_events/', 'champions_meetings/', 'league_of_heroes/',
                 'anniversary_events/', 'step_up_banners/', 'scenarios/',
+                'skills/', 'umas_borderless/',
             }),
         )
 
@@ -379,12 +382,20 @@ class SpacesImagePickerFormTests(CalculatorTestCase):
     def setUpTestData(cls):
         cls.superuser = CustomUser.objects.create_superuser(username='boss', password='x')
 
+    # The uma page carries the UmaSkill inline, whose formset must be present
+    # (empty) in every POST or the whole form is invalid and re-rendered.
+    INLINE_FORMS = {
+        'skills-TOTAL_FORMS': '0', 'skills-INITIAL_FORMS': '0',
+        'skills-MIN_NUM_FORMS': '0', 'skills-MAX_NUM_FORMS': '1000',
+    }
+
     def setUp(self):
         self.client.force_login(self.superuser)
         self.add_url = reverse('admin:calculatorapi_uma_add')
 
     def test_picked_key_is_saved_without_uploading_anything(self):
         res = self.client.post(self.add_url, {
+            **self.INLINE_FORMS,
             'name': 'Special Week',
             'image': '',                                   # no upload
             'image-library-key': 'umas/Special Week.png',   # picked in the modal
@@ -407,6 +418,7 @@ class SpacesImagePickerFormTests(CalculatorTestCase):
         """Both submitted at once must keep the file the editor actually chose."""
         upload = SimpleUploadedFile('new.png', PNG_1PX, content_type='image/png')
         res = self.client.post(self.add_url, {
+            **self.INLINE_FORMS,
             'name': 'Uploader',
             'image': upload,
             'image-library-key': 'umas/Some Other.png',
@@ -420,7 +432,7 @@ class SpacesImagePickerFormTests(CalculatorTestCase):
         uma = Uma.objects.create(name='Keeper', image='umas/Keeper.png')
         res = self.client.post(
             reverse('admin:calculatorapi_uma_change', args=[uma.pk]),
-            {'name': 'Keeper renamed', 'image': '', 'image-library-key': ''})
+            {**self.INLINE_FORMS, 'name': 'Keeper renamed', 'image': '', 'image-library-key': ''})
         self.assertEqual(res.status_code, 302)
         uma.refresh_from_db()
         self.assertEqual(uma.name, 'Keeper renamed')

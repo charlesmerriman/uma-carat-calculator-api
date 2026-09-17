@@ -23,7 +23,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.management.base import BaseCommand
 
 from calculatorapi.models import (
-    Uma, SupportCard,
+    Uma, SupportCard, Skill,
     BannerTimeline, BannerUma, BannerSupport, BannerStepUp,
     UmasOnUmaBanner, SupportsOnSupportBanner,
     GameEvent,
@@ -42,7 +42,7 @@ GROUP_NAME = "Content editors"
 # Everything a content editor manages. The three join models are edited via
 # inlines, but inline saves still require permissions on the join model itself.
 CONTENT_MODELS = [
-    Uma, SupportCard,
+    Uma, SupportCard, Skill,
     BannerTimeline, BannerUma, BannerSupport, BannerStepUp,
     UmasOnUmaBanner, SupportsOnSupportBanner,
     GameEvent,

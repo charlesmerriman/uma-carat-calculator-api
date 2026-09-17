@@ -179,6 +179,16 @@ services:
     scope: RUN_TIME
     type: SECRET
     value: ""
+  # The admin's "Rebuild website" button (calculatorapi/digitalocean_api.py): this
+  # app's own id, and a personal access token that can manage apps. While the
+  # token is blank the button says it is not configured and does nothing.
+  - key: DO_APP_ID
+    scope: RUN_TIME
+    value: 6c058011-003f-4a2a-bab7-8ff7491d1cd0
+  - key: DO_API_TOKEN
+    scope: RUN_TIME
+    type: SECRET
+    value: ""
   github:
     branch: master
     deploy_on_push: true
@@ -198,7 +208,12 @@ services:
   # nothing on its own. Apply it with the `doctl apps spec get` /
   # `doctl apps update` dance described above, which preserves the secrets
   # this committed copy carries as "".
-  run_command: python manage.py migrate && python manage.py sync_changelog && gunicorn calculatorproject.wsgi:application --bind 0.0.0.0:8080
+  #
+  # create_content_editor_group sits between them since 2026-09-15 so a model added
+  # to CONTENT_MODELS is granted on the deploy that creates its table, with no
+  # console step to remember. Idempotent, and it runs AFTER migrate on purpose:
+  # before the table exists the model has no permissions to grant.
+  run_command: python manage.py migrate && python manage.py create_content_editor_group && python manage.py sync_changelog && gunicorn calculatorproject.wsgi:application --bind 0.0.0.0:8080
   source_dir: /
 static_sites:
 - build_command: npm install && npm run build

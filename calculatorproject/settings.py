@@ -191,6 +191,11 @@ UNFOLD = {
                         "icon": "cards",
                         "link": reverse_lazy("admin:calculatorapi_supportcard_changelist"),
                     },
+                    {
+                        "title": _("Skills"),
+                        "icon": "bolt",
+                        "link": reverse_lazy("admin:calculatorapi_skill_changelist"),
+                    },
                 ],
             },
             {

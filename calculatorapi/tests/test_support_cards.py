@@ -7,6 +7,7 @@ import os
 import shutil
 import tempfile
 from io import StringIO
+from pathlib import Path
 from unittest.mock import patch
 
 from django.core.management import call_command
@@ -564,3 +565,69 @@ class FixSupportCardVariantsTests(CalculatorTestCase):
         link.refresh_from_db()
         self.assertEqual(link.support_card_id, card.pk)
         self.assertIn('no game_id', out.getvalue())
+
+
+class ImportGameDataSupportCardTests(CalculatorTestCase):
+    """`import_game_data` filling the SupportCard columns. The Uma half is in test_umas."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()  # pylint: disable=consider-using-with
+        self.addCleanup(self.tmp.cleanup)
+        self.card = SupportCard.objects.create(name="Oguri Cap", game_id=30024)
+
+    def _snapshot(self, **overrides):
+        card = {
+            "id": 30024, "chara_id": 1006, "chara_name": "Oguri Cap",
+            "name": "[Get Lots of Hugs for Me] Oguri Cap", "title": "[Get Lots of Hugs for Me]",
+            "rarity": 3, "card_type": "stamina", "skill_set_id": 9081006,
+        }
+        card.update(overrides)
+        directory = Path(self.tmp.name)
+        (directory / "skills.json").write_text("[]", encoding="utf-8")
+        (directory / "cards.json").write_text("[]", encoding="utf-8")
+        (directory / "card_skills.json").write_text("[]", encoding="utf-8")
+        (directory / "support_hints.json").write_text("[]", encoding="utf-8")
+        (directory / "support_cards.json").write_text(json.dumps([card]), encoding="utf-8")
+        return directory
+
+    def _run(self, directory, *flags):
+        out = StringIO()
+        call_command(
+            "import_game_data", "--no-input", "--snapshot", str(directory), *flags, stdout=out,
+        )
+        return out.getvalue()
+
+    def test_fills_type_character_and_title(self):
+        self._run(self._snapshot())
+
+        self.card.refresh_from_db()
+        self.assertEqual(self.card.card_type, "stamina")
+        self.assertEqual(self.card.character_id, 1006)
+        self.assertEqual(self.card.title, "[Get Lots of Hugs for Me]")
+        self.assertEqual(self.card.name, "Oguri Cap")
+
+    def test_friend_and_group_types_round_trip(self):
+        group = SupportCard.objects.create(name="Heirs to the Throne", game_id=30067)
+        directory = self._snapshot(
+            id=30067, chara_id=1017, chara_name="Heirs to the Throne",
+            name="[Esteemed and Adored] Heirs to the Throne", card_type="group",
+        )
+
+        self._run(directory)
+
+        group.refresh_from_db()
+        self.assertEqual(group.card_type, "group")
+
+    def test_name_mismatch_is_left_alone(self):
+        self._run(self._snapshot(chara_name="Special Week"))
+
+        self.card.refresh_from_db()
+        self.assertEqual(self.card.card_type, "")
+        self.assertIsNone(self.card.character_id)
+
+    def test_dry_run_writes_nothing(self):
+        out = self._run(self._snapshot(), "--dry-run")
+
+        self.card.refresh_from_db()
+        self.assertEqual(self.card.card_type, "")
+        self.assertIn("would update 1", out)

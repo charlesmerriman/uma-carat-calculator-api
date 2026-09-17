@@ -62,7 +62,7 @@ from .admin_patreon_import import (
 )
 from .predictions import GAME_EVENT_END_DATE_BUFFER
 from .models import (
-    CustomUser, Uma, SupportCard, UserPlannedBanner,
+    CustomUser, Uma, Skill, UmaSkill, SupportCardSkill, SupportCard, UserPlannedBanner,
     TeamTrialsRank, ClubRank, ChampionsMeetingRank, LeagueOfHeroesRank,
     BannerTimeline, BannerUma, BannerSupport, BannerStepUp,
     ChampionsMeeting, ChampionsMeetingUmaRecommendation,
@@ -139,6 +139,22 @@ class SupportOnBannerInline(TabularInline):
     model = SupportsOnSupportBanner
     autocomplete_fields = ("support_card",)
     extra = 1
+
+
+class UmaSkillInline(TabularInline):
+    """The skills an outfit carries, on the uma's page. Filled by the import."""
+    model = UmaSkill
+    autocomplete_fields = ("skill",)
+    fields = ("skill", "source", "level", "notes")
+    extra = 0
+
+
+class SupportCardSkillInline(TabularInline):
+    """The skills a support card gives, by hint or event. Filled by the import."""
+    model = SupportCardSkill
+    autocomplete_fields = ("skill",)
+    fields = ("skill", "source", "notes")
+    extra = 0
 
 
 class RecommendedUmaInline(TabularInline):
@@ -437,14 +453,20 @@ PURPOSE_FILTER = ("purpose", admin.EmptyFieldListFilter)
 
 @admin.register(Uma)
 class UmaAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
-    list_display = ("image_preview", "name", "is_time_limited", "is_three_star")
+    inlines = (UmaSkillInline,)
+    list_display = ("image_preview", "name", "game_id", "is_time_limited", "is_three_star")
     list_display_links = ("name",)
     list_filter = ("is_time_limited", "is_three_star", PURPOSE_FILTER)
     ordering = ("name",)
-    search_fields = ("name",)  # required: autocomplete source for banner inlines
-    readonly_fields = ("image_preview",)
+    # required: autocomplete source for banner inlines. `=game_id` is an exact
+    # match, so typing an id finds one row rather than every name containing it.
+    search_fields = ("name", "=game_id")
+    readonly_fields = ("image_preview", "borderless_preview")
     fieldsets = (
-        (None, {"fields": ("name", "image", "image_preview", "admin_comments")}),
+        (None, {"fields": (
+            "name", "game_id", "image", "image_preview",
+            "image_borderless", "borderless_preview", "admin_comments",
+        )}),
         PURPOSE_FIELDSET,
         ("Selector availability", {
             "fields": ("is_time_limited", "is_three_star"),
@@ -455,14 +477,85 @@ class UmaAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
                 "campaign cutoff dates."
             ),
         }),
+        ("Game data", {
+            "classes": ("collapse",),
+            "description": (
+                "Filled by the game-data import and overwritten by the next one, "
+                "so edits here do not stick. Fix the source instead."
+            ),
+            "fields": (
+                "title", "rarity", "running_style",
+                ("apt_turf", "apt_dirt"),
+                ("apt_short", "apt_mile", "apt_medium", "apt_long"),
+                ("apt_front", "apt_pace", "apt_late", "apt_end"),
+                ("base_speed", "base_stamina", "base_power", "base_guts", "base_wit"),
+                ("growth_speed", "growth_stamina", "growth_power", "growth_guts", "growth_wit"),
+            ),
+        }),
     )
+
+
+    @admin.display(description="Borderless preview")
+    def borderless_preview(self, obj):
+        if obj.image_borderless:
+            return format_html(
+                '<img src="{}" style="height: 48px; border-radius: 4px;" />',
+                obj.image_borderless.url,
+            )
+        return "—"
+
+
+@admin.register(Skill)
+class SkillAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
+    """
+    Skills are imported, so this page is mostly for looking things up and for
+    the two editor-owned columns (image, admin comments). "Versions" answers
+    "is this the gold version of something" from group_id without a second table.
+    """
+    list_display = ("image_preview", "name", "game_id", "rarity", "tier", "cost", "versions")
+    list_display_links = ("name",)
+    list_filter = ("rarity", "tier")
+    ordering = ("name",)
+    search_fields = ("name", "=game_id", "=group_id")
+    readonly_fields = ("image_preview", "versions")
+    autocomplete_fields = ("evolves_from",)
+    fieldsets = (
+        (None, {"fields": ("name", "game_id", "image", "image_preview", "admin_comments")}),
+        ("Text", {"fields": ("description", "description_detailed")}),
+        ("Versions", {
+            "description": (
+                "The white, gold and × versions of one effect share a group id. "
+                "Evolved skills point at the skill they evolved from."
+            ),
+            "fields": ("rarity", "group_id", "tier", "versions", "evolves_from"),
+        }),
+        ("Game data", {
+            "classes": ("collapse",),
+            "description": "Filled by the game-data import and overwritten by the next one.",
+            "fields": ("icon_id", "cost", "precondition", "condition"),
+        }),
+    )
+
+    @admin.display(description="Versions")
+    def versions(self, obj):
+        """The other tiers of this effect, plus the evolution link when set."""
+        if obj.pk is None:
+            return "—"
+        parts = [
+            f"{sibling.get_tier_display()} {sibling.name} ({sibling.game_id})"
+            for sibling in obj.siblings()
+        ]
+        if obj.evolves_from_id:
+            parts.append(f"evolved from {obj.evolves_from.name} ({obj.evolves_from.game_id})")
+        return ", ".join(parts) if parts else "—"
 
 
 @admin.register(SupportCard)
 class SupportCardAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
-    list_display = ("image_preview", "name", "game_id")
+    inlines = (SupportCardSkillInline,)
+    list_display = ("image_preview", "name", "game_id", "card_type")
     list_display_links = ("name",)
-    list_filter = (PURPOSE_FILTER,)
+    list_filter = ("card_type", PURPOSE_FILTER)
     ordering = ("name",)
     search_fields = ("name", "=game_id")  # required: autocomplete source for banner inlines
     readonly_fields = ("image_preview",)
@@ -471,6 +564,14 @@ class SupportCardAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
     fieldsets = (
         (None, {"fields": ("name", "game_id", "image", "image_preview", "admin_comments")}),
         PURPOSE_FIELDSET,
+        ("Game data", {
+            "classes": ("collapse",),
+            "description": (
+                "Filled by the game-data import and overwritten by the next one, "
+                "so edits here do not stick. Fix the source instead."
+            ),
+            "fields": ("title", "card_type", "character_id"),
+        }),
     )
 
 

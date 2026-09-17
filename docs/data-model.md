@@ -92,15 +92,63 @@ erDiagram
     Uma {
         int id PK
         string name
+        int game_id "unique, nullable; the game's card id, e.g. 102001 = character 1020 outfit 01. The join key for imported game data; the image filename starts with it"
         string image
+        string image_borderless "the same art without the rarity border; umas_borderless/ in the Space; nothing renders it yet"
         string admin_comments
         string purpose "PUBLIC, max 100, never null; the Timeline tile's hover overlay"
+        bool is_time_limited
+        bool is_three_star "set from rarity by import_game_data; what the selector pickers read"
+        string title "IMPORTED from here down (import_game_data overwrites): the outfit's [Title]"
+        int rarity "initial stars 1..3"
+        int running_style "1 front 2 pace 3 late 4 end"
+        int apt_turf "ten apt_* grades on the game's 1..8 scale (G..S): turf dirt short mile medium long front pace late end"
+        int base_speed "five base_* stats at the initial star count"
+        int growth_speed "five growth_* bonuses in percent"
+    }
+
+    Skill {
+        int id PK
+        int game_id "unique; the game's skill id"
+        string name "global English"
+        string description "the game's text, shown by default"
+        string description_detailed "fan translation with numbers; from gametora, optional"
+        int rarity "1 white 2 gold 3/4 the two halves of a star-1/2 unique 5 unique 6 evolved (none yet)"
+        int group_id "white, gold and x versions of one effect share it"
+        int tier "-1 penalty 1 white 2 gold"
+        int icon_id "one of 63 generic icons"
+        int cost "skill points; null for uniques"
+        string precondition "raw game string"
+        string condition "raw game string, for a later parser"
+        int evolves_from FK "self, nullable; empty until global has evolution"
+        string image "skills/<icon_id>.png, set by link_skill_images"
+        string admin_comments
+    }
+
+    UmaSkill {
+        int id PK
+        int uma FK
+        int skill FK
+        string source "unique | innate | awakening | evolved"
+        int level "awakening rank 2..5, or the star a unique applies from; null for innate"
+        string notes
+    }
+
+    SupportCardSkill {
+        int id PK
+        int support_card FK
+        int skill FK
+        string source "hint (game data) | event (gametora)"
+        string notes
     }
 
     SupportCard {
         int id PK
         string name
         int game_id "unique, nullable; anchors image to the DO Space file. ALSO ENCODES RARITY: 1xxxx R, 2xxxx SR, 3xxxx SSR — banners may only link 3xxxx"
+        string card_type "IMPORTED: speed stamina power guts wit friend group; blank until imported"
+        int character_id "IMPORTED: the game's character id, a number not a FK"
+        string title "IMPORTED: the card's [Title]"
         string image
         string admin_comments
         string purpose "PUBLIC, max 100, never null; the Timeline tile's hover overlay"
@@ -814,6 +862,79 @@ not authoring, and making that structural keeps "accidentally reword a user's
 report" out of reach.
 
 ---
+
+### `Skill` is imported, and "versions" are a group, not a table
+
+Every `Skill` row comes from `manage.py import_game_data` reading the committed snapshot,
+which creates missing skills and overwrites the game-owned columns on every run. The two
+editor-owned columns are `image` and `admin_comments`. `image` is set in bulk by
+`manage.py link_skill_images` from `icon_id` (63 generic icons cover 718 skills, hosted on
+the Space under `skills/<icon_id>.png` by `scripts/fetch_skill_icons.py --upload`); a
+hand-picked image survives re-runs because the linker only fills empty ones.
+
+"Is this the gold version of something" is answered by `group_id` and `tier`, which the
+game itself uses: the white (○), gold (◎) and penalty (×) versions of one effect share a
+`group_id`, and `tier` says which this row is. The admin's read-only "Versions" column lists
+the siblings. `evolves_from` is the other relationship, for evolved skills, and stays empty
+until global has skill evolution (the model and the extractor are ready; the import will
+need the `skill_upgrade_*` tables then).
+
+`UmaSkill` records which outfit carries which skill and how (`source`), unique on
+`(uma, skill, source)`. `level` is one nullable column with a per-source meaning: the
+awakening rank for `awakening` rows, the star count a unique applies from for `unique` rows
+(so a ★1/★2 outfit has two `unique` rows, at 1 and at 3), null for `innate`. The import adds
+rows and updates a level but never deletes, so a row an editor adds by hand survives.
+Edited as an inline on the uma's admin page.
+
+`SupportCardSkill` does the same for support cards, unique on `(support_card, skill,
+source)`: `hint` rows come from the game's own hint table in the snapshot, `event` rows from
+gametora's per-card pages (`scripts/fetch_support_events.py` writes
+`support_events.json` next to the snapshot; the game has no clean table for them). A hint
+listed under two hint groups is one row. Edited as an inline on the support card's page.
+
+`description` is the game's own text and is what a page should show by default;
+`description_detailed` is gametora's fan translation with the concrete numbers, imported
+only when `--gametora skills.json` is passed, for a future "detailed" toggle.
+
+## The game's master database (`master.mdb`) and the committed snapshot
+
+The skills work imports from the global game client's own database rather than a fan
+site. The Steam client keeps it as a plain SQLite file that it re-downloads on every
+update (`.../AppData/LocalLow/Cygames/Umamusume/master/master.mdb`, about 16 MB, English
+text, global content only). `scripts/extract_master_snapshot.py` reads it and writes the
+slice this project needs to `scripts/data/master_snapshot/*.json`, which **is committed**;
+the mdb never is. `manage.py import_game_data` reads the JSON, so an import is reviewable
+as a diff and reproducible on a machine without the game. `meta.json` records the mdb's
+size and modification time and every file's row count.
+
+The tables the extractor reads, and the two places the schema is not what it looks like:
+
+| Need | Table | Notes |
+|---|---|---|
+| skills | `skill_data` (718 rows) | `rarity` 1 white, 2 gold, 3/4 the pre- and post-★3 uniques of a ★1/★2 character, 5 unique. No 6 (evolved) on global yet. `group_id` groups white with gold; `group_rate` is the tier (1 white, 2 gold, -1 the × penalty version). `icon_id` is one of 63. `condition_1` is the activation condition, kept verbatim |
+| skill text | `text_data` cat 47 (name), 48 (description) | keyed by skill id; every skill has both |
+| skill point cost | `single_mode_skill_need_point` | absent for every unique and 18 white/gold skills, so nullable |
+| uma outfits | `card_data` (105, of which 2 are tutorial variants above id 9,000,000, skipped) | `default_rarity` is the initial star count; `running_style` 1 front, 2 pace, 3 late, 4 end; `talent_*` are the growth bonuses in percent |
+| per-star stats and aptitudes | `card_rarity_data` (334) | one row per outfit per star. `speed`..`wiz` are the base stats at that star; `max_*` is the cap (1200 everywhere); `proper_*` aptitudes on the game's 1..8 scale (G F E D C B A S). **`skill_set` is not a skill id**: it keys the `skill_set` table, whose `skill_id1` is the unique skill that star carries |
+| innate and awakening skills | `available_skill_set` (721) | keyed by `card_data.available_skill_set_id`; `need_rank` 0 innate, 2..5 the awakening level |
+| outfit text | `text_data` cat 4 (full), 5 (title), 6 (character name by character id) | |
+| support cards | `support_card_data` (253) | `rarity` 1 R, 2 SR, 3 SSR; `command_id` 101 speed, 102 stamina, 103 power, 105 guts, 106 wit, and 0 with `support_card_type` 2 friend / 3 group |
+| support card hints | `single_mode_hint_gain` (2063) | **keyed per card by `support_card_id`**, not by the card's `skill_set_id` (several cards of one character share that as `hint_id`, with different rows each). `hint_gain_type` 0 rows are skills (`hint_value_1`); type 1 are stat hints, skipped. 15 cards have none: friend, group and Haru Urara cards |
+| support card text | `text_data` cat 75 (full), 76 (title), 77 (character) | |
+
+What the ids encode, which the import asserts on: an outfit id `100101` is character
+`1001`, outfit `01`, so the character is `id // 100`; a support id's leading digit is its
+rarity; a unique skill id embeds the character (`100011` is Special Week's base outfit,
+`110011` her second, `120011` her third), and a ★1/★2 character carries a rarity-3 unique
+(`10271`) until ★3, when the rarity-4 one (`100271`) replaces it. `card_skills.json`
+therefore lists two `unique` rows for those 17 outfits, with `level` the star at which
+each first applies.
+
+Support card **event** skills are not in any clean table (they come from story choice
+data); gametora's per-card pages are the agreed source for that one piece, fetched by
+`scripts/fetch_support_events.py` into `support_events.json` in the same folder (their
+Next.js data endpoint, slug `<id>-<gametora name>`; 648 rows across 249 cards on
+2026-09-16).
 
 ## `PatreonTier` / `PatreonSupporter`
 
