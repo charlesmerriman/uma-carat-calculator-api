@@ -1,13 +1,28 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 from .custom_user import CustomUser
+from .plan import Plan
 from .banner_uma import BannerUma
 from .banner_support import BannerSupport
 from .banner_step_up import BannerStepUp
 
 
 class UserPlannedBanner(models.Model):
+    # TRANSITIONAL (multi-plan, release 1 of 2). A row is owned by its PLAN, and
+    # the plan by a user -- `plan.user` is the real owner. `user` survives this
+    # release only because `git push origin master` runs migrate while the old
+    # code is still serving, and that code writes `user` and knows nothing of
+    # `plan`. Release 2 sweeps any plan-less row it left behind into its
+    # owner's active plan, makes `plan` NOT NULL and drops `user`.
+    # Until then: every write sets BOTH, and every read filters on `plan`.
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    plan = models.ForeignKey(
+        Plan,
+        on_delete=models.CASCADE,
+        related_name="banners",
+        blank=True,
+        null=True,
+    )
     banner_uma = models.ForeignKey(
         BannerUma,
         on_delete=models.CASCADE,

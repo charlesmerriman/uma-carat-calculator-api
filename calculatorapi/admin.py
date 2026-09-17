@@ -63,6 +63,7 @@ from .admin_patreon_import import (
 from .predictions import GAME_EVENT_END_DATE_BUFFER
 from .models import (
     CustomUser, Uma, Skill, UmaSkill, SupportCardSkill, SupportCard, UserPlannedBanner,
+    Plan,
     TeamTrialsRank, ClubRank, ChampionsMeetingRank, LeagueOfHeroesRank,
     BannerTimeline, BannerUma, BannerSupport, BannerStepUp,
     ChampionsMeeting, ChampionsMeetingUmaRecommendation,
@@ -338,8 +339,11 @@ class PlannedByColumnMixin:  # pylint: disable=too-few-public-methods
 
     def get_queryset(self, request):
         # Reverse FK from UserPlannedBanner (no related_name → default name).
+        # DISTINCT USERS, not rows: an account can hold several plans, and the
+        # same banner in three of them is still one person. The column says
+        # "users", so that is what it counts.
         return super().get_queryset(request).annotate(
-            planned_count=Count("userplannedbanner"))
+            planned_count=Count("userplannedbanner__user", distinct=True))
 
     @admin.display(description="Planned by", ordering="planned_count")
     def planned_by(self, obj):
@@ -977,12 +981,33 @@ class SocialAccountAdmin(ModelAdmin):
         return False
 
 
+@admin.register(Plan)
+class PlanAdmin(ModelAdmin):
+    list_display = ("user", "name", "is_active", "banner_count", "updated_at")
+    list_filter = ("is_active",)
+    list_select_related = ("user",)
+    search_fields = ("user__username", "name")
+    readonly_fields = ("created_at", "updated_at")
+
+    def get_queryset(self, request):
+        # Annotated once for the whole page rather than one COUNT per row.
+        return super().get_queryset(request).annotate(
+            banner_count=Count("banners"))
+
+    @admin.display(description="Banners", ordering="banner_count")
+    def banner_count(self, obj):
+        return obj.banner_count
+
+
 @admin.register(UserPlannedBanner)
 class UserPlannedBannerAdmin(ModelAdmin):
     list_display = (
-        "user", "banner_uma", "banner_support", "number_of_pulls", "reserved_copies",
+        "user", "plan", "banner_uma", "banner_support", "number_of_pulls",
+        "reserved_copies",
     )
-    list_select_related = ("user", "banner_uma", "banner_support")
+    # plan__user because Plan.__str__ prints its owner's handle; without it the
+    # new column costs one user lookup per row.
+    list_select_related = ("user", "plan__user", "banner_uma", "banner_support")
     search_fields = ("user__username",)
 
 

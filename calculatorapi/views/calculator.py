@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework import permissions, status
 from django.db import transaction
 from django.db.models import Prefetch
-from calculatorapi import public_payload_cache
+from calculatorapi import plans, public_payload_cache
 from calculatorapi.eligibility import build_first_jp_date_maps
 from calculatorapi.ledger import (
     KIND_CHAMPIONS_MEETING,
@@ -23,7 +23,7 @@ from calculatorapi.predictions import (
     planned_effective_start,
 )
 from calculatorapi.models import (
-    CalculationConstants,
+    CalculationConstants, Plan,
     ClubRank, TeamTrialsRank, ChampionsMeetingRank, LeagueOfHeroesRank,
     UserPlannedBanner, UserPlannedPurchase, UserStepUpSelection,
     BannerUma, BannerSupport, BannerStepUp,
@@ -52,10 +52,11 @@ from calculatorapi.views.ledger import IncomeLedgerRowSerializer
 from calculatorapi.views.calculation_constants import CalculationConstantsSerializer
 from calculatorapi.views.user_planned_purchase import UserPlannedPurchaseSerializer
 from calculatorapi.views.user_step_up_selection import UserStepUpSelectionSerializer
+from calculatorapi.views.plan import PlanSerializer
 
 
 def _replace_user_rows(rows, *, model, serializer_class, user, missing_message,
-                       context=None):
+                       context=None, plan=None):
     # pylint: disable=too-many-arguments
     # Every one after `rows` is keyword-only and names a distinct part of the
     # contract below; bundling them into a config object would hide which
@@ -69,6 +70,14 @@ def _replace_user_rows(rows, *, model, serializer_class, user, missing_message,
       * row carrying an id                      -> partial update, 404 if the
                                                    id isn't this user's
       * row without an id                       -> create, owned by this user
+
+    `plan` narrows the collection from "this user's rows" to "this PLAN's
+    rows". Only planned banners pass it; purchases and step-up selections
+    belong to the account and leave it None. It is not optional in spirit for
+    banners: the delete below removes every row the body did not name, so
+    reconciling plan A's body against ALL of the user's rows would wipe plans
+    B through E. The caller resolves it through plans.get_owned_plan(), so a
+    plan that reaches here is already known to be this user's.
 
     `context` is handed to every row's serializer. Collections that validate a
     row against something outside it (step-up selections against the JP cutoff,
@@ -89,14 +98,22 @@ def _replace_user_rows(rows, *, model, serializer_class, user, missing_message,
     if rows is None:
         return None
 
+    # One scope for the delete, the lookup and the save, so the three can
+    # never disagree about which rows this body is allowed to touch.
+    # TRANSITIONAL: a planned banner still carries `user` beside `plan` until
+    # release 2 drops the column -- see models/user_planned_banner.py.
+    scope = {"user": user} if plan is None else {"user": user, "plan": plan}
+
     incoming_ids = [row["id"] for row in rows if "id" in row]
-    model.objects.filter(user=user).exclude(id__in=incoming_ids).delete()
+    model.objects.filter(**scope).exclude(id__in=incoming_ids).delete()
 
     for row in rows:
         row_id = row.get("id")
         if row_id:
             try:
-                instance = model.objects.get(id=row_id, user=user)
+                # An id from ANOTHER of this user's plans is "not found" too:
+                # a body is reconciled against one plan, never across them.
+                instance = model.objects.get(id=row_id, **scope)
             except model.DoesNotExist:
                 return Response({"error": missing_message},
                                 status=status.HTTP_404_NOT_FOUND)
@@ -108,7 +125,7 @@ def _replace_user_rows(rows, *, model, serializer_class, user, missing_message,
 
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        serializer.save(user=user)
+        serializer.save(**scope)
 
     return None
 
@@ -189,13 +206,15 @@ def _build_user_context():
     }
 
 
-def _build_user_payload(user, *, emap, anniversary_emap, card_context):
-    """The four user-owned collections, serialized, for merging over the
-    cached guest payload. Every key here MUST also appear in
-    _build_public_payload()'s response dict with its guest value, or a signed-in
-    response and a guest one would carry different keys."""
+def serialize_planned_banners(plan, *, emap, card_context):
+    """One plan's banner rows, date-sorted and serialized.
+
+    Shared by GET /calculator-data (the active plan) and GET /plans/<id> (the
+    plan being switched to), so a row looks identical whichever route served
+    it and the client needs one type for both.
+    """
     planned_banners = sorted(
-        UserPlannedBanner.objects.filter(user=user).select_related(
+        UserPlannedBanner.objects.filter(plan=plan).select_related(
             "banner_uma__banner_timeline",
             "banner_support__banner_timeline",
             "banner_step_up__banner_timeline",
@@ -209,6 +228,32 @@ def _build_user_payload(user, *, emap, anniversary_emap, card_context):
             _planned_banner_kind_rank(pb),
         ),
     )
+    return UserPlannedBannerSerializer(
+        planned_banners, many=True,
+        # No "request" in context on purpose: with it, DRF's ImageField
+        # emits absolute URLs via request.build_absolute_uri(), which
+        # behind the prod reverse proxy point at the wrong (internal/http)
+        # host and break the nested banner images. Every other serializer
+        # omits request and emits relative /media/... URLs that the
+        # frontend/ingress resolves correctly — keep this one consistent.
+        context={"effective_dates": emap, **card_context},
+    ).data
+
+
+def _build_user_payload(user, *, emap, anniversary_emap, card_context):
+    """The user-owned half of the response, serialized, for merging over the
+    cached guest payload. Every key here MUST also appear in
+    _build_public_payload()'s response dict with its guest value, or a signed-in
+    response and a guest one would carry different keys.
+
+    Planned banners are the ACTIVE PLAN's. Purchases, step-up selections and
+    stats belong to the account and are the same whichever plan is open --
+    see models/plan.py for why the line falls there.
+    """
+    # Creates the account's first plan if it has none, so everything below can
+    # assume one exists. A write on a GET, deliberately: see get_active_plan.
+    active_plan = plans.get_active_plan(user)
+
     # Ordered by their campaign's resolved start so the planner renders
     # chronologically without re-deriving dates client-side.
     planned_purchases = sorted(
@@ -225,16 +270,14 @@ def _build_user_payload(user, *, emap, anniversary_emap, card_context):
     step_up_selections = UserStepUpSelection.objects.filter(user=user)
 
     return {
-        "user_planned_banner_data": UserPlannedBannerSerializer(
-            planned_banners, many=True,
-            # No "request" in context on purpose: with it, DRF's ImageField
-            # emits absolute URLs via request.build_absolute_uri(), which
-            # behind the prod reverse proxy point at the wrong (internal/http)
-            # host and break the nested banner images. Every other serializer
-            # omits request and emits relative /media/... URLs that the
-            # frontend/ingress resolves correctly — keep this one consistent.
-            context={"effective_dates": emap, **card_context},
+        # Read AFTER get_active_plan so a first plan it just created is listed.
+        "user_plans": PlanSerializer(
+            Plan.objects.filter(user=user), many=True
         ).data,
+        "active_plan_id": active_plan.id,
+        "user_planned_banner_data": serialize_planned_banners(
+            active_plan, emap=emap, card_context=card_context
+        ),
         "user_planned_purchase_data": UserPlannedPurchaseSerializer(
             planned_purchases, many=True
         ).data,
@@ -262,7 +305,7 @@ class CalculatorViewSet(ViewSet):
         below serializes ~900 nested cards twice over and none of it is
         per-user. On a cache hit neither branch runs a single catalogue query:
         a guest is answered straight from the cached JSON, and a signed-in user
-        has only their own four collections read and merged over it.
+        has only their own user-scoped keys read and merged over it.
         """
         cached_json = public_payload_cache.read()
         if cached_json is None:
@@ -455,10 +498,13 @@ class CalculatorViewSet(ViewSet):
                 banner_step_up_data, many=True,
                 context={"effective_dates": emap}
             ).data,
-            # The guest values. A signed-in request overwrites all four from
+            # The guest values. A signed-in request overwrites all of them from
             # _build_user_payload() after this dict comes back out of the cache;
             # they are spelled out here so the CACHED bytes are already a
             # complete, correct guest response and can be returned untouched.
+            # A guest has one unnamed in-memory plan, hence no list and no id.
+            "user_plans": [],
+            "active_plan_id": None,
             "user_planned_banner_data": [],
             "user_planned_purchase_data": [],
             "user_step_up_selection_data": [],
@@ -521,6 +567,26 @@ class CalculatorViewSet(ViewSet):
         """
         user = request.user
 
+        # WHICH PLAN the banner rows belong to. The body says; the server never
+        # guesses for a client that knows about plans. _replace_user_rows
+        # deletes every row the body does not name, and auto-save fires five
+        # seconds after the last edit -- so "whatever plan is active when the
+        # save arrives" would let someone who edits plan A and switches to B
+        # inside that window have A's rows written over B's.
+        #
+        # An ABSENT plan_id means the active plan. That exists for one case: a
+        # tab left open across the deploy that introduced plans. Its bundle has
+        # never heard of them and the account then has exactly one.
+        plan_id = request.data.get("plan_id")
+        try:
+            plan = (
+                plans.get_active_plan(user) if plan_id is None
+                else plans.get_owned_plan(user, plan_id)
+            )
+        except Plan.DoesNotExist:
+            return Response({"error": "Plan not found"},
+                            status=status.HTTP_404_NOT_FOUND)
+
         user_stats_data = request.data.get("user_stats_data")
         if user_stats_data:
             serializer = UserStatsSerializer(user, data=user_stats_data, partial=True)
@@ -541,16 +607,20 @@ class CalculatorViewSet(ViewSet):
                 "first_jp_dates": build_first_jp_date_maps(),
             }
 
+        # Only banners are scoped to the plan. Purchases and selections are the
+        # account's, the same under every plan, so they reconcile against all
+        # of the user's rows exactly as before.
         collections = (
             ("user_planned_banner_data", UserPlannedBanner,
-             UserPlannedBannerSerializer, "Banner not found", None),
+             UserPlannedBannerSerializer, "Banner not found", None, plan),
             ("user_planned_purchase_data", UserPlannedPurchase,
-             UserPlannedPurchaseSerializer, "Purchase not found", None),
+             UserPlannedPurchaseSerializer, "Purchase not found", None, None),
             ("user_step_up_selection_data", UserStepUpSelection,
              UserStepUpSelectionSerializer, "Step-up selection not found",
-             selection_context),
+             selection_context, None),
         )
-        for key, model, serializer_class, missing_message, context in collections:
+        for key, model, serializer_class, missing_message, context, scope_plan \
+                in collections:
             error = _replace_user_rows(
                 request.data.get(key),
                 model=model,
@@ -558,8 +628,14 @@ class CalculatorViewSet(ViewSet):
                 user=user,
                 missing_message=missing_message,
                 context=context,
+                plan=scope_plan,
             )
             if error is not None:
                 return error
+
+        # auto_now only fires on save(), and the rows above were written through
+        # their own serializers. Stamp the plan so "last edited" means its rows.
+        if request.data.get("user_planned_banner_data") is not None:
+            plan.save(update_fields=["updated_at"])
 
         return None

@@ -4,6 +4,7 @@ from .champions_meeting_rank import ChampionsMeetingRank
 from .club_rank import ClubRank
 from .team_trials_rank import TeamTrialsRank
 from .custom_user import CustomUser
+from .plan import Plan, PLAN_CAP, DEFAULT_PLAN_NAME
 from .user_planned_banner import UserPlannedBanner
 from .support_card import SupportCard, SupportCardRarity, SupportCardType
 from .uma import Uma, Rarity, RunningStyle, Aptitude

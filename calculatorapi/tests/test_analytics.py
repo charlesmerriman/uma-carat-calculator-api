@@ -18,6 +18,7 @@ from calculatorapi.visits import (
 from calculatorapi.models import (
     CustomUser,
     ClubRank,
+    Plan,
     UserPlannedBanner,
     DailyVisit, MonthlyVisit, VisitorHash,
 )
@@ -96,6 +97,17 @@ class AnalyticsReportScenarioTests(CalculatorTestCase):
         UserPlannedBanner.objects.create(user=cls.planner, banner_uma=uma_z, number_of_pulls=5)
         UserPlannedBanner.objects.create(user=cls.staff, banner_uma=uma_z, number_of_pulls=100)
 
+        # whale also keeps a spare what-if plan: far more pulls on Uma X, and a
+        # banner (Uma Z) their real plan does not include at all. Only the
+        # ACTIVE plan is what someone intends, so none of this may reach a
+        # figure -- every assertion below was written before plans existed and
+        # must hold unchanged.
+        spare = Plan.objects.create(user=cls.whale, name='What if', is_active=False)
+        UserPlannedBanner.objects.create(
+            user=cls.whale, plan=spare, banner_uma=uma_x, number_of_pulls=500)
+        UserPlannedBanner.objects.create(
+            user=cls.whale, plan=spare, banner_uma=uma_z, number_of_pulls=50)
+
         cls.report = build_analytics_report()
 
     def test_user_counts_exclude_staff(self):
@@ -150,6 +162,15 @@ class AnalyticsReportScenarioTests(CalculatorTestCase):
         self.assertEqual(second['name'], 'Uma Z')
         self.assertEqual(second['planners'], 1)
         self.assertEqual(second['total_pulls'], 5)
+
+    def test_an_inactive_plan_adds_no_planner_and_no_pulls(self):
+        """whale's spare plan holds Uma X x500 and Uma Z x50 (see setUpTestData)."""
+        by_name = {row['name']: row for row in self.report['popular_uma_banners']}
+        # Uma X: still whale 10 + dolphin 20, not 530.
+        self.assertEqual(by_name['Uma X']['total_pulls'], 30)
+        # Uma Z: still planner alone. whale's what-if is not a second planner.
+        self.assertEqual(by_name['Uma Z']['planners'], 1)
+        self.assertEqual(by_name['Uma Z']['total_pulls'], 5)
 
     def test_support_banner_popularity(self):
         (only,) = self.report['popular_support_banners']

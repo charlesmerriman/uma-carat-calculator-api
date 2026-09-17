@@ -168,9 +168,19 @@ erDiagram
         string recommendation
     }
 
-    UserPlannedBanner {
+    Plan {
         int id PK
         int user_id FK
+        string name
+        bool is_active "one per user"
+        datetime created_at
+        datetime updated_at
+    }
+
+    UserPlannedBanner {
+        int id PK
+        int plan_id FK "the owner"
+        int user_id FK "transitional, dropped in release 2"
         int banner_uma_id FK
         int banner_support_id FK
         int banner_step_up_id FK
@@ -292,7 +302,9 @@ erDiagram
     SupportsOnSupportBanner }o--|| BannerSupport : "banner_support"
     SupportsOnSupportBanner }o--|| SupportCard : "support_card"
 
-    UserPlannedBanner }o--|| CustomUser : "user"
+    Plan }o--|| CustomUser : "user"
+    UserPlannedBanner }o--|| Plan : "plan"
+    UserPlannedBanner }o--|| CustomUser : "user (transitional)"
     UserPlannedBanner }o--o| BannerUma : "banner_uma"
     UserPlannedBanner }o--o| BannerSupport : "banner_support"
     UserPlannedBanner }o--o| BannerStepUp : "banner_step_up"
@@ -417,6 +429,76 @@ deliberate. Because the ledger owns this, every consumer inherits it: the banner
 rows, the income tiles, and the uncap-crystals panel (which reads race payout
 instants from `income_ledger`, not from `champions_meeting_data`, for exactly
 this reason).
+
+### `Plan` — a named list of planned banners, and nothing else
+
+An account holds up to `PLAN_CAP` (5) plans and the calculator opens on the active one.
+`UserPlannedBanner.plan` is what a row belongs to; the row's owner is `plan.user`.
+
+**A plan holds choices. The account holds facts.** That line decides what goes where:
+
+| Data | Lives on | Why |
+|---|---|---|
+| Planned banner rows (`number_of_pulls`, `reserved_copies`) | `Plan` | the choices |
+| Carats, tickets, selector tickets, shards, crystals, ranks | `CustomUser` | facts about the person |
+| The income toggles | `CustomUser` | income side |
+| `UserPlannedPurchase` | the account | money the person spends; it feeds income |
+| `UserStepUpSelection` | the account | already keyed to the banner, and changes no number |
+
+So the same plan projected for two people gives two different answers, which is the point.
+Worked example: Alice (80,000 carats, top ranks) and Bob (12,000 carats, middling ranks)
+both hold a plan that says "Kitasan, 200 pulls". Alice sees it comfortably funded. Bob sees
+a shortfall. Nothing on the plan differs; everything that differs is on their accounts.
+
+That portability is deliberate. A later feature lets a player publish a plan and another
+player take it, and both are `plans.copy_plan()` plus a visibility rule. A plan that never
+held anything about its author needs no stripping when it is copied and cannot leak what
+someone holds or spends. **Do not add a field to `Plan` that describes the person.**
+`reserved_copies` passes that test: only the count is stored, and which ticket or crystal
+pays for each copy is derived on render from the viewer's own balances.
+
+Accepted consequence: purchases are shared across plans. A pack planned to fund a step-up
+in one plan still credits its carats while another plan is open.
+
+Both account-side collections could move onto the plan later without losing data (add the
+FK, copy the one set into each plan). The reverse would have to merge several sets into
+one. Account-side is therefore the choice that stays cheap to change.
+
+**`is_active`, not a `CustomUser.active_plan` FK.** That FK would be circular and could be
+pointed at somebody else's plan. A boolean on the person's own row cannot. The partial
+unique constraint `one_active_plan_per_user` forbids two; zero is repaired by
+`plans.get_active_plan()`, which promotes the oldest.
+
+**Every account always has a plan**, without a signal or a change to sign-up:
+`plans.get_active_plan(user)` creates "Main plan" the first time anything asks. Migration
+`0067` gave one to every user who already had planned rows and skipped everyone else on
+purpose, so there is one way a first plan comes to exist rather than two.
+
+**Every plan id is resolved through `plans.get_owned_plan(user, plan_id)`.** That function
+is the ownership check. Somebody else's plan and a missing one are the same `DoesNotExist`.
+
+**The cap is checked on creation only.** It never rejects a save to an existing plan and
+never deletes one, so lowering it later strands nobody's data.
+
+**Analytics count the ACTIVE plan only.** Spare plans are what-ifs; summing them would
+report demand from rows nobody intends. The admin's "Planned by" column counts distinct
+users for the same reason.
+
+#### Two releases: `UserPlannedBanner.user` is transitional
+
+`git push origin master` runs `migrate` while the old code is still serving, so the column
+the old code writes cannot be dropped in the deploy that stops writing it.
+
+| Release | Schema | Code |
+|---|---|---|
+| 1 (`0066`, `0067`) | `Plan` added; `UserPlannedBanner.plan` NULLABLE; backfill | writes `user` AND `plan`, reads by `plan` |
+| 2 (not yet written) | sweep plan-less rows, `plan` NOT NULL, drop `user` | drop the dual write |
+
+During release 1's deploy window the old code can still save a row with a `user` and no
+`plan`. `plans._adopt_planless_rows()` moves such rows into the owner's active plan on
+their next request, so nothing disappears from anyone's calculator. It is one `UPDATE` that
+almost always matches nothing, and it goes away with release 2. Every spot that exists only
+for this window is marked `TRANSITIONAL` in the code.
 
 ### `UserPlannedBanner` — exactly-one check constraint
 
