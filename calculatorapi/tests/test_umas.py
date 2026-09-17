@@ -1,4 +1,4 @@
-"""Umas as rows: the game id, its backfill, and the duplicate merge that runs first."""
+"""Umas as rows: the game id, its backfill, the duplicate merge that runs first, and the borderless art linking."""
 
 import json
 import tempfile
@@ -8,8 +8,11 @@ from io import StringIO
 from pathlib import Path
 
 from django.apps import apps
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
 from django.core.management import call_command
 from django.db import IntegrityError
+from django.test import override_settings
 
 from calculatorapi.models import (
     AnniversaryEventProduct,
@@ -21,7 +24,7 @@ from calculatorapi.models import (
     UserStepUpSelection,
 )
 from calculatorapi.models.uma import game_id_from_image
-from calculatorapi.tests.base import CalculatorTestCase
+from calculatorapi.tests.base import CalculatorTestCase, PLAIN_TEST_STORAGES
 from calculatorapi.tests.factories import (
     make_anniversary_event,
     make_champions_meeting,
@@ -493,3 +496,68 @@ class ImportGameDataUmaTests(CalculatorTestCase):
         )
         self.assertIn("umas:", out)
         self.assertIn("support cards:", out)
+
+
+@override_settings(STORAGES=PLAIN_TEST_STORAGES)
+class LinkBorderlessUmasTests(CalculatorTestCase):
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()  # pylint: disable=consider-using-with
+        self.addCleanup(self.tmp.cleanup)
+        self.override = override_settings(MEDIA_ROOT=self.tmp.name)
+        self.override.enable()
+        self.addCleanup(self.override.disable)
+        self.with_file = Uma.objects.create(name="Phalaenopsis", game_id=114901)
+        self.without_file = Uma.objects.create(name="Kiseki", game_id=113701)
+        # The "(All)" placeholder: no game id, so it can never be matched or reported.
+        self.placeholder = Uma.objects.create(name="(All)")
+        default_storage.save("umas_borderless/114901-Phalaenopsis.png", ContentFile(b"png"))
+
+    def _run(self, *flags):
+        out = StringIO()
+        call_command("link_borderless_umas", *flags, stdout=out)
+        return out.getvalue()
+
+    def test_links_the_uma_whose_game_id_starts_the_filename(self):
+        out = self._run()
+
+        self.with_file.refresh_from_db()
+        self.without_file.refresh_from_db()
+        self.assertEqual(self.with_file.image_borderless.name, "umas_borderless/114901-Phalaenopsis.png")
+        self.assertFalse(self.without_file.image_borderless)
+        self.assertIn("Kiseki (113701)", out)
+        self.assertNotIn("(All)", out)
+
+    def test_reports_a_file_that_matches_no_uma(self):
+        default_storage.save("umas_borderless/999901-Nobody.png", ContentFile(b"png"))
+        # A support card id is five digits; it is not an uma file and is ignored outright.
+        default_storage.save("umas_borderless/30201-Narita-Taishin-Wit.png", ContentFile(b"png"))
+
+        out = self._run()
+
+        self.assertIn("umas_borderless/999901-Nobody.png", out)
+        self.assertNotIn("30201", out)
+
+    def test_leaves_a_hand_picked_image_alone(self):
+        self.with_file.image_borderless = "umas_borderless/custom.png"
+        self.with_file.save()
+
+        self._run()
+
+        self.with_file.refresh_from_db()
+        self.assertEqual(self.with_file.image_borderless.name, "umas_borderless/custom.png")
+
+    def test_dry_run_writes_nothing(self):
+        out = self._run("--dry-run")
+
+        self.with_file.refresh_from_db()
+        self.assertFalse(self.with_file.image_borderless)
+        self.assertIn("Would link 1", out)
+
+    def test_an_empty_storage_links_nothing(self):
+        default_storage.delete("umas_borderless/114901-Phalaenopsis.png")
+        Path(self.tmp.name, "umas_borderless").rmdir()
+
+        out = self._run()
+
+        self.assertIn("Linking 0 uma(s) from 0 file(s)", out)
