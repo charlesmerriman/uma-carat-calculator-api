@@ -263,3 +263,14 @@ class UmaCatalogueTests(CalculatorTestCase):
         uma = Uma.objects.get(name="Alpha Uma")
         row = APIClient().get("/umas").json()[0]
         self.assertEqual(row["image"], uma.image.url)
+
+    def test_image_is_the_borderless_art_when_the_uma_has_it(self):
+        # The picker crops to a circle; the bordered art is only the fallback.
+        uma = Uma.objects.get(name="Alpha Uma")
+        uma.image_borderless = "umas_borderless/alpha.png"
+        uma.save()
+
+        rows = APIClient().get("/umas").json()
+
+        self.assertEqual(rows[0]["image"], uma.image_borderless.url)
+        self.assertEqual(rows[1]["image"], Uma.objects.get(name="Zeta Uma").image.url)
