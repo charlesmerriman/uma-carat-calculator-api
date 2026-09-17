@@ -17,9 +17,9 @@ WHAT IT WRITES, and what it leaves alone:
                when `--gametora FILE` is given (see below).
   Uma          title, rarity, running_style, the ten apt_* grades, the five
                base_* stats at the initial star count, the five growth_*
-               bonuses, and `is_three_star` (= rarity is 3), which the selector
-               pickers read. Matched on `game_id`.
-  SupportCard  card_type, character_id, title. Matched on `game_id`.
+               bonuses. `rarity` is what the selector pickers read, through
+               `Uma.is_three_star`. Matched on `game_id`.
+  SupportCard  card_type, rarity, character_id, title. Matched on `game_id`.
   UmaSkill     one row per (uma, skill, source) the game lists: unique, innate
                and awakening skills, with `level` (see the model). Rows are
                ADDED and never deleted, so a hand-added row survives. An
@@ -68,7 +68,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from calculatorapi import public_payload_cache
-from calculatorapi.models import Rarity, Skill, SupportCard, SupportCardSkill, Uma, UmaSkill
+from calculatorapi.models import Skill, SupportCard, SupportCardSkill, Uma, UmaSkill
 
 CONFIRM_PHRASE = "import"
 
@@ -117,7 +117,6 @@ def uma_values(card):
         "title": card["title"],
         "rarity": card["default_rarity"],
         "running_style": RUNNING_STYLES[card["running_style"]],
-        "is_three_star": card["default_rarity"] == Rarity.THREE,
     }
     for key, column in APTITUDE_COLUMNS.items():
         values[column] = initial["aptitude"][key]
@@ -167,6 +166,7 @@ def support_values(card):
     return {
         "title": card["title"],
         "card_type": card["card_type"],
+        "rarity": card["rarity"],
         "character_id": card["chara_id"],
     }
 

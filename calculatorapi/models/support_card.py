@@ -12,6 +12,27 @@ class SupportCardType(models.TextChoices):
     GROUP = "group", "Group"
 
 
+class SupportCardRarity(models.IntegerChoices):
+    """R / SR / SSR. The number IS the game's value, and the card id's first digit."""
+    R = 1, "R"
+    SR = 2, "SR"
+    SSR = 3, "SSR"
+
+
+def support_rarity_from_game_id(game_id):
+    """The rarity a support card id encodes in its first digit, or None.
+
+    Every support card id starts with 1, 2 or 3 for R, SR, SSR (10001, 20012,
+    30024), which holds for cards that are not on global yet too. The import
+    writes the game's own `rarity` for the cards it knows; this is the fallback
+    that covers the rest.
+    """
+    if not game_id:
+        return None
+    first_digit = int(str(game_id)[0])
+    return first_digit if first_digit in SupportCardRarity.values else None
+
+
 class SupportCard(models.Model):
     name = models.CharField(max_length=255)
     game_id = models.PositiveIntegerField(
@@ -48,6 +69,12 @@ class SupportCard(models.Model):
         choices=SupportCardType.choices,
         help_text="What the card trains. Blank until imported.",
     )
+    rarity = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        choices=SupportCardRarity.choices,
+        help_text="R, SR or SSR. Blank only for a card with no game id.",
+    )
     # The game's character id, a plain number rather than a FK to Uma: a
     # character is not an outfit, so "this character's outfits" is
     # Uma.objects.filter(game_id__range=(id * 100, id * 100 + 99)).
@@ -62,6 +89,13 @@ class SupportCard(models.Model):
         default="",
         help_text="The card's title from the game, e.g. \"[Get Lots of Hugs for Me]\".",
     )
+
+    def save(self, *args, **kwargs):
+        # A card an editor adds by hand, e.g. one that is not on global yet,
+        # never meets the import, so its rarity is read off the id here.
+        if self.rarity is None:
+            self.rarity = support_rarity_from_game_id(self.game_id)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         # Many characters have 2-3 support cards sharing the exact same name

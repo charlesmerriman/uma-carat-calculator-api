@@ -81,10 +81,12 @@ class IntrinsicSelectorGateTests(CalculatorTestCase):
     """The second gate: units no selector can take at ANY cutoff."""
 
     def test_an_ordinary_uma_is_selectable_by_default(self):
-        # The defaults have to land on "selectable", or adding the columns would
-        # silently empty every picker for the whole existing catalogue.
+        # The defaults have to land on "selectable": an uma with no rarity yet
+        # (anything not on global) counts as ★3, or every picker would lose the
+        # part of the catalogue nobody has game data for.
         uma = Uma.objects.create(name='Ordinary')
         self.assertFalse(uma.is_time_limited)
+        self.assertIsNone(uma.rarity)
         self.assertTrue(uma.is_three_star)
         self.assertTrue(is_intrinsically_selectable(uma))
 
@@ -93,13 +95,20 @@ class IntrinsicSelectorGateTests(CalculatorTestCase):
         self.assertFalse(is_intrinsically_selectable(uma))
 
     def test_non_three_star_uma_is_never_selectable(self):
-        uma = Uma.objects.create(name='Two Star', is_three_star=False)
-        self.assertFalse(is_intrinsically_selectable(uma))
+        for rarity in (1, 2):
+            uma = Uma.objects.create(name=f'Star {rarity}', rarity=rarity)
+            self.assertFalse(is_intrinsically_selectable(uma))
+
+    def test_three_star_uma_is_selectable(self):
+        uma = Uma.objects.create(name='Three Star', rarity=3)
+        self.assertTrue(is_intrinsically_selectable(uma))
 
     def test_support_cards_have_no_intrinsic_gate(self):
-        # Neither flag exists on SupportCard; absent must read as unrestricted
-        # rather than as "not a ★3".
-        card = SupportCard.objects.create(name='Any SSR', game_id=30001)
+        # Neither gate exists on SupportCard; absent must read as unrestricted
+        # rather than as "not a ★3". An R card makes the point: SupportCard has
+        # a `rarity` of its own, and the gate must not start reading it.
+        card = SupportCard.objects.create(name='Any R', game_id=10001)
+        self.assertEqual(card.rarity, 1)
         self.assertTrue(is_intrinsically_selectable(card))
 
     def test_intrinsic_gate_bites_under_a_null_cutoff(self):

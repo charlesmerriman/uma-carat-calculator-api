@@ -454,9 +454,9 @@ PURPOSE_FILTER = ("purpose", admin.EmptyFieldListFilter)
 @admin.register(Uma)
 class UmaAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
     inlines = (UmaSkillInline,)
-    list_display = ("image_preview", "name", "game_id", "is_time_limited", "is_three_star")
+    list_display = ("image_preview", "name", "game_id", "is_time_limited", "rarity")
     list_display_links = ("name",)
-    list_filter = ("is_time_limited", "is_three_star", PURPOSE_FILTER)
+    list_filter = ("is_time_limited", "rarity", PURPOSE_FILTER)
     ordering = ("name",)
     # required: autocomplete source for banner inlines. `=game_id` is an exact
     # match, so typing an id finds one row rather than every name containing it.
@@ -469,12 +469,15 @@ class UmaAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
         )}),
         PURPOSE_FIELDSET,
         ("Selector availability", {
-            "fields": ("is_time_limited", "is_three_star"),
+            "fields": ("is_time_limited", "rarity"),
             "description": (
-                "Either box set against this uma hides it from selector and "
-                "step-up pickers, and stops a selector ticket paying for a "
-                "banner it is featured on. Both are independent of the "
-                "campaign cutoff dates."
+                "A time-limited uma, or one that is ★1 or ★2, is hidden from "
+                "selector and step-up pickers, and a selector ticket cannot pay "
+                "for a banner it is featured on. Both are independent of the "
+                "campaign cutoff dates. Rarity comes from the game-data import "
+                "for umas on global, which overwrites an edit here; set it by "
+                "hand only for an uma that is not on global yet. Blank counts "
+                "as ★3."
             ),
         }),
         ("Game data", {
@@ -484,7 +487,7 @@ class UmaAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
                 "so edits here do not stick. Fix the source instead."
             ),
             "fields": (
-                "title", "rarity", "running_style",
+                "title", "running_style",
                 ("apt_turf", "apt_dirt"),
                 ("apt_short", "apt_mile", "apt_medium", "apt_long"),
                 ("apt_front", "apt_pace", "apt_late", "apt_end"),
@@ -553,9 +556,9 @@ class SkillAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
 @admin.register(SupportCard)
 class SupportCardAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
     inlines = (SupportCardSkillInline,)
-    list_display = ("image_preview", "name", "game_id", "card_type")
+    list_display = ("image_preview", "name", "game_id", "card_type", "rarity")
     list_display_links = ("name",)
-    list_filter = ("card_type", PURPOSE_FILTER)
+    list_filter = ("card_type", "rarity", PURPOSE_FILTER)
     ordering = ("name",)
     search_fields = ("name", "=game_id")  # required: autocomplete source for banner inlines
     readonly_fields = ("image_preview",)
@@ -570,7 +573,7 @@ class SupportCardAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
                 "Filled by the game-data import and overwritten by the next one, "
                 "so edits here do not stick. Fix the source instead."
             ),
-            "fields": ("title", "card_type", "character_id"),
+            "fields": ("title", "card_type", "rarity", "character_id"),
         }),
     )
 

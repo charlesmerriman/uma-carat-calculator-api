@@ -386,8 +386,8 @@ class UserPlannedPurchaseTests(CalculatorTestCase):
         self.assertEqual(res.status_code, 400)
 
     def test_rejects_a_non_three_star_target(self):
-        self.eligible_uma.is_three_star = False
-        self.eligible_uma.save(update_fields=['is_three_star'])
+        self.eligible_uma.rarity = 2
+        self.eligible_uma.save(update_fields=['rarity'])
         res = self._patch([
             {'product': self.uma_selector.id, 'quantity': 1,
              'target_uma': self.eligible_uma.id}

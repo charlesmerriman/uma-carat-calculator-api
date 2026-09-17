@@ -275,7 +275,7 @@ Table calculatorapi_uma as Uma {
   admin_comments text [null, note: 'Notes for editors.']
   purpose varchar(100) [not null, note: 'Django default: "". Shown publicly when a player hovers this uma\'s art on the Timeline, e.g. "Great pace parent." Leave blank to show nothing. Notes for other editors go in Admin comments instead.']
   is_time_limited boolean [not null, note: 'Django default: False. Only obtainable during a limited window, so selector tickets and step-ups can never take them. Hides this uma from every selector picker and stops a selector funding a banner it is featured on.']
-  is_three_star boolean [not null, note: 'Django default: True. Uncheck for ★1/★2 units. Selectors and step-ups only grant ★3 umas, so anything unchecked here is hidden from the pickers.']
+  rarity smallint [null, note: 'Django choices: 1 (★1); 2 (★2); 3 (★3). Initial star count. The ★ half of the intrinsic selector gate, read through the Uma.is_three_star property; null counts as ★3. Imported for umas on global, set by hand otherwise. The other imported game-data columns are not listed in this file.']
 
   Note: 'Django model: calculatorapi.Uma. Source: calculatorapi/models/uma.py.'
 }
@@ -287,6 +287,7 @@ Table calculatorapi_supportcard as SupportCard {
   image varchar(100) [null, note: 'Stored file path, not binary image data.']
   admin_comments text [null, note: 'Notes for editors.']
   purpose varchar(100) [not null, note: 'Django default: "". Shown publicly when a player hovers this card\'s art on the Timeline, e.g. "Great for front runners." Leave blank to show nothing. Notes for other editors go in Admin comments instead.']
+  rarity smallint [null, note: 'Django choices: 1 (R); 2 (SR); 3 (SSR). Imported; otherwise read off the first digit of game_id on save. Null only for a card with no game id.']
 
   Note: 'Django model: calculatorapi.SupportCard. Source: calculatorapi/models/support_card.py.'
 }
