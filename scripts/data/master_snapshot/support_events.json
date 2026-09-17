@@ -864,6 +864,14 @@
   "skill_id": 201402
  },
  {
+  "support_card_id": 20053,
+  "skill_id": 200252
+ },
+ {
+  "support_card_id": 20053,
+  "skill_id": 200722
+ },
+ {
   "support_card_id": 30001,
   "skill_id": 200511
  },
@@ -2550,6 +2558,18 @@
  {
   "support_card_id": 30121,
   "skill_id": 200711
+ },
+ {
+  "support_card_id": 30122,
+  "skill_id": 200292
+ },
+ {
+  "support_card_id": 30122,
+  "skill_id": 200592
+ },
+ {
+  "support_card_id": 30122,
+  "skill_id": 201383
  },
  {
   "support_card_id": 30145,

@@ -24,6 +24,28 @@ class SkillTier(models.IntegerChoices):
     GOLD = 2, "◎ gold"
 
 
+class SkillQuerySet(models.QuerySet):
+    """
+    "Is this skill on global yet?", asked of the database.
+
+    THE RULE: a skill is on global when the game gives it an English
+    description. It is derived from the text and never stored, so it cannot
+    disagree with the data, and a skill that releases fixes itself on the next
+    import. `Skill.is_on_global` is the same rule for one row; keep the two in
+    step. `\\S` rather than `!= ""` so whitespace alone does not count as text.
+
+    Anything that shows skills to a player (the CM planner, a skill page) must
+    go through `on_global()`. A skill that is not there yet may sit in the
+    backend, but a player never sees it.
+    """
+
+    def on_global(self):
+        return self.filter(description__regex=r"\S")
+
+    def not_on_global(self):
+        return self.exclude(description__regex=r"\S")
+
+
 class Skill(models.Model):
     """
     One skill as the global game defines it, imported from the game's data.
@@ -95,11 +117,18 @@ class Skill(models.Model):
     image = models.ImageField(upload_to="skills/", blank=True, null=True)
     admin_comments = models.TextField(blank=True, null=True, help_text="Notes for editors.")
 
+    objects = SkillQuerySet.as_manager()
+
     class Meta:
         ordering = ("name", "game_id")
 
     def __str__(self):
         return f"{self.name} ({self.game_id})"
+
+    @property
+    def is_on_global(self):
+        """Has this skill released on global? See SkillQuerySet for the rule."""
+        return bool(self.description.strip())
 
     def siblings(self):
         """The other versions of this effect: same group, different tier."""

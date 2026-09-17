@@ -8688,6 +8688,114 @@
   ]
  },
  {
+  "id": 104901,
+  "chara_id": 1049,
+  "chara_name": "Nakayama Festa",
+  "name": "[Desperate Measures] Nakayama Festa",
+  "title": "[Desperate Measures]",
+  "default_rarity": 3,
+  "running_style": "late",
+  "growth": {
+   "speed": 10,
+   "stamina": 10,
+   "power": 10,
+   "guts": 0,
+   "wit": 0
+  },
+  "stars": [
+   {
+    "star": 3,
+    "unique_skill_id": 100491,
+    "stats": {
+     "speed": 97,
+     "stamina": 92,
+     "power": 99,
+     "guts": 75,
+     "wit": 87
+    },
+    "max_stats": {
+     "speed": 1200,
+     "stamina": 1200,
+     "power": 1200,
+     "guts": 1200,
+     "wit": 1200
+    },
+    "aptitude": {
+     "turf": 7,
+     "dirt": 1,
+     "short": 1,
+     "mile": 5,
+     "medium": 7,
+     "long": 6,
+     "front": 1,
+     "pace": 7,
+     "late": 7,
+     "end": 4
+    }
+   },
+   {
+    "star": 4,
+    "unique_skill_id": 100491,
+    "stats": {
+     "speed": 108,
+     "stamina": 102,
+     "power": 110,
+     "guts": 84,
+     "wit": 96
+    },
+    "max_stats": {
+     "speed": 1200,
+     "stamina": 1200,
+     "power": 1200,
+     "guts": 1200,
+     "wit": 1200
+    },
+    "aptitude": {
+     "turf": 7,
+     "dirt": 1,
+     "short": 1,
+     "mile": 5,
+     "medium": 7,
+     "long": 6,
+     "front": 1,
+     "pace": 7,
+     "late": 7,
+     "end": 4
+    }
+   },
+   {
+    "star": 5,
+    "unique_skill_id": 100491,
+    "stats": {
+     "speed": 119,
+     "stamina": 113,
+     "power": 121,
+     "guts": 92,
+     "wit": 105
+    },
+    "max_stats": {
+     "speed": 1200,
+     "stamina": 1200,
+     "power": 1200,
+     "guts": 1200,
+     "wit": 1200
+    },
+    "aptitude": {
+     "turf": 7,
+     "dirt": 1,
+     "short": 1,
+     "mile": 5,
+     "medium": 7,
+     "long": 6,
+     "front": 1,
+     "pace": 7,
+     "late": 7,
+     "end": 4
+    }
+   }
+  ]
+ },
+ {
   "id": 105001,
   "chara_id": 1050,
   "chara_name": "Narita Taishin",
@@ -11869,6 +11977,114 @@
      "pace": 7,
      "late": 5,
      "end": 1
+    }
+   }
+  ]
+ },
+ {
+  "id": 110001,
+  "chara_id": 1100,
+  "chara_name": "Wonder Acute",
+  "name": "[Butterfly Sting] Wonder Acute",
+  "title": "[Butterfly Sting]",
+  "default_rarity": 3,
+  "running_style": "pace",
+  "growth": {
+   "speed": 0,
+   "stamina": 0,
+   "power": 0,
+   "guts": 15,
+   "wit": 15
+  },
+  "stars": [
+   {
+    "star": 3,
+    "unique_skill_id": 101001,
+    "stats": {
+     "speed": 84,
+     "stamina": 82,
+     "power": 84,
+     "guts": 101,
+     "wit": 99
+    },
+    "max_stats": {
+     "speed": 1200,
+     "stamina": 1200,
+     "power": 1200,
+     "guts": 1200,
+     "wit": 1200
+    },
+    "aptitude": {
+     "turf": 1,
+     "dirt": 7,
+     "short": 4,
+     "mile": 7,
+     "medium": 7,
+     "long": 3,
+     "front": 5,
+     "pace": 7,
+     "late": 5,
+     "end": 3
+    }
+   },
+   {
+    "star": 4,
+    "unique_skill_id": 101001,
+    "stats": {
+     "speed": 93,
+     "stamina": 91,
+     "power": 94,
+     "guts": 112,
+     "wit": 110
+    },
+    "max_stats": {
+     "speed": 1200,
+     "stamina": 1200,
+     "power": 1200,
+     "guts": 1200,
+     "wit": 1200
+    },
+    "aptitude": {
+     "turf": 1,
+     "dirt": 7,
+     "short": 4,
+     "mile": 7,
+     "medium": 7,
+     "long": 3,
+     "front": 5,
+     "pace": 7,
+     "late": 5,
+     "end": 3
+    }
+   },
+   {
+    "star": 5,
+    "unique_skill_id": 101001,
+    "stats": {
+     "speed": 102,
+     "stamina": 100,
+     "power": 103,
+     "guts": 123,
+     "wit": 122
+    },
+    "max_stats": {
+     "speed": 1200,
+     "stamina": 1200,
+     "power": 1200,
+     "guts": 1200,
+     "wit": 1200
+    },
+    "aptitude": {
+     "turf": 1,
+     "dirt": 7,
+     "short": 4,
+     "mile": 7,
+     "medium": 7,
+     "long": 3,
+     "front": 5,
+     "pace": 7,
+     "late": 5,
+     "end": 3
     }
    }
   ]

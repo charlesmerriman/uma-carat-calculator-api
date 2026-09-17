@@ -252,6 +252,51 @@ class SkillAdminTests(CalculatorTestCase):
         self.assertContains(res, "Right-Handed ◎")
 
 
+@override_settings(STORAGES=PLAIN_TEST_STORAGES)
+class SkillOnGlobalTests(CalculatorTestCase):
+    """A skill is on global when the game gives it a description. Derived, never stored."""
+
+    def setUp(self):
+        # A group each: the admin's "Versions" column prints a skill's siblings,
+        # which would put the released id on the unreleased skill's row.
+        common = {"rarity": 1, "tier": 1, "icon_id": 10011}
+        self.released = Skill.objects.create(
+            game_id=200012, name="Right-Handed ○", description="Moderately increases...",
+            group_id=20001, **common,
+        )
+        self.unreleased = Skill.objects.create(game_id=200992, name="", group_id=20099, **common)
+        # Whitespace is not a description.
+        self.blank = Skill.objects.create(
+            game_id=200993, name="", description="  \n", group_id=20098, **common,
+        )
+
+    def test_the_property_and_the_queryset_agree(self):
+        self.assertTrue(self.released.is_on_global)
+        self.assertFalse(self.unreleased.is_on_global)
+        self.assertFalse(self.blank.is_on_global)
+        self.assertEqual(list(Skill.objects.on_global()), [self.released])
+        self.assertCountEqual(Skill.objects.not_on_global(), [self.unreleased, self.blank])
+
+    def test_a_description_arriving_puts_the_skill_on_global(self):
+        # Nothing to flip and nothing to forget: the next import's text is enough.
+        self.unreleased.description = "Slightly increases..."
+        self.unreleased.save()
+
+        self.assertEqual(Skill.objects.on_global().count(), 2)
+
+    def test_admin_filter_lists_the_unreleased(self):
+        self.client.force_login(CustomUser.objects.create_superuser(username="boss", password="x"))
+        url = reverse("admin:calculatorapi_skill_changelist")
+
+        not_yet = self.client.get(url, {"on_global": "no"})
+        released = self.client.get(url, {"on_global": "yes"})
+
+        self.assertContains(not_yet, "200992")
+        self.assertNotContains(not_yet, "200012")
+        self.assertContains(released, "200012")
+        self.assertNotContains(released, "200992")
+
+
 class UmaSkillImportTests(CalculatorTestCase):
     """The junction rows: which outfit carries which skill, and how."""
 
@@ -354,13 +399,20 @@ class UmaSkillImportTests(CalculatorTestCase):
 
         import_game_data(SNAPSHOT_DIR)
 
-        self.assertEqual(UmaSkill.objects.count(), 841)
-        self.assertEqual(UmaSkill.objects.filter(source="unique").count(), 120)
-        # 17 ★1/★2 outfits carry two uniques; every other outfit exactly one.
+        # Expected counts come from the snapshot itself, never a literal: the
+        # file grows with every game update, and a pinned number fails the
+        # refresh PR for no reason.
+        rows = json.loads((SNAPSHOT_DIR / "card_skills.json").read_text(encoding="utf-8"))
+        uniques = [row for row in rows if row["source"] == "unique"]
+        self.assertEqual(UmaSkill.objects.count(), len(rows))
+        self.assertEqual(UmaSkill.objects.filter(source="unique").count(), len(uniques))
+        # A ★1/★2 outfit carries two uniques (the weaker one until ★3); every
+        # other outfit exactly one.
         two_uniques = [
             uma for uma in Uma.objects.all() if uma.skills.filter(source="unique").count() == 2
         ]
-        self.assertEqual(len(two_uniques), 17)
+        below_three_star = [card for card in cards if card["default_rarity"] < 3]
+        self.assertEqual(len(two_uniques), len(below_three_star))
         self.assertFalse(Uma.objects.filter(skills__isnull=True).exists())
 
 
@@ -427,9 +479,16 @@ class SupportCardSkillImportTests(CalculatorTestCase):
         import_game_data(SNAPSHOT_DIR)
 
         events = json.loads((SNAPSHOT_DIR / "support_events.json").read_text(encoding="utf-8"))
-        self.assertEqual(SupportCardSkill.objects.filter(source="hint").count(), 1529)
-        self.assertEqual(SupportCardSkill.objects.filter(source="event").count(), len(events))
-        # 15 cards have no hints (friend, group, Haru Urara).
+        hints = json.loads((SNAPSHOT_DIR / "support_hints.json").read_text(encoding="utf-8"))
+        # One row per (card, skill): a skill in two hint groups is still one row.
+        hint_pairs = {(hint["support_card_id"], hint["skill_id"]) for hint in hints}
         self.assertEqual(
-            SupportCard.objects.exclude(skills__source="hint").distinct().count(), 15,
+            SupportCardSkill.objects.filter(source="hint").count(), len(hint_pairs),
+        )
+        self.assertEqual(SupportCardSkill.objects.filter(source="event").count(), len(events))
+        # Some cards have no hints at all (friend, group, Haru Urara).
+        hintless = {card["id"] for card in cards} - {card_id for card_id, _ in hint_pairs}
+        self.assertEqual(
+            SupportCard.objects.exclude(skills__source="hint").distinct().count(),
+            len(hintless),
         )

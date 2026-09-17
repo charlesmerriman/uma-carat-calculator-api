@@ -508,6 +508,22 @@ class UmaAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
         return "—"
 
 
+class OnGlobalFilter(admin.SimpleListFilter):
+    """Skills by whether they have released on global. The rule is SkillQuerySet's."""
+    title = "on global"
+    parameter_name = "on_global"
+
+    def lookups(self, request, model_admin):
+        return (("yes", "Yes"), ("no", "Not yet"))
+
+    def queryset(self, request, queryset):
+        if self.value() == "yes":
+            return queryset.on_global()
+        if self.value() == "no":
+            return queryset.not_on_global()
+        return queryset
+
+
 @admin.register(Skill)
 class SkillAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
     """
@@ -515,16 +531,24 @@ class SkillAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
     the two editor-owned columns (image, admin comments). "Versions" answers
     "is this the gold version of something" from group_id without a second table.
     """
-    list_display = ("image_preview", "name", "game_id", "rarity", "tier", "cost", "versions")
+    list_display = (
+        "image_preview", "name", "game_id", "rarity", "tier", "cost", "versions", "on_global",
+    )
     list_display_links = ("name",)
-    list_filter = ("rarity", "tier")
+    list_filter = ("rarity", "tier", OnGlobalFilter)
     ordering = ("name",)
     search_fields = ("name", "=game_id", "=group_id")
-    readonly_fields = ("image_preview", "versions")
+    readonly_fields = ("image_preview", "versions", "on_global")
     autocomplete_fields = ("evolves_from",)
     fieldsets = (
         (None, {"fields": ("name", "game_id", "image", "image_preview", "admin_comments")}),
-        ("Text", {"fields": ("description", "description_detailed")}),
+        ("Text", {
+            "description": (
+                "A skill with no description has not released on global yet. It "
+                "stays here in the admin and is never shown to players."
+            ),
+            "fields": ("description", "description_detailed", "on_global"),
+        }),
         ("Versions", {
             "description": (
                 "The white, gold and × versions of one effect share a group id. "
@@ -538,6 +562,10 @@ class SkillAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
             "fields": ("icon_id", "cost", "precondition", "condition"),
         }),
     )
+
+    @admin.display(description="On global", boolean=True)
+    def on_global(self, obj):
+        return obj.is_on_global
 
     @admin.display(description="Versions")
     def versions(self, obj):

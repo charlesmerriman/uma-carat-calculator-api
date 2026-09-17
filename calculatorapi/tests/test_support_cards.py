@@ -21,6 +21,7 @@ from calculatorapi.models import (
     BannerCategory,
 )
 from calculatorapi.tests.base import CalculatorTestCase
+from calculatorapi.tests.factories import make_support_banner
 
 
 class SupportVariantResolutionTests(CalculatorTestCase):
@@ -649,3 +650,60 @@ class ImportGameDataSupportCardTests(CalculatorTestCase):
         self.card.refresh_from_db()
         self.assertEqual(self.card.card_type, "")
         self.assertIn("would update 1", out)
+
+
+class MergeDuplicateSupportCardsTests(CalculatorTestCase):
+    """`merge_duplicate_support_cards`: the merge itself is tested with the uma command."""
+
+    def setUp(self):
+        # Two real cards share the name, as Daiichi Ruby's do. Only the image
+        # says which of them the (Rerun) row is a copy of.
+        self.ssr = SupportCard.objects.create(
+            name="Daiichi Ruby", game_id=30114, image="support_cards/30114-Daiichi-Ruby-pwr.png",
+        )
+        self.other_ssr = SupportCard.objects.create(
+            name="Daiichi Ruby", game_id=30270, image="support_cards/30270-Daiichi-Ruby-gts.png",
+        )
+        self.copy = SupportCard.objects.create(
+            name="Daiichi Ruby (Rerun)", image="support_cards/30114-Daiichi-Ruby-pwr.png",
+        )
+
+    @staticmethod
+    def _run(*flags):
+        out = StringIO()
+        call_command("merge_duplicate_support_cards", "--no-input", *flags, stdout=out)
+        return out.getvalue()
+
+    def test_merges_the_copy_into_the_card_with_the_same_image(self):
+        rerun_banner = make_support_banner(name="Rerun banner")
+        SupportsOnSupportBanner.objects.create(banner_support=rerun_banner, support_card=self.copy)
+
+        out = self._run()
+
+        self.assertFalse(SupportCard.objects.filter(pk=self.copy.pk).exists())
+        self.assertEqual(
+            list(rerun_banner.supportsonsupportbanner_set.values_list("support_card", flat=True)),
+            [self.ssr.pk],
+        )
+        self.assertTrue(SupportCard.objects.filter(pk=self.other_ssr.pk).exists())
+        self.assertIn("Merged 1 support card(s)", out)
+
+    def test_a_banner_listing_both_keeps_one_row(self):
+        banner = make_support_banner()
+        SupportsOnSupportBanner.objects.create(banner_support=banner, support_card=self.ssr)
+        SupportsOnSupportBanner.objects.create(banner_support=banner, support_card=self.copy)
+
+        self._run()
+
+        self.assertEqual(banner.supportsonsupportbanner_set.count(), 1)
+
+    def test_dry_run_writes_nothing(self):
+        out = self._run("--dry-run")
+
+        self.assertTrue(SupportCard.objects.filter(pk=self.copy.pk).exists())
+        self.assertIn("Would merge 1", out)
+
+    def test_second_run_finds_nothing(self):
+        self._run()
+
+        self.assertIn("Nothing to merge", self._run())
