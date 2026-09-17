@@ -382,9 +382,10 @@ class ImportGameDataUmaTests(CalculatorTestCase):
         self.assertEqual(self.uma.growth_speed, 0)
         self.assertEqual(self.uma.character_id, 1027)
 
-    def test_sets_is_three_star_from_the_rarity(self):
-        # The checkbox the selector pickers read. It defaults to True, so a
-        # ★1 card that was never unticked would otherwise stay selectable.
+    def test_a_one_star_import_leaves_the_selector_pickers(self):
+        # The pickers read is_three_star, which is derived from the rarity the
+        # import writes. Before the import this uma had none, so it counted as ★3.
+        self.assertTrue(self.uma.is_three_star)
         write_snapshot(self.tmp.name, cards=[snapshot_card()])
 
         import_game_data(self.tmp.name)
@@ -392,8 +393,10 @@ class ImportGameDataUmaTests(CalculatorTestCase):
         self.uma.refresh_from_db()
         self.assertFalse(self.uma.is_three_star)
 
-    def test_three_star_card_ticks_the_box_back(self):
-        self.uma.is_three_star = False
+    def test_three_star_import_overrides_a_hand_set_rarity(self):
+        # An editor's ★2 on an uma that was not on global yet gives way to the
+        # game's own value once the snapshot carries the card.
+        self.uma.rarity = 2
         self.uma.save()
         write_snapshot(self.tmp.name, cards=[snapshot_card(default_rarity=3)])
 

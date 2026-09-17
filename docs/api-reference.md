@@ -783,8 +783,9 @@ cutoff, inclusive. `null` means the card has never been featured on a banner in 
 treat that as *unknown*, not *ancient*; eligibility refuses `null` under a real cutoff.
 
 `is_time_limited` / `is_three_star` are the **intrinsic** half, and appear on umas only —
-a support card has no equivalent. They are stored, not derived, and are independent of the
-cutoff: a `true` / `false` here bars the uma from every selector and step-up there is,
+a support card has no equivalent. `is_three_star` is computed from the uma's `rarity` (3,
+or unknown, reads `true`); the wire field is a plain boolean either way. Both are
+independent of the cutoff: a `true` / `false` here bars the uma from every selector and step-up there is,
 including one with a `null` (unrestricted) cutoff. A client must check both halves. See
 `calculatorapi/eligibility.py`.
 

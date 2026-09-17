@@ -505,8 +505,8 @@ class UserStepUpSelectionTests(CalculatorTestCase):
         self.assertEqual(res.status_code, 400)
 
     def test_rejects_a_non_three_star_uma(self):
-        self.eligible_uma.is_three_star = False
-        self.eligible_uma.save(update_fields=['is_three_star'])
+        self.eligible_uma.rarity = 2
+        self.eligible_uma.save(update_fields=['rarity'])
         res = self._patch([self._slot(uma=self.eligible_uma.id)])
         self.assertEqual(res.status_code, 400)
 

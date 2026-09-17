@@ -5,7 +5,7 @@ from .club_rank import ClubRank
 from .team_trials_rank import TeamTrialsRank
 from .custom_user import CustomUser
 from .user_planned_banner import UserPlannedBanner
-from .support_card import SupportCard, SupportCardType
+from .support_card import SupportCard, SupportCardRarity, SupportCardType
 from .uma import Uma, Rarity, RunningStyle, Aptitude
 from .skill import Skill, SkillRarity, SkillTier
 from .uma_skill import UmaSkill, UmaSkillSource

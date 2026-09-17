@@ -111,7 +111,8 @@ class Uma(models.Model):
     # banner data: a time-limited unit and a non-★3 unit both appear on ordinary
     # banners and look exactly like a selectable unit from here. They are
     # independent of the JP cutoff and bite even under an unrestricted (null)
-    # one -- see calculatorapi/eligibility.py.
+    # one -- see calculatorapi/eligibility.py. The ★ half is `rarity`, further
+    # down with the rest of the game data, read through `is_three_star`.
     is_time_limited = models.BooleanField(
         default=False,
         help_text=(
@@ -120,15 +121,6 @@ class Uma(models.Model):
             "picker and stops a selector funding a banner it is featured on."
         ),
     )
-    is_three_star = models.BooleanField(
-        default=True,
-        verbose_name="Is ★3",
-        help_text=(
-            "Uncheck for ★1/★2 units. Selectors and step-ups only grant ★3 "
-            "umas, so anything unchecked here is hidden from the pickers."
-        ),
-    )
-
     # ---- Game data, imported. See the note above _game_int. ----
     title = models.CharField(
         max_length=100,
@@ -137,8 +129,9 @@ class Uma(models.Model):
         help_text="The outfit's title from the game, e.g. \"[Special Dreamer]\".",
     )
     rarity = _game_int(
-        "Initial star count. Sets \"Is ★3\" on import; that box is what the "
-        "selector pickers read.",
+        "Initial star count. Selectors and step-ups only grant ★3 umas, so ★1 "
+        "and ★2 are hidden from the pickers. Blank counts as ★3. Imported for "
+        "umas on global; set it by hand for one that is not there yet.",
         choices=Rarity.choices,
     )
     running_style = _game_int("Default strategy.", choices=RunningStyle.choices)
@@ -167,6 +160,17 @@ class Uma(models.Model):
     def character_id(self):
         """The game's character id: an outfit id is `<character><outfit>`."""
         return self.game_id // 100 if self.game_id else None
+
+    @property
+    def is_three_star(self):
+        """Can a selector or step-up grant this uma, as far as stars go?
+
+        Derived from `rarity` rather than stored. An unknown rarity counts as
+        ★3 on purpose: an uma nobody has data for yet stays selectable, which
+        is what the old default-ticked "Is ★3" box did. /calculator-data still
+        sends this under the same name, so the client never saw the change.
+        """
+        return self.rarity is None or self.rarity == Rarity.THREE
 
     def __str__(self):
         return f"{self.name}"
