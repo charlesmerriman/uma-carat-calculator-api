@@ -172,6 +172,19 @@ class OshiPictureTests(OshiTestCase):
         self.assertEqual([row["id"] for row in body["oshis"]], self._ids(1))
         self.assertEqual(body["avatar_url"], self.umas[1].image.url)
 
+    def test_the_picture_is_the_borderless_art_when_the_uma_has_it(self):
+        self._pledge(self.classic)
+        self._patch({"oshis": self._ids(0, 1)})
+        self.umas[0].image_borderless = "umas_borderless/uma-0.png"
+        self.umas[0].save()
+
+        body = self._get()
+
+        self.assertEqual(body["avatar_url"], self.umas[0].image_borderless.url)
+        self.assertEqual(body["oshis"][0]["image"], self.umas[0].image_borderless.url)
+        # No borderless file yet: the bordered art, as before.
+        self.assertEqual(body["oshis"][1]["image"], self.umas[1].image.url)
+
     def test_an_uma_whose_picture_was_cleared_yields_to_the_next(self):
         # An editor can clear the image after the pick was made. The row stays
         # (the pick is still theirs) with image "", and the picture falls

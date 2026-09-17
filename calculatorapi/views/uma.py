@@ -38,6 +38,12 @@ class UmaOptionSerializer(serializers.ModelSerializer):
     right moment to stop the comments leaking further.
     """
 
+    # Still called `image` on the wire, but it is the uma's portrait: the
+    # borderless art when the row has it, the bordered art when it does not
+    # (Uma.portrait). A picker tile is a circle, and the border does not
+    # survive the crop.
+    image = serializers.ImageField(source="portrait", read_only=True)
+
     class Meta:
         model = Uma
         fields = ("id", "name", "image")

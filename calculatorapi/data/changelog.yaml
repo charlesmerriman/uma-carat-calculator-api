@@ -32,6 +32,18 @@
 # module changed. Newest entry first is conventional here but not required — the
 # page sorts by date.
 
+- key: borderless-oshis
+  date: 2026-09-17
+  title: "Cleaner oshi pictures and a free pulls filter"
+  version: "v1.6"
+  changes:
+    - added: "A Free pulls filter on the Timeline. It shows every banner that gives pulls away."
+    - changed: "Oshi pictures use new art without the card border. The picker and your picture in the top right both get it."
+    - changed: "The free pulls tag on the Timeline is bigger now. Same size as the title next to it."
+    - changed: "When a recommended banner also has free pulls, the gold tag shrinks to its star so the two fit on one line."
+    - fixed: "The oshi picker could sit on its loading spinner forever. It opens now."
+    - fixed: "On the Timeline, a banner with only umas keeps its panel next to the art."
+
 - key: timeline-filters-and-fixes
   date: 2026-09-14
   title: "Timeline filters and a few fixes"
