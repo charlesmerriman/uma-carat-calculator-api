@@ -211,12 +211,18 @@ def copy_plan(source, *, owner, name):
     why it takes the owner rather than assuming it. It works across accounts
     because a plan holds nothing about its author (models/plan.py): a row is a
     catalogue FK and two counts, all of which mean the same thing to anyone.
+    The row's `note` is the exception and is blanked across accounts.
 
     Does NOT check the cap or ownership of `source`. Both are the caller's
     job -- create_plan() does the first, get_owned_plan() the second -- so that
     a future "take a published plan" can apply a different rule for reading
     the source without this function growing a mode flag.
     """
+    # Notes are the author's private text, the one thing on a row that is NOT
+    # "a catalogue FK and two counts". Same rule as the income_profile pointer
+    # below: they survive a Duplicate inside one account and are blanked the
+    # moment a copy changes owner, so a published plan never leaks them.
+    same_owner = owner.pk == source.user_id
     with transaction.atomic():
         new_plan = Plan.objects.create(
             user=owner,
@@ -225,9 +231,7 @@ def copy_plan(source, *, owner, name):
             # alt's plan" should read my alt's numbers too. Across accounts it
             # MUST be dropped. The profile is the author's facts, and a plan
             # that reaches another person carries nothing of its author.
-            income_profile=(
-                source.income_profile if owner.pk == source.user_id else None
-            ),
+            income_profile=source.income_profile if same_owner else None,
         )
         UserPlannedBanner.objects.bulk_create(
             [
@@ -241,6 +245,7 @@ def copy_plan(source, *, owner, name):
                     banner_step_up_id=row.banner_step_up_id,
                     number_of_pulls=row.number_of_pulls,
                     reserved_copies=row.reserved_copies,
+                    note=row.note if same_owner else "",
                 )
                 for row in source.banners.all()
             ]

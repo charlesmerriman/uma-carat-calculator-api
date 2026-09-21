@@ -15,7 +15,9 @@ from calculatorapi.models import (
     UserPlannedPurchase,
     UmasOnUmaBanner,
 )
+from calculatorapi import plans
 from calculatorapi.tests.base import CalculatorTestCase
+from calculatorapi.views.user_planned_banner import NOTE_MAX_LENGTH
 from calculatorapi.tests.factories import (
     make_user,
     make_timeline,
@@ -531,3 +533,81 @@ class ReservedCopiesTests(CalculatorTestCase):
 
         res = self.client.get('/calculator-data')
         self.assertEqual(res.data['user_planned_banner_data'][0]['reserved_copies'], 2)
+
+
+class PlannedBannerNoteTests(CalculatorTestCase):
+    """A row's note rides along on the planned-banner payload, like reserved_copies."""
+
+    def setUp(self):
+        self.user = make_user()
+        self.client, _ = auth_client(self.user)
+        self.banner = make_uma_banner()
+
+    def _patch(self, row):
+        return self.client.patch(
+            '/calculator-data',
+            {'user_planned_banner_data': [row]},
+            format='json',
+        )
+
+    def test_defaults_to_blank_and_round_trips(self):
+        res = self._patch({'banner_uma': self.banner.id, 'number_of_pulls': 100})
+        self.assertEqual(res.status_code, 200)
+        planned = UserPlannedBanner.objects.get(user=self.user)
+        self.assertEqual(planned.note, '')
+
+        res = self._patch({
+            'id': planned.id, 'banner_uma': self.banner.id,
+            'number_of_pulls': 100, 'note': '  skip if the selector covers her  ',
+        })
+        self.assertEqual(res.status_code, 200)
+        planned.refresh_from_db()
+        # trim_whitespace: stored without the padding.
+        self.assertEqual(planned.note, 'skip if the selector covers her')
+
+        res = self.client.get('/calculator-data')
+        self.assertEqual(
+            res.data['user_planned_banner_data'][0]['note'],
+            'skip if the selector covers her',
+        )
+
+    def test_a_body_without_note_keeps_the_stored_one(self):
+        """A cached pre-notes bundle must not wipe notes when it saves."""
+        planned = UserPlannedBanner.objects.create(
+            user=self.user, plan=plans.get_active_plan(self.user),
+            banner_uma=self.banner, number_of_pulls=100, note='keep me',
+        )
+        res = self._patch({
+            'id': planned.id, 'banner_uma': self.banner.id, 'number_of_pulls': 120,
+        })
+        self.assertEqual(res.status_code, 200)
+        planned.refresh_from_db()
+        self.assertEqual(planned.number_of_pulls, 120)
+        self.assertEqual(planned.note, 'keep me')
+
+    def test_a_note_can_be_cleared(self):
+        planned = UserPlannedBanner.objects.create(
+            user=self.user, plan=plans.get_active_plan(self.user),
+            banner_uma=self.banner, number_of_pulls=100, note='old',
+        )
+        res = self._patch({
+            'id': planned.id, 'banner_uma': self.banner.id,
+            'number_of_pulls': 100, 'note': '',
+        })
+        self.assertEqual(res.status_code, 200)
+        planned.refresh_from_db()
+        self.assertEqual(planned.note, '')
+
+    def test_a_note_over_the_cap_is_a_400_and_saves_nothing(self):
+        res = self._patch({
+            'banner_uma': self.banner.id, 'number_of_pulls': 100,
+            'note': 'x' * (NOTE_MAX_LENGTH + 1),
+        })
+        self.assertEqual(res.status_code, 400)
+        self.assertFalse(UserPlannedBanner.objects.filter(user=self.user).exists())
+
+        res = self._patch({
+            'banner_uma': self.banner.id, 'number_of_pulls': 100,
+            'note': 'x' * NOTE_MAX_LENGTH,
+        })
+        self.assertEqual(res.status_code, 200)
