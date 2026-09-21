@@ -32,6 +32,20 @@
 # module changed. Newest entry first is conventional here but not required — the
 # page sorts by date.
 
+- key: picked-selectors
+  date: 2026-09-21
+  title: "Selectors go to the card you picked, plans with their own resources, and notes"
+  version: "v1.7"
+  changes:
+    - added: "A plan can keep its own resources now. Open the plan's menu and turn on \"Use separate resources for this plan\". Its carats, tickets and ranks stop following your main ones. Handy if you play a second account."
+    - added: "Plans with their own resources get a wallet icon on their tab."
+    - added: "Notes on banner rows. Click the notepad on a row and write up to 500 characters. Hover it later to read the note back."
+    - changed: "A selector you buy on the Selectors page now only counts for the card you picked for it. It used to pay for a reserved copy on any banner old enough, which made some plans look more affordable than they were."
+    - changed: "No card picked yet? That selector pays for nothing. Hover the red Reserved box and it says so."
+    - changed: "Selector tickets you already own work the same as before."
+    - changed: "Your purchases are still shared by every plan."
+    - changed: "The video on the home page is Henry Handsome Derby's walkthrough of this site now. It used to show whatever he uploaded last."
+
 - key: borderless-oshis
   date: 2026-09-17
   title: "Multiple plans, cleaner oshi pictures and a free pulls filter"
