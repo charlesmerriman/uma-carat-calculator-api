@@ -1045,6 +1045,9 @@ class UserPlannedBannerAdmin(ModelAdmin):
     # new column costs one user lookup per row.
     list_select_related = ("user", "plan__user", "banner_uma", "banner_support")
     search_fields = ("user__username",)
+    # A row's note is the owner's private text. Staff have no reason to read
+    # it, so it is kept off the change form as well as the list.
+    exclude = ("note",)
 
 
 @admin.register(UserPlannedPurchase)

@@ -7,6 +7,14 @@ from .banner_support import BannerSupportSerializer
 from .banner_step_up import BannerStepUpSerializer
 
 
+# The cap on a row's note. Enforced here rather than on the column because a
+# TextField has no database-level limit on Postgres, and because the whole row
+# list is re-sent on every auto-save -- an uncapped note would ride along in
+# every one of those bodies. The client mirrors this number for its counter
+# (NOTE_MAX_LENGTH in the frontend's BannerNote); change both together.
+NOTE_MAX_LENGTH = 500
+
+
 class UserPlannedBannerSerializer(serializers.ModelSerializer):
     banner_uma = serializers.PrimaryKeyRelatedField(
         queryset=BannerUma.objects.all(), required=False, allow_null=True
@@ -18,6 +26,17 @@ class UserPlannedBannerSerializer(serializers.ModelSerializer):
         queryset=BannerStepUp.objects.all(), required=False, allow_null=True
     )
 
+    # Declared explicitly so it carries max_length: the ModelSerializer default
+    # for a TextField has none. Optional so a client that predates notes (a
+    # cached bundle during a deploy) still saves; on an existing row the update
+    # is partial, so leaving `note` out keeps whatever is stored.
+    note = serializers.CharField(
+        max_length=NOTE_MAX_LENGTH,
+        allow_blank=True,
+        required=False,
+        trim_whitespace=True,
+    )
+
     class Meta:
         model = UserPlannedBanner
         fields = (
@@ -26,6 +45,7 @@ class UserPlannedBannerSerializer(serializers.ModelSerializer):
             "plan",
             "number_of_pulls",
             "reserved_copies",
+            "note",
             "banner_uma",
             "banner_support",
             "banner_step_up",

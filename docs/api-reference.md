@@ -426,6 +426,10 @@ Rank fields accept the integer primary key of the corresponding rank row. Exactl
 SSR crystal rather than by pulling. Only the count is stored — which resource pays is
 derived client-side per render from the projected balances and JP eligibility.
 
+`note` is an optional free-text reminder on the row, at most 500 characters (longer is a
+400), trimmed, `""` when unset. Omitting it on a row that carries an `id` keeps the stored
+note; send `""` to clear it.
+
 For a planned purchase, **at most one** of `target_uma` / `target_support` may be set, it
 must match the product's type, and a carat pack may have neither. A selector target is
 additionally rejected (`400`) when the card was released on JP after the product's
@@ -713,6 +717,7 @@ On GET, `banner_uma` and `banner_support` are expanded to nested objects (not ID
   "plan": 12,
   "number_of_pulls": 20,
   "reserved_copies": 0,
+  "note": "",
   "banner_uma": { ... BannerUma object ... },
   "banner_support": null
 }
