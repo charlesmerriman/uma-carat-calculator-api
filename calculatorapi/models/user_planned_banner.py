@@ -52,6 +52,14 @@ class UserPlannedBanner(models.Model):
     # copy is derived on every render from the projected balances and the
     # banner's JP eligibility, so it can never go stale against them.
     reserved_copies = models.IntegerField(default=0)
+    # The owner's own free-text reminder about this row ("skip if the selector
+    # covers her"). It belongs to the ROW, so it is per plan and nothing in the
+    # projection ever reads it. The length cap lives on the serializer
+    # (NOTE_MAX_LENGTH in views/user_planned_banner.py): a Postgres text column
+    # enforces none, and the API is the only writer. Private text -- it is
+    # served to its owner only, and plans.copy_plan() blanks it whenever a copy
+    # changes owner.
+    note = models.TextField(blank=True, default="")
 
     class Meta:
         constraints = [

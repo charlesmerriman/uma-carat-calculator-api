@@ -91,6 +91,7 @@ Table calculatorapi_userplannedbanner as UserPlannedBanner {
   banner_step_up_id bigint [null, note: 'Django on_delete: CASCADE.']
   number_of_pulls integer [not null]
   reserved_copies integer [not null, note: 'Django default: 0.']
+  note text [not null, note: 'Django default: empty string. Owner-only free text; 500-char cap enforced by the serializer.']
 
   indexes {
     user_id

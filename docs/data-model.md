@@ -451,7 +451,7 @@ An account holds up to `PLAN_CAP` (5) plans and the calculator opens on the acti
 
 | Data | Lives on | Why |
 |---|---|---|
-| Planned banner rows (`number_of_pulls`, `reserved_copies`) | `Plan` | the choices |
+| Planned banner rows (`number_of_pulls`, `reserved_copies`, `note`) | `Plan` | the choices |
 | Which of the owner's stats blocks to read (`income_profile`, nullable) | `Plan` | a pointer, not a fact; dropped when a copy changes owner |
 | Carats, tickets, selector tickets, shards, crystals, ranks | `CustomUser`, or an `IncomeProfile` the account owns | facts about the person (or about their other game account) |
 | The income toggles | same row as the balances | income side |
@@ -469,6 +469,13 @@ held anything about its author needs no stripping when it is copied and cannot l
 someone holds or spends. **Do not add a field to `Plan` that describes the person.**
 `reserved_copies` passes that test: only the count is stored, and which ticket or crystal
 pays for each copy is derived on render from the viewer's own balances.
+
+`note` is the one row column that does NOT pass it: it is the owner's private free text
+(capped at 500 characters by the serializer, `NOTE_MAX_LENGTH`). It lives on the row
+because it is about the choice and should differ per plan, and `copy_plan()` keeps the
+portability rule true by blanking every note when the copy changes owner, exactly as it
+drops `income_profile`. It is never served on a public route and is excluded from the
+admin form.
 
 Accepted consequence: purchases are shared across plans. A pack planned to fund a step-up
 in one plan still credits its carats while another plan is open.

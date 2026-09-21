@@ -134,6 +134,20 @@ class CopyPlanTests(CalculatorTestCase):
             & set(self.source.banners.values_list("id", flat=True))
         )
 
+    def test_notes_survive_a_duplicate_but_never_cross_accounts(self):
+        """A note is the author's private text; see plans.copy_plan()."""
+        self.source.banners.filter(banner_uma=self.uma_banner).update(note="mine")
+
+        duplicate = plans.copy_plan(self.source, owner=self.user, name="Copy")
+        self.assertEqual(
+            duplicate.banners.get(banner_uma=self.uma_banner).note, "mine",
+        )
+
+        taker = make_user(username="note-taker")
+        taken = plans.copy_plan(self.source, owner=taker, name="Taken")
+        self.assertEqual(taken.banners.count(), 2)
+        self.assertFalse(taken.banners.exclude(note="").exists())
+
     def test_copy_into_another_account_belongs_to_that_account(self):
         """The shape "take a published plan" will have."""
         taker = make_user(username="taker")
