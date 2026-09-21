@@ -63,7 +63,7 @@ from .admin_patreon_import import (
 from .predictions import GAME_EVENT_END_DATE_BUFFER
 from .models import (
     CustomUser, Uma, Skill, UmaSkill, SupportCardSkill, SupportCard, UserPlannedBanner,
-    Plan,
+    Plan, IncomeProfile,
     TeamTrialsRank, ClubRank, ChampionsMeetingRank, LeagueOfHeroesRank,
     BannerTimeline, BannerUma, BannerSupport, BannerStepUp,
     ChampionsMeeting, ChampionsMeetingUmaRecommendation,
@@ -900,6 +900,23 @@ class UserOshiInline(TabularInline):
 
 # ── 6. User data (owner-only) ────────────────────────────────────────────────
 
+# The stats block in the order it reads best on a form: ranks, toggles,
+# balances. One tuple for BOTH places it appears, the user's own stats and an
+# IncomeProfile's, because the two models share the columns (models/game_stats.py)
+# and should look the same to whoever edits them.
+CALCULATOR_STATS_FIELDS = (
+    "club_rank", "team_trials_rank",
+    "champions_meeting_rank", "league_of_heroes_rank",
+    "daily_carat", "training_pass", "misc_earnings",
+    "monthly_shop_tickets", "discounted_paid_pulls", "full_price_paid_pulls",
+    "include_purchases_in_projection", "webstore_bonus",
+    "current_carat", "current_paid_carat",
+    "uma_ticket", "support_ticket",
+    "uma_selector_ticket", "support_selector_ticket",
+    "ssr_crystals", "sr_crystals", "ssr_shards", "sr_shards",
+)
+
+
 @admin.register(CustomUser)
 class CustomUserAdmin(UserAdmin, ModelAdmin):
     """
@@ -940,17 +957,7 @@ class CustomUserAdmin(UserAdmin, ModelAdmin):
     ) + (
         ("Calculator stats", {
             "classes": ("collapse",),
-            "fields": (
-                "club_rank", "team_trials_rank",
-                "champions_meeting_rank", "league_of_heroes_rank",
-                "daily_carat", "training_pass", "misc_earnings",
-                "monthly_shop_tickets", "discounted_paid_pulls", "full_price_paid_pulls",
-                "include_purchases_in_projection", "webstore_bonus",
-                "current_carat", "current_paid_carat",
-                "uma_ticket", "support_ticket",
-                "uma_selector_ticket", "support_selector_ticket",
-                "ssr_crystals", "sr_crystals", "ssr_shards", "sr_shards",
-            ),
+            "fields": CALCULATOR_STATS_FIELDS,
         }),
     )
 
@@ -983,11 +990,18 @@ class SocialAccountAdmin(ModelAdmin):
 
 @admin.register(Plan)
 class PlanAdmin(ModelAdmin):
-    list_display = ("user", "name", "is_active", "banner_count", "updated_at")
+    list_display = (
+        "user", "name", "is_active", "income_profile", "banner_count", "updated_at",
+    )
     list_filter = ("is_active",)
-    list_select_related = ("user",)
+    list_select_related = ("user", "income_profile__user")
     search_fields = ("user__username", "name")
     readonly_fields = ("created_at", "updated_at")
+    # A profile's __str__ carries its owner's handle, so a plan pointed at the
+    # wrong person's profile reads wrong at a glance. Ownership is enforced by
+    # the API (plans.py), not by this form; the raw id keeps the picker from
+    # listing every profile in the database.
+    raw_id_fields = ("income_profile",)
 
     def get_queryset(self, request):
         # Annotated once for the whole page rather than one COUNT per row.
@@ -997,6 +1011,28 @@ class PlanAdmin(ModelAdmin):
     @admin.display(description="Banners", ordering="banner_count")
     def banner_count(self, obj):
         return obj.banner_count
+
+
+@admin.register(IncomeProfile)
+class IncomeProfileAdmin(ModelAdmin):
+    """A second stats block of an account, read by the plans that point at it.
+    Same fieldset as the user's own stats, on purpose: it IS the same block."""
+    list_display = ("user", "plan_count", "updated_at")
+    list_select_related = ("user",)
+    search_fields = ("user__username",)
+    readonly_fields = ("created_at", "updated_at")
+    raw_id_fields = ("user",)
+    fieldsets = (
+        (None, {"fields": ("user", "created_at", "updated_at")}),
+        ("Calculator stats", {"fields": CALCULATOR_STATS_FIELDS}),
+    )
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).annotate(plan_count=Count("plans"))
+
+    @admin.display(description="Plans", ordering="plan_count")
+    def plan_count(self, obj):
+        return obj.plan_count
 
 
 @admin.register(UserPlannedBanner)
