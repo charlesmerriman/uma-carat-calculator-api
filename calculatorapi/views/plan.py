@@ -14,11 +14,19 @@ class PlanSerializer(serializers.ModelSerializer):
     read nor name anybody else. `is_active` is read-only here because making a
     plan active also has to clear the previous one (plans.set_active_plan) --
     a plain field write would trip one_active_plan_per_user instead.
+
+    `income_profile_id` tells the switcher which plans read their own stats
+    (null: the account's). Read-only, and NOT a writable FK: a body must not be
+    able to name a profile at all. Attaching is `separate_income` on the PATCH
+    route, which creates the profile itself, and pointing a plan at an
+    existing profile by id is a later feature with its own ownership check.
     """
+
+    income_profile_id = serializers.IntegerField(read_only=True, allow_null=True)
 
     class Meta:
         model = Plan
-        fields = ("id", "name", "is_active", "updated_at")
+        fields = ("id", "name", "is_active", "income_profile_id", "updated_at")
         read_only_fields = ("id", "is_active", "updated_at")
 
     def validate_name(self, value):

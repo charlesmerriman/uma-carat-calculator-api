@@ -38,7 +38,7 @@ from calculatorapi.views.rank_viewsets import (
     LeagueOfHeroesRankSerializer,
 )
 from calculatorapi.views.user_planned_banner import UserPlannedBannerSerializer
-from calculatorapi.views.user import UserStatsSerializer
+from calculatorapi.views.income_profile import stats_serializer
 from calculatorapi.views.banner_uma import BannerUmaSerializer
 from calculatorapi.views.banner_support import BannerSupportSerializer
 from calculatorapi.views.banner_step_up import BannerStepUpSerializer
@@ -246,9 +246,10 @@ def _build_user_payload(user, *, emap, anniversary_emap, card_context):
     _build_public_payload()'s response dict with its guest value, or a signed-in
     response and a guest one would carry different keys.
 
-    Planned banners are the ACTIVE PLAN's. Purchases, step-up selections and
-    stats belong to the account and are the same whichever plan is open --
-    see models/plan.py for why the line falls there.
+    Planned banners are the ACTIVE PLAN's, and so are the stats: a plan reads
+    either the account's own or its income profile's (plans.stats_target).
+    Purchases and step-up selections belong to the account and are the same
+    whichever plan is open -- see models/plan.py for why the line falls there.
     """
     # Creates the account's first plan if it has none, so everything below can
     # assume one exists. A write on a GET, deliberately: see get_active_plan.
@@ -284,7 +285,7 @@ def _build_user_payload(user, *, emap, anniversary_emap, card_context):
         "user_step_up_selection_data": UserStepUpSelectionSerializer(
             step_up_selections, many=True
         ).data,
-        "user_stats_data": UserStatsSerializer(user).data,
+        "user_stats_data": stats_serializer(plans.stats_target(active_plan)).data,
     }
 
 
@@ -587,9 +588,14 @@ class CalculatorViewSet(ViewSet):
             return Response({"error": "Plan not found"},
                             status=status.HTTP_404_NOT_FOUND)
 
+        # Stats save to the PLAN's target: the account row, or the plan's own
+        # income profile. The body already names the plan beside the stats, so
+        # the two can never disagree about which block is being written.
         user_stats_data = request.data.get("user_stats_data")
         if user_stats_data:
-            serializer = UserStatsSerializer(user, data=user_stats_data, partial=True)
+            serializer = stats_serializer(
+                plans.stats_target(plan), data=user_stats_data, partial=True
+            )
             if not serializer.is_valid():
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             serializer.save()

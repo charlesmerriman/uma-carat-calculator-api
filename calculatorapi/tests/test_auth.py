@@ -18,7 +18,8 @@ from calculatorapi.views.social_auth import STATE_SALT
 from calculatorapi.views.account_linking import LINK_STATE_SALT
 from calculatorapi import oauth
 from calculatorapi.models import (
-    BannerUma, CustomUser, Feedback, PatreonSupporter, SocialAccount, UserPlannedBanner,
+    BannerUma, CustomUser, Feedback, IncomeProfile, PatreonSupporter, SocialAccount,
+    UserPlannedBanner,
 )
 from calculatorapi.tests.base import CalculatorTestCase
 from calculatorapi.tests.factories import make_user, make_timeline, auth_client, FakeResponse
@@ -869,10 +870,13 @@ class AccountDeleteTests(CalculatorTestCase):
         banner = BannerUma.objects.create(name='B', banner_timeline=make_timeline())
         UserPlannedBanner.objects.create(user=self.user, banner_uma=banner, number_of_pulls=10)
 
+        IncomeProfile.objects.create(user=self.user, current_carat=1)
+
         self.client.delete('/account')
 
         self.assertFalse(SocialAccount.objects.filter(subject_id='g-del').exists())
         self.assertFalse(UserPlannedBanner.objects.filter(banner_uma=banner).exists())
+        self.assertFalse(IncomeProfile.objects.exists())
         # The catalogue itself is untouched — only the plan that referenced it.
         self.assertTrue(BannerUma.objects.filter(pk=banner.pk).exists())
 

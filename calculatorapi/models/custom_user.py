@@ -32,7 +32,7 @@ class CustomUser(GameStats, AbstractUser):
             "handle. Unique among non-blank names, ignoring case."
         ),
     )
-    # The 25 stat fields (ranks, income toggles, balances) come from GameStats.
+    # The 22 stat fields (ranks, income toggles, balances) come from GameStats.
     # They are THIS ACCOUNT'S numbers. A plan can read an IncomeProfile's set
     # instead (models/income_profile.py); plans.stats_target() decides which.
 
