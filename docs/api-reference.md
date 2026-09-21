@@ -324,6 +324,8 @@ assumption it rests on, in `calculatorapi/public_payload_cache.py`.
 }
 ```
 
+`user_stats_data` is the **active plan's** stats: the account's own, or, when that plan has `separate_income` on, its income profile's. Same shape either way (`Plan.income_profile_id` says which). Purchases and step-up selections are the account's whichever plan is open.
+
 `user_planned_banner_data`, `banner_uma_data`, `banner_support_data`, `champions_meeting_data`, `league_of_heroes_event_data`, `events_data`, `anniversary_event_data`, `scenario_data` and `user_planned_purchase_data` are all ordered by each row's **resolved** (confirmed-or-predicted) global start date, sorted server-side in Python since predicted dates aren't a DB column.
 
 ---
@@ -331,7 +333,9 @@ assumption it rests on, in `calculatorapi/public_payload_cache.py`.
 ### `PATCH /calculator-data`
 
 Protected. Upserts the user's planned banners, planned purchases and step-up card
-selections, and updates their stats, in one request.
+selections, and updates their stats, in one request. `user_stats_data` is written to the
+named plan's stats block: the account's own, or the plan's income profile (the body names
+the plan beside the stats, so the two cannot disagree).
 
 **`plan_id` names the plan the banner rows belong to, and a client that knows about plans
 must always send it.** The reconcile deletes every row the body does not name, and
@@ -473,14 +477,20 @@ the catalogue half of `/calculator-data`.
 
 ### `PATCH /plans/<id>`
 
-Renames the plan and/or makes it the active one. Both keys optional.
+Renames the plan, makes it the active one, and/or gives it its own stats. All keys optional.
 
 ```json
-{ "name": "F2P", "is_active": true }
+{ "name": "F2P", "is_active": true, "separate_income": true }
 ```
 
 Only `is_active: true` means anything. There is no deactivate: an account always has exactly
 one active plan, so the way to leave a plan is to activate another.
+
+`separate_income: true` creates an income profile seeded from the stats the plan reads
+today and points the plan at it (no-op if it already has one). `false` points the plan back
+at the account's stats and deletes the profile unless another plan still uses it. Anything
+but a boolean is `400`, checked before anything is written. The response does not carry
+the stats: the client follows up with `GET /plans/<id>`, the same path a switch uses.
 
 **Response `200`** `Plan`
 
@@ -671,22 +681,26 @@ campaign's cutoff instead.
 ### `Plan` (from `user_plans`, and the `/plans` routes)
 
 ```json
-{ "id": 12, "name": "Main plan", "is_active": true, "updated_at": "2026-09-17T18:04:11Z" }
+{ "id": 12, "name": "Main plan", "is_active": true, "income_profile_id": null, "updated_at": "2026-09-17T18:04:11Z" }
 ```
 
 `name` is the only writable field. There is deliberately no `user`: the owner is always the
 caller. `updated_at` moves when the plan is renamed, activated, or has its rows saved.
+`income_profile_id` is non-null when the plan reads its own stats (`separate_income`); it is
+read-only, and a body that sends it is ignored.
 
 ### `PlanWithRows` (from `POST /plans` and `GET /plans/<id>`)
 
 ```json
 {
   "plan": Plan,
+  "user_stats_data": UserStats,
   "user_planned_banner_data": [ UserPlannedBanner ]
 }
 ```
 
-The rows are shaped and ordered exactly as the same key on `GET /calculator-data`.
+Both keys are shaped exactly as on `GET /calculator-data`, so a switch stores them with the
+same code. `user_stats_data` is THIS plan's stats (its income profile's, or the account's).
 
 ### `UserPlannedBanner` (response)
 

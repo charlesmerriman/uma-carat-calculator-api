@@ -8,7 +8,14 @@ from calculatorapi.models import CustomUser as User
 from calculatorapi.models import ClubRank, TeamTrialsRank, ChampionsMeetingRank, LeagueOfHeroesRank
 
 
-class UserStatsSerializer(serializers.ModelSerializer):
+class GameStatsSerializer(serializers.ModelSerializer):
+    """The stats block (models/game_stats.py) in the shape the client stores as
+    `user_stats_data`. Abstract in the same sense as the model: subclasses set
+    Meta.model and nothing else, so an account's own stats and an
+    IncomeProfile's serialize identically and the client cannot tell which it
+    was handed. Which one a plan reads is plans.stats_target()'s decision;
+    stats_serializer() (views/income_profile.py) picks the subclass for it.
+    """
     club_rank = serializers.PrimaryKeyRelatedField(
         required=False, allow_null=True, queryset=ClubRank.objects.all()
     )
@@ -23,7 +30,6 @@ class UserStatsSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
-        model = User
         fields = [
             "current_carat", "current_paid_carat", "uma_ticket", "support_ticket",
             "uma_selector_ticket", "support_selector_ticket",
@@ -33,6 +39,13 @@ class UserStatsSerializer(serializers.ModelSerializer):
             "sr_shards", "sr_crystals", "ssr_shards", "ssr_crystals",
             "club_rank", "team_trials_rank", "champions_meeting_rank", "league_of_heroes_rank",
         ]
+
+
+class UserStatsSerializer(GameStatsSerializer):
+    """The account's OWN stats: what a plan without an income profile reads."""
+
+    class Meta(GameStatsSerializer.Meta):
+        model = User
 
 
 # Public sign-up was removed when ordinary accounts moved to Google/Discord

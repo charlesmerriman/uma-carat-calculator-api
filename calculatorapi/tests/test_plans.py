@@ -12,6 +12,7 @@ from rest_framework.test import APIClient
 from calculatorapi import plans
 from calculatorapi.models import (
     DEFAULT_PLAN_NAME,
+    IncomeProfile,
     PLAN_CAP,
     Plan,
     UserPlannedBanner,
@@ -174,7 +175,7 @@ class PlanRouteTests(CalculatorTestCase):
         self.assertTrue(res.data[0]["is_active"])
         # The whitelist: nothing about the owner rides along.
         self.assertEqual(
-            set(res.data[0].keys()), {"id", "name", "is_active", "updated_at"}
+            set(res.data[0].keys()), {"id", "name", "is_active", "income_profile_id", "updated_at"}
         )
 
     def test_create_blank(self):
@@ -515,3 +516,203 @@ class MainPlanBackfillTests(CalculatorTestCase):
         self.assertFalse(Plan.objects.exists())
         row.refresh_from_db()
         self.assertIsNone(row.plan_id)
+
+
+class IncomeProfileTests(CalculatorTestCase):
+    """A plan may read its own stats block (an IncomeProfile) instead of the
+    account's. The pointer is the only thing on the plan; the facts stay on
+    rows the account owns, and never cross to another account."""
+
+    def setUp(self):
+        self.user = make_user()
+        self.client, _ = auth_client(self.user)
+        self.user.current_carat = 5000
+        self.user.daily_carat = True
+        self.user.save()
+        self.plan = plans.get_active_plan(self.user)
+
+    def _patch_plan(self, plan, body):
+        return self.client.patch(f"/plans/{plan.id}", body, format="json")
+
+    def test_a_plan_reads_the_account_by_default(self):
+        self.assertIsNone(self.plan.income_profile)
+        self.assertIs(plans.stats_target(self.plan), self.plan.user)
+
+    def test_attach_seeds_from_the_stats_the_plan_reads_today(self):
+        plans.attach_income_profile(self.plan)
+
+        profile = self.plan.income_profile
+        self.assertIsNotNone(profile)
+        self.assertEqual(profile.user_id, self.user.id)
+        self.assertEqual(profile.current_carat, 5000)
+        self.assertTrue(profile.daily_carat)
+        self.assertIs(plans.stats_target(self.plan), profile)
+        # Idempotent: a second attach keeps the same profile.
+        plans.attach_income_profile(self.plan)
+        self.assertEqual(IncomeProfile.objects.count(), 1)
+
+    def test_attach_from_a_plan_that_shares_a_profile_seeds_from_that_profile(self):
+        """Duplicate keeps the pointer; turning it "on" for the copy (a no-op)
+        and for a fresh plan whose target is a profile both read the profile."""
+        plans.attach_income_profile(self.plan)
+        self.plan.income_profile.current_carat = 77
+        self.plan.income_profile.save()
+        copy = plans.copy_plan(self.plan, owner=self.user, name="Copy")
+
+        self.assertEqual(copy.income_profile_id, self.plan.income_profile_id)
+        plans.attach_income_profile(copy)  # already has one: no new row
+        self.assertEqual(IncomeProfile.objects.count(), 1)
+
+    def test_detach_deletes_a_profile_nothing_else_uses(self):
+        plans.attach_income_profile(self.plan)
+
+        plans.detach_income_profile(self.plan)
+
+        self.assertIsNone(self.plan.income_profile)
+        self.assertFalse(IncomeProfile.objects.exists())
+        # And the account's own numbers were never touched.
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.current_carat, 5000)
+
+    def test_detach_keeps_a_profile_another_plan_still_points_at(self):
+        plans.attach_income_profile(self.plan)
+        copy = plans.copy_plan(self.plan, owner=self.user, name="Copy")
+
+        plans.detach_income_profile(self.plan)
+
+        copy.refresh_from_db()
+        self.assertIsNotNone(copy.income_profile)
+        self.assertEqual(IncomeProfile.objects.count(), 1)
+
+    def test_deleting_a_plan_drops_its_unshared_profile(self):
+        other = Plan.objects.create(user=self.user, name="Other")
+        plans.attach_income_profile(other)
+
+        plans.delete_plan(other)
+
+        self.assertFalse(IncomeProfile.objects.exists())
+
+    def test_deleting_a_plan_keeps_a_shared_profile(self):
+        plans.attach_income_profile(self.plan)
+        copy = plans.copy_plan(self.plan, owner=self.user, name="Copy")
+
+        plans.delete_plan(copy)
+
+        self.assertEqual(IncomeProfile.objects.count(), 1)
+        self.plan.refresh_from_db()
+        self.assertIsNotNone(self.plan.income_profile)
+
+    def test_a_copy_to_another_account_never_carries_the_pointer(self):
+        """The rule that makes publish/take safe: nothing of the author's
+        travels. The profile is the author's facts."""
+        plans.attach_income_profile(self.plan)
+        other = make_user(username="other")
+
+        copy = plans.copy_plan(self.plan, owner=other, name="Taken")
+
+        self.assertIsNone(copy.income_profile)
+        self.assertIs(plans.stats_target(copy), other)
+        self.assertEqual(IncomeProfile.objects.filter(user=other).count(), 0)
+
+    def test_deleting_a_profile_never_takes_the_plans_rows(self):
+        """Plan.income_profile is SET_NULL: an admin delete falls the plan back
+        to the account's stats and leaves its banners alone."""
+        banner = make_uma_banner()
+        _row(self.plan, banner)
+        plans.attach_income_profile(self.plan)
+
+        self.plan.income_profile.delete()
+
+        self.plan.refresh_from_db()
+        self.assertIsNone(self.plan.income_profile)
+        self.assertEqual(self.plan.banners.count(), 1)
+
+    # The route ───────────────────────────────────────────────────────────────
+
+    def test_patch_separate_income_true_then_false(self):
+        res = self._patch_plan(self.plan, {"separate_income": True})
+        self.assertEqual(res.status_code, 200)
+        self.assertIsNotNone(res.data["income_profile_id"])
+        self.assertEqual(IncomeProfile.objects.filter(user=self.user).count(), 1)
+
+        res = self._patch_plan(self.plan, {"separate_income": False})
+        self.assertEqual(res.status_code, 200)
+        self.assertIsNone(res.data["income_profile_id"])
+        self.assertFalse(IncomeProfile.objects.exists())
+
+    def test_patch_separate_income_must_be_a_boolean(self):
+        res = self._patch_plan(self.plan, {"separate_income": "yes"})
+        self.assertEqual(res.status_code, 400)
+        self.assertFalse(IncomeProfile.objects.exists())
+
+    def test_income_profile_id_cannot_be_written(self):
+        """A body naming a profile is ignored: attaching by id is not a thing."""
+        other = make_user(username="other")
+        theirs = IncomeProfile.objects.create(user=other, current_carat=1)
+
+        res = self._patch_plan(self.plan, {"income_profile_id": theirs.id})
+
+        self.assertEqual(res.status_code, 200)
+        self.plan.refresh_from_db()
+        self.assertIsNone(self.plan.income_profile)
+
+    def test_plan_fetch_carries_the_stats_the_plan_reads(self):
+        """GET /plans/<id> delivers the target's stats with the rows, so a
+        switch swaps both in one go. Same shape either way."""
+        res = self.client.get(f"/plans/{self.plan.id}")
+        self.assertEqual(res.data["user_stats_data"]["current_carat"], 5000)
+
+        plans.attach_income_profile(self.plan)
+        self.plan.income_profile.current_carat = 123
+        self.plan.income_profile.save()
+        res = self.client.get(f"/plans/{self.plan.id}")
+        self.assertEqual(res.data["user_stats_data"]["current_carat"], 123)
+        # The whitelist is identical for both blocks.
+        own = self.client.get("/calculator-data").data["user_stats_data"]
+        self.assertEqual(set(own.keys()), set(res.data["user_stats_data"].keys()))
+
+    def test_calculator_data_serves_the_active_plans_target(self):
+        plans.attach_income_profile(self.plan)
+        self.plan.income_profile.current_carat = 123
+        self.plan.income_profile.save()
+
+        res = self.client.get("/calculator-data")
+
+        self.assertEqual(res.data["user_stats_data"]["current_carat"], 123)
+        self.assertEqual(res.data["user_plans"][0]["income_profile_id"],
+                         self.plan.income_profile_id)
+
+    def test_stats_save_lands_on_the_plans_target_and_nowhere_else(self):
+        plans.attach_income_profile(self.plan)
+        own = Plan.objects.create(user=self.user, name="Own stats")
+
+        res = self.client.patch("/calculator-data", {
+            "plan_id": self.plan.id,
+            "user_stats_data": {"current_carat": 42, "daily_carat": False},
+        }, format="json")
+        self.assertEqual(res.status_code, 200)
+        self.plan.income_profile.refresh_from_db()
+        self.user.refresh_from_db()
+        self.assertEqual(self.plan.income_profile.current_carat, 42)
+        self.assertFalse(self.plan.income_profile.daily_carat)
+        self.assertEqual(self.user.current_carat, 5000)
+        self.assertTrue(self.user.daily_carat)
+
+        # The other direction: a plan without a profile writes the account.
+        res = self.client.patch("/calculator-data", {
+            "plan_id": own.id,
+            "user_stats_data": {"current_carat": 9},
+        }, format="json")
+        self.assertEqual(res.status_code, 200)
+        self.user.refresh_from_db()
+        self.plan.income_profile.refresh_from_db()
+        self.assertEqual(self.user.current_carat, 9)
+        self.assertEqual(self.plan.income_profile.current_carat, 42)
+
+    def test_a_bad_stats_value_is_rejected_for_a_profile_too(self):
+        plans.attach_income_profile(self.plan)
+        res = self.client.patch("/calculator-data", {
+            "plan_id": self.plan.id,
+            "user_stats_data": {"current_carat": "lots"},
+        }, format="json")
+        self.assertEqual(res.status_code, 400)

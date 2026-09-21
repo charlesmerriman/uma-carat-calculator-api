@@ -2,6 +2,7 @@ from django.db import models
 from django.db.models import Q
 
 from .custom_user import CustomUser
+from .income_profile import IncomeProfile
 
 # The most plans one account can hold. A flat number for everyone (decided
 # 2026-09-17), not a supporter ladder. Enforced only when a plan is CREATED
@@ -23,7 +24,8 @@ class Plan(models.Model):
     ----------------------------------------------
     Carats, tickets, ranks, the income toggles, planned purchases and step-up
     picks all stay on the account (CustomUser and its own collections). A plan
-    carries only which banners to pull on and how hard. The numbers on screen
+    carries only which banners to pull on and how hard, plus at most a pointer
+    to which of its owner's stats blocks to read (see below). The numbers on screen
     are therefore always the VIEWER'S: the same plan projected for two people
     gives two different answers, which is the point.
 
@@ -32,6 +34,17 @@ class Plan(models.Model):
     anything about its author needs no stripping when it is copied and cannot
     leak what someone holds or spends. Do not add a field here that describes
     the person rather than the plan.
+
+    ONE EXCEPTION, BY POINTER: `income_profile`
+    ------------------------------------------
+    A person who plays several game accounts wants a plan projected against
+    the OTHER account's numbers. Those numbers live on an IncomeProfile row
+    owned by the same person (models/income_profile.py), and the plan holds
+    only a nullable pointer to it. Null, the default and the common case, means
+    "use the account's own stats". plans.stats_target() resolves which, and is
+    the only place that decides. The pointer never crosses accounts:
+    plans.copy_plan() drops it when the copy changes owner, so the portability
+    argument above still holds.
 
     OWNERSHIP
     ---------
@@ -60,6 +73,16 @@ class Plan(models.Model):
     # should be asked for at publish time rather than reusing this.
     name = models.CharField(max_length=40)
     is_active = models.BooleanField(default=False)
+    # SET_NULL, not CASCADE: deleting a profile (admin, or the detach helper)
+    # must never take a plan's banner rows with it. The plan just falls back to
+    # the account's stats.
+    income_profile = models.ForeignKey(
+        IncomeProfile,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="plans",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -105,6 +105,11 @@ of Heroes): how many users selected each rank. Rows are ordered by the rank's
 income amount (game progression order); **Not set** counts users who never
 picked one.
 
+Both this section and the next read `CustomUser` only: a person's own account.
+Income profiles (the stats a plan keeps for the person's other game account,
+`IncomeProfile`) are not counted, so the distributions describe people, not
+game accounts.
+
 ### Current resources
 
 Median, mean and dropped-value count for each resource field (carats, tickets,

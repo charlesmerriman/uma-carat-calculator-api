@@ -2,7 +2,8 @@
 GET    /plans        the caller's plans (name, which is active). No rows.
 POST   /plans        create one: blank, or `copy_from` another of theirs.
 GET    /plans/<id>   one plan plus ITS banner rows. What a switch fetches.
-PATCH  /plans/<id>   rename it, and/or make it the active plan.
+PATCH  /plans/<id>   rename it, make it the active plan, and/or give it its
+                     own stats (`separate_income`: true / false).
 DELETE /plans/<id>   delete it and its rows. The last plan is refused.
 
 All IsAuthenticated. A guest has one unnamed plan in memory and never calls
@@ -41,6 +42,7 @@ from calculatorapi.eligibility import build_first_jp_date_maps
 from calculatorapi.models import PLAN_CAP, BannerTimeline, Plan
 from calculatorapi.predictions import build_effective_date_maps
 from calculatorapi.views.calculator import serialize_planned_banners
+from calculatorapi.views.income_profile import stats_serializer
 from calculatorapi.views.plan import PlanSerializer
 
 _NOT_FOUND = {"error": "Plan not found"}
@@ -62,6 +64,10 @@ def _plan_with_rows(plan):
     uma_first_jp_dates, support_first_jp_dates = build_first_jp_date_maps()
     return {
         "plan": PlanSerializer(plan).data,
+        # The stats this plan is projected against: its income profile's, or
+        # the account's. Same shape either way, so a switch swaps them in with
+        # the rows and the client never learns which it got.
+        "user_stats_data": stats_serializer(plans.stats_target(plan)).data,
         "user_planned_banner_data": serialize_planned_banners(
             plan,
             emap=emap,
@@ -107,6 +113,35 @@ def plan_list(request):
     return Response(_plan_with_rows(plan), status=status.HTTP_201_CREATED)
 
 
+def _update_plan(request, plan):
+    """PATCH /plans/<id>: rename, activate, and/or toggle its own stats. The
+    name goes through the serializer; the other two are operations on the
+    plan, handled beside it, because each has to do more than write a field."""
+    serializer = PlanSerializer(plan, data=request.data, partial=True)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    # separate_income is validated BEFORE anything is written, so a bad value
+    # cannot land a rename and then refuse.
+    separate = request.data.get("separate_income")
+    if separate is not None and not isinstance(separate, bool):
+        return Response({"separate_income": ["Must be true or false."]},
+                        status=status.HTTP_400_BAD_REQUEST)
+    serializer.save()
+    # Only `true` means anything. There is no "deactivate": an account
+    # always has exactly one active plan, so the way to leave a plan is to
+    # activate another.
+    if request.data.get("is_active") is True:
+        plans.set_active_plan(plan)
+    # true creates a profile seeded from the plan's current stats and points
+    # the plan at it; false points it back at the account and drops an
+    # unshared profile. The client refetches GET /plans/<id> for the stats.
+    if separate is True:
+        plans.attach_income_profile(plan)
+    elif separate is False:
+        plans.detach_income_profile(plan)
+    return Response(PlanSerializer(plan).data)
+
+
 @api_view(["GET", "PATCH", "DELETE"])
 @permission_classes([permissions.IsAuthenticated])
 def plan_detail(request, plan_id):
@@ -119,16 +154,7 @@ def plan_detail(request, plan_id):
         return Response(_plan_with_rows(plan))
 
     if request.method == "PATCH":
-        serializer = PlanSerializer(plan, data=request.data, partial=True)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        serializer.save()
-        # Only `true` means anything. There is no "deactivate": an account
-        # always has exactly one active plan, so the way to leave a plan is to
-        # activate another.
-        if request.data.get("is_active") is True:
-            plans.set_active_plan(plan)
-        return Response(PlanSerializer(plan).data)
+        return _update_plan(request, plan)
 
     # DELETE. An account always has a plan to open on, so the last one stays.
     # Emptying it is what clearing its rows is for.
