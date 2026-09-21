@@ -307,6 +307,12 @@ UNFOLD = {
                         "permission": _requires_perm("calculatorapi.view_plan"),
                     },
                     {
+                        "title": _("Income profiles"),
+                        "icon": "switch_account",
+                        "link": reverse_lazy("admin:calculatorapi_incomeprofile_changelist"),
+                        "permission": _requires_perm("calculatorapi.view_incomeprofile"),
+                    },
+                    {
                         "title": _("Planned banners"),
                         "icon": "checklist",
                         "link": reverse_lazy("admin:calculatorapi_userplannedbanner_changelist"),

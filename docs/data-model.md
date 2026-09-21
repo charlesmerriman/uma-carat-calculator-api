@@ -173,6 +173,16 @@ erDiagram
         int user_id FK
         string name
         bool is_active "one per user"
+        int income_profile_id FK "nullable: null = the account's stats"
+        datetime created_at
+        datetime updated_at
+    }
+
+    IncomeProfile {
+        int id PK
+        int user_id FK
+        int current_carat "the same 22 stat columns as CustomUser"
+        int club_rank_id FK
         datetime created_at
         datetime updated_at
     }
@@ -303,6 +313,8 @@ erDiagram
     SupportsOnSupportBanner }o--|| SupportCard : "support_card"
 
     Plan }o--|| CustomUser : "user"
+    Plan }o--o| IncomeProfile : "income_profile"
+    IncomeProfile }o--|| CustomUser : "user"
     UserPlannedBanner }o--|| Plan : "plan"
     UserPlannedBanner }o--|| CustomUser : "user (transitional)"
     UserPlannedBanner }o--o| BannerUma : "banner_uma"
@@ -440,8 +452,9 @@ An account holds up to `PLAN_CAP` (5) plans and the calculator opens on the acti
 | Data | Lives on | Why |
 |---|---|---|
 | Planned banner rows (`number_of_pulls`, `reserved_copies`) | `Plan` | the choices |
-| Carats, tickets, selector tickets, shards, crystals, ranks | `CustomUser` | facts about the person |
-| The income toggles | `CustomUser` | income side |
+| Which of the owner's stats blocks to read (`income_profile`, nullable) | `Plan` | a pointer, not a fact; dropped when a copy changes owner |
+| Carats, tickets, selector tickets, shards, crystals, ranks | `CustomUser`, or an `IncomeProfile` the account owns | facts about the person (or about their other game account) |
+| The income toggles | same row as the balances | income side |
 | `UserPlannedPurchase` | the account | money the person spends; it feeds income |
 | `UserStepUpSelection` | the account | already keyed to the banner, and changes no number |
 
@@ -463,6 +476,15 @@ in one plan still credits its carats while another plan is open.
 Both account-side collections could move onto the plan later without losing data (add the
 FK, copy the one set into each plan). The reverse would have to merge several sets into
 one. Account-side is therefore the choice that stays cheap to change.
+
+**The one exception is a pointer: `Plan.income_profile`.** A person who plays several game
+accounts wants a plan projected against the other account's numbers. Those numbers live on
+an `IncomeProfile` row the same person owns (next section), and the plan holds only a
+nullable FK to it. `plans.stats_target(plan)` returns the profile or the owner's own row,
+and is the only place that decides; every read and every save of `user_stats_data` goes
+through it. `plans.copy_plan()` keeps the pointer within one account (a Duplicate of "my
+alt's plan" should read the alt's numbers) and drops it whenever the copy changes owner, so
+the portability argument above still holds.
 
 **`is_active`, not a `CustomUser.active_plan` FK.** That FK would be circular and could be
 pointed at somebody else's plan. A boolean on the person's own row cannot. The partial
@@ -499,6 +521,44 @@ During release 1's deploy window the old code can still save a row with a `user`
 their next request, so nothing disappears from anyone's calculator. It is one `UPDATE` that
 almost always matches nothing, and it goes away with release 2. Every spot that exists only
 for this window is marked `TRANSITIONAL` in the code.
+
+### `IncomeProfile` — a second stats block, for a plan that reads its own numbers
+
+The 22 stat columns (four rank FKs, eight income toggles, ten balances) are defined once,
+on the abstract `GameStats` model in `models/game_stats.py`, and inherited by both
+`CustomUser` (the account's own numbers, as always) and `IncomeProfile` (the numbers of
+another game account the same person plays). Moving the fields off `CustomUser` into the
+base changed no column; `makemigrations --check` must stay quiet for `CustomUser` after any
+edit to the base, and if it does not, the base drifted and the fix is the base, never a
+migration on the user table. The serializers mirror it: `GameStatsSerializer` holds the
+field list and `UserStatsSerializer` / `IncomeProfileSerializer` set only the model, so a
+plan switch hands the client either block in the same shape and it never learns which.
+
+A profile has `user` (CASCADE, `related_name="income_profiles"`), the stats and
+timestamps. No name (decided 2026-09-21): a profile is reached only through the plans that
+point at it, so a name would have nowhere to appear yet. `user` is kept even though every
+pointing plan already knows its owner: it is the ownership check, the cascade on account
+delete, and the admin's list column. Nothing here is personal data; `purge_user_pii`
+leaves it alone.
+
+**Lifecycle, all in `plans.py`:**
+
+| Operation | What happens |
+|---|---|
+| `attach_income_profile(plan)` | creates a profile seeded from whatever the plan reads today (`stats_target`), points the plan at it. No-op if it already has one. `GameStats.field_names()` drives the copy, so a new stat column is copied without anyone remembering. |
+| `detach_income_profile(plan)` | points the plan back at the account; deletes the profile if no other plan still uses it. |
+| `delete_plan(plan)` | after the delete, the same unused-profile check. |
+| `copy_plan(source, owner=...)` | same owner: keeps the pointer (this is how two plans come to share a profile in v1, there is no picker). Different owner: `None`. |
+
+`Plan.income_profile` is `SET_NULL`, not `CASCADE`: deleting a profile in the admin sends
+its plans back to the account's stats and never takes a banner row. The API exposes the
+profile only as `separate_income: true | false` on `PATCH /plans/<id>` and a read-only
+`income_profile_id` on `Plan`; a body can never name a profile by id, because attaching an
+existing profile is a later feature that needs its own ownership check.
+
+Purchases and step-up picks stay on the account (decided 2026-09-21): an alt's plan sees
+the main account's planned packs, the same accepted consequence as above. If a player with
+an alt asks, purchases follow with a nullable `income_profile` FK on `UserPlannedPurchase`.
 
 ### `UserPlannedBanner` — exactly-one check constraint
 

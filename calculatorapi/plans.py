@@ -14,6 +14,8 @@ from django.db import IntegrityError, transaction
 from calculatorapi.models import (
     CustomUser,
     DEFAULT_PLAN_NAME,
+    GameStats,
+    IncomeProfile,
     PLAN_CAP,
     Plan,
     UserPlannedBanner,
@@ -101,6 +103,59 @@ def get_owned_plan(user, plan_id):
         raise Plan.DoesNotExist from exc
 
 
+def stats_target(plan):
+    """WHOSE STATS a plan is projected against: its income profile if it has
+    one, else its owner's own row. Both carry the same columns
+    (models/game_stats.py), so a caller reads and writes the result the same
+    way either way; views/income_profile.py stats_serializer() picks the
+    serializer. This is the only place the choice is made: every read of
+    `user_stats_data` and every save of it goes through here, so a plan can
+    never read one block and write the other.
+    """
+    return plan.income_profile or plan.user
+
+
+def attach_income_profile(plan):
+    """Give `plan` its own stats: a new IncomeProfile seeded from whatever the
+    plan reads today, then pointed at. No-op if it already has one.
+
+    Seeding from the current target rather than from defaults is what the
+    person expects: they turn this on for their alt account's plan and edit
+    the numbers that differ, instead of re-entering ranks and toggles from
+    scratch. GameStats.field_names() drives the copy, so a field added to the
+    stats block is copied without anyone remembering this function exists.
+    """
+    if plan.income_profile_id is not None:
+        return plan
+    source = stats_target(plan)
+    values = {name: getattr(source, name) for name in GameStats.field_names()}
+    with transaction.atomic():
+        plan.income_profile = IncomeProfile.objects.create(user=plan.user, **values)
+        plan.save(update_fields=["income_profile", "updated_at"])
+    return plan
+
+
+def detach_income_profile(plan):
+    """Send `plan` back to its owner's own stats. The profile is deleted only
+    if no other plan still points at it (a Duplicate shares the pointer)."""
+    profile = plan.income_profile
+    if profile is None:
+        return plan
+    with transaction.atomic():
+        plan.income_profile = None
+        plan.save(update_fields=["income_profile", "updated_at"])
+        _drop_profile_if_unused(profile)
+    return plan
+
+
+def _drop_profile_if_unused(profile):
+    """Delete a profile nothing points at any more. Called after a detach and
+    after a plan delete, so the table never accumulates orphans nobody can
+    reach. `Plan.income_profile` is SET_NULL, so nothing here can take rows."""
+    if profile is not None and not profile.plans.exists():
+        profile.delete()
+
+
 def set_active_plan(plan):
     """Make `plan` its owner's active plan.
 
@@ -163,7 +218,17 @@ def copy_plan(source, *, owner, name):
     the source without this function growing a mode flag.
     """
     with transaction.atomic():
-        new_plan = Plan.objects.create(user=owner, name=name)
+        new_plan = Plan.objects.create(
+            user=owner,
+            name=name,
+            # The pointer stays only within one account: a Duplicate of "my
+            # alt's plan" should read my alt's numbers too. Across accounts it
+            # MUST be dropped. The profile is the author's facts, and a plan
+            # that reaches another person carries nothing of its author.
+            income_profile=(
+                source.income_profile if owner.pk == source.user_id else None
+            ),
+        )
         UserPlannedBanner.objects.bulk_create(
             [
                 UserPlannedBanner(
@@ -196,6 +261,8 @@ def delete_plan(plan):
     refuses it).
     """
     user = plan.user
+    profile = plan.income_profile
     with transaction.atomic():
         plan.delete()  # CASCADE takes its UserPlannedBanner rows
+        _drop_profile_if_unused(profile)
         return get_active_plan(user)
