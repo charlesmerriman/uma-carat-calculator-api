@@ -32,6 +32,15 @@
 # module changed. Newest entry first is conventional here but not required — the
 # page sorts by date.
 
+- key: cookie-prompt
+  date: 2026-09-22
+  title: "A cookie prompt, a clearer privacy policy, and feedback on Discord"
+  version: "v1.8"
+  changes:
+    - added: "The site asks about cookies now. Accept or Reject on your first visit. The only things that set one are Google Analytics and, later on, ads; signing in and your settings never do. Cookie settings in the footer lets you change your answer."
+    - changed: "The privacy policy has been rewritten. It now spells out who runs the site, what is stored and why, how long it is kept, and what you can ask us to do with it."
+    - changed: "Feedback goes through Discord now. The Feedback page links you there."
+
 - key: picked-selectors
   date: 2026-09-21
   title: "Selectors go to the card you picked, plans with their own resources, and notes"
