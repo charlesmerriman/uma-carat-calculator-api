@@ -18,7 +18,7 @@ from calculatorapi.views.social_auth import STATE_SALT
 from calculatorapi.views.account_linking import LINK_STATE_SALT
 from calculatorapi import oauth
 from calculatorapi.models import (
-    BannerUma, CustomUser, Feedback, IncomeProfile, PatreonSupporter, SocialAccount,
+    BannerUma, CustomUser, IncomeProfile, PatreonSupporter, SocialAccount,
     UserPlannedBanner,
 )
 from calculatorapi.tests.base import CalculatorTestCase
@@ -909,15 +909,6 @@ class AccountDeleteTests(CalculatorTestCase):
         supporter.refresh_from_db()
         self.assertIsNone(supporter.linked_user)
         self.assertTrue(supporter.is_public)
-
-    def test_feedback_survives_without_its_author(self):
-        report = Feedback.objects.create(
-            category='bug', message='The timeline is upside down.', user=self.user)
-
-        self.client.delete('/account')
-
-        report.refresh_from_db()
-        self.assertIsNone(report.user)
 
     def test_staff_are_refused_and_untouched(self):
         """Admin accounts are deleted in the admin, deliberately and logged —

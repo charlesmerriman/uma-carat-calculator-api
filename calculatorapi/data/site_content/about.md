@@ -33,6 +33,6 @@ This site is unofficial and has no connection to Cygames or *Uma Musume Pretty D
 
 ## Get in touch
 
-Bug reports, data corrections and feature ideas are best sent through the [Feedback](/feedback) form. No account is required. For anything else, including press or business enquiries, email [Henryhandsomederby@gmail.com](mailto:Henryhandsomederby@gmail.com).
+Bug reports, data corrections and feature ideas go to our [Discord server](https://discord.com/invite/MsqDJphtQH), where you can also get a reply. For anything else, including press or business enquiries, email [Henryhandsomederby@gmail.com](mailto:Henryhandsomederby@gmail.com).
 
 See also our [Terms of Service](/terms).
