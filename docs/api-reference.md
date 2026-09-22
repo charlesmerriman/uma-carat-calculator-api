@@ -218,10 +218,9 @@ Protected. Removes the caller's account. **`204`**, no body.
   stops working immediately), its `SocialAccount` rows, its oshis
   and every planned banner, purchase and step-up selection. Signing in again
   with the same provider creates a fresh, empty account.
-- **Kept, with the pointer to the account cleared:** feedback the person sent
-  (`user` → null) and their `PatreonSupporter` row (`linked_user` → null — the
-  same treatment as an unlink, a lapse or a purge; that table is not ours to
-  delete from).
+- **Kept, with the pointer to the account cleared:** their `PatreonSupporter`
+  row (`linked_user` → null — the same treatment as an unlink, a lapse or a
+  purge; that table is not ours to delete from).
 - `403` for staff — their accounts are managed in the admin. `401` anonymous.
 - No confirmation body. The account page makes the person type a phrase first;
   the request carries the token of the very account it deletes, and there is no
@@ -551,48 +550,6 @@ returns `429`.
 No IP address is stored. See `backend/docs/analytics.md` for what is recorded,
 and for why the monthly unique-visitor count is deliberately smaller than the
 sum of the daily ones.
-
----
-
-### `POST /feedback`
-
-Public. Stores one message from the site's feedback form and returns
-`201 Created` with an empty body. The site's other public write endpoint, and it
-follows `POST /visit` above in both respects that matter: it is rate limited, and
-its response says nothing about how the submission was handled.
-
-Request body:
-
-```json
-{
-  "category": "bug",              // bug | feature | data | other
-  "message": "…",                 // required, non-blank, max 4000 chars
-  "source_path": "/app/timeline", // optional, the route the sender was on
-  "website": ""                   // honeypot — see below
-}
-```
-
-`user`, `submitted_at` and `is_resolved` are **not** writable. A client cannot
-attribute its message to someone else's account, backdate it, or file it
-pre-resolved; the view sets the user from the request itself.
-
-Auth is optional. A signed-in caller's submission is linked to their account so
-repeat reporters are visible in the admin; a guest's is stored with `user` null.
-Guests are the common case — the whole site works signed out.
-
-`website` is a honeypot. The form renders it hidden, tab-skipped and
-autocomplete-off, so a person never fills it and a naive bot fills everything. A
-non-empty value makes the endpoint discard the submission **and still return
-`201`** — answering "spam detected" would tell whoever is probing which field to
-leave alone next time. Same reasoning as the beacon's bot filter.
-
-Throttled at 10/hour per address (`feedback` scope); over the limit returns
-`429`. Much lower than the beacon because a real person submits once, and each
-request here writes a row. A blank or over-long `message` is a `400` with a
-field error.
-
-No IP address and no contact details are stored — the form has no reply-address
-field at all. See the "Feedback you send us" section of the privacy policy.
 
 ---
 

@@ -984,42 +984,6 @@ below, on purpose: patch notes describe the code, these pages do not.
 All three are in `public_payload_cache._IRRELEVANT_MODELS`, since they have
 their own endpoint and are absent from `/calculator-data`.
 
-### `Feedback` — visitor-submitted, deliberately unattributable
-
-One message from the public feedback form (`POST /feedback`). Unusual among the
-models here in that its rows come from *visitors* rather than from an editor or
-from a signed-in user's plan, which drives three decisions worth stating.
-
-**No IP address column, ever.** The privacy policy's promise that a visitor's IP
-is never stored is site-wide, not scoped to the traffic beacon. The instinct when
-building an abusable public endpoint is to log the submitter's address for
-forensics; doing that here would quietly make a published promise false. Abuse is
-handled by rate limiting instead (`feedback` throttle scope, 10/hour), which
-reads the address to build a cache key but never persists it.
-
-**No contact details.** The form has no reply-address field, so feedback is
-one-way by design and the "we do not collect or store your email address"
-sentence in the policy stays true as written. A sender who types an address into
-the message body has it stored as ordinary text — which is why the form carries a
-"please don't include personal details" hint and the policy gained a "Feedback
-you send us" section.
-
-**`user` is `on_delete=SET_NULL`, not `CASCADE`.** This is load-bearing rather
-than stylistic. `purge_user_pii` is IRREVERSIBLE and is meant to be run against
-production; under `CASCADE`, stripping PII from accounts would also destroy every
-bug report those accounts had ever filed. `SET_NULL` keeps the report and drops
-only the linkage. The column has to be nullable regardless, because guests — the
-majority of senders, since the whole site works signed out — submit with no user
-at all.
-
-The admin (`FeedbackAdmin`) is read-mostly to match: every content field is
-`readonly`, `has_add_permission` is `False`, and `is_resolved` is the only
-editable field. A row is a record of what somebody said; the workflow is triage,
-not authoring, and making that structural keeps "accidentally reword a user's
-report" out of reach.
-
----
-
 ### `Skill` is imported, and "versions" are a group, not a table
 
 Every `Skill` row comes from `manage.py import_game_data` reading the committed snapshot,

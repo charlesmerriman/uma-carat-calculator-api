@@ -107,7 +107,7 @@ aggregates only, never per-user rows. The public changelog is authored in
 | `CustomUser`, `SocialAccount` | Accounts and the provider identities linked to them |
 | `PatreonTier`, `PatreonSupporter` | Supporter tiers and the synced supporter list |
 | `ChangelogEntry`, `ChangelogChange` | Public patch notes |
-| `DailyVisit`, `MonthlyVisit`, `Feedback` | Anonymous traffic counts and feedback |
+| `DailyVisit`, `MonthlyVisit` | Anonymous traffic counts |
 
 ### Endpoints
 
@@ -119,7 +119,7 @@ aggregates only, never per-user rows. The public changelog is authored in
 | `GET /account` | The signed-in account and its supporter benefits |
 | `GET /account/link/<provider>/start`, `POST /account/link/<provider>/complete`, `DELETE /account/link/<provider>` | Link or unlink a provider on a signed-in account |
 | `POST /login`, `POST /logout` | Staff password login, and logout |
-| `POST /visit`, `POST /feedback` | Anonymous visit beacon and feedback form, both throttled |
+| `POST /visit` | Anonymous visit beacon, throttled |
 | `POST /patreon/sync` | Supporter sync, authorised by a shared-secret header |
 | `GET /teamtrialranks`, `/clubranks`, `/championsmeetingranks`, `/leagueofheroesranks`, `/leagueofheroes`, `/events`, `/changelog`, `/supporters` | Read-only reference data |
 | `GET /schema`, `GET /docs` | The generated OpenAPI schema, and Swagger UI over it ([live](https://umacaratcalculator.com/api/docs)) |
