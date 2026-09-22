@@ -81,7 +81,6 @@ _IRRELEVANT_MODELS = frozenset({
     "customuser",
     "socialaccount",
     # Their own endpoints; absent from /calculator-data entirely.
-    "feedback",
     "changelogentry",
     "changelogchange",
     "patreontier",

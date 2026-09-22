@@ -117,9 +117,9 @@
     - slug: how-do-i-report-a-bug-or
       question: How do I report a bug or suggest a feature?
       answer: |
-        Use the [Feedback](/feedback) form. No account is needed, and you can tag it as a bug, a feature idea or a data correction. Bug reports are much easier to act on with the specifics: which banner or screen, what you expected, and what you saw instead.
+        Post it in our [Discord server](https://discord.com/invite/MsqDJphtQH). Bug reports are much easier to act on with the specifics: which banner or screen, what you expected, and what you saw instead.
 
-        The form asks for nothing but the message itself (no name, no email address), so it is one-way and you will not get a reply to it.
+        Discord is a separate service. Anything you write there stays with Discord under its own privacy policy, and this site never sees or stores it.
     - slug: how-often-is-the-data-updated
       question: How often is the data updated?
       answer: |

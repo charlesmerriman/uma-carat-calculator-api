@@ -99,8 +99,8 @@ DELETING AN ACCOUNT
 Self-serve, on the same route, because an account that holds no email has no
 other way to ask. See _delete_account for exactly what goes and what stays —
 the short version is that everything the PERSON entered goes with them, and
-the two rows that are about someone else's records (their feedback, their
-Patreon pledge) lose only their pointer to the account.
+the one row that is about someone else's records (their Patreon pledge) loses
+only its pointer to the account.
 """
 
 import unicodedata
@@ -333,13 +333,11 @@ def _delete_account(user):
     account page makes the person type a confirmation before it sends this.
 
     WHAT STAYS, with its pointer cleared:
-      * Feedback they sent (user FK is SET_NULL). The report is still useful
-        to the site and identifies nobody on its own.
       * Their PatreonSupporter row (linked_user is SET_NULL). It is a fact
         about a pledge, not about this account: it keeps its publication
         consent and pledge date exactly as it does on an unlink, a lapse or a
         purge. That table is not ours to delete from.
-    Both are the model's on_delete rules doing the work, so this function
+    That is the model's on_delete rule doing the work, so this function
     cannot drift from them; the tests pin the outcome rather than the code.
 
     STAFF ARE REFUSED. Their accounts carry a real password and admin

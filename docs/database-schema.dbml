@@ -585,7 +585,7 @@ Table calculatorapi_patreoncredentials as PatreonCredentials {
   Note: 'Django model: calculatorapi.PatreonCredentials. Source: calculatorapi/models/patreon_credentials.py. Singleton: model save() pins pk=1 and instance delete() does nothing. Stores the rotating credential pair; never registered in admin. This diagram includes field definitions only.'
 }
 
-// Analytics and Feedback
+// Analytics
 
 Table calculatorapi_dailyvisit as DailyVisit {
   id bigint [pk, increment, not null]
@@ -618,22 +618,6 @@ Table calculatorapi_visitorhash as VisitorHash {
   }
 
   Note: 'Django model: calculatorapi.VisitorHash. Source: calculatorapi/models/site_visit.py. Temporary visitor deduplication rows. Stores month-scoped salted digests, not IP addresses. No user FK.'
-}
-
-Table calculatorapi_feedback as Feedback {
-  id bigint [pk, increment, not null]
-  category varchar(20) [not null, note: 'Django default: "other". Django choices: bug (Bug); feature (Feature idea); data (Data correction); other (Other).']
-  message text [not null]
-  user_id bigint [null, note: 'Django on_delete: SET_NULL.']
-  source_path varchar(200) [not null]
-  submitted_at "timestamp with time zone" [not null, note: 'Django sets this timestamp on creation.']
-  is_resolved boolean [not null, note: 'Django default: False.']
-
-  indexes {
-    user_id
-  }
-
-  Note: 'Django model: calculatorapi.Feedback. Source: calculatorapi/models/feedback.py. Optional account link; account deletion preserves feedback. No separate IP address or contact-details columns.'
 }
 
 // Django Infrastructure
@@ -791,7 +775,6 @@ Ref: ChampionsMeetingUmaRecommendation.champions_meeting_id > ChampionsMeeting.i
 Ref: ChangelogChange.entry_id > ChangelogEntry.id
 Ref: CustomUser.id - PatreonSupporter.linked_user_id
 Ref: PatreonSupporter.tier_id > PatreonTier.id
-Ref: Feedback.user_id > CustomUser.id
 Ref: Permission.content_type_id > ContentType.id
 Ref: Group_permissions.group_id > Group.id
 Ref: Group_permissions.permission_id > Permission.id
@@ -852,11 +835,10 @@ TableGroup Patreon {
   PatreonCredentials
 }
 
-TableGroup Analytics_and_Feedback {
+TableGroup Analytics {
   DailyVisit
   MonthlyVisit
   VisitorHash
-  Feedback
 }
 
 TableGroup Django_Infrastructure {

@@ -172,8 +172,8 @@ Enforced server-side. Hiding the button is a suggestion; this has to be a rule.
 `DELETE /account` (`views/account.py`) exists because an account that holds no
 email has no other way to ask. It deletes the `CustomUser` (display name with it)
 and lets the models' `on_delete` rules decide the rest: the token, the
-`SocialAccount` rows, the oshis and the whole plan cascade; feedback and the `PatreonSupporter` row
-are `SET_NULL` and survive with their pointer cleared — the same treatment a
+`SocialAccount` rows, the oshis and the whole plan cascade; the `PatreonSupporter` row
+is `SET_NULL` and survives with its pointer cleared — the same treatment a
 pledge gets on an unlink, a lapse or a purge. Staff are refused (`403`); admin
 accounts are deleted in the admin, deliberately and logged. There is no undo.
 

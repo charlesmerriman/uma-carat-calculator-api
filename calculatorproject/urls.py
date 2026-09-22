@@ -27,7 +27,6 @@ from calculatorapi.views.account_linking import (
     account_link_start,
 )
 from calculatorapi.views.visits import site_visit
-from calculatorapi.views.feedback import submit_feedback
 from calculatorapi.views.patreon_supporters import patreon_sync
 from calculatorapi.views.site_content import site_content
 from calculatorapi.views.social_auth import social_auth_start, social_auth_complete
@@ -94,9 +93,6 @@ urlpatterns = [
     # — the frontend is a separate static site, so this is the only way Django
     # learns that a page was loaded at all.
     path("visit", site_visit, name="site-visit"),
-    # Public feedback form. Like the beacon above it is unauthenticated,
-    # write-only and rate limited; unlike the beacon it has a validated body.
-    path("feedback", submit_feedback, name="submit-feedback"),
     # Trigger for the scheduled supporters sync, called by a GitHub Action.
     # Authorised by a shared secret header, and 404s entirely while
     # PATREON_SYNC_SECRET is unset. Cannot publish a name — see the view.

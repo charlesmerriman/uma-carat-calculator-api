@@ -13,9 +13,8 @@ Layout of this file:
   5. Rank / income tables
   6. User data admins (owner-only; hidden from content editors by permissions)
   7. Calculation constants (the projection's tunable numbers, one singleton row)
-  8. Feedback (read-only inbox for the public form; triage only, no authoring)
-  9. Patreon supporters (the public thank-you list, plus its CSV importer)
- 10. Site content (the About page, the carat income guide and the FAQ, plus
+  8. Patreon supporters (the public thank-you list, plus its CSV importer)
+  9. Site content (the About page, the carat income guide and the FAQ, plus
      the "Rebuild website" button that re-bakes them into the public site)
 
 The three join models (UmasOnUmaBanner, SupportsOnSupportBanner,
@@ -75,7 +74,6 @@ from .models import (
     UserPlannedPurchase,
     UserStepUpSelection,
     CalculationConstants,
-    Feedback,
     PatreonTier, PatreonSupporter, PatreonCredentials,
     UserOshi,
     SitePage, FaqCategory, FaqItem,
@@ -1205,73 +1203,7 @@ class CalculationConstantsAdmin(ModelAdmin):
         )
 
 
-# ── 8. Feedback (read-only inbox) ────────────────────────────────────────────
-
-@admin.register(Feedback)
-class FeedbackAdmin(ModelAdmin):
-    """Triage queue for messages sent through the public /feedback form.
-
-    Read-mostly on purpose. Every content field is readonly and adding is
-    disabled, because a row here is a record of what somebody said — the job is
-    to read it and mark it handled, not to edit it. Leaving the fields writable
-    would make silently rewording a user's report a single mis-click away, and
-    nothing in the workflow needs it.
-
-    `is_resolved` is the one editable field, plus the two bulk actions below so
-    a batch can be cleared from the changelist without opening each row.
-    """
-
-    list_display = ("submitted_at", "category", "message_preview", "submitter", "is_resolved")
-    list_filter = ("is_resolved", "category", "submitted_at")
-    list_editable = ("is_resolved",)
-    date_hierarchy = "submitted_at"
-    ordering = ("-submitted_at",)
-    search_fields = ("message",)
-    readonly_fields = ("category", "message", "user", "source_path", "submitted_at")
-    actions = ("mark_resolved", "mark_unresolved")
-
-    fieldsets = (
-        (None, {
-            "fields": ("category", "message", "is_resolved"),
-        }),
-        ("Context", {
-            "description": (
-                "Where this came from. 'User' is blank for guests, who send most "
-                "feedback — the site works signed out. No IP address is recorded."
-            ),
-            "fields": ("user", "source_path", "submitted_at"),
-        }),
-    )
-
-    @admin.display(description="Message")
-    def message_preview(self, obj):
-        """First line only — the changelist is for scanning, not reading."""
-        first_line = obj.message.splitlines()[0] if obj.message else ""
-        return first_line[:80] + ("…" if len(first_line) > 80 else "")
-
-    @admin.display(description="From", ordering="user")
-    def submitter(self, obj):
-        # Guests are the common case and deserve a clearer label than an empty
-        # cell, which reads as missing data rather than as "no account".
-        return obj.user.username if obj.user else "Guest"
-
-    def has_add_permission(self, request):
-        # Feedback arrives through the API. Hand-authoring a row would fabricate
-        # a message attributed to a visitor.
-        return False
-
-    @admin.action(description="Mark selected feedback as resolved")
-    def mark_resolved(self, request, queryset):
-        updated = queryset.update(is_resolved=True)
-        self.message_user(request, f"{updated} marked resolved.")
-
-    @admin.action(description="Mark selected feedback as unresolved")
-    def mark_unresolved(self, request, queryset):
-        updated = queryset.update(is_resolved=False)
-        self.message_user(request, f"{updated} marked unresolved.")
-
-
-# ── 9. Patreon supporters ────────────────────────────────────────────────────
+# ── 8. Patreon supporters ────────────────────────────────────────────────────
 
 @admin.register(PatreonTier)
 class PatreonTierAdmin(ModelAdmin):
@@ -1506,7 +1438,7 @@ class PatreonSupporterAdmin(ModelAdmin):
         )
 
 
-# ── 10. Site content ─────────────────────────────────────────────────────────
+# ── 9. Site content ──────────────────────────────────────────────────────────
 
 @admin.register(SitePage)
 class SitePageAdmin(ModelAdmin):
