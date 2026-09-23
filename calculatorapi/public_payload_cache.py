@@ -41,7 +41,10 @@ process. That is correct here because .do/app.yaml runs ``instance_count: 1``
 and its gunicorn line passes no ``--workers``, so there is exactly one process:
 one cache, and an admin write invalidates the same copy the next request reads.
 
-Raise the instance count OR add gunicorn workers and that stops holding -- each
+Threads are fine: gunicorn.conf.py runs one process with several gthread
+threads, and they all share this one cache (LocMemCache takes a lock).
+
+Raise the instance count OR add gunicorn WORKERS and that stops holding -- each
 process would carry its own cache, and ``invalidate()`` firing in the process
 that handled the admin write would leave the others serving stale content.
 ``CACHE_TTL_SECONDS`` is the backstop for exactly that case: it bounds the
@@ -77,6 +80,16 @@ _IRRELEVANT_MODELS = frozenset({
     "userplannedbanner",
     "userplannedpurchase",
     "userstepupselection",
+    # Plans, their stats blocks and oshis are user-scoped too. Plan and
+    # IncomeProfile shipped on 2026-09-17 and 2026-09-21 WITHOUT being listed
+    # here, and every auto-save touches Plan.updated_at (views/calculator.py),
+    # so each save dropped the catalogue and the next visitor paid the ~2s
+    # rebuild. On 2026-09-23 a new banner's crowd of savers queued the single
+    # worker solid and /app spun forever. A new user-owned model goes here the
+    # day it is added; test_a_user_save_does_not_invalidate is the guard.
+    "plan",
+    "incomeprofile",
+    "useroshi",
     # Accounts and auth.
     "customuser",
     "socialaccount",
