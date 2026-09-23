@@ -586,7 +586,8 @@ WHITENOISE_STATIC_PREFIX = '/static/'
 # so the size limit and the deployment assumption are visible.
 #
 # LocMem lives inside ONE process, which is correct only while the service runs
-# a single one (.do/app.yaml: instance_count 1, gunicorn with no --workers).
+# a single one (.do/app.yaml: instance_count 1, gunicorn.conf.py: workers = 1;
+# threads share the process, so they share the cache).
 # calculatorapi/public_payload_cache.py carries the full reasoning and what to
 # change if that ever stops being true.
 CACHES = {

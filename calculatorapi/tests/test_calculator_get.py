@@ -10,9 +10,15 @@ from rest_framework.test import APIClient
 from calculatorapi import public_payload_cache
 from calculatorapi.predictions import GAME_EVENT_END_DATE_BUFFER
 from calculatorapi.models import (
-    BannerStepUp, UserPlannedBanner,
-    AnniversaryEventBanner, AnniversaryEventProduct,
+    AnniversaryEventBanner,
+    AnniversaryEventProduct,
+    BannerStepUp,
     DailyVisit,
+    IncomeProfile,
+    Plan,
+    Uma,
+    UserOshi,
+    UserPlannedBanner,
 )
 from calculatorapi.tests.base import CalculatorTestCase
 from calculatorapi.tests.factories import (
@@ -737,6 +743,31 @@ class PublicPayloadCacheTests(CalculatorTestCase):
         UserPlannedBanner.objects.create(
             user=self.user, banner_uma=self.uma_banner, number_of_pulls=5)
         self.assertIsNotNone(public_payload_cache.read())
+
+    def test_a_user_save_does_not_invalidate(self):
+        # Every auto-save touches Plan.updated_at, an account may create an
+        # IncomeProfile, and a supporter picks oshis. None of that is in the
+        # cached half, so none of it may drop the catalogue. On 2026-09-23 Plan
+        # and IncomeProfile were missing from the denylist: each save under a
+        # new banner's crowd forced a ~2s rebuild on the one worker, and /app
+        # spun forever behind the queue. -> public_payload_cache._IRRELEVANT_MODELS
+        oshi_uma = Uma.objects.create(name='Oshi Week')   # catalogue: before the warm-up
+        APIClient().get('/calculator-data')
+
+        plan = Plan.objects.create(user=self.user, name='Main')
+        plan.save(update_fields=['updated_at'])   # what views/calculator.py does
+        self.assertIsNotNone(public_payload_cache.read(), 'a plan save dropped the cache')
+
+        profile = IncomeProfile.objects.create(user=self.user)
+        plan.income_profile = profile
+        plan.save(update_fields=['income_profile', 'updated_at'])
+        self.assertIsNotNone(public_payload_cache.read(), 'an income profile dropped the cache')
+
+        UserOshi.objects.create(user=self.user, uma=oshi_uma, position=0)
+        self.assertIsNotNone(public_payload_cache.read(), 'an oshi pick dropped the cache')
+
+        plan.delete()
+        self.assertIsNotNone(public_payload_cache.read(), 'a plan delete dropped the cache')
 
     def test_signed_in_rows_are_never_served_to_a_guest(self):
         """The one that matters: no user's data may reach the shared cache."""
