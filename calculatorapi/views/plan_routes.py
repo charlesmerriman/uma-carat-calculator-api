@@ -1,7 +1,8 @@
 """
 GET    /plans        the caller's plans (name, which is active). No rows.
 POST   /plans        create one: blank, or `copy_from` another of theirs.
-GET    /plans/<id>   one plan plus ITS banner rows. What a switch fetches.
+GET    /plans/<id>   one plan plus ITS banner rows, stats and purchases. What
+                     a switch fetches.
 PATCH  /plans/<id>   rename it, make it the active plan, and/or give it its
                      own stats (`separate_income`: true / false).
 DELETE /plans/<id>   delete it and its rows. The last plan is refused.
@@ -38,10 +39,12 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
 from calculatorapi import plans
-from calculatorapi.eligibility import build_first_jp_date_maps
-from calculatorapi.models import PLAN_CAP, BannerTimeline, Plan
-from calculatorapi.predictions import build_effective_date_maps
-from calculatorapi.views.calculator import serialize_planned_banners
+from calculatorapi.models import PLAN_CAP, Plan
+from calculatorapi.views.calculator import (
+    build_user_context,
+    serialize_planned_banners,
+    serialize_planned_purchases,
+)
 from calculatorapi.views.income_profile import stats_serializer
 from calculatorapi.views.plan import PlanSerializer
 
@@ -56,12 +59,10 @@ def _plan_list(user):
 
 
 def _plan_with_rows(plan):
-    """A plan and its banner rows, shaped like the matching /calculator-data
-    keys so the client stores both with the same code."""
-    # The plural build_effective_date_maps, never the per-model one: schedule
-    # offsets span content types and resolve wrongly against a partial calendar.
-    emap = build_effective_date_maps()[BannerTimeline]
-    uma_first_jp_dates, support_first_jp_dates = build_first_jp_date_maps()
+    """A plan, its banner rows, its stats and its purchases, shaped like the
+    matching /calculator-data keys so the client stores them with the same
+    code. Everything that changes on a switch, and nothing that does not."""
+    emap, anniversary_emap, card_context = build_user_context()
     return {
         "plan": PlanSerializer(plan).data,
         # The stats this plan is projected against: its income profile's, or
@@ -69,12 +70,11 @@ def _plan_with_rows(plan):
         # the rows and the client never learns which it got.
         "user_stats_data": stats_serializer(plans.stats_target(plan)).data,
         "user_planned_banner_data": serialize_planned_banners(
-            plan,
-            emap=emap,
-            card_context={
-                "uma_first_jp_dates": uma_first_jp_dates,
-                "support_first_jp_dates": support_first_jp_dates,
-            },
+            plan, emap=emap, card_context=card_context
+        ),
+        # The purchases of that same stats block (plans.purchase_scope).
+        "user_planned_purchase_data": serialize_planned_purchases(
+            plans.purchase_scope(plan), anniversary_emap=anniversary_emap
         ),
     }
 

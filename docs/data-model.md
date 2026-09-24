@@ -331,6 +331,7 @@ erDiagram
     AnniversaryEventBanner }o--|| BannerTimeline : "banner_timeline"
     AnniversaryEventProduct }o--|| AnniversaryEvent : "anniversary_event"
     UserPlannedPurchase }o--|| CustomUser : "user"
+    UserPlannedPurchase }o--o| IncomeProfile : "income_profile"
     UserPlannedPurchase }o--|| AnniversaryEventProduct : "product"
     UserPlannedPurchase }o--o| Uma : "target_uma"
     UserPlannedPurchase }o--o| SupportCard : "target_support"
@@ -455,7 +456,7 @@ An account holds up to `PLAN_CAP` (5) plans and the calculator opens on the acti
 | Which of the owner's stats blocks to read (`income_profile`, nullable) | `Plan` | a pointer, not a fact; dropped when a copy changes owner |
 | Carats, tickets, selector tickets, shards, crystals, ranks | `CustomUser`, or an `IncomeProfile` the account owns | facts about the person (or about their other game account) |
 | The income toggles | same row as the balances | income side |
-| `UserPlannedPurchase` | the account | money the person spends; it feeds income |
+| `UserPlannedPurchase` | the same stats block as the balances (`income_profile`, nullable) | money the person spends; it feeds income, so it follows the income it feeds |
 | `UserStepUpSelection` | the account | already keyed to the banner, and changes no number |
 
 So the same plan projected for two people gives two different answers, which is the point.
@@ -477,12 +478,15 @@ portability rule true by blanking every note when the copy changes owner, exactl
 drops `income_profile`. It is never served on a public route and is excluded from the
 admin form.
 
-Accepted consequence: purchases are shared across plans. A pack planned to fund a step-up
-in one plan still credits its carats while another plan is open.
+Accepted consequence: purchases are shared by every plan that reads the same stats block.
+A pack planned to fund a step-up in one plan still credits its carats while another plan
+on the same block is open. Since 2026-09-24 a plan with its own `IncomeProfile` reads that
+profile's purchases instead (`plans.purchase_scope`, below), so the sharing follows the
+income, not the account.
 
-Both account-side collections could move onto the plan later without losing data (add the
-FK, copy the one set into each plan). The reverse would have to merge several sets into
-one. Account-side is therefore the choice that stays cheap to change.
+Step-up picks could still move onto the plan later without losing data (add the FK, copy
+the one set into each plan). The reverse would have to merge several sets into one.
+Account-side is therefore the choice that stays cheap to change.
 
 **The one exception is a pointer: `Plan.income_profile`.** A person who plays several game
 accounts wants a plan projected against the other account's numbers. Those numbers live on
@@ -563,9 +567,25 @@ profile only as `separate_income: true | false` on `PATCH /plans/<id>` and a rea
 `income_profile_id` on `Plan`; a body can never name a profile by id, because attaching an
 existing profile is a later feature that needs its own ownership check.
 
-Purchases and step-up picks stay on the account (decided 2026-09-21): an alt's plan sees
-the main account's planned packs, the same accepted consequence as above. If a player with
-an alt asks, purchases follow with a nullable `income_profile` FK on `UserPlannedPurchase`.
+**Purchases follow the profile** (since 2026-09-24; `migration 0071`).
+`UserPlannedPurchase.income_profile` is a nullable FK: null is the account's own
+purchases, set is that profile's, and `plans.purchase_scope(plan)` is the companion of
+`stats_target`, the one place that decides which set a plan reads and reconciles. Every
+route that serves or saves `user_planned_purchase_data` goes through it: `GET
+/calculator-data` (the active plan's block), `GET /plans/<id>` (the plan being switched
+to, so a switch delivers the purchases beside the stats) and the purchases collection of
+`PATCH /calculator-data`. `user` stays on the row as the owner and the ownership check,
+and `clean()` refuses a profile of another user (the API can never produce one, the scope
+comes from an owned plan).
+
+The FK is `CASCADE`, unlike `Plan.income_profile`: turning separate resources off already
+deletes an unshared profile's stats, and its purchases go with them. `SET_NULL` would fold
+them into the account's list, and a product planned on both sides would become two rows
+for one product, one of which the Selectors page cannot show but the projection still
+credits. `attach_income_profile` copies the purchases the plan sees today onto the new
+profile (including selector picks), the same way it copies the stats, so flipping the
+toggle changes nothing on screen. A Duplicate shares the pointer and so shares the
+purchases. Step-up picks stay on the account: they change no number.
 
 ### `UserPlannedBanner` — exactly-one check constraint
 
