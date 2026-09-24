@@ -1015,7 +1015,7 @@ class PlanAdmin(ModelAdmin):
 class IncomeProfileAdmin(ModelAdmin):
     """A second stats block of an account, read by the plans that point at it.
     Same fieldset as the user's own stats, on purpose: it IS the same block."""
-    list_display = ("user", "plan_count", "updated_at")
+    list_display = ("user", "plan_count", "purchase_count", "updated_at")
     list_select_related = ("user",)
     search_fields = ("user__username",)
     readonly_fields = ("created_at", "updated_at")
@@ -1026,11 +1026,21 @@ class IncomeProfileAdmin(ModelAdmin):
     )
 
     def get_queryset(self, request):
-        return super().get_queryset(request).annotate(plan_count=Count("plans"))
+        # distinct=True on both: two reverse joins in one query multiply each
+        # other's rows, so without it a profile with 2 plans and 3 purchases
+        # would count 6 of each.
+        return super().get_queryset(request).annotate(
+            plan_count=Count("plans", distinct=True),
+            purchase_count=Count("planned_purchases", distinct=True),
+        )
 
     @admin.display(description="Plans", ordering="plan_count")
     def plan_count(self, obj):
         return obj.plan_count
+
+    @admin.display(description="Purchases", ordering="purchase_count")
+    def purchase_count(self, obj):
+        return obj.purchase_count
 
 
 @admin.register(UserPlannedBanner)
@@ -1050,12 +1060,16 @@ class UserPlannedBannerAdmin(ModelAdmin):
 
 @admin.register(UserPlannedPurchase)
 class UserPlannedPurchaseAdmin(ModelAdmin):
-    list_display = ("user", "product", "quantity", "selector_target")
+    """`income_profile` blank = the account's own purchases; set = the
+    purchases of that profile, seen only by the plans pointing at it."""
+    list_display = ("user", "income_profile", "product", "quantity", "selector_target")
     list_filter = ("product__product_type", "product__anniversary_event")
     list_select_related = (
-        "user", "product__anniversary_event", "target_uma", "target_support",
+        "user", "income_profile__user", "product__anniversary_event",
+        "target_uma", "target_support",
     )
     search_fields = ("user__username",)
+    raw_id_fields = ("income_profile",)
 
     @admin.display(description="Selector target")
     def selector_target(self, obj):

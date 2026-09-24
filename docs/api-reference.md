@@ -285,8 +285,9 @@ For anonymous requests, all reference keys are populated as usual but the user-s
 
 **`user_planned_banner_data` is the ACTIVE plan's rows.** `user_plans` lists every plan the
 account holds (`Plan` shape below) and `active_plan_id` says which one the rows belong to.
-Stats, purchases and step-up selections belong to the account and are the same whichever
-plan is open. A signed-in account with no plan yet is given its "Main plan" by this request.
+Stats and purchases are the active plan's stats block's (the account's own, or its income
+profile's); step-up selections belong to the account and are the same whichever plan is
+open. A signed-in account with no plan yet is given its "Main plan" by this request.
 To read another plan's rows without refetching the catalogue, use `GET /plans/<id>`.
 
 **Everything except the six user-scoped keys is cached server-side.** The reference half is
@@ -323,7 +324,7 @@ assumption it rests on, in `calculatorapi/public_payload_cache.py`.
 }
 ```
 
-`user_stats_data` is the **active plan's** stats: the account's own, or, when that plan has `separate_income` on, its income profile's. Same shape either way (`Plan.income_profile_id` says which). Purchases and step-up selections are the account's whichever plan is open.
+`user_stats_data` is the **active plan's** stats: the account's own, or, when that plan has `separate_income` on, its income profile's. Same shape either way (`Plan.income_profile_id` says which). `user_planned_purchase_data` follows the same rule: the purchases of that same stats block. Step-up selections are the account's whichever plan is open.
 
 `user_planned_banner_data`, `banner_uma_data`, `banner_support_data`, `champions_meeting_data`, `league_of_heroes_event_data`, `events_data`, `anniversary_event_data`, `scenario_data` and `user_planned_purchase_data` are all ordered by each row's **resolved** (confirmed-or-predicted) global start date, sorted server-side in Python since predicted dates aren't a DB column.
 
@@ -355,16 +356,18 @@ the caller's (or not a number) is a `404` and writes nothing. A row `id` belongi
 An **absent** `plan_id` means the active plan. That exists only for a tab left open across
 the deploy that introduced plans, whose bundle has never heard of them.
 
-`plan_id` scopes `user_planned_banner_data` only. Purchases and selections are the
-account's and reconcile against all of the user's rows as before. A row's own `plan` field
-is read-only; only the top-level `plan_id` decides where a row lands.
+`plan_id` scopes `user_planned_banner_data` to the plan, and `user_planned_purchase_data`
+to the stats block that plan reads (the account's own purchases, or its income profile's;
+`plans.purchase_scope`). Selections are the account's and reconcile against all of the
+user's rows. A row's own `plan` / `income_profile` field is read-only; only the top-level
+`plan_id` decides where a row lands.
 
 **Upsert semantics** — identical for `user_planned_banner_data`, `user_planned_purchase_data`
 and `user_step_up_selection_data`:
 - Key absent from the body → that collection is left completely alone
 - Key present as `[]` → every row in that collection is deleted
-- Row with `id` → update that row (`404` if the id isn't this user's, or for a banner row,
-  isn't in the plan named by `plan_id`)
+- Row with `id` → update that row (`404` if the id isn't this user's, or for a banner or
+  purchase row, isn't in the scope `plan_id` names)
 - Row without `id` → create new row
 - Any row in the database not present in the payload → deleted
 
@@ -473,8 +476,8 @@ is required, at most 40 characters, and has runs of whitespace collapsed.
 
 ### `GET /plans/<id>`
 
-One plan and its banner rows. This is what switching fetches, so a switch never re-downloads
-the catalogue half of `/calculator-data`.
+One plan with its banner rows, its stats and its purchases. This is what switching fetches,
+so a switch never re-downloads the catalogue half of `/calculator-data`.
 
 **Response `200`** `PlanWithRows`
 
@@ -489,11 +492,12 @@ Renames the plan, makes it the active one, and/or gives it its own stats. All ke
 Only `is_active: true` means anything. There is no deactivate: an account always has exactly
 one active plan, so the way to leave a plan is to activate another.
 
-`separate_income: true` creates an income profile seeded from the stats the plan reads
-today and points the plan at it (no-op if it already has one). `false` points the plan back
-at the account's stats and deletes the profile unless another plan still uses it. Anything
-but a boolean is `400`, checked before anything is written. The response does not carry
-the stats: the client follows up with `GET /plans/<id>`, the same path a switch uses.
+`separate_income: true` creates an income profile seeded from the stats AND the planned
+purchases the plan reads today and points the plan at it (no-op if it already has one).
+`false` points the plan back at the account's stats and deletes the profile, purchases
+included, unless another plan still uses it. Anything but a boolean is `400`, checked
+before anything is written. The response does not carry the stats or purchases: the
+client follows up with `GET /plans/<id>`, the same path a switch uses.
 
 **Response `200`** `Plan`
 
@@ -656,12 +660,14 @@ read-only, and a body that sends it is ignored.
 {
   "plan": Plan,
   "user_stats_data": UserStats,
-  "user_planned_banner_data": [ UserPlannedBanner ]
+  "user_planned_banner_data": [ UserPlannedBanner ],
+  "user_planned_purchase_data": [ UserPlannedPurchase ]
 }
 ```
 
-Both keys are shaped exactly as on `GET /calculator-data`, so a switch stores them with the
-same code. `user_stats_data` is THIS plan's stats (its income profile's, or the account's).
+Every key is shaped exactly as on `GET /calculator-data`, so a switch stores them with the
+same code. `user_stats_data` is THIS plan's stats (its income profile's, or the account's)
+and `user_planned_purchase_data` the purchases of that same block.
 
 ### `UserPlannedBanner` (response)
 
@@ -806,6 +812,10 @@ nested, because the client already holds the whole campaign catalogue and joins 
   "target_support": null
 }
 ```
+
+Which stats block a row belongs to (`income_profile`, null for the account's own) is not
+serialized: the server sets it from the `plan_id` of the save, and a body can never name
+one.
 
 ### `UserStepUpSelection` (from `user_step_up_selection_data`)
 
