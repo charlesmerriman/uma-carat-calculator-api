@@ -4,6 +4,7 @@
 # pylint: disable=too-many-instance-attributes
 
 from importlib import import_module
+from unittest.mock import patch
 
 from django.apps import apps
 from django.core.exceptions import ValidationError
@@ -52,9 +53,35 @@ class ActivePlanTests(CalculatorTestCase):
 
         self.assertEqual(plan.name, DEFAULT_PLAN_NAME)
         self.assertTrue(plan.is_active)
+        self.assertIsNotNone(plan.public_id)
+        self.assertRegex(plan.public_id, r"^[A-Za-z0-9]{8}$")
         # And a second call finds it rather than making another.
         self.assertEqual(plans.get_active_plan(self.user).id, plan.id)
         self.assertEqual(Plan.objects.filter(user=self.user).count(), 1)
+
+    def test_created_plans_have_unique_public_ids(self):
+        first = plans.get_active_plan(self.user)
+        second = plans.create_plan(self.user, "Second")
+        copy = plans.copy_plan(first, owner=self.user, name="Copy")
+
+        self.assertEqual(
+            Plan.objects.filter(user=self.user)
+            .values_list("public_id", flat=True)
+            .count(),
+            3,
+        )
+        self.assertEqual(len({first.public_id, second.public_id, copy.public_id}), 3)
+
+    def test_public_id_retries_a_collision(self):
+        with patch(
+            "calculatorapi.plans.generate_public_id",
+            side_effect=["AAAAAAAA", "AAAAAAAA", "BBBBBBBB"],
+        ):
+            first = plans.get_active_plan(self.user)
+            second = plans.create_plan(self.user, "Second")
+
+        self.assertEqual(first.public_id, "AAAAAAAA")
+        self.assertEqual(second.public_id, "BBBBBBBB")
 
     def test_plans_with_none_active_promotes_the_oldest(self):
         oldest = Plan.objects.create(user=self.user, name="First")
@@ -191,7 +218,8 @@ class PlanRouteTests(CalculatorTestCase):
         self.assertTrue(res.data[0]["is_active"])
         # The whitelist: nothing about the owner rides along.
         self.assertEqual(
-            set(res.data[0].keys()), {"id", "name", "is_active", "income_profile_id", "updated_at"}
+            set(res.data[0].keys()),
+            {"id", "public_id", "name", "is_active", "income_profile_id", "updated_at"},
         )
 
     def test_create_blank(self):

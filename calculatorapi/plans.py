@@ -21,10 +21,19 @@ from calculatorapi.models import (
     UserPlannedBanner,
     UserPlannedPurchase,
 )
+from calculatorapi.public_ids import generate_public_id
 
 
 class PlanCapReached(Exception):
     """The account already holds PLAN_CAP plans, so another cannot be created."""
+
+
+def generate_unique_public_id():
+    """Generate a public ID that is not already assigned to a plan."""
+    public_id = generate_public_id()
+    while Plan.objects.filter(public_id=public_id).exists():
+        public_id = generate_public_id()
+    return public_id
 
 
 def get_active_plan(user):
@@ -61,7 +70,10 @@ def _find_or_create_active_plan(user):
         # transaction the caller already has open (PATCH /calculator-data).
         with transaction.atomic():
             return Plan.objects.create(
-                user=user, name=DEFAULT_PLAN_NAME, is_active=True
+                user=user,
+                name=DEFAULT_PLAN_NAME,
+                is_active=True,
+                public_id=generate_unique_public_id(),
             )
     except IntegrityError:
         # Two first requests at once (the app fires its prefetch and the real
@@ -238,7 +250,9 @@ def create_plan(user, name, *, copy_from=None):
             raise PlanCapReached()
         if copy_from is not None:
             return copy_plan(copy_from, owner=user, name=name)
-        return Plan.objects.create(user=user, name=name)
+        return Plan.objects.create(
+            user=user, name=name, public_id=generate_unique_public_id()
+        )
 
 
 def copy_plan(source, *, owner, name):
@@ -265,6 +279,7 @@ def copy_plan(source, *, owner, name):
         new_plan = Plan.objects.create(
             user=owner,
             name=name,
+            public_id=generate_unique_public_id(),
             # The pointer stays only within one account: a Duplicate of "my
             # alt's plan" should read my alt's numbers too. Across accounts it
             # MUST be dropped. The profile is the author's facts, and a plan
