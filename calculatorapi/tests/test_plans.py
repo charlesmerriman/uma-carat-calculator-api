@@ -286,6 +286,69 @@ class PlanRouteTests(CalculatorTestCase):
             [22],
         )
 
+    def test_public_id_reads_another_users_plan_without_write_access(self):
+        other = make_user(username="other")
+        shared = plans.get_active_plan(other)
+        other.current_carat = 4321
+        other.current_paid_carat = 765
+        other.uma_ticket = 12
+        other.support_ticket = 13
+        other.ssr_crystals = 5
+        other.sr_crystals = 6
+        other.ssr_shards = 7
+        other.sr_shards = 8
+        other.daily_carat = True
+        other.training_pass = True
+        other.save()
+        _row(shared, self.banner, pulls=42)
+        guest = APIClient()
+
+        response = guest.get(f"/plans/public/{shared.public_id}")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["plan"]["public_id"], shared.public_id)
+        self.assertEqual(
+            [row["number_of_pulls"] for row in response.data["user_planned_banner_data"]],
+            [42],
+        )
+        stats = response.data["user_stats_data"]
+        self.assertEqual(stats["current_carat"], 4321)
+        self.assertEqual(stats["current_paid_carat"], 765)
+        self.assertEqual(stats["uma_ticket"], 12)
+        self.assertEqual(stats["support_ticket"], 13)
+        self.assertEqual(stats["ssr_crystals"], 5)
+        self.assertEqual(stats["sr_crystals"], 6)
+        self.assertEqual(stats["ssr_shards"], 7)
+        self.assertEqual(stats["sr_shards"], 8)
+        self.assertTrue(stats["daily_carat"])
+        self.assertTrue(stats["training_pass"])
+        self.assertNotIn("user_planned_purchase_data", response.data)
+        self.assertEqual(
+            guest.patch(f"/plans/public/{shared.public_id}", {"name": "Changed"}, format="json").status_code,
+            405,
+        )
+        shared.refresh_from_db()
+        self.assertEqual(shared.name, DEFAULT_PLAN_NAME)
+
+    def test_public_id_reads_the_plans_separate_income_profile(self):
+        other = make_user(username="other")
+        shared = plans.get_active_plan(other)
+        plans.attach_income_profile(shared)
+        shared.refresh_from_db()
+        shared.income_profile.current_carat = 2345
+        shared.income_profile.current_paid_carat = 678
+        shared.income_profile.save()
+
+        response = APIClient().get(f"/plans/public/{shared.public_id}")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["user_stats_data"]["current_carat"], 2345)
+        self.assertEqual(response.data["user_stats_data"]["current_paid_carat"], 678)
+
+    def test_unknown_public_id_is_not_found(self):
+        response = APIClient().get("/plans/public/unknown")
+        self.assertEqual(response.status_code, 404)
+
     def test_someone_elses_plan_is_a_404_on_every_method(self):
         other = make_user(username="other")
         theirs = plans.get_active_plan(other)

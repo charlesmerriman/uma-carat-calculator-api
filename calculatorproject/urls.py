@@ -20,7 +20,7 @@ from calculatorapi.views.admin_images import admin_image_library
 from calculatorapi.views.analytics import analytics_dashboard
 from calculatorapi.views.user import user_login, user_logout
 from calculatorapi.views.account import account_detail
-from calculatorapi.views.plan_routes import plan_detail, plan_list
+from calculatorapi.views.plan_routes import plan_detail, plan_list, public_plan_detail
 from calculatorapi.views.account_linking import (
     account_link_complete,
     account_link_delete,
@@ -69,6 +69,7 @@ urlpatterns = [
     # PATCH /calculator-data (now carrying plan_id); these create, rename,
     # switch, copy and delete the plans themselves. -> views/plan_routes.py
     path("plans", plan_list, name="plan-list"),
+    path("plans/public/<str:public_id>", public_plan_detail, name="public-plan-detail"),
     path("plans/<int:plan_id>", plan_detail, name="plan-detail"),
     # Attaching a provider identity to an account that is ALREADY signed in.
     # Separate from /auth/* above and deliberately so: those create accounts,
