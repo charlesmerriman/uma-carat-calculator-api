@@ -15,7 +15,7 @@ from statistics import median
 from django.db.models import Avg, Count, F, Q, Sum
 from django.utils import timezone
 
-from .models import CustomUser, UserPlannedBanner
+from .models import AnniversaryEventProduct, CustomUser, UserPlannedBanner
 from .visits import build_visit_report
 
 # Resource fields averaged for the "Current Resources" section.
@@ -44,6 +44,11 @@ PAID_PRODUCT_FIELDS = [
     ("daily_carat", "Daily Carat Pack"),
     ("training_pass", "Training Pass"),
 ]
+
+# The campaign products that grant a selector ticket (see
+# AnniversaryEventProduct.grants_selector). Carat packs are deliberately not
+# reported: the client asked about selectors.
+SELECTOR_PRODUCT_TYPES = ("uma_selector", "support_selector")
 
 
 # ── Sanity bounds ────────────────────────────────────────────────────────────
@@ -91,6 +96,10 @@ def _engaged_q():
     percentage down. Reports show both denominators (total vs engaged).
     """
     q = Q(userplannedbanner__isnull=False)
+    # Planning a campaign purchase is using the calculator too. Without this, a
+    # user whose only action was planning a selector would be a buyer who is
+    # not "engaged", and "% of engaged" could pass 100.
+    q |= Q(userplannedpurchase__isnull=False)
     for field, _ in PAID_PRODUCT_FIELDS:
         q |= Q(**{field: True})
     for field, _ in RANK_FIELDS:
@@ -183,6 +192,92 @@ def _banner_popularity(fk_name):
     ]
 
 
+def _selector_purchases(total_users, engaged_users):
+    """Who plans to buy each campaign selector: one row per selector product.
+
+    A "buyer" is a distinct non-staff user with a planned purchase of the
+    product at quantity 1 or more.
+
+    COUNTED PER PERSON, ACROSS EVERY STATS BLOCK. A purchase belongs either to
+    the account or to one of its income profiles (UserPlannedPurchase), so the
+    same person can plan one product twice: once for their main game account
+    and once for an alt. That is still one person buying, and distinct=True on
+    the user is what keeps them from being counted twice. Unlike banner
+    popularity there is no "active plan" filter to apply, because a purchase
+    never lives on a plan.
+
+    `picked` is how many of those buyers have chosen the card the selector
+    will be spent on. An unpicked selector funds nothing in the projection, so
+    the gap between the two columns is people who bought in but have not
+    decided yet.
+
+    Every selector product is listed, including ones nobody plans to buy: a
+    zero is an answer here, and a missing row would look like a missing
+    product.
+
+    Returns the two report keys this section owns. `any_selector` counts
+    people planning AT LEAST ONE selector. It is its own query because the
+    per-product counts cannot be added up: someone buying two selectors
+    appears in two rows.
+    """
+    # The join path from a product to its purchases; Count(filter=...) puts
+    # these conditions inside the aggregate, so a product with no matching
+    # purchase still comes back, with a count of 0.
+    bought = Q(
+        userplannedpurchase__user__is_staff=False,
+        userplannedpurchase__quantity__gte=1,
+    )
+    has_pick = (
+        Q(userplannedpurchase__target_uma__isnull=False)
+        | Q(userplannedpurchase__target_support__isnull=False)
+    )
+    products = (
+        AnniversaryEventProduct.objects
+        .filter(product_type__in=SELECTOR_PRODUCT_TYPES)
+        .annotate(
+            buyers=Count("userplannedpurchase__user", filter=bought, distinct=True),
+            picked=Count(
+                "userplannedpurchase__user", filter=bought & has_pick, distinct=True
+            ),
+        )
+        # Campaigns own no dates (they borrow them from the timeline), so id
+        # order stands in for "oldest campaign first"; within a campaign, the
+        # admin's own product order.
+        .order_by("anniversary_event_id", "order", "id")
+        .values("name", "anniversary_event__name", "buyers", "picked")
+    )
+    rows = [
+        {
+            "campaign": product["anniversary_event__name"],
+            "label": product["name"],
+            "count": product["buyers"],
+            "picked": product["picked"],
+            "pct_of_total": _pct(product["buyers"], total_users),
+            "pct_of_engaged": _pct(product["buyers"], engaged_users),
+        }
+        for product in products
+    ]
+
+    any_count = (
+        CustomUser.objects
+        .filter(
+            is_staff=False,
+            userplannedpurchase__product__product_type__in=SELECTOR_PRODUCT_TYPES,
+            userplannedpurchase__quantity__gte=1,
+        )
+        .distinct()
+        .count()
+    )
+    return {
+        "selector_purchases": rows,
+        "any_selector": {
+            "count": any_count,
+            "pct_of_total": _pct(any_count, total_users),
+            "pct_of_engaged": _pct(any_count, engaged_users),
+        },
+    }
+
+
 def _resource_statistics(engaged):
     """Mean, median and dropped-value count for each resource field.
 
@@ -237,6 +332,8 @@ def build_analytics_report():
       - overview: total vs engaged user counts
       - traffic: daily and monthly site visits (the one section with history)
       - paid_products: daily carat pack / training pass adoption
+      - selector_purchases / any_selector: planned buyers per campaign
+        selector, and people planning at least one
       - rank_distributions: users per rank, per rank type
       - resource_averages: mean, median and dropped count per resource,
         among engaged users
@@ -324,6 +421,7 @@ def build_analytics_report():
         "engaged_users": engaged_users,
         "engaged_pct": _pct(engaged_users, total_users),
         "paid_products": paid_products,
+        **_selector_purchases(total_users, engaged_users),
         "rank_distributions": rank_distributions,
         "resource_averages": resource_averages,
         "popular_uma_banners": _banner_popularity("banner_uma"),
