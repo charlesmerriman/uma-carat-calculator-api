@@ -6,6 +6,7 @@
 from importlib import import_module
 
 from django.apps import apps
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from rest_framework.test import APIClient
 
@@ -15,6 +16,7 @@ from calculatorapi.models import (
     IncomeProfile,
     PLAN_CAP,
     Plan,
+    Uma,
     UserPlannedBanner,
     UserPlannedPurchase,
     AnniversaryEventProduct,
@@ -730,3 +732,236 @@ class IncomeProfileTests(CalculatorTestCase):
             "user_stats_data": {"current_carat": "lots"},
         }, format="json")
         self.assertEqual(res.status_code, 400)
+
+
+class ProfilePurchaseTests(CalculatorTestCase):
+    """Planned purchases follow the plan's stats block: the account's own
+    purchases for a plan without a profile, the profile's for a plan with one.
+    plans.purchase_scope() is the one place that decides, and every route
+    that reads or reconciles purchases goes through it."""
+
+    def setUp(self):
+        self.user = make_user()
+        self.client, _ = auth_client(self.user)
+        self.plan = plans.get_active_plan(self.user)
+        event = make_anniversary_event()
+        self.pack = AnniversaryEventProduct.objects.create(
+            anniversary_event=event, name="Pack", product_type="carat_pack",
+            usd_cost=10, paid_carat_amount=1500,
+        )
+        self.selector = AnniversaryEventProduct.objects.create(
+            anniversary_event=event, name="Uma selector",
+            product_type="uma_selector", usd_cost=21, max_quantity=1,
+        )
+        self.uma = Uma.objects.create(name="Picked Uma")
+        # Two account-level purchases: a pack, and a selector with a pick.
+        self.account_pack = UserPlannedPurchase.objects.create(
+            user=self.user, product=self.pack, quantity=2,
+        )
+        self.account_selector = UserPlannedPurchase.objects.create(
+            user=self.user, product=self.selector, quantity=1, target_uma=self.uma,
+        )
+
+    def _patch(self, body):
+        return self.client.patch("/calculator-data", body, format="json")
+
+    @staticmethod
+    def _product_ids(rows):
+        return sorted(row["product"] for row in rows)
+
+    def test_a_plan_without_a_profile_scopes_to_the_accounts_purchases(self):
+        self.assertEqual(
+            plans.purchase_scope(self.plan),
+            {"user": self.user, "income_profile": None},
+        )
+
+    def test_attach_copies_the_purchases_the_plan_sees_today(self):
+        plans.attach_income_profile(self.plan)
+
+        profile = self.plan.income_profile
+        copied = UserPlannedPurchase.objects.filter(income_profile=profile)
+        self.assertEqual(copied.count(), 2)
+        pack = copied.get(product=self.pack)
+        self.assertEqual(pack.quantity, 2)
+        self.assertEqual(pack.user_id, self.user.id)
+        # The selector pick travels with the row.
+        self.assertEqual(copied.get(product=self.selector).target_uma_id, self.uma.id)
+        # The account's own rows are untouched and still the account's.
+        self.assertEqual(
+            UserPlannedPurchase.objects.filter(
+                user=self.user, income_profile=None
+            ).count(),
+            2,
+        )
+
+    def test_a_duplicate_shares_the_profiles_purchases(self):
+        """Duplicate keeps the pointer, so both plans see one set of purchases
+        and turning the toggle "on" for the copy (a no-op) copies nothing."""
+        plans.attach_income_profile(self.plan)
+        profile = self.plan.income_profile
+        copy = plans.copy_plan(self.plan, owner=self.user, name="Copy")
+
+        self.assertEqual(plans.purchase_scope(copy)["income_profile"], profile)
+        plans.attach_income_profile(copy)
+        self.assertEqual(
+            UserPlannedPurchase.objects.filter(income_profile=profile).count(), 2
+        )
+        self.assertEqual(UserPlannedPurchase.objects.count(), 4)
+
+    def test_get_serves_the_active_plans_block(self):
+        plans.attach_income_profile(self.plan)
+        profile = self.plan.income_profile
+        UserPlannedPurchase.objects.filter(income_profile=profile).delete()
+        UserPlannedPurchase.objects.create(
+            user=self.user, income_profile=profile, product=self.pack, quantity=7,
+        )
+
+        res = self.client.get("/calculator-data")
+        self.assertEqual(res.status_code, 200)
+        rows = res.data["user_planned_purchase_data"]
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["quantity"], 7)
+
+        # A plan without a profile is served the account's two.
+        other = plans.create_plan(self.user, "Other")
+        plans.set_active_plan(other)
+        res = self.client.get("/calculator-data")
+        self.assertEqual(
+            self._product_ids(res.data["user_planned_purchase_data"]),
+            sorted([self.pack.id, self.selector.id]),
+        )
+
+    def test_plan_fetch_carries_the_purchases_the_plan_reads(self):
+        plans.attach_income_profile(self.plan)
+        profile = self.plan.income_profile
+        UserPlannedPurchase.objects.filter(income_profile=profile).delete()
+        UserPlannedPurchase.objects.create(
+            user=self.user, income_profile=profile, product=self.selector, quantity=1,
+        )
+        other = plans.create_plan(self.user, "Other")
+
+        res = self.client.get(f"/plans/{self.plan.id}")
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(
+            self._product_ids(res.data["user_planned_purchase_data"]), [self.selector.id]
+        )
+        res = self.client.get(f"/plans/{other.id}")
+        self.assertEqual(
+            self._product_ids(res.data["user_planned_purchase_data"]),
+            sorted([self.pack.id, self.selector.id]),
+        )
+
+    def test_a_save_lands_on_the_plans_block_and_nowhere_else(self):
+        plans.attach_income_profile(self.plan)
+        profile = self.plan.income_profile
+
+        # Replace the profile's copies with one new pack row.
+        res = self._patch({
+            "plan_id": self.plan.id,
+            "user_planned_purchase_data": [{"product": self.pack.id, "quantity": 9}],
+        })
+        self.assertEqual(res.status_code, 200)
+        profile_rows = UserPlannedPurchase.objects.filter(income_profile=profile)
+        self.assertEqual(profile_rows.count(), 1)
+        self.assertEqual(profile_rows.get().quantity, 9)
+        self.assertEqual(profile_rows.get().user_id, self.user.id)
+        # The account's own two rows survived untouched.
+        self.assertEqual(
+            UserPlannedPurchase.objects.filter(user=self.user, income_profile=None).count(),
+            2,
+        )
+        self.account_pack.refresh_from_db()
+        self.assertEqual(self.account_pack.quantity, 2)
+
+    def test_an_empty_list_clears_only_the_named_plans_block(self):
+        plans.attach_income_profile(self.plan)
+        profile = self.plan.income_profile
+        other = plans.create_plan(self.user, "Other")
+
+        res = self._patch({"plan_id": other.id, "user_planned_purchase_data": []})
+        self.assertEqual(res.status_code, 200)
+        self.assertFalse(
+            UserPlannedPurchase.objects.filter(user=self.user, income_profile=None).exists()
+        )
+        self.assertEqual(
+            UserPlannedPurchase.objects.filter(income_profile=profile).count(), 2
+        )
+
+    def test_a_row_id_from_the_other_block_is_not_found_and_nothing_is_saved(self):
+        plans.attach_income_profile(self.plan)
+        profile = self.plan.income_profile
+        profile_row = UserPlannedPurchase.objects.filter(income_profile=profile).first()
+
+        # The account's row id, sent in a body reconciled against the profile.
+        res = self._patch({
+            "plan_id": self.plan.id,
+            "user_planned_purchase_data": [
+                {"id": self.account_pack.id, "product": self.pack.id, "quantity": 1},
+            ],
+        })
+        self.assertEqual(res.status_code, 404)
+        # The transaction rolled the delete-then-lookup back: the profile's
+        # rows are still there and the account's row was not edited.
+        self.assertTrue(
+            UserPlannedPurchase.objects.filter(id=profile_row.id).exists()
+        )
+        self.account_pack.refresh_from_db()
+        self.assertEqual(self.account_pack.quantity, 2)
+
+    def test_detach_takes_an_unshared_profiles_purchases_and_leaves_the_accounts(self):
+        plans.attach_income_profile(self.plan)
+
+        plans.detach_income_profile(self.plan)
+
+        self.assertFalse(UserPlannedPurchase.objects.exclude(income_profile=None).exists())
+        self.assertEqual(
+            UserPlannedPurchase.objects.filter(user=self.user, income_profile=None).count(),
+            2,
+        )
+
+    def test_detach_keeps_a_shared_profiles_purchases(self):
+        plans.attach_income_profile(self.plan)
+        profile = self.plan.income_profile
+        plans.copy_plan(self.plan, owner=self.user, name="Copy")
+
+        plans.detach_income_profile(self.plan)
+
+        self.assertEqual(
+            UserPlannedPurchase.objects.filter(income_profile=profile).count(), 2
+        )
+
+    def test_deleting_a_plan_drops_its_unshared_profiles_purchases(self):
+        other = plans.create_plan(self.user, "Other")
+        plans.attach_income_profile(other)
+
+        plans.delete_plan(other)
+
+        self.assertFalse(IncomeProfile.objects.exists())
+        self.assertEqual(UserPlannedPurchase.objects.filter(user=self.user).count(), 2)
+
+    def test_a_copy_to_another_account_reads_that_accounts_purchases(self):
+        plans.attach_income_profile(self.plan)
+        bob = make_user(username="bob")
+
+        taken = plans.copy_plan(self.plan, owner=bob, name="Taken")
+
+        self.assertEqual(plans.purchase_scope(taken), {"user": bob, "income_profile": None})
+        self.assertFalse(UserPlannedPurchase.objects.filter(user=bob).exists())
+
+    def test_a_profile_of_another_user_is_rejected_by_clean(self):
+        bob = make_user(username="bob")
+        bobs_profile = IncomeProfile.objects.create(user=bob)
+        row = UserPlannedPurchase(
+            user=self.user, income_profile=bobs_profile, product=self.pack, quantity=1,
+        )
+        with self.assertRaises(ValidationError):
+            row.clean()
+
+    def test_deleting_the_account_takes_every_block(self):
+        plans.attach_income_profile(self.plan)
+        self.assertEqual(UserPlannedPurchase.objects.count(), 4)
+
+        self.user.delete()
+
+        self.assertFalse(UserPlannedPurchase.objects.exists())
+        self.assertFalse(IncomeProfile.objects.exists())

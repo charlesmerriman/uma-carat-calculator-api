@@ -23,11 +23,12 @@ class Plan(models.Model):
     A PLAN HOLDS CHOICES. THE ACCOUNT HOLDS FACTS.
     ----------------------------------------------
     Carats, tickets, ranks, the income toggles, planned purchases and step-up
-    picks all stay on the account (CustomUser and its own collections). A plan
-    carries only which banners to pull on and how hard, plus at most a pointer
-    to which of its owner's stats blocks to read (see below). The numbers on screen
-    are therefore always the VIEWER'S: the same plan projected for two people
-    gives two different answers, which is the point.
+    picks all stay off the plan: on the account (CustomUser and its own
+    collections) or, for stats and purchases, on one of the account's stats
+    blocks. A plan carries only which banners to pull on and how hard, plus at
+    most a pointer to which of its owner's stats blocks to read (see below).
+    The numbers on screen are therefore always the VIEWER'S: the same plan
+    projected for two people gives two different answers, which is the point.
 
     That split is what makes a plan portable. A later feature lets a player
     publish a plan and another player take it, and a plan that never held
@@ -42,7 +43,9 @@ class Plan(models.Model):
     owned by the same person (models/income_profile.py), and the plan holds
     only a nullable pointer to it. Null, the default and the common case, means
     "use the account's own stats". plans.stats_target() resolves which, and is
-    the only place that decides. The pointer never crosses accounts:
+    the only place that decides. The planned purchases follow the same pointer
+    (plans.purchase_scope(): a profile has its own purchases, the account has
+    its own). The pointer never crosses accounts:
     plans.copy_plan() drops it when the copy changes owner, so the portability
     argument above still holds.
 

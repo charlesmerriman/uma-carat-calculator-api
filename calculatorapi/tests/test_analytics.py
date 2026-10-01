@@ -16,14 +16,19 @@ from calculatorapi.visits import (
     record_visit,
 )
 from calculatorapi.models import (
+    AnniversaryEventProduct,
     CustomUser,
     ClubRank,
+    IncomeProfile,
     Plan,
+    Uma,
     UserPlannedBanner,
+    UserPlannedPurchase,
     DailyVisit, MonthlyVisit, VisitorHash,
 )
 from calculatorapi.tests.base import CalculatorTestCase, PLAIN_TEST_STORAGES
 from calculatorapi.tests.factories import (
+    make_anniversary_event,
     make_user,
     make_timeline,
     make_uma_banner,
@@ -47,6 +52,8 @@ class AnalyticsReportEmptyTests(CalculatorTestCase):
             self.assertEqual(resource['avg'], 0)
             self.assertEqual(resource['median'], 0)
             self.assertEqual(resource['excluded'], 0)
+        self.assertEqual(report['selector_purchases'], [])
+        self.assertEqual(report['any_selector']['count'], 0)
         self.assertEqual(report['popular_uma_banners'], [])
         self.assertEqual(report['popular_support_banners'], [])
 
@@ -177,6 +184,84 @@ class AnalyticsReportScenarioTests(CalculatorTestCase):
         self.assertEqual(only['name'], 'Support Y')
         self.assertEqual(only['planners'], 1)
         self.assertEqual(only['total_pulls'], 5)
+
+
+class AnalyticsSelectorPurchaseTests(CalculatorTestCase):
+    """The campaign selector table under Paid products.
+
+    The scenario:
+      - picker:  plans the uma selector with a card picked, and the support
+                 selector without one
+      - twice:   plans the uma selector on the account AND on an income
+                 profile, neither picked -- one person, not two
+      - packer:  plans only the carat pack -- not a selector buyer
+      - lurker:  nothing at all
+      - staff:   plans the uma selector -- invisible
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        make_anniversary_event(name='1st Anniversary', products=[
+            {'name': 'Carat Pack', 'product_type': 'carat_pack'},
+            {'name': 'Uma Selector', 'product_type': 'uma_selector', 'order': 1},
+            {'name': 'Support Selector', 'product_type': 'support_selector', 'order': 2},
+            {'name': 'Unwanted Selector', 'product_type': 'uma_selector', 'order': 3},
+        ])
+        products = {p.name: p for p in AnniversaryEventProduct.objects.all()}
+        uma = Uma.objects.create(name='Picked Uma')
+
+        picker = CustomUser.objects.create_user(username='picker', password='x')
+        twice = CustomUser.objects.create_user(username='twice', password='x')
+        packer = CustomUser.objects.create_user(username='packer', password='x')
+        CustomUser.objects.create_user(username='lurker', password='x')
+        staff = CustomUser.objects.create_user(
+            username='staff', password='x', is_staff=True)
+
+        UserPlannedPurchase.objects.create(
+            user=picker, product=products['Uma Selector'], target_uma=uma)
+        UserPlannedPurchase.objects.create(
+            user=picker, product=products['Support Selector'])
+        UserPlannedPurchase.objects.create(
+            user=twice, product=products['Uma Selector'])
+        UserPlannedPurchase.objects.create(
+            user=twice, product=products['Uma Selector'],
+            income_profile=IncomeProfile.objects.create(user=twice))
+        UserPlannedPurchase.objects.create(
+            user=packer, product=products['Carat Pack'])
+        UserPlannedPurchase.objects.create(
+            user=staff, product=products['Uma Selector'], target_uma=uma)
+
+        cls.report = build_analytics_report()
+        cls.rows = {row['label']: row for row in cls.report['selector_purchases']}
+
+    def test_lists_selectors_only_in_product_order(self):
+        self.assertEqual(
+            [row['label'] for row in self.report['selector_purchases']],
+            ['Uma Selector', 'Support Selector', 'Unwanted Selector'],
+        )
+        self.assertEqual(self.rows['Uma Selector']['campaign'], '1st Anniversary')
+
+    def test_buyers_are_distinct_people_and_staff_free(self):
+        # picker + twice; twice's two rows are one person, staff ignored
+        uma = self.rows['Uma Selector']
+        self.assertEqual(uma['count'], 2)
+        self.assertEqual(uma['pct_of_total'], 50.0)
+        # engaged = picker, twice, packer (a planned purchase counts)
+        self.assertEqual(self.report['engaged_users'], 3)
+        self.assertEqual(uma['pct_of_engaged'], 66.7)
+
+    def test_picked_counts_only_buyers_with_a_card_chosen(self):
+        self.assertEqual(self.rows['Uma Selector']['picked'], 1)
+        self.assertEqual(self.rows['Support Selector']['count'], 1)
+        self.assertEqual(self.rows['Support Selector']['picked'], 0)
+
+    def test_a_selector_nobody_plans_is_listed_at_zero(self):
+        self.assertEqual(self.rows['Unwanted Selector']['count'], 0)
+
+    def test_any_selector_counts_each_person_once(self):
+        # picker buys two selectors but is one person; packer is not a buyer
+        self.assertEqual(self.report['any_selector']['count'], 2)
+        self.assertEqual(self.report['any_selector']['pct_of_total'], 50.0)
 
 
 class AnalyticsOutlierTests(CalculatorTestCase):
@@ -329,6 +414,7 @@ class AnalyticsDashboardViewTests(CalculatorTestCase):
         self.assertIn('attachment; filename="analytics-', res['Content-Disposition'])
         body = res.content.decode()
         self.assertIn('Paid Products', body)
+        self.assertIn('Campaign Selectors', body)
         self.assertIn('Popular Uma Banners', body)
 
     def test_csv_survives_a_planned_banner_with_no_confirmed_dates(self):

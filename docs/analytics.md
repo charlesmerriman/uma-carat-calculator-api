@@ -62,7 +62,7 @@ The dashboard therefore reports two denominators:
 - **Total users** — every non-staff account.
 - **Engaged users** — accounts that changed at least one calculator setting
   (a rank, a resource amount, a paid-product toggle) **or** planned at least
-  one banner.
+  one banner or one campaign purchase.
 
 Percentages are shown against both. "% of engaged" is usually the more honest
 answer to "what share of our *actual* users do X?".
@@ -97,6 +97,21 @@ a visitor blocks the request.
 Adoption of the two purchasable income sources — **Daily Carat Pack**
 (`daily_carat`) and **Training Pass** (`training_pass`). A user "has" the
 product if the toggle is on in their income settings right now.
+
+Below those, **Campaign selectors** lists every selector product a campaign
+sells (Uma and Support), with how many people plan to buy it:
+
+- **Users** — distinct people with the selector in their planned purchases.
+  Someone who plans the same selector for their own account and for an income
+  profile is counted once.
+- **Card picked** — how many of those have chosen the card on the Selectors
+  page. A selector with no pick funds nothing in their projection, so the gap
+  between the two columns is people who have not decided yet.
+- **Any selector** — people planning at least one selector. It is not the sum
+  of the rows above, because someone buying two selectors appears in both.
+
+This is what people *plan* to buy in the calculator, not a record of real
+purchases. Carat packs are not listed.
 
 ### Rank distributions
 

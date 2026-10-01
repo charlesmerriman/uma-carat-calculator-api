@@ -95,6 +95,20 @@ def _csv_response(report):
                          product["pct_of_total"], product["pct_of_engaged"]])
     writer.writerow([])
 
+    writer.writerow(["Campaign Selectors"])
+    writer.writerow(["Campaign", "Selector", "Users", "Card picked",
+                     "% of total", "% of engaged"])
+    for selector in report["selector_purchases"]:
+        writer.writerow([selector["campaign"], selector["label"],
+                         selector["count"], selector["picked"],
+                         selector["pct_of_total"], selector["pct_of_engaged"]])
+    # Not a sum of the rows above: someone buying two selectors is in both.
+    any_selector = report["any_selector"]
+    writer.writerow(["", "Any selector", any_selector["count"], "",
+                     any_selector["pct_of_total"],
+                     any_selector["pct_of_engaged"]])
+    writer.writerow([])
+
     for distribution in report["rank_distributions"]:
         writer.writerow([f"Rank Distribution — {distribution['label']}"])
         writer.writerow(["Rank", "Users", "% of total"])

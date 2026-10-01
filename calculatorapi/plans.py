@@ -19,6 +19,7 @@ from calculatorapi.models import (
     PLAN_CAP,
     Plan,
     UserPlannedBanner,
+    UserPlannedPurchase,
 )
 
 
@@ -115,6 +116,20 @@ def stats_target(plan):
     return plan.income_profile or plan.user
 
 
+def purchase_scope(plan):
+    """WHOSE PURCHASES a plan sees: the filter (and the save kwargs) that
+    narrows UserPlannedPurchase to the rows of the stats block this plan reads.
+    `income_profile` is None for a plan on the account's own stats, which
+    Django filters as IS NULL, so the account's purchases and each profile's
+    are disjoint sets under one owner. The companion of stats_target(): a
+    plan's purchases follow its stats, never its rows, and this is the only
+    place that decides, so a plan can never read one block's purchases and
+    write another's. Every read and reconcile of `user_planned_purchase_data`
+    goes through here.
+    """
+    return {"user": plan.user, "income_profile": plan.income_profile}
+
+
 def attach_income_profile(plan):
     """Give `plan` its own stats: a new IncomeProfile seeded from whatever the
     plan reads today, then pointed at. No-op if it already has one.
@@ -124,20 +139,43 @@ def attach_income_profile(plan):
     the numbers that differ, instead of re-entering ranks and toggles from
     scratch. GameStats.field_names() drives the copy, so a field added to the
     stats block is copied without anyone remembering this function exists.
+
+    The planned purchases are copied for the same reason: they belong to the
+    stats block (models/user_planned_purchase.py), and turning the toggle on
+    must not change what is on screen. Without the copy the Selectors page
+    would empty and the projection would move the moment it was flipped.
     """
     if plan.income_profile_id is not None:
         return plan
     source = stats_target(plan)
     values = {name: getattr(source, name) for name in GameStats.field_names()}
+    # Read BEFORE the pointer moves: the scope is the block the plan reads
+    # today, and after the attach it would be the new, empty profile.
+    purchases = list(UserPlannedPurchase.objects.filter(**purchase_scope(plan)))
     with transaction.atomic():
-        plan.income_profile = IncomeProfile.objects.create(user=plan.user, **values)
+        profile = IncomeProfile.objects.create(user=plan.user, **values)
+        UserPlannedPurchase.objects.bulk_create(
+            [
+                UserPlannedPurchase(
+                    user=plan.user,
+                    income_profile=profile,
+                    product_id=row.product_id,
+                    quantity=row.quantity,
+                    target_uma_id=row.target_uma_id,
+                    target_support_id=row.target_support_id,
+                )
+                for row in purchases
+            ]
+        )
+        plan.income_profile = profile
         plan.save(update_fields=["income_profile", "updated_at"])
     return plan
 
 
 def detach_income_profile(plan):
     """Send `plan` back to its owner's own stats. The profile is deleted only
-    if no other plan still points at it (a Duplicate shares the pointer)."""
+    if no other plan still points at it (a Duplicate shares the pointer), and
+    its purchases go with it (CASCADE, see models/user_planned_purchase.py)."""
     profile = plan.income_profile
     if profile is None:
         return plan

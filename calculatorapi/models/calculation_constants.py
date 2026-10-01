@@ -176,11 +176,29 @@ class CalculationConstants(models.Model):
     )
     monthly_shop_uma_tickets = models.IntegerField(
         default=4, validators=[MinValueValidator(0)],
-        help_text="Uma tickets in the monthly shop bundle. Off by default per user.",
+        help_text=(
+            "Uma tickets a player is ASSUMED to buy from the shop each month, "
+            "until they set their own count. Matches the source sheet."
+        ),
     )
     monthly_shop_support_tickets = models.IntegerField(
         default=4, validators=[MinValueValidator(0)],
-        help_text="Support tickets in the monthly shop bundle.",
+        help_text=(
+            "Support tickets a player is assumed to buy from the shop each "
+            "month, until they set their own count."
+        ),
+    )
+    # The two above are the DEFAULT purchase; these are the most the shop
+    # sells. Separate numbers on purpose: raising the cap lets a player who
+    # buys more say so without moving the projection of everyone who never
+    # touched the setting.
+    monthly_shop_uma_tickets_max = models.IntegerField(
+        default=9, validators=[MinValueValidator(0)],
+        help_text="Most uma tickets the shop sells in a month. Caps a player's own count.",
+    )
+    monthly_shop_support_tickets_max = models.IntegerField(
+        default=9, validators=[MinValueValidator(0)],
+        help_text="Most support tickets the shop sells in a month. Caps a player's own count.",
     )
     monthly_shop_restock_day = models.IntegerField(
         default=2, validators=[MinValueValidator(1), MaxValueValidator(28)],

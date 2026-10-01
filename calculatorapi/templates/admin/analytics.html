@@ -132,6 +132,39 @@ light/dark theme unfold renders in.
       {% endfor %}
     </tbody>
   </table>
+
+  <h3>Campaign selectors</h3>
+  {% if report.selector_purchases %}
+  <table>
+    <thead>
+      <tr>
+        <th>Campaign</th><th>Selector</th><th>Users</th>
+        <th>Card picked</th><th>% of total</th><th>% of engaged</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for selector in report.selector_purchases %}
+      <tr>
+        <td>{{ selector.campaign }}</td>
+        <td>{{ selector.label }}</td>
+        <td>{{ selector.count }}</td>
+        <td>{{ selector.picked }}</td>
+        <td>{{ selector.pct_of_total }}%</td>
+        <td>{{ selector.pct_of_engaged }}%</td>
+      </tr>
+      {% endfor %}
+      <tr>
+        <td colspan="2"><strong>Any selector</strong></td>
+        <td>{{ report.any_selector.count }}</td>
+        <td></td>
+        <td>{{ report.any_selector.pct_of_total }}%</td>
+        <td>{{ report.any_selector.pct_of_engaged }}%</td>
+      </tr>
+    </tbody>
+  </table>
+  {% else %}
+  <p>No selector products exist yet.</p>
+  {% endif %}
 </div>
 
 {% for distribution in report.rank_distributions %}

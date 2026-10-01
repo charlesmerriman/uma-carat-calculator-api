@@ -55,8 +55,8 @@ from calculatorapi.views.user_step_up_selection import UserStepUpSelectionSerial
 from calculatorapi.views.plan import PlanSerializer
 
 
-def _replace_user_rows(rows, *, model, serializer_class, user, missing_message,
-                       context=None, plan=None):
+def _replace_user_rows(rows, *, model, serializer_class, scope, missing_message,
+                       context=None):
     # pylint: disable=too-many-arguments
     # Every one after `rows` is keyword-only and names a distinct part of the
     # contract below; bundling them into a config object would hide which
@@ -68,16 +68,21 @@ def _replace_user_rows(rows, *, model, serializer_class, user, missing_message,
       * key absent from the body (rows is None) -> leave the collection alone
       * []                                      -> delete every row
       * row carrying an id                      -> partial update, 404 if the
-                                                   id isn't this user's
-      * row without an id                       -> create, owned by this user
+                                                   id isn't inside `scope`
+      * row without an id                       -> create, inside `scope`
 
-    `plan` narrows the collection from "this user's rows" to "this PLAN's
-    rows". Only planned banners pass it; purchases and step-up selections
-    belong to the account and leave it None. It is not optional in spirit for
-    banners: the delete below removes every row the body did not name, so
-    reconciling plan A's body against ALL of the user's rows would wipe plans
-    B through E. The caller resolves it through plans.get_owned_plan(), so a
-    plan that reaches here is already known to be this user's.
+    `scope` is the filter that says WHICH rows this body owns, and always
+    carries the user. It is one dict for the delete, the lookup and the save,
+    so the three can never disagree. Each collection narrows differently:
+    banners to the named plan (`plan`), purchases to the stats block that
+    plan reads (`income_profile`, None for the account's own; see
+    plans.purchase_scope), step-up selections to the account alone. The
+    narrowing is not optional in spirit: the delete below removes every row
+    the body did not name, so reconciling plan A's body against ALL of the
+    user's banner rows would wipe plans B through E, and reconciling one
+    profile's purchases against the account's would do the same. The caller
+    resolves the plan through plans.get_owned_plan(), so a scope that reaches
+    here is already known to be this user's.
 
     `context` is handed to every row's serializer. Collections that validate a
     row against something outside it (step-up selections against the JP cutoff,
@@ -97,12 +102,6 @@ def _replace_user_rows(rows, *, model, serializer_class, user, missing_message,
     """
     if rows is None:
         return None
-
-    # One scope for the delete, the lookup and the save, so the three can
-    # never disagree about which rows this body is allowed to touch.
-    # TRANSITIONAL: a planned banner still carries `user` beside `plan` until
-    # release 2 drops the column -- see models/user_planned_banner.py.
-    scope = {"user": user} if plan is None else {"user": user, "plan": plan}
 
     incoming_ids = [row["id"] for row in rows if "id" in row]
     model.objects.filter(**scope).exclude(id__in=incoming_ids).delete()
@@ -179,7 +178,7 @@ def _stored_selection_pairs(user):
     return pairs
 
 
-def _build_user_context():
+def build_user_context():
     """The three lookups the user-scoped collections need, and nothing else.
 
     A signed-in request still has to order its planned banners by resolved
@@ -240,31 +239,43 @@ def serialize_planned_banners(plan, *, emap, card_context):
     ).data
 
 
-def _build_user_payload(user, *, emap, anniversary_emap, card_context):
-    """The user-owned half of the response, serialized, for merging over the
-    cached guest payload. Every key here MUST also appear in
-    _build_public_payload()'s response dict with its guest value, or a signed-in
-    response and a guest one would carry different keys.
+def serialize_planned_purchases(scope, *, anniversary_emap):
+    """One stats block's planned purchases, date-sorted and serialized.
 
-    Planned banners are the ACTIVE PLAN's, and so are the stats: a plan reads
-    either the account's own or its income profile's (plans.stats_target).
-    Purchases and step-up selections belong to the account and are the same
-    whichever plan is open -- see models/plan.py for why the line falls there.
+    `scope` is plans.purchase_scope(plan). Shared by GET /calculator-data (the
+    active plan's block) and GET /plans/<id> (the plan being switched to), so
+    a switch delivers the purchases with the stats and the rows, and the
+    client stores all three with the same code.
     """
-    # Creates the account's first plan if it has none, so everything below can
-    # assume one exists. A write on a GET, deliberately: see get_active_plan.
-    active_plan = plans.get_active_plan(user)
-
     # Ordered by their campaign's resolved start so the planner renders
     # chronologically without re-deriving dates client-side.
     planned_purchases = sorted(
-        UserPlannedPurchase.objects.filter(user=user).select_related(
+        UserPlannedPurchase.objects.filter(**scope).select_related(
             "product__anniversary_event"
         ),
         key=lambda pp: effective_sort_key(
             anniversary_emap.get(pp.product.anniversary_event_id)
         ),
     )
+    return UserPlannedPurchaseSerializer(planned_purchases, many=True).data
+
+
+def _build_user_payload(user, *, emap, anniversary_emap, card_context):
+    """The user-owned half of the response, serialized, for merging over the
+    cached guest payload. Every key here MUST also appear in
+    _build_public_payload()'s response dict with its guest value, or a signed-in
+    response and a guest one would carry different keys.
+
+    Planned banners are the ACTIVE PLAN's, and so are the stats and the
+    purchases: a plan reads either the account's own or its income profile's
+    (plans.stats_target, plans.purchase_scope). Step-up selections belong to
+    the account and are the same whichever plan is open -- see models/plan.py
+    for why the line falls there.
+    """
+    # Creates the account's first plan if it has none, so everything below can
+    # assume one exists. A write on a GET, deliberately: see get_active_plan.
+    active_plan = plans.get_active_plan(user)
+
     # Ordered by the model's own Meta.ordering (banner, then slot) so the client
     # can render the ten slots without re-sorting. Cards are joined for nothing
     # here -- only ids are serialized -- so this stays a single query.
@@ -279,9 +290,9 @@ def _build_user_payload(user, *, emap, anniversary_emap, card_context):
         "user_planned_banner_data": serialize_planned_banners(
             active_plan, emap=emap, card_context=card_context
         ),
-        "user_planned_purchase_data": UserPlannedPurchaseSerializer(
-            planned_purchases, many=True
-        ).data,
+        "user_planned_purchase_data": serialize_planned_purchases(
+            plans.purchase_scope(active_plan), anniversary_emap=anniversary_emap
+        ),
         "user_step_up_selection_data": UserStepUpSelectionSerializer(
             step_up_selections, many=True
         ).data,
@@ -321,7 +332,7 @@ class CalculatorViewSet(ViewSet):
             payload = json.loads(cached_json)
 
         if request.user.is_authenticated:
-            emap, anniversary_emap, card_context = _build_user_context()
+            emap, anniversary_emap, card_context = build_user_context()
             payload.update(
                 _build_user_payload(
                     request.user,
@@ -613,28 +624,31 @@ class CalculatorViewSet(ViewSet):
                 "first_jp_dates": build_first_jp_date_maps(),
             }
 
-        # Only banners are scoped to the plan. Purchases and selections are the
-        # account's, the same under every plan, so they reconcile against all
-        # of the user's rows exactly as before.
+        # Banners are scoped to the plan; purchases to the stats block the
+        # plan reads (the account's own, or its profile's); step-up selections
+        # are the account's, the same under every plan.
+        # TRANSITIONAL: a planned banner still carries `user` beside `plan`
+        # until release 2 drops the column -- see models/user_planned_banner.py.
         collections = (
             ("user_planned_banner_data", UserPlannedBanner,
-             UserPlannedBannerSerializer, "Banner not found", None, plan),
+             UserPlannedBannerSerializer, "Banner not found", None,
+             {"user": user, "plan": plan}),
             ("user_planned_purchase_data", UserPlannedPurchase,
-             UserPlannedPurchaseSerializer, "Purchase not found", None, None),
+             UserPlannedPurchaseSerializer, "Purchase not found", None,
+             plans.purchase_scope(plan)),
             ("user_step_up_selection_data", UserStepUpSelection,
              UserStepUpSelectionSerializer, "Step-up selection not found",
-             selection_context, None),
+             selection_context, {"user": user}),
         )
-        for key, model, serializer_class, missing_message, context, scope_plan \
+        for key, model, serializer_class, missing_message, context, scope \
                 in collections:
             error = _replace_user_rows(
                 request.data.get(key),
                 model=model,
                 serializer_class=serializer_class,
-                user=user,
+                scope=scope,
                 missing_message=missing_message,
                 context=context,
-                plan=scope_plan,
             )
             if error is not None:
                 return error

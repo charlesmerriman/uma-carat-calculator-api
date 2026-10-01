@@ -32,6 +32,23 @@
 # module changed. Newest entry first is conventional here but not required — the
 # page sorts by date.
 
+- key: guest-plans-and-spare-tickets
+  date: 2026-10-01
+  title: "Plans without an account, spare tickets, and more themes"
+  version: "v1.9"
+  changes:
+    - added: "Your plan is saved on this device now, even without an account. Reload the page or come back tomorrow and it is still there."
+    - added: "Sign in later and the plan on your device is added to your account."
+    - added: "Clear plan and start over, in the settings menu, for guests who want an empty planner."
+    - added: "Spend Tickets on Banners, a new switch in settings. Turn it off to keep your tickets as spares. The planner then pays for pulls with carats only and your ticket balance carries forward."
+    - added: "You can set how many shop tickets you buy each month, uma and support separately. It used to assume 4 of each."
+    - added: "Five more light themes: Blue, Green, Red, Purple and Pearl."
+    - changed: "A plan with separate resources keeps its own purchases too. The Selectors page tells you when the purchases on screen belong to that plan only."
+    - changed: "The quick buttons on a pull count fit the row now. Uma rows step by half a pity, support rows by a full one, and a step-up row gets Limit, which fills in every step the banner sells."
+    - changed: "Copies and discounted pack counts have quick buttons as well."
+    - changed: "When an uma banner and its support banner start on different days, the Timeline shows them as one card and says which side starts later."
+    - fixed: "A banner row shows 0 tickets when you are short, never a negative number."
+
 - key: cookie-prompt
   date: 2026-09-22
   title: "A cookie prompt, a clearer privacy policy, and feedback on Discord"
