@@ -143,19 +143,39 @@ and an insecure development secret key. Sign-in additionally needs the OAuth cli
 for the provider you test with, and `FRONTEND_URL` must produce the exact redirect URI
 registered in that provider's console.
 
-### A fresh database starts empty
+### Local content
 
-There is no seeding step, on purpose. Production content is authored in the admin, and
-`loaddata` upserts by primary key, so a seeding script is one stray run (or one wrong
-`DATABASE_URL`) away from overwriting live edits with a stale snapshot. The JSON in
-`calculatorapi/fixtures/` is a one-way export that nothing loads.
+A fresh database starts empty. Nothing ever loads content INTO production: it is authored
+in the admin, and `loaddata` upserts by primary key, so a seeding script is one stray run
+(or one wrong `DATABASE_URL`) away from overwriting live edits with a stale snapshot. The
+JSON in `calculatorapi/fixtures/` is a one-way export that nothing loads.
 
-To work against real content, run the frontend against the production API with
-`npm run dev:live`
+Content does travel the other way, from production down to a local SQLite database:
+
+```bash
+python manage.py migrate
+python manage.py pull_prod_content      # needs doctl signed in, and DO_SPACES_* in .env
+python manage.py createsuperuser        # accounts are never copied, so make your own
+```
+
+`pull_prod_content` dumps the content tables in the production container (a read), carries
+the file out through the media Space as a private object it deletes afterwards, and replaces
+the local content tables with it. Run it again whenever local content has fallen behind.
+It copies only the tables listed in `calculatorapi/content_snapshot.py`: no accounts, plans,
+supporters, credentials or traffic counts. Both it and `load_content_snapshot` refuse any
+database that is not SQLite.
+
+A refresh keeps local accounts and their rows. If one of those rows points at content that
+production has since deleted, the load stops and changes nothing; delete the row it names,
+or start over by moving `db.sqlite3` aside and running the three commands above.
+
+Local `.env` points at production's media Space, which is why pulled rows show their images.
+It also means a file uploaded through the local admin lands in the production bucket.
+
+For a quick look at real content with no local database at all, run the frontend against
+the production API with `npm run dev:live`
 ([details](https://github.com/charlesmerriman/uma-carat-calculator-web#choosing-a-backend)).
 Sign-in there is real: signed in, a save writes to the live database under your own account.
-Use your local `/admin` when you specifically need local rows, such as when exercising a
-migration.
 
 ## Tests and linting
 
@@ -176,6 +196,8 @@ result depends on which tests ran before it.
 |---|---|
 | `sync_changelog` | Writes `calculatorapi/data/changelog.yaml` into the changelog table. Runs on every deploy; use `--dry-run --strict` locally to validate the file |
 | `create_content_editor_group` | Creates or refreshes the "Content editors" permission group. Runs on every deploy after `migrate`; locally run it by hand, after `migrate` |
+| `pull_prod_content` | Local only. Replaces the local content tables with a fresh snapshot of production's; see "Local content" |
+| `load_content_snapshot` | Local only. Loads a snapshot file kept with `pull_prod_content --keep` |
 | `seed_anniversary_campaigns` | Creates or refreshes the anniversary campaigns from the source sheet. Idempotent |
 | `sync_patreon_supporters` | Syncs supporters from the Patreon API; the daily Action reaches the same reconcile over HTTP |
 | `set_patreon_tier_order` | Sets supporter tier order from `NAME=ORDER` pairs |
