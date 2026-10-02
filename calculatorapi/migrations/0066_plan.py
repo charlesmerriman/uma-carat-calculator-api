@@ -3,7 +3,32 @@
 import django.db.models.deletion
 from django.conf import settings
 from django.db import migrations, models
+import secrets
+import string
 
+from calculatorapi.public_ids import generate_public_id as default_public_id
+
+PUBLIC_ID_LENGTH = 8
+PUBLIC_ID_ALPHABET = string.ascii_letters + string.digits
+
+def generate_public_id(existing):
+    public_id = "".join(
+        secrets.choice(PUBLIC_ID_ALPHABET) for _ in range(PUBLIC_ID_LENGTH)
+    )
+    while public_id in existing:
+        public_id = "".join(
+            secrets.choice(PUBLIC_ID_ALPHABET) for _ in range(PUBLIC_ID_LENGTH)
+        )
+    return public_id
+
+
+def replace_public_ids(apps, schema_editor):
+    Plan = apps.get_model("calculatorapi", "Plan")
+    existing = set()
+    for plan in Plan.objects.all().iterator():
+        plan.public_id = generate_public_id(existing)
+        existing.add(plan.public_id)
+        plan.save(update_fields=["public_id"])
 
 class Migration(migrations.Migration):
 
@@ -34,5 +59,21 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name='plan',
             constraint=models.UniqueConstraint(condition=models.Q(('is_active', True)), fields=('user',), name='one_active_plan_per_user'),
+        ),
+        migrations.AddField(
+            model_name="plan",
+            name="public_id",
+            field=models.CharField(null=True, max_length=8, editable=False),
+        ),
+        migrations.RunPython(replace_public_ids, migrations.RunPython.noop),
+        migrations.AlterField(
+            model_name="plan",
+            name="public_id",
+            field=models.CharField(
+                default=default_public_id,
+                editable=False,
+                max_length=8,
+                unique=True,
+            ),
         ),
     ]

@@ -3,6 +3,7 @@ from django.db.models import Q
 
 from .custom_user import CustomUser
 from .income_profile import IncomeProfile
+from ..public_ids import generate_public_id
 
 # The most plans one account can hold. A flat number for everyone (decided
 # 2026-09-17), not a supporter ladder. Enforced only when a plan is CREATED
@@ -71,6 +72,11 @@ class Plan(models.Model):
 
     user = models.ForeignKey(
         CustomUser, on_delete=models.CASCADE, related_name="plans"
+    )
+    # Stable identifier for public URLs. The service layer supplies this
+    # explicitly on every plan creation; the default protects direct ORM use.
+    public_id = models.CharField(
+        max_length=8, default=generate_public_id, unique=True, editable=False
     )
     # Private to its owner today. If plans are ever published, the public title
     # should be asked for at publish time rather than reusing this.
