@@ -101,6 +101,36 @@ class CalculatorPatchTests(CalculatorTestCase):
         self.assertFalse(self.user.discounted_paid_pulls)
         self.assertFalse(self.user.full_price_paid_pulls)
 
+    def test_patch_stats_updates_ticket_settings(self):
+        # Defaults first: tickets are spent, and NULL counts mean "the default
+        # shop purchase" (see GameStats), so an untouched account changes nothing.
+        self.assertTrue(self.user.spend_tickets_on_banners)
+        self.assertIsNone(self.user.shop_uma_tickets_bought)
+        self.assertIsNone(self.user.shop_support_tickets_bought)
+        res = self.client.patch(
+            '/calculator-data',
+            {'user_stats_data': {
+                'spend_tickets_on_banners': False,
+                'shop_uma_tickets_bought': 2,
+                'shop_support_tickets_bought': 0,
+            }},
+            format='json',
+        )
+        self.assertEqual(res.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertFalse(self.user.spend_tickets_on_banners)
+        self.assertEqual(self.user.shop_uma_tickets_bought, 2)
+        # 0 is a real answer ("I buy none of these"), distinct from NULL.
+        self.assertEqual(self.user.shop_support_tickets_bought, 0)
+
+    def test_patch_rejects_negative_shop_ticket_count(self):
+        res = self.client.patch(
+            '/calculator-data',
+            {'user_stats_data': {'shop_uma_tickets_bought': -1}},
+            format='json',
+        )
+        self.assertEqual(res.status_code, 400)
+
     def test_patch_invalid_stats_returns_400(self):
         res = self.client.patch(
             '/calculator-data',

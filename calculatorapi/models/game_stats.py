@@ -55,6 +55,26 @@ class GameStats(models.Model):
     # projection simply credits those tickets monthly at no carat cost. On by
     # default alongside the other three projection toggles.
     monthly_shop_tickets = models.BooleanField(default=True)
+    # How many of each the player actually buys from the shop each month, for
+    # someone who buys fewer or more than the assumed amount. NULL means "the
+    # default", which is why these are nullable instead of defaulting to 4: the
+    # default is an admin-editable constant
+    # (CalculationConstants.monthly_shop_*_tickets), and a stored 4 would stop
+    # following it the day an editor changes it. The ceiling is its sibling
+    # constant, monthly_shop_*_tickets_max.
+    #
+    # Deliberately NOT validated against that ceiling here. The client clamps
+    # to it when it reads these (frontend shopTicketsPerMonth), so a count
+    # stored before an editor lowers the cap keeps saving instead of 400ing a
+    # PATCH that carries the person's whole stats block with it.
+    # They only apply while monthly_shop_tickets above is on.
+    shop_uma_tickets_bought = models.PositiveSmallIntegerField(null=True, blank=True)
+    shop_support_tickets_bought = models.PositiveSmallIntegerField(null=True, blank=True)
+    # Spend gacha tickets on planned banners: when off, tickets are never used
+    # to pay for a planned pull. They keep accumulating as a reserve (for
+    # banners outside the plan) and drop out of "Max Pulls". On by default,
+    # which is the behavior every plan had before this toggle existed.
+    spend_tickets_on_banners = models.BooleanField(default=True)
     # Discounted paid pulls: a once-per-day option to spend 50 (instead of 150)
     # PAID carats on a single pull. Only usable while paid carats remain.
     discounted_paid_pulls = models.BooleanField(default=True)

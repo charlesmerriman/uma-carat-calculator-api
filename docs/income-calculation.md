@@ -102,6 +102,17 @@ Credited on the **2nd of each month** (`MONTHLY_SHOP_TICKET_DAY`) via
 `MONTHLY_SHOP_UMA_TICKETS` / `MONTHLY_SHOP_SUPPORT_TICKETS` in
 `frontend/src/constants/gameConstants.ts`.
 
+**Setting your own count.** The 4 + 4 above is the DEFAULT purchase
+(`CalculationConstants.monthly_shop_uma_tickets` / `_support_tickets`, the sheet's figure). The
+shop sells up to **9 of each** (`monthly_shop_uma_tickets_max` / `_support_tickets_max`), and
+`shop_uma_tickets_bought` / `shop_support_tickets_bought` (on `GameStats`, so both the account
+and an `IncomeProfile` carry them) hold a player's own monthly count, from 0 to that cap.
+`NULL` means the default, and the Settings menu stores a count equal to the default as `NULL`
+so it keeps following the default if an editor changes it. The server checks only that the
+count is not negative; the cap is applied where the count is read, by `shopTicketsPerMonth`
+in `frontend/src/utils/cumulativeIncome.ts`, so a count saved before the cap was lowered never
+rejects a save. Both are ignored while the toggle is off.
+
 ---
 
 ## 50-Day Login Bonus (rolling 50-day cycle, always on)
@@ -263,7 +274,10 @@ the Daily Carat Pack's 500-carat purchase bonus every 30 days and the paid Train
 The spend order for a banner's `number_of_pulls`, after subtracting the banner's `free_pulls`,
 is:
 
-1. **Matching tickets** — uma tickets for an uma banner, support tickets for a support banner.
+1. **Matching tickets** *(if `spend_tickets_on_banners` on, default)* — uma tickets for an
+   uma banner, support tickets for a support banner. With the toggle off the step is skipped:
+   tickets pay for nothing, carry forward untouched as a reserve, and are left out of
+   "Max Pulls" and its breakdown.
 2. **Discounted paid pulls** *(if `discounted_paid_pulls` on)* — a once-per-day option to
    spend **50 paid carats** instead of 150 for a single pull. Capped at one pull per day of
    the banner's window and by the paid-carat balance (paid-carats only; the discount stops

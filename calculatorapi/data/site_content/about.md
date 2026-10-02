@@ -24,7 +24,7 @@ Corrections and bug reports do get read and acted on.
 ## What it costs, and what it asks of you
 
 - It is free and always has been. Hosting is paid for by Patreon supporters, and by advertising if and when it runs.
-- No account is needed. The whole calculator works as a guest. Signing in only lets you save a plan and pick it up on another device.
+- No account is needed. The whole calculator works as a guest. Your plan is saved in your browser, and signing in lets you pick it up on another device.
 - If you do sign in, we hold no email address, no real name and no password. The [Privacy Policy](/privacy-policy) lists what is stored, why, and how to delete it.
 
 ## Not affiliated with Cygames
