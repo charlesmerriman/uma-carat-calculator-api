@@ -41,7 +41,7 @@ from django.contrib import admin, messages
 from django.contrib.auth.admin import GroupAdmin as BaseGroupAdmin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import Group
-from django.db.models import Count
+from django.db.models import Count, F
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
@@ -699,35 +699,56 @@ class ScenarioAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
 
 
 @admin.register(DailyLegendRaceRelease)
-class DailyLegendRaceReleaseAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
+class DailyLegendRaceReleaseAdmin(ModelAdmin):
     """A batch of umas joining the daily legend races.
 
     Like a scenario, a batch has a start and no end, taken from a banner. It
     also has a day offset, for batches that land a few days after that banner.
     The list shows the banner's confirmed start plus the offset, with no
-    prediction maths (same rule as ScenarioAdmin), and whether the batch shows
-    on the site at all: a batch with no banner is hidden there.
+    prediction maths (same rule as ScenarioAdmin), and how the batch shows on
+    the site: dated, tentative (no banner yet), or not at all (no banner and
+    no umas).
+
+    No image on the form. The model still has the column, but nothing on the
+    site draws it since a batch became a pill on its banner's Timeline card,
+    and an upload box that does nothing is a trap for an editor. To bring it
+    back, add "image" to the first fieldset and the two image mixins
+    (ImagePreviewMixin, SpacesImagePickerMixin) to the bases.
     """
     list_display = (
         "name", "banner_timeline", "offset_days", "confirmed_start_date",
         "uma_count", "on_the_site",
     )
-    ordering = ("-banner_timeline__global_start_date", "name")
+    # Newest batch first, by the banner's JP date. NOT the global date: a
+    # predicted banner has none, and most batches are years out, so sorting on
+    # it left nearly every row tied on NULL and the list fell back to name
+    # order (1.5th, 1st, 2.5th, 2nd...). Every banner has a JP date today and
+    # the two calendars run in the same order. The global date is the second
+    # key only for a banner that might one day have no JP date; the two are
+    # never mixed into one key, because they are years apart. Unlinked batches
+    # go last, stated outright because Postgres and SQLite disagree on where a
+    # descending sort puts NULL.
+    ordering = (
+        F("banner_timeline__jp_start_date").desc(nulls_last=True),
+        F("banner_timeline__global_start_date").desc(nulls_last=True),
+        "name",
+    )
     search_fields = ("name",)
     autocomplete_fields = ("banner_timeline",)
     list_select_related = ("banner_timeline",)
-    readonly_fields = ("image_preview",)
     inlines = [DailyLegendRaceUmaInline]
     fieldsets = (
-        (None, {"fields": ("name", "image", "image_preview")}),
+        (None, {"fields": ("name",)}),
         ("Date", {
             "fields": ("banner_timeline", "offset_days"),
             "description": (
                 "The batch's date is this banner's start date, plus the offset. "
                 "Pick the banner the batch arrives with, usually the "
-                "anniversary's last part. Leave the banner blank to keep a "
-                "batch off the site until the timeline reaches it. A batch has "
-                "no end date: once umas join the daily races, they stay."
+                "anniversary's last part. If the timeline has no banner for "
+                "the batch yet, leave it blank: the Legend Races tab then "
+                "lists the batch as tentative, with no date, and the Timeline "
+                "leaves it out. A batch has no end date: once umas join the "
+                "daily races, they stay."
             ),
         }),
     )
@@ -746,12 +767,17 @@ class DailyLegendRaceReleaseAdmin(ImagePreviewMixin, SpacesImagePickerMixin, Mod
     def uma_count(self, obj):
         return obj._uma_count  # pylint: disable=protected-access
 
-    @admin.display(description="On the site", boolean=True)
+    @admin.display(description="On the site")
     def on_the_site(self, obj):
-        # The site shows a batch whenever its banner has a date, predicted or
-        # confirmed. Every banner on the timeline has one, so "has a banner"
-        # is the honest yes/no an editor can act on.
-        return obj.banner_timeline_id is not None
+        # Three answers, matching _build_public_payload. A batch with a banner
+        # shows with that banner's date, predicted or confirmed (every banner
+        # on the timeline has one). Without a banner it shows as tentative, as
+        # long as it has umas to show. With neither it is a draft.
+        if obj.banner_timeline_id is not None:
+            return "Yes, with a date"
+        if obj._uma_count:  # pylint: disable=protected-access
+            return "Tentative, no date"
+        return "Hidden: no banner or umas"
 
 
 @admin.register(AnniversaryEvent)

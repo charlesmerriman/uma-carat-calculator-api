@@ -50,7 +50,12 @@ Champions Meeting → recommended umas), autocomplete pickers, image previews, a
   (autocomplete). An uma already in another release is refused as a form error by the
   junction's `UniqueConstraint`. The list shows the banner's **confirmed** start plus
   `offset_days` (no prediction maths, same rule as `ScenarioAdmin`), an uma count
-  (annotated, one query), and **On the site**: a release with no banner is hidden.
+  (annotated, one query), and **On the site**, one of three: "Yes, with a date"
+  (linked), "Tentative, no date" (no banner, has umas) or "Hidden: no banner or umas"
+  (a draft). The same three cases `_build_public_payload` applies.
+  The list runs newest first by the banner's **JP** start (a predicted banner has no
+  global date, so sorting on that left most rows tied), unlinked releases last. The
+  model's `image` is not on the form: nothing on the site draws it.
 - `BannerStepUp` is registered top-level, not as an inline. It hangs off **two** parents
   (a `BannerTimeline` and an `AnniversaryEvent`) that have to agree, so an inline under
   either one would hide half of what the editor has to get right. `clean()` rejects a

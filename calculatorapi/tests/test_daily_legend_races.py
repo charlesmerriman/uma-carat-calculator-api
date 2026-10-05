@@ -150,15 +150,51 @@ class DailyLegendRaceApiTests(CalculatorTestCase):
         )
         self.assertEqual(set(umas[0]), {'id', 'name', 'image', 'rarity'})
 
-    def test_releases_sort_by_date_and_undated_ones_go_last(self):
+    def test_releases_sort_by_date(self):
         later = make_timeline(name='Later', global_start_date=_dt(2027, 4, 11))
-        undated = make_daily_legend_race(name='6th Anniversary', banner_timeline=None)
         second = make_daily_legend_race(name='2.5th', banner_timeline=later)
         first = make_daily_legend_race(name='2nd', banner_timeline=self.banner)
 
-        self.assertEqual(
-            [r['id'] for r in self._rows()], [first.id, second.id, undated.id]
+        self.assertEqual([r['id'] for r in self._rows()], [first.id, second.id])
+
+    def test_a_release_with_no_banner_is_sent_undated_as_tentative(self):
+        # Entered before the timeline has a banner for it. The Legend Races
+        # tab lists it as tentative, so it travels, with nothing for a date.
+        tentative = make_daily_legend_race(
+            name='6th Anniversary', banner_timeline=None, umas=[_uma('Duramente')],
         )
+        row = next(r for r in self._rows() if r['id'] == tentative.id)
+
+        self.assertIsNone(row['start_date'])
+        self.assertIsNone(row['banner_timeline'])
+        self.assertFalse(row['is_predicted'])
+        self.assertEqual([u['name'] for u in row['umas']], ['Duramente'])
+
+    def test_tentative_releases_go_last_in_the_order_they_were_entered(self):
+        # By name "6.5th" sorts before "6th". Entry order is what an editor
+        # controls, and a banner-less batch has no date to sort on.
+        sixth = make_daily_legend_race(
+            name='6th Anniversary', banner_timeline=None, umas=[_uma('Duramente')],
+        )
+        dated = make_daily_legend_race(name='2nd', banner_timeline=self.banner)
+        six_and_a_half = make_daily_legend_race(
+            name='6.5th Anniversary', banner_timeline=None, umas=[_uma('Durandal')],
+        )
+
+        self.assertEqual(
+            [r['id'] for r in self._rows()],
+            [dated.id, sixth.id, six_and_a_half.id],
+        )
+
+    def test_a_release_with_no_banner_and_no_umas_is_a_draft_and_not_sent(self):
+        # Nothing to show: no date and nobody in it. Left out HERE, not on
+        # the client, because this payload is public.
+        draft = make_daily_legend_race(name='7th Anniversary', banner_timeline=None)
+        self.assertEqual(self._rows(), [])
+
+        # Either half makes it real: an uma (tentative) or a banner (dated).
+        DailyLegendRaceUma.objects.create(release=draft, uma=_uma('Transcend'))
+        self.assertEqual([r['id'] for r in self._rows()], [draft.id])
 
     def test_query_count_does_not_grow_with_releases(self):
         def cold_query_count():
@@ -267,7 +303,10 @@ class DailyLegendRaceAdminTests(CalculatorTestCase):
             name='2nd Anniversary', banner_timeline=banner, offset_days=1,
             umas=[_uma('Hishi Amazon'), _uma('Mejiro Dober')],
         )
-        make_daily_legend_race(name='6th Anniversary', banner_timeline=None)
+        make_daily_legend_race(
+            name='6th Anniversary', banner_timeline=None, umas=[_uma('Duramente')],
+        )
+        make_daily_legend_race(name='7th Anniversary', banner_timeline=None)
 
         res = self.client.get(reverse('admin:calculatorapi_dailylegendracerelease_changelist'))
 
@@ -276,5 +315,36 @@ class DailyLegendRaceAdminTests(CalculatorTestCase):
         rows = {r.name: r for r in res.context['cl'].result_list}
         self.assertEqual(rows['2nd Anniversary']._uma_count, 2)  # pylint: disable=protected-access
         admin_obj = res.context['cl'].model_admin
-        self.assertTrue(admin_obj.on_the_site(rows['2nd Anniversary']))
-        self.assertFalse(admin_obj.on_the_site(rows['6th Anniversary']))
+        # The three states an editor can put a batch in.
+        self.assertEqual(admin_obj.on_the_site(rows['2nd Anniversary']), 'Yes, with a date')
+        self.assertEqual(admin_obj.on_the_site(rows['6th Anniversary']), 'Tentative, no date')
+        self.assertEqual(
+            admin_obj.on_the_site(rows['7th Anniversary']), 'Hidden: no banner or umas'
+        )
+
+    def test_changelist_runs_newest_first_even_when_every_date_is_predicted(self):
+        # No global dates at all, which is most batches: they are years out.
+        # Sorting on the global date left these tied and in name order, where
+        # "2.5th" comes before "2nd".
+        def batch(name, jp_start):
+            banner = make_timeline(name=f'{name} banner', jp_start_date=jp_start)
+            return make_daily_legend_race(name=name, banner_timeline=banner)
+
+        batch('2nd Anniversary', _dt(2023, 3, 20))
+        batch('2.5th Anniversary', _dt(2023, 8, 31))
+        batch('3rd Anniversary', _dt(2024, 3, 21))
+        make_daily_legend_race(name='6th Anniversary', banner_timeline=None)
+
+        res = self.client.get(reverse('admin:calculatorapi_dailylegendracerelease_changelist'))
+
+        self.assertEqual(
+            [r.name for r in res.context['cl'].result_list],
+            ['3rd Anniversary', '2.5th Anniversary', '2nd Anniversary', '6th Anniversary'],
+        )
+
+    def test_the_form_offers_no_image_field(self):
+        # Nothing on the site draws a batch's image. See the admin's docstring.
+        res = self.client.get(reverse('admin:calculatorapi_dailylegendracerelease_add'))
+
+        self.assertEqual(res.status_code, 200)
+        self.assertNotIn('image', res.context['adminform'].form.fields)
