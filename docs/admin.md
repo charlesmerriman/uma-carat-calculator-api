@@ -269,7 +269,7 @@ Full metric definitions: [analytics.md](analytics.md).
 One singleton row holding every tunable number the carat projection uses, at
 **Configuration → Calculation constants** in the sidebar. Grouped into fieldsets
 (daily income, packs & passes, login campaigns & gifts, pull costs & uncap, the
-event carat decay curve, global date prediction, daily legend races); each field's help text names
+event carat decay curve, global date prediction); each field's help text names
 the source spreadsheet cell it corresponds to.
 
 Its admin is deliberately non-standard, because the usual list → add → edit flow

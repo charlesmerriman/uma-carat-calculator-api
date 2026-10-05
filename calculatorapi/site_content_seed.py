@@ -40,7 +40,7 @@ PAGES = {
         "title": "Daily Legend Races",
         "meta_description": (
             "When each batch of umas joins the Uma Musume daily legend races on "
-            "global, and how long grinding one of them takes."
+            "global, and how long grinding Star Pieces for one of them takes."
         ),
     },
 }

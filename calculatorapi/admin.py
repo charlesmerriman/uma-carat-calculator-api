@@ -1273,17 +1273,6 @@ class CalculationConstantsAdmin(ModelAdmin):
             ),
             "fields": ("prediction_factor", "game_event_end_buffer_days"),
         }),
-        ("Daily legend races", {
-            "description": (
-                "The grind numbers on the Legend Races page. They change only "
-                "that page's \"how long to grind\" lines, never anyone's carats."
-            ),
-            "fields": (
-                "daily_legend_race_piece_goal",
-                "daily_legend_race_event_pieces",
-                "daily_legend_race_pieces_per_day",
-            ),
-        }),
     )
 
     def has_add_permission(self, request):

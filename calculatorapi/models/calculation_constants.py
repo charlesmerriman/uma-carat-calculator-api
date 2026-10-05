@@ -1,7 +1,5 @@
 """
-Every tunable number the carat projection uses, in one editable row, plus the
-few the daily legend races tab reads (it has no projection of its own, and a
-second singleton would only add a second admin page for three numbers).
+Every tunable number the carat projection uses, in one editable row.
 
 WHY A MODEL AND NOT A CONSTANTS FILE
 ------------------------------------
@@ -328,28 +326,6 @@ class CalculationConstants(models.Model):
             "to date events and to recover the banner window the decay curve runs "
             "over."
         ),
-    )
-
-    # ── Daily legend races ───────────────────────────────────────────────────
-    # Read by the /app/legend-races tab only. Pieces buy nothing the carat
-    # projection counts, so none of these touch the income engine.
-    daily_legend_race_piece_goal = models.IntegerField(
-        default=150, validators=[MinValueValidator(1)],
-        help_text=(
-            "Pieces a player grinds one uma toward. The page counts the days to "
-            "reach this, from zero and from the event's pieces below."
-        ),
-    )
-    daily_legend_race_event_pieces = models.IntegerField(
-        default=80, validators=[MinValueValidator(0)],
-        help_text=(
-            "Pieces a player got from that uma's original limited Legend Race "
-            "event (about 3 days, 3 races a day), if they played it."
-        ),
-    )
-    daily_legend_race_pieces_per_day = models.IntegerField(
-        default=1, validators=[MinValueValidator(1)],
-        help_text="Pieces one daily legend race gives. One race a day per uma.",
     )
 
     class Meta:

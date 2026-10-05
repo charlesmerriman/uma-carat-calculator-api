@@ -1,1 +1,5 @@
-Once an uma's batch joins the Daily Legend Races, you can race her once a day for pieces, and every uma has her own race, so you can grind several at once. A date marked Estimated comes from the JP schedule and can still move.
+Daily Legend Races reward 1 Star Piece. 1 Legend Race can be completed per day.
+
+The Original Limited Time Legend Races reward ~80 Star Pieces, if completed grinding will take 70 days.
+
+If the Original Legend Race was missed, starting from 0 Star Pieces grinding will take 140 days

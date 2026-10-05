@@ -179,13 +179,6 @@ class DailyLegendRaceApiTests(CalculatorTestCase):
             )
         self.assertEqual(cold_query_count(), one)
 
-    def test_grind_numbers_are_served_with_the_constants(self):
-        constants = self.client.get('/calculator-data').data['calculation_constants']
-
-        self.assertEqual(constants['daily_legend_race_piece_goal'], 150)
-        self.assertEqual(constants['daily_legend_race_event_pieces'], 80)
-        self.assertEqual(constants['daily_legend_race_pieces_per_day'], 1)
-
     def test_an_admin_edit_invalidates_the_cached_payload(self):
         self.assertTrue(public_payload_cache.affects_public_payload(DailyLegendRaceRelease))
         self.assertTrue(public_payload_cache.affects_public_payload(DailyLegendRaceUma))
@@ -195,14 +188,6 @@ class DailyLegendRaceApiTests(CalculatorTestCase):
         DailyLegendRaceUma.objects.create(release=release, uma=_uma('Hishi Amazon'))
 
         self.assertEqual([u['name'] for u in self._rows()[0]['umas']], ['Hishi Amazon'])
-
-    def test_constants_edit_reaches_the_payload(self):
-        constants = CalculationConstants.load()
-        constants.daily_legend_race_piece_goal = 140
-        constants.save()
-
-        data = self.client.get('/calculator-data').data
-        self.assertEqual(data['calculation_constants']['daily_legend_race_piece_goal'], 140)
 
 
 class OneReleasePerUmaTests(CalculatorTestCase):
@@ -242,7 +227,7 @@ class DailyLegendRacesPageSeedTests(CalculatorTestCase):
     def test_the_migration_created_the_page(self):
         page = SitePage.objects.get(slug=SitePage.Slug.DAILY_LEGEND_RACES)
         self.assertEqual(page.title, 'Daily Legend Races')
-        self.assertIn('own race', page.body)
+        self.assertIn('Star Piece', page.body)
 
     def test_seeding_again_leaves_an_edited_page_alone(self):
         SitePage.objects.filter(slug='daily-legend-races').update(body='Edited.\n')

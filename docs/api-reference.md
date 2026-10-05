@@ -1069,10 +1069,6 @@ Two things to know:
 - **`training_pass_start_date` is a plain `YYYY-MM-DD` calendar day**, not a
   datetime.
 
-Three fields are not projection inputs: `daily_legend_race_piece_goal` (150),
-`daily_legend_race_event_pieces` (80) and `daily_legend_race_pieces_per_day` (1)
-feed only the grind lines on `/app/legend-races`.
-
 `id` is deliberately excluded — there is only ever one row.
 
 ### `ChangelogEntry` (from `GET /changelog`)

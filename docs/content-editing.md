@@ -173,13 +173,11 @@ star count.
 early, before the timeline has a banner for it. It appears as soon as you link
 one. The **On the site** column on the list shows which batches are visible.
 
-**The page's intro text** is under **Site content → Pages → Daily Legend
-Races**, edited like the other pages below.
+**The page's text** is under **Site content → Pages → Daily Legend Races**,
+edited like the other pages below.
 
-**The grind numbers** (the goal of 150 pieces, the 80 from an uma's original
-event, and 1 piece per daily race) are on the **Calculation constants** page,
-under **Daily legend races**. That page needs the site owner's account; see
-"One page to leave alone" at the end.
+**The grind guidance** ("Daily Legend Races reward 1 Star Piece...") is part of
+the page's text, so change any number in it right there.
 
 ## Site pages and FAQ
 
