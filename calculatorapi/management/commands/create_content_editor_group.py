@@ -33,6 +33,7 @@ from calculatorapi.models import (
     ClubRank, TeamTrialsRank, ChampionsMeetingRank, LeagueOfHeroesRank,
     AnniversaryEvent, AnniversaryEventBanner, AnniversaryEventProduct,
     Scenario,
+    DailyLegendRaceRelease, DailyLegendRaceUma,
     PatreonTier, PatreonSupporter,
     SitePage, FaqCategory, FaqItem,
 )
@@ -56,6 +57,9 @@ CONTENT_MODELS = [
     # A scenario is content too: an editor names it, points it at its launch
     # banner, and adds the art whenever the art exists.
     Scenario,
+    # Daily legend race batches and their umas (edited through an inline, which
+    # still needs permissions on the junction to save).
+    DailyLegendRaceRelease, DailyLegendRaceUma,
     # The Patreon thank-you list. Included because deciding who is thanked, and
     # by what name, is exactly the editorial judgement this group exists for —
     # and the sidebar links it ungated, like the Changelog. Note that `add`

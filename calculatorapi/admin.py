@@ -35,6 +35,8 @@ permissions on them for the inlines to save.
 # admin_content.py is worth doing as its own change.
 # pylint: disable=too-many-lines
 
+from datetime import timedelta
+
 from django.contrib import admin, messages
 from django.contrib.auth.admin import GroupAdmin as BaseGroupAdmin
 from django.contrib.auth.admin import UserAdmin
@@ -68,6 +70,7 @@ from .models import (
     ChampionsMeeting, ChampionsMeetingUmaRecommendation,
     SupportsOnSupportBanner, UmasOnUmaBanner,
     GameEvent, LeagueOfHeroes, Scenario,
+    DailyLegendRaceRelease, DailyLegendRaceUma,
     ChangelogEntry, ChangelogChange,
     SocialAccount,
     AnniversaryEvent, AnniversaryEventBanner, AnniversaryEventProduct,
@@ -181,6 +184,19 @@ class AnniversaryEventBannerInline(TabularInline):
     fields = ("part_number", "banner_timeline")
     autocomplete_fields = ("banner_timeline",)
     ordering = ("part_number",)
+    extra = 1
+
+
+class DailyLegendRaceUmaInline(TabularInline):
+    """The umas in one daily legend race batch.
+
+    No order column: the site sorts a batch by star count, then by name. An
+    uma already in another batch is refused with a form error, from the
+    database's one-release-per-uma constraint.
+    """
+    model = DailyLegendRaceUma
+    fields = ("uma",)
+    autocomplete_fields = ("uma",)
     extra = 1
 
 
@@ -680,6 +696,62 @@ class ScenarioAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
         if obj.banner_timeline_id is None:
             return "—"
         return obj.banner_timeline.global_start_date or "—"
+
+
+@admin.register(DailyLegendRaceRelease)
+class DailyLegendRaceReleaseAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
+    """A batch of umas joining the daily legend races.
+
+    Like a scenario, a batch has a start and no end, taken from a banner. It
+    also has a day offset, for batches that land a few days after that banner.
+    The list shows the banner's confirmed start plus the offset, with no
+    prediction maths (same rule as ScenarioAdmin), and whether the batch shows
+    on the site at all: a batch with no banner is hidden there.
+    """
+    list_display = (
+        "name", "banner_timeline", "offset_days", "confirmed_start_date",
+        "uma_count", "on_the_site",
+    )
+    ordering = ("-banner_timeline__global_start_date", "name")
+    search_fields = ("name",)
+    autocomplete_fields = ("banner_timeline",)
+    list_select_related = ("banner_timeline",)
+    readonly_fields = ("image_preview",)
+    inlines = [DailyLegendRaceUmaInline]
+    fieldsets = (
+        (None, {"fields": ("name", "image", "image_preview")}),
+        ("Date", {
+            "fields": ("banner_timeline", "offset_days"),
+            "description": (
+                "The batch's date is this banner's start date, plus the offset. "
+                "Pick the banner the batch arrives with, usually the "
+                "anniversary's last part. Leave the banner blank to keep a "
+                "batch off the site until the timeline reaches it. A batch has "
+                "no end date: once umas join the daily races, they stay."
+            ),
+        }),
+    )
+
+    def get_queryset(self, request):
+        # Counted in the list query, so the column costs nothing per row.
+        return super().get_queryset(request).annotate(_uma_count=Count("uma_links"))
+
+    @admin.display(description="Start date")
+    def confirmed_start_date(self, obj):
+        if obj.banner_timeline_id is None or obj.banner_timeline.global_start_date is None:
+            return "—"
+        return obj.banner_timeline.global_start_date + timedelta(days=obj.offset_days)
+
+    @admin.display(description="Umas", ordering="_uma_count")
+    def uma_count(self, obj):
+        return obj._uma_count  # pylint: disable=protected-access
+
+    @admin.display(description="On the site", boolean=True)
+    def on_the_site(self, obj):
+        # The site shows a batch whenever its banner has a date, predicted or
+        # confirmed. Every banner on the timeline has one, so "has a banner"
+        # is the honest yes/no an editor can act on.
+        return obj.banner_timeline_id is not None
 
 
 @admin.register(AnniversaryEvent)
@@ -1200,6 +1272,17 @@ class CalculationConstantsAdmin(ModelAdmin):
                 "These move BANNER DATES, not just income."
             ),
             "fields": ("prediction_factor", "game_event_end_buffer_days"),
+        }),
+        ("Daily legend races", {
+            "description": (
+                "The grind numbers on the Legend Races page. They change only "
+                "that page's \"how long to grind\" lines, never anyone's carats."
+            ),
+            "fields": (
+                "daily_legend_race_piece_goal",
+                "daily_legend_race_event_pieces",
+                "daily_legend_race_pieces_per_day",
+            ),
         }),
     )
 

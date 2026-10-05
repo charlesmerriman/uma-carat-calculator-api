@@ -36,6 +36,13 @@ PAGES = {
             "for, and why the number can differ from the game."
         ),
     },
+    "daily-legend-races": {
+        "title": "Daily Legend Races",
+        "meta_description": (
+            "When each batch of umas joins the Uma Musume daily legend races on "
+            "global, and how long grinding one of them takes."
+        ),
+    },
 }
 
 
@@ -57,6 +64,17 @@ def load_faq():
     """
     with open(SEED_DIR / "faq.yaml", encoding="utf-8") as handle:
         return yaml.safe_load(handle)
+
+
+def seed_page(SitePage, slug):  # pylint: disable=invalid-name
+    """Create ONE page's row if it does not exist yet. Never overwrites.
+
+    For a migration that adds a page after the first seed. Calling seed()
+    again there would also re-create every FAQ item an editor has deleted
+    since, because get_or_create cannot tell "never seeded" from "removed".
+    """
+    row = next(page for page in load_pages() if page["slug"] == slug)
+    SitePage.objects.get_or_create(slug=slug, defaults=row)
 
 
 def seed(SitePage, FaqCategory, FaqItem):  # pylint: disable=invalid-name

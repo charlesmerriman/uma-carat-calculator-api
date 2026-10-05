@@ -23,7 +23,7 @@ class SeedTests(CalculatorTestCase):
         # has already run once here.
         self.assertEqual(
             set(SitePage.objects.values_list("slug", flat=True)),
-            {"about", "carat-income-guide"},
+            {"about", "carat-income-guide", "daily-legend-races"},
         )
         categories = list(FaqCategory.objects.all())
         self.assertEqual(
@@ -49,7 +49,7 @@ class SeedTests(CalculatorTestCase):
 
         site_content_seed.seed(SitePage, FaqCategory, FaqItem)
 
-        self.assertEqual(SitePage.objects.count(), 2)
+        self.assertEqual(SitePage.objects.count(), 3)
         self.assertEqual(FaqItem.objects.count(), 16)
         self.assertEqual(SitePage.objects.get(slug="about").body, "Edited in the admin.\n")
         self.assertEqual(FaqItem.objects.get(slug="do-i-need-an-account").answer, "Edited answer.")
@@ -78,7 +78,7 @@ class EndpointTests(CalculatorTestCase):
 
     def test_page_shape(self):
         pages = {p["slug"]: p for p in self.get().json()["pages"]}
-        self.assertEqual(set(pages), {"about", "carat-income-guide"})
+        self.assertEqual(set(pages), {"about", "carat-income-guide", "daily-legend-races"})
         about = pages["about"]
         self.assertEqual(
             set(about), {"slug", "title", "meta_description", "body", "updated_at"}
