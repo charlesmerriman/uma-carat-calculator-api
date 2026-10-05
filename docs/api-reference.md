@@ -789,7 +789,8 @@ arrives and stays.
 `offset_days`; `is_predicted` and `applied_offset_days` come from the banner
 (`applied_offset_days` does **not** include the release's offset). `null` when the
 release has no banner yet, which the client treats as "not on the site".
-`offset_days` and `banner_timeline` are not sent: the date already includes both.
+`banner_timeline` is a bare id: the Timeline shows a release as a note on that banner's
+card. `offset_days` is not sent; the date already includes it.
 
 `umas` are sorted by rarity (★3 first), then name. `rarity` is resolved on the
 server (`1` / `2` / `3`, blank counts as `3`), so the client never repeats that rule.
@@ -799,6 +800,7 @@ server (`1` / `2` / `3`, blank counts as `3`), so the client never repeats that 
   "id": 4,
   "name": "2nd Anniversary",
   "image": null,
+  "banner_timeline": 75,
   "start_date": "2026-12-22T22:00:00Z",
   "is_predicted": true,
   "applied_offset_days": 0,

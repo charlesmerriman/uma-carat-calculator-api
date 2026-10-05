@@ -128,9 +128,10 @@ class DailyLegendRaceApiTests(CalculatorTestCase):
         self.assertFalse(row['is_predicted'])
         # Absent, not null: see StartInstantDateMixin.
         self.assertNotIn('end_date', row)
-        # Folded into start_date, so neither travels.
+        # Folded into start_date, so it does not travel.
         self.assertNotIn('offset_days', row)
-        self.assertNotIn('banner_timeline', row)
+        # A bare id: the Timeline puts the release on this banner's card.
+        self.assertEqual(row['banner_timeline'], self.banner.id)
 
     def test_umas_carry_a_resolved_rarity_and_come_sorted(self):
         make_daily_legend_race(banner_timeline=self.banner, umas=[
