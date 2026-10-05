@@ -174,6 +174,11 @@ UNFOLD = {
                         "icon": "stadia_controller",
                         "link": reverse_lazy("admin:calculatorapi_scenario_changelist"),
                     },
+                    {
+                        "title": _("Daily legend races"),
+                        "icon": "trophy",
+                        "link": reverse_lazy("admin:calculatorapi_dailylegendracerelease_changelist"),
+                    },
                 ],
             },
             {

@@ -443,6 +443,48 @@ def build_scenario_date_map(scenarios, banner_timeline_emap):
     }
 
 
+def daily_legend_race_effective_dates(release, banner_timeline_emap):
+    """
+    Resolve a DailyLegendRaceRelease's START: its banner's resolved start plus
+    the release's own signed `offset_days`.
+
+    The same start-only shape as scenario_effective_dates, with one addition.
+    A batch of daily legend races often lands a day or three after the banner
+    it arrives with, and `offset_days` is the editor's record of that. It is a
+    per-release nudge, NOT a schedule offset: it moves this release and nothing
+    after it, so it is added here, after apply_schedule_offsets has run, and is
+    not counted in `applied_offset_days`. That field keeps meaning what it means
+    everywhere else (cascading schedule offset baked into the banner's date).
+
+    No end date, ever: once a batch joins the daily races it stays. See
+    scenario_effective_dates for why the key is kept as a permanent None.
+
+    An unlinked release (or one whose banner has no resolved start) resolves to
+    a null start. The client drops it, which is how an editor enters a future
+    batch before the timeline has a banner to link it to.
+    """
+    entry = banner_timeline_emap.get(release.banner_timeline_id)
+    if entry is None or entry["start_date"] is None:
+        return {"start_date": None, "end_date": None, "is_predicted": False,
+                "applied_offset_days": 0}
+    return {
+        "start_date": entry["start_date"] + timedelta(days=release.offset_days),
+        "end_date": None,
+        "is_predicted": entry["is_predicted"],
+        "applied_offset_days": entry["applied_offset_days"],
+    }
+
+
+def build_daily_legend_race_date_map(releases, banner_timeline_emap):
+    """Wraps daily_legend_race_effective_dates over a queryset/iterable of
+    DailyLegendRaceRelease rows, resolving each via the shared BannerTimeline
+    map."""
+    return {
+        release.id: daily_legend_race_effective_dates(release, banner_timeline_emap)
+        for release in releases
+    }
+
+
 #: The part number carrying an anniversary's headline banner. Every anniversary
 #: opens with a Part 1 lead-up campaign — "the anniversary is coming, here are
 #: some rewards" — and the anniversary proper starts one part later, on JP 02-24

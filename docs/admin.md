@@ -46,6 +46,16 @@ Champions Meeting → recommended umas), autocomplete pickers, image previews, a
   fieldset), **not** an inline — a `GameEvent` carries at most one reward package.
 - The three M2M join models are edited only via inlines; they are not registered
   top-level.
+- `DailyLegendRaceRelease` edits its umas through `DailyLegendRaceUmaInline`
+  (autocomplete). An uma already in another release is refused as a form error by the
+  junction's `UniqueConstraint`. The list shows the banner's **confirmed** start plus
+  `offset_days` (no prediction maths, same rule as `ScenarioAdmin`), an uma count
+  (annotated, one query), and **On the site**, one of three: "Yes, with a date"
+  (linked), "Tentative, no date" (no banner, has umas) or "Hidden: no banner or umas"
+  (a draft). The same three cases `_build_public_payload` applies.
+  The list runs newest first by the banner's **JP** start (a predicted banner has no
+  global date, so sorting on that left most rows tied), unlinked releases last. The
+  model's `image` is not on the form: nothing on the site draws it.
 - `BannerStepUp` is registered top-level, not as an inline. It hangs off **two** parents
   (a `BannerTimeline` and an `AnniversaryEvent`) that have to agree, so an inline under
   either one would hide half of what the editor has to get right. `clean()` rejects a
@@ -127,8 +137,8 @@ authored in the repo, and synced on deploy".
 
 ## Site content: Pages and FAQ, and the Rebuild button
 
-**Site content → Pages** holds the About page and the carat income guide as
-markdown (`SitePage`); **Site content → FAQ** holds the categories with their
+**Site content → Pages** holds the About page, the carat income guide and the
+intro to the daily legend races tab as markdown (`SitePage`); **Site content → FAQ** holds the categories with their
 questions as a `StackedInline` (`FaqCategory` / `FaqItem`). Stacked rather than
 tabular because an answer is a few paragraphs and a tabular row is too narrow to
 write one in. Both are in `CONTENT_MODELS`.

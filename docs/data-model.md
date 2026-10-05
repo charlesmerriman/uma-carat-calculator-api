@@ -230,6 +230,20 @@ erDiagram
         int banner_timeline_id FK "nullable; supplies the START only"
     }
 
+    DailyLegendRaceRelease {
+        int id PK
+        string name
+        string image "nullable"
+        int banner_timeline_id FK "nullable; supplies the START only"
+        int offset_days "signed; added to that start"
+    }
+
+    DailyLegendRaceUma {
+        int id PK
+        int release_id FK
+        int uma_id FK "UNIQUE: one release per uma"
+    }
+
     ChangelogEntry {
         int id PK
         string title
@@ -325,6 +339,9 @@ erDiagram
 
     GameEvent }o--o| BannerTimeline : "banner_timeline"
     Scenario }o--o| BannerTimeline : "banner_timeline"
+    DailyLegendRaceRelease }o--o| BannerTimeline : "banner_timeline"
+    DailyLegendRaceUma }o--|| DailyLegendRaceRelease : "release"
+    DailyLegendRaceUma |o--|| Uma : "uma"
     ChangelogChange }o--|| ChangelogEntry : "entry"
 
     AnniversaryEventBanner }o--|| AnniversaryEvent : "anniversary_event"
@@ -919,7 +936,7 @@ There are now four ways a model gets dates from `BannerTimeline`, and it is wort
 | 1 | Content on a banner | `BannerUma`, `BannerSupport`, `BannerStepUp` | none of its own |
 | 2 | Borrow the banner's window | `GameEvent` | start = banner start; end = banner end **+ 4 days** |
 | 3 | Span several "Parts" | `AnniversaryEvent` | earliest part start → latest part end |
-| 4 | **Borrow the banner's START only** | **`Scenario`** | **start = banner start; no end, ever** |
+| 4 | **Borrow the banner's START only** | **`Scenario`**, `DailyLegendRaceRelease` | **start = banner start (+ `offset_days` on a release); no end, ever** |
 
 **Shape 4 is the only one with no end at all, and that is a fact about scenarios rather than a gap in the data.** A scenario is released and then stays available permanently — a newer scenario does *not* retire an older one, it just tends to get played more because it is more rewarding. There is therefore nothing for an end date to mean, and deriving one from the launch banner would invent an expiry the scenario has never had. `scenario_effective_dates()` returns `end_date: None` unconditionally, and `StartInstantDateMixin` drops the field from the wire entirely rather than emitting a permanent `null`.
 
@@ -928,6 +945,20 @@ Otherwise it follows `GameEvent`'s precedent exactly: a nullable `banner_timelin
 `scenario_effective_dates()` is deliberately its **own** function rather than a generalisation shared with `anniversary_event_effective_dates()`. `predictions.py`'s convention is one function per derivation shape: the mechanisms are shared (`_ResolvedDateMixin`, `effective_sort_key`), the policies are not. An anniversary's range is a *sales window* whose start is the instant purchases are credited; a scenario's start is just when a new way to play appeared. Merging them would put a scenario-only concern inside anniversary date maths the first time the two diverge.
 
 `image` is nullable by workflow, not by accident: scenarios get entered while a feature is being built and the art arrives later. Every consumer must render without it.
+
+### `DailyLegendRaceRelease`: shape 4 with a day offset
+
+A batch of umas joining the **Daily Legend Races** (one race a day per uma, forever, one Star Piece each). It ports the source sheet's "Daily Legend Race Schedule" tab and backs the `/app/legend-races` page and a note on its banner's Timeline card (hence `banner_timeline` on the wire). Plan and decisions: workspace-root `legend-races-plan.md`.
+
+- **Shape 4, like `Scenario`**: a nullable `banner_timeline` FK (`SET_NULL`), a start borrowed from it, no end. A batch arrives and stays. Resolved by `daily_legend_race_effective_dates()`, serialized with `StartInstantDateMixin`.
+- **Plus a signed `offset_days`.** A batch often lands a day or three after the banner it arrives with (the sheet's `+1` / `+3`). The offset is added **after** `apply_schedule_offsets` and is **not** counted in `applied_offset_days`: it is a nudge for this one release, not a schedule slip that cascades to later rows. A schedule offset on the banner still moves the release, because the banner's date already includes it.
+- **Linked to a banner, never to an `AnniversaryEvent`.** A batch arrives with one specific part, usually the anniversary's last, not when the campaign opens. The 1.5th batch arrived with a banner that is not one of its campaign's parts at all.
+- **Unlinked means tentative.** An editor can enter a future batch (6th, 6.5th) before the timeline has a banner for it. It resolves to a null start, is sent that way, and the Legend Races tab lists it under "No date yet" with a Tentative badge; the Timeline has no banner to put it on and skips it. Tentative releases sort after every dated one, in `id` order (the order entered), because by name "6.5th" sorts before "6th". Owner's call, 2026-10-05; before that an unlinked release was hidden.
+- **No banner and no umas means draft.** `_build_public_payload` leaves such a release out of the payload, on the server because the payload is public. Adding an uma or a banner makes it appear. The admin's "On the site" column names the three states.
+- **`image` is unused.** It was art for a Timeline card of the batch's own; a batch is a pill on its banner's card now, nothing draws the image, and the admin form leaves the field off. The column and the wire key stay, so bringing the art back needs no migration.
+- **One release per uma**, as the `one_daily_legend_race_per_uma` `UniqueConstraint` on `DailyLegendRaceUma.uma`. The admin inline reports a clash as a form error; `merge_duplicate_umas` treats the clash as "drop the duplicate's row", with no change needed.
+- **Rarity is derived, never stored.** The serializer sends `rarity` as `Uma.rarity or 3` (blank counts as ★3, the `is_three_star` rule), and the page groups on it.
+- **No income, and no grind maths.** Star Pieces buy nothing the projection counts, so nothing here reaches the ledger. The grind guidance (1 a day, ~80 from the original event, 70 or 140 days) is prose in the `daily-legend-races` site page, so an editor changes the numbers where they change the words. Three `CalculationConstants` fields briefly held them (0073) and were dropped before release (0075) once the page stopped calculating.
 
 ### The changelog is authored in the repo, and synced on deploy
 

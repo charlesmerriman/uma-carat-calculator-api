@@ -170,7 +170,8 @@ class AnniversaryEventDateMixin(GameEventDateMixin):
 class StartInstantDateMixin(_ResolvedDateMixin):
     """
     A single dated instant borrowed from a BannerTimeline, with no end — used by
-    Scenario, the only model whose dates are a start and nothing else.
+    Scenario and DailyLegendRaceRelease, the two models whose dates are a start
+    and nothing else.
 
     `end_date` is REMOVED from the wire rather than emitted as a permanent null.
     A field that is structurally always null invites a consumer to render a range

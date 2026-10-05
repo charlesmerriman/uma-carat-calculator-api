@@ -317,6 +317,7 @@ assumption it rests on, in `calculatorapi/public_payload_cache.py`.
   "banner_timeline_data":        [ BannerTimeline ],
   "anniversary_event_data":      [ AnniversaryEvent ],
   "scenario_data":               [ Scenario ],
+  "daily_legend_race_data":      [ DailyLegendRaceRelease ],
   "user_planned_purchase_data":  [ UserPlannedPurchase ],
   "user_step_up_selection_data": [ UserStepUpSelection ],
   "income_ledger":               [ IncomeLedgerRow ],
@@ -326,7 +327,7 @@ assumption it rests on, in `calculatorapi/public_payload_cache.py`.
 
 `user_stats_data` is the **active plan's** stats: the account's own, or, when that plan has `separate_income` on, its income profile's. Same shape either way (`Plan.income_profile_id` says which). `user_planned_purchase_data` follows the same rule: the purchases of that same stats block. Step-up selections are the account's whichever plan is open.
 
-`user_planned_banner_data`, `banner_uma_data`, `banner_support_data`, `champions_meeting_data`, `league_of_heroes_event_data`, `events_data`, `anniversary_event_data`, `scenario_data` and `user_planned_purchase_data` are all ordered by each row's **resolved** (confirmed-or-predicted) global start date, sorted server-side in Python since predicted dates aren't a DB column.
+`user_planned_banner_data`, `banner_uma_data`, `banner_support_data`, `champions_meeting_data`, `league_of_heroes_event_data`, `events_data`, `anniversary_event_data`, `scenario_data`, `daily_legend_race_data` and `user_planned_purchase_data` are all ordered by each row's **resolved** (confirmed-or-predicted) global start date, sorted server-side in Python since predicted dates aren't a DB column.
 
 ---
 
@@ -778,6 +779,41 @@ consumer is expected to render without it.
 banner in `banner_timeline_data`, and it needs the id to pin the scenario's band directly
 above that banner's row in the planner.
 
+### `DailyLegendRaceRelease` (from `daily_legend_race_data`)
+
+A batch of umas joining the Daily Legend Races. Public, cached with the rest of the
+public payload. Start-only like `Scenario`: **no `end_date` key**, because a batch
+arrives and stays.
+
+`start_date` is the release's banner's resolved start plus the release's own
+`offset_days`; `is_predicted` and `applied_offset_days` come from the banner
+(`applied_offset_days` does **not** include the release's offset).
+
+A release with no banner yet is **tentative**: it is sent with `start_date: null` and
+`banner_timeline: null`, after every dated release, in the order the tentative ones
+were entered (by `id`). The Legend Races tab lists it with no date; the Timeline skips
+it. A release with no banner **and** no umas is a draft and is **not sent at all**.
+`banner_timeline` is a bare id: the Timeline shows a release as a note on that banner's
+card. `offset_days` is not sent; the date already includes it.
+
+`umas` are sorted by rarity (★3 first), then name. `rarity` is resolved on the
+server (`1` / `2` / `3`, blank counts as `3`), so the client never repeats that rule.
+
+```json
+{
+  "id": 4,
+  "name": "2nd Anniversary",
+  "image": null,
+  "banner_timeline": 75,
+  "start_date": "2026-12-22T22:00:00Z",
+  "is_predicted": true,
+  "applied_offset_days": 0,
+  "umas": [
+    { "id": 12, "name": "Hishi Amazon", "image": "https://…/umas/…png", "rarity": 3 }
+  ]
+}
+```
+
 ### `AnniversaryEventProduct`
 
 One purchasable line on a campaign. Packs and selectors share one shape, tagged by
@@ -1073,7 +1109,7 @@ only in the Django admin.
 `pages` is ordered by `slug`. `faq` is ordered by category `order`, then each
 category's `items` by their `order`. `body` and `answer` are markdown. `slug` on a
 FAQ item is its anchor on the FAQ page (`/faq#do-i-need-an-account`); on a page it
-is one of a fixed set (`about`, `carat-income-guide`) that the frontend routes
+is one of a fixed set (`about`, `carat-income-guide`, `daily-legend-races`) that the frontend routes
 by. `updated_at` is the last save, shown on the page as "Last updated".
 
 ```json
