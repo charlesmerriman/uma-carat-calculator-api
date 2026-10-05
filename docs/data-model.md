@@ -948,15 +948,17 @@ Otherwise it follows `GameEvent`'s precedent exactly: a nullable `banner_timelin
 
 ### `DailyLegendRaceRelease`: shape 4 with a day offset
 
-A batch of umas joining the **Daily Legend Races** (one race a day per uma, forever, each giving `daily_legend_race_pieces_per_day` pieces). It ports the source sheet's "Daily Legend Race Schedule" tab and backs the `/app/legend-races` page and a Timeline marker. Plan and decisions: workspace-root `legend-races-plan.md`.
+A batch of umas joining the **Daily Legend Races** (one race a day per uma, forever, one Star Piece each). It ports the source sheet's "Daily Legend Race Schedule" tab and backs the `/app/legend-races` page and a note on its banner's Timeline card (hence `banner_timeline` on the wire). Plan and decisions: workspace-root `legend-races-plan.md`.
 
 - **Shape 4, like `Scenario`**: a nullable `banner_timeline` FK (`SET_NULL`), a start borrowed from it, no end. A batch arrives and stays. Resolved by `daily_legend_race_effective_dates()`, serialized with `StartInstantDateMixin`.
 - **Plus a signed `offset_days`.** A batch often lands a day or three after the banner it arrives with (the sheet's `+1` / `+3`). The offset is added **after** `apply_schedule_offsets` and is **not** counted in `applied_offset_days`: it is a nudge for this one release, not a schedule slip that cascades to later rows. A schedule offset on the banner still moves the release, because the banner's date already includes it.
 - **Linked to a banner, never to an `AnniversaryEvent`.** A batch arrives with one specific part, usually the anniversary's last, not when the campaign opens. The 1.5th batch arrived with a banner that is not one of its campaign's parts at all.
-- **Unlinked means hidden.** An editor can enter a future batch (6th, 6.5th) before the timeline has a banner for it; it resolves to a null start and the client drops it.
+- **Unlinked means tentative.** An editor can enter a future batch (6th, 6.5th) before the timeline has a banner for it. It resolves to a null start, is sent that way, and the Legend Races tab lists it under "No date yet" with a Tentative badge; the Timeline has no banner to put it on and skips it. Tentative releases sort after every dated one, in `id` order (the order entered), because by name "6.5th" sorts before "6th". Owner's call, 2026-10-05; before that an unlinked release was hidden.
+- **No banner and no umas means draft.** `_build_public_payload` leaves such a release out of the payload, on the server because the payload is public. Adding an uma or a banner makes it appear. The admin's "On the site" column names the three states.
+- **`image` is unused.** It was art for a Timeline card of the batch's own; a batch is a pill on its banner's card now, nothing draws the image, and the admin form leaves the field off. The column and the wire key stay, so bringing the art back needs no migration.
 - **One release per uma**, as the `one_daily_legend_race_per_uma` `UniqueConstraint` on `DailyLegendRaceUma.uma`. The admin inline reports a clash as a form error; `merge_duplicate_umas` treats the clash as "drop the duplicate's row", with no change needed.
 - **Rarity is derived, never stored.** The serializer sends `rarity` as `Uma.rarity or 3` (blank counts as ★3, the `is_three_star` rule), and the page groups on it.
-- **No income.** Pieces buy nothing the projection counts, so nothing here reaches the ledger. The three grind numbers live on `CalculationConstants` only because a second singleton would be a second admin page for three fields.
+- **No income, and no grind maths.** Star Pieces buy nothing the projection counts, so nothing here reaches the ledger. The grind guidance (1 a day, ~80 from the original event, 70 or 140 days) is prose in the `daily-legend-races` site page, so an editor changes the numbers where they change the words. Three `CalculationConstants` fields briefly held them (0073) and were dropped before release (0075) once the page stopped calculating.
 
 ### The changelog is authored in the repo, and synced on deploy
 

@@ -33,9 +33,10 @@ class DailyLegendRaceReleaseSerializer(StartInstantDateMixin, serializers.ModelS
     StartInstantDateMixin, same as ScenarioSerializer: a release has a start
     and no end, so `end_date` is absent from the payload entirely.
 
-    `offset_days` and `banner_timeline` stay off the wire. The start date
-    already includes both, and nothing on the client places a release by its
-    banner (the Timeline marker sits on its own date).
+    `banner_timeline` is a bare id, as on ScenarioSerializer: the Timeline
+    shows a release as a note on the card of the banner it arrives with, and
+    already holds every banner in banner_timeline_data. `offset_days` stays
+    off the wire; the start date already includes it.
     """
 
     umas = serializers.SerializerMethodField()
@@ -46,6 +47,7 @@ class DailyLegendRaceReleaseSerializer(StartInstantDateMixin, serializers.ModelS
             "id",
             "name",
             "image",
+            "banner_timeline",
             "start_date",
             "is_predicted",
             "applied_offset_days",

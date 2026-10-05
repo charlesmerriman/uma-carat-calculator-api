@@ -148,13 +148,13 @@ in-game event.
 
 **Events & competitions → Daily legend races** lists the batches of umas that
 join the Daily Legend Races, one row per batch ("2nd Anniversary"). The site
-shows them on the Legend Races tab and as a marker on the Timeline.
+shows them on the Legend Races tab, and as a small note on the Timeline card
+of the banner each batch arrives with. The list runs newest batch first.
 
 **Adding a batch:**
 
 1. **Add daily legend race release**, and give it a **name** ("3rd
-   Anniversary"). An image is optional; without one the Timeline marker shows
-   just the name and date.
+   Anniversary").
 2. Pick the **banner timeline** the batch arrives with. That is usually the
    anniversary's last part. The batch's date is that banner's start date, so
    when the banner's dates change (confirmed, predicted, or moved by a schedule
@@ -169,17 +169,22 @@ shows them on the Legend Races tab and as a marker on the Timeline.
 You don't set the star groups (★3 / ★2 / ★1). The site reads each uma's own
 star count.
 
-**A batch with no banner is hidden on the site.** That lets you enter a batch
-early, before the timeline has a banner for it. It appears as soon as you link
-one. The **On the site** column on the list shows which batches are visible.
+**A batch with no banner is tentative.** That is how you enter a batch early,
+before the timeline has a banner for it. The Legend Races tab lists it under
+"No date yet" with a Tentative badge, after the dated batches, and the
+Timeline leaves it out. Tentative batches show in the order you added them.
+Link a banner later and the batch gets its date and moves up with the rest.
 
-**The page's intro text** is under **Site content → Pages → Daily Legend
-Races**, edited like the other pages below.
+**A batch with no banner and no umas is not shown at all**, so you can save a
+half-finished one. The **On the site** column on the list says which of the
+three each batch is: "Yes, with a date", "Tentative, no date" or "Hidden: no
+banner or umas". The ones with no banner sit at the bottom of the list.
 
-**The grind numbers** (the goal of 150 pieces, the 80 from an uma's original
-event, and 1 piece per daily race) are on the **Calculation constants** page,
-under **Daily legend races**. That page needs the site owner's account; see
-"One page to leave alone" at the end.
+**The page's text** is under **Site content → Pages → Daily Legend Races**,
+edited like the other pages below.
+
+**The grind guidance** ("Daily Legend Races reward 1 Star Piece...") is part of
+the page's text, so change any number in it right there.
 
 ## Site pages and FAQ
 

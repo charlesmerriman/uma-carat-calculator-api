@@ -431,12 +431,27 @@ class CalculatorViewSet(ViewSet):
         # with their uma joined, so every release's umas cost ONE query in
         # total; the select_related must live in this Prefetch, not in the
         # serializer (see BannerUmaNestedSerializer.get_umas).
-        daily_legend_race_data = DailyLegendRaceRelease.objects.prefetch_related(
+        #
+        # A release with no banner is TENTATIVE: entered before the timeline
+        # has a banner for it. It is sent with a null start and the Legend
+        # Races tab lists it as such, with no date. One with no banner AND no
+        # umas is a draft with nothing to show, so it is not sent; that is
+        # decided here and not on the client, because this payload is public.
+        #
+        # order_by("id") so the tentative ones, which all tie on "no date" in
+        # the sort below, come out in the order they were entered. Python's
+        # sort is stable, so it keeps that order among ties.
+        releases = DailyLegendRaceRelease.objects.order_by("id").prefetch_related(
             Prefetch(
                 "uma_links",
                 queryset=DailyLegendRaceUma.objects.select_related("uma"),
             )
         )
+        daily_legend_race_data = [
+            release for release in releases
+            # .all() reads the prefetch cache here; .exists() would re-query.
+            if release.banner_timeline_id is not None or release.uma_links.all()
+        ]
         daily_legend_race_emap = build_daily_legend_race_date_map(
             daily_legend_race_data, emap
         )

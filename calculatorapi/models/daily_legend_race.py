@@ -27,8 +27,11 @@ class DailyLegendRaceRelease(models.Model):
 
     banner_timeline is nullable + SET_NULL, same reasoning as Scenario: the
     batch's umas stay real content if the banner is deleted. An unlinked
-    release is undated and stays off the site, which is also how an editor
-    enters a future batch before the timeline reaches it.
+    release is undated, and that is how an editor enters a future batch before
+    the timeline reaches it. The Legend Races tab lists it as TENTATIVE, with
+    no date; the Timeline cannot show it, having no banner to put it on. Until
+    2026-10-05 an unlinked release was hidden outright. One with no banner AND
+    no umas is a draft and stays off the site (see _build_public_payload).
 
     Rarity is never stored here. The page groups umas by Uma.rarity.
     """
@@ -37,8 +40,10 @@ class DailyLegendRaceRelease(models.Model):
         max_length=255,
         help_text='What the batch is called on the site, e.g. "2nd Anniversary".',
     )
-    # Optional, like Scenario.image: without one the Timeline card collapses
-    # to a chip, the name and the date.
+    # UNUSED for now. It was art for a Timeline card of the batch's own; the
+    # batch became a pill on its banner's card instead, so nothing draws this
+    # and the admin form leaves it off (see DailyLegendRaceReleaseAdmin). The
+    # column stays so bringing the art back needs no migration.
     image = models.ImageField(upload_to="daily_legend_races/", null=True, blank=True)
     banner_timeline = models.ForeignKey(
         BannerTimeline,
@@ -48,8 +53,9 @@ class DailyLegendRaceRelease(models.Model):
         related_name="daily_legend_race_releases",
         help_text=(
             "The banner this batch arrives with, usually the anniversary's last "
-            "part. Its start date is the batch's date. Leave it blank to keep "
-            "the batch off the site until the timeline reaches it."
+            "part. Its start date is the batch's date. Leave it blank while the "
+            "timeline has no banner for it yet: the batch then shows on the "
+            "Legend Races tab as tentative, with no date."
         ),
     )
     # Signed: a batch can land before its banner as well as after it.

@@ -787,9 +787,14 @@ arrives and stays.
 
 `start_date` is the release's banner's resolved start plus the release's own
 `offset_days`; `is_predicted` and `applied_offset_days` come from the banner
-(`applied_offset_days` does **not** include the release's offset). `null` when the
-release has no banner yet, which the client treats as "not on the site".
-`offset_days` and `banner_timeline` are not sent: the date already includes both.
+(`applied_offset_days` does **not** include the release's offset).
+
+A release with no banner yet is **tentative**: it is sent with `start_date: null` and
+`banner_timeline: null`, after every dated release, in the order the tentative ones
+were entered (by `id`). The Legend Races tab lists it with no date; the Timeline skips
+it. A release with no banner **and** no umas is a draft and is **not sent at all**.
+`banner_timeline` is a bare id: the Timeline shows a release as a note on that banner's
+card. `offset_days` is not sent; the date already includes it.
 
 `umas` are sorted by rarity (★3 first), then name. `rarity` is resolved on the
 server (`1` / `2` / `3`, blank counts as `3`), so the client never repeats that rule.
@@ -799,6 +804,7 @@ server (`1` / `2` / `3`, blank counts as `3`), so the client never repeats that 
   "id": 4,
   "name": "2nd Anniversary",
   "image": null,
+  "banner_timeline": 75,
   "start_date": "2026-12-22T22:00:00Z",
   "is_predicted": true,
   "applied_offset_days": 0,
@@ -1066,10 +1072,6 @@ Two things to know:
   deep in the odds.
 - **`training_pass_start_date` is a plain `YYYY-MM-DD` calendar day**, not a
   datetime.
-
-Three fields are not projection inputs: `daily_legend_race_piece_goal` (150),
-`daily_legend_race_event_pieces` (80) and `daily_legend_race_pieces_per_day` (1)
-feed only the grind lines on `/app/legend-races`.
 
 `id` is deliberately excluded — there is only ever one row.
 
