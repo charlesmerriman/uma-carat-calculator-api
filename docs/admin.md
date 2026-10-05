@@ -46,6 +46,11 @@ Champions Meeting → recommended umas), autocomplete pickers, image previews, a
   fieldset), **not** an inline — a `GameEvent` carries at most one reward package.
 - The three M2M join models are edited only via inlines; they are not registered
   top-level.
+- `DailyLegendRaceRelease` edits its umas through `DailyLegendRaceUmaInline`
+  (autocomplete). An uma already in another release is refused as a form error by the
+  junction's `UniqueConstraint`. The list shows the banner's **confirmed** start plus
+  `offset_days` (no prediction maths, same rule as `ScenarioAdmin`), an uma count
+  (annotated, one query), and **On the site**: a release with no banner is hidden.
 - `BannerStepUp` is registered top-level, not as an inline. It hangs off **two** parents
   (a `BannerTimeline` and an `AnniversaryEvent`) that have to agree, so an inline under
   either one would hide half of what the editor has to get right. `clean()` rejects a
@@ -127,8 +132,8 @@ authored in the repo, and synced on deploy".
 
 ## Site content: Pages and FAQ, and the Rebuild button
 
-**Site content → Pages** holds the About page and the carat income guide as
-markdown (`SitePage`); **Site content → FAQ** holds the categories with their
+**Site content → Pages** holds the About page, the carat income guide and the
+intro to the daily legend races tab as markdown (`SitePage`); **Site content → FAQ** holds the categories with their
 questions as a `StackedInline` (`FaqCategory` / `FaqItem`). Stacked rather than
 tabular because an answer is a few paragraphs and a tabular row is too narrow to
 write one in. Both are in `CONTENT_MODELS`.
@@ -264,7 +269,7 @@ Full metric definitions: [analytics.md](analytics.md).
 One singleton row holding every tunable number the carat projection uses, at
 **Configuration → Calculation constants** in the sidebar. Grouped into fieldsets
 (daily income, packs & passes, login campaigns & gifts, pull costs & uncap, the
-event carat decay curve, global date prediction); each field's help text names
+event carat decay curve, global date prediction, daily legend races); each field's help text names
 the source spreadsheet cell it corresponds to.
 
 Its admin is deliberately non-standard, because the usual list → add → edit flow

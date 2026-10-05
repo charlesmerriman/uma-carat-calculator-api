@@ -16,6 +16,7 @@ from calculatorapi.ledger import (
 )
 from calculatorapi.predictions import (
     build_anniversary_event_date_map,
+    build_daily_legend_race_date_map,
     build_effective_date_maps,
     build_game_event_date_map,
     build_scenario_date_map,
@@ -29,6 +30,7 @@ from calculatorapi.models import (
     BannerUma, BannerSupport, BannerStepUp,
     ChampionsMeeting, LeagueOfHeroes, GameEvent, BannerTimeline,
     AnniversaryEvent, Scenario,
+    DailyLegendRaceRelease, DailyLegendRaceUma,
     UmasOnUmaBanner, SupportsOnSupportBanner,
 )
 from calculatorapi.views.rank_viewsets import (
@@ -48,6 +50,7 @@ from calculatorapi.views.game_event import GameEventSerializer
 from calculatorapi.views.banner_timeline import BannerTimelineForViewingSerializer
 from calculatorapi.views.anniversary_event import AnniversaryEventSerializer
 from calculatorapi.views.scenario import ScenarioSerializer
+from calculatorapi.views.daily_legend_race import DailyLegendRaceReleaseSerializer
 from calculatorapi.views.ledger import IncomeLedgerRowSerializer
 from calculatorapi.views.calculation_constants import CalculationConstantsSerializer
 from calculatorapi.views.user_planned_purchase import UserPlannedPurchaseSerializer
@@ -423,6 +426,24 @@ class CalculatorViewSet(ViewSet):
             scenario_data,
             key=lambda sc: effective_sort_key(scenario_emap.get(sc.id)),
         )
+        # Daily legend race batches: the same start-only shape as a scenario,
+        # plus each release's own day offset. The junction rows are prefetched
+        # with their uma joined, so every release's umas cost ONE query in
+        # total; the select_related must live in this Prefetch, not in the
+        # serializer (see BannerUmaNestedSerializer.get_umas).
+        daily_legend_race_data = DailyLegendRaceRelease.objects.prefetch_related(
+            Prefetch(
+                "uma_links",
+                queryset=DailyLegendRaceUma.objects.select_related("uma"),
+            )
+        )
+        daily_legend_race_emap = build_daily_legend_race_date_map(
+            daily_legend_race_data, emap
+        )
+        daily_legend_race_data = sorted(
+            daily_legend_race_data,
+            key=lambda rel: effective_sort_key(daily_legend_race_emap.get(rel.id)),
+        )
 
         # Selector eligibility keys off each card's earliest JP banner. Built
         # once here and handed to every serializer that nests a card, because
@@ -527,6 +548,10 @@ class CalculatorViewSet(ViewSet):
             "scenario_data": ScenarioSerializer(
                 scenario_data, many=True,
                 context={"effective_dates": scenario_emap}
+            ).data,
+            "daily_legend_race_data": DailyLegendRaceReleaseSerializer(
+                daily_legend_race_data, many=True,
+                context={"effective_dates": daily_legend_race_emap}
             ).data,
             "champions_meeting_data": ChampionsMeetingSerializer(
                 champions_meeting_data, many=True, context={"effective_dates": cm_emap}

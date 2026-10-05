@@ -59,6 +59,7 @@ class AdminSmokeTests(CalculatorTestCase):
         'admin:calculatorapi_clubrank',
         'admin:calculatorapi_anniversaryevent',
         'admin:calculatorapi_scenario',
+        'admin:calculatorapi_dailylegendracerelease',
     ]
 
     @classmethod
@@ -118,7 +119,7 @@ class AdminSmokeTests(CalculatorTestCase):
         # Edited via inlines only — their changelists should not exist.
         for name in ['umasonumabanner', 'supportsonsupportbanner',
                      'championsmeetingumarecommendation', 'umaskill',
-                     'supportcardskill']:
+                     'supportcardskill', 'dailylegendraceuma']:
             with self.subTest(model=name):
                 with self.assertRaises(NoReverseMatch):
                     reverse(f'admin:calculatorapi_{name}_changelist')
@@ -245,7 +246,7 @@ class ImageLibraryTests(CalculatorTestCase):
                 'umas/', 'support_cards/', 'banner_timelines/',
                 'game_events/', 'champions_meetings/', 'league_of_heroes/',
                 'anniversary_events/', 'step_up_banners/', 'scenarios/',
-                'skills/', 'umas_borderless/',
+                'skills/', 'umas_borderless/', 'daily_legend_races/',
             }),
         )
 

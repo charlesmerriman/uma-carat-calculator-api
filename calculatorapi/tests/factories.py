@@ -15,6 +15,7 @@ from calculatorapi.models import (
     ClubRank, TeamTrialsRank, ChampionsMeetingRank, LeagueOfHeroesRank,
     BannerTimeline, BannerUma, BannerSupport, BannerStepUp,
     ChampionsMeeting, LeagueOfHeroes, GameEvent, Scenario,
+    DailyLegendRaceRelease, DailyLegendRaceUma,
     AnniversaryEvent, AnniversaryEventBanner, AnniversaryEventProduct,
 )
 
@@ -161,6 +162,22 @@ def make_scenario(name='Test Scenario', banner_timeline=None, image=None):
     return Scenario.objects.create(
         name=name, banner_timeline=banner_timeline, image=image,
     )
+
+
+def make_daily_legend_race(name='Test Release', banner_timeline=None,
+                           offset_days=0, umas=()):
+    """Create a DailyLegendRaceRelease and link `umas` to it.
+
+    Start-only like a scenario: the date is the banner's start plus
+    `offset_days`, and there is no end. Unlinked (banner_timeline=None) is the
+    normal state for a batch entered before the timeline reaches it.
+    """
+    release = DailyLegendRaceRelease.objects.create(
+        name=name, banner_timeline=banner_timeline, offset_days=offset_days,
+    )
+    for uma in umas:
+        DailyLegendRaceUma.objects.create(release=release, uma=uma)
+    return release
 
 
 def make_anniversary_event(name='Test Anniversary', event_type='anniversary',
