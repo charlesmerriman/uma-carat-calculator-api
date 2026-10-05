@@ -948,7 +948,7 @@ Otherwise it follows `GameEvent`'s precedent exactly: a nullable `banner_timelin
 
 ### `DailyLegendRaceRelease`: shape 4 with a day offset
 
-A batch of umas joining the **Daily Legend Races** (one race a day per uma, forever, each giving `daily_legend_race_pieces_per_day` pieces). It ports the source sheet's "Daily Legend Race Schedule" tab and backs the `/app/legend-races` page and a Timeline marker. Plan and decisions: workspace-root `legend-races-plan.md`.
+A batch of umas joining the **Daily Legend Races** (one race a day per uma, forever, each giving `daily_legend_race_pieces_per_day` pieces). It ports the source sheet's "Daily Legend Race Schedule" tab and backs the `/app/legend-races` page and a note on its banner's Timeline card (hence `banner_timeline` on the wire). Plan and decisions: workspace-root `legend-races-plan.md`.
 
 - **Shape 4, like `Scenario`**: a nullable `banner_timeline` FK (`SET_NULL`), a start borrowed from it, no end. A batch arrives and stays. Resolved by `daily_legend_race_effective_dates()`, serialized with `StartInstantDateMixin`.
 - **Plus a signed `offset_days`.** A batch often lands a day or three after the banner it arrives with (the sheet's `+1` / `+3`). The offset is added **after** `apply_schedule_offsets` and is **not** counted in `applied_offset_days`: it is a nudge for this one release, not a schedule slip that cascades to later rows. A schedule offset on the banner still moves the release, because the banner's date already includes it.
