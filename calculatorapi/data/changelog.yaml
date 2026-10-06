@@ -34,9 +34,16 @@
 
 - key: champions-meeting-payout-day
   date: 2026-10-06
-  title: "Champions Meeting payouts"
+  title: "Better odds, and Champions Meeting payouts"
   version: "v1.11"
   changes:
+    - fixed: "Step-up odds count the guaranteed cards on steps 3 and 4 now. Your chances were a lot better than the planner showed: a full three-banner step-up goes from 7.5% to about 27% for MLB. Thanks to Daptrius for working out the maths."
+    - fixed: "Rate-ups use each card's own rate. Most are still 0.75%, but ★2 cards, select banners and banners with a crowd of rate-ups get their real numbers."
+    - added: "On a banner with more than one rate-up, the odds name the card they're for. Open that to pick another card, or tick Also show to see two at once."
+    - added: "A tab you left open tells you when a newer version is out."
+    - fixed: "Light themes are easier to read. Banner type boxes, pity colours, step-up markers and the Uncap Crystals text all follow the theme."
+    - fixed: "The bars under the odds match their percentages."
+    - fixed: "The uncap estimator keeps your banner when you switch pages."
     - changed: "Predicted dates now start at the daily reset, like confirmed ones. Some Timeline dates move by a day."
     - fixed: "A Champions Meeting that ends the day after a banner no longer counts toward that banner. Its rewards land a minute after the banner closes, so they go to the next one in your plan. Thanks to Daptrius for catching it."
 

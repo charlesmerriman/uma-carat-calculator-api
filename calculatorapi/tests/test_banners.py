@@ -2,8 +2,11 @@
 line, and the rate-up inputs."""
 
 import datetime
+import importlib
+from decimal import Decimal
 from io import StringIO
 
+from django.apps import apps as django_apps
 from django.core.exceptions import ValidationError
 from django.core.management import call_command
 from django.db import connection
@@ -356,3 +359,67 @@ class RateUpInputTests(CalculatorTestCase):
             self.client.get('/calculator-data')
 
         self.assertEqual(len(after), len(before))
+
+
+class RateUpBackfillMigrationTests(CalculatorTestCase):
+    """0079 fills the rate-up inputs the select banners and collab doubles need.
+
+    Run directly against today's models: the function only asks `apps` for models,
+    and the real registry answers the same way the migration's historical one does.
+    """
+
+    @staticmethod
+    def _backfill():
+        migration = importlib.import_module(
+            'calculatorapi.migrations.0079_backfill_rate_up_inputs')
+        migration.backfill_rate_up_inputs(django_apps, None)
+
+    @staticmethod
+    def _timeline(global_start):
+        return BannerTimeline.objects.create(
+            name='Window',
+            jp_start_date=timezone.make_aware(datetime.datetime(2024, 1, 1)),
+            jp_end_date=timezone.make_aware(datetime.datetime(2024, 1, 11)),
+            global_start_date=global_start,
+        )
+
+    def test_gives_select_banners_two_picks_and_leaves_the_rest(self):
+        timeline = self._timeline(None)
+        select = BannerSupport.objects.create(
+            banner_timeline=timeline, name='Debut 10 Select 2')
+        already = BannerSupport.objects.create(
+            banner_timeline=timeline, name='Kiseki 10 Select 2', rate_up_picks=3)
+        ordinary = BannerSupport.objects.create(banner_timeline=timeline, name='Kitasan Black')
+
+        self._backfill()
+
+        for banner, picks in ((select, 2), (already, 3), (ordinary, None)):
+            banner.refresh_from_db()
+            self.assertEqual(banner.rate_up_picks, picks, banner.name)
+
+    def test_overrides_only_the_collab_doubles_on_their_day(self):
+        collab_day = datetime.datetime(2025, 7, 16, 22, tzinfo=datetime.timezone.utc)
+        rerun_day = datetime.datetime(2026, 7, 16, 22, tzinfo=datetime.timezone.utc)
+        card = SupportCard.objects.create(name='Kitasan Black')
+        teio = Uma.objects.create(name='Tokai Teio (Anime)')
+
+        collab = BannerSupport.objects.create(
+            banner_timeline=self._timeline(collab_day), name='Kitasan Black + Satono Diamond')
+        rerun = BannerSupport.objects.create(
+            banner_timeline=self._timeline(rerun_day), name='Kitasan Black + Satono Diamond')
+        collab_row = SupportsOnSupportBanner.objects.create(banner_support=collab, support_card=card)
+        rerun_row = SupportsOnSupportBanner.objects.create(banner_support=rerun, support_card=card)
+
+        uma_collab = BannerUma.objects.create(
+            banner_timeline=self._timeline(collab_day),
+            name='Tokai Teio (Anime) + Mejiro Mcqueen (Anime)')
+        # An editor got here first: their value stands.
+        edited = UmasOnUmaBanner.objects.create(
+            banner_uma=uma_collab, uma=teio, rate_override='0.0042')
+
+        self._backfill()
+
+        for row, rate in ((collab_row, Decimal('0.005')), (rerun_row, None),
+                          (edited, Decimal('0.0042'))):
+            row.refresh_from_db()
+            self.assertEqual(row.rate_override, rate)
