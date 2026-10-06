@@ -113,8 +113,9 @@ class CalculationConstantsTests(CalculatorTestCase):
 
         emap = build_effective_date_map()
         predicted = next(e for e in emap.values() if e['is_predicted'])
-        # At a factor of 1.0 the 30-day JP gap maps to a 30-day global gap.
-        self.assertEqual(predicted['start_date'], _dt(2025, 6, 1) + datetime.timedelta(days=30))
+        # At a factor of 1.0 the 30-day JP gap maps to a 30-day global gap,
+        # landing on that day's reset.
+        self.assertEqual(predicted['start_date'], _dt(2025, 7, 1, 22, 0, 0))
 
     def test_game_event_buffer_is_configurable(self):
         timeline = make_timeline(
