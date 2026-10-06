@@ -1279,6 +1279,24 @@ class CalculationConstantsAdmin(ModelAdmin):
                 "step_up_max_rounds",
             ),
         }),
+        ("Rate-up rates", {
+            "description": (
+                "The chance of pulling one rate-up card on an ordinary banner, by rarity. "
+                "Each card gets its rarity's rate, unless more cards share the rate-up than "
+                "the pool allows: then the pool is split between them (20 SSRs sharing 3% "
+                "is 0.15% each). Decimals: 0.0075 is 0.75%. A single banner that breaks "
+                "the rule is fixed on that banner's page, with 'rate override' or "
+                "'rate-up picks', not here."
+            ),
+            "fields": (
+                "rate_up_rate_3",
+                "rate_up_pool_3",
+                "rate_up_rate_2",
+                "rate_up_pool_2",
+                "rate_up_rate_1",
+                "rate_up_pool_1",
+            ),
+        }),
         ("Event carat decay curve", {
             "description": (
                 "Governs how an event's 'carats throughout' pool is front-loaded "

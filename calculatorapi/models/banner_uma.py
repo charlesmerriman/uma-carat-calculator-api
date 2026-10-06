@@ -27,6 +27,17 @@ class BannerUma(models.Model):
         help_text="Tick when this banner is exceptionally worth pulling on. Highlights it "
                   "on the Timeline and in the calculator's banner dropdown.",
     )
+    # Odds input, read by the client's rate-up rule (frontend utils/rateUpRates.ts).
+    # A select banner lists every card the player COULD choose, but only the
+    # ones they pick are rate-ups, so the rule must split the pool by the picks,
+    # not by the list. Blank on every ordinary banner.
+    rate_up_picks = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        verbose_name="rate-up picks",
+        help_text="Select banners only (\"10 Select 2\"): how many of the listed cards the "
+                  "player picks to rate up. Leave blank when every listed card is a rate-up.",
+    )
 
     class Meta:
         # Default would be "banner uma / banner umas" — confusing for editors.
