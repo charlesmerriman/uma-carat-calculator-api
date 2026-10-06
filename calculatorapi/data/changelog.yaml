@@ -32,6 +32,13 @@
 # module changed. Newest entry first is conventional here but not required — the
 # page sorts by date.
 
+- key: champions-meeting-payout-day
+  date: 2026-10-06
+  title: "Champions Meeting payouts"
+  version: "v1.11"
+  changes:
+    - fixed: "A Champions Meeting that ends the day after a banner no longer counts toward that banner. Its rewards land a minute after the banner closes, so they go to the next one in your plan. Thanks to Daptrius for catching it."
+
 - key: daily-legend-races
   date: 2026-10-05
   title: "Daily legend races"

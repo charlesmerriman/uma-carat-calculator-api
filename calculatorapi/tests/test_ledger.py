@@ -307,10 +307,11 @@ class LedgerTests(CalculatorTestCase):
         self.assertEqual(self._ledger(), [])
 
     def test_race_rows_are_dated_at_end_less_lead_time_and_carry_no_amounts(self):
-        # A Champions Meeting settles its placements 24h before its window
-        # closes; League of Heroes has no lead time. The gap between the two is
-        # the only place these otherwise identical kinds diverge, so it is
-        # asserted side by side rather than in separate tests.
+        # A Champions Meeting settles its placements at the daily reset a day
+        # before its window closes (end less 23:59:59); League of Heroes has no
+        # lead time. The gap between the two is the only place these otherwise
+        # identical kinds diverge, so it is asserted side by side rather than
+        # in separate tests.
         make_champions_meeting(
             name='CM', global_start_date=_dt(2025, 6, 1),
             global_end_date=_dt(2025, 6, 8),
@@ -323,7 +324,7 @@ class LedgerTests(CalculatorTestCase):
         self.assertEqual(len(rows), 2)
         cm, loh = rows[0], rows[1]
         self.assertEqual((cm['kind'], cm['date']),
-                         ('champions_meeting', _dt(2025, 6, 7)))
+                         ('champions_meeting', _dt(2025, 6, 7, 0, 0, 1)))
         self.assertEqual((loh['kind'], loh['date']),
                          ('league_of_heroes', _dt(2025, 7, 8)))
         # Amounts stay zero: what a placement pays depends on the user's rank.
@@ -358,12 +359,15 @@ class LedgerTests(CalculatorTestCase):
         # Confirmed global windows run 22:00 -> 21:59:59, not midnight to
         # midnight. The lead time is a timedelta off the resolved end, so it
         # shifts the whole instant and must NOT truncate to a date — a CM
-        # closing at 21:59:59 settles at 21:59:59 the previous day.
+        # closing at 21:59:59 settles at the reset the previous day, 22:00:00.
+        # Not 21:59:59: that is a banner's closing second, and the client's
+        # `date <= end` gate would then credit a CM ending the day after a
+        # banner to that banner, one minute before the rewards exist.
         make_champions_meeting(
             name='CM', global_start_date=_dt(2025, 6, 1, 22, 0, 0),
             global_end_date=_dt(2025, 6, 8, 21, 59, 59),
         )
-        self.assertEqual(self._one_row()['date'], _dt(2025, 6, 7, 21, 59, 59))
+        self.assertEqual(self._one_row()['date'], _dt(2025, 6, 7, 22, 0, 0))
 
     def test_past_events_are_included(self):
         # Deliberate: the ledger is a set of dated facts with no "as of today"
@@ -374,7 +378,7 @@ class LedgerTests(CalculatorTestCase):
             global_end_date=_dt(2020, 1, 8),
         )
         row = self._one_row()
-        self.assertEqual(row['date'], _dt(2020, 1, 7))
+        self.assertEqual(row['date'], _dt(2020, 1, 7, 0, 0, 1))
 
     def test_rows_are_sorted_by_date(self):
         late = make_timeline(name='Late', global_start_date=_dt(2025, 9, 1),
