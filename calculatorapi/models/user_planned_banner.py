@@ -60,6 +60,20 @@ class UserPlannedBanner(models.Model):
     # served to its owner only, and plans.copy_plan() blanks it whenever a copy
     # changes owner.
     note = models.TextField(blank=True, default="")
+    # Which featured cards the row's odds are about -- choices, so they live on
+    # the row like the counts. Plain card ids rather than FKs: whether an id
+    # names an Uma or a SupportCard follows the row's target, and a pair of FKs
+    # per field would be four columns for two numbers. The CLIENT ignores an id
+    # that is not (or no longer) among the banner's featured cards, so an editor
+    # removing a card can never 400 a plan its owner did not touch -- the trap
+    # step-up selections had to be grandfathered out of.
+    #
+    # primary_card: the card the odds strip is about. Null = the client's
+    #   default, the banner's first card of its highest rarity.
+    # second_card: a second card to show joint odds for ("MLB of the first, and
+    #   how many of this one"). Null = two-card odds off, the normal state.
+    primary_card = models.PositiveIntegerField(null=True, blank=True)
+    second_card = models.PositiveIntegerField(null=True, blank=True)
 
     class Meta:
         constraints = [

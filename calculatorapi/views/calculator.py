@@ -224,7 +224,12 @@ def serialize_planned_banners(plan, *, emap, card_context):
         # UserPlannedBannerSerializer nests BannerUma/BannerSupportSerializer,
         # so a signed-in user pays the same M2M N+1 as the catalogue does --
         # once per planned row rather than once per banner, but same cause.
-        ).prefetch_related("banner_uma__umas", "banner_support__support_cards"),
+        ).prefetch_related(
+            "banner_uma__umas",
+            "banner_uma__umasonumabanner_set",
+            "banner_support__support_cards",
+            "banner_support__supportsonsupportbanner_set",
+        ),
         key=lambda pb: (
             effective_sort_key(planned_effective_start(pb, emap)),
             _planned_banner_kind_rank(pb),
@@ -385,12 +390,14 @@ class CalculatorViewSet(ViewSet):
         # and the endpoint costs ~340 extra round trips. Cheap on SQLite,
         # ~6ms each against the networked prod Postgres.
         banner_uma_data = sorted(
-            BannerUma.objects.select_related("banner_timeline").prefetch_related("umas"),
+            BannerUma.objects.select_related("banner_timeline").prefetch_related(
+                "umas", "umasonumabanner_set"
+            ),
             key=lambda b: effective_sort_key(emap.get(b.banner_timeline_id)),
         )
         banner_support_data = sorted(
             BannerSupport.objects.select_related("banner_timeline").prefetch_related(
-                "support_cards"
+                "support_cards", "supportsonsupportbanner_set"
             ),
             key=lambda b: effective_sort_key(emap.get(b.banner_timeline_id)),
         )

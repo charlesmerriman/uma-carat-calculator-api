@@ -54,13 +54,22 @@ KIND_LEAGUE_OF_HEROES = "league_of_heroes"
 # carats a day late, which is visible whenever a banner closes in that gap: the
 # CM fell on the wrong side of the banner and its payout slipped to the next row.
 #
+# The lead is 23:59:59, not 24:00:00, so the row lands ON the award instant.
+# Confirmed windows close at 21:59:59; the rewards drop at the daily reset that
+# follows, 22:00:00 the day before the listed end (confirmed by Daptrius,
+# 2026-10-06). A full 24 hours would date the row one second before that
+# reset, which is exactly a banner's closing second: the client gate is
+# `date <= banner end`, and that one second decided whether a CM ending the
+# day after a banner was credited to it (it must not be — the rewards arrive a
+# minute after the banner closes).
+#
 # League of Heroes is listed explicitly at zero rather than omitted. CM and LoH
 # are field-identical and handled identically everywhere else (they even share
 # one timeline card), so a divergence between them has to read as deliberate at
 # the point it happens, not as a kind someone forgot to add. Giving LoH the same
 # lead time later is a one-line change here and nowhere else.
 RACE_REWARD_LEAD_TIME = {
-    KIND_CHAMPIONS_MEETING: timedelta(hours=24),
+    KIND_CHAMPIONS_MEETING: timedelta(hours=23, minutes=59, seconds=59),
     KIND_LEAGUE_OF_HEROES: timedelta(0),
 }
 
@@ -170,7 +179,8 @@ def _race_rows(events, emap, kind):
 
     Dated at the event's resolved END date, less that kind's
     RACE_REWARD_LEAD_TIME — the payout lands when the event's placements are
-    settled, which for a Champions Meeting is a day before the window closes.
+    settled, which for a Champions Meeting is the daily reset a day before the
+    window closes.
     Amounts stay zero: what a placement is worth depends on the user's rank row,
     which only the client knows.
 

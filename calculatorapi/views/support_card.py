@@ -16,4 +16,7 @@ class SupportCardSerializer(FirstJpDateMixin, serializers.ModelSerializer):
             # Public and rendered: the Timeline tile's hover overlay.
             "purpose",
             "first_jp_date",
+            # The rate-up rule's input (R / SR / SSR as 1 / 2 / 3). Null for a
+            # card with no game id, which the client reads as SSR.
+            "rarity",
         )

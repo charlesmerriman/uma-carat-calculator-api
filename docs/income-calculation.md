@@ -334,6 +334,19 @@ The live ceiling is a step-up's own `banner_count * 5`, which is always lower �
 `step_up_max_rounds` exists only to stop a mis-entered `banner_count` producing an absurd
 projection.
 
+### Rate-up rates (odds only, no carats)
+
+An ordinary banner's odds read the rate-up rule's six constants, also on
+`CalculationConstants`. They move no carat total, only the copy-count strip:
+
+| Constant | Default | Meaning |
+|---|---|---|
+| `rate_up_rate_3` / `rate_up_pool_3` | 0.0075 / 0.03 | ★3 / SSR: each card's rate, and the most they share |
+| `rate_up_rate_2` / `rate_up_pool_2` | 0.0225 / 0.03 | ★2 / SR |
+| `rate_up_rate_1` / `rate_up_pool_1` | 0.0375 / 0.05 | ★1 / R |
+
+The rule, its exceptions and where the numbers came from: `data-model.md`, "Rate-up rates".
+
 **Contention worth knowing:** step-ups and discounted pulls draw from the same paid-carat
 pool, and walk order (banner start date) decides which drains it first. A step-up planned
 earlier in the timeline can leave a later banner unable to fund its discounted pulls.

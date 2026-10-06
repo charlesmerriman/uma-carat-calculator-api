@@ -33,6 +33,7 @@ from calculatorapi.tests.factories import (
     auth_client,
     _dt,
     _predicted,
+    _predicted_end,
     _iso,
 )
 
@@ -163,7 +164,7 @@ class CalculatorGetTests(CalculatorTestCase):
         # run length is preserved because both ends move together.
         shifted_start = _predicted(_dt(2025, 6, 1), 30, offset_days=7)
         expected_start = _iso(shifted_start)
-        expected_end = _iso(shifted_start + datetime.timedelta(days=7))
+        expected_end = _iso(_predicted_end(_dt(2025, 6, 1), 30, 7, offset_days=7))
 
         top = next(t for t in res.data['banner_timeline_data'] if t['id'] == offset_tl.id)
         self.assertEqual(top['start_date'], expected_start)
@@ -283,7 +284,7 @@ class CalculatorGetTests(CalculatorTestCase):
         shifted_start = _predicted(_dt(2025, 6, 1), 30, offset_days=7)
         self.assertEqual(entry['start_date'], _iso(shifted_start))
         self.assertEqual(entry['end_date'], _iso(
-            shifted_start + datetime.timedelta(days=7) + GAME_EVENT_END_DATE_BUFFER))
+            _predicted_end(_dt(2025, 6, 1), 30, 7, offset_days=7) + GAME_EVENT_END_DATE_BUFFER))
         self.assertEqual(entry['applied_offset_days'], 7)
 
     def test_champions_meeting_exposes_resolved_and_predicted_fields(self):
@@ -395,7 +396,7 @@ class CalculatorGetTests(CalculatorTestCase):
         self.assertTrue(entry['is_predicted'])
         self.assertEqual(entry['start_date'], _iso(predicted_start))
         self.assertEqual(entry['end_date'], _iso(
-            predicted_start + datetime.timedelta(days=7) + GAME_EVENT_END_DATE_BUFFER))
+            _predicted_end(_dt(2025, 6, 1), 30, 7) + GAME_EVENT_END_DATE_BUFFER))
 
     def test_game_event_with_no_banner_timeline_resolves_null_dates(self):
         event = make_game_event(name='Unlinked Event', banner_timeline=None)

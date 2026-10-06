@@ -77,6 +77,7 @@ erDiagram
         string name
         int free_pulls
         bool is_recommended "editorial; presentation only"
+        int rate_up_picks "select banners only; null = every listed card is a rate-up"
         string admin_comments
     }
 
@@ -86,6 +87,7 @@ erDiagram
         string name
         int free_pulls
         bool is_recommended "editorial; presentation only"
+        int rate_up_picks "select banners only; null = every listed card is a rate-up"
         string admin_comments
     }
 
@@ -469,7 +471,7 @@ An account holds up to `PLAN_CAP` (5) plans and the calculator opens on the acti
 
 | Data | Lives on | Why |
 |---|---|---|
-| Planned banner rows (`number_of_pulls`, `reserved_copies`, `note`) | `Plan` | the choices |
+| Planned banner rows (`number_of_pulls`, `reserved_copies`, `note`, `primary_card`, `second_card`) | `Plan` | the choices |
 | Which of the owner's stats blocks to read (`income_profile`, nullable) | `Plan` | a pointer, not a fact; dropped when a copy changes owner |
 | Carats, tickets, selector tickets, shards, crystals, ranks | `CustomUser`, or an `IncomeProfile` the account owns | facts about the person (or about their other game account) |
 | The income toggles | same row as the balances | income side |
@@ -494,6 +496,15 @@ because it is about the choice and should differ per plan, and `copy_plan()` kee
 portability rule true by blanking every note when the copy changes owner, exactly as it
 drops `income_profile`. It is never served on a public route and is excluded from the
 admin form.
+
+`primary_card` / `second_card` pass it too: they are catalogue card ids saying which
+featured cards the row's odds are about (the first is the one the strip shows, null meaning
+the client's default; the second turns on two-card odds). Plain integers, not FKs, because
+whether one names an `Uma` or a `SupportCard` follows the row's target. **The server does
+not check them against the banner's featured cards, on purpose**: the client ignores an id
+the banner no longer features, so an editor removing a card cannot `400` a plan its owner
+never touched (the trap step-up selections had to be grandfathered out of). `copy_plan()`
+copies both, across accounts too.
 
 Accepted consequence: purchases are shared by every plan that reads the same stats block.
 A pack planned to fund a step-up in one plan still credits its carats while another plan
@@ -839,6 +850,38 @@ The admin toggles it with `list_editable`, deliberately not a bulk action: bulk 
 `queryset.update()`, which fires no `post_save`, so `public_payload_cache` would keep serving
 the old flag until its TTL expired.
 
+### Rate-up rates — a client-side rule, with per-banner exceptions
+
+A rate-up card's per-pull chance is **not** a flat 0.75%. The global client's own gacha
+table (`gacha_available` in `master.mdb`, read 2026-10-06) shows one rule behind every
+ordinary banner: each card gets its rarity's usual rate-up chance, unless more cards share
+the rate-up than the rarity's pool allows, in which case the pool is split evenly.
+
+```
+rate = min(rate_up_rate_N, rate_up_pool_N / rate-up cards of rarity N on the banner)
+```
+
+| Rarity | `rate_up_rate_N` | `rate_up_pool_N` | Seen in the game data |
+|---|---|---|---|
+| ★3 / SSR | 0.75% | 3% | 1-2 cards 0.75% each; 9 umas 0.333%; 20 supports 0.15% |
+| ★2 / SR | 2.25% | 3% | one ★2 uma 2.25%; three SRs 1% each |
+| ★1 / R | 3.75% | 5% | one 3.75%; two 2.5% each; three 1.67% each |
+
+Two inputs bend it, both set per banner in the admin:
+
+- **`BannerUma.rate_up_picks` / `BannerSupport.rate_up_picks`** — a select banner ("10 Select
+  2") lists every card the player *could* pick, but only the picks are rate-ups, so the
+  pool is split by the picks rather than the list. Null on every ordinary banner.
+- **`UmasOnUmaBanner.rate_override` / `SupportsOnSupportBanner.rate_override`** — one
+  card's rate when it breaks the rule outright. Per card *on a banner*, because the same
+  card can be 0.75% on one banner and 0.5% on another (the 2025-07-16 anime-collab doubles
+  were 0.5% each).
+
+**The rule runs on the client** (`frontend/src/utils/rateUpRates.ts`), matching "the backend
+carries no projection math". The API serves its inputs: each featured card's `rarity`, the
+banner's `rate_up_picks` and `rate_overrides`, and the six constants. A missing `rarity`
+reads as ★3/SSR, the same default `Uma.is_three_star` applies.
+
 ### `GameEvent` reward amounts are fields, not a separate model
 
 Reward amounts used to live on a separate `EventReward` model, one-to-many with `GameEvent`. In practice every event had at most one immediate reward and one throughout-the-event reward, so the two were folded directly onto `GameEvent` as fields instead: `carat_amount` (+ the ticket/shard/crystal fields) is earned once the event's own resolved `start_date` passes, and `carats_throughout` is prorated by elapsed time across `start_date`..`end_date` (computed client-side — see `remainingThroughoutForRow` in `frontend/src/utils/incomeLedger.ts`), independent of `start_date`. Only carats are ever distributed this way; tickets/shards/crystals are always a lump on `start_date`.
@@ -882,14 +925,17 @@ The site targets the **global** server, but global dates are only confirmed ~1 m
 
 Prediction (fixed anchor, in `calculatorapi/predictions.py`):
 - **Anchor** = the row with the greatest `jp_start_date` among those having BOTH a confirmed `global_start_date` and a `jp_start_date`.
-- `predicted_global_start = anchor.global_start_date + (target.jp_start_date − anchor.jp_start_date) × 0.664`
+- `predicted_global_start = anchor.global_start_date + (target.jp_start_date − anchor.jp_start_date) × factor`
 - `predicted_global_end = predicted_global_start + (target.jp_end_date − target.jp_start_date)`
+- **Both are then snapped to the daily reset** (`snap_to_reset`): the start to 22:00:00 UTC and the end to 21:59:59 UTC on the UTC calendar day the raw instant falls on. The raw result has a fractional time of day that no real banner has, and it made the displayed day flip per viewer timezone on a random subset of predicted rows. The rule is the source sheet's (datetime → date → fixed time), so the two schedules agree row for row.
+
+The factor is `CalculationConstants.prediction_factor`, admin-editable (0.64 on the live site as of 2026-10-06); `PREDICTION_FACTOR` in `predictions.py` is only the fallback for the DB-free functions.
 
 The calculator view builds one effective-date map per content type (keyed by row id) once per request and injects each via serializer context, so the resolved dates are consistent across every serialization path. **Prediction requires the anchor to have a `jp_start_date`** — historical rows migrate with JP dates null, so the most-recent confirmed rows must have their JP dates backfilled in the admin for prediction to activate.
 
 ### Schedule offsets: correcting a prediction that has drifted
 
-The 0.664 factor assumes global keeps a steady pace. When it doesn't — a delayed banner, an inserted break week — *every* prediction after the slip is wrong by the same number of days. `schedule_offset_days` (an `IntegerField(default=0)` on all three models) is the manual correction, applied by `apply_schedule_offsets()` as a **second layer on top of** the anchor math, which it leaves untouched.
+The prediction factor assumes global keeps a steady pace. When it doesn't — a delayed banner, an inserted break week — *every* prediction after the slip is wrong by the same number of days. `schedule_offset_days` (an `IntegerField(default=0)` on all three models) is the manual correction, applied by `apply_schedule_offsets()` as a **second layer on top of** the anchor math, which it leaves untouched.
 
 - The offset pushes **its own row and every dated row after it** forward by that many days. Both ends move, so the run length is preserved.
 - Offsets **stack**: a row's applied offset is the sum of `schedule_offset_days` from every offset-carrying row whose base start date is at or before its own.

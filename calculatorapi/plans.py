@@ -248,7 +248,8 @@ def copy_plan(source, *, owner, name):
     publish and take features are this same call across two accounts, which is
     why it takes the owner rather than assuming it. It works across accounts
     because a plan holds nothing about its author (models/plan.py): a row is a
-    catalogue FK and two counts, all of which mean the same thing to anyone.
+    catalogue FK, two counts and two card ids, all of which mean the same thing
+    to anyone.
     The row's `note` is the exception and is blanked across accounts.
 
     Does NOT check the cap or ownership of `source`. Both are the caller's
@@ -284,6 +285,9 @@ def copy_plan(source, *, owner, name):
                     number_of_pulls=row.number_of_pulls,
                     reserved_copies=row.reserved_copies,
                     note=row.note if same_owner else "",
+                    # Catalogue ids, so they mean the same thing to anyone.
+                    primary_card=row.primary_card,
+                    second_card=row.second_card,
                 )
                 for row in source.banners.all()
             ]
