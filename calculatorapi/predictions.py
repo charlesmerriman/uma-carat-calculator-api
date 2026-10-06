@@ -21,7 +21,15 @@ Prediction model (fixed anchor):
                                + (target.jp_start_date - anchor.jp_start_date) * FACTOR
       predicted_global_end   = predicted_global_start
                                + (target.jp_end_date - target.jp_start_date)
-  The 0.664 factor reflects global historically running content faster than JP.
+  The factor reflects global historically running content faster than JP. It is
+  admin-editable (CalculationConstants.prediction_factor; 0.64 on the live site
+  as of 2026-10-06), and PREDICTION_FACTOR below is only the fallback.
+- Both predicted instants are then SNAPPED to the daily reset: the start to
+  22:00:00 UTC and the end to 21:59:59 UTC on the UTC calendar day each raw
+  instant falls on (`snap_to_reset`). Raw results carry a fractional time of
+  day (0.64 x a whole number of days), which no real banner has, and which made
+  the displayed day flip per viewer timezone on a random subset of rows. The
+  source sheet does the same: datetime -> date -> fixed time.
 - Confirmed rows pass through unchanged with is_predicted=False.
 - Rows with no usable dates (or when no anchor exists) resolve to
   (None, None, False).
@@ -75,6 +83,26 @@ _NO_DATE_SENTINEL = datetime.max
 # a deploy. This constant is what the pure functions fall back to when called
 # without one.
 PREDICTION_FACTOR = 0.664
+
+
+# The global server's daily reset, UTC. Every confirmed window runs
+# 22:00:00 -> 21:59:59, so a predicted one is made to as well.
+RESET_START_OF_DAY = timedelta(hours=22)
+RESET_END_OF_DAY = timedelta(hours=21, minutes=59, seconds=59)
+
+
+def snap_to_reset(instant, *, end=False):
+    """Move a predicted instant onto the daily reset of the UTC calendar day
+    it falls on: 22:00:00 for a start, 21:59:59 for an end.
+
+    The rule is the source sheet's (take the date, add a fixed time), chosen
+    over rounding to the nearest reset so the two schedules agree row for row.
+    The rule is applied to each end of a window independently; because JP
+    windows are themselves reset-aligned, the predicted window keeps the JP
+    run length in game days.
+    """
+    day = instant.replace(hour=0, minute=0, second=0, microsecond=0)
+    return day + (RESET_END_OF_DAY if end else RESET_START_OF_DAY)
 
 
 def _get(row, key):
@@ -150,9 +178,13 @@ def compute_effective_dates(rows, *, prediction_factor=PREDICTION_FACTOR):
             pred_start = _get(anchor, "global_start_date") + jp_gap * float(prediction_factor)
             jp_end = _get(row, "jp_end_date")
             pred_end = pred_start + (jp_end - jp_start) if jp_end is not None else None
+            # Snap AFTER the end is derived from the raw start, so the window
+            # keeps its JP run length; snapping the start first and then
+            # adding the run length would leave the end at 21:59:59 only by
+            # luck of the JP row's own time of day.
             result[row_id] = {
-                "start_date": pred_start,
-                "end_date": pred_end,
+                "start_date": snap_to_reset(pred_start),
+                "end_date": snap_to_reset(pred_end, end=True) if pred_end is not None else None,
                 "is_predicted": True,
             }
         else:

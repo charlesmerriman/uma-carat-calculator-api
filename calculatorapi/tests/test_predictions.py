@@ -6,6 +6,7 @@ from django.utils import timezone
 
 from calculatorapi.predictions import (
     PREDICTION_FACTOR,
+    snap_to_reset,
     GAME_EVENT_END_DATE_BUFFER,
     apply_schedule_offsets,
     compute_effective_dates,
@@ -32,6 +33,7 @@ from calculatorapi.tests.factories import (
     _UTC,
     _dt,
     _predicted,
+    _predicted_end,
 )
 
 
@@ -66,7 +68,7 @@ class PredictionUnitTests(CalculatorTestCase):
         target = compute_effective_dates(rows)[4]
         # Anchored to id=2 (jp 2025-01-01 / global 2025-06-01). Δjp = 30 days.
         self.assertTrue(target["is_predicted"])
-        self.assertEqual(target["start_date"], _dt(2025, 6, 1) + datetime.timedelta(days=30) * PREDICTION_FACTOR)
+        self.assertEqual(target["start_date"], _predicted(_dt(2025, 6, 1), 30))
 
     def test_fixed_anchor_worked_example(self):
         rows = [
@@ -76,11 +78,13 @@ class PredictionUnitTests(CalculatorTestCase):
              "global_start_date": None, "global_end_date": None},
         ]
         out = compute_effective_dates(rows)[2]
-        # Δjp = 30d × 0.664 = 19.92d -> 2025-06-20 22:04:48; banner runs 7d.
+        # Δjp = 30d × 0.664 = 19.92d -> raw 2025-06-20 22:04:48, snapped to the
+        # reset of that calendar day, 22:00:00; the banner runs 7d, so the raw
+        # end is 06-27 22:04:48, snapped to 21:59:59 on its own day.
         # Deliberately hardcoded: this is the one test that pins the arithmetic,
         # so retuning PREDICTION_FACTOR should fail here and nowhere else.
-        self.assertEqual(out["start_date"], datetime.datetime(2025, 6, 20, 22, 4, 48, tzinfo=_UTC))
-        self.assertEqual(out["end_date"], datetime.datetime(2025, 6, 27, 22, 4, 48, tzinfo=_UTC))
+        self.assertEqual(out["start_date"], datetime.datetime(2025, 6, 20, 22, 0, 0, tzinfo=_UTC))
+        self.assertEqual(out["end_date"], datetime.datetime(2025, 6, 27, 21, 59, 59, tzinfo=_UTC))
         self.assertTrue(out["is_predicted"])
 
     def test_no_anchor_leaves_jp_only_rows_unresolved(self):
@@ -104,6 +108,39 @@ class PredictionUnitTests(CalculatorTestCase):
         self.assertIsNone(out["start_date"])
         self.assertFalse(out["is_predicted"])
 
+    def test_snap_to_reset_takes_the_calendar_day_then_a_fixed_time(self):
+        # The sheet's rule: datetime -> date -> fixed time. NOT nearest reset:
+        # 07:36 on the 10th is closer to the 9th's 22:00, and still snaps to
+        # the 10th's, because that is the calendar day it fell on.
+        early = datetime.datetime(2026, 11, 10, 7, 36, 0, tzinfo=_UTC)
+        late = datetime.datetime(2026, 12, 21, 23, 55, 12, tzinfo=_UTC)
+        self.assertEqual(snap_to_reset(early), _dt(2026, 11, 10, 22, 0, 0))
+        self.assertEqual(snap_to_reset(late), _dt(2026, 12, 21, 22, 0, 0))
+        self.assertEqual(snap_to_reset(early, end=True), _dt(2026, 11, 10, 21, 59, 59))
+        self.assertEqual(snap_to_reset(late, end=True), _dt(2026, 12, 21, 21, 59, 59))
+        # Already on the reset: unchanged.
+        self.assertEqual(snap_to_reset(_dt(2026, 11, 10, 22, 0, 0)), _dt(2026, 11, 10, 22, 0, 0))
+        self.assertEqual(snap_to_reset(_dt(2026, 11, 10, 21, 59, 59), end=True),
+                         _dt(2026, 11, 10, 21, 59, 59))
+
+    def test_predicted_window_is_reset_aligned_and_keeps_the_jp_run_length(self):
+        # Live-shaped rows: JP and global windows both run 22:00 -> 21:59:59.
+        # Whatever fraction the factor produces, the predicted window must come
+        # out 22:00:00 -> 21:59:59 and span the same number of game days as
+        # the JP window (10 here).
+        rows = [
+            {"id": 1, "jp_start_date": _dt(2023, 1, 20, 22), "jp_end_date": _dt(2023, 1, 30, 21, 59, 59),
+             "global_start_date": _dt(2026, 11, 4, 22), "global_end_date": _dt(2026, 11, 14, 21, 59, 59)},
+            {"id": 2, "jp_start_date": _dt(2023, 3, 20, 22), "jp_end_date": _dt(2023, 3, 30, 21, 59, 59),
+             "global_start_date": None, "global_end_date": None},
+        ]
+        out = compute_effective_dates(rows, prediction_factor=0.64)[2]
+        # Δjp = 59d × 0.64 = 37.76d -> raw 2026-12-12 16:14:24.
+        self.assertEqual(out["start_date"], _dt(2026, 12, 12, 22, 0, 0))
+        self.assertEqual(out["end_date"], _dt(2026, 12, 22, 21, 59, 59))
+        # A confirmed row is a fact and is never touched, whatever its time.
+        self.assertEqual(compute_effective_dates(rows)[1]["start_date"], _dt(2026, 11, 4, 22))
+
     def test_negative_delta_predicts_before_anchor(self):
         rows = [
             {"id": 1, "jp_start_date": _dt(2025, 3, 1), "jp_end_date": _dt(2025, 3, 8),
@@ -113,8 +150,9 @@ class PredictionUnitTests(CalculatorTestCase):
              "global_start_date": None, "global_end_date": None},
         ]
         out = compute_effective_dates(rows)[2]
-        # Δjp = -30d × 0.7 = -21d -> 2025-07-11.
-        self.assertEqual(out["start_date"], _dt(2025, 8, 1) - datetime.timedelta(days=30) * PREDICTION_FACTOR)
+        # Δjp = -30d × 0.664 = -19.92d -> raw 2025-07-12 01:55:12, snapped to
+        # 2025-07-12 22:00:00.
+        self.assertEqual(out["start_date"], _predicted(_dt(2025, 8, 1), -30))
         self.assertTrue(out["is_predicted"])
 
     def test_predicted_start_but_null_jp_end_gives_null_end(self):
@@ -417,7 +455,7 @@ class GameEventPredictionTests(CalculatorTestCase):
         self.assertTrue(out['is_predicted'])
         self.assertEqual(out['start_date'], predicted_start)
         self.assertEqual(out['end_date'],
-                         predicted_start + datetime.timedelta(days=7) + GAME_EVENT_END_DATE_BUFFER)
+                         _predicted_end(_dt(2025, 6, 1), 30, 7) + GAME_EVENT_END_DATE_BUFFER)
 
     def test_unlinked_event_resolves_to_null(self):
         event = make_game_event(banner_timeline=None)

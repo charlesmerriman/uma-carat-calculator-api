@@ -882,14 +882,17 @@ The site targets the **global** server, but global dates are only confirmed ~1 m
 
 Prediction (fixed anchor, in `calculatorapi/predictions.py`):
 - **Anchor** = the row with the greatest `jp_start_date` among those having BOTH a confirmed `global_start_date` and a `jp_start_date`.
-- `predicted_global_start = anchor.global_start_date + (target.jp_start_date − anchor.jp_start_date) × 0.664`
+- `predicted_global_start = anchor.global_start_date + (target.jp_start_date − anchor.jp_start_date) × factor`
 - `predicted_global_end = predicted_global_start + (target.jp_end_date − target.jp_start_date)`
+- **Both are then snapped to the daily reset** (`snap_to_reset`): the start to 22:00:00 UTC and the end to 21:59:59 UTC on the UTC calendar day the raw instant falls on. The raw result has a fractional time of day that no real banner has, and it made the displayed day flip per viewer timezone on a random subset of predicted rows. The rule is the source sheet's (datetime → date → fixed time), so the two schedules agree row for row.
+
+The factor is `CalculationConstants.prediction_factor`, admin-editable (0.64 on the live site as of 2026-10-06); `PREDICTION_FACTOR` in `predictions.py` is only the fallback for the DB-free functions.
 
 The calculator view builds one effective-date map per content type (keyed by row id) once per request and injects each via serializer context, so the resolved dates are consistent across every serialization path. **Prediction requires the anchor to have a `jp_start_date`** — historical rows migrate with JP dates null, so the most-recent confirmed rows must have their JP dates backfilled in the admin for prediction to activate.
 
 ### Schedule offsets: correcting a prediction that has drifted
 
-The 0.664 factor assumes global keeps a steady pace. When it doesn't — a delayed banner, an inserted break week — *every* prediction after the slip is wrong by the same number of days. `schedule_offset_days` (an `IntegerField(default=0)` on all three models) is the manual correction, applied by `apply_schedule_offsets()` as a **second layer on top of** the anchor math, which it leaves untouched.
+The prediction factor assumes global keeps a steady pace. When it doesn't — a delayed banner, an inserted break week — *every* prediction after the slip is wrong by the same number of days. `schedule_offset_days` (an `IntegerField(default=0)` on all three models) is the manual correction, applied by `apply_schedule_offsets()` as a **second layer on top of** the anchor math, which it leaves untouched.
 
 - The offset pushes **its own row and every dated row after it** forward by that many days. Both ends move, so the run length is preserved.
 - Offsets **stack**: a row's applied offset is the sum of `schedule_offset_days` from every offset-carrying row whose base start date is at or before its own.
