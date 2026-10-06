@@ -5,7 +5,6 @@ import datetime
 from django.utils import timezone
 
 from calculatorapi.predictions import (
-    PREDICTION_FACTOR,
     snap_to_reset,
     GAME_EVENT_END_DATE_BUFFER,
     apply_schedule_offsets,
