@@ -904,9 +904,18 @@ editor narrowing a cutoff cannot 400 a plan its owner never touched.
   "is_recommended": false,
   "admin_comments": "string | null",
   "banner_timeline": { "id": 1, "name": "string", "start_date": "ISO8601", "end_date": "ISO8601", "is_predicted": false, "jp_start_date": "ISO8601 | null", "jp_end_date": "ISO8601 | null", "global_start_date": "ISO8601 | null", "global_end_date": "ISO8601 | null", "image": "url | null" },
-  "umas": [ { "id": 1, "name": "string", "image": "url | null", "admin_comments": "string | null", "purpose": "string", "first_jp_date": "ISO8601 | null", "is_time_limited": false, "is_three_star": true } ]
+  "umas": [ { "id": 1, "name": "string", "image": "url | null", "admin_comments": "string | null", "purpose": "string", "first_jp_date": "ISO8601 | null", "is_time_limited": false, "is_three_star": true, "rarity": "1 | 2 | 3 | null" } ],
+  "rate_up_picks": "int | null",
+  "rate_overrides": { "<uma id>": 0.005 }
 }
 ```
+
+`rarity`, `rate_up_picks` and `rate_overrides` are the **inputs to the rate-up rule** the
+client applies (`data-model.md`, "Rate-up rates"). `rarity` is the game's star count, null
+until imported (read it as 3). `rate_up_picks` is set only on select banners: how many of
+the listed cards the player picks. `rate_overrides` maps a card id to its rate as a decimal,
+for the cards on this banner that break the rule; it is `{}` on nearly every banner, and
+its keys are strings because JSON object keys always are.
 
 `is_recommended` is the editorial "Recommended" flag, set **per banner** — the uma and
 support banners sharing a window are flagged independently, and `BannerStepUp` has no such
@@ -940,9 +949,14 @@ including one with a `null` (unrestricted) cutoff. A client must check both halv
   "is_recommended": false,
   "admin_comments": "string | null",
   "banner_timeline": { ... },
-  "support_cards": [ { "id": 1, "name": "string", "image": "url | null", "admin_comments": "string | null", "purpose": "string", "first_jp_date": "ISO8601 | null" } ]
+  "support_cards": [ { "id": 1, "name": "string", "image": "url | null", "admin_comments": "string | null", "purpose": "string", "first_jp_date": "ISO8601 | null", "rarity": "1 | 2 | 3 | null" } ],
+  "rate_up_picks": "int | null",
+  "rate_overrides": { "<support card id>": 0.005 }
 }
 ```
+
+The rate-up inputs mean what they do on `BannerUma`; a support card's `rarity` is R / SR /
+SSR as 1 / 2 / 3.
 
 ### `BannerStepUp` (from `banner_step_up_data`)
 ```json
@@ -1066,7 +1080,8 @@ Two things to know:
   `DecimalField` as a string by default; these are coerced to floats because the
   client feeds them straight into arithmetic, and `"0.664" * 2` is a silent `NaN`
   in JavaScript rather than an error. Affects `prediction_factor`,
-  `throughout_decay_k`, `throughout_decay_linear_slope` and `step_up_target_rate`.
+  `throughout_decay_k`, `throughout_decay_linear_slope`, `step_up_target_rate` and the
+  six rate-up constants (`rate_up_rate_1..3`, `rate_up_pool_1..3`).
   **Every `DecimalField` added here needs the same coercion**, and a test walks the
   model to enforce that — a missed one is not a type error anywhere, just a `NaN`
   deep in the odds.

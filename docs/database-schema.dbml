@@ -230,6 +230,7 @@ Table calculatorapi_banneruma as BannerUma {
   admin_comments text [null, note: 'Notes for editors.']
   free_pulls integer [not null, note: 'Django default: 0. Free pulls players get on this banner — the calculator counts these toward affordability.']
   is_recommended boolean [not null, note: 'Django default: False. Tick when this banner is exceptionally worth pulling on. Highlights it on the Timeline and in the calculator\'s banner dropdown.']
+  rate_up_picks smallint [null, note: 'Select banners only ("10 Select 2"): how many of the listed cards the player picks to rate up. Leave blank when every listed card is a rate-up.']
 
   indexes {
     banner_timeline_id
@@ -245,6 +246,7 @@ Table calculatorapi_bannersupport as BannerSupport {
   admin_comments text [null, note: 'Notes for editors.']
   free_pulls integer [not null, note: 'Django default: 0. Free pulls players get on this banner — the calculator counts these toward affordability.']
   is_recommended boolean [not null, note: 'Django default: False. Tick when this banner is exceptionally worth pulling on. Highlights it on the Timeline and in the calculator\'s banner dropdown.']
+  rate_up_picks smallint [null, note: 'Select banners only ("10 Select 2"): how many of the listed cards the player picks to rate up. Leave blank when every listed card is a rate-up.']
 
   indexes {
     banner_timeline_id
@@ -301,6 +303,7 @@ Table calculatorapi_umasonumabanner as UmasOnUmaBanner {
   banner_uma_id bigint [not null, note: 'Django on_delete: CASCADE.']
   uma_id bigint [not null, note: 'Django on_delete: CASCADE.']
   recommendation text [null, note: 'Optional recommendation text for this uma on this banner.']
+  rate_override numeric(7,6) [null, note: 'Only when this card\'s rate breaks the usual rule, as a decimal: 0.005 for 0.5%. Blank = the client\'s rate-up rule decides. Application validator: MinValueValidator(0). Application validator: MaxValueValidator(1).']
 
   indexes {
     banner_uma_id
@@ -315,6 +318,7 @@ Table calculatorapi_supportsonsupportbanner as SupportsOnSupportBanner {
   banner_support_id bigint [not null, note: 'Django on_delete: CASCADE.']
   support_card_id bigint [not null, note: 'Django on_delete: CASCADE.']
   recommendation text [null, note: 'Optional recommendation text for this card on this banner.']
+  rate_override numeric(7,6) [null, note: 'Only when this card\'s rate breaks the usual rule, as a decimal: 0.005 for 0.5%. Blank = the client\'s rate-up rule decides. Application validator: MinValueValidator(0). Application validator: MaxValueValidator(1).']
 
   indexes {
     banner_support_id
@@ -516,6 +520,12 @@ Table calculatorapi_calculationconstants as CalculationConstants {
   step_up_pulls_per_step integer [not null, note: 'Django default: 10. Pulls per step. Each step is a 10-pull. Application validator: MinValueValidator(1).']
   step_up_target_rate numeric(6,4) [not null, note: 'Django default: "0.0030". Per-pull chance of the ONE card the player is chasing. Derived: the game\'s ~3% total ★3/SSR rate spread across the 10 cards they selected. Change it only if the pool size or the headline rate changes — it is not an independent dial. Application validator: MinValueValidator(0). Application validator: MaxValueValidator(1).']
   step_up_max_rounds integer [not null, note: 'Django default: 7. Safety bound on completed ladders, NOT the live constraint. Real cost and odds clamp at a banner\'s own banner_count x 5, which is always lower. The source sheet\'s 35-step cap is an artifact of its lookup table\'s extent rather than a game rule. Application validator: MinValueValidator(1).']
+  rate_up_rate_3 numeric(7,6) [not null, note: 'Django default: "0.007500". Per-pull chance of one rarity-3 rate-up card. Application validator: MinValueValidator(0). Application validator: MaxValueValidator(1).']
+  rate_up_pool_3 numeric(7,6) [not null, note: 'Django default: "0.030000". The most the rarity-3 rate-ups can share between them. Application validator: MinValueValidator(0). Application validator: MaxValueValidator(1).']
+  rate_up_rate_2 numeric(7,6) [not null, note: 'Django default: "0.022500". Per-pull chance of one rarity-2 rate-up card. Application validator: MinValueValidator(0). Application validator: MaxValueValidator(1).']
+  rate_up_pool_2 numeric(7,6) [not null, note: 'Django default: "0.030000". The most the rarity-2 rate-ups can share between them. Application validator: MinValueValidator(0). Application validator: MaxValueValidator(1).']
+  rate_up_rate_1 numeric(7,6) [not null, note: 'Django default: "0.037500". Per-pull chance of one rarity-1 rate-up card. Application validator: MinValueValidator(0). Application validator: MaxValueValidator(1).']
+  rate_up_pool_1 numeric(7,6) [not null, note: 'Django default: "0.050000". The most the rarity-1 rate-ups can share between them. Application validator: MinValueValidator(0). Application validator: MaxValueValidator(1).']
   throughout_end_offset_days integer [not null, note: 'Django default: 4. Days trimmed off a banner\'s end before the decay curve is measured. Sheet: end_date - (\'Carat Calculator\'!G25 + 1). Application validator: MinValueValidator(0).']
   throughout_filter_grace_days integer [not null, note: 'Django default: 4. Grace window deciding which banners can still reach an event\'s throughout carats. Sheet: AQ32, which reads 3 — ours was fitted to 4 against published per-banner figures, so one of the offsets above may be absorbing a day. Confirm with the parity harness before treating either as authoritative. Application validator: MinValueValidator(0).']
   throughout_decay_k numeric(4,2) [not null, note: 'Django default: "2.00". Steepness of the curve\'s early exponential leg. Higher front-loads more of the pool into the first days of a banner. Application validator: MinValueValidator(0).']

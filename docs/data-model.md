@@ -77,6 +77,7 @@ erDiagram
         string name
         int free_pulls
         bool is_recommended "editorial; presentation only"
+        int rate_up_picks "select banners only; null = every listed card is a rate-up"
         string admin_comments
     }
 
@@ -86,6 +87,7 @@ erDiagram
         string name
         int free_pulls
         bool is_recommended "editorial; presentation only"
+        int rate_up_picks "select banners only; null = every listed card is a rate-up"
         string admin_comments
     }
 
@@ -838,6 +840,38 @@ window-level flag would recommend all three. No projection reads it (the same co
 The admin toggles it with `list_editable`, deliberately not a bulk action: bulk actions are
 `queryset.update()`, which fires no `post_save`, so `public_payload_cache` would keep serving
 the old flag until its TTL expired.
+
+### Rate-up rates — a client-side rule, with per-banner exceptions
+
+A rate-up card's per-pull chance is **not** a flat 0.75%. The global client's own gacha
+table (`gacha_available` in `master.mdb`, read 2026-10-06) shows one rule behind every
+ordinary banner: each card gets its rarity's usual rate-up chance, unless more cards share
+the rate-up than the rarity's pool allows, in which case the pool is split evenly.
+
+```
+rate = min(rate_up_rate_N, rate_up_pool_N / rate-up cards of rarity N on the banner)
+```
+
+| Rarity | `rate_up_rate_N` | `rate_up_pool_N` | Seen in the game data |
+|---|---|---|---|
+| ★3 / SSR | 0.75% | 3% | 1-2 cards 0.75% each; 9 umas 0.333%; 20 supports 0.15% |
+| ★2 / SR | 2.25% | 3% | one ★2 uma 2.25%; three SRs 1% each |
+| ★1 / R | 3.75% | 5% | one 3.75%; two 2.5% each; three 1.67% each |
+
+Two inputs bend it, both set per banner in the admin:
+
+- **`BannerUma.rate_up_picks` / `BannerSupport.rate_up_picks`** — a select banner ("10 Select
+  2") lists every card the player *could* pick, but only the picks are rate-ups, so the
+  pool is split by the picks rather than the list. Null on every ordinary banner.
+- **`UmasOnUmaBanner.rate_override` / `SupportsOnSupportBanner.rate_override`** — one
+  card's rate when it breaks the rule outright. Per card *on a banner*, because the same
+  card can be 0.75% on one banner and 0.5% on another (the 2025-07-16 anime-collab doubles
+  were 0.5% each).
+
+**The rule runs on the client** (`frontend/src/utils/rateUpRates.ts`), matching "the backend
+carries no projection math". The API serves its inputs: each featured card's `rarity`, the
+banner's `rate_up_picks` and `rate_overrides`, and the six constants. A missing `rarity`
+reads as ★3/SSR, the same default `Uma.is_three_star` applies.
 
 ### `GameEvent` reward amounts are fields, not a separate model
 

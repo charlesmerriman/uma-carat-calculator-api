@@ -1,19 +1,25 @@
-"""Banner and card content fields: the category, the Recommended flag, and a card's purpose line."""
+"""Banner and card content fields: the category, the Recommended flag, a card's purpose
+line, and the rate-up inputs."""
 
 import datetime
 from io import StringIO
 
 from django.core.exceptions import ValidationError
 from django.core.management import call_command
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
+from rest_framework.test import APIClient
 
+from calculatorapi import public_payload_cache
 from calculatorapi.models import (
     Uma, SupportCard,
     BannerTimeline, BannerUma, BannerSupport,
     UmasOnUmaBanner, SupportsOnSupportBanner,
-    BannerCategory,
+    BannerCategory, UserPlannedBanner,
 )
 from calculatorapi.tests.base import CalculatorTestCase
+from calculatorapi.tests.factories import auth_client, make_user
 
 
 class BannerCategoryTests(CalculatorTestCase):
@@ -260,3 +266,93 @@ class CardPurposeTests(CalculatorTestCase):
         self.assertEqual(uma_banner['umas'][0]['purpose'], 'Great pace parent.')
         self.assertEqual(support_banner['support_cards'][0]['purpose'],
                          'Great for front runners.')
+
+
+class RateUpInputTests(CalculatorTestCase):
+    """What the client's rate-up rule reads: card rarity, picks, and overrides.
+
+    The rule itself is client-side (frontend utils/rateUpRates.ts). These pin
+    the inputs reaching it, because a missing one does not error: the client
+    falls back to "★3, every listed card a rate-up, no override" and shows the
+    old 0.75% without complaint.
+    """
+
+    def setUp(self):
+        self.client = APIClient()
+        self.timeline = BannerTimeline.objects.create(
+            name='Kitasan Black + Matikanetannhauser',
+            jp_start_date=timezone.make_aware(datetime.datetime(2024, 1, 1)),
+            jp_end_date=timezone.make_aware(datetime.datetime(2024, 1, 11)),
+        )
+        self.kitasan = Uma.objects.create(name='Kitasan Black', rarity=3)
+        self.matikane = Uma.objects.create(name='Matikanetannhauser', rarity=2)
+        self.uma_banner = BannerUma.objects.create(
+            banner_timeline=self.timeline, name='Kitasan Black + Matikanetannhauser')
+        UmasOnUmaBanner.objects.create(banner_uma=self.uma_banner, uma=self.kitasan)
+        UmasOnUmaBanner.objects.create(
+            banner_uma=self.uma_banner, uma=self.matikane, rate_override='0.005')
+
+        self.support_banner = BannerSupport.objects.create(
+            banner_timeline=self.timeline, name='Debut 10 Select 2', rate_up_picks=2)
+        for card in (SupportCard.objects.create(name='Kitasan Black', rarity=3),
+                     SupportCard.objects.create(name='No game id')):
+            SupportsOnSupportBanner.objects.create(
+                banner_support=self.support_banner, support_card=card)
+
+    def _banners(self):
+        data = self.client.get('/calculator-data').json()
+        uma = next(b for b in data['banner_uma_data'] if b['id'] == self.uma_banner.pk)
+        support = next(b for b in data['banner_support_data']
+                       if b['id'] == self.support_banner.pk)
+        return uma, support
+
+    def test_serves_each_featured_cards_rarity(self):
+        uma, support = self._banners()
+        self.assertEqual({u['name']: u['rarity'] for u in uma['umas']},
+                         {'Kitasan Black': 3, 'Matikanetannhauser': 2})
+        # Null, not a guess: the client reads a missing rarity as SSR.
+        self.assertEqual({c['name']: c['rarity'] for c in support['support_cards']},
+                         {'Kitasan Black': 3, 'No game id': None})
+
+    def test_serves_rate_up_picks_null_unless_set(self):
+        uma, support = self._banners()
+        self.assertIsNone(uma['rate_up_picks'])
+        self.assertEqual(support['rate_up_picks'], 2)
+
+    def test_serves_only_the_overridden_cards_as_float_rates(self):
+        uma, support = self._banners()
+        # JSON object keys are strings; the value is a number, not "0.005000".
+        self.assertEqual(uma['rate_overrides'], {str(self.matikane.pk): 0.005})
+        self.assertEqual(support['rate_overrides'], {})
+
+    def test_planned_rows_carry_the_same_inputs(self):
+        """A planned row nests the same banner serializer, so the odds agree."""
+        user = make_user()
+        UserPlannedBanner.objects.create(
+            user=user, banner_uma=self.uma_banner, number_of_pulls=100)
+        client, _ = auth_client(user)
+
+        data = client.get('/calculator-data').json()
+
+        banner = data['user_planned_banner_data'][0]['banner_uma']
+        self.assertEqual(banner['rate_overrides'], {str(self.matikane.pk): 0.005})
+        self.assertIsNone(banner['rate_up_picks'])
+
+    def test_overrides_cost_no_query_per_banner(self):
+        """`rate_overrides` reads the prefetched through rows, never its own query."""
+        # Warm up first: the very first request also creates the constants
+        # singleton, three one-off queries that would skew the comparison.
+        self.client.get('/calculator-data')
+        public_payload_cache.invalidate()
+        with CaptureQueriesContext(connection) as before:
+            self.client.get('/calculator-data')
+
+        for i in range(3):
+            extra = BannerUma.objects.create(banner_timeline=self.timeline, name=f'Extra {i}')
+            UmasOnUmaBanner.objects.create(
+                banner_uma=extra, uma=self.kitasan, rate_override='0.004')
+        public_payload_cache.invalidate()
+        with CaptureQueriesContext(connection) as after:
+            self.client.get('/calculator-data')
+
+        self.assertEqual(len(after), len(before))

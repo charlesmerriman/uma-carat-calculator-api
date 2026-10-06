@@ -277,6 +277,51 @@ class CalculationConstants(models.Model):
         ),
     )
 
+    # ── Rate-up rates ────────────────────────────────────────────────────────
+    # One rate-up card's per-pull chance on an ordinary uma or support banner.
+    # The game's rule, read off the global client's own gacha table: each card
+    # gets its rarity's usual rate-up chance, unless so many cards share the
+    # rate-up that the rarity's pool runs out, then the pool is split evenly:
+    #
+    #     rate = min(rate_up_rate_N, rate_up_pool_N / rate-up cards of that rarity)
+    #
+    # So 1 or 2 SSRs are 0.75% each, but the 20-card launch banner is 0.15%.
+    # The client applies the rule (the backend carries no odds math); a single
+    # card that breaks it is overridden on its banner, not here.
+    rate_up_rate_3 = models.DecimalField(
+        max_digits=7, decimal_places=6, default="0.007500",
+        validators=[MinValueValidator(0), MaxValueValidator(1)],
+        help_text="Per-pull chance of one ★3 / SSR rate-up card, as a decimal (0.0075 = 0.75%).",
+    )
+    rate_up_pool_3 = models.DecimalField(
+        max_digits=7, decimal_places=6, default="0.030000",
+        validators=[MinValueValidator(0), MaxValueValidator(1)],
+        help_text=(
+            "The most the ★3 / SSR rate-ups can share between them (0.03 = 3%). "
+            "Only matters when there are more than four of them."
+        ),
+    )
+    rate_up_rate_2 = models.DecimalField(
+        max_digits=7, decimal_places=6, default="0.022500",
+        validators=[MinValueValidator(0), MaxValueValidator(1)],
+        help_text="Per-pull chance of one ★2 / SR rate-up card (0.0225 = 2.25%).",
+    )
+    rate_up_pool_2 = models.DecimalField(
+        max_digits=7, decimal_places=6, default="0.030000",
+        validators=[MinValueValidator(0), MaxValueValidator(1)],
+        help_text="The most the ★2 / SR rate-ups can share between them (0.03 = 3%).",
+    )
+    rate_up_rate_1 = models.DecimalField(
+        max_digits=7, decimal_places=6, default="0.037500",
+        validators=[MinValueValidator(0), MaxValueValidator(1)],
+        help_text="Per-pull chance of one ★1 / R rate-up card (0.0375 = 3.75%).",
+    )
+    rate_up_pool_1 = models.DecimalField(
+        max_digits=7, decimal_places=6, default="0.050000",
+        validators=[MinValueValidator(0), MaxValueValidator(1)],
+        help_text="The most the ★1 / R rate-ups can share between them (0.05 = 5%).",
+    )
+
     # ── Throughout-carat decay curve ─────────────────────────────────────────
     throughout_end_offset_days = models.IntegerField(
         default=4, validators=[MinValueValidator(0)],

@@ -25,6 +25,10 @@ class UmaSerializer(FirstJpDateMixin, serializers.ModelSerializer):
             # funding by them -- see frontend/src/utils/selectorTickets.ts.
             "is_time_limited",
             "is_three_star",
+            # The rate-up rule's input: a featured ★2 is 2.25%, not 0.75%.
+            # Null until imported, which the client reads as ★3, the same
+            # default is_three_star applies.
+            "rarity",
         )
 
 

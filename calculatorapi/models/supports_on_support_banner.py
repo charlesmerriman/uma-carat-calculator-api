@@ -1,6 +1,7 @@
 from django.db import models
 from .banner_support import BannerSupport
 from .support_card import SupportCard
+from .umas_on_uma_banner import rate_override_field
 
 
 class SupportsOnSupportBanner(models.Model):
@@ -11,6 +12,8 @@ class SupportsOnSupportBanner(models.Model):
         null=True,
         help_text="Optional recommendation text for this card on this banner.",
     )
+    # See UmasOnUmaBanner.rate_override.
+    rate_override = rate_override_field()
 
     class Meta:
         # Shown as the inline section title on the support card banner edit page.
