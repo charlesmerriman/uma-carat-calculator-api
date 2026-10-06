@@ -471,7 +471,7 @@ An account holds up to `PLAN_CAP` (5) plans and the calculator opens on the acti
 
 | Data | Lives on | Why |
 |---|---|---|
-| Planned banner rows (`number_of_pulls`, `reserved_copies`, `note`) | `Plan` | the choices |
+| Planned banner rows (`number_of_pulls`, `reserved_copies`, `note`, `primary_card`, `second_card`) | `Plan` | the choices |
 | Which of the owner's stats blocks to read (`income_profile`, nullable) | `Plan` | a pointer, not a fact; dropped when a copy changes owner |
 | Carats, tickets, selector tickets, shards, crystals, ranks | `CustomUser`, or an `IncomeProfile` the account owns | facts about the person (or about their other game account) |
 | The income toggles | same row as the balances | income side |
@@ -496,6 +496,15 @@ because it is about the choice and should differ per plan, and `copy_plan()` kee
 portability rule true by blanking every note when the copy changes owner, exactly as it
 drops `income_profile`. It is never served on a public route and is excluded from the
 admin form.
+
+`primary_card` / `second_card` pass it too: they are catalogue card ids saying which
+featured cards the row's odds are about (the first is the one the strip shows, null meaning
+the client's default; the second turns on two-card odds). Plain integers, not FKs, because
+whether one names an `Uma` or a `SupportCard` follows the row's target. **The server does
+not check them against the banner's featured cards, on purpose**: the client ignores an id
+the banner no longer features, so an editor removing a card cannot `400` a plan its owner
+never touched (the trap step-up selections had to be grandfathered out of). `copy_plan()`
+copies both, across accounts too.
 
 Accepted consequence: purchases are shared by every plan that reads the same stats block.
 A pack planned to fund a step-up in one plan still credits its carats while another plan

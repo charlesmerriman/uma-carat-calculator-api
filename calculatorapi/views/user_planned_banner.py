@@ -46,6 +46,10 @@ class UserPlannedBannerSerializer(serializers.ModelSerializer):
             "number_of_pulls",
             "reserved_copies",
             "note",
+            # Card ids; null = the client's default / two-card odds off. No
+            # membership check against the banner on purpose: see the model.
+            "primary_card",
+            "second_card",
             "banner_uma",
             "banner_support",
             "banner_step_up",

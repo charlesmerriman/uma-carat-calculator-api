@@ -439,6 +439,13 @@ derived client-side per render from the projected balances and JP eligibility.
 400), trimmed, `""` when unset. Omitting it on a row that carries an `id` keeps the stored
 note; send `""` to clear it.
 
+`primary_card` / `second_card` are optional card ids (an uma id on an uma row, a support
+card id on a support row), `null` when unset. `primary_card` names the card the odds are
+about (null: the client picks the banner's first card of its highest rarity);
+`second_card` turns on two-card odds for that card (null: off). Not checked against the
+banner's featured cards; the client ignores an id the banner doesn't feature. Omitting
+either on a row with an `id` keeps the stored value; send `null` to clear it.
+
 For a planned purchase, **at most one** of `target_uma` / `target_support` may be set, it
 must match the product's type, and a carat pack may have neither. A selector target is
 additionally rejected (`400`) when the card was released on JP after the product's
@@ -691,6 +698,8 @@ On GET, `banner_uma` and `banner_support` are expanded to nested objects (not ID
   "number_of_pulls": 20,
   "reserved_copies": 0,
   "note": "",
+  "primary_card": null,
+  "second_card": null,
   "banner_uma": { ... BannerUma object ... },
   "banner_support": null
 }

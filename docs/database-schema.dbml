@@ -95,6 +95,8 @@ Table calculatorapi_userplannedbanner as UserPlannedBanner {
   number_of_pulls integer [not null]
   reserved_copies integer [not null, note: 'Django default: 0.']
   note text [not null, note: 'Django default: empty string. Owner-only free text; 500-char cap enforced by the serializer.']
+  primary_card integer [null, note: 'Card id (uma or support, following the row\'s target) the odds strip is about. Null = the client\'s default. Not an FK; never checked against the banner.']
+  second_card integer [null, note: 'Card id for two-card odds. Null = off.']
 
   indexes {
     user_id
