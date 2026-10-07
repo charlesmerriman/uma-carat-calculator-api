@@ -119,6 +119,7 @@ meaning anything instead of rendering a signed-in shell around nothing.
     { "position": 0, "id": 42, "name": "Special Week", "image": "https://…/media/umas/special-week.png" }
   ],
   "oshi_slots": 1,
+  "oshi_variants": true,
   "linked_providers": [
     { "provider": "google", "linked_at": "2026-07-02" },
     { "provider": "patreon", "linked_at": "2026-09-08" }
@@ -133,22 +134,27 @@ meaning anything instead of rendering a signed-in shell around nothing.
   when they have not (the client shows the handle instead). Set through
   `PATCH /account` below. **Served only here, to its owner** — it never appears
   on `/supporters` or any other public route today. **Unique**, ignoring case.
-- **`oshis`** is the ordered list of umas a supporter picked (`position` is
-  0-based; `image` is the storage URL, or `""` if an editor has since cleared
-  the picture). **Every stored row is listed, covered by the current tier or
-  not**, so a page can grey out what a downgrade stopped covering. Empty for a
-  free account. Set through `PATCH`; the catalogue to pick from is `GET /umas`.
-- **`oshi_slots`** is how many oshis the current tier covers: 5, 3 or 1 by
-  tier, **0 for a free account**. A count the server has already resolved from
+- **`oshis`** is the ordered list of favourite umas the person picked
+  (`position` is 0-based; `image` is the storage URL, or `""` if an editor has
+  since cleared the picture). The UI calls them "your favourite uma musume";
+  the wire keeps the name it shipped with. **Every stored row is listed,
+  covered by the current tier or not**, so a page can grey out what a lapse or
+  downgrade stopped covering. Empty until they pick one. Set through `PATCH`;
+  the catalogue to pick from is `GET /umas`.
+- **`oshi_slots`** is how many favourites the account covers: **1 for any
+  signed-in account**, 3 / 5 / 7 by Patreon tier (the free slot plus 2, 4 or
+  6), 7 for staff. A count the server has already resolved from
   `benefits.OSHI_SLOT_LADDER`, not a tier order — a client should draw that
   many tiles and do no arithmetic. Top-level rather than inside `supporter`
-  because `0` is a real answer the page needs even when there is no
-  entitlement block to put it in.
+  because a free account has a count too.
+- **`oshi_variants`** is whether a costume variant (`is_variant` on `GET /umas`)
+  may be *added*: `true` for a supporter on any paid tier and for staff. The
+  picker locks those tiles on `false`; the rule itself is in the `PATCH` check.
 - **`avatar_url`** (top level) is the picture to show in the navbar: the first
   oshi's `image` **while `oshi_slots >= 1`** (skipping any whose picture was
   cleared), else **`null`** — null rather than `""`, so a client draws its
-  default instead of loading an empty `src`. Free accounts always get `null`:
-  the picture is the perk. No provider picture is ever held or served.
+  default instead of loading an empty `src`. `null` until they pick one. No
+  provider picture is ever held or served.
   → [auth-and-privacy.md](auth-and-privacy.md)
 - **`subject_id` is never serialized, for any provider.** The serializer's
   explicit field list is the only thing keeping it off the wire — the same role
@@ -194,13 +200,18 @@ reflecting the write.
   handle. Re-saving your own name is fine; blank never collides.
 - **`oshis`** — the **whole ordered list** of uma ids, replacing what was
   stored; the first becomes the picture. `[]` clears them. `400` for an unknown
-  id, a uma with no image (the picker never offers one), a repeated id, or a
-  list longer than five. **Entitlement:** a list longer than `oshi_slots` is
+  id, a uma with no image, a repeated id, or a list longer than seven.
+  **Pickable:** an id being *added* must be one `GET /umas` offers
+  (`Uma.pickable()`: pictured, and not the `(All)` placeholder); `400` "That
+  one can't be picked." otherwise. A costume variant (`is_variant`) may be
+  added only while `oshi_variants` is true: `400` "Costume variants are a
+  Patreon supporter perk." A held id that a rule would now refuse may still be
+  kept or reordered. **Entitlement:** a list longer than `oshi_slots` is
   `400` *unless every id in it is already stored* — so a supporter whose tier
   dropped may still reorder, trim or keep what they hold, and a lapsed one may
-  clear the list, but nobody can *add* past their count. A free account
-  (`oshi_slots` 0) can only ever send `[]` or its existing rows. Messages:
-  "Picking an oshi is a Patreon supporter perk." / "Your tier covers 3 oshis."
+  clear the list, but nobody can *add* past their count. Messages:
+  "Free accounts get one favourite. Patreon supporters get more." /
+  "Your tier covers 3 favourites."
 - **The field list is the whitelist.** Any other key in the body — `username`,
   `is_staff`, a calculator stat — is ignored, not applied. Calculator stats
   have their own route (`PATCH /calculator-data`).
@@ -538,7 +549,7 @@ These endpoints return static rank tables. All are public and support `list` and
 | `GET /changelog` | Patch-note entries (newest first) with nested, ordered change lines |
 | `GET /site-content` | The admin-editable pages (About, the carat income guide) and the whole FAQ, in one object — **not** an array, see below |
 | `GET /supporters` | Patreon thank-you list — **not** an array, see below |
-| `GET /umas` | The uma catalogue as picker options: `{ id, name, image }`, umas **with an image only**, sorted by name. `image` is the uma's portrait: the borderless art (`Uma.image_borderless`) when the row has it, else the bordered card art; the oshi rows and `avatar_url` on `GET /account` follow the same rule (`Uma.portrait`). Feeds the oshi picker on `/account`, which never loads `/calculator-data`. Nothing else from the uma row (no `admin_comments`, no selector gates). |
+| `GET /umas` | The uma catalogue as picker options: `{ id, name, image, is_variant }`, **`Uma.pickable()` only** (with an image, minus the `(All)` placeholder), sorted by name. The same list for everyone; `is_variant` flags costume variants, which only supporters and staff may add (`oshi_variants` on `GET /account`). `image` is the uma's portrait: the borderless art (`Uma.image_borderless`) when the row has it, else the bordered card art; the oshi rows and `avatar_url` on `GET /account` follow the same rule (`Uma.portrait`). Feeds the oshi picker on `/account`, which never loads `/calculator-data`. Nothing else from the uma row (no `admin_comments`, no selector gates). |
 
 All list responses return an array of the resource object, **except `/supporters`** (an object — the anonymous count is not derivable from the rows) **and `/site-content`** (an object with two halves; it is a plain view, not a viewset). Retrieve by appending `/<id>`; `/supporters` and `/site-content` have no retrieve action.
 

@@ -13,8 +13,8 @@ class SocialAccount(models.Model):
     from each response, so no email, display name or picture is ever stored
     here by accident. (A provider picture WAS stored for one unshipped day,
     2026-09-12 to 2026-09-13; the column was dropped before it ever reached
-    production, and the account picture is now a supporter perk -- see
-    models/user_oshi.py.)
+    production, and the account picture is now a favourite uma the person
+    picks from the site's own art -- see models/user_oshi.py.)
 
     A row can arrive two ways, and they are NOT the same operation:
 
