@@ -710,3 +710,39 @@ class PlannedBannerOddsCardTests(CalculatorTestCase):
             'banner_uma': self.banner.id, 'number_of_pulls': 100, 'primary_card': 999999,
         })
         self.assertEqual(res.status_code, 200)
+
+    def test_primary_target_defaults_to_null_and_round_trips(self):
+        res = self._patch({'banner_uma': self.banner.id, 'number_of_pulls': 400})
+        self.assertEqual(res.status_code, 200)
+        planned = UserPlannedBanner.objects.get(user=self.user)
+        self.assertIsNone(planned.primary_target)
+
+        res = self._patch({
+            'id': planned.id, 'banner_uma': self.banner.id, 'number_of_pulls': 400,
+            'primary_target': 5,
+        })
+        self.assertEqual(res.status_code, 200)
+        row = self.client.get('/calculator-data').data['user_planned_banner_data'][0]
+        self.assertEqual(row['primary_target'], 5)
+
+    def test_primary_target_null_restores_the_default(self):
+        planned = UserPlannedBanner.objects.create(
+            user=self.user, plan=plans.get_active_plan(self.user),
+            banner_uma=self.banner, number_of_pulls=100, primary_target=5,
+        )
+        res = self._patch({
+            'id': planned.id, 'banner_uma': self.banner.id,
+            'number_of_pulls': 100, 'primary_target': None,
+        })
+        self.assertEqual(res.status_code, 200)
+        planned.refresh_from_db()
+        self.assertIsNone(planned.primary_target)
+
+    def test_primary_target_outside_one_to_five_is_a_400(self):
+        """A range check, unlike the card ids: no content edit can invalidate it."""
+        for bad in (0, 6):
+            res = self._patch({
+                'banner_uma': self.banner.id, 'number_of_pulls': 100, 'primary_target': bad,
+            })
+            self.assertEqual(res.status_code, 400, bad)
+        self.assertFalse(UserPlannedBanner.objects.filter(user=self.user).exists())

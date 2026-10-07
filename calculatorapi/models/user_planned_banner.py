@@ -74,6 +74,13 @@ class UserPlannedBanner(models.Model):
     #   how many of this one"). Null = two-card odds off, the normal state.
     primary_card = models.PositiveIntegerField(null=True, blank=True)
     second_card = models.PositiveIntegerField(null=True, blank=True)
+    # primary_target: how many copies of primary_card the two-card odds take
+    #   it to before any free copy (a 200-pull exchange or a reserved copy)
+    #   goes to second_card. Null = the client's default for the banner type
+    #   (one copy of an uma, MLB of a support card). The client offers 1 and 5
+    #   today; the column takes any 1..5 so a finer choice needs no migration.
+    #   A choice about the strip, so it copies across accounts like the ids.
+    primary_target = models.PositiveSmallIntegerField(null=True, blank=True)
 
     class Meta:
         constraints = [

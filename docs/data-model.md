@@ -483,7 +483,7 @@ An account holds up to `PLAN_CAP` (5) plans and the calculator opens on the acti
 
 | Data | Lives on | Why |
 |---|---|---|
-| Planned banner rows (`number_of_pulls`, `reserved_copies`, `note`, `primary_card`, `second_card`) | `Plan` | the choices |
+| Planned banner rows (`number_of_pulls`, `reserved_copies`, `note`, `primary_card`, `second_card`, `primary_target`) | `Plan` | the choices |
 | Which of the owner's stats blocks to read (`income_profile`, nullable) | `Plan` | a pointer, not a fact; dropped when a copy changes owner |
 | Carats, tickets, selector tickets, shards, crystals, ranks | `CustomUser`, or an `IncomeProfile` the account owns | facts about the person (or about their other game account) |
 | The income toggles | same row as the balances | income side |
@@ -517,6 +517,13 @@ not check them against the banner's featured cards, on purpose**: the client ign
 the banner no longer features, so an editor removing a card cannot `400` a plan its owner
 never touched (the trap step-up selections had to be grandfathered out of). `copy_plan()`
 copies both, across accounts too.
+
+`primary_target` (nullable, 1..5) rides with them: the copies the two-card odds take the
+first card to before a free copy goes to the second. Null means the client's default for
+the banner type (one copy of an uma, MLB of a support card). The serializer checks the
+range, which is fine where a membership check is not: no content edit can put a stored
+value outside 1..5. The client offers 1 and 5; the column takes any value in between so
+a finer choice needs no migration. Copied across accounts like the ids.
 
 Accepted consequence: purchases are shared by every plan that reads the same stats block.
 A pack planned to fund a step-up in one plan still credits its carats while another plan

@@ -288,6 +288,7 @@ def copy_plan(source, *, owner, name):
                     # Catalogue ids, so they mean the same thing to anyone.
                     primary_card=row.primary_card,
                     second_card=row.second_card,
+                    primary_target=row.primary_target,
                 )
                 for row in source.banners.all()
             ]

@@ -14,6 +14,10 @@ from .banner_step_up import BannerStepUpSerializer
 # (NOTE_MAX_LENGTH in the frontend's BannerNote); change both together.
 NOTE_MAX_LENGTH = 500
 
+# Copies of a card: the card itself plus four limit breaks. The most a
+# two-card target can ask for (the client's MAX_COPIES).
+MAX_TARGET_COPIES = 5
+
 
 class UserPlannedBannerSerializer(serializers.ModelSerializer):
     banner_uma = serializers.PrimaryKeyRelatedField(
@@ -37,6 +41,15 @@ class UserPlannedBannerSerializer(serializers.ModelSerializer):
         trim_whitespace=True,
     )
 
+    # A range check, not a membership check: 1..5 is what the odds strip can
+    # show, and no content edit can ever make a stored value fall outside it.
+    primary_target = serializers.IntegerField(
+        min_value=1,
+        max_value=MAX_TARGET_COPIES,
+        required=False,
+        allow_null=True,
+    )
+
     class Meta:
         model = UserPlannedBanner
         fields = (
@@ -50,6 +63,9 @@ class UserPlannedBannerSerializer(serializers.ModelSerializer):
             # membership check against the banner on purpose: see the model.
             "primary_card",
             "second_card",
+            # Copies the first card is taken to on a two-card row; null = the
+            # client's default for the banner type.
+            "primary_target",
             "banner_uma",
             "banner_support",
             "banner_step_up",

@@ -457,6 +457,12 @@ about (null: the client picks the banner's first card of its highest rarity);
 banner's featured cards; the client ignores an id the banner doesn't feature. Omitting
 either on a row with an `id` keeps the stored value; send `null` to clear it.
 
+`primary_target` is how many copies the two-card odds take `primary_card` to before any
+free copy (a 200-pull exchange or a reserved copy) goes to `second_card`: an integer from
+1 to 5 (outside that is a 400), `null` for the client's default (1 on an uma row, 5 on a
+support row). Omitting it on a row with an `id` keeps the stored value; send `null` to
+go back to the default.
+
 For a planned purchase, **at most one** of `target_uma` / `target_support` may be set, it
 must match the product's type, and a carat pack may have neither. A selector target is
 additionally rejected (`400`) when the card was released on JP after the product's
@@ -711,6 +717,7 @@ On GET, `banner_uma` and `banner_support` are expanded to nested objects (not ID
   "note": "",
   "primary_card": null,
   "second_card": null,
+  "primary_target": null,
   "banner_uma": { ... BannerUma object ... },
   "banner_support": null
 }
