@@ -162,31 +162,44 @@ class Uma(models.Model):
         """The game's character id: an outfit id is `<character><outfit>`."""
         return self.game_id // 100 if self.game_id else None
 
+    # The one catalogue row that is not a uma at all: a banner uses it to
+    # mean "every uma". Matched by exact name so a real uma could never be
+    # caught by it.
+    ALL_PLACEHOLDER_NAME = "(All)"
+
     @classmethod
     def pickable(cls):
-        """The umas a person may pick as a favourite (an oshi).
+        """The umas anyone may be OFFERED as a favourite (an oshi).
 
         Two rules, in ONE place so GET /umas (the picker's catalogue) and
         PATCH /account (the write) cannot disagree about who is on offer:
 
           * With a picture. A pick has to render, and a tile that draws blank
             is a worse experience than a 400.
-          * A single uma musume, which here means NO parenthesis in the name.
-            The catalogue carries rows that stand for something else, chiefly
-            the "(All)" placeholder a banner uses to mean every uma, and the
-            outfit variants ("Special Week (Summer)") that the base row already
-            covers as a favourite. Owner's call, 2026-10-07: the picker lists
-            characters, not banner entries.
+          * Not the "(All)" placeholder, which stands for every uma and none.
+
+        Costume variants ("Special Week (Summer)") ARE in this set; whether a
+        given person may ADD one is a supporter perk decided per request
+        (benefits.oshi_variants), not a property of the row, so the catalogue
+        carries `is_costume_variant` and the picker locks those tiles for a
+        free account. Owner's call, 2026-10-07.
 
         A pick made BEFORE a rule existed is kept, not refused: the account
-        serializer tests only what a save ADDS against this, so a held outfit
-        variant can still be reordered or removed.
+        serializer tests only what a save ADDS against this.
         """
         return (
             cls.objects.exclude(image="")
             .exclude(image__isnull=True)
-            .exclude(name__contains="(")
+            .exclude(name__iexact=cls.ALL_PLACEHOLDER_NAME)
         )
+
+    @property
+    def is_costume_variant(self):
+        """An alternate outfit of a character ("Special Week (Summer)") rather
+        than the base row. The game names every variant with a parenthesised
+        outfit, and nothing else in the catalogue has one except the "(All)"
+        placeholder, which `pickable()` removes first."""
+        return "(" in self.name
 
     @property
     def portrait(self):

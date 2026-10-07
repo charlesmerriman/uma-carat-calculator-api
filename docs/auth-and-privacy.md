@@ -57,7 +57,10 @@ or a downgrade **keeps every row** and simply stops covering some of them:
 `GET /account` still lists them all, the picture is the first one (always
 covered, since the free slot), and `PATCH` refuses only a list that **adds**
 past the slot count (reordering and removing among what is already held is
-always allowed). → `views/account.py`, `models/user_oshi.py`
+always allowed). Adding a **costume variant** (`Uma.is_costume_variant`) is
+gated the same way (`benefits.oshi_variants`: any paid tier, or staff) and
+reported as `oshi_variants`; a held one is never taken away.
+→ `views/account.py`, `models/user_oshi.py`
 
 Staff accounts are the exception: they keep password login so `/admin` and the
 analytics dashboard remain reachable.

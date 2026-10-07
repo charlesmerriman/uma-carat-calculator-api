@@ -119,6 +119,7 @@ meaning anything instead of rendering a signed-in shell around nothing.
     { "position": 0, "id": 42, "name": "Special Week", "image": "https://…/media/umas/special-week.png" }
   ],
   "oshi_slots": 1,
+  "oshi_variants": true,
   "linked_providers": [
     { "provider": "google", "linked_at": "2026-07-02" },
     { "provider": "patreon", "linked_at": "2026-09-08" }
@@ -146,6 +147,9 @@ meaning anything instead of rendering a signed-in shell around nothing.
   `benefits.OSHI_SLOT_LADDER`, not a tier order — a client should draw that
   many tiles and do no arithmetic. Top-level rather than inside `supporter`
   because a free account has a count too.
+- **`oshi_variants`** is whether a costume variant (`is_variant` on `GET /umas`)
+  may be *added*: `true` for a supporter on any paid tier and for staff. The
+  picker locks those tiles on `false`; the rule itself is in the `PATCH` check.
 - **`avatar_url`** (top level) is the picture to show in the navbar: the first
   oshi's `image` **while `oshi_slots >= 1`** (skipping any whose picture was
   cleared), else **`null`** — null rather than `""`, so a client draws its
@@ -198,9 +202,10 @@ reflecting the write.
   stored; the first becomes the picture. `[]` clears them. `400` for an unknown
   id, a uma with no image, a repeated id, or a list longer than seven.
   **Pickable:** an id being *added* must be one `GET /umas` offers
-  (`Uma.pickable()`: pictured, and no `(` in the name — not the `(All)`
-  placeholder, not an outfit variant); `400` "That one isn't a single uma
-  musume." otherwise. A held id that the rule later excluded may still be
+  (`Uma.pickable()`: pictured, and not the `(All)` placeholder); `400` "That
+  one can't be picked." otherwise. A costume variant (`is_variant`) may be
+  added only while `oshi_variants` is true: `400` "Costume variants are a
+  Patreon supporter perk." A held id that a rule would now refuse may still be
   kept or reordered. **Entitlement:** a list longer than `oshi_slots` is
   `400` *unless every id in it is already stored* — so a supporter whose tier
   dropped may still reorder, trim or keep what they hold, and a lapsed one may
@@ -544,7 +549,7 @@ These endpoints return static rank tables. All are public and support `list` and
 | `GET /changelog` | Patch-note entries (newest first) with nested, ordered change lines |
 | `GET /site-content` | The admin-editable pages (About, the carat income guide) and the whole FAQ, in one object — **not** an array, see below |
 | `GET /supporters` | Patreon thank-you list — **not** an array, see below |
-| `GET /umas` | The uma catalogue as picker options: `{ id, name, image }`, **`Uma.pickable()` only** (with an image, and no `(` in the name: no `(All)` placeholder, no outfit variants), sorted by name. `image` is the uma's portrait: the borderless art (`Uma.image_borderless`) when the row has it, else the bordered card art; the oshi rows and `avatar_url` on `GET /account` follow the same rule (`Uma.portrait`). Feeds the oshi picker on `/account`, which never loads `/calculator-data`. Nothing else from the uma row (no `admin_comments`, no selector gates). |
+| `GET /umas` | The uma catalogue as picker options: `{ id, name, image, is_variant }`, **`Uma.pickable()` only** (with an image, minus the `(All)` placeholder), sorted by name. The same list for everyone; `is_variant` flags costume variants, which only supporters and staff may add (`oshi_variants` on `GET /account`). `image` is the uma's portrait: the borderless art (`Uma.image_borderless`) when the row has it, else the bordered card art; the oshi rows and `avatar_url` on `GET /account` follow the same rule (`Uma.portrait`). Feeds the oshi picker on `/account`, which never loads `/calculator-data`. Nothing else from the uma row (no `admin_comments`, no selector gates). |
 
 All list responses return an array of the resource object, **except `/supporters`** (an object — the anonymous count is not derivable from the rows) **and `/site-content`** (an object with two halves; it is a plain view, not a viewset). Retrieve by appending `/<id>`; `/supporters` and `/site-content` have no retrieve action.
 

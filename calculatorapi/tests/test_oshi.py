@@ -34,7 +34,8 @@ class OshiTestCase(CalculatorTestCase):  # pylint: disable=too-many-instance-att
             Uma.objects.create(name=f"Uma {i}", image=f"umas/uma-{i}.png") for i in range(8)
         ]
         self.bare_uma = Uma.objects.create(name="No Picture")
-        # Pictured, but not a single uma musume: the picker never offers these.
+        # The banner placeholder (never offered) and a costume variant
+        # (offered, supporters and staff only).
         self.all_uma = Uma.objects.create(name="(All)", image="umas/all.png")
         self.outfit_uma = Uma.objects.create(name="Uma 0 (Summer)", image="umas/uma-0-summer.png")
 
@@ -67,6 +68,17 @@ class OshiLadderTests(OshiTestCase):
     def test_free_account_has_one_slot(self):
         self.assertEqual(benefits.FREE_OSHI_SLOTS, 1)
         self.assertEqual(benefits.oshi_slots(self.user), 1)
+
+    def test_costume_variants_are_for_any_paid_tier_and_staff(self):
+        self.assertFalse(benefits.oshi_variants(self.user))
+        self.assertFalse(benefits.oshi_variants(None))
+        self.assertTrue(benefits.oshi_variants(make_user("staffer", is_staff=True)))
+        self._pledge(self.junior)
+        self.assertTrue(benefits.oshi_variants(self.user))
+
+    def test_a_lapse_takes_costume_variants_away(self):
+        self._pledge(self.junior, is_active=False)
+        self.assertFalse(benefits.oshi_variants(self.user))
 
     def test_nobody_has_no_slots(self):
         self.assertEqual(benefits.oshi_slots(None), 0)
@@ -119,7 +131,14 @@ class OshiPictureTests(OshiTestCase):
         body = self._get()
         self.assertIsNone(body["avatar_url"])
         self.assertEqual(body["oshi_slots"], 1)
+        self.assertFalse(body["oshi_variants"])
         self.assertEqual(body["oshis"], [])
+
+    def test_a_supporter_and_staff_are_told_they_may_pick_variants(self):
+        self._pledge(self.junior)
+        self.assertTrue(self._get()["oshi_variants"])
+        client, _ = auth_client(make_user("staffer", is_staff=True))
+        self.assertTrue(client.get("/account").json()["oshi_variants"])
 
     def test_a_free_account_s_pick_is_its_picture(self):
         self._patch({"oshis": self._ids(3)})
@@ -289,39 +308,57 @@ class OshiWriteTests(OshiTestCase):  # pylint: disable=too-many-public-methods
         self.assertEqual(response.status_code, 400)
         self.assertIn("oshis", response.json())
 
-    # the picker's rules: Uma.pickable ────────────────────────────────────────
+    # the picker's rules: Uma.pickable, and costume variants for supporters ──
 
-    def test_the_all_placeholder_is_refused(self):
+    def test_the_all_placeholder_is_refused_for_everyone(self):
+        self._pledge(self.senior)
         response = self._patch({"oshis": [self.all_uma.id]})
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json()["oshis"][0], "That one isn't a single uma musume.")
+        self.assertEqual(response.json()["oshis"][0], "That one can't be picked.")
         self.assertEqual(self._stored_ids(), [])
 
-    def test_an_outfit_variant_is_refused(self):
+    def test_a_free_account_may_not_add_a_costume_variant(self):
+        response = self._patch({"oshis": [self.outfit_uma.id]})
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.json()["oshis"][0], "Costume variants are a Patreon supporter perk."
+        )
+        self.assertEqual(self._stored_ids(), [])
+
+    def test_a_supporter_may_add_a_costume_variant(self):
         self._pledge(self.junior)
         response = self._patch({"oshis": self._ids(0) + [self.outfit_uma.id]})
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(self._stored_ids(), [])
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self._stored_ids(), self._ids(0) + [self.outfit_uma.id])
 
-    def test_a_held_outfit_variant_may_be_kept_and_reordered(self):
-        """A pick made before the rule existed stays theirs; only an ADD is tested."""
-        self._pledge(self.junior)
-        UserOshi.objects.create(user=self.user, uma=self.outfit_uma, position=0)
-        UserOshi.objects.create(user=self.user, uma=self.umas[1], position=1)
+    def test_staff_may_add_a_costume_variant_with_no_pledge(self):
+        client, _ = auth_client(make_user("staffer", is_staff=True))
+        response = client.patch("/account", {"oshis": [self.outfit_uma.id]}, format="json")
+        self.assertEqual(response.status_code, 200)
+
+    def test_a_lapsed_supporter_keeps_a_held_variant_and_may_reorder_it(self):
+        """The variant was theirs to add; a lapse never refuses a keep, reorder or trim."""
+        pledge = self._pledge(self.junior)
+        self._patch({"oshis": [self.outfit_uma.id] + self._ids(1)})
+        pledge.is_active = False
+        pledge.save()
 
         response = self._patch({"oshis": self._ids(1) + [self.outfit_uma.id]})
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(self._stored_ids(), self._ids(1) + [self.outfit_uma.id])
-        # ...and adding a fresh one beside it is still fine.
-        response = self._patch({"oshis": self._ids(1, 2) + [self.outfit_uma.id]})
-        self.assertEqual(response.status_code, 200)
+        # ...but swapping in a second variant is an ADD, and refused.
+        second = Uma.objects.create(name="Uma 1 (Winter)", image="umas/uma-1-winter.png")
+        response = self._patch({"oshis": [second.id, self.outfit_uma.id]})
+        self.assertEqual(response.status_code, 400)
 
     def test_pickable_is_what_the_picker_lists(self):
         self.assertEqual(
             set(Uma.pickable().values_list("name", flat=True)),
-            {f"Uma {i}" for i in range(8)},
+            {f"Uma {i}" for i in range(8)} | {"Uma 0 (Summer)"},
         )
+        self.assertTrue(self.outfit_uma.is_costume_variant)
+        self.assertFalse(self.umas[0].is_costume_variant)
 
     def test_the_same_uma_twice_is_refused(self):
         self._pledge(self.classic)

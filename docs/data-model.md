@@ -414,11 +414,14 @@ top rung of `benefits.OSHI_SLOT_LADDER` (asserted at import).
   position", so a gap is harmless.
 - Only a **pickable** uma may be *added*: `Uma.pickable()` is one queryset for
   both `GET /umas` (what the picker lists) and the `PATCH` check, and means
-  *with an image* and *no parenthesis in the name* — the `(All)` placeholder
-  banners use and the outfit variants (`Special Week (Summer)`) are not single
-  uma musume (owner's call, 2026-10-07). The check is on what a save **adds**,
-  like the entitlement check: a held pick that the rule later excluded may
-  still be kept or reordered. If an editor clears an image later the row
+  *with an image* and *not the `(All)` placeholder* (`Uma.ALL_PLACEHOLDER_NAME`,
+  exact match). **Costume variants** (`Uma.is_costume_variant`: a `(` in the
+  name, `Special Week (Summer)`) are listed for everyone but may be *added*
+  only by a supporter on any paid tier or by staff (`benefits.oshi_variants`,
+  sent as `oshi_variants` on `/account` so the picker locks the tiles). Owner's
+  call, 2026-10-07. Both checks are on what a save **adds**, like the slot
+  check: a held variant survives a lapse and may still be kept or reordered.
+  If an editor clears an image later the row
   stays, its `image` is `""` on the wire, and the picture falls through to the
   next oshi rather than to a broken tile.
 - **Not personal data.** The site's own art; `purge_user_pii` leaves it. Decided

@@ -98,8 +98,11 @@ page can show the ones no longer covered; the picture is the first row while
 what is NEW: a list longer than the slot count is a 400 unless every id in it
 is already stored — reordering and removing among rows you already hold is
 always allowed, adding past your entitlement never is. The same "only what is
-new" test applies the picker's rules (Uma.pickable): a row that is no longer
-on offer may be kept, but not added.
+new" test applies the picker's rules: an id being added must be on offer
+(Uma.pickable: pictured, not the "(All)" placeholder), and a costume variant
+("Special Week (Summer)") may be added only by a supporter or staff
+(benefits.oshi_variants, reported as `oshi_variants` so the picker can lock
+those tiles). A held row that a rule would now refuse may be kept.
 
 DELETING AN ACCOUNT
 -------------------
@@ -173,11 +176,11 @@ class AccountPreferencesSerializer(serializers.ModelSerializer):
 
     # The whole ordered list, replaced on every write. The queryset here is
     # looser than the picker's on purpose: every uma with a picture resolves,
-    # so a row a person picked before a picker rule existed (an outfit variant,
-    # since 2026-10-07) still parses and can be kept or reordered. Whether a
-    # NEW pick is on offer is checked in validate_oshis against Uma.pickable,
-    # next to the entitlement rule, where "only what is added is tested" can
-    # explain itself. The cap is the table's, not the person's.
+    # so a row a person picked before a rule existed still parses and can be
+    # kept or reordered. Whether a NEW pick is allowed is checked in
+    # validate_oshis (Uma.pickable, and the costume-variant perk), next to the
+    # slot rule, where "only what is added is tested" can explain itself. The
+    # cap is the table's, not the person's.
     oshis = serializers.ListField(
         child=serializers.PrimaryKeyRelatedField(
             queryset=Uma.objects.exclude(image="").exclude(image__isnull=True)
@@ -193,25 +196,32 @@ class AccountPreferencesSerializer(serializers.ModelSerializer):
     def validate_oshis(self, umas):
         """Distinct, on offer, and never MORE than the person is entitled to hold.
 
-        Both checks test only what the list ADDS, deliberately. A supporter
+        Every check tests only what the list ADDS, deliberately. A supporter
         whose tier dropped from seven slots to five still owns seven rows;
         refusing every save until they delete two would make the page unusable
         exactly when it should be helping them tidy up. So a list longer than
         the slot count is fine as long as it introduces nothing new — reorder,
-        remove, keep — and a 400 the moment it adds. Likewise a held pick the
-        picker no longer offers (Uma.pickable) stays valid in the list; only a
-        fresh one is refused.
+        remove, keep — and a 400 the moment it adds. Likewise a held pick a
+        rule would now refuse (a costume variant after a lapse) stays valid in
+        the list; only a fresh one is refused.
         """
         ids = [uma.pk for uma in umas]
         if len(set(ids)) != len(ids):
             raise serializers.ValidationError("The same uma can't be picked twice.")
 
         stored = set(self.instance.oshis.values_list("uma_id", flat=True))
-        added = [pk for pk in ids if pk not in stored]
-        if added and Uma.pickable().filter(pk__in=added).count() != len(added):
+        added = [uma for uma in umas if uma.pk not in stored]
+        added_ids = [uma.pk for uma in added]
+        if added and Uma.pickable().filter(pk__in=added_ids).count() != len(added):
             # The picker never offers one of these, so a request naming one
             # is not coming from the page.
-            raise serializers.ValidationError("That one isn't a single uma musume.")
+            raise serializers.ValidationError("That one can't be picked.")
+        if any(uma.is_costume_variant for uma in added) and not benefits.oshi_variants(
+            self.instance
+        ):
+            raise serializers.ValidationError(
+                "Costume variants are a Patreon supporter perk."
+            )
 
         slots = benefits.oshi_slots(self.instance)
         if len(ids) > slots and added:
@@ -403,6 +413,10 @@ def _account_summary(user):
         # supporter block because a free account has a count too.
         "oshis": oshis,
         "oshi_slots": slots,
+        # Whether a costume variant may be ADDED. Resolved here like the slot
+        # count (supporter or staff), so the picker locks the right tiles
+        # without a second copy of the rule.
+        "oshi_variants": benefits.oshi_variants_for(supporter, is_staff=user.is_staff),
         "linked_providers": LinkedProviderSerializer(linked, many=True).data,
         "supporter": _supporter_block(supporter),
     }

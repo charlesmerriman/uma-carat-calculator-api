@@ -45,7 +45,7 @@ class AccountPreferencesTests(CalculatorTestCase):  # pylint: disable=too-many-p
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             set(response.json()),
-            {"username", "display_name", "avatar_url", "oshis", "oshi_slots",
+            {"username", "display_name", "avatar_url", "oshis", "oshi_slots", "oshi_variants",
              "linked_providers", "supporter"},
         )
 
@@ -240,29 +240,34 @@ class UmaCatalogueTests(CalculatorTestCase):
         Uma.objects.create(name="Zeta Uma", image="umas/zeta.png")
         Uma.objects.create(name="Alpha Uma", image="umas/alpha.png", admin_comments="editor note")
         Uma.objects.create(name="Bare Uma")
-        # Rows that stand for something other than one uma musume: the
-        # banner placeholder and an outfit variant. Pictured, still left out.
+        # The banner placeholder (pictured, still left out) and a costume
+        # variant (listed, flagged).
         Uma.objects.create(name="(All)", image="umas/all.png")
         Uma.objects.create(name="Alpha Uma (Summer)", image="umas/alpha-summer.png")
 
     def test_is_public(self):
         self.assertEqual(APIClient().get("/umas").status_code, 200)
 
-    def test_lists_only_pictured_single_umas_sorted_by_name(self):
+    def test_lists_pictured_umas_sorted_by_name_without_the_placeholder(self):
         body = APIClient().get("/umas").json()
-        self.assertEqual([row["name"] for row in body], ["Alpha Uma", "Zeta Uma"])
+        self.assertEqual(
+            [row["name"] for row in body], ["Alpha Uma", "Alpha Uma (Summer)", "Zeta Uma"]
+        )
 
-    def test_a_name_with_a_parenthesis_is_never_offered(self):
-        names = [row["name"] for row in APIClient().get("/umas").json()]
-        self.assertNotIn("(All)", names)
-        self.assertNotIn("Alpha Uma (Summer)", names)
+    def test_the_all_placeholder_is_never_offered(self):
+        self.assertNotIn("(All)", [row["name"] for row in APIClient().get("/umas").json()])
+
+    def test_costume_variants_are_flagged_not_filtered(self):
+        by_name = {row["name"]: row["is_variant"] for row in APIClient().get("/umas").json()}
+        self.assertTrue(by_name["Alpha Uma (Summer)"])
+        self.assertFalse(by_name["Alpha Uma"])
 
     def test_rows_carry_only_id_name_and_image(self):
         # No admin_comments, no selector gates, no purpose: the picker has no
         # use for them, and admin_comments is an editors' field that a new
         # public route should not carry.
         row = APIClient().get("/umas").json()[0]
-        self.assertEqual(set(row), {"id", "name", "image"})
+        self.assertEqual(set(row), {"id", "name", "image", "is_variant"})
         self.assertTrue(row["image"])
 
     def test_image_is_the_storage_url(self):
@@ -279,4 +284,4 @@ class UmaCatalogueTests(CalculatorTestCase):
         rows = APIClient().get("/umas").json()
 
         self.assertEqual(rows[0]["image"], uma.image_borderless.url)
-        self.assertEqual(rows[1]["image"], Uma.objects.get(name="Zeta Uma").image.url)
+        self.assertEqual(rows[2]["image"], Uma.objects.get(name="Zeta Uma").image.url)

@@ -55,8 +55,10 @@ ANY_PAID_TIER = None
 # a <SupporterOnly> boundary keys off, so it is part of the contract: rename one
 # and the frontend silently stops gating.
 AD_FREE = "ad_free"
-# May pick oshis, the first of which is their account picture. The boolean
-# half of the perk; HOW MANY is the ladder below.
+# The supporter half of the favourites ("oshi") feature: extra slots (the
+# ladder below says how many) and the costume variants ("Special Week
+# (Summer)") as picks. Every account has the base umas and one slot without
+# this key.
 OSHI = "oshi"
 
 # feature key -> the tier order a supporter must be at or above, or
@@ -182,6 +184,25 @@ def oshi_slots(user):
     if user is None or not user.is_authenticated:
         return 0
     return oshi_slots_for(entitled_supporter(user), is_staff=user.is_staff)
+
+
+def oshi_variants_for(supporter, *, is_staff=False):
+    """Whether an already-resolved supporter row may ADD a costume variant
+    ("Special Week (Summer)") as a favourite: any paid tier, or staff.
+
+    The staff bypass is the same one oshi_slots_for has, for the same reason:
+    `is_staff` is CustomUser's own truth, not a copy of Patreon's. A base uma
+    needs no entitlement at all, and a variant already held is never refused
+    (the serializer tests only what a save adds).
+    """
+    return is_staff or _meets(supporter, BENEFITS[OSHI])
+
+
+def oshi_variants(user):
+    """Whether `user` may add a costume variant as a favourite right now."""
+    if user is None or not user.is_authenticated:
+        return False
+    return oshi_variants_for(entitled_supporter(user), is_staff=user.is_staff)
 
 
 class IsSupporter(permissions.BasePermission):
