@@ -97,6 +97,7 @@ Table calculatorapi_userplannedbanner as UserPlannedBanner {
   note text [not null, note: 'Django default: empty string. Owner-only free text; 500-char cap enforced by the serializer.']
   primary_card integer [null, note: 'Card id (uma or support, following the row\'s target) the odds strip is about. Null = the client\'s default. Not an FK; never checked against the banner.']
   second_card integer [null, note: 'Card id for two-card odds. Null = off.']
+  primary_target smallint [null, note: 'Copies the two-card odds take primary_card to (1..5, serializer-checked) before a free copy goes to second_card. Null = the client\'s default for the banner type.']
 
   indexes {
     user_id
