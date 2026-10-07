@@ -1,8 +1,8 @@
 """
 GET    /account — who the caller is, and what they are entitled to.
 PATCH  /account — change the two preferences an account has: a display name
-                  and, for supporters, the list of oshis whose first entry is
-                  their picture.
+                  and the list of favourite umas ("oshis") whose first entry
+                  is their picture.
 DELETE /account — remove the caller's account and everything that is theirs.
 
 WHY THIS IS ITS OWN ROUTE
@@ -72,27 +72,34 @@ The display name is served only here, to its owner. It never reaches
 GET /supporters or any other public route — the thank-you list stays the
 Patreon-side name with Patreon-side consent.
 
-OSHIS: THE PICTURE IS A SUPPORTER PERK (AND A STAFF ONE)
-----------------------------------------------------------
-`oshis` is the ordered list of umas a supporter picked; the FIRST is their
-picture. How many they may hold is `benefits.oshi_slots(user)` — 1, 3 or 5 by
-tier, 0 for a free account, and OSHI_SLOT_CAP for staff regardless of tier —
-and GET reports it as `oshi_slots` so the page can draw that many tiles. It is
-a count the server has already resolved, not a tier order for the client to
-do arithmetic on. Staff get full oshi access on top of, not instead of, a real
-Patreon entitlement — `supporter` in the response is unaffected, so a staff
-member who is not a patron still sees `is_supporter: false` there; only the
-slot count (and therefore the picture and the picker) is unlocked.
+OSHIS: ONE FOR EVERYONE, MORE FOR SUPPORTERS (AND STAFF)
+---------------------------------------------------------
+`oshis` is the ordered list of favourite umas a person picked; the FIRST is
+their picture. The UI calls them "your favourite uma musume"; the wire keeps
+the name it shipped with. How many they may hold is `benefits.oshi_slots(user)`
+— 1 for any signed-in account, 3 / 5 / 7 by tier (the free slot plus 2, 4 or
+6), and OSHI_SLOT_CAP for staff regardless of tier — and GET reports it as
+`oshi_slots` so the page can draw that many tiles. It is a count the server
+has already resolved, not a tier order for the client to do arithmetic on.
+Staff get full oshi access on top of, not instead of, a real Patreon
+entitlement — `supporter` in the response is unaffected, so a staff member who
+is not a patron still sees `is_supporter: false` there; only the slot count
+(and therefore the picker) is unlocked.
+
+Until 2026-10-07 the free count was 0 and the picture itself was the perk.
+Now the perk is the extra slots, and the lapse rule below is what keeps a
+lapsed supporter's picture: the first row is always covered.
 
 A lapse or a downgrade never deletes a pick and never rejects a save the
 person could have made before it (the same rule /calculator-data applies to
 premium rows). Every stored row is returned regardless of entitlement, so the
-page can show the ones no longer covered; the picture is the first row only
-while `oshi_slots >= 1`, so a lapsed supporter is back on the default picture
-until the sync sees the pledge again. PATCH refuses only what is NEW: a list
-longer than the slot count is a 400 unless every id in it is already stored —
-reordering and removing among rows you already hold is always allowed, adding
-past your entitlement never is.
+page can show the ones no longer covered; the picture is the first row while
+`oshi_slots >= 1`, which every signed-in account now clears. PATCH refuses only
+what is NEW: a list longer than the slot count is a 400 unless every id in it
+is already stored — reordering and removing among rows you already hold is
+always allowed, adding past your entitlement never is. The same "only what is
+new" test applies the picker's rules (Uma.pickable): a row that is no longer
+on offer may be kept, but not added.
 
 DELETING AN ACCOUNT
 -------------------
@@ -164,12 +171,13 @@ class AccountPreferencesSerializer(serializers.ModelSerializer):
     Always used with partial=True: sending one field leaves the other alone.
     """
 
-    # The whole ordered list, replaced on every write. Only umas with a
-    # picture may be chosen: a pick that renders blank is a worse experience
-    # than a 400, and the picker (GET /umas) never offers one, so a request
-    # that names one is not coming from the page. The cap is the table's, not
-    # the person's — their own limit is checked in validate_oshis, where the
-    # entitlement rule can explain itself.
+    # The whole ordered list, replaced on every write. The queryset here is
+    # looser than the picker's on purpose: every uma with a picture resolves,
+    # so a row a person picked before a picker rule existed (an outfit variant,
+    # since 2026-10-07) still parses and can be kept or reordered. Whether a
+    # NEW pick is on offer is checked in validate_oshis against Uma.pickable,
+    # next to the entitlement rule, where "only what is added is tested" can
+    # explain itself. The cap is the table's, not the person's.
     oshis = serializers.ListField(
         child=serializers.PrimaryKeyRelatedField(
             queryset=Uma.objects.exclude(image="").exclude(image__isnull=True)
@@ -183,28 +191,37 @@ class AccountPreferencesSerializer(serializers.ModelSerializer):
         fields = ["display_name", "oshis"]
 
     def validate_oshis(self, umas):
-        """Distinct, and never MORE than the person is entitled to hold.
+        """Distinct, on offer, and never MORE than the person is entitled to hold.
 
-        The entitlement check is deliberately a subset test rather than a
-        length test. A supporter whose tier dropped from five slots to three
-        still owns five rows; refusing every save until they delete two would
-        make the page unusable exactly when it should be helping them tidy up.
-        So a list longer than the slot count is fine as long as it introduces
-        nothing new — reorder, remove, keep — and a 400 the moment it adds.
+        Both checks test only what the list ADDS, deliberately. A supporter
+        whose tier dropped from seven slots to five still owns seven rows;
+        refusing every save until they delete two would make the page unusable
+        exactly when it should be helping them tidy up. So a list longer than
+        the slot count is fine as long as it introduces nothing new — reorder,
+        remove, keep — and a 400 the moment it adds. Likewise a held pick the
+        picker no longer offers (Uma.pickable) stays valid in the list; only a
+        fresh one is refused.
         """
         ids = [uma.pk for uma in umas]
         if len(set(ids)) != len(ids):
             raise serializers.ValidationError("The same uma can't be picked twice.")
 
+        stored = set(self.instance.oshis.values_list("uma_id", flat=True))
+        added = [pk for pk in ids if pk not in stored]
+        if added and Uma.pickable().filter(pk__in=added).count() != len(added):
+            # The picker never offers one of these, so a request naming one
+            # is not coming from the page.
+            raise serializers.ValidationError("That one isn't a single uma musume.")
+
         slots = benefits.oshi_slots(self.instance)
-        if len(ids) > slots:
-            stored = set(self.instance.oshis.values_list("uma_id", flat=True))
-            if not set(ids) <= stored:
-                if slots == 0:
-                    message = "Picking an oshi is a Patreon supporter perk."
-                else:
-                    message = f"Your tier covers {slots} oshi{'s' if slots != 1 else ''}."
-                raise serializers.ValidationError(message)
+        if len(ids) > slots and added:
+            # The free count is the one no pledge (and no staff flag) can
+            # produce, so it alone identifies a free account here.
+            if slots == benefits.FREE_OSHI_SLOTS:
+                message = "Free accounts get one favourite. Patreon supporters get more."
+            else:
+                message = f"Your tier covers {slots} favourites."
+            raise serializers.ValidationError(message)
         return umas
 
     def update(self, instance, validated_data):
@@ -285,11 +302,12 @@ def _current_avatar_url(oshis, slots):
     """The picture for the navbar: the first oshi's art, or None.
 
     None — not "" — when there is nothing to show, so the client draws its
-    default rather than loading an empty src. Nothing while `slots` is 0: a
-    lapsed supporter keeps their rows (see the module docstring) but the
-    picture is the perk, and the perk is off. The first row with an image,
-    rather than strictly position 0, so an editor clearing one uma's picture
-    degrades to the next pick instead of to a broken tile.
+    default rather than loading an empty src. Nothing while `slots` is 0,
+    which since the free slot (2026-10-07) no signed-in account hits; the
+    guard stays because the count is the server's to decide, not this
+    function's to assume. The first row with an image, rather than strictly
+    position 0, so an editor clearing one uma's picture degrades to the next
+    pick instead of to a broken tile.
     """
     if slots < 1:
         return None
@@ -380,9 +398,9 @@ def _account_summary(user):
         # null, not "", when there is no picture: the client draws its own
         # fallback on null and would try to load "" as an image.
         "avatar_url": _current_avatar_url(oshis, slots),
-        # Every pick, in order, covered or not; and how many the current tier
-        # covers. 0 slots for a free account — a real answer the page needs,
-        # which is why it is top-level and not inside the supporter block.
+        # Every pick, in order, covered or not; and how many the account
+        # covers (1 free, more by tier). Top-level and not inside the
+        # supporter block because a free account has a count too.
         "oshis": oshis,
         "oshi_slots": slots,
         "linked_providers": LinkedProviderSerializer(linked, many=True).data,

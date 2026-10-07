@@ -162,16 +162,43 @@ class Uma(models.Model):
         """The game's character id: an outfit id is `<character><outfit>`."""
         return self.game_id // 100 if self.game_id else None
 
+    @classmethod
+    def pickable(cls):
+        """The umas a person may pick as a favourite (an oshi).
+
+        Two rules, in ONE place so GET /umas (the picker's catalogue) and
+        PATCH /account (the write) cannot disagree about who is on offer:
+
+          * With a picture. A pick has to render, and a tile that draws blank
+            is a worse experience than a 400.
+          * A single uma musume, which here means NO parenthesis in the name.
+            The catalogue carries rows that stand for something else, chiefly
+            the "(All)" placeholder a banner uses to mean every uma, and the
+            outfit variants ("Special Week (Summer)") that the base row already
+            covers as a favourite. Owner's call, 2026-10-07: the picker lists
+            characters, not banner entries.
+
+        A pick made BEFORE a rule existed is kept, not refused: the account
+        serializer tests only what a save ADDS against this, so a held outfit
+        variant can still be reordered or removed.
+        """
+        return (
+            cls.objects.exclude(image="")
+            .exclude(image__isnull=True)
+            .exclude(name__contains="(")
+        )
+
     @property
     def portrait(self):
         """The art to draw when the uma stands for a PERSON: the borderless cut
         if there is one, else the bordered card art.
 
-        The oshi picker and the account picture crop the art into a circle,
-        where the rarity border only shows as clipped corners. Falling back
-        keeps every uma pickable while the borderless set has gaps (a new
-        outfit gets its bordered art first). One property so GET /umas and
-        GET /account cannot disagree about which file a pick shows.
+        The oshi picker and the account picture show the art as a small
+        square, where the rarity border reads as a frame around a frame.
+        Falling back keeps every uma pickable while the borderless set has
+        gaps (a new outfit gets its bordered art first). One property so
+        GET /umas and GET /account cannot disagree about which file a pick
+        shows.
         """
         return self.image_borderless or self.image
 

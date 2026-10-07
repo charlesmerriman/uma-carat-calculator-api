@@ -1,4 +1,5 @@
-"""Oshis: the supporter-only picture, how many a tier grants, and what a lapse keeps."""
+"""Oshis (favourite umas): one for everyone, how many a tier grants, what a lapse keeps,
+and which umas may be picked."""
 
 from io import StringIO
 
@@ -15,8 +16,8 @@ from calculatorapi.tests.factories import auth_client, make_user
 # resolve without credentials. The tests compare against `uma.image.url`
 # itself rather than a literal, so they hold whatever the storage's URL is.
 @override_settings(STORAGES=PLAIN_TEST_STORAGES)
-class OshiTestCase(CalculatorTestCase):
-    """Shared fixtures: the three prod tiers by their prod orders, and six umas."""
+class OshiTestCase(CalculatorTestCase):  # pylint: disable=too-many-instance-attributes
+    """Shared fixtures: the three prod tiers by their prod orders, and eight umas."""
 
     def setUp(self):
         # The orders are the live ones (GET /supporters, 2026-09-13). The
@@ -28,10 +29,14 @@ class OshiTestCase(CalculatorTestCase):
         self.client, _ = auth_client(self.user)
         # Assigning a name to the ImageField is enough: nothing here opens the
         # file, and the storage is never asked to save one.
+        # Eight: one more than the cap, so "past the cap" has something to send.
         self.umas = [
-            Uma.objects.create(name=f"Uma {i}", image=f"umas/uma-{i}.png") for i in range(6)
+            Uma.objects.create(name=f"Uma {i}", image=f"umas/uma-{i}.png") for i in range(8)
         ]
         self.bare_uma = Uma.objects.create(name="No Picture")
+        # Pictured, but not a single uma musume: the picker never offers these.
+        self.all_uma = Uma.objects.create(name="(All)", image="umas/all.png")
+        self.outfit_uma = Uma.objects.create(name="Uma 0 (Summer)", image="umas/uma-0-summer.png")
 
     def _pledge(self, tier, user=None, **kwargs):
         return PatreonSupporter.objects.create(**{
@@ -57,32 +62,36 @@ class OshiTestCase(CalculatorTestCase):
 
 
 class OshiLadderTests(OshiTestCase):
-    """benefits.oshi_slots: 5 / 3 / 1 by tier, 0 otherwise."""
+    """benefits.oshi_slots: 1 free, then 3 / 5 / 7 by tier (the free slot plus 2, 4, 6)."""
 
-    def test_free_account_has_no_slots(self):
-        self.assertEqual(benefits.oshi_slots(self.user), 0)
-
-    def test_junior_gets_one(self):
-        self._pledge(self.junior)
+    def test_free_account_has_one_slot(self):
+        self.assertEqual(benefits.FREE_OSHI_SLOTS, 1)
         self.assertEqual(benefits.oshi_slots(self.user), 1)
 
-    def test_classic_gets_three(self):
-        self._pledge(self.classic)
+    def test_nobody_has_no_slots(self):
+        self.assertEqual(benefits.oshi_slots(None), 0)
+
+    def test_junior_gets_three(self):
+        self._pledge(self.junior)
         self.assertEqual(benefits.oshi_slots(self.user), 3)
 
-    def test_senior_gets_five(self):
-        self._pledge(self.senior)
+    def test_classic_gets_five(self):
+        self._pledge(self.classic)
         self.assertEqual(benefits.oshi_slots(self.user), 5)
 
-    def test_a_tier_added_below_junior_gets_one(self):
+    def test_senior_gets_seven(self):
+        self._pledge(self.senior)
+        self.assertEqual(benefits.oshi_slots(self.user), 7)
+
+    def test_a_tier_added_below_junior_gets_three(self):
         """The bottom rung is ANY_PAID_TIER, so a new lowest tier is covered."""
         trial = PatreonTier.objects.create(name="Debut", order=9)
         self._pledge(trial)
-        self.assertEqual(benefits.oshi_slots(self.user), 1)
+        self.assertEqual(benefits.oshi_slots(self.user), 3)
 
-    def test_a_lapsed_pledge_has_no_slots(self):
+    def test_a_lapsed_pledge_keeps_the_free_slot(self):
         self._pledge(self.senior, is_active=False)
-        self.assertEqual(benefits.oshi_slots(self.user), 0)
+        self.assertEqual(benefits.oshi_slots(self.user), 1)
 
     def test_the_ladder_never_exceeds_the_model_cap(self):
         self.assertEqual(max(slots for _, slots in benefits.OSHI_SLOT_LADDER), OSHI_SLOT_CAP)
@@ -97,23 +106,29 @@ class OshiLadderTests(OshiTestCase):
         self.assertEqual(benefits.oshi_slots(staff), OSHI_SLOT_CAP)
 
     def test_staff_slots_are_not_reduced_by_a_lower_tier(self):
-        """Staff is a bypass, not a rung: a junior pledge does not cap them at 1."""
+        """Staff is a bypass, not a rung: a junior pledge does not cap them at 3."""
         staff = make_user("staffer", is_staff=True)
         self._pledge(self.junior, user=staff, patreon_user_id="8")
         self.assertEqual(benefits.oshi_slots(staff), OSHI_SLOT_CAP)
 
 
 class OshiPictureTests(OshiTestCase):
-    """GET /account: the first oshi is the picture, and only while it is covered."""
+    """GET /account: the first oshi is the picture, for every account."""
 
-    def test_free_account_has_no_picture_and_zero_slots(self):
+    def test_free_account_has_one_slot_and_no_picture_until_it_picks(self):
         body = self._get()
         self.assertIsNone(body["avatar_url"])
-        self.assertEqual(body["oshi_slots"], 0)
+        self.assertEqual(body["oshi_slots"], 1)
         self.assertEqual(body["oshis"], [])
 
+    def test_a_free_account_s_pick_is_its_picture(self):
+        self._patch({"oshis": self._ids(3)})
+        body = self._get()
+        self.assertEqual(body["avatar_url"], self.umas[3].image.url)
+        self.assertEqual(body["oshi_slots"], 1)
+
     def test_the_first_oshi_is_the_picture(self):
-        self._pledge(self.classic)
+        self._pledge(self.junior)
         self._patch({"oshis": self._ids(2, 0, 1)})
 
         body = self._get()
@@ -137,30 +152,30 @@ class OshiPictureTests(OshiTestCase):
 
         self.assertEqual(response.json()["avatar_url"], self.umas[1].image.url)
 
-    def test_a_lapse_keeps_the_rows_and_removes_the_picture(self):
-        """The Dave rule: nothing is deleted, the perk is simply off."""
+    def test_a_lapse_keeps_the_rows_and_the_picture(self):
+        """The Dave rule: nothing is deleted. The free slot keeps the first one covered."""
         pledge = self._pledge(self.senior)
-        self._patch({"oshis": self._ids(0, 1, 2, 3, 4)})
+        self._patch({"oshis": self._ids(0, 1, 2, 3, 4, 5, 6)})
         pledge.is_active = False
         pledge.save()
 
         body = self._get()
 
-        self.assertIsNone(body["avatar_url"])
-        self.assertEqual(body["oshi_slots"], 0)
-        self.assertEqual([row["id"] for row in body["oshis"]], self._ids(0, 1, 2, 3, 4))
+        self.assertEqual(body["avatar_url"], self.umas[0].image.url)
+        self.assertEqual(body["oshi_slots"], 1)
+        self.assertEqual([row["id"] for row in body["oshis"]], self._ids(0, 1, 2, 3, 4, 5, 6))
 
     def test_a_downgrade_keeps_every_row_and_reports_the_smaller_count(self):
         pledge = self._pledge(self.senior)
-        self._patch({"oshis": self._ids(0, 1, 2, 3, 4)})
+        self._patch({"oshis": self._ids(0, 1, 2, 3, 4, 5, 6)})
         pledge.tier = self.classic
         pledge.save()
 
         body = self._get()
 
         self.assertEqual(body["avatar_url"], self.umas[0].image.url)
-        self.assertEqual(body["oshi_slots"], 3)
-        self.assertEqual(len(body["oshis"]), 5)
+        self.assertEqual(body["oshi_slots"], 5)
+        self.assertEqual(len(body["oshis"]), 7)
 
     def test_deleting_an_uma_removes_that_oshi_and_the_next_becomes_the_picture(self):
         self._pledge(self.classic)
@@ -221,44 +236,92 @@ class OshiPictureTests(OshiTestCase):
         self.assertFalse(get_body["supporter"]["is_supporter"])
 
         patch_body = client.patch(
-            "/account", {"oshis": self._ids(0, 1, 2, 3, 4)}, format="json"
+            "/account", {"oshis": self._ids(0, 1, 2, 3, 4, 5, 6)}, format="json"
         ).json()
         self.assertEqual(patch_body["avatar_url"], self.umas[0].image.url)
-        self.assertEqual(len(patch_body["oshis"]), 5)
+        self.assertEqual(len(patch_body["oshis"]), 7)
 
 
-class OshiWriteTests(OshiTestCase):
+class OshiWriteTests(OshiTestCase):  # pylint: disable=too-many-public-methods
     """PATCH /account {"oshis": [...]}: what may be added, and what may always be done."""
 
-    def test_a_free_account_may_not_pick(self):
+    def test_a_free_account_may_pick_one(self):
         response = self._patch({"oshis": self._ids(0)})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self._stored_ids(), self._ids(0))
+
+    def test_a_free_account_may_not_pick_two(self):
+        response = self._patch({"oshis": self._ids(0, 1)})
         self.assertEqual(response.status_code, 400)
-        self.assertIn("Patreon", response.json()["oshis"][0])
+        self.assertEqual(
+            response.json()["oshis"][0],
+            "Free accounts get one favourite. Patreon supporters get more.",
+        )
         self.assertEqual(self._stored_ids(), [])
+
+    def test_a_free_account_may_swap_its_one(self):
+        self._patch({"oshis": self._ids(0)})
+        response = self._patch({"oshis": self._ids(1)})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self._stored_ids(), self._ids(1))
 
     def test_a_supporter_may_fill_their_slots(self):
         self._pledge(self.junior)
-        response = self._patch({"oshis": self._ids(3)})
+        response = self._patch({"oshis": self._ids(3, 4, 5)})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(self._stored_ids(), self._ids(3))
+        self.assertEqual(self._stored_ids(), self._ids(3, 4, 5))
 
     def test_one_past_the_slot_count_is_refused(self):
         self._pledge(self.junior)
-        response = self._patch({"oshis": self._ids(0, 1)})
+        response = self._patch({"oshis": self._ids(0, 1, 2, 3)})
         self.assertEqual(response.status_code, 400)
-        self.assertIn("covers 1 oshi.", response.json()["oshis"][0])
+        self.assertEqual(response.json()["oshis"][0], "Your tier covers 3 favourites.")
         self.assertEqual(self._stored_ids(), [])
 
-    def test_the_message_pluralises(self):
+    def test_the_message_names_the_tier_s_count(self):
         self._pledge(self.classic)
-        response = self._patch({"oshis": self._ids(0, 1, 2, 3)})
-        self.assertIn("covers 3 oshis.", response.json()["oshis"][0])
+        response = self._patch({"oshis": self._ids(0, 1, 2, 3, 4, 5)})
+        self.assertEqual(response.json()["oshis"][0], "Your tier covers 5 favourites.")
 
     def test_more_than_the_cap_is_refused_even_for_the_top_tier(self):
         self._pledge(self.senior)
-        response = self._patch({"oshis": self._ids(0, 1, 2, 3, 4, 5)})
+        response = self._patch({"oshis": self._ids(0, 1, 2, 3, 4, 5, 6, 7)})
         self.assertEqual(response.status_code, 400)
         self.assertIn("oshis", response.json())
+
+    # the picker's rules: Uma.pickable ────────────────────────────────────────
+
+    def test_the_all_placeholder_is_refused(self):
+        response = self._patch({"oshis": [self.all_uma.id]})
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["oshis"][0], "That one isn't a single uma musume.")
+        self.assertEqual(self._stored_ids(), [])
+
+    def test_an_outfit_variant_is_refused(self):
+        self._pledge(self.junior)
+        response = self._patch({"oshis": self._ids(0) + [self.outfit_uma.id]})
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(self._stored_ids(), [])
+
+    def test_a_held_outfit_variant_may_be_kept_and_reordered(self):
+        """A pick made before the rule existed stays theirs; only an ADD is tested."""
+        self._pledge(self.junior)
+        UserOshi.objects.create(user=self.user, uma=self.outfit_uma, position=0)
+        UserOshi.objects.create(user=self.user, uma=self.umas[1], position=1)
+
+        response = self._patch({"oshis": self._ids(1) + [self.outfit_uma.id]})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self._stored_ids(), self._ids(1) + [self.outfit_uma.id])
+        # ...and adding a fresh one beside it is still fine.
+        response = self._patch({"oshis": self._ids(1, 2) + [self.outfit_uma.id]})
+        self.assertEqual(response.status_code, 200)
+
+    def test_pickable_is_what_the_picker_lists(self):
+        self.assertEqual(
+            set(Uma.pickable().values_list("name", flat=True)),
+            {f"Uma {i}" for i in range(8)},
+        )
 
     def test_the_same_uma_twice_is_refused(self):
         self._pledge(self.classic)
@@ -279,7 +342,7 @@ class OshiWriteTests(OshiTestCase):
         self.assertIn("oshis", response.json())
 
     def test_a_replace_renumbers_from_zero(self):
-        self._pledge(self.senior)
+        self._pledge(self.junior)
         self._patch({"oshis": self._ids(0, 1, 2)})
         self._patch({"oshis": self._ids(2)})
         self.assertEqual(
@@ -287,7 +350,6 @@ class OshiWriteTests(OshiTestCase):
         )
 
     def test_an_empty_list_clears_them(self):
-        self._pledge(self.junior)
         self._patch({"oshis": self._ids(0)})
         response = self._patch({"oshis": []})
         self.assertEqual(response.status_code, 200)
@@ -295,7 +357,6 @@ class OshiWriteTests(OshiTestCase):
         self.assertIsNone(response.json()["avatar_url"])
 
     def test_a_patch_without_oshis_leaves_them_alone(self):
-        self._pledge(self.junior)
         self._patch({"oshis": self._ids(0)})
         self._patch({"display_name": "Rhondal"})
         self.assertEqual(self._stored_ids(), self._ids(0))
@@ -304,66 +365,77 @@ class OshiWriteTests(OshiTestCase):
 
     def test_a_downgraded_supporter_may_reorder_what_they_hold(self):
         pledge = self._pledge(self.senior)
-        self._patch({"oshis": self._ids(0, 1, 2, 3, 4)})
+        self._patch({"oshis": self._ids(0, 1, 2, 3, 4, 5, 6)})
         pledge.tier = self.classic
         pledge.save()
 
-        response = self._patch({"oshis": self._ids(4, 3, 2, 1, 0)})
+        response = self._patch({"oshis": self._ids(6, 5, 4, 3, 2, 1, 0)})
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(self._stored_ids(), self._ids(4, 3, 2, 1, 0))
-        self.assertEqual(response.json()["avatar_url"], self.umas[4].image.url)
+        self.assertEqual(self._stored_ids(), self._ids(6, 5, 4, 3, 2, 1, 0))
+        self.assertEqual(response.json()["avatar_url"], self.umas[6].image.url)
 
     def test_a_downgraded_supporter_may_remove_down_to_their_count(self):
         pledge = self._pledge(self.senior)
-        self._patch({"oshis": self._ids(0, 1, 2, 3, 4)})
+        self._patch({"oshis": self._ids(0, 1, 2, 3, 4, 5, 6)})
         pledge.tier = self.classic
         pledge.save()
 
-        response = self._patch({"oshis": self._ids(0, 1, 2, 3)})
+        response = self._patch({"oshis": self._ids(0, 1, 2, 3, 4, 5)})
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(self._stored_ids(), self._ids(0, 1, 2, 3))
+        self.assertEqual(self._stored_ids(), self._ids(0, 1, 2, 3, 4, 5))
 
     def test_a_downgraded_supporter_may_not_swap_in_a_new_one(self):
-        """Five rows, three slots: replacing one of the five is an ADD."""
+        """Seven rows, five slots: replacing one of the seven is an ADD."""
         pledge = self._pledge(self.senior)
-        self._patch({"oshis": self._ids(0, 1, 2, 3, 4)})
+        self._patch({"oshis": self._ids(0, 1, 2, 3, 4, 5, 6)})
         pledge.tier = self.classic
         pledge.save()
 
-        response = self._patch({"oshis": self._ids(0, 1, 2, 3, 5)})
+        response = self._patch({"oshis": self._ids(0, 1, 2, 3, 4, 5, 7)})
 
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(self._stored_ids(), self._ids(0, 1, 2, 3, 4))
+        self.assertEqual(self._stored_ids(), self._ids(0, 1, 2, 3, 4, 5, 6))
 
     def test_a_downgraded_supporter_may_pick_fresh_within_their_count(self):
         pledge = self._pledge(self.senior)
-        self._patch({"oshis": self._ids(0, 1, 2, 3, 4)})
+        self._patch({"oshis": self._ids(0, 1, 2, 3, 4, 5, 6)})
         pledge.tier = self.classic
         pledge.save()
 
-        response = self._patch({"oshis": self._ids(5, 4, 3)})
+        response = self._patch({"oshis": self._ids(7, 6, 5, 4, 3)})
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(self._stored_ids(), self._ids(5, 4, 3))
+        self.assertEqual(self._stored_ids(), self._ids(7, 6, 5, 4, 3))
 
     def test_a_lapsed_supporter_may_clear_or_trim_but_not_add(self):
+        """Three rows, one (free) slot left: keep, reorder and trim, never add."""
+        pledge = self._pledge(self.junior)
+        self._patch({"oshis": self._ids(0, 1, 2)})
+        pledge.is_active = False
+        pledge.save()
+
+        self.assertEqual(self._patch({"oshis": self._ids(0, 1, 2, 3)}).status_code, 400)
+        self.assertEqual(self._patch({"oshis": self._ids(2, 1, 0)}).status_code, 200)
+        self.assertEqual(self._patch({"oshis": self._ids(2)}).status_code, 200)
+        self.assertEqual(self._patch({"oshis": []}).status_code, 200)
+        self.assertEqual(self._stored_ids(), [])
+
+    def test_a_lapsed_supporter_s_refusal_reads_as_the_free_message(self):
         pledge = self._pledge(self.junior)
         self._patch({"oshis": self._ids(0)})
         pledge.is_active = False
         pledge.save()
 
-        self.assertEqual(self._patch({"oshis": self._ids(1)}).status_code, 400)
-        self.assertEqual(self._patch({"oshis": self._ids(0)}).status_code, 200)
-        self.assertEqual(self._patch({"oshis": []}).status_code, 200)
-        self.assertEqual(self._stored_ids(), [])
+        response = self._patch({"oshis": self._ids(0, 1)})
+
+        self.assertEqual(response.json()["oshis"][0],
+                         "Free accounts get one favourite. Patreon supporters get more.")
 
     def test_oshis_are_per_account(self):
         other = make_user("user_b7e2d0")
         other_client, _ = auth_client(other)
-        self._pledge(self.junior)
-        self._pledge(self.junior, user=other, patreon_user_id="8", display_name="Other")
         self._patch({"oshis": self._ids(0)})
         other_client.patch("/account", {"oshis": self._ids(0)}, format="json")
 

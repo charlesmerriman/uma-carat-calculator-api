@@ -44,8 +44,8 @@ class UmaOptionSerializer(serializers.ModelSerializer):
 
     # Still called `image` on the wire, but it is the uma's portrait: the
     # borderless art when the row has it, the bordered art when it does not
-    # (Uma.portrait). A picker tile is a circle, and the border does not
-    # survive the crop.
+    # (Uma.portrait). A picker tile is a small square, and the rarity border
+    # reads as a frame inside a frame.
     image = serializers.ImageField(source="portrait", read_only=True)
 
     class Meta:
@@ -61,7 +61,8 @@ class UmaViewSet(viewsets.ReadOnlyModelViewSet):  # pylint: disable=too-many-anc
     client there, and fetching the largest payload the API serves to fill a
     picker would be the wrong trade — this is three fields a row.
 
-    Only umas WITH a picture, because a pick has to render, and by name
+    Only the umas a person may pick (Uma.pickable: with a picture, and not a
+    "(…)" row such as the "(All)" placeholder or an outfit variant), by name
     because that is how a person scans a few hundred tiles. Not cached: it is
     one indexed query, and the public payload cache's one-process caveat
     (public_payload_cache.py) is not worth inheriting for it.
@@ -69,9 +70,7 @@ class UmaViewSet(viewsets.ReadOnlyModelViewSet):  # pylint: disable=too-many-anc
 
     permission_classes = [permissions.AllowAny]
     serializer_class = UmaOptionSerializer
-    queryset = (
-        Uma.objects.exclude(image="").exclude(image__isnull=True).order_by("name", "id")
-    )
+    queryset = Uma.pickable().order_by("name", "id")
 
     def get_serializer_context(self):
         # No "request" in the context, matching every serializer behind

@@ -36,7 +36,8 @@ class AccountPreferencesTests(CalculatorTestCase):  # pylint: disable=too-many-p
         body = self._get().json()
         self.assertEqual(body["display_name"], "")
         self.assertEqual(body["oshis"], [])
-        self.assertEqual(body["oshi_slots"], 0)
+        # The free slot: every account may hold one favourite.
+        self.assertEqual(body["oshi_slots"], 1)
         self.assertIsNone(body["avatar_url"])
 
     def test_patch_answers_with_the_full_account_summary(self):
@@ -192,13 +193,9 @@ class AccountPreferencesTests(CalculatorTestCase):  # pylint: disable=too-many-p
         self.assertEqual(self.user.email, "user_a3f9c1@test.com")
 
     def test_patching_one_preference_leaves_the_other_alone(self):
-        # A supporter with one slot, so the oshi half of the body is accepted.
-        # The interplay itself is test_oshi's business; this pins only that
-        # a later name-only PATCH does not clear the list.
-        from calculatorapi.models import PatreonSupporter, PatreonTier  # pylint: disable=import-outside-toplevel
-        tier = PatreonTier.objects.create(name="Junior Class", order=3)
-        PatreonSupporter.objects.create(display_name="R", patreon_user_id="7", tier=tier,
-                                        is_active=True, linked_user=self.user)
+        # One pick fits the free slot, so the oshi half of the body is
+        # accepted. The interplay itself is test_oshi's business; this pins
+        # only that a later name-only PATCH does not clear the list.
         uma = Uma.objects.create(name="Special Week", image="umas/special-week.png")
         self._patch({"display_name": "Rhondal", "oshis": [uma.id]})
         response = self._patch({"display_name": "Rho"})
@@ -237,19 +234,28 @@ class AccountPreferencesTests(CalculatorTestCase):  # pylint: disable=too-many-p
 
 @override_settings(STORAGES=PLAIN_TEST_STORAGES)
 class UmaCatalogueTests(CalculatorTestCase):
-    """GET /umas: the picker's options — public, pictured umas only, by name."""
+    """GET /umas: the picker's options — public, Uma.pickable only, by name."""
 
     def setUp(self):
         Uma.objects.create(name="Zeta Uma", image="umas/zeta.png")
         Uma.objects.create(name="Alpha Uma", image="umas/alpha.png", admin_comments="editor note")
         Uma.objects.create(name="Bare Uma")
+        # Rows that stand for something other than one uma musume: the
+        # banner placeholder and an outfit variant. Pictured, still left out.
+        Uma.objects.create(name="(All)", image="umas/all.png")
+        Uma.objects.create(name="Alpha Uma (Summer)", image="umas/alpha-summer.png")
 
     def test_is_public(self):
         self.assertEqual(APIClient().get("/umas").status_code, 200)
 
-    def test_lists_only_umas_with_a_picture_sorted_by_name(self):
+    def test_lists_only_pictured_single_umas_sorted_by_name(self):
         body = APIClient().get("/umas").json()
         self.assertEqual([row["name"] for row in body], ["Alpha Uma", "Zeta Uma"])
+
+    def test_a_name_with_a_parenthesis_is_never_offered(self):
+        names = [row["name"] for row in APIClient().get("/umas").json()]
+        self.assertNotIn("(All)", names)
+        self.assertNotIn("Alpha Uma (Summer)", names)
 
     def test_rows_carry_only_id_name_and_image(self):
         # No admin_comments, no selector gates, no purpose: the picker has no
@@ -265,7 +271,7 @@ class UmaCatalogueTests(CalculatorTestCase):
         self.assertEqual(row["image"], uma.image.url)
 
     def test_image_is_the_borderless_art_when_the_uma_has_it(self):
-        # The picker crops to a circle; the bordered art is only the fallback.
+        # The picker shows a small square; the bordered art is only the fallback.
         uma = Uma.objects.get(name="Alpha Uma")
         uma.image_borderless = "umas_borderless/alpha.png"
         uma.save()

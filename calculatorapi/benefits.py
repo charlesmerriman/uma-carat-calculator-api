@@ -69,20 +69,28 @@ BENEFITS = {
 }
 
 # ── Oshi slots ───────────────────────────────────────────────────────────────
-# The one benefit that is a COUNT rather than a yes/no: 5 oshis on the top tier,
-# 3 on the next, 1 on any other paid tier. Rungs are (tier order threshold,
-# slots), read top down, and the first rung the supporter clears wins -- the
-# same `order <= threshold` test BENEFITS uses, so a tier added below the
-# current bottom gets 1 and a tier renumbered above the top gets 5. The
-# thresholds are the prod tiers' orders as of 2026-09-13: Senior Class 1,
-# Classic Class 2, Junior Class 3.
+# The one benefit that is a COUNT rather than a yes/no. Every signed-in account
+# holds FREE_OSHI_SLOTS (one favourite, which is their picture); a pledge adds
+# more on top: +2 on any paid tier, +4 on the next, +6 on the top tier, so the
+# rungs below are 3 / 5 / 7. Rungs are (tier order threshold, slots), read top
+# down, and the first rung the supporter clears wins -- the same
+# `order <= threshold` test BENEFITS uses, so a tier added below the current
+# bottom gets 3 and a tier renumbered above the top gets 7. The thresholds are
+# the prod tiers' orders as of 2026-09-13: Senior Class 1, Classic Class 2,
+# Junior Class 3.
+#
+# Until 2026-10-07 the free count was 0 and the picture itself was the perk;
+# now the perk is the extra slots. The lapse rule is unchanged (a lapse keeps
+# every row and refuses only an ADD past the count), it just leaves the first
+# row covered, so a lapsed supporter keeps their picture.
 #
 # In code and not on PatreonTier for the same reason BENEFITS is: a paywall
 # boundary should move through a reviewable diff, not an admin form.
+FREE_OSHI_SLOTS = 1
 OSHI_SLOT_LADDER = (
-    (1, 5),
-    (2, 3),
-    (ANY_PAID_TIER, 1),
+    (1, FREE_OSHI_SLOTS + 6),
+    (2, FREE_OSHI_SLOTS + 4),
+    (ANY_PAID_TIER, FREE_OSHI_SLOTS + 2),
 )
 
 # The model caps `position` at OSHI_SLOT_CAP - 1, so the ladder must never
@@ -146,7 +154,10 @@ def benefit_keys(user):
 
 
 def oshi_slots_for(supporter, *, is_staff=False):
-    """How many oshis an already-resolved supporter row is entitled to; 0 for None.
+    """How many oshis an already-resolved supporter row is entitled to.
+
+    FREE_OSHI_SLOTS for None: a signed-in account with no pledge (or a lapsed
+    one) still holds its one favourite.
 
     `is_staff` is a full bypass of the ladder, capped at OSHI_SLOT_CAP rather
     than at the top rung's 5 for the same reason the ladder asserts against
@@ -161,15 +172,16 @@ def oshi_slots_for(supporter, *, is_staff=False):
     for threshold, slots in OSHI_SLOT_LADDER:
         if _meets(supporter, threshold):
             return slots
-    return 0
+    return FREE_OSHI_SLOTS
 
 
 def oshi_slots(user):
-    """How many oshis `user` may hold right now. 0 for everyone who is not a
-    supporter and not staff, which is what makes "has a picture" and "has at
-    least one slot" the same question."""
-    is_staff = user is not None and user.is_authenticated and user.is_staff
-    return oshi_slots_for(entitled_supporter(user), is_staff=is_staff)
+    """How many oshis `user` may hold right now: the free slot for any
+    signed-in account, more for supporters and staff. 0 only for nobody at
+    all (anonymous), who has no account to hold one on."""
+    if user is None or not user.is_authenticated:
+        return 0
+    return oshi_slots_for(entitled_supporter(user), is_staff=user.is_staff)
 
 
 class IsSupporter(permissions.BasePermission):
