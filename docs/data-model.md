@@ -522,8 +522,7 @@ copies both, across accounts too.
 first card to before a free copy goes to the second. Null means the client's default for
 the banner type (one copy of an uma, MLB of a support card). The serializer checks the
 range, which is fine where a membership check is not: no content edit can put a stored
-value outside 1..5. The client offers 1 and 5; the column takes any value in between so
-a finer choice needs no migration. Copied across accounts like the ids.
+value outside 1..5. Copied across accounts like the ids.
 
 Accepted consequence: purchases are shared by every plan that reads the same stats block.
 A pack planned to fund a step-up in one plan still credits its carats while another plan
