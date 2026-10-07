@@ -30,13 +30,14 @@ ForeignKey, not a OneToOne, precisely so that linking is possible.
 > For one unshipped day (2026-09-12 to 2026-09-13) the provider's profile
 > picture was stored on this row and Google's `profile` scope was requested for
 > it. Both were removed before reaching production: the account picture is now
-> a **supporter perk** drawn from the site's own art (see "Oshis" below), and
-> free accounts have no picture. Any future profile attribute needs the same
-> explicit decision this one got, and a policy edit first.
+> a **favourite uma the person picks** from the site's own art (see "Oshis"
+> below), one for everyone and more for supporters since 2026-10-07. Any future
+> profile attribute needs the same explicit decision this one got, and a policy
+> edit first.
 
 **Preferences are not profile attributes.** `CustomUser.display_name` (a name
-shown beside the handle) and a supporter's **oshis** (`UserOshi`: an ordered
-list of umas from the catalogue, the first of which is their picture) are things
+shown beside the handle) and the person's **oshis** (`UserOshi`: an ordered
+list of favourite umas from the catalogue, the first of which is their picture) are things
 the person *tells* us through `PATCH /account`, never things we *learn* from a
 provider — the scopes and `oauth.Identity` are untouched by them. The handle
 stays the row's identity; the name sits beside it and is unique (ignoring case,
@@ -48,15 +49,18 @@ data, and survive the purge. Neither reaches any public route today. (Oshis
 through `PatreonSupporter.linked_user`, honour `is_public`, and never carry the
 display name or handle alongside.)
 
-**Oshis are entitlement-gated, and entitlement is derived.** How many a person
-may hold is `benefits.oshi_slots(user)` — 5 / 3 / 1 by tier via
-`OSHI_SLOT_LADDER`, 0 for a free account — resolved on every request from the
-linked `PatreonSupporter` row, never stored. A lapse or a downgrade **keeps every
-row** and simply stops covering some of them: `GET /account` still lists them
-all, the picture is the first one only while `oshi_slots >= 1`, and `PATCH`
-refuses only a list that **adds** past the slot count (reordering and removing
-among what is already held is always allowed). → `views/account.py`,
-`models/user_oshi.py`
+**Extra oshi slots are entitlement-gated, and entitlement is derived.** How
+many a person may hold is `benefits.oshi_slots(user)` — 1 for any signed-in
+account (`FREE_OSHI_SLOTS`), 3 / 5 / 7 by tier via `OSHI_SLOT_LADDER` — resolved
+on every request from the linked `PatreonSupporter` row, never stored. A lapse
+or a downgrade **keeps every row** and simply stops covering some of them:
+`GET /account` still lists them all, the picture is the first one (always
+covered, since the free slot), and `PATCH` refuses only a list that **adds**
+past the slot count (reordering and removing among what is already held is
+always allowed). Adding a **costume variant** (`Uma.is_costume_variant`) is
+gated the same way (`benefits.oshi_variants`: any paid tier, or staff) and
+reported as `oshi_variants`; a held one is never taken away.
+→ `views/account.py`, `models/user_oshi.py`
 
 Staff accounts are the exception: they keep password login so `/admin` and the
 analytics dashboard remain reachable.

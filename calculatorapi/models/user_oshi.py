@@ -3,24 +3,28 @@ from django.db import models
 from .custom_user import CustomUser
 from .uma import Uma
 
-# The most oshis any account can hold: what the top Patreon tier grants.
-# benefits.OSHI_SLOT_LADDER's top rung must equal this (benefits.py asserts
-# it at import), and PATCH /account refuses a longer list outright, so the
-# `position` column below never exceeds OSHI_SLOT_CAP - 1.
-OSHI_SLOT_CAP = 5
+# The most oshis any account can hold: what the top Patreon tier grants
+# (the free slot plus six). benefits.OSHI_SLOT_LADDER's top rung must equal
+# this (benefits.py asserts it at import), and PATCH /account refuses a longer
+# list outright, so the `position` column below never exceeds OSHI_SLOT_CAP - 1.
+# Raised from 5 on 2026-10-07, when every account got a slot; no migration,
+# the column is a plain small integer.
+OSHI_SLOT_CAP = 7
 
 
 class UserOshi(models.Model):
-    """One of the umas a Patreon supporter picked as their "oshi" (favourite).
+    """One of the umas a person picked as a favourite (an "oshi" in the code).
 
-    WHAT IT IS FOR. Supporters get a small ordered list of favourite umas, sized
-    by tier (1, 3 or 5 -- see benefits.OSHI_SLOT_LADDER), and the FIRST one is
-    their picture in the navbar and on the account page. Free accounts have no
-    picture; the perk IS the picture. Written only by PATCH /account, which
-    replaces the whole list and renumbers positions from 0, so "the first one"
-    is always position 0 among the rows that exist.
+    WHAT IT IS FOR. Every account gets a small ordered list of favourite umas,
+    and the FIRST one is their picture in the navbar and on the account page.
+    A free account holds one; Patreon supporters hold more by tier (3, 5 or 7
+    -- see benefits.OSHI_SLOT_LADDER), so the perk is the EXTRA slots, not the
+    picture itself (it was, until 2026-10-07). Written only by PATCH /account,
+    which replaces the whole list and renumbers positions from 0, so "the first
+    one" is always position 0 among the rows that exist. The UI calls these
+    "your favourite uma musume"; the wire and the code keep "oshi".
 
-    WHY A TABLE AND NOT A COLUMN. The list is up to five long and ordered, and
+    WHY A TABLE AND NOT A COLUMN. The list is up to OSHI_SLOT_CAP long and ordered, and
     a future feature will show a supporter's oshis publicly (decided
     2026-09-13), so it needs to be joinable from the supporter side --
     `related_name="oshis"` rather than the "+" the old avatar_uma FK had.
@@ -30,6 +34,8 @@ class UserOshi(models.Model):
     (the same "a lapse never deletes data" rule /calculator-data follows for
     premium rows) and GET /account reports how many of them the current tier
     covers; the view decides what to show and PATCH decides what may be added.
+    Since the free slot, a lapsed supporter keeps their picture: the first row
+    is always covered.
 
     NOT PERSONAL DATA. A uma pick is the site's own art, so purge_user_pii
     leaves these rows alone, exactly as it left avatar_uma. When the future

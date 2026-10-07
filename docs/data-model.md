@@ -381,35 +381,47 @@ serialized anywhere public today.
 → [auth-and-privacy.md](auth-and-privacy.md) for why this is not a profile
 attribute, and [api-reference.md](api-reference.md) for the route.
 
-### `UserOshi` — the supporter-only picture
+### `UserOshi` — favourite umas, the first of which is the picture
 
-The umas a Patreon supporter picked as their "oshis", one row each:
+The umas a person picked as favourites ("oshis" in the code and on the wire,
+"your favourite uma musume" on screen), one row each:
 `user` (FK, CASCADE, `related_name="oshis"`), `uma` (FK, **CASCADE**), `position`
 (0-based). Unique on `(user, position)` and on `(user, uma)`. **The first one is
-their picture** in the navbar and on the account page; free accounts have no
-picture at all — the perk *is* the picture. `OSHI_SLOT_CAP = 5` is the table's
-ceiling and equals the top rung of `benefits.OSHI_SLOT_LADDER` (asserted at
-import).
+their picture** in the navbar and on the account page. Every account holds one
+(`benefits.FREE_OSHI_SLOTS`); Patreon supporters hold more by tier, so the perk
+is the *extra slots*. (Until 2026-10-07 the free count was 0 and the picture
+itself was the perk.) `OSHI_SLOT_CAP = 7` is the table's ceiling and equals the
+top rung of `benefits.OSHI_SLOT_LADDER` (asserted at import).
 
 - **Written only by `PATCH /account`**, which replaces the whole list and
   renumbers from 0 inside one transaction, so "the first" is always position 0
   among the rows that exist.
-- **Entitlement is not stored here.** How many rows the current tier covers is
-  `benefits.oshi_slots(user)` (5 / 3 / 1 / 0), derived per request like every
+- **Entitlement is not stored here.** How many rows the account covers is
+  `benefits.oshi_slots(user)` (1 free; 3 / 5 / 7 by tier, the free slot plus
+  2, 4 or 6), derived per request like every
   other benefit — except staff, who get `OSHI_SLOT_CAP` regardless of tier
   (`oshi_slots_for(supporter, is_staff=...)`). That bypass reads `is_staff`,
   CustomUser's own field, so it adds no second copy of Patreon entitlement; it
   only unlocks the slot count, `supporter`/`is_supporter` in the `/account`
   response is untouched. **A lapse or downgrade keeps every row**: `GET /account` lists
-  them all, shows the picture only while `oshi_slots >= 1`, and `PATCH` refuses
-  only a list that *adds* past the count — a subset of what is already held may
-  always be kept, reordered or trimmed.
+  them all, shows the picture while `oshi_slots >= 1` (which, since the free
+  slot, every signed-in account clears, so a lapsed supporter keeps their
+  picture), and `PATCH` refuses only a list that *adds* past the count — a
+  subset of what is already held may always be kept, reordered or trimmed.
 - **CASCADE on the uma, not SET_NULL**: a slot with no uma is nothing, and the
   list will one day be shown publicly, where a dangling slot would be a blank
   tile. The remaining rows keep their positions; the view reads "first by
   position", so a gap is harmless.
-- Only a uma **with an image** may be chosen (the serializer's queryset, and
-  `GET /umas` offers nothing else). If an editor clears an image later the row
+- Only a **pickable** uma may be *added*: `Uma.pickable()` is one queryset for
+  both `GET /umas` (what the picker lists) and the `PATCH` check, and means
+  *with an image* and *not the `(All)` placeholder* (`Uma.ALL_PLACEHOLDER_NAME`,
+  exact match). **Costume variants** (`Uma.is_costume_variant`: a `(` in the
+  name, `Special Week (Summer)`) are listed for everyone but may be *added*
+  only by a supporter on any paid tier or by staff (`benefits.oshi_variants`,
+  sent as `oshi_variants` on `/account` so the picker locks the tiles). Owner's
+  call, 2026-10-07. Both checks are on what a save **adds**, like the slot
+  check: a held variant survives a lapse and may still be kept or reordered.
+  If an editor clears an image later the row
   stays, its `image` is `""` on the wire, and the picture falls through to the
   next oshi rather than to a broken tile.
 - **Not personal data.** The site's own art; `purge_user_pii` leaves it. Decided
@@ -471,7 +483,7 @@ An account holds up to `PLAN_CAP` (5) plans and the calculator opens on the acti
 
 | Data | Lives on | Why |
 |---|---|---|
-| Planned banner rows (`number_of_pulls`, `reserved_copies`, `note`, `primary_card`, `second_card`) | `Plan` | the choices |
+| Planned banner rows (`number_of_pulls`, `reserved_copies`, `note`, `primary_card`, `second_card`, `primary_target`) | `Plan` | the choices |
 | Which of the owner's stats blocks to read (`income_profile`, nullable) | `Plan` | a pointer, not a fact; dropped when a copy changes owner |
 | Carats, tickets, selector tickets, shards, crystals, ranks | `CustomUser`, or an `IncomeProfile` the account owns | facts about the person (or about their other game account) |
 | The income toggles | same row as the balances | income side |
@@ -505,6 +517,12 @@ not check them against the banner's featured cards, on purpose**: the client ign
 the banner no longer features, so an editor removing a card cannot `400` a plan its owner
 never touched (the trap step-up selections had to be grandfathered out of). `copy_plan()`
 copies both, across accounts too.
+
+`primary_target` (nullable, 1..5) rides with them: the copies the two-card odds take the
+first card to before a free copy goes to the second. Null means the client's default for
+the banner type (one copy of an uma, MLB of a support card). The serializer checks the
+range, which is fine where a membership check is not: no content edit can put a stored
+value outside 1..5. Copied across accounts like the ids.
 
 Accepted consequence: purchases are shared by every plan that reads the same stats block.
 A pack planned to fund a step-up in one plan still credits its carats while another plan

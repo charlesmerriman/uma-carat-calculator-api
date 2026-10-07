@@ -36,8 +36,8 @@ each extractor reads exactly that one value from what comes back:
 None of them sends an email address, a name or a picture we keep, so none can
 be stored here by accident. NO profile attribute is held: for one unshipped day
 (2026-09-12 to 2026-09-13) the provider picture was, and it was removed before
-it reached production -- the account picture is a supporter perk now
-(models/user_oshi.py). Do not widen these scopes or the extractors without
+it reached production -- the account picture is a favourite uma the person
+picks from the site's own art (models/user_oshi.py). Do not widen these scopes or the extractors without
 changing the privacy policy first: it promises this exact list.
 
 In particular: Patreon puts the email behind a SEPARATE "identity[email]" scope.

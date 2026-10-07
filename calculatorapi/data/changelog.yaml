@@ -32,6 +32,22 @@
 # module changed. Newest entry first is conventional here but not required — the
 # page sorts by date.
 
+- key: favourites-for-everyone
+  date: 2026-10-07
+  title: "A favourite uma musume for everyone, and a target for two-card odds"
+  version: "v1.12"
+  changes:
+    - added: "Every account can pick a favourite uma musume now, and she becomes your picture. It used to take a Patreon pledge."
+    - changed: "Supporters get more slots: 3 on Junior Class, 5 on Classic, 7 on Senior. If a pledge lapses, the picture stays."
+    - changed: "Costume variants, the (Summer) style rows, are a supporter perk in the picker. Free accounts see them locked. Anyone who already picked one keeps her."
+    - changed: "The (All) row is out of the picker."
+    - changed: "Your picture and the picker tiles are square now."
+    - changed: "The Legend Races tab lists your favourites at the top for every signed-in account, not just supporters."
+    - added: "On a banner with two rate-ups and Also show ticked, you can choose how far the first card goes before a spare copy counts toward the second: anything from one copy to 5x, or MLB on a support banner. The choice is saved with the plan."
+    - changed: "The copies you get at every 200 pulls and your reserved copies are one pot now. They fill the first card to your target, and whatever is left goes to the second card instead of being wasted."
+    - changed: "On a double uma rate-up, the first uma is taken to one copy by default. Extra copies of an uma add a little talent, nothing like a support's limit breaks."
+    - changed: "Each box in the two-card strip names both cards' levels, like 1x & 2x or MLB & 1LB, and the line above it says which card is which."
+
 - key: rate-up-odds
   date: 2026-10-06
   title: "Real rate-up odds"
