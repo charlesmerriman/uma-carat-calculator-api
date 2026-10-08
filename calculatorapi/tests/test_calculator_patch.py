@@ -641,3 +641,108 @@ class PlannedBannerNoteTests(CalculatorTestCase):
             'note': 'x' * NOTE_MAX_LENGTH,
         })
         self.assertEqual(res.status_code, 200)
+
+
+class PlannedBannerOddsCardTests(CalculatorTestCase):
+    """The two odds-card ids ride along on the planned-banner payload, like the note."""
+
+    def setUp(self):
+        self.user = make_user()
+        self.client, _ = auth_client(self.user)
+        self.banner = make_uma_banner()
+
+    def _patch(self, row):
+        return self.client.patch(
+            '/calculator-data',
+            {'user_planned_banner_data': [row]},
+            format='json',
+        )
+
+    def test_default_to_null_and_round_trip(self):
+        res = self._patch({'banner_uma': self.banner.id, 'number_of_pulls': 400})
+        self.assertEqual(res.status_code, 200)
+        planned = UserPlannedBanner.objects.get(user=self.user)
+        self.assertIsNone(planned.primary_card)
+        self.assertIsNone(planned.second_card)
+
+        res = self._patch({
+            'id': planned.id, 'banner_uma': self.banner.id, 'number_of_pulls': 400,
+            'primary_card': 7, 'second_card': 9,
+        })
+        self.assertEqual(res.status_code, 200)
+
+        row = self.client.get('/calculator-data').data['user_planned_banner_data'][0]
+        self.assertEqual((row['primary_card'], row['second_card']), (7, 9))
+
+    def test_a_body_without_them_keeps_the_stored_ones(self):
+        """A cached bundle from before two-card odds must not switch them off."""
+        planned = UserPlannedBanner.objects.create(
+            user=self.user, plan=plans.get_active_plan(self.user),
+            banner_uma=self.banner, number_of_pulls=100, primary_card=7, second_card=9,
+        )
+        res = self._patch({
+            'id': planned.id, 'banner_uma': self.banner.id, 'number_of_pulls': 120,
+        })
+        self.assertEqual(res.status_code, 200)
+        planned.refresh_from_db()
+        self.assertEqual((planned.primary_card, planned.second_card), (7, 9))
+
+    def test_turning_the_second_card_off_is_a_null(self):
+        planned = UserPlannedBanner.objects.create(
+            user=self.user, plan=plans.get_active_plan(self.user),
+            banner_uma=self.banner, number_of_pulls=100, second_card=9,
+        )
+        res = self._patch({
+            'id': planned.id, 'banner_uma': self.banner.id,
+            'number_of_pulls': 100, 'second_card': None,
+        })
+        self.assertEqual(res.status_code, 200)
+        planned.refresh_from_db()
+        self.assertIsNone(planned.second_card)
+
+    def test_an_id_not_on_the_banner_is_accepted(self):
+        """No membership check: an editor removing a card must not 400 old plans.
+
+        The client ignores an id the banner no longer features (see the model),
+        so the server storing one is harmless and rejecting it is not.
+        """
+        res = self._patch({
+            'banner_uma': self.banner.id, 'number_of_pulls': 100, 'primary_card': 999999,
+        })
+        self.assertEqual(res.status_code, 200)
+
+    def test_primary_target_defaults_to_null_and_round_trips(self):
+        res = self._patch({'banner_uma': self.banner.id, 'number_of_pulls': 400})
+        self.assertEqual(res.status_code, 200)
+        planned = UserPlannedBanner.objects.get(user=self.user)
+        self.assertIsNone(planned.primary_target)
+
+        res = self._patch({
+            'id': planned.id, 'banner_uma': self.banner.id, 'number_of_pulls': 400,
+            'primary_target': 5,
+        })
+        self.assertEqual(res.status_code, 200)
+        row = self.client.get('/calculator-data').data['user_planned_banner_data'][0]
+        self.assertEqual(row['primary_target'], 5)
+
+    def test_primary_target_null_restores_the_default(self):
+        planned = UserPlannedBanner.objects.create(
+            user=self.user, plan=plans.get_active_plan(self.user),
+            banner_uma=self.banner, number_of_pulls=100, primary_target=5,
+        )
+        res = self._patch({
+            'id': planned.id, 'banner_uma': self.banner.id,
+            'number_of_pulls': 100, 'primary_target': None,
+        })
+        self.assertEqual(res.status_code, 200)
+        planned.refresh_from_db()
+        self.assertIsNone(planned.primary_target)
+
+    def test_primary_target_outside_one_to_five_is_a_400(self):
+        """A range check, unlike the card ids: no content edit can invalidate it."""
+        for bad in (0, 6):
+            res = self._patch({
+                'banner_uma': self.banner.id, 'number_of_pulls': 100, 'primary_target': bad,
+            })
+            self.assertEqual(res.status_code, 400, bad)
+        self.assertFalse(UserPlannedBanner.objects.filter(user=self.user).exists())

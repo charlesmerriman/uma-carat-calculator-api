@@ -79,8 +79,9 @@ features:
 #     value: ${dev-db-462490.DATABASE_URL}
 # Custom domains, added 2026-08-31. The apex is PRIMARY; www is an ALIAS. Both
 # name the DigitalOcean-managed DNS zone, so App Platform writes the records and
-# renews the certificate itself. The .ondigitalocean.app hostname keeps working
-# permanently alongside these and stays the health-check target.
+# renews the certificate itself. The generated .ondigitalocean.app hostname can
+# never be deleted, but since 2026-10-06 the first ingress rule below answers
+# every request to it with a 301 to the apex (see "ingress").
 domains:
 - domain: umacaratcalculator.com
   type: PRIMARY
@@ -90,6 +91,32 @@ domains:
   zone: umacaratcalculator.com
 ingress:
   rules:
+  # Redirects first, so neither host ever reaches a component. ${STARTER_DOMAIN}
+  # is App Platform's placeholder for the generated .ondigitalocean.app hostname,
+  # which cannot be removed from an app. Before this rule (added 2026-10-06) the
+  # old hostname still served the whole site: sign-in failed there with a 400,
+  # because the callback is only registered for the real domain, and a guest's
+  # plan lived in a separate localStorage, so people following an old link saw
+  # a broken site. The 301 is permanent on purpose: browsers cache it and
+  # search engines pass ranking through it. No `uri` is set, so the path is
+  # kept and an old deep link lands on the same page.
+  - match:
+      authority:
+        exact: ${STARTER_DOMAIN}
+      path:
+        prefix: /
+    redirect:
+      authority: umacaratcalculator.com
+      redirect_code: 301
+  # www -> apex, so there is one canonical host. Live since the domain move.
+  - match:
+      authority:
+        exact: www.umacaratcalculator.com
+      path:
+        prefix: /
+    redirect:
+      authority: umacaratcalculator.com
+      redirect_code: 301
   - component:
       name: calculatorproject
     match:

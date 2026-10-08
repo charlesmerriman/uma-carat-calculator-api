@@ -9,12 +9,13 @@ from django.utils import timezone
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
 
-from calculatorapi.predictions import PREDICTION_FACTOR
+from calculatorapi.predictions import PREDICTION_FACTOR, snap_to_reset
 from calculatorapi.models import (
     CustomUser,
     ClubRank, TeamTrialsRank, ChampionsMeetingRank, LeagueOfHeroesRank,
     BannerTimeline, BannerUma, BannerSupport, BannerStepUp,
     ChampionsMeeting, LeagueOfHeroes, GameEvent, Scenario,
+    DailyLegendRaceRelease, DailyLegendRaceUma,
     AnniversaryEvent, AnniversaryEventBanner, AnniversaryEventProduct,
 )
 
@@ -163,6 +164,22 @@ def make_scenario(name='Test Scenario', banner_timeline=None, image=None):
     )
 
 
+def make_daily_legend_race(name='Test Release', banner_timeline=None,
+                           offset_days=0, umas=()):
+    """Create a DailyLegendRaceRelease and link `umas` to it.
+
+    Start-only like a scenario: the date is the banner's start plus
+    `offset_days`, and there is no end. Unlinked (banner_timeline=None) is the
+    normal state for a batch entered before the timeline reaches it.
+    """
+    release = DailyLegendRaceRelease.objects.create(
+        name=name, banner_timeline=banner_timeline, offset_days=offset_days,
+    )
+    for uma in umas:
+        DailyLegendRaceUma.objects.create(release=release, uma=uma)
+    return release
+
+
 def make_anniversary_event(name='Test Anniversary', event_type='anniversary',
                            jp_cutoff_date=None, parts=(), products=()):
     """Create an AnniversaryEvent, its banner-part links and its products.
@@ -209,8 +226,18 @@ def _predicted(anchor_global_start, jp_gap_days, offset_days=0):
     doesn't mean rewriting every expectation in the suite. The one deliberate
     exception is test_fixed_anchor_worked_example, which pins concrete numbers
     on purpose — that's what makes it a worked example."""
-    return (anchor_global_start
-            + datetime.timedelta(days=jp_gap_days) * PREDICTION_FACTOR
+    raw = anchor_global_start + datetime.timedelta(days=jp_gap_days) * PREDICTION_FACTOR
+    # Predicted starts land on the reset (22:00 UTC) of the day the raw
+    # instant falls on; offsets are whole days, so they keep the snap.
+    return snap_to_reset(raw) + datetime.timedelta(days=offset_days)
+
+
+def _predicted_end(anchor_global_start, jp_gap_days, run_days, offset_days=0):
+    """Predicted global END for the same row: the raw start plus the JP run
+    length, snapped to 21:59:59 on the day it falls, plus any offset. Built from
+    the RAW start, not the snapped one, exactly as compute_effective_dates does."""
+    raw = anchor_global_start + datetime.timedelta(days=jp_gap_days) * PREDICTION_FACTOR
+    return (snap_to_reset(raw + datetime.timedelta(days=run_days), end=True)
             + datetime.timedelta(days=offset_days))
 
 

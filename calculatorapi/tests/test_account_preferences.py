@@ -36,7 +36,8 @@ class AccountPreferencesTests(CalculatorTestCase):  # pylint: disable=too-many-p
         body = self._get().json()
         self.assertEqual(body["display_name"], "")
         self.assertEqual(body["oshis"], [])
-        self.assertEqual(body["oshi_slots"], 0)
+        # The free slot: every account may hold one favourite.
+        self.assertEqual(body["oshi_slots"], 1)
         self.assertIsNone(body["avatar_url"])
 
     def test_patch_answers_with_the_full_account_summary(self):
@@ -44,7 +45,7 @@ class AccountPreferencesTests(CalculatorTestCase):  # pylint: disable=too-many-p
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             set(response.json()),
-            {"username", "display_name", "avatar_url", "oshis", "oshi_slots",
+            {"username", "display_name", "avatar_url", "oshis", "oshi_slots", "oshi_variants",
              "linked_providers", "supporter"},
         )
 
@@ -192,13 +193,9 @@ class AccountPreferencesTests(CalculatorTestCase):  # pylint: disable=too-many-p
         self.assertEqual(self.user.email, "user_a3f9c1@test.com")
 
     def test_patching_one_preference_leaves_the_other_alone(self):
-        # A supporter with one slot, so the oshi half of the body is accepted.
-        # The interplay itself is test_oshi's business; this pins only that
-        # a later name-only PATCH does not clear the list.
-        from calculatorapi.models import PatreonSupporter, PatreonTier  # pylint: disable=import-outside-toplevel
-        tier = PatreonTier.objects.create(name="Junior Class", order=3)
-        PatreonSupporter.objects.create(display_name="R", patreon_user_id="7", tier=tier,
-                                        is_active=True, linked_user=self.user)
+        # One pick fits the free slot, so the oshi half of the body is
+        # accepted. The interplay itself is test_oshi's business; this pins
+        # only that a later name-only PATCH does not clear the list.
         uma = Uma.objects.create(name="Special Week", image="umas/special-week.png")
         self._patch({"display_name": "Rhondal", "oshis": [uma.id]})
         response = self._patch({"display_name": "Rho"})
@@ -237,26 +234,40 @@ class AccountPreferencesTests(CalculatorTestCase):  # pylint: disable=too-many-p
 
 @override_settings(STORAGES=PLAIN_TEST_STORAGES)
 class UmaCatalogueTests(CalculatorTestCase):
-    """GET /umas: the picker's options — public, pictured umas only, by name."""
+    """GET /umas: the picker's options — public, Uma.pickable only, by name."""
 
     def setUp(self):
         Uma.objects.create(name="Zeta Uma", image="umas/zeta.png")
         Uma.objects.create(name="Alpha Uma", image="umas/alpha.png", admin_comments="editor note")
         Uma.objects.create(name="Bare Uma")
+        # The banner placeholder (pictured, still left out) and a costume
+        # variant (listed, flagged).
+        Uma.objects.create(name="(All)", image="umas/all.png")
+        Uma.objects.create(name="Alpha Uma (Summer)", image="umas/alpha-summer.png")
 
     def test_is_public(self):
         self.assertEqual(APIClient().get("/umas").status_code, 200)
 
-    def test_lists_only_umas_with_a_picture_sorted_by_name(self):
+    def test_lists_pictured_umas_sorted_by_name_without_the_placeholder(self):
         body = APIClient().get("/umas").json()
-        self.assertEqual([row["name"] for row in body], ["Alpha Uma", "Zeta Uma"])
+        self.assertEqual(
+            [row["name"] for row in body], ["Alpha Uma", "Alpha Uma (Summer)", "Zeta Uma"]
+        )
+
+    def test_the_all_placeholder_is_never_offered(self):
+        self.assertNotIn("(All)", [row["name"] for row in APIClient().get("/umas").json()])
+
+    def test_costume_variants_are_flagged_not_filtered(self):
+        by_name = {row["name"]: row["is_variant"] for row in APIClient().get("/umas").json()}
+        self.assertTrue(by_name["Alpha Uma (Summer)"])
+        self.assertFalse(by_name["Alpha Uma"])
 
     def test_rows_carry_only_id_name_and_image(self):
         # No admin_comments, no selector gates, no purpose: the picker has no
         # use for them, and admin_comments is an editors' field that a new
         # public route should not carry.
         row = APIClient().get("/umas").json()[0]
-        self.assertEqual(set(row), {"id", "name", "image"})
+        self.assertEqual(set(row), {"id", "name", "image", "is_variant"})
         self.assertTrue(row["image"])
 
     def test_image_is_the_storage_url(self):
@@ -265,7 +276,7 @@ class UmaCatalogueTests(CalculatorTestCase):
         self.assertEqual(row["image"], uma.image.url)
 
     def test_image_is_the_borderless_art_when_the_uma_has_it(self):
-        # The picker crops to a circle; the bordered art is only the fallback.
+        # The picker shows a small square; the bordered art is only the fallback.
         uma = Uma.objects.get(name="Alpha Uma")
         uma.image_borderless = "umas_borderless/alpha.png"
         uma.save()
@@ -273,4 +284,4 @@ class UmaCatalogueTests(CalculatorTestCase):
         rows = APIClient().get("/umas").json()
 
         self.assertEqual(rows[0]["image"], uma.image_borderless.url)
-        self.assertEqual(rows[1]["image"], Uma.objects.get(name="Zeta Uma").image.url)
+        self.assertEqual(rows[2]["image"], Uma.objects.get(name="Zeta Uma").image.url)

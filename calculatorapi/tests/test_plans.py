@@ -177,6 +177,18 @@ class CopyPlanTests(CalculatorTestCase):
         self.assertEqual(taken.banners.count(), 2)
         self.assertFalse(taken.banners.exclude(note="").exists())
 
+    def test_odds_cards_copy_everywhere(self):
+        """Card ids are catalogue facts, so unlike notes they cross accounts."""
+        self.source.banners.filter(banner_uma=self.uma_banner).update(
+            primary_card=7, second_card=9, primary_target=5)
+
+        taker = make_user(username="odds-taker")
+        for owner in (self.user, taker):
+            copy = plans.copy_plan(self.source, owner=owner, name="Copy")
+            row = copy.banners.get(banner_uma=self.uma_banner)
+            self.assertEqual((row.primary_card, row.second_card), (7, 9))
+            self.assertEqual(row.primary_target, 5)
+
     def test_copy_into_another_account_belongs_to_that_account(self):
         """The shape "take a published plan" will have."""
         taker = make_user(username="taker")

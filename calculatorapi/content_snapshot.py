@@ -48,6 +48,8 @@ CONTENT_MODELS = (
     "LeagueOfHeroes",
     "GameEvent",
     "Scenario",
+    "DailyLegendRaceRelease",
+    "DailyLegendRaceUma",
     "AnniversaryEvent",
     "AnniversaryEventBanner",
     "AnniversaryEventProduct",

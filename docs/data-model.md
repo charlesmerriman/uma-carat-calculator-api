@@ -77,6 +77,7 @@ erDiagram
         string name
         int free_pulls
         bool is_recommended "editorial; presentation only"
+        int rate_up_picks "select banners only; null = every listed card is a rate-up"
         string admin_comments
     }
 
@@ -86,6 +87,7 @@ erDiagram
         string name
         int free_pulls
         bool is_recommended "editorial; presentation only"
+        int rate_up_picks "select banners only; null = every listed card is a rate-up"
         string admin_comments
     }
 
@@ -230,6 +232,20 @@ erDiagram
         int banner_timeline_id FK "nullable; supplies the START only"
     }
 
+    DailyLegendRaceRelease {
+        int id PK
+        string name
+        string image "nullable"
+        int banner_timeline_id FK "nullable; supplies the START only"
+        int offset_days "signed; added to that start"
+    }
+
+    DailyLegendRaceUma {
+        int id PK
+        int release_id FK
+        int uma_id FK "UNIQUE: one release per uma"
+    }
+
     ChangelogEntry {
         int id PK
         string title
@@ -325,6 +341,9 @@ erDiagram
 
     GameEvent }o--o| BannerTimeline : "banner_timeline"
     Scenario }o--o| BannerTimeline : "banner_timeline"
+    DailyLegendRaceRelease }o--o| BannerTimeline : "banner_timeline"
+    DailyLegendRaceUma }o--|| DailyLegendRaceRelease : "release"
+    DailyLegendRaceUma |o--|| Uma : "uma"
     ChangelogChange }o--|| ChangelogEntry : "entry"
 
     AnniversaryEventBanner }o--|| AnniversaryEvent : "anniversary_event"
@@ -362,35 +381,47 @@ serialized anywhere public today.
 → [auth-and-privacy.md](auth-and-privacy.md) for why this is not a profile
 attribute, and [api-reference.md](api-reference.md) for the route.
 
-### `UserOshi` — the supporter-only picture
+### `UserOshi` — favourite umas, the first of which is the picture
 
-The umas a Patreon supporter picked as their "oshis", one row each:
+The umas a person picked as favourites ("oshis" in the code and on the wire,
+"your favourite uma musume" on screen), one row each:
 `user` (FK, CASCADE, `related_name="oshis"`), `uma` (FK, **CASCADE**), `position`
 (0-based). Unique on `(user, position)` and on `(user, uma)`. **The first one is
-their picture** in the navbar and on the account page; free accounts have no
-picture at all — the perk *is* the picture. `OSHI_SLOT_CAP = 5` is the table's
-ceiling and equals the top rung of `benefits.OSHI_SLOT_LADDER` (asserted at
-import).
+their picture** in the navbar and on the account page. Every account holds one
+(`benefits.FREE_OSHI_SLOTS`); Patreon supporters hold more by tier, so the perk
+is the *extra slots*. (Until 2026-10-07 the free count was 0 and the picture
+itself was the perk.) `OSHI_SLOT_CAP = 7` is the table's ceiling and equals the
+top rung of `benefits.OSHI_SLOT_LADDER` (asserted at import).
 
 - **Written only by `PATCH /account`**, which replaces the whole list and
   renumbers from 0 inside one transaction, so "the first" is always position 0
   among the rows that exist.
-- **Entitlement is not stored here.** How many rows the current tier covers is
-  `benefits.oshi_slots(user)` (5 / 3 / 1 / 0), derived per request like every
+- **Entitlement is not stored here.** How many rows the account covers is
+  `benefits.oshi_slots(user)` (1 free; 3 / 5 / 7 by tier, the free slot plus
+  2, 4 or 6), derived per request like every
   other benefit — except staff, who get `OSHI_SLOT_CAP` regardless of tier
   (`oshi_slots_for(supporter, is_staff=...)`). That bypass reads `is_staff`,
   CustomUser's own field, so it adds no second copy of Patreon entitlement; it
   only unlocks the slot count, `supporter`/`is_supporter` in the `/account`
   response is untouched. **A lapse or downgrade keeps every row**: `GET /account` lists
-  them all, shows the picture only while `oshi_slots >= 1`, and `PATCH` refuses
-  only a list that *adds* past the count — a subset of what is already held may
-  always be kept, reordered or trimmed.
+  them all, shows the picture while `oshi_slots >= 1` (which, since the free
+  slot, every signed-in account clears, so a lapsed supporter keeps their
+  picture), and `PATCH` refuses only a list that *adds* past the count — a
+  subset of what is already held may always be kept, reordered or trimmed.
 - **CASCADE on the uma, not SET_NULL**: a slot with no uma is nothing, and the
   list will one day be shown publicly, where a dangling slot would be a blank
   tile. The remaining rows keep their positions; the view reads "first by
   position", so a gap is harmless.
-- Only a uma **with an image** may be chosen (the serializer's queryset, and
-  `GET /umas` offers nothing else). If an editor clears an image later the row
+- Only a **pickable** uma may be *added*: `Uma.pickable()` is one queryset for
+  both `GET /umas` (what the picker lists) and the `PATCH` check, and means
+  *with an image* and *not the `(All)` placeholder* (`Uma.ALL_PLACEHOLDER_NAME`,
+  exact match). **Costume variants** (`Uma.is_costume_variant`: a `(` in the
+  name, `Special Week (Summer)`) are listed for everyone but may be *added*
+  only by a supporter on any paid tier or by staff (`benefits.oshi_variants`,
+  sent as `oshi_variants` on `/account` so the picker locks the tiles). Owner's
+  call, 2026-10-07. Both checks are on what a save **adds**, like the slot
+  check: a held variant survives a lapse and may still be kept or reordered.
+  If an editor clears an image later the row
   stays, its `image` is `""` on the wire, and the picture falls through to the
   next oshi rather than to a broken tile.
 - **Not personal data.** The site's own art; `purge_user_pii` leaves it. Decided
@@ -452,7 +483,7 @@ An account holds up to `PLAN_CAP` (5) plans and the calculator opens on the acti
 
 | Data | Lives on | Why |
 |---|---|---|
-| Planned banner rows (`number_of_pulls`, `reserved_copies`, `note`) | `Plan` | the choices |
+| Planned banner rows (`number_of_pulls`, `reserved_copies`, `note`, `primary_card`, `second_card`, `primary_target`) | `Plan` | the choices |
 | Which of the owner's stats blocks to read (`income_profile`, nullable) | `Plan` | a pointer, not a fact; dropped when a copy changes owner |
 | Carats, tickets, selector tickets, shards, crystals, ranks | `CustomUser`, or an `IncomeProfile` the account owns | facts about the person (or about their other game account) |
 | The income toggles | same row as the balances | income side |
@@ -477,6 +508,21 @@ because it is about the choice and should differ per plan, and `copy_plan()` kee
 portability rule true by blanking every note when the copy changes owner, exactly as it
 drops `income_profile`. It is never served on a public route and is excluded from the
 admin form.
+
+`primary_card` / `second_card` pass it too: they are catalogue card ids saying which
+featured cards the row's odds are about (the first is the one the strip shows, null meaning
+the client's default; the second turns on two-card odds). Plain integers, not FKs, because
+whether one names an `Uma` or a `SupportCard` follows the row's target. **The server does
+not check them against the banner's featured cards, on purpose**: the client ignores an id
+the banner no longer features, so an editor removing a card cannot `400` a plan its owner
+never touched (the trap step-up selections had to be grandfathered out of). `copy_plan()`
+copies both, across accounts too.
+
+`primary_target` (nullable, 1..5) rides with them: the copies the two-card odds take the
+first card to before a free copy goes to the second. Null means the client's default for
+the banner type (one copy of an uma, MLB of a support card). The serializer checks the
+range, which is fine where a membership check is not: no content edit can put a stored
+value outside 1..5. Copied across accounts like the ids.
 
 Accepted consequence: purchases are shared by every plan that reads the same stats block.
 A pack planned to fund a step-up in one plan still credits its carats while another plan
@@ -822,6 +868,38 @@ The admin toggles it with `list_editable`, deliberately not a bulk action: bulk 
 `queryset.update()`, which fires no `post_save`, so `public_payload_cache` would keep serving
 the old flag until its TTL expired.
 
+### Rate-up rates — a client-side rule, with per-banner exceptions
+
+A rate-up card's per-pull chance is **not** a flat 0.75%. The global client's own gacha
+table (`gacha_available` in `master.mdb`, read 2026-10-06) shows one rule behind every
+ordinary banner: each card gets its rarity's usual rate-up chance, unless more cards share
+the rate-up than the rarity's pool allows, in which case the pool is split evenly.
+
+```
+rate = min(rate_up_rate_N, rate_up_pool_N / rate-up cards of rarity N on the banner)
+```
+
+| Rarity | `rate_up_rate_N` | `rate_up_pool_N` | Seen in the game data |
+|---|---|---|---|
+| ★3 / SSR | 0.75% | 3% | 1-2 cards 0.75% each; 9 umas 0.333%; 20 supports 0.15% |
+| ★2 / SR | 2.25% | 3% | one ★2 uma 2.25%; three SRs 1% each |
+| ★1 / R | 3.75% | 5% | one 3.75%; two 2.5% each; three 1.67% each |
+
+Two inputs bend it, both set per banner in the admin:
+
+- **`BannerUma.rate_up_picks` / `BannerSupport.rate_up_picks`** — a select banner ("10 Select
+  2") lists every card the player *could* pick, but only the picks are rate-ups, so the
+  pool is split by the picks rather than the list. Null on every ordinary banner.
+- **`UmasOnUmaBanner.rate_override` / `SupportsOnSupportBanner.rate_override`** — one
+  card's rate when it breaks the rule outright. Per card *on a banner*, because the same
+  card can be 0.75% on one banner and 0.5% on another (the 2025-07-16 anime-collab doubles
+  were 0.5% each).
+
+**The rule runs on the client** (`frontend/src/utils/rateUpRates.ts`), matching "the backend
+carries no projection math". The API serves its inputs: each featured card's `rarity`, the
+banner's `rate_up_picks` and `rate_overrides`, and the six constants. A missing `rarity`
+reads as ★3/SSR, the same default `Uma.is_three_star` applies.
+
 ### `GameEvent` reward amounts are fields, not a separate model
 
 Reward amounts used to live on a separate `EventReward` model, one-to-many with `GameEvent`. In practice every event had at most one immediate reward and one throughout-the-event reward, so the two were folded directly onto `GameEvent` as fields instead: `carat_amount` (+ the ticket/shard/crystal fields) is earned once the event's own resolved `start_date` passes, and `carats_throughout` is prorated by elapsed time across `start_date`..`end_date` (computed client-side — see `remainingThroughoutForRow` in `frontend/src/utils/incomeLedger.ts`), independent of `start_date`. Only carats are ever distributed this way; tickets/shards/crystals are always a lump on `start_date`.
@@ -865,14 +943,17 @@ The site targets the **global** server, but global dates are only confirmed ~1 m
 
 Prediction (fixed anchor, in `calculatorapi/predictions.py`):
 - **Anchor** = the row with the greatest `jp_start_date` among those having BOTH a confirmed `global_start_date` and a `jp_start_date`.
-- `predicted_global_start = anchor.global_start_date + (target.jp_start_date − anchor.jp_start_date) × 0.664`
+- `predicted_global_start = anchor.global_start_date + (target.jp_start_date − anchor.jp_start_date) × factor`
 - `predicted_global_end = predicted_global_start + (target.jp_end_date − target.jp_start_date)`
+- **Both are then snapped to the daily reset** (`snap_to_reset`): the start to 22:00:00 UTC and the end to 21:59:59 UTC on the UTC calendar day the raw instant falls on. The raw result has a fractional time of day that no real banner has, and it made the displayed day flip per viewer timezone on a random subset of predicted rows. The rule is the source sheet's (datetime → date → fixed time), so the two schedules agree row for row.
+
+The factor is `CalculationConstants.prediction_factor`, admin-editable (0.64 on the live site as of 2026-10-06); `PREDICTION_FACTOR` in `predictions.py` is only the fallback for the DB-free functions.
 
 The calculator view builds one effective-date map per content type (keyed by row id) once per request and injects each via serializer context, so the resolved dates are consistent across every serialization path. **Prediction requires the anchor to have a `jp_start_date`** — historical rows migrate with JP dates null, so the most-recent confirmed rows must have their JP dates backfilled in the admin for prediction to activate.
 
 ### Schedule offsets: correcting a prediction that has drifted
 
-The 0.664 factor assumes global keeps a steady pace. When it doesn't — a delayed banner, an inserted break week — *every* prediction after the slip is wrong by the same number of days. `schedule_offset_days` (an `IntegerField(default=0)` on all three models) is the manual correction, applied by `apply_schedule_offsets()` as a **second layer on top of** the anchor math, which it leaves untouched.
+The prediction factor assumes global keeps a steady pace. When it doesn't — a delayed banner, an inserted break week — *every* prediction after the slip is wrong by the same number of days. `schedule_offset_days` (an `IntegerField(default=0)` on all three models) is the manual correction, applied by `apply_schedule_offsets()` as a **second layer on top of** the anchor math, which it leaves untouched.
 
 - The offset pushes **its own row and every dated row after it** forward by that many days. Both ends move, so the run length is preserved.
 - Offsets **stack**: a row's applied offset is the sum of `schedule_offset_days` from every offset-carrying row whose base start date is at or before its own.
@@ -919,7 +1000,7 @@ There are now four ways a model gets dates from `BannerTimeline`, and it is wort
 | 1 | Content on a banner | `BannerUma`, `BannerSupport`, `BannerStepUp` | none of its own |
 | 2 | Borrow the banner's window | `GameEvent` | start = banner start; end = banner end **+ 4 days** |
 | 3 | Span several "Parts" | `AnniversaryEvent` | earliest part start → latest part end |
-| 4 | **Borrow the banner's START only** | **`Scenario`** | **start = banner start; no end, ever** |
+| 4 | **Borrow the banner's START only** | **`Scenario`**, `DailyLegendRaceRelease` | **start = banner start (+ `offset_days` on a release); no end, ever** |
 
 **Shape 4 is the only one with no end at all, and that is a fact about scenarios rather than a gap in the data.** A scenario is released and then stays available permanently — a newer scenario does *not* retire an older one, it just tends to get played more because it is more rewarding. There is therefore nothing for an end date to mean, and deriving one from the launch banner would invent an expiry the scenario has never had. `scenario_effective_dates()` returns `end_date: None` unconditionally, and `StartInstantDateMixin` drops the field from the wire entirely rather than emitting a permanent `null`.
 
@@ -928,6 +1009,20 @@ Otherwise it follows `GameEvent`'s precedent exactly: a nullable `banner_timelin
 `scenario_effective_dates()` is deliberately its **own** function rather than a generalisation shared with `anniversary_event_effective_dates()`. `predictions.py`'s convention is one function per derivation shape: the mechanisms are shared (`_ResolvedDateMixin`, `effective_sort_key`), the policies are not. An anniversary's range is a *sales window* whose start is the instant purchases are credited; a scenario's start is just when a new way to play appeared. Merging them would put a scenario-only concern inside anniversary date maths the first time the two diverge.
 
 `image` is nullable by workflow, not by accident: scenarios get entered while a feature is being built and the art arrives later. Every consumer must render without it.
+
+### `DailyLegendRaceRelease`: shape 4 with a day offset
+
+A batch of umas joining the **Daily Legend Races** (one race a day per uma, forever, one Star Piece each). It ports the source sheet's "Daily Legend Race Schedule" tab and backs the `/app/legend-races` page and a note on its banner's Timeline card (hence `banner_timeline` on the wire). Plan and decisions: workspace-root `legend-races-plan.md`.
+
+- **Shape 4, like `Scenario`**: a nullable `banner_timeline` FK (`SET_NULL`), a start borrowed from it, no end. A batch arrives and stays. Resolved by `daily_legend_race_effective_dates()`, serialized with `StartInstantDateMixin`.
+- **Plus a signed `offset_days`.** A batch often lands a day or three after the banner it arrives with (the sheet's `+1` / `+3`). The offset is added **after** `apply_schedule_offsets` and is **not** counted in `applied_offset_days`: it is a nudge for this one release, not a schedule slip that cascades to later rows. A schedule offset on the banner still moves the release, because the banner's date already includes it.
+- **Linked to a banner, never to an `AnniversaryEvent`.** A batch arrives with one specific part, usually the anniversary's last, not when the campaign opens. The 1.5th batch arrived with a banner that is not one of its campaign's parts at all.
+- **Unlinked means tentative.** An editor can enter a future batch (6th, 6.5th) before the timeline has a banner for it. It resolves to a null start, is sent that way, and the Legend Races tab lists it under "No date yet" with a Tentative badge; the Timeline has no banner to put it on and skips it. Tentative releases sort after every dated one, in `id` order (the order entered), because by name "6.5th" sorts before "6th". Owner's call, 2026-10-05; before that an unlinked release was hidden.
+- **No banner and no umas means draft.** `_build_public_payload` leaves such a release out of the payload, on the server because the payload is public. Adding an uma or a banner makes it appear. The admin's "On the site" column names the three states.
+- **`image` is unused.** It was art for a Timeline card of the batch's own; a batch is a pill on its banner's card now, nothing draws the image, and the admin form leaves the field off. The column and the wire key stay, so bringing the art back needs no migration.
+- **One release per uma**, as the `one_daily_legend_race_per_uma` `UniqueConstraint` on `DailyLegendRaceUma.uma`. The admin inline reports a clash as a form error; `merge_duplicate_umas` treats the clash as "drop the duplicate's row", with no change needed.
+- **Rarity is derived, never stored.** The serializer sends `rarity` as `Uma.rarity or 3` (blank counts as ★3, the `is_three_star` rule), and the page groups on it.
+- **No income, and no grind maths.** Star Pieces buy nothing the projection counts, so nothing here reaches the ledger. The grind guidance (1 a day, ~80 from the original event, 70 or 140 days) is prose in the `daily-legend-races` site page, so an editor changes the numbers where they change the words. Three `CalculationConstants` fields briefly held them (0073) and were dropped before release (0075) once the page stopped calculating.
 
 ### The changelog is authored in the repo, and synced on deploy
 

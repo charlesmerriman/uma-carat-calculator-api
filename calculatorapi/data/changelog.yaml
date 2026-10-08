@@ -32,6 +32,51 @@
 # module changed. Newest entry first is conventional here but not required — the
 # page sorts by date.
 
+- key: favourites-for-everyone
+  date: 2026-10-07
+  title: "A favourite uma musume for everyone, and a target for two-card odds"
+  version: "v1.12"
+  changes:
+    - added: "Every account can pick a favourite uma musume now, and she becomes your picture. It used to take a Patreon pledge."
+    - changed: "Supporters get more slots: 3 on Junior Class, 5 on Classic, 7 on Senior. If a pledge lapses, the picture stays."
+    - changed: "Costume variants, the (Summer) style rows, are a supporter perk in the picker. Free accounts see them locked. Anyone who already picked one keeps her."
+    - changed: "The (All) row is out of the picker."
+    - changed: "Your picture and the picker tiles are square now."
+    - changed: "The Legend Races tab lists your favourites at the top for every signed-in account, not just supporters."
+    - added: "On a banner with two rate-ups and Also show ticked, you can choose how far the first card goes before a spare copy counts toward the second: anything from one copy to 5x, or MLB on a support banner. The choice is saved with the plan."
+    - changed: "The copies you get at every 200 pulls and your reserved copies are one pot now. They fill the first card to your target, and whatever is left goes to the second card instead of being wasted."
+    - changed: "On a double uma rate-up, the first uma is taken to one copy by default. Extra copies of an uma add a little talent, nothing like a support's limit breaks."
+    - changed: "Each box in the two-card strip names both cards' levels, like 1x & 2x or MLB & 1LB, and the line above it says which card is which."
+
+- key: rate-up-odds
+  date: 2026-10-06
+  title: "Real rate-up odds"
+  version: "v1.11"
+  changes:
+    - fixed: "Step-up odds now count the guaranteed card at the end of steps 3 and 4. Over fifteen steps, that takes your chance to MLB from 7.5% to about 27%."
+    - fixed: "Every rate-up card uses its real rate. ★2 cards are 2.25%, and on a banner with lots of rate-ups, each one gets a smaller share."
+    - added: "Banners with more than one rate-up let you choose the card you're chasing. Click Odds for to switch, or tick Also show to see your odds on a second card at the same time. Your choice stays with the plan."
+    - added: "If the site updates while you have it open, you'll get a message with a Refresh button."
+    - fixed: "MLB chance bars are drawn to scale."
+    - fixed: "On light themes, banner type boxes, step-up chips and the uncap crystal estimate use the theme's colours. Pull counts at pity or over budget stand out more."
+    - changed: "Staged banners line up with the calculator rows below. Add to calculator sits in the MLB column, and discarding one uses the trashcan."
+    - fixed: "The uncap crystal estimate remembers your banner when you switch pages."
+    - changed: "Predicted dates on the Timeline follow the daily reset, like confirmed ones. Some move by a day."
+    - fixed: "A Champions Meeting ending the day after a banner closes no longer adds its carats to that banner."
+
+- key: daily-legend-races
+  date: 2026-10-05
+  title: "Daily legend races"
+  version: "v1.10"
+  changes:
+    - added: "Legend Races, a new tab. It shows when each batch of umas joins the daily legend races, and who is in it."
+    - added: "Search it by name to find one uma."
+    - added: "The furthest batches have no date yet. They are listed as tentative."
+    - added: "On the Timeline, a banner's card tells you when a batch arrives with it. Click the note to see the umas."
+    - added: "Supporters get a line for each of their oshis at the top of the tab: when she joins, or that she is already in."
+    - changed: "On a phone, the tabs show the icon above the name. Four of them did not fit side by side."
+    - fixed: "When a link takes you to a card on the Timeline, the card is outlined so you can find it."
+
 - key: guest-plans-and-spare-tickets
   date: 2026-10-01
   title: "Plans without an account, spare tickets, and more themes"

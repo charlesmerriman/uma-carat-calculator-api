@@ -25,6 +25,12 @@ class CalculationConstantsSerializer(serializers.ModelSerializer):
     throughout_decay_linear_slope = serializers.FloatField()
     prediction_factor = serializers.FloatField()
     step_up_target_rate = serializers.FloatField()
+    rate_up_rate_3 = serializers.FloatField()
+    rate_up_pool_3 = serializers.FloatField()
+    rate_up_rate_2 = serializers.FloatField()
+    rate_up_pool_2 = serializers.FloatField()
+    rate_up_rate_1 = serializers.FloatField()
+    rate_up_pool_1 = serializers.FloatField()
 
     class Meta:
         model = CalculationConstants

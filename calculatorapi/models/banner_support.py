@@ -22,6 +22,14 @@ class BannerSupport(models.Model):
         help_text="Tick when this banner is exceptionally worth pulling on. Highlights it "
                   "on the Timeline and in the calculator's banner dropdown.",
     )
+    # Same field as BannerUma.rate_up_picks -- see the note there.
+    rate_up_picks = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        verbose_name="rate-up picks",
+        help_text="Select banners only (\"10 Select 2\"): how many of the listed cards the "
+                  "player picks to rate up. Leave blank when every listed card is a rate-up.",
+    )
 
     class Meta:
         # Default would be "banner support / banner supports" — confusing for editors.

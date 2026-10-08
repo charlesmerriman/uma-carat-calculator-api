@@ -1,5 +1,6 @@
 """
-A prose page the team edits from the admin: About, and the carat income guide.
+A prose page the team edits from the admin: About, the carat income guide, and
+the intro to the daily legend races tab.
 
 WHY A FIXED LIST OF SLUGS
 -------------------------
@@ -31,6 +32,7 @@ class SitePage(models.Model):
     class Slug(models.TextChoices):
         ABOUT = "about", "About"
         CARAT_INCOME_GUIDE = "carat-income-guide", "Carat income guide"
+        DAILY_LEGEND_RACES = "daily-legend-races", "Daily legend races"
 
     slug = models.SlugField(
         max_length=50,

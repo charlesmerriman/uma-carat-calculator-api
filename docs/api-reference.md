@@ -119,6 +119,7 @@ meaning anything instead of rendering a signed-in shell around nothing.
     { "position": 0, "id": 42, "name": "Special Week", "image": "https://…/media/umas/special-week.png" }
   ],
   "oshi_slots": 1,
+  "oshi_variants": true,
   "linked_providers": [
     { "provider": "google", "linked_at": "2026-07-02" },
     { "provider": "patreon", "linked_at": "2026-09-08" }
@@ -133,22 +134,27 @@ meaning anything instead of rendering a signed-in shell around nothing.
   when they have not (the client shows the handle instead). Set through
   `PATCH /account` below. **Served only here, to its owner** — it never appears
   on `/supporters` or any other public route today. **Unique**, ignoring case.
-- **`oshis`** is the ordered list of umas a supporter picked (`position` is
-  0-based; `image` is the storage URL, or `""` if an editor has since cleared
-  the picture). **Every stored row is listed, covered by the current tier or
-  not**, so a page can grey out what a downgrade stopped covering. Empty for a
-  free account. Set through `PATCH`; the catalogue to pick from is `GET /umas`.
-- **`oshi_slots`** is how many oshis the current tier covers: 5, 3 or 1 by
-  tier, **0 for a free account**. A count the server has already resolved from
+- **`oshis`** is the ordered list of favourite umas the person picked
+  (`position` is 0-based; `image` is the storage URL, or `""` if an editor has
+  since cleared the picture). The UI calls them "your favourite uma musume";
+  the wire keeps the name it shipped with. **Every stored row is listed,
+  covered by the current tier or not**, so a page can grey out what a lapse or
+  downgrade stopped covering. Empty until they pick one. Set through `PATCH`;
+  the catalogue to pick from is `GET /umas`.
+- **`oshi_slots`** is how many favourites the account covers: **1 for any
+  signed-in account**, 3 / 5 / 7 by Patreon tier (the free slot plus 2, 4 or
+  6), 7 for staff. A count the server has already resolved from
   `benefits.OSHI_SLOT_LADDER`, not a tier order — a client should draw that
   many tiles and do no arithmetic. Top-level rather than inside `supporter`
-  because `0` is a real answer the page needs even when there is no
-  entitlement block to put it in.
+  because a free account has a count too.
+- **`oshi_variants`** is whether a costume variant (`is_variant` on `GET /umas`)
+  may be *added*: `true` for a supporter on any paid tier and for staff. The
+  picker locks those tiles on `false`; the rule itself is in the `PATCH` check.
 - **`avatar_url`** (top level) is the picture to show in the navbar: the first
   oshi's `image` **while `oshi_slots >= 1`** (skipping any whose picture was
   cleared), else **`null`** — null rather than `""`, so a client draws its
-  default instead of loading an empty `src`. Free accounts always get `null`:
-  the picture is the perk. No provider picture is ever held or served.
+  default instead of loading an empty `src`. `null` until they pick one. No
+  provider picture is ever held or served.
   → [auth-and-privacy.md](auth-and-privacy.md)
 - **`subject_id` is never serialized, for any provider.** The serializer's
   explicit field list is the only thing keeping it off the wire — the same role
@@ -194,13 +200,18 @@ reflecting the write.
   handle. Re-saving your own name is fine; blank never collides.
 - **`oshis`** — the **whole ordered list** of uma ids, replacing what was
   stored; the first becomes the picture. `[]` clears them. `400` for an unknown
-  id, a uma with no image (the picker never offers one), a repeated id, or a
-  list longer than five. **Entitlement:** a list longer than `oshi_slots` is
+  id, a uma with no image, a repeated id, or a list longer than seven.
+  **Pickable:** an id being *added* must be one `GET /umas` offers
+  (`Uma.pickable()`: pictured, and not the `(All)` placeholder); `400` "That
+  one can't be picked." otherwise. A costume variant (`is_variant`) may be
+  added only while `oshi_variants` is true: `400` "Costume variants are a
+  Patreon supporter perk." A held id that a rule would now refuse may still be
+  kept or reordered. **Entitlement:** a list longer than `oshi_slots` is
   `400` *unless every id in it is already stored* — so a supporter whose tier
   dropped may still reorder, trim or keep what they hold, and a lapsed one may
-  clear the list, but nobody can *add* past their count. A free account
-  (`oshi_slots` 0) can only ever send `[]` or its existing rows. Messages:
-  "Picking an oshi is a Patreon supporter perk." / "Your tier covers 3 oshis."
+  clear the list, but nobody can *add* past their count. Messages:
+  "Free accounts get one favourite. Patreon supporters get more." /
+  "Your tier covers 3 favourites."
 - **The field list is the whitelist.** Any other key in the body — `username`,
   `is_staff`, a calculator stat — is ignored, not applied. Calculator stats
   have their own route (`PATCH /calculator-data`).
@@ -317,6 +328,7 @@ assumption it rests on, in `calculatorapi/public_payload_cache.py`.
   "banner_timeline_data":        [ BannerTimeline ],
   "anniversary_event_data":      [ AnniversaryEvent ],
   "scenario_data":               [ Scenario ],
+  "daily_legend_race_data":      [ DailyLegendRaceRelease ],
   "user_planned_purchase_data":  [ UserPlannedPurchase ],
   "user_step_up_selection_data": [ UserStepUpSelection ],
   "income_ledger":               [ IncomeLedgerRow ],
@@ -326,7 +338,7 @@ assumption it rests on, in `calculatorapi/public_payload_cache.py`.
 
 `user_stats_data` is the **active plan's** stats: the account's own, or, when that plan has `separate_income` on, its income profile's. Same shape either way (`Plan.income_profile_id` says which). `user_planned_purchase_data` follows the same rule: the purchases of that same stats block. Step-up selections are the account's whichever plan is open.
 
-`user_planned_banner_data`, `banner_uma_data`, `banner_support_data`, `champions_meeting_data`, `league_of_heroes_event_data`, `events_data`, `anniversary_event_data`, `scenario_data` and `user_planned_purchase_data` are all ordered by each row's **resolved** (confirmed-or-predicted) global start date, sorted server-side in Python since predicted dates aren't a DB column.
+`user_planned_banner_data`, `banner_uma_data`, `banner_support_data`, `champions_meeting_data`, `league_of_heroes_event_data`, `events_data`, `anniversary_event_data`, `scenario_data`, `daily_legend_race_data` and `user_planned_purchase_data` are all ordered by each row's **resolved** (confirmed-or-predicted) global start date, sorted server-side in Python since predicted dates aren't a DB column.
 
 ---
 
@@ -438,6 +450,19 @@ derived client-side per render from the projected balances and JP eligibility.
 400), trimmed, `""` when unset. Omitting it on a row that carries an `id` keeps the stored
 note; send `""` to clear it.
 
+`primary_card` / `second_card` are optional card ids (an uma id on an uma row, a support
+card id on a support row), `null` when unset. `primary_card` names the card the odds are
+about (null: the client picks the banner's first card of its highest rarity);
+`second_card` turns on two-card odds for that card (null: off). Not checked against the
+banner's featured cards; the client ignores an id the banner doesn't feature. Omitting
+either on a row with an `id` keeps the stored value; send `null` to clear it.
+
+`primary_target` is how many copies the two-card odds take `primary_card` to before any
+free copy (a 200-pull exchange or a reserved copy) goes to `second_card`: an integer from
+1 to 5 (outside that is a 400), `null` for the client's default (1 on an uma row, 5 on a
+support row). Omitting it on a row with an `id` keeps the stored value; send `null` to
+go back to the default.
+
 For a planned purchase, **at most one** of `target_uma` / `target_support` may be set, it
 must match the product's type, and a carat pack may have neither. A selector target is
 additionally rejected (`400`) when the card was released on JP after the product's
@@ -538,7 +563,7 @@ These endpoints return static rank tables. All are public and support `list` and
 | `GET /changelog` | Patch-note entries (newest first) with nested, ordered change lines |
 | `GET /site-content` | The admin-editable pages (About, the carat income guide) and the whole FAQ, in one object — **not** an array, see below |
 | `GET /supporters` | Patreon thank-you list — **not** an array, see below |
-| `GET /umas` | The uma catalogue as picker options: `{ id, name, image }`, umas **with an image only**, sorted by name. `image` is the uma's portrait: the borderless art (`Uma.image_borderless`) when the row has it, else the bordered card art; the oshi rows and `avatar_url` on `GET /account` follow the same rule (`Uma.portrait`). Feeds the oshi picker on `/account`, which never loads `/calculator-data`. Nothing else from the uma row (no `admin_comments`, no selector gates). |
+| `GET /umas` | The uma catalogue as picker options: `{ id, name, image, is_variant }`, **`Uma.pickable()` only** (with an image, minus the `(All)` placeholder), sorted by name. The same list for everyone; `is_variant` flags costume variants, which only supporters and staff may add (`oshi_variants` on `GET /account`). `image` is the uma's portrait: the borderless art (`Uma.image_borderless`) when the row has it, else the bordered card art; the oshi rows and `avatar_url` on `GET /account` follow the same rule (`Uma.portrait`). Feeds the oshi picker on `/account`, which never loads `/calculator-data`. Nothing else from the uma row (no `admin_comments`, no selector gates). |
 
 All list responses return an array of the resource object, **except `/supporters`** (an object — the anonymous count is not derivable from the rows) **and `/site-content`** (an object with two halves; it is a plain view, not a viewset). Retrieve by appending `/<id>`; `/supporters` and `/site-content` have no retrieve action.
 
@@ -698,6 +723,9 @@ On GET, `banner_uma` and `banner_support` are expanded to nested objects (not ID
   "number_of_pulls": 20,
   "reserved_copies": 0,
   "note": "",
+  "primary_card": null,
+  "second_card": null,
+  "primary_target": null,
   "banner_uma": { ... BannerUma object ... },
   "banner_support": null
 }
@@ -785,6 +813,41 @@ consumer is expected to render without it.
 `banner_timeline` is a bare id, not a nested object — the frontend already holds every
 banner in `banner_timeline_data`, and it needs the id to pin the scenario's band directly
 above that banner's row in the planner.
+
+### `DailyLegendRaceRelease` (from `daily_legend_race_data`)
+
+A batch of umas joining the Daily Legend Races. Public, cached with the rest of the
+public payload. Start-only like `Scenario`: **no `end_date` key**, because a batch
+arrives and stays.
+
+`start_date` is the release's banner's resolved start plus the release's own
+`offset_days`; `is_predicted` and `applied_offset_days` come from the banner
+(`applied_offset_days` does **not** include the release's offset).
+
+A release with no banner yet is **tentative**: it is sent with `start_date: null` and
+`banner_timeline: null`, after every dated release, in the order the tentative ones
+were entered (by `id`). The Legend Races tab lists it with no date; the Timeline skips
+it. A release with no banner **and** no umas is a draft and is **not sent at all**.
+`banner_timeline` is a bare id: the Timeline shows a release as a note on that banner's
+card. `offset_days` is not sent; the date already includes it.
+
+`umas` are sorted by rarity (★3 first), then name. `rarity` is resolved on the
+server (`1` / `2` / `3`, blank counts as `3`), so the client never repeats that rule.
+
+```json
+{
+  "id": 4,
+  "name": "2nd Anniversary",
+  "image": null,
+  "banner_timeline": 75,
+  "start_date": "2026-12-22T22:00:00Z",
+  "is_predicted": true,
+  "applied_offset_days": 0,
+  "umas": [
+    { "id": 12, "name": "Hishi Amazon", "image": "https://…/umas/…png", "rarity": 3 }
+  ]
+}
+```
 
 ### `AnniversaryEventProduct`
 
@@ -876,9 +939,18 @@ editor narrowing a cutoff cannot 400 a plan its owner never touched.
   "is_recommended": false,
   "admin_comments": "string | null",
   "banner_timeline": { "id": 1, "name": "string", "start_date": "ISO8601", "end_date": "ISO8601", "is_predicted": false, "jp_start_date": "ISO8601 | null", "jp_end_date": "ISO8601 | null", "global_start_date": "ISO8601 | null", "global_end_date": "ISO8601 | null", "image": "url | null" },
-  "umas": [ { "id": 1, "name": "string", "image": "url | null", "admin_comments": "string | null", "purpose": "string", "first_jp_date": "ISO8601 | null", "is_time_limited": false, "is_three_star": true } ]
+  "umas": [ { "id": 1, "name": "string", "image": "url | null", "admin_comments": "string | null", "purpose": "string", "first_jp_date": "ISO8601 | null", "is_time_limited": false, "is_three_star": true, "rarity": "1 | 2 | 3 | null" } ],
+  "rate_up_picks": "int | null",
+  "rate_overrides": { "<uma id>": 0.005 }
 }
 ```
+
+`rarity`, `rate_up_picks` and `rate_overrides` are the **inputs to the rate-up rule** the
+client applies (`data-model.md`, "Rate-up rates"). `rarity` is the game's star count, null
+until imported (read it as 3). `rate_up_picks` is set only on select banners: how many of
+the listed cards the player picks. `rate_overrides` maps a card id to its rate as a decimal,
+for the cards on this banner that break the rule; it is `{}` on nearly every banner, and
+its keys are strings because JSON object keys always are.
 
 `is_recommended` is the editorial "Recommended" flag, set **per banner** — the uma and
 support banners sharing a window are flagged independently, and `BannerStepUp` has no such
@@ -912,9 +984,14 @@ including one with a `null` (unrestricted) cutoff. A client must check both halv
   "is_recommended": false,
   "admin_comments": "string | null",
   "banner_timeline": { ... },
-  "support_cards": [ { "id": 1, "name": "string", "image": "url | null", "admin_comments": "string | null", "purpose": "string", "first_jp_date": "ISO8601 | null" } ]
+  "support_cards": [ { "id": 1, "name": "string", "image": "url | null", "admin_comments": "string | null", "purpose": "string", "first_jp_date": "ISO8601 | null", "rarity": "1 | 2 | 3 | null" } ],
+  "rate_up_picks": "int | null",
+  "rate_overrides": { "<support card id>": 0.005 }
 }
 ```
+
+The rate-up inputs mean what they do on `BannerUma`; a support card's `rarity` is R / SR /
+SSR as 1 / 2 / 3.
 
 ### `BannerStepUp` (from `banner_step_up_data`)
 ```json
@@ -1014,7 +1091,7 @@ The flat, date-sorted timeline the projection queries for cumulative income tota
 
 Five things to know:
 
-- **`date` is the instant the reward lands** — an event's resolved start; for a race event, its resolved **end less that kind's `RACE_REWARD_LEAD_TIME`**. A Champions Meeting settles its placements **24 hours before** its window closes, so its row sits a day ahead of the end date the timeline shows; League of Heroes has no lead time and is dated at its end. The offset is a `timedelta`, so it preserves time of day — a CM closing 21:59:59 pays at 21:59:59 the day before.
+- **`date` is the instant the reward lands** — an event's resolved start; for a race event, its resolved **end less that kind's `RACE_REWARD_LEAD_TIME`**. A Champions Meeting settles its placements at the daily reset **a day before** its window closes, so its row sits a day ahead of the end date the timeline shows; League of Heroes has no lead time and is dated at its end. The offset is a `timedelta` of 23:59:59, so it preserves time of day — a CM closing 21:59:59 pays at 22:00:00 the day before. The client credits a row to a banner when `date <= banner end`, so a CM ending the day after a banner is never credited to that banner: its rewards arrive a minute after the banner closes.
 - **Race rows carry no amounts.** `champions_meeting` / `league_of_heroes` rows are indicators; what a placement pays depends on the user's rank row, which only the client knows. Every amount field is still present (as `0`), so the client never guards on shape.
 - **`event_number` says which race event a row is**: `cm_number` / `loh_number` on race rows, `null` on `event` rows. It exists because a few specific events pay *below* the user's rank. League of Heroes #1 only ran to Platinum 1, so the client caps it there (`RACE_RANK_CAPS` in `frontend/src/utils/incomeLedger.ts`). The number rather than `source_id`, because it is the identity the game and the sheet use, and it is stable across databases.
 - **`throughout_end` is the linked banner's end, with `GAME_EVENT_END_DATE_BUFFER` already removed.** The `carats_throughout` pool decays over the banner, not over the event, whose own `end_date` trails it by 4 days. Emitting it pre-stripped is what stops the client keeping its own copy of that constant.
@@ -1038,7 +1115,8 @@ Two things to know:
   `DecimalField` as a string by default; these are coerced to floats because the
   client feeds them straight into arithmetic, and `"0.664" * 2` is a silent `NaN`
   in JavaScript rather than an error. Affects `prediction_factor`,
-  `throughout_decay_k`, `throughout_decay_linear_slope` and `step_up_target_rate`.
+  `throughout_decay_k`, `throughout_decay_linear_slope`, `step_up_target_rate` and the
+  six rate-up constants (`rate_up_rate_1..3`, `rate_up_pool_1..3`).
   **Every `DecimalField` added here needs the same coercion**, and a test walks the
   model to enforce that — a missed one is not a type error anywhere, just a `NaN`
   deep in the odds.
@@ -1081,7 +1159,7 @@ only in the Django admin.
 `pages` is ordered by `slug`. `faq` is ordered by category `order`, then each
 category's `items` by their `order`. `body` and `answer` are markdown. `slug` on a
 FAQ item is its anchor on the FAQ page (`/faq#do-i-need-an-account`); on a page it
-is one of a fixed set (`about`, `carat-income-guide`) that the frontend routes
+is one of a fixed set (`about`, `carat-income-guide`, `daily-legend-races`) that the frontend routes
 by. `updated_at` is the last save, shown on the page as "Last updated".
 
 ```json

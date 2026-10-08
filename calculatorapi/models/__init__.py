@@ -22,6 +22,7 @@ from .umas_on_uma_banner import UmasOnUmaBanner
 from .supports_on_support_banner import SupportsOnSupportBanner
 from .game_event import GameEvent
 from .scenario import Scenario
+from .daily_legend_race import DailyLegendRaceRelease, DailyLegendRaceUma
 from .league_of_heroes_rank import LeagueOfHeroesRank
 from .league_of_heroes import LeagueOfHeroes
 from .changelog_entry import ChangelogEntry
