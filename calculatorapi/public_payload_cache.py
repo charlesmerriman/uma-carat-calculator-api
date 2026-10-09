@@ -108,6 +108,8 @@ _IRRELEVANT_MODELS = frozenset({
     "dailyvisit",
     "monthlyvisit",
     "visitorhash",
+    "landingpagevisit",
+    "referrervisit",
     # The admin analytics report's daily copy. Written once a day by a staff
     # page load or a deploy, never part of the catalogue.
     "analyticssnapshot",

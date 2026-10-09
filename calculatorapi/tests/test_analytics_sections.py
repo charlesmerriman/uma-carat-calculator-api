@@ -25,6 +25,7 @@ from calculatorapi.models import (
     PatreonSupporter,
     PatreonTier,
     Plan,
+    ReferrerVisit,
     SocialAccount,
     SupportCard,
     Uma,
@@ -430,3 +431,20 @@ class AnalyticsFavouriteTests(CalculatorTestCase):
         rows = build_analytics_report()['favourite_umas']
         self.assertEqual(rows[0], {'uma': 'Rice', 'people': 3, 'as_picture': 2})
         self.assertEqual(rows[1], {'uma': 'Spe', 'people': 2, 'as_picture': 1})
+
+
+class AnalyticsReferrerTests(CalculatorTestCase):
+    """The referrer table names the busiest sites and folds the rest."""
+
+    def test_the_25_busiest_are_named_and_the_rest_share_a_row(self):
+        today = timezone.localdate()
+        for index in range(30):
+            ReferrerVisit.objects.create(date=today, host=f'site{index:02}.com',
+                                         page_views=100 - index)
+        ReferrerVisit.objects.create(date=today, host='other', page_views=7)
+        rows = build_analytics_report()['referrers']
+        self.assertEqual(len(rows), 26)
+        self.assertEqual(rows[0]['name'], 'site00.com')
+        # site25..site29 (75+74+73+72+71) and the "other" bucket (7).
+        self.assertEqual(rows[-1]['name'], 'Everything else')
+        self.assertEqual(rows[-1]['visits'], 365 + 7)

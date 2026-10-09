@@ -144,6 +144,15 @@ def rank_distribution(rows):
                      [row["count"] for row in answered], "Users")
 
 
+def landing_pages(rows):
+    """Visits per landing page over the last 30 days."""
+    rows = [row for row in rows if row["visits"]]
+    if not rows:
+        return None
+    return bar_chart([row["name"] for row in rows],
+                     [row["visits"] for row in rows], "Visits")
+
+
 def demand(calendar_rows):
     """Planned pulls by the month banners end."""
     if not calendar_rows:

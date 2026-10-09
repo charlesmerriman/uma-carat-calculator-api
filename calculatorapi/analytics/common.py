@@ -17,7 +17,8 @@ import datetime
 #   v4  2026-10-09  + growth_by_month, growth_by_week, activity,
 #                   sign_in_providers, supporters, feature_adoption,
 #                   favourite_umas
-REPORT_SHAPE = "analytics:report:v4"
+#   v5  2026-10-09  + landing_pages, referrers
+REPORT_SHAPE = "analytics:report:v5"
 
 
 # ── Sanity bounds ────────────────────────────────────────────────────────────

@@ -7,7 +7,10 @@ from django.db.models.functions import TruncMonth
 from django.utils import timezone
 
 from ..models import DailyVisit
-from ..visits import build_visit_report
+from ..visits import OTHER, build_visit_report
+
+# How many referring sites the table names before folding the rest into one row.
+TOP_REFERRERS = 25
 
 # "visit-days": a daily unique visitor summed across days. Someone who comes on
 # five days is five visit-days. Every figure that sums daily uniques says so,
@@ -37,7 +40,29 @@ def traffic():
         "monthly_visits": _with_visit_days(visits["monthly"]),
         "daily_window_days": visits["daily_window_days"],
         "traffic_weeks": _week_over_week(daily),
+        "landing_pages": visits["landing_pages"],
+        "referrers": _top_referrers(visits["referrers"]),
     }
+
+
+def _top_referrers(rows):
+    """The TOP_REFERRERS busiest sites, then everything else in one row.
+
+    The "other" bucket visits.py already keeps (malformed hosts, the daily cap)
+    folds into that last row too, so the table ends with one line for all the
+    rest however it got there.
+    """
+    named = [row for row in rows if row["name"] != OTHER]
+    kept, rest = named[:TOP_REFERRERS], named[TOP_REFERRERS:]
+    rest += [row for row in rows if row["name"] == OTHER]
+    if rest:
+        kept.append({
+            "name": "Everything else",
+            "visits": sum(row["visits"] for row in rest),
+            "share": round(sum(row["share"] for row in rest), 1),
+            "earlier": sum(row["earlier"] for row in rest),
+        })
+    return kept
 
 
 def _with_visit_days(monthly):
