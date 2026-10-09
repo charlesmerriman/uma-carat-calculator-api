@@ -82,7 +82,7 @@ single-use, valid for seconds, and unredeemable without the secret — and is st
 better than putting a long-lived token in a URL.
 
 `oauth.py` is a pure-logic module (no views, no ORM), mirroring the
-`predictions.py` / `analytics.py` split used elsewhere in this app.
+`predictions.py` / `analytics/` split used elsewhere in this app.
 
 ---
 

@@ -153,7 +153,7 @@ Separate tables for Uma and Support banners, ranked by:
   primary popularity signal)
 - **Total pulls** — the sum of pulls everyone has budgeted for it
 - **Avg pulls** — total pulls ÷ plan rows (how invested each planner is)
-- **Ignored** — plan rows whose pull count was too large to be a real answer
+- **Ignored values** — plan rows whose pull count was too large to be a real answer
 
 **Only each account's active plan is read.** An account can hold several
 plans, and the spare ones are what-ifs: someone comparing "200 pulls" against
@@ -181,7 +181,7 @@ account was adding ~169,000 to every resource mean and reporting one banner's
 average as 447,572 pulls.
 
 So the dashboard excludes values above a sanity ceiling
-(`SANE_MAX_PULLS` / `SANE_MAX_RESOURCE` in `calculatorapi/analytics.py`) from
+(`SANE_MAX_PULLS` / `SANE_MAX_RESOURCE` in `calculatorapi/analytics/common.py`) from
 every figure that treats a stored number as a **quantity**, and from none of
 the figures that merely **count people**. Three consequences worth knowing:
 
@@ -193,7 +193,7 @@ the figures that merely **count people**. Three consequences worth knowing:
 - **Nothing is rewritten.** This page filters what it reads; it never edits a
   saved plan. A user's own projection still shows them their billion.
 
-Each affected row reports its **Ignored** count, so a surprising figure can be
+Each affected row reports its **Ignored values** count, so a surprising figure can be
 checked against the number of exclusions behind it. The ceilings sit orders of
 magnitude above any real answer (2,000 pulls is ten pity copies on one banner,
 double what maxing it out costs; 10,000,000 carats is ~66,000 pulls' worth) —
@@ -215,8 +215,23 @@ files. The dated filenames make it easy to build a trend spreadsheet later.
 
 ## Implementation notes (for developers)
 
-- All aggregation lives in `calculatorapi/analytics.py`
-  (`build_analytics_report()`), pure ORM queries with no HTTP concerns.
+- All aggregation lives in the `calculatorapi/analytics/` package, pure ORM
+  queries with no HTTP concerns. `build_analytics_report()` (`report.py`)
+  assembles one plain dict from the section modules (`people.py`,
+  `income_settings.py`, `banners.py`, `traffic.py`); the package's `__init__`
+  docstring maps them. Import from the package, never from a module inside it.
+- **The dict is the contract; `tables.py` is presentation.** `report_tables()`
+  turns the dict into a list of sections (title, help, columns with a *kind*,
+  rows), and the page and the CSV are each one loop over that list, so they
+  cannot disagree about a title or a column. The tests and the KPI cards read
+  the dict.
+- **Adding a section is two steps:** a function in the right section module
+  that returns its rows (aggregates only, staff excluded), called from
+  `build_analytics_report()`; and one `_section(...)` entry in
+  `report_tables()` naming its columns. Neither the template nor the CSV writer
+  changes. `AnalyticsTablesTests` fails if a row is missing a column's key, so
+  give the new section a row in its seed. A new key changes the dict's shape,
+  so bump `REPORT_CACHE_KEY`'s suffix in the same change.
 - Every reader goes through `get_report()`, which holds the report in the
   default cache for five minutes under `analytics:report:v1`: the page, its CSV
   and the admin index's KPI cards (`admin_dashboard.dashboard_callback`, which

@@ -2,7 +2,7 @@
 Patreon API v2 client for the supporters sync.
 
 This module is pure provider logic — no Django views, no serializers — mirroring
-the split used by oauth.py, predictions.py and analytics.py. It touches the ORM
+the split used by oauth.py, predictions.py and the analytics package. It touches the ORM
 for exactly one thing: reading and rotating the token pair on PatreonCredentials.
 Everything that can go wrong raises PatreonApiError so callers can report one
 readable line instead of leaking Patreon's internals.

@@ -29,7 +29,7 @@ light/dark theme unfold renders in.
     padding: 0.4rem 0.75rem;
     text-align: left;
   }
-  .analytics-report thead th, .analytics-report th[scope="row"] { font-weight: 600; }
+  .analytics-report thead th, .analytics-report tr.total td { font-weight: 600; }
   .analytics-report tr:last-child th, .analytics-report tr:last-child td { border-bottom: 0; }
   .analytics-report a.button {
     display: inline-block;
@@ -50,233 +50,39 @@ light/dark theme unfold renders in.
   Site traffic is accumulated over time;
   every other section is a snapshot of the database as it stands right now.
   Staff accounts are excluded from every user metric. “Engaged users” are accounts
-  that changed at least one calculator setting or planned at least one banner —
-  percentages are shown against both denominators because brand-new accounts
+  that changed at least one calculator setting or planned at least one banner.
+  Percentages are shown against both denominators because brand-new accounts
   start with everything off.
 </p>
 <p><a class="button" href="?format=csv">Download CSV</a></p>
 
-<div class="module">
-  <h2>Overview</h2>
-  <table>
-    <tbody>
-      <tr><th scope="row">Total users (non-staff)</th><td>{{ report.total_users }}</td></tr>
-      <tr><th scope="row">Engaged users</th><td>{{ report.engaged_users }} ({{ report.engaged_pct }}%)</td></tr>
-    </tbody>
-  </table>
-</div>
-
-<div class="module">
-  <h2>Site traffic — last {{ report.daily_window_days }} days</h2>
-  <p>
-    Counts every visitor, signed in or not — the only section here that can see
-    guests. One page view is one browser session, not one click. Days with no
-    traffic are omitted rather than shown as zero.
-  </p>
-  {% if report.daily_visits %}
+{% comment %}
+Every section is the same shape (calculatorapi/analytics/tables.py), so this
+one loop renders them all, and the CSV is the same list written out. A new
+section needs no markup here. Cells arrive already formatted as strings.
+{% endcomment %}
+{% for section in tables %}
+<div class="module" id="{{ section.key }}">
+  <h2>{{ section.title }}</h2>
+  {% if section.help %}<p class="help">{{ section.help }}</p>{% endif %}
+  {% if section.cells %}
   <table>
     <thead>
-      <tr><th>Date</th><th>Page views</th><th>Unique visitors</th></tr>
+      <tr>{% for column in section.columns %}<th>{{ column.label }}</th>{% endfor %}</tr>
     </thead>
     <tbody>
-      {% for day in report.daily_visits %}
-      <tr>
-        <td>{{ day.date|date:"Y-m-d" }}</td>
-        <td>{{ day.page_views }}</td>
-        <td>{{ day.unique_visitors }}</td>
-      </tr>
+      {% for cells in section.cells %}
+      <tr>{% for cell in cells %}<td>{{ cell }}</td>{% endfor %}</tr>
       {% endfor %}
+      {% if section.footer_cells %}
+      <tr class="total">{% for cell in section.footer_cells %}<td>{{ cell }}</td>{% endfor %}</tr>
+      {% endif %}
     </tbody>
   </table>
   {% else %}
-  <p>No visits recorded yet.</p>
+  <p>{{ section.empty }}</p>
   {% endif %}
-</div>
-
-<div class="module">
-  <h2>Site traffic — by month</h2>
-  <p>
-    Monthly unique visitors are a true monthly-active count: someone who visits
-    on fifteen days in a month counts <strong>once</strong>. It is therefore
-    smaller than the sum of that month’s daily unique visitors, and the two are
-    not meant to reconcile.
-  </p>
-  {% if report.monthly_visits %}
-  <table>
-    <thead>
-      <tr><th>Month</th><th>Page views</th><th>Unique visitors</th></tr>
-    </thead>
-    <tbody>
-      {% for month in report.monthly_visits %}
-      <tr>
-        <td>{{ month.month|date:"Y-m" }}</td>
-        <td>{{ month.page_views }}</td>
-        <td>{{ month.unique_visitors }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {% else %}
-  <p>No visits recorded yet.</p>
-  {% endif %}
-</div>
-
-<div class="module">
-  <h2>Paid products</h2>
-  <table>
-    <thead>
-      <tr><th>Product</th><th>Users</th><th>% of total</th><th>% of engaged</th></tr>
-    </thead>
-    <tbody>
-      {% for product in report.paid_products %}
-      <tr>
-        <td>{{ product.label }}</td>
-        <td>{{ product.count }}</td>
-        <td>{{ product.pct_of_total }}%</td>
-        <td>{{ product.pct_of_engaged }}%</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-
-  <h3>Campaign selectors</h3>
-  {% if report.selector_purchases %}
-  <table>
-    <thead>
-      <tr>
-        <th>Campaign</th><th>Selector</th><th>Users</th>
-        <th>Card picked</th><th>% of total</th><th>% of engaged</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for selector in report.selector_purchases %}
-      <tr>
-        <td>{{ selector.campaign }}</td>
-        <td>{{ selector.label }}</td>
-        <td>{{ selector.count }}</td>
-        <td>{{ selector.picked }}</td>
-        <td>{{ selector.pct_of_total }}%</td>
-        <td>{{ selector.pct_of_engaged }}%</td>
-      </tr>
-      {% endfor %}
-      <tr>
-        <td colspan="2"><strong>Any selector</strong></td>
-        <td>{{ report.any_selector.count }}</td>
-        <td></td>
-        <td>{{ report.any_selector.pct_of_total }}%</td>
-        <td>{{ report.any_selector.pct_of_engaged }}%</td>
-      </tr>
-    </tbody>
-  </table>
-  {% else %}
-  <p>No selector products exist yet.</p>
-  {% endif %}
-</div>
-
-{% for distribution in report.rank_distributions %}
-<div class="module">
-  <h2>Rank distribution — {{ distribution.label }}</h2>
-  <table>
-    <thead>
-      <tr><th>Rank</th><th>Users</th><th>% of total</th></tr>
-    </thead>
-    <tbody>
-      {% for row in distribution.rows %}
-      <tr>
-        <td>{{ row.name }}</td>
-        <td>{{ row.count }}</td>
-        <td>{{ row.pct_of_total }}%</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
 </div>
 {% endfor %}
-
-<div class="module">
-  <h2>Current resources (engaged users)</h2>
-  <p class="help">
-    Median is the typical holding &mdash; unlike the average, no single account
-    can move it. &ldquo;Ignored&rdquo; counts values too large to be real
-    answers, which are left out of both figures; saved plans are never altered.
-  </p>
-  <table>
-    <thead>
-      <tr><th>Resource</th><th>Median</th><th>Average</th><th>Ignored</th></tr>
-    </thead>
-    <tbody>
-      {% for resource in report.resource_averages %}
-      <tr>
-        <td>{{ resource.label }}</td>
-        <td>{{ resource.median }}</td>
-        <td>{{ resource.avg }}</td>
-        <td>{{ resource.excluded|default:"&mdash;" }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
-
-<div class="module">
-  <h2>Popular Uma banners</h2>
-  <p class="help">
-    Planners counts everyone who has the banner in their plan. Pull figures
-    leave out implausibly large entries; &ldquo;Ignored&rdquo; is how many.
-  </p>
-  {% if report.popular_uma_banners %}
-  <table>
-    <thead>
-      <tr>
-        <th>Banner</th><th>Timeline</th><th>Runs</th>
-        <th>Planners</th><th>Total pulls</th><th>Avg pulls</th><th>Ignored</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for banner in report.popular_uma_banners %}
-      <tr>
-        <td>{{ banner.name }}</td>
-        <td>{{ banner.timeline }}</td>
-        <td>{{ banner.start_date|date:"Y-m-d" }} → {{ banner.end_date|date:"Y-m-d" }}</td>
-        <td>{{ banner.planners }}</td>
-        <td>{{ banner.total_pulls }}</td>
-        <td>{{ banner.avg_pulls }}</td>
-        <td>{{ banner.excluded|default:"&mdash;" }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {% else %}
-  <p>No planned uma banners yet.</p>
-  {% endif %}
-</div>
-
-<div class="module">
-  <h2>Popular support banners</h2>
-  {% if report.popular_support_banners %}
-  <table>
-    <thead>
-      <tr>
-        <th>Banner</th><th>Timeline</th><th>Runs</th>
-        <th>Planners</th><th>Total pulls</th><th>Avg pulls</th><th>Ignored</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for banner in report.popular_support_banners %}
-      <tr>
-        <td>{{ banner.name }}</td>
-        <td>{{ banner.timeline }}</td>
-        <td>{{ banner.start_date|date:"Y-m-d" }} → {{ banner.end_date|date:"Y-m-d" }}</td>
-        <td>{{ banner.planners }}</td>
-        <td>{{ banner.total_pulls }}</td>
-        <td>{{ banner.avg_pulls }}</td>
-        <td>{{ banner.excluded|default:"&mdash;" }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {% else %}
-  <p>No planned support banners yet.</p>
-  {% endif %}
-</div>
 </div>
 {% endblock %}

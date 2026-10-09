@@ -1,10 +1,10 @@
 """
 Site traffic counting: page views and distinct visitors, per day and per month.
 
-Same split as calculatorapi/analytics.py -- this module is pure logic with no
+Same split as the calculatorapi/analytics package -- this module is pure logic with no
 HTTP concerns beyond reading headers off a request object, so the hashing and
 the rollup can be unit-tested directly. views/visits.py owns the endpoint and
-analytics.py folds build_visit_report() into the dashboard.
+analytics/traffic.py folds build_visit_report() into the dashboard.
 
 PRIVACY CONTRACT. No function here may persist an IP address, a user agent, or
 anything else that identifies a request. The only per-visitor artifact written

@@ -17,7 +17,7 @@ The flow, end to end:
    never leaves this process) and returns an `Identity`.
 
 This module is pure provider logic -- no Django views, no ORM -- mirroring the
-split used by predictions.py and analytics.py. Everything that can go wrong
+split used by predictions.py and the analytics package. Everything that can go wrong
 raises OAuthError so the view can collapse the lot into one generic 400 rather
 than leaking provider internals to the client.
 
