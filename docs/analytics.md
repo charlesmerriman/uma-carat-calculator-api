@@ -332,7 +332,17 @@ deliberately, because wrongly dropping a real whale would bias the report
 silently, while a ceiling this high can only catch values that were never
 answers.
 
-## CSV export
+## Charts and navigation
+
+Five sections draw a chart above their table: daily traffic, monthly traffic
+and History as lines, each rank distribution and Demand by month as bars. The
+table underneath keeps the exact numbers. A rank chart leaves out "Not set", so
+its bars show the shape of the people who answered; the table keeps the row. A
+section with nothing to draw (no traffic yet, no ranks picked) shows its table
+alone. The line of links under the buttons jumps to any section and stays in
+view while you scroll.
+
+## CSV and JSON export
 
 The **Download CSV** button (or `?format=csv`) exports every table into a
 single dated file (`analytics-YYYY-MM-DD.csv`) that opens directly in Google
@@ -343,6 +353,10 @@ There is no need to keep monthly downloads for trends any more: the server
 keeps a daily copy and the History section reads it (see "The 30-day comparison
 and History" above). A download is still the way to keep a figure History does
 not track, such as a banner's planners on a given day.
+
+**JSON** (or `?format=json`) returns the report itself, the same dict the page
+is built from, with dates as text. Staff-only like the page. Charts are not in
+it; the CSV and the JSON carry numbers only.
 
 ## Implementation notes (for developers)
 
@@ -357,6 +371,16 @@ not track, such as a banner's planners on a given day.
   assembles one plain dict from the section modules (`people.py`,
   `income_settings.py`, `banners.py`, `traffic.py`); the package's `__init__`
   docstring maps them. Import from the package, never from a module inside it.
+- **Charts** (`analytics/charts.py`) are presentation too: a section's `chart`
+  slot holds Chart.js data and options, `page_tables()` turns them into JSON
+  strings, and the template includes unfold's own
+  `unfold/components/chart/<type>.html`, whose `app.js` `renderCharts()` draws
+  every `canvas.chart` on page load and re-colours the grid for dark mode.
+  Colours are unfold tokens (`var(--color-primary-600)`), resolved on the page.
+  Options are explicit because unfold's defaults hide the legend and draw 4px
+  bars; `maintainAspectRatio` is off, so each chart fills a fixed-height box.
+  Verified in light and dark on 2026-10-09 with a headless screenshot of a
+  seeded page.
 - **The dict is the contract; `tables.py` is presentation.** `report_tables()`
   turns the dict into a list of sections (title, help, columns with a *kind*,
   rows), and the page and the CSV are each one loop over that list, so they

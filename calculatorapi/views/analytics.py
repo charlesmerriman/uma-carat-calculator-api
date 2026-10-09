@@ -12,7 +12,8 @@ over analytics.tables, so a new section needs no change here.
 import csv
 
 from django.contrib import admin
-from django.http import HttpResponse
+from django.core.serializers.json import DjangoJSONEncoder
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
 
@@ -20,7 +21,8 @@ from calculatorapi.analytics import csv_rows, get_report, page_tables
 
 
 def analytics_dashboard(request):
-    """Render the analytics snapshot; ``?format=csv`` downloads it instead.
+    """Render the analytics snapshot; ``?format=csv`` downloads it instead,
+    and ``?format=json`` returns the report dict itself.
 
     Both read the cached report (analytics.get_report), so the CSV is the page
     the person just looked at. ``?refresh=1`` is the page's "Refresh now" link:
@@ -33,6 +35,10 @@ def analytics_dashboard(request):
     report = get_report()
     if request.GET.get("format") == "csv":
         return _csv_response(report)
+    if request.GET.get("format") == "json":
+        # The dict as the tests and the KPI cards read it, dates as ISO
+        # strings. Staff-only like the page: admin_view wraps this whole view.
+        return JsonResponse(report, encoder=DjangoJSONEncoder)
     context = {
         # each_context() supplies the admin chrome (site header, nav
         # sidebar, user tools) so the template renders like a native

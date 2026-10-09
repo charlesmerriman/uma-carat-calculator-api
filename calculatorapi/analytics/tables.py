@@ -24,6 +24,7 @@ A section is a dict:
         "footer": {...} or None,     # a totals row, keyed like the rows
         "empty": "...",              # the page's text when there are no rows
         "collapse": {...} or None,   # page only: rows to fold away, see below
+        "chart": {...} or None,      # page only: a charts.py chart drawn above
     }
 
 `collapse` names rows the page tucks under a closed <details> instead of the
@@ -53,9 +54,12 @@ None is a blank cell in both renderers, and a string is written as it is
 whatever the kind, which is how a totals row puts "Total" in a date column.
 """
 
+import json
 from typing import NamedTuple
 
 from django.utils.text import slugify
+
+from . import charts
 
 
 class Column(NamedTuple):
@@ -70,7 +74,7 @@ KINDS = frozenset({"text", "int", "num", "pct", "date", "month", "ignored",
                    "delta", "flag"})
 
 def _section(key, title, columns, rows, *, help_text="", footer=None,
-             empty="Nothing recorded yet.", collapse=None):
+             empty="Nothing recorded yet.", collapse=None, chart=None):
     # pylint: disable=too-many-arguments
     # Four required fields plus optional keyword-only ones: this is the
     # section dict's constructor, and its parameters are its keys.
@@ -83,6 +87,7 @@ def _section(key, title, columns, rows, *, help_text="", footer=None,
         "footer": footer,
         "empty": empty,
         "collapse": collapse,
+        "chart": chart,
     }
 
 
@@ -181,6 +186,7 @@ def _overview_tables(report):
                 "Unique visitors are that month’s count from Site traffic."
             ),
             empty="No history yet.",
+            chart=charts.history(report["history"]),
         ),
     ]
 
@@ -206,6 +212,7 @@ def _traffic_tables(report):
             footer={"date": "Total", "page_views": totals["page_views"],
                     "unique_visitors": totals["visit_days"]},
             empty="No visits recorded yet.",
+            chart=charts.daily_traffic(report["daily_visits"], days),
         ),
         _section(
             "traffic_weeks", "Site traffic: last 7 days against the 7 before",
@@ -242,6 +249,7 @@ def _traffic_tables(report):
                 "people, 2.9. The month still running is marked partial."
             ),
             empty="No visits recorded yet.",
+            chart=charts.monthly_traffic(report["monthly_visits"]),
         ),
     ]
 
@@ -382,6 +390,7 @@ def _settings_tables(report):
             [Column("Rank", "name"), Column("Users", "count", "int"),
              Column("% of total", "pct_of_total", "pct")],
             distribution["rows"],
+            chart=charts.rank_distribution(distribution["rows"]),
         ))
 
     sections.append(_section(
@@ -465,6 +474,7 @@ def _banner_tables(report):
                 "past the next six months and anything still undated."
             ),
             empty="Nothing upcoming is planned.",
+            chart=charts.demand(report["demand_calendar"]),
         ),
         _section(
             "favourite_umas", "Favourite umas",
@@ -523,6 +533,16 @@ def _cells(row, columns, formatter):
     return [formatter(row[column.key], column.kind) for column in columns]
 
 
+def _page_chart(chart):
+    if chart is None:
+        return None
+    return {
+        "template": f"unfold/components/chart/{chart['type']}.html",
+        "data": json.dumps(chart["data"]),
+        "options": json.dumps(chart["options"]),
+    }
+
+
 def _is_collapsed(row, collapse):
     return collapse is not None and row[collapse["key"]] == collapse["value"]
 
@@ -532,7 +552,9 @@ def page_tables(report):
 
     The template can only loop, so the formatting happens here: `cells` holds
     one list of strings per row, `collapsed_cells` the rows `collapse` folds
-    away, `footer_cells` the totals row or None.
+    away, `footer_cells` the totals row or None. A chart becomes the unfold
+    component to include and its data and options as JSON strings, which the
+    component writes into the canvas's data attributes.
     """
     tables = []
     for section in report_tables(report):
@@ -546,6 +568,7 @@ def page_tables(report):
                                 if _is_collapsed(row, collapse)],
             "footer_cells": (_cells(section["footer"], columns, page_cell)
                              if section["footer"] else None),
+            "chart": _page_chart(section["chart"]),
         })
     return tables
 
