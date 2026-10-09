@@ -18,6 +18,7 @@ Where things live:
     banners.py          banner popularity
     traffic.py          site traffic, from the visit counters in visits.py
     common.py           pct() and the sanity bounds every section shares
+    snapshots.py        one stored copy a day; the comparison and History
     cache.py            get_report(): the five-minute copy every reader uses
     tables.py           the report as tables, the one shape both renderers read
 

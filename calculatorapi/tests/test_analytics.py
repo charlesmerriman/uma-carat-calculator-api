@@ -11,6 +11,8 @@ from django.utils import timezone
 
 from calculatorapi.admin_dashboard import dashboard_callback
 from calculatorapi.analytics import build_analytics_report, get_report, report_tables
+from calculatorapi.analytics.common import REPORT_SHAPE
+from calculatorapi.analytics.snapshots import NOT_STORED, ensure_today
 from calculatorapi.analytics.tables import KINDS, csv_cell, page_cell
 from calculatorapi.visits import (
     VISITOR_HASH_RETENTION_DAYS,
@@ -18,6 +20,7 @@ from calculatorapi.visits import (
     record_visit,
 )
 from calculatorapi.models import (
+    AnalyticsSnapshot,
     AnniversaryEventProduct,
     CustomUser,
     ClubRank,
@@ -58,6 +61,8 @@ class AnalyticsReportEmptyTests(CalculatorTestCase):
         self.assertEqual(report['any_selector']['count'], 0)
         self.assertEqual(report['popular_uma_banners'], [])
         self.assertEqual(report['popular_support_banners'], [])
+        self.assertIsNone(report['comparison']['since'])
+        self.assertEqual(report['history'], [])
 
 
 class AnalyticsReportScenarioTests(CalculatorTestCase):
@@ -471,6 +476,112 @@ class AnalyticsTablesTests(CalculatorTestCase):
         self.assertEqual(page_cell(3, 'ignored'), '3')
 
 
+def _store_snapshot(day, **report):
+    """A stored snapshot holding only the keys a test cares about, which is
+    also what a row from an older, smaller report shape looks like."""
+    return AnalyticsSnapshot.objects.create(date=day, shape='test', report=report)
+
+
+def _days_ago(days):
+    return timezone.localdate() - datetime.timedelta(days=days)
+
+
+class AnalyticsSnapshotTests(CalculatorTestCase):
+    """snapshots.ensure_today(): one stored copy of the report per day."""
+
+    def test_the_first_rebuild_of_a_day_keeps_one_snapshot(self):
+        get_report()
+        get_report(refresh=True)
+        self.assertEqual(AnalyticsSnapshot.objects.count(), 1)
+        self.assertEqual(AnalyticsSnapshot.objects.get().date, timezone.localdate())
+
+    def test_a_race_past_the_exists_check_still_leaves_one_row(self):
+        report = build_analytics_report()
+        self.assertTrue(ensure_today(report))
+        # Both requests saw "missing"; the unique date lets only one insert win.
+        with patch('django.db.models.query.QuerySet.exists', return_value=False):
+            self.assertFalse(ensure_today(report))
+        self.assertEqual(AnalyticsSnapshot.objects.count(), 1)
+
+    def test_dated_by_the_day_the_report_was_built(self):
+        report = build_analytics_report()
+        report['generated_at'] -= datetime.timedelta(days=1)
+        ensure_today(report)
+        self.assertEqual(AnalyticsSnapshot.objects.get().date, _days_ago(1))
+
+    def test_stores_the_figures_but_not_traffic_or_what_is_built_from_snapshots(self):
+        make_user('someone')
+        ensure_today(build_analytics_report())
+        row = AnalyticsSnapshot.objects.get()
+        self.assertEqual(row.shape, REPORT_SHAPE)
+        self.assertEqual(row.report['total_users'], 1)
+        self.assertFalse(NOT_STORED & row.report.keys())
+
+
+class AnalyticsComparisonTests(CalculatorTestCase):
+    """The Overview's "30 days ago": the nearest snapshot on or before then."""
+
+    def test_no_snapshot_old_enough_leaves_every_comparison_blank(self):
+        _store_snapshot(_days_ago(10), total_users=0)
+        comparison = build_analytics_report()['comparison']
+        self.assertIsNone(comparison['since'])
+        for row in comparison['figures'].values():
+            self.assertIsNone(row['then'])
+            self.assertIsNone(row['delta'])
+
+    def test_reads_the_nearest_snapshot_on_or_before_30_days_back(self):
+        _store_snapshot(_days_ago(45), total_users=1)
+        _store_snapshot(_days_ago(10), total_users=5)   # too recent
+        for name in ('a', 'b', 'c'):
+            make_user(name)
+        comparison = build_analytics_report()['comparison']
+        self.assertEqual(comparison['since'], _days_ago(45))
+        total = comparison['figures']['total_users']
+        self.assertEqual((total['now'], total['then'], total['delta']), (3, 1, 2))
+
+    def test_a_figure_an_older_shape_lacks_reads_blank_not_an_error(self):
+        _store_snapshot(_days_ago(40), total_users=2)   # no paid_products, no any_selector
+        figures = build_analytics_report()['comparison']['figures']
+        self.assertEqual(figures['total_users']['delta'], -2)
+        self.assertIsNone(figures['daily_carat']['then'])
+        self.assertIsNone(figures['any_selector']['delta'])
+
+
+class AnalyticsHistoryTests(CalculatorTestCase):
+    """One row per month from its first snapshot, beside that month's visitors."""
+
+    @classmethod
+    def setUpTestData(cls):
+        this_month = timezone.localdate().replace(day=1)
+        cls.last_month = (this_month - datetime.timedelta(days=1)).replace(day=1)
+        cls.two_months_ago = (cls.last_month - datetime.timedelta(days=1)).replace(day=1)
+        _store_snapshot(cls.last_month.replace(day=3), total_users=4)
+        _store_snapshot(cls.last_month.replace(day=20), total_users=9)
+        MonthlyVisit.objects.create(
+            month=cls.last_month, page_views=50, unique_visitors=30)
+        # Traffic only: a month from before snapshots began.
+        MonthlyVisit.objects.create(
+            month=cls.two_months_ago, page_views=20, unique_visitors=12)
+        cls.history = build_analytics_report()['history']
+
+    def test_a_month_reads_its_first_snapshot(self):
+        row = self.history[0]
+        self.assertEqual(row['month'], self.last_month)
+        self.assertEqual(row['total_users'], 4)
+        self.assertEqual(row['unique_visitors'], 30)
+
+    def test_a_month_with_only_traffic_has_blank_account_figures(self):
+        row = self.history[1]
+        self.assertEqual(row['month'], self.two_months_ago)
+        self.assertIsNone(row['total_users'])
+        self.assertEqual(row['unique_visitors'], 12)
+
+    def test_a_month_with_neither_is_left_out(self):
+        # This month has no snapshot (build_analytics_report never writes one)
+        # and no traffic.
+        self.assertEqual(len(self.history), 2)
+
+
 # Rendering admin templates resolves {% static %} tags; the production
 # whitenoise manifest storage requires collectstatic, which never runs in
 # tests. Any test class that renders admin pages swaps in plain storage.
@@ -511,7 +622,35 @@ class AnalyticsDashboardViewTests(CalculatorTestCase):
         self.client.get(self.url)
         make_user('second')
         body = self.client.get(self.url, {'format': 'csv'}).content.decode()
-        self.assertIn('Total users (non-staff),1\r\n', body)
+        # Value 1, the then-cached count; no snapshot is 30 days old, so the
+        # comparison cells are blank.
+        self.assertIn('Total users (non-staff),1,,\r\n', body)
+
+    def test_a_staff_visit_keeps_one_snapshot_a_day(self):
+        self._staff_client()
+        self.client.get(self.url)
+        self.client.get(self.url)
+        self.client.get(self.url, {'format': 'csv'})
+        self.assertEqual(AnalyticsSnapshot.objects.count(), 1)
+
+    def test_page_and_csv_show_the_comparison_and_history(self):
+        _store_snapshot(_days_ago(35), total_users=0)
+        make_user('newcomer')
+        self._staff_client()
+        page = self.client.get(self.url)
+        self.assertContains(page, '30 days ago')
+        self.assertContains(page, '<td>+1</td>', html=True)
+        self.assertContains(page, 'id="history"')
+        body = self.client.get(self.url, {'format': 'csv'}).content.decode()
+        self.assertIn('Total users (non-staff),1,0,1\r\n', body)
+        self.assertIn('History', body)
+
+    def test_the_admin_index_card_says_how_much_users_grew(self):
+        since = _days_ago(35)
+        _store_snapshot(since, total_users=0)
+        make_user('newcomer')
+        cards = dashboard_callback(None, {})['kpi_cards']
+        self.assertEqual(cards[0]['footer'], f'+1 since {since:%Y-%m-%d}')
 
     def test_refresh_rebuilds_then_redirects_to_the_plain_url(self):
         self._staff_client()
@@ -578,6 +717,27 @@ class AnalyticsDashboardViewTests(CalculatorTestCase):
         # SMALLER than the sum of the daily uniques. The qualifier in the header
         # is what stops a reader treating that gap as a bug.
         self.assertIn('Unique visitors (counted once per month)', body)
+
+
+class SnapshotAnalyticsCommandTests(CalculatorTestCase):
+    """manage.py snapshot_analytics: the deploy chain's daily point."""
+
+    def _run(self):
+        out = StringIO()
+        call_command('snapshot_analytics', stdout=out)
+        return out.getvalue()
+
+    def test_keeps_todays_snapshot_then_does_nothing(self):
+        self.assertIn('Kept the analytics snapshot', self._run())
+        self.assertIn('already exists', self._run())
+        self.assertEqual(AnalyticsSnapshot.objects.count(), 1)
+
+    def test_a_failing_report_never_fails_the_deploy(self):
+        with patch('calculatorapi.management.commands.snapshot_analytics'
+                   '.build_analytics_report', side_effect=RuntimeError('boom')):
+            output = self._run()   # returns: no exception, so exit status 0
+        self.assertIn('Snapshot skipped', output)
+        self.assertFalse(AnalyticsSnapshot.objects.exists())
 
 
 class VisitRecordingTests(CalculatorTestCase):

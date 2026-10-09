@@ -2,20 +2,17 @@
 
 from django.core.cache import cache
 
+from .common import REPORT_SHAPE
 from .report import build_analytics_report
+from .snapshots import ensure_today
 
 # ── The cached report ────────────────────────────────────────────────────────
 # build_analytics_report() is a few dozen aggregate queries, and the admin
 # landing page reads it for four KPI cards on EVERY load, not just when someone
 # opens the analytics page. So the report is held for five minutes and every
-# reader shares the one copy.
-#
-# Bump the suffix whenever the dict's SHAPE changes (a key added, renamed or
-# removed). A deploy restarts the process, which empties LocMem anyway, but the
-# version is what keeps a cache that outlives a deploy (a shared backend, one
-# day) from handing an old shape to a new template. Same rule as
-# public_payload_cache.CACHE_KEY.
-REPORT_CACHE_KEY = "analytics:report:v1"
+# reader shares the one copy. The key is the report's shape version, so a new
+# shape never meets a cached old one (common.REPORT_SHAPE says when to bump it).
+REPORT_CACHE_KEY = REPORT_SHAPE
 REPORT_CACHE_TTL_SECONDS = 300
 
 
@@ -27,7 +24,8 @@ def get_report(refresh=False):
     match the page the person was just looking at.
 
     `refresh=True` rebuilds and re-caches regardless; it backs the page's
-    "Refresh now" link.
+    "Refresh now" link. Every rebuild also makes sure the day has its
+    snapshot (snapshots.ensure_today).
 
     There is no invalidation, on purpose. The report only reads, so an old copy
     is merely old, never wrong, and the page prints when it was built. Like
@@ -40,5 +38,9 @@ def get_report(refresh=False):
         if report is not None:
             return report
     report = build_analytics_report()
+    # The first rebuild on a new day keeps a copy as that day's snapshot. Here,
+    # and only on a rebuild, so a cache hit stays free and every reader (the
+    # page, the CSV, the admin index's cards) writes history without knowing.
+    ensure_today(report)
     cache.set(REPORT_CACHE_KEY, report, REPORT_CACHE_TTL_SECONDS)
     return report

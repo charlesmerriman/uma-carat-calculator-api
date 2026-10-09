@@ -11,6 +11,7 @@ from .income_settings import (
     selector_purchases,
 )
 from .people import engaged_subset, non_staff_users
+from .snapshots import comparison, history
 from .traffic import traffic
 
 
@@ -28,6 +29,8 @@ def build_analytics_report():
       - resource_averages: mean, median and dropped count per resource,
         among engaged users
       - popular_uma_banners / popular_support_banners: ranked pull plans
+      - comparison: the tracked figures now vs the snapshot ~30 days back
+      - history: one row per month, from the first snapshot of each
 
     Implausible values are excluded from every figure that treats a stored
     number as a QUANTITY (see SANE_MAX_PULLS / SANE_MAX_RESOURCE), and from
@@ -35,16 +38,16 @@ def build_analytics_report():
     how many values it dropped, so the exclusion is visible on the page rather
     than being something a reader has to know about.
 
-    Everything but `traffic` is a snapshot of the database as it stands right
-    now. Traffic is accumulated over time by calculatorapi/visits.py, so it is
-    the only part of this report that reads as a trend.
+    Every other section is a snapshot of the database as it stands right now.
+    Traffic is accumulated over time by calculatorapi/visits.py; for the rest,
+    `comparison` and `history` read the daily copies snapshots.py keeps.
     """
     users = non_staff_users()
     total_users = users.count()
     engaged = engaged_subset(users)
     engaged_users = engaged.count()
 
-    return {
+    report = {
         "generated_at": timezone.now(),
         **traffic(),
         "total_users": total_users,
@@ -59,3 +62,8 @@ def build_analytics_report():
         "popular_uma_banners": banner_popularity("banner_uma"),
         "popular_support_banners": banner_popularity("banner_support"),
     }
+    # Last, because both read the figures above. Neither is ever stored in a
+    # snapshot (snapshots.NOT_STORED): they are built FROM snapshots.
+    report["comparison"] = comparison(report)
+    report["history"] = history(report["monthly_visits"])
+    return report

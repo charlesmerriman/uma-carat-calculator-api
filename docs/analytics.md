@@ -7,8 +7,9 @@ planning to roll on?"* and *"how much traffic did we get last month?"*
 Most of the page aggregates the stats and pull plans that logged-in users
 already save through the calculator. The **Site traffic** section is the one
 exception: it counts page loads, which means it is the only section that can see
-guests, and the only one that accumulates history rather than reporting a
-snapshot.
+guests. Traffic accumulates its own history; for everything else the server keeps
+one copy of the report a day, which the **Overview** and **History** sections
+compare against.
 
 ## Where to find it
 
@@ -61,6 +62,30 @@ the page within that window shows the same numbers, and a CSV downloaded from it
 matches what the page showed. The page prints when its copy was built; **Refresh
 now** rebuilds it on the spot. The admin home page's stat cards read the same
 copy.
+
+### The 30-day comparison and History
+
+The server keeps one copy of the whole report per day (an `AnalyticsSnapshot`
+row). Nothing needs scheduling: the first time the report is rebuilt on a new
+day, by anyone opening the admin home page or this page, it keeps that day's
+copy, and every deploy adds one too (`manage.py snapshot_analytics`). A day when
+nobody looked and nothing deployed has no copy, and that is fine.
+
+- **Overview: 30 days ago / Change.** The figure from the nearest copy on or
+  before 30 days ago; the help line under the table names its date. Blank until
+  a copy that old exists, so the first month after this shipped (2026-10-09)
+  shows no comparison.
+- **History.** One row per month for the last twelve: users, engaged users, the
+  two paid products and selector buyers from that month's **first** copy (where
+  things stood as the month began), beside that month's unique visitors. Months
+  from before copies began still list their visitors, with the account figures
+  blank.
+- **The admin home page cards** say "+N since YYYY-MM-DD" from the same
+  comparison.
+
+A stored copy is never shown as a page of its own. The report gains sections
+between releases, so an old copy can lack a figure a newer page asks for; that
+figure reads blank rather than wrong.
 
 ### Total vs. engaged users
 
@@ -201,17 +226,17 @@ deliberately, because wrongly dropping a real whale would bias the report
 silently, while a ceiling this high can only catch values that were never
 answers.
 
-## CSV export & tracking trends over time
+## CSV export
 
 The **Download CSV** button (or `?format=csv`) exports every table into a
 single dated file (`analytics-YYYY-MM-DD.csv`) that opens directly in Google
-Sheets or Excel — use it for charts or to share numbers.
+Sheets or Excel: use it for charts or to share numbers. It is the same copy of
+the report the page shows, History section included.
 
-**Site traffic is the only section with history.** Everything else is a
-**snapshot**: it shows the state of the database at the moment you load it. To
-track trends in those (e.g. "is Training Pass adoption growing?"), download the
-CSV on a regular schedule — the first of each month works well — and keep the
-files. The dated filenames make it easy to build a trend spreadsheet later.
+There is no need to keep monthly downloads for trends any more: the server
+keeps a daily copy and the History section reads it (see "The 30-day comparison
+and History" above). A download is still the way to keep a figure History does
+not track, such as a banner's planners on a given day.
 
 ## Implementation notes (for developers)
 
@@ -241,6 +266,18 @@ files. The dated filenames make it easy to build a trend spreadsheet later.
   `record_visit()` writes, `build_visit_report()` reads, and neither knows about
   HTTP responses. `views/visits.py` is the `POST /visit` endpoint (public,
   throttled, always 204 and never a body, so the bot filter can't be probed).
+- **Snapshots** (`analytics/snapshots.py`, model `AnalyticsSnapshot`, one row
+  per UTC day, unique on `date`). `cache.get_report()` calls `ensure_today()` on
+  every rebuild, never on a cache hit: `exists()` first, then `get_or_create`,
+  so a race leaves one row. The stored dict leaves out `NOT_STORED` (the traffic
+  lists, which have their own tables, and `comparison`/`history`, which are
+  built from snapshots). `shape` records `common.REPORT_SHAPE`. **Read a stored
+  report only through `snapshots.figure()`**, which answers None for a key an
+  older shape lacks; to track a new number over time, add it to
+  `snapshots.FIGURES`. Not in the admin, listed in
+  `content_snapshot.PRIVATE_MODELS` (never pulled to local) and in
+  `public_payload_cache._IRRELEVANT_MODELS` (writing one must not drop the
+  `/calculator-data` cache). About 365 rows a year, never pruned.
 - `DailyVisit` and `MonthlyVisit` are the permanent records; `VisitorHash` is
   disposable deduplication scratch, dropped after 90 days by
   `manage.py prune_visitor_hashes`, which runs on every deploy (the

@@ -25,6 +25,15 @@ def environment_callback(request):  # pylint: disable=unused-argument
     return ["Production", "danger"]
 
 
+def _since(comparison, key):
+    """"+3 since 2026-09-09" for one tracked figure, or "" with nothing to
+    compare against yet (see analytics.snapshots.comparison)."""
+    delta = comparison["figures"][key]["delta"]
+    if delta is None:
+        return ""
+    return f"{delta:+} since {comparison['since']:%Y-%m-%d}"
+
+
 def dashboard_callback(request, context):  # pylint: disable=unused-argument
     """
     Inject headline KPI cards into the admin index context. Reuses the same
@@ -50,22 +59,33 @@ def dashboard_callback(request, context):  # pylint: disable=unused-argument
     # Most-planned uma banner (list is pre-sorted by planners desc).
     top_uma = report["popular_uma_banners"][0] if report["popular_uma_banners"] else None
 
+    comparison = report["comparison"]
+    engaged_since = _since(comparison, "engaged_users")
+    carat_delta, pass_delta = (comparison["figures"][key]["delta"]
+                               for key in ("daily_carat", "training_pass"))
+    paid_since = ""
+    if carat_delta is not None and pass_delta is not None:
+        paid_since = (f"{carat_delta:+} / {pass_delta:+} "
+                      f"since {comparison['since']:%Y-%m-%d}")
+
     context["kpi_cards"] = [
         {
             "title": "Total users",
             "value": report["total_users"],
+            "footer": _since(comparison, "total_users"),
             "icon": "group",
         },
         {
             "title": "Active planners",
             "value": report["engaged_users"],
-            "footer": f"{report['engaged_pct']}% of users",
+            "footer": ", ".join(filter(None, [
+                f"{report['engaged_pct']}% of users", engaged_since])),
             "icon": "person_check",
         },
         {
             "title": "Daily Carat / Training Pass",
             "value": f"{daily_carat} / {training_pass}",
-            "footer": "paid-product adopters",
+            "footer": paid_since or "paid-product adopters",
             "icon": "paid",
         },
         {

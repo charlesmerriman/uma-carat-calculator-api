@@ -50,9 +50,9 @@ def _csv_response(report):
     Serialize the report into a single sectioned CSV.
 
     One file (section title row, header row, data rows, blank line) keeps
-    the download simple to open in Google Sheets/Excel. The dated filename
-    doubles as poor-man's history: keep monthly downloads and trends can be
-    charted later even though v1 stores no history server-side.
+    the download simple to open in Google Sheets/Excel. History no longer
+    depends on keeping these files: the server stores a daily snapshot and the
+    History section carries it (analytics/snapshots.py).
     """
     today = timezone.localdate().isoformat()
     response = HttpResponse(content_type="text/csv")
