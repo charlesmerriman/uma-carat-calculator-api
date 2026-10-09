@@ -154,7 +154,9 @@ user with five copies of a plan move an average five times. The active plan is
 the one they have open, so it is the best single answer to "what does this
 person plan to do", and it keeps every figure here meaning what it meant when
 an account had exactly one plan. The **Planned by** column on the admin's Uma
-banners and Support banners lists applies the same rule, so the two agree.
+banners and Support banners lists applies the same rule, so the two agree on
+which plans count (that column still includes staff accounts, which the
+dashboard leaves out).
 
 Being *engaged* is the one place a spare plan still counts: planning a banner
 in any plan is using the calculator, so that person is in the engaged
