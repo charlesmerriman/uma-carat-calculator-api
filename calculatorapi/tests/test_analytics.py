@@ -10,7 +10,8 @@ from django.urls import reverse
 from django.utils import timezone
 
 from calculatorapi.admin_dashboard import dashboard_callback
-from calculatorapi.analytics import build_analytics_report, get_report
+from calculatorapi.analytics import build_analytics_report, get_report, report_tables
+from calculatorapi.analytics.tables import KINDS, csv_cell, page_cell
 from calculatorapi.visits import (
     VISITOR_HASH_RETENTION_DAYS,
     build_visit_report,
@@ -405,6 +406,71 @@ class AnalyticsReportCacheTests(CalculatorTestCase):
         self.assertEqual(context['kpi_cards'][0]['title'], 'Total users')
 
 
+class AnalyticsTablesTests(CalculatorTestCase):
+    """The one table shape the page and the CSV both render (analytics/tables.py).
+
+    The seed gives every section at least one row, so the structure check has
+    something to check in each.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        club = ClubRank.objects.create(name='A', income_amount=100)
+        user = CustomUser.objects.create_user(
+            username='user', password='x', club_rank=club, current_carat=10)
+        timeline = make_timeline()
+        UserPlannedBanner.objects.create(
+            user=user, banner_uma=make_uma_banner(timeline), number_of_pulls=5)
+        UserPlannedBanner.objects.create(
+            user=user, banner_support=make_support_banner(timeline),
+            number_of_pulls=5)
+        make_anniversary_event(products=[
+            {'name': 'Uma Selector', 'product_type': 'uma_selector'},
+        ])
+        UserPlannedPurchase.objects.create(
+            user=user, product=AnniversaryEventProduct.objects.get())
+        DailyVisit.objects.create(
+            date=timezone.localdate(), page_views=1, unique_visitors=1)
+        MonthlyVisit.objects.create(
+            month=timezone.localdate().replace(day=1),
+            page_views=1, unique_visitors=1)
+        cls.tables = report_tables(build_analytics_report())
+
+    def test_every_row_fills_every_column(self):
+        """A section cannot ship with a column its rows do not fill."""
+        for section in self.tables:
+            with self.subTest(section=section['key']):
+                self.assertTrue(section['rows'], 'the seed should give this section a row')
+                keys = {column.key for column in section['columns']}
+                rows = section['rows'] + [section['footer']] * bool(section['footer'])
+                for row in rows:
+                    self.assertLessEqual(keys, row.keys())
+
+    def test_every_column_has_a_kind_the_renderers_know(self):
+        for section in self.tables:
+            for column in section['columns']:
+                self.assertIn(column.kind, KINDS, (section['key'], column.label))
+
+    def test_section_keys_are_unique(self):
+        # They are the page's anchor ids.
+        keys = [section['key'] for section in self.tables]
+        self.assertEqual(len(keys), len(set(keys)))
+
+    def test_kinds_format_for_each_renderer(self):
+        day = datetime.date(2026, 10, 9)
+        self.assertEqual(page_cell(12.5, 'pct'), '12.5%')
+        self.assertEqual(csv_cell(12.5, 'pct'), 12.5)
+        self.assertEqual(page_cell(day, 'date'), '2026-10-09')
+        self.assertEqual(csv_cell(day, 'month'), '2026-10')
+        # A predicted banner has no confirmed date: blank, never a crash.
+        self.assertEqual(page_cell(None, 'date'), '')
+        self.assertEqual(csv_cell(None, 'date'), '')
+        # Nothing ignored reads as a dash on the page, a number in the CSV.
+        self.assertEqual(page_cell(0, 'ignored'), '–')
+        self.assertEqual(csv_cell(0, 'ignored'), 0)
+        self.assertEqual(page_cell(3, 'ignored'), '3')
+
+
 # Rendering admin templates resolves {% static %} tags; the production
 # whitenoise manifest storage requires collectstatic, which never runs in
 # tests. Any test class that renders admin pages swaps in plain storage.
@@ -463,9 +529,9 @@ class AnalyticsDashboardViewTests(CalculatorTestCase):
         self.assertEqual(res['Content-Type'], 'text/csv')
         self.assertIn('attachment; filename="analytics-', res['Content-Disposition'])
         body = res.content.decode()
-        self.assertIn('Paid Products', body)
-        self.assertIn('Campaign Selectors', body)
-        self.assertIn('Popular Uma Banners', body)
+        self.assertIn('Paid products', body)
+        self.assertIn('Campaign selectors', body)
+        self.assertIn('Popular Uma banners', body)
 
     def test_csv_survives_a_planned_banner_with_no_confirmed_dates(self):
         """Regression: Download CSV used to 500 on any predicted banner.
@@ -507,7 +573,7 @@ class AnalyticsDashboardViewTests(CalculatorTestCase):
         self._seed_traffic()
         self._staff_client()
         body = self.client.get(self.url, {'format': 'csv'}).content.decode()
-        self.assertIn('Site Traffic', body)
+        self.assertIn('Site traffic', body)
         # The monthly column is a true monthly-active count and is therefore
         # SMALLER than the sum of the daily uniques. The qualifier in the header
         # is what stops a reader treating that gap as a bug.
