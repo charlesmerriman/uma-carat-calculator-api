@@ -1,5 +1,5 @@
-"""What people plan to pull on: banner popularity, step-ups, and when the
-demand falls due."""
+"""What people plan to pull on: banner popularity, step-ups, when the
+demand falls due, and the umas they pick as favourites."""
 
 import datetime
 from collections import defaultdict
@@ -7,7 +7,7 @@ from collections import defaultdict
 from django.db.models import Avg, Count, F, Q, Sum
 from django.utils import timezone
 
-from ..models import BannerStepUp, UserPlannedBanner, UserStepUpSelection
+from ..models import BannerStepUp, UserOshi, UserPlannedBanner, UserStepUpSelection
 from .common import SANE_MAX_PULLS, SANE_MAX_STEPS
 
 # How many calendar months the demand calendar lists one by one, this one
@@ -279,3 +279,26 @@ def demand_calendar(timeline_dates):
             "step_up_planners": len(bucket["step_up_planners"]),
         })
     return calendar
+
+
+# How many umas the favourites leaderboard lists.
+FAVOURITES_LIMIT = 20
+
+
+def favourite_umas():
+    """The most-picked favourite umas: distinct non-staff people per uma.
+
+    "As picture" counts the people for whom it is the FIRST favourite, which is
+    the account picture. A costume variant is its own Uma row, so it appears
+    under its own name. An aggregate preference, like the banner tables: no
+    person is listed, only how many chose each uma.
+    """
+    rows = (
+        UserOshi.objects.filter(user__is_staff=False)
+        .values("uma_id", "uma__name")
+        .annotate(people=Count("user", distinct=True),
+                  as_picture=Count("user", distinct=True, filter=Q(position=0)))
+        .order_by("-people", "-as_picture", "uma__name")[:FAVOURITES_LIMIT]
+    )
+    return [{"uma": row["uma__name"], "people": row["people"],
+             "as_picture": row["as_picture"]} for row in rows]

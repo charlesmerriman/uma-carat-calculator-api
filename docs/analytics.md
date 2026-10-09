@@ -142,6 +142,45 @@ Two things do **not** appear here: visits made while running
 at a remote API, so local work can't inflate production), and anything at all if
 a visitor blocks the request.
 
+### Growth, activity and sign-in providers
+
+- **New accounts by month / by week** come from when each non-staff account
+  joined. An account deleted since is gone from every row; a purged one still
+  counts (the purge keeps the join date). Weeks are seven days ending today.
+- **Activity** uses only what is already stored, nothing new about anyone: a
+  plan or income profile save stamps `updated_at`, a sign-in stamps
+  `last_login_at`. **Sign-ins undercount**: a sign-in lasts until the person
+  signs out, so a daily user may not have signed in for months. Saves are the
+  better signal. "Came back after their first week" asks, of accounts older than
+  a week, how many saved or signed in more than a week after joining; each row
+  shows its own denominator in "Out of". Django's `last_login` is not
+  maintained (token auth never calls `login()`) and is never read.
+- **Sign-in providers** counts people per provider, people with two or more,
+  and password accounts with none. No provider id ever leaves the database.
+
+### Supporters
+
+Active Patreon supporters by tier, in tier order, with how many are linked to a
+site account (staff accounts left out) and how many agreed to be named publicly.
+These are **patrons, not users**: someone can support without an account here,
+so the staff exclusion that applies to every user figure does not apply to the
+tier counts. The supporter's email is never read. History tracks the total.
+
+### Feature adoption
+
+One row per feature shipped since the dashboard was built, with how many people
+use it and the share of engaged users: more than one plan, an income profile, a
+note, two-card odds, a two-card target, reserved copies, step-up cards, a
+favourite, two or more favourites, a campaign purchase, shop ticket counts,
+tickets kept off banners, a display name. Anything on a planned banner reads the
+active plan only. The list, with the filter that defines each row, is `FEATURES`
+in `analytics/people.py`.
+
+### Favourite umas
+
+The 20 umas most often picked as a favourite, by people, with how many show it
+as their account picture (their first favourite). A costume is its own uma.
+
 ### Income settings and shop tickets
 
 Every income toggle a person can switch (all nine booleans on their stats), led
