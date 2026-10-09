@@ -10,6 +10,7 @@ from rest_framework.test import APIClient
 from calculatorapi import public_payload_cache
 from calculatorapi.predictions import GAME_EVENT_END_DATE_BUFFER
 from calculatorapi.models import (
+    AnalyticsSnapshot,
     AnniversaryEventBanner,
     AnniversaryEventProduct,
     BannerStepUp,
@@ -736,6 +737,13 @@ class PublicPayloadCacheTests(CalculatorTestCase):
         APIClient().get('/calculator-data')
         DailyVisit.objects.create(
             date=timezone.localdate(), page_views=1, unique_visitors=1)
+        self.assertIsNotNone(public_payload_cache.read())
+
+    def test_an_analytics_snapshot_does_not_invalidate(self):
+        # The admin report's daily copy is no part of the catalogue.
+        APIClient().get('/calculator-data')
+        AnalyticsSnapshot.objects.create(
+            date=timezone.localdate(), shape='test', report={})
         self.assertIsNotNone(public_payload_cache.read())
 
     def test_a_user_plan_write_does_not_invalidate(self):

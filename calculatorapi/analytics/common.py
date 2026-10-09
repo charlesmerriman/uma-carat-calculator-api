@@ -1,5 +1,15 @@
 """Helpers and bounds shared by every section module in this package."""
 
+# The report dict's shape version. Bump it whenever a key is added, renamed or
+# removed. It is the cache key (cache.REPORT_CACHE_KEY): a deploy restarts the
+# process, which empties LocMem anyway, but the version is what keeps a cache
+# that outlives a deploy (a shared backend, one day) from handing an old shape
+# to a new template. Same rule as public_payload_cache.CACHE_KEY. Every stored
+# snapshot records it too (AnalyticsSnapshot.shape).
+#   v1  2026-10-09  the first cached shape
+#   v2  2026-10-09  + comparison, history (daily snapshots)
+REPORT_SHAPE = "analytics:report:v2"
+
 
 # ── Sanity bounds ────────────────────────────────────────────────────────────
 # Ceilings above which a stored number stops being an answer and starts being

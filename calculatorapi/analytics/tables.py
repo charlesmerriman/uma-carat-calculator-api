@@ -39,6 +39,8 @@ Column KINDS decide formatting, and only here:
     ignored  values left out as implausible (see common.SANE_MAX_PULLS). The
              CSV writes the count; the page writes an en dash for zero, so the
              rare row that dropped something stands out.
+    delta    a change between two figures: signed on the page ("+3", "-0.5"),
+             a plain number in the CSV
 
 None is a blank cell in both renderers.
 """
@@ -56,7 +58,8 @@ class Column(NamedTuple):
     kind: str = "text"
 
 
-KINDS = frozenset({"text", "int", "num", "pct", "date", "month", "ignored"})
+KINDS = frozenset({"text", "int", "num", "pct", "date", "month", "ignored",
+                   "delta"})
 
 _DATE_FORMATS = {"date": "%Y-%m-%d", "month": "%Y-%m"}
 
@@ -95,6 +98,21 @@ _BANNER_COLUMNS = [
     Column("Ignored values", "excluded", "ignored"),
 ]
 
+# The Overview's figures, compared with the snapshot ~30 days back.
+_OVERVIEW_FIGURES = ("total_users", "engaged_users", "engaged_pct")
+
+# The History's columns: a choice from snapshots.FIGURES, which may track more
+# than fits across a page.
+_HISTORY_COLUMNS = [
+    Column("Month", "month", "month"),
+    Column("Users", "total_users", "int"),
+    Column("Engaged", "engaged_users", "int"),
+    Column("Daily Carat Pack", "daily_carat", "int"),
+    Column("Training Pass", "training_pass", "int"),
+    Column("Any selector", "any_selector", "int"),
+    Column("Unique visitors", "unique_visitors", "int"),
+]
+
 _BANNER_HELP = (
     "Planners counts everyone who has the banner in their plan. Pull figures "
     "leave out implausibly large entries; “Ignored values” is how many."
@@ -105,16 +123,38 @@ def report_tables(report):
     """Every section of the report, in page order, as tables."""
     days = report["daily_window_days"]
     any_selector = report["any_selector"]
+    compared = report["comparison"]["figures"]
+    since = report["comparison"]["since"]
 
     sections = [
         _section(
             "overview", "Overview",
-            [Column("Metric", "metric"), Column("Value", "value", "num")],
+            [Column("Metric", "metric"), Column("Value", "value", "num"),
+             Column("30 days ago", "then", "num"),
+             Column("Change", "delta", "delta")],
             [
-                {"metric": "Total users (non-staff)", "value": report["total_users"]},
-                {"metric": "Engaged users", "value": report["engaged_users"]},
-                {"metric": "Engaged %", "value": report["engaged_pct"]},
+                {"metric": compared[key]["label"], "value": compared[key]["now"],
+                 "then": compared[key]["then"], "delta": compared[key]["delta"]}
+                for key in _OVERVIEW_FIGURES
             ],
+            help_text=(
+                f"“30 days ago” is the daily snapshot from {since:%Y-%m-%d}, "
+                "the nearest one on or before that day."
+                if since else
+                "“30 days ago” fills in once a daily snapshot that old exists. "
+                "One is kept each day the admin is opened, and on every deploy."
+            ),
+        ),
+        _section(
+            "history", "History",
+            _HISTORY_COLUMNS, report["history"],
+            help_text=(
+                "Where things stood as each month began: the first daily "
+                "snapshot of the month. Account figures are blank for a month "
+                "with no snapshot, which is every month before they began. "
+                "Unique visitors are that month’s count from Site traffic."
+            ),
+            empty="No history yet.",
         ),
         _section(
             "daily_visits", f"Site traffic: last {days} days",
@@ -224,6 +264,8 @@ def page_cell(value, kind):
         return ""
     if kind == "pct":
         return f"{value}%"
+    if kind == "delta":
+        return f"{value:+}"
     if kind in _DATE_FORMATS:
         return value.strftime(_DATE_FORMATS[kind])
     return str(value)
