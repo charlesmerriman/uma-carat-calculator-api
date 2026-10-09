@@ -26,8 +26,15 @@ class PlanSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Plan
-        fields = ("id", "name", "is_active", "income_profile_id", "updated_at")
-        read_only_fields = ("id", "is_active", "updated_at")
+        fields = (
+            "id",
+            "public_id",
+            "name",
+            "is_active",
+            "income_profile_id",
+            "updated_at",
+        )
+        read_only_fields = ("id", "public_id", "is_active", "updated_at")
 
     def validate_name(self, value):
         # CharField already trims the ends and rejects blank. This collapses

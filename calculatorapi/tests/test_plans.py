@@ -4,6 +4,7 @@
 # pylint: disable=too-many-instance-attributes
 
 from importlib import import_module
+from unittest.mock import patch
 
 from django.apps import apps
 from django.core.exceptions import ValidationError
@@ -52,9 +53,35 @@ class ActivePlanTests(CalculatorTestCase):
 
         self.assertEqual(plan.name, DEFAULT_PLAN_NAME)
         self.assertTrue(plan.is_active)
+        self.assertIsNotNone(plan.public_id)
+        self.assertRegex(plan.public_id, r"^[A-Za-z0-9]{8}$")
         # And a second call finds it rather than making another.
         self.assertEqual(plans.get_active_plan(self.user).id, plan.id)
         self.assertEqual(Plan.objects.filter(user=self.user).count(), 1)
+
+    def test_created_plans_have_unique_public_ids(self):
+        first = plans.get_active_plan(self.user)
+        second = plans.create_plan(self.user, "Second")
+        copy = plans.copy_plan(first, owner=self.user, name="Copy")
+
+        self.assertEqual(
+            Plan.objects.filter(user=self.user)
+            .values_list("public_id", flat=True)
+            .count(),
+            3,
+        )
+        self.assertEqual(len({first.public_id, second.public_id, copy.public_id}), 3)
+
+    def test_public_id_retries_a_collision(self):
+        with patch(
+            "calculatorapi.plans.generate_public_id",
+            side_effect=["AAAAAAAA", "AAAAAAAA", "BBBBBBBB"],
+        ):
+            first = plans.get_active_plan(self.user)
+            second = plans.create_plan(self.user, "Second")
+
+        self.assertEqual(first.public_id, "AAAAAAAA")
+        self.assertEqual(second.public_id, "BBBBBBBB")
 
     def test_plans_with_none_active_promotes_the_oldest(self):
         oldest = Plan.objects.create(user=self.user, name="First")
@@ -203,7 +230,8 @@ class PlanRouteTests(CalculatorTestCase):
         self.assertTrue(res.data[0]["is_active"])
         # The whitelist: nothing about the owner rides along.
         self.assertEqual(
-            set(res.data[0].keys()), {"id", "name", "is_active", "income_profile_id", "updated_at"}
+            set(res.data[0].keys()),
+            {"id", "public_id", "name", "is_active", "income_profile_id", "updated_at"},
         )
 
     def test_create_blank(self):
@@ -269,6 +297,69 @@ class PlanRouteTests(CalculatorTestCase):
             [row["number_of_pulls"] for row in res.data["user_planned_banner_data"]],
             [22],
         )
+
+    def test_public_id_reads_another_users_plan_without_write_access(self):
+        other = make_user(username="other")
+        shared = plans.get_active_plan(other)
+        other.current_carat = 4321
+        other.current_paid_carat = 765
+        other.uma_ticket = 12
+        other.support_ticket = 13
+        other.ssr_crystals = 5
+        other.sr_crystals = 6
+        other.ssr_shards = 7
+        other.sr_shards = 8
+        other.daily_carat = True
+        other.training_pass = True
+        other.save()
+        _row(shared, self.banner, pulls=42)
+        guest = APIClient()
+
+        response = guest.get(f"/plans/public/{shared.public_id}")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["plan"]["public_id"], shared.public_id)
+        self.assertEqual(
+            [row["number_of_pulls"] for row in response.data["user_planned_banner_data"]],
+            [42],
+        )
+        stats = response.data["user_stats_data"]
+        self.assertEqual(stats["current_carat"], 4321)
+        self.assertEqual(stats["current_paid_carat"], 765)
+        self.assertEqual(stats["uma_ticket"], 12)
+        self.assertEqual(stats["support_ticket"], 13)
+        self.assertEqual(stats["ssr_crystals"], 5)
+        self.assertEqual(stats["sr_crystals"], 6)
+        self.assertEqual(stats["ssr_shards"], 7)
+        self.assertEqual(stats["sr_shards"], 8)
+        self.assertTrue(stats["daily_carat"])
+        self.assertTrue(stats["training_pass"])
+        self.assertNotIn("user_planned_purchase_data", response.data)
+        self.assertEqual(
+            guest.patch(f"/plans/public/{shared.public_id}", {"name": "Changed"}, format="json").status_code,
+            405,
+        )
+        shared.refresh_from_db()
+        self.assertEqual(shared.name, DEFAULT_PLAN_NAME)
+
+    def test_public_id_reads_the_plans_separate_income_profile(self):
+        other = make_user(username="other")
+        shared = plans.get_active_plan(other)
+        plans.attach_income_profile(shared)
+        shared.refresh_from_db()
+        shared.income_profile.current_carat = 2345
+        shared.income_profile.current_paid_carat = 678
+        shared.income_profile.save()
+
+        response = APIClient().get(f"/plans/public/{shared.public_id}")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["user_stats_data"]["current_carat"], 2345)
+        self.assertEqual(response.data["user_stats_data"]["current_paid_carat"], 678)
+
+    def test_unknown_public_id_is_not_found(self):
+        response = APIClient().get("/plans/public/unknown")
+        self.assertEqual(response.status_code, 404)
 
     def test_someone_elses_plan_is_a_404_on_every_method(self):
         other = make_user(username="other")

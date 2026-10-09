@@ -512,6 +512,14 @@ so a switch never re-downloads the catalogue half of `/calculator-data`.
 
 **Response `200`** `PlanWithRows`
 
+### `GET /plans/public/<public_id>`
+
+Reads a plan's income settings and banner choices through its public share identifier. This
+endpoint is read-only and does not require authentication; unknown identifiers return `404`.
+Planned purchases are not shared.
+
+**Response `200`** `{ "plan": Plan, "user_stats_data": UserStats, "user_planned_banner_data": [PlannedBanner] }`
+
 ### `PATCH /plans/<id>`
 
 Renames the plan, makes it the active one, and/or gives it its own stats. All keys optional.

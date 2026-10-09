@@ -6,9 +6,11 @@ GET    /plans/<id>   one plan plus ITS banner rows, stats and purchases. What
 PATCH  /plans/<id>   rename it, make it the active plan, and/or give it its
                      own stats (`separate_income`: true / false).
 DELETE /plans/<id>   delete it and its rows. The last plan is refused.
+GET    /plans/public/<public_id>  read a plan shared by its public link.
 
-All IsAuthenticated. A guest has one unnamed plan in memory and never calls
-these.
+The owner-specific routes require IsAuthenticated. The public-ID route is a
+GET-only share view; it reveals the plan data to anyone with its identifier.
+A guest has one unnamed plan in memory and never calls the owner routes.
 
 WHY SWITCHING HAS ITS OWN ROUTE
 -------------------------------
@@ -75,6 +77,18 @@ def _plan_with_rows(plan):
         # The purchases of that same stats block (plans.purchase_scope).
         "user_planned_purchase_data": serialize_planned_purchases(
             plans.purchase_scope(plan), anniversary_emap=anniversary_emap
+        ),
+    }
+
+
+def _public_plan_with_rows(plan):
+    """Share the plan's income settings and banner choices, but not purchases."""
+    emap, _, card_context = build_user_context()
+    return {
+        "plan": PlanSerializer(plan).data,
+        "user_stats_data": stats_serializer(plans.stats_target(plan)).data,
+        "user_planned_banner_data": serialize_planned_banners(
+            plan, emap=emap, card_context=card_context
         ),
     }
 
@@ -166,3 +180,14 @@ def plan_detail(request, plan_id):
     active = plans.delete_plan(plan)
     # The client needs to know where it landed if it deleted the open plan.
     return Response({"active_plan_id": active.id})
+
+
+@api_view(["GET"])
+@permission_classes([permissions.AllowAny])
+def public_plan_detail(request, public_id):
+    """Read a plan by its share identifier; deliberately has no write path."""
+    try:
+        plan = Plan.objects.get(public_id=public_id)
+    except Plan.DoesNotExist:
+        return Response(_NOT_FOUND, status=status.HTTP_404_NOT_FOUND)
+    return Response(_public_plan_with_rows(plan))
