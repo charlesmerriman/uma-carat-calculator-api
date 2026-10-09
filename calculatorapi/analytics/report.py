@@ -4,7 +4,12 @@ from django.utils import timezone
 
 from ..models import BannerTimeline
 from ..predictions import build_effective_date_maps
-from .banners import banner_popularity, demand_calendar, step_up_popularity
+from .banners import (
+    banner_popularity,
+    demand_calendar,
+    favourite_umas,
+    step_up_popularity,
+)
 from .common import pct
 from .income_settings import (
     income_settings,
@@ -13,7 +18,15 @@ from .income_settings import (
     selector_purchases,
     shop_tickets,
 )
-from .people import engaged_subset, non_staff_users
+from .people import (
+    activity,
+    engaged_subset,
+    feature_adoption,
+    growth,
+    non_staff_users,
+    sign_in_providers,
+    supporters,
+)
 from .snapshots import comparison, history
 from .traffic import traffic
 
@@ -36,6 +49,12 @@ def build_analytics_report():
         with effective (predicted when unconfirmed) dates and a status
       - step_up_popularity: ranked step-up plans, in STEPS
       - demand_calendar: planned demand by the month banners end
+      - growth_by_month / growth_by_week: new accounts
+      - activity: saves and sign-ins in recent windows, and who came back
+      - sign_in_providers: people per provider, and overlaps
+      - supporters: active patrons by tier (patrons, not users)
+      - feature_adoption: people using each shipped feature
+      - favourite_umas: the most-picked favourites
       - comparison: the tracked figures now vs the snapshot ~30 days back
       - history: one row per month, from the first snapshot of each
 
@@ -63,6 +82,11 @@ def build_analytics_report():
         "total_users": total_users,
         "engaged_users": engaged_users,
         "engaged_pct": pct(engaged_users, total_users),
+        **growth(users),
+        "activity": activity(users, total_users),
+        "sign_in_providers": sign_in_providers(users, total_users),
+        "supporters": supporters(),
+        "feature_adoption": feature_adoption(users, engaged_users),
         "income_settings": income_settings(engaged, engaged_users),
         "shop_tickets": shop_tickets(engaged),
         **selector_purchases(total_users, engaged_users),
@@ -74,6 +98,7 @@ def build_analytics_report():
         "popular_support_banners": banner_popularity("banner_support", timeline_dates),
         "step_up_popularity": step_up_popularity(timeline_dates),
         "demand_calendar": demand_calendar(timeline_dates),
+        "favourite_umas": favourite_umas(),
     }
     # Last, because both read the figures above. Neither is ever stored in a
     # snapshot (snapshots.NOT_STORED): they are built FROM snapshots.

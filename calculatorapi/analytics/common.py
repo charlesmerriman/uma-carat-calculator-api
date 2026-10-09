@@ -1,5 +1,7 @@
 """Helpers and bounds shared by every section module in this package."""
 
+import datetime
+
 # The report dict's shape version. Bump it whenever a key is added, renamed or
 # removed. It is the cache key (cache.REPORT_CACHE_KEY): a deploy restarts the
 # process, which empties LocMem anyway, but the version is what keeps a cache
@@ -12,7 +14,10 @@
 #                   step_up_popularity, demand_calendar, daily_totals,
 #                   traffic_weeks; banner rows gain predicted dates and status;
 #                   resources gain quartiles and share at zero
-REPORT_SHAPE = "analytics:report:v3"
+#   v4  2026-10-09  + growth_by_month, growth_by_week, activity,
+#                   sign_in_providers, supporters, feature_adoption,
+#                   favourite_umas
+REPORT_SHAPE = "analytics:report:v4"
 
 
 # ── Sanity bounds ────────────────────────────────────────────────────────────
@@ -50,6 +55,12 @@ SANE_MAX_RESOURCE = 10_000_000
 # matches how the two bounds above work. The planner clamps what it charges at
 # the real cap; this only decides what counts as a data point here.
 SANE_MAX_STEPS = 50
+
+
+def months_back(month_start, count):
+    """The first day of the month `count` months before `month_start`."""
+    index = month_start.year * 12 + month_start.month - 1 - count
+    return datetime.date(index // 12, index % 12 + 1, 1)
 
 
 def pct(part, whole):

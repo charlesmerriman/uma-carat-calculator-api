@@ -21,6 +21,9 @@ from calculatorapi.analytics.tables import KINDS, csv_cell, page_cell
 from calculatorapi.models import (
     AnalyticsSnapshot,
     AnniversaryEventProduct,
+    PatreonSupporter,
+    PatreonTier,
+    UserOshi,
     CustomUser,
     ClubRank,
     IncomeProfile,
@@ -438,6 +441,10 @@ class AnalyticsTablesTests(CalculatorTestCase):
             user=user, product=AnniversaryEventProduct.objects.get())
         UserPlannedBanner.objects.create(
             user=user, banner_step_up=make_step_up_banner(), number_of_pulls=5)
+        PatreonSupporter.objects.create(
+            display_name='Patron', patreon_user_id='1',
+            tier=PatreonTier.objects.create(name='Junior Class', order=10))
+        UserOshi.objects.create(user=user, uma=Uma.objects.create(name='Fave'), position=0)
         DailyVisit.objects.create(
             date=timezone.localdate(), page_views=1, unique_visitors=1)
         MonthlyVisit.objects.create(

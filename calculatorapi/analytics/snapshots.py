@@ -22,7 +22,7 @@ import datetime
 from django.utils import timezone
 
 from ..models import AnalyticsSnapshot
-from .common import REPORT_SHAPE
+from .common import REPORT_SHAPE, months_back
 
 # How far back "30 days ago" looks: the nearest snapshot on or before this
 # many days before today.
@@ -69,6 +69,9 @@ FIGURES = [
     ("training_pass", "Training Pass",
      _paid_product("training_pass", "Training Pass")),
     ("any_selector", "Any selector", lambda report: report["any_selector"]["count"]),
+    # Shape v4 on. Earlier snapshots have no supporters key and read None.
+    ("active_supporters", "Active supporters",
+     lambda report: sum(row["active"] for row in report["supporters"])),
 ]
 
 
@@ -140,12 +143,6 @@ def comparison(report):
     return {"since": then_row.date if then_row else None, "figures": rows}
 
 
-def _months_back(month_start, count):
-    """The first day of the month `count` months before `month_start`."""
-    index = month_start.year * 12 + month_start.month - 1 - count
-    return datetime.date(index // 12, index % 12 + 1, 1)
-
-
 def _first_of_each_month(since):
     """The stored report of each month's FIRST snapshot from `since` on, by month.
 
@@ -172,11 +169,11 @@ def history(monthly_visits):
     with neither is left out.
     """
     this_month = timezone.localdate().replace(day=1)
-    stored = _first_of_each_month(_months_back(this_month, HISTORY_MONTHS - 1))
+    stored = _first_of_each_month(months_back(this_month, HISTORY_MONTHS - 1))
     visitors = {row["month"]: row["unique_visitors"] for row in monthly_visits}
     rows = []
     for count in range(HISTORY_MONTHS):
-        month = _months_back(this_month, count)
+        month = months_back(this_month, count)
         report = stored.get(month)
         if report is None and month not in visitors:
             continue

@@ -1,12 +1,14 @@
 """The admin analytics report, section by section: who counts as engaged, the
-income settings, banner dates and status, step-ups, the demand calendar and the
-derived traffic figures.
+income settings, banner dates and status, step-ups, the demand calendar, the
+derived traffic figures, and the people sections (growth, activity, providers,
+supporters, feature adoption, favourites).
 
 The report's machinery (cache, table shape, snapshots, page, CSV) is tested in
 test_analytics.py.
 """
 
 import datetime
+import json
 
 from django.utils import timezone
 
@@ -20,7 +22,10 @@ from calculatorapi.models import (
     DailyVisit,
     IncomeProfile,
     MonthlyVisit,
+    PatreonSupporter,
+    PatreonTier,
     Plan,
+    SocialAccount,
     SupportCard,
     Uma,
     UserOshi,
@@ -288,3 +293,140 @@ class AnalyticsTrafficDerivedTests(CalculatorTestCase):
         DailyVisit.objects.create(
             date=timezone.localdate(), page_views=5, unique_visitors=1)
         self.assertIsNone(build_analytics_report()['traffic_weeks'][0]['change_pct'])
+
+
+def _joined(user, days_ago):
+    """Backdate an account. date_joined has a default, not auto_now, but an
+    update() keeps the test honest about what it sets."""
+    CustomUser.objects.filter(pk=user.pk).update(
+        date_joined=timezone.now() - datetime.timedelta(days=days_ago))
+
+
+class AnalyticsGrowthTests(CalculatorTestCase):
+    """New accounts per month and per week, staff left out."""
+
+    def test_counts_by_month_and_week(self):
+        _joined(make_user('today'), 0)
+        _joined(make_user('earlier'), 10)
+        make_user('staff', is_staff=True)
+        report = build_analytics_report()
+        months = report['growth_by_month']
+        weeks = report['growth_by_week']
+        self.assertEqual(len(months), 12)
+        self.assertTrue(months[0]['partial'])
+        self.assertEqual(sum(row['new_accounts'] for row in months), 2)
+        self.assertEqual(len(weeks), 8)
+        self.assertEqual(weeks[0]['new_accounts'], 1)   # the last seven days
+        self.assertEqual(weeks[1]['new_accounts'], 1)   # 7 to 13 days ago
+
+
+class AnalyticsActivityTests(CalculatorTestCase):
+    """Saves and sign-ins from stored timestamps; nothing new is kept."""
+
+    @classmethod
+    def setUpTestData(cls):
+        now = timezone.now()
+        day = datetime.timedelta(days=1)
+        cls.fresh = make_user('fresh')          # saved 2 days ago, joined 30 days ago
+        cls.lapsed = make_user('lapsed')        # saved 40 days ago, joined 45 days ago
+        cls.signer = make_user('signer')        # signed in 10 days ago, joined 60 days ago
+        for user, joined, saved in ((cls.fresh, 30, 2), (cls.lapsed, 45, 40),
+                                    (cls.signer, 60, 59)):
+            _joined(user, joined)
+            plan = Plan.objects.create(user=user, name='Main', is_active=True)
+            # auto_now ignores a value passed to save(); update() sets it.
+            Plan.objects.filter(pk=plan.pk).update(updated_at=now - saved * day)
+        SocialAccount.objects.create(
+            user=cls.signer, provider=SocialAccount.PROVIDER_GOOGLE, subject_id='g1',
+            last_login_at=now - 10 * day)
+        cls.rows = {row['measure']: row for row in build_analytics_report()['activity']}
+
+    def test_saves_in_each_window(self):
+        self.assertEqual(self.rows['Saved in the last 7 days']['users'], 1)
+        self.assertEqual(self.rows['Saved in the last 30 days']['users'], 1)
+
+    def test_sign_ins_in_the_last_30_days(self):
+        self.assertEqual(self.rows['Signed in in the last 30 days']['users'], 1)
+
+    def test_came_back_after_the_first_week(self):
+        # fresh saved 28 days after joining and signer signed in 50 days after;
+        # lapsed saved only 5 days after joining.
+        row = self.rows['Came back after their first week']
+        self.assertEqual((row['users'], row['out_of']), (2, 3))
+
+
+class AnalyticsSignInProviderTests(CalculatorTestCase):
+    """People per provider, overlaps, and password accounts."""
+
+    def test_counts_people_per_provider_and_overlaps(self):
+        both = make_user('both')
+        for provider, subject in ((SocialAccount.PROVIDER_GOOGLE, 'g'),
+                                  (SocialAccount.PROVIDER_DISCORD, 'd')):
+            SocialAccount.objects.create(user=both, provider=provider, subject_id=subject)
+        make_user('password')
+        rows = {row['label']: row['users']
+                for row in build_analytics_report()['sign_in_providers']}
+        self.assertEqual((rows['Google'], rows['Discord'], rows['Patreon']), (1, 1, 0))
+        self.assertEqual(rows['Two or more'], 1)
+        self.assertEqual(rows['None (a password account)'], 1)
+
+
+class AnalyticsSupporterTests(CalculatorTestCase):
+    """Active patrons by tier; linked leaves staff out; email never read."""
+
+    def test_counts_by_tier_in_tier_order(self):
+        top = PatreonTier.objects.create(name='Classic Class', order=0)
+        junior = PatreonTier.objects.create(name='Junior Class', order=10)
+        PatreonSupporter.objects.create(
+            display_name='A', patreon_user_id='1', tier=junior, is_public=True,
+            linked_user=make_user('linked'), email='a@example.com')
+        PatreonSupporter.objects.create(
+            display_name='B', patreon_user_id='2', tier=junior,
+            linked_user=make_user('staff', is_staff=True))
+        PatreonSupporter.objects.create(display_name='C', patreon_user_id='3', tier=top)
+        PatreonSupporter.objects.create(
+            display_name='D', patreon_user_id='4', tier=top, is_active=False)
+        report = build_analytics_report()
+        self.assertEqual(
+            report['supporters'],
+            [{'tier': 'Classic Class', 'active': 1, 'linked': 0, 'public': 0},
+             {'tier': 'Junior Class', 'active': 2, 'linked': 1, 'public': 1}])
+        self.assertEqual(report['comparison']['figures']['active_supporters']['now'], 3)
+        self.assertNotIn('a@example.com', json.dumps(report, default=str))
+
+
+class AnalyticsFeatureAdoptionTests(CalculatorTestCase):
+    """One row per feature; row features read the active plan only."""
+
+    def test_each_feature_counts_its_users_and_spare_plans_do_not(self):
+        user = make_user('user')
+        active = Plan.objects.create(user=user, name='Main', is_active=True)
+        spare = Plan.objects.create(user=user, name='Spare', is_active=False)
+        uma = make_uma_banner(make_timeline())
+        UserPlannedBanner.objects.create(
+            user=user, plan=active, banner_uma=uma, number_of_pulls=5, note='save up')
+        # Only the spare plan uses two-card odds: it must not count.
+        UserPlannedBanner.objects.create(
+            user=user, plan=spare, banner_uma=uma, number_of_pulls=5, second_card=1)
+        rows = {row['feature']: row['users']
+                for row in build_analytics_report()['feature_adoption']}
+        self.assertEqual(rows['More than one plan'], 1)
+        self.assertEqual(rows['A note on a planned banner'], 1)
+        self.assertEqual(rows['Two-card odds on a banner'], 0)
+        self.assertEqual(rows['A favourite uma'], 0)
+
+
+class AnalyticsFavouriteTests(CalculatorTestCase):
+    """Favourite umas ranked by people, with who shows it as their picture."""
+
+    def test_ranks_by_people_and_counts_pictures(self):
+        rice, spe = Uma.objects.create(name='Rice'), Uma.objects.create(name='Spe')
+        for index, (first, second) in enumerate(((rice, spe), (rice, None), (spe, rice))):
+            user = make_user(f'fan{index}')
+            UserOshi.objects.create(user=user, uma=first, position=0)
+            if second:
+                UserOshi.objects.create(user=user, uma=second, position=1)
+        UserOshi.objects.create(user=make_user('staff', is_staff=True), uma=spe, position=0)
+        rows = build_analytics_report()['favourite_umas']
+        self.assertEqual(rows[0], {'uma': 'Rice', 'people': 3, 'as_picture': 2})
+        self.assertEqual(rows[1], {'uma': 'Spe', 'people': 2, 'as_picture': 1})

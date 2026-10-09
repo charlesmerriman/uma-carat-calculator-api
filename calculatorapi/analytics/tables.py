@@ -126,6 +126,7 @@ _HISTORY_COLUMNS = [
     Column("Daily Carat Pack", "daily_carat", "int"),
     Column("Training Pass", "training_pass", "int"),
     Column("Any selector", "any_selector", "int"),
+    Column("Supporters", "active_supporters", "int"),
     Column("Unique visitors", "unique_visitors", "int"),
 ]
 
@@ -142,6 +143,7 @@ def report_tables(report):
     return [
         *_overview_tables(report),
         *_traffic_tables(report),
+        *_people_tables(report),
         *_settings_tables(report),
         *_banner_tables(report),
     ]
@@ -240,6 +242,84 @@ def _traffic_tables(report):
                 "people, 2.9. The month still running is marked partial."
             ),
             empty="No visits recorded yet.",
+        ),
+    ]
+
+
+_GROWTH_COLUMNS = [
+    Column("Period", "period"),
+    Column("New accounts", "new_accounts", "int"),
+    Column("Partial", "partial", "flag"),
+]
+
+
+def _people_tables(report):
+    supporters = report["supporters"]
+    return [
+        _section(
+            "growth_by_month", "New accounts by month",
+            _GROWTH_COLUMNS, report["growth_by_month"],
+            help_text=(
+                "Non-staff accounts by the month they joined. Accounts deleted "
+                "since are not counted. The month still running is partial."
+            ),
+        ),
+        _section(
+            "growth_by_week", "New accounts by week",
+            _GROWTH_COLUMNS, report["growth_by_week"],
+            help_text="Seven-day weeks ending today; the first is still running.",
+        ),
+        _section(
+            "activity", "Activity",
+            [Column("Measure", "measure"), Column("Users", "users", "int"),
+             Column("Out of", "out_of", "int"), Column("Share", "share", "pct")],
+            report["activity"],
+            help_text=(
+                "A save is any change to a plan or its stats, or a new plan. "
+                "Sign-ins undercount: "
+                "a sign-in lasts until the person signs out, so someone who uses "
+                "the site daily may not have signed in for months. “Came back” "
+                "counts, of accounts older than a week, those who saved or signed "
+                "in more than a week after joining."
+            ),
+        ),
+        _section(
+            "sign_in_providers", "Sign-in providers",
+            [Column("Provider", "label"), Column("Users", "users", "int"),
+             Column("% of total", "pct_of_total", "pct")],
+            report["sign_in_providers"],
+            help_text=(
+                "People per provider; someone linked to two counts under both "
+                "and once in “Two or more”."
+            ),
+        ),
+        _section(
+            "supporters", "Supporters",
+            [Column("Tier", "tier"), Column("Active", "active", "int"),
+             Column("Linked to an account", "linked", "int"),
+             Column("Shown publicly", "public", "int")],
+            supporters,
+            help_text=(
+                "Active Patreon supporters, who need no account here, so staff "
+                "are not left out of these counts. “Linked” leaves out staff "
+                "accounts. “Shown publicly” is who agreed to be named on the "
+                "About page."
+            ),
+            footer={"tier": "Total",
+                    "active": sum(row["active"] for row in supporters),
+                    "linked": sum(row["linked"] for row in supporters),
+                    "public": sum(row["public"] for row in supporters)},
+            empty="No active supporters.",
+        ),
+        _section(
+            "feature_adoption", "Feature adoption",
+            [Column("Feature", "feature"), Column("Users", "users", "int"),
+             Column("% of engaged", "pct_of_engaged", "pct")],
+            report["feature_adoption"],
+            help_text=(
+                "People using each feature. Anything on a planned banner counts "
+                "the active plan only, like the banner tables."
+            ),
         ),
     ]
 
@@ -385,6 +465,19 @@ def _banner_tables(report):
                 "past the next six months and anything still undated."
             ),
             empty="Nothing upcoming is planned.",
+        ),
+        _section(
+            "favourite_umas", "Favourite umas",
+            [Column("Uma", "uma"), Column("People", "people", "int"),
+             Column("As their picture", "as_picture", "int")],
+            report["favourite_umas"],
+            help_text=(
+                "The 20 umas most often picked as a favourite. “As their "
+                "picture” counts people for whom it is the first favourite, "
+                "the one shown as their account picture. A costume is its own "
+                "uma here."
+            ),
+            empty="No favourites picked yet.",
         ),
     ]
 
