@@ -11,7 +11,7 @@ the admin renders — keeping settings.py free of app-model imports.
 
 from django.conf import settings
 
-from .analytics import build_analytics_report
+from .analytics import get_report
 
 
 def environment_callback(request):  # pylint: disable=unused-argument
@@ -29,13 +29,15 @@ def dashboard_callback(request, context):  # pylint: disable=unused-argument
     """
     Inject headline KPI cards into the admin index context. Reuses the same
     aggregate report as the analytics dashboard (staff excluded, aggregates
-    only — never per-user rows).
+    only — never per-user rows), and the same cached copy of it: this runs on
+    every /admin/ load, so building the report here each time made the
+    cheapest admin page the most expensive one.
 
     Wrapped defensively: the landing page must still render even if the report
     query fails (e.g. a half-migrated database), just without the cards.
     """
     try:
-        report = build_analytics_report()
+        report = get_report()
     except Exception:  # pylint: disable=broad-except
         context["kpi_cards"] = []
         return context

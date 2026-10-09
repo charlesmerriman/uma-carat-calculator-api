@@ -201,7 +201,7 @@ result depends on which tests ran before it.
 | `seed_anniversary_campaigns` | Creates or refreshes the anniversary campaigns from the source sheet. Idempotent |
 | `sync_patreon_supporters` | Syncs supporters from the Patreon API; the daily Action reaches the same reconcile over HTTP |
 | `set_patreon_tier_order` | Sets supporter tier order from `NAME=ORDER` pairs |
-| `prune_visitor_hashes` | Deletes visitor de-duplication hashes older than the retention window |
+| `prune_visitor_hashes` | Deletes visitor de-duplication hashes older than the retention window (90 days, never below 45). Runs on every deploy |
 | `purge_user_pii` | Blanks email, name and password on every non-staff account. **Irreversible**, so run it with `--dry-run` first |
 | `import_game_data` | Fills the game-data columns on Uma and SupportCard and creates or updates every Skill from `scripts/data/master_snapshot/`. `--dry-run` first; `--gametora skills.json` adds the detailed descriptions |
 | `import_game_data` also reads `support_events.json`, written by `scripts/fetch_support_events.py` from gametora (the game has no clean table for support card event skills) |

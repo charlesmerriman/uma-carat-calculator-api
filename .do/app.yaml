@@ -240,7 +240,14 @@ services:
   # to CONTENT_MODELS is granted on the deploy that creates its table, with no
   # console step to remember. Idempotent, and it runs AFTER migrate on purpose:
   # before the table exists the model has no permissions to grant.
-  run_command: python manage.py migrate && python manage.py create_content_editor_group && python manage.py sync_changelog && python manage.py import_game_data --no-input && python manage.py link_skill_images && gunicorn calculatorproject.wsgi:application --bind 0.0.0.0:8080
+  #
+  # prune_visitor_hashes sits last since 2026-10-09. The privacy policy promises
+  # visitor hashes are deleted after 90 days, and before this nothing ran the
+  # command that deletes them. A deploy is this project's scheduler: one lands
+  # every few weeks at most, which keeps the promise true to within a release.
+  # Idempotent and exits 0 with nothing to delete. Keep its default (90 days);
+  # never pass --days below 45 (the command's docstring says why).
+  run_command: python manage.py migrate && python manage.py create_content_editor_group && python manage.py sync_changelog && python manage.py import_game_data --no-input && python manage.py link_skill_images && python manage.py prune_visitor_hashes && gunicorn calculatorproject.wsgi:application --bind 0.0.0.0:8080
   source_dir: /
 static_sites:
 - build_command: npm install && npm run build
