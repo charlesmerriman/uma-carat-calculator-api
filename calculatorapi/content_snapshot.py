@@ -63,8 +63,9 @@ CONTENT_MODELS = (
     "PatreonTier",
 )
 
-# Private: about a person, an account, a credential or site traffic. Never
-# leaves production. Listed so the test can tell "decided" from "forgotten".
+# Private: about a person, an account, a credential, site traffic or the
+# analytics built from them. Never leaves production. Listed so the test can
+# tell "decided" from "forgotten".
 PRIVATE_MODELS = (
     "CustomUser",
     "SocialAccount",
@@ -79,6 +80,10 @@ PRIVATE_MODELS = (
     "DailyVisit",
     "MonthlyVisit",
     "VisitorHash",
+    "LandingPageVisit",
+    "ReferrerVisit",
+    # Aggregates only, but production's usage figures are not local content.
+    "AnalyticsSnapshot",
 )
 
 

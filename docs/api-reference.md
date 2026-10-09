@@ -577,6 +577,19 @@ Public. Records one site visit for the admin analytics dashboard. Takes no
 request body — anything sent is ignored — and returns `204 No Content` with an
 empty body.
 
+Two optional query parameters (since 2026-10-09), so the request stays a bare
+POST that needs no CORS preflight:
+
+| Param | Sent as | Counted as |
+|---|---|---|
+| `path` | the landing pathname, lowercased, no trailing slash or query | the route if it is in `visits.KNOWN_ROUTES`, else `other` |
+| `ref` | the referring page's hostname without `www.`, `""` when there is none | the hostname, or `direct` (empty, or our own site), or `other` (malformed, or a new site past the day's cap of 100) |
+
+A parameter that is ABSENT writes nothing, which is how an older frontend build
+is told apart from "no referrer". Both are counted into totals tables
+(`LandingPageVisit`, `ReferrerVisit`) with no visitor hash beside them, and only
+after the bot filter.
+
 The frontend is a separate static site on the CDN, so Django never sees a page
 load; this beacon is the only way it learns of one. `frontend/src/services/visitBeacon.ts`
 fires it **once per browser session**, not per route change, and suppresses it

@@ -261,7 +261,7 @@ two, so adding a name to `MEMBER_FIELDS` is the review point.
 stats — paid-product adoption (`daily_carat` / `training_pass`), rank distributions,
 resource averages, popular planned banners — plus a `?format=csv` export.
 
-Aggregation logic is in `calculatorapi/analytics.py` (pure ORM, unit-tested); the view is
+Aggregation logic is in the `calculatorapi/analytics/` package (pure ORM, unit-tested); the view is
 wrapped with `admin.site.admin_view()` in `urls.py`. Only aggregates are exposed, never
 per-user rows, and staff accounts are excluded from all metrics.
 

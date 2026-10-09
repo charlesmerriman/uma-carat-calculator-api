@@ -1,0 +1,69 @@
+"""Helpers and bounds shared by every section module in this package."""
+
+import datetime
+
+# The report dict's shape version. Bump it whenever a key is added, renamed or
+# removed. It is the cache key (cache.REPORT_CACHE_KEY): a deploy restarts the
+# process, which empties LocMem anyway, but the version is what keeps a cache
+# that outlives a deploy (a shared backend, one day) from handing an old shape
+# to a new template. Same rule as public_payload_cache.CACHE_KEY. Every stored
+# snapshot records it too (AnalyticsSnapshot.shape).
+#   v1  2026-10-09  the first cached shape
+#   v2  2026-10-09  + comparison, history (daily snapshots)
+#   v3  2026-10-09  income_settings replaces paid_products; + shop_tickets,
+#                   step_up_popularity, demand_calendar, daily_totals,
+#                   traffic_weeks; banner rows gain predicted dates and status;
+#                   resources gain quartiles and share at zero
+#   v4  2026-10-09  + growth_by_month, growth_by_week, activity,
+#                   sign_in_providers, supporters, feature_adoption,
+#                   favourite_umas
+#   v5  2026-10-09  + landing_pages, referrers
+REPORT_SHAPE = "analytics:report:v5"
+
+
+# ── Sanity bounds ────────────────────────────────────────────────────────────
+# Ceilings above which a stored number stops being an answer and starts being
+# someone finding out what the field does.
+#
+# These are ANALYTICS-ONLY, and deliberately NOT validation. The API accepts any
+# value on purpose: a user is free to sandbox "what if I had a billion carats"
+# and watch their own projection respond, and that is a legitimate thing to want
+# from a calculator. These bounds decide only what counts as a DATA POINT on
+# this page — nobody's saved plan is touched, rejected or rewritten.
+#
+# Both sit orders of magnitude above any real answer, so what they exclude is
+# unambiguous rather than merely unusual. A cautious ceiling would be the wrong
+# trade: wrongly dropping a genuine whale biases the report quietly, while a
+# ceiling this high can only catch values that were never answers at all.
+#
+#   pulls    — pity is 200 and MLB of a five-copy card is ~1,000 pulls, so
+#              2,000 is ten pity copies budgeted for one banner: double what
+#              maxing out a banner costs, and still a number someone could
+#              plausibly mean.
+#   resource — 10,000,000 carats is ~66,000 pulls' worth, and the same ceiling
+#              is generous past absurdity for tickets, crystals and shards.
+#
+# What prompted them: the client sanitiser caps typed input at nine digits
+# (frontend NumberField.sanitise), so a user leaning on a digit key lands on
+# exactly 999,999,999. That one value, on one account, was adding ~169,000 to
+# every resource mean and turning a 145-avg banner into a 447,572 one.
+SANE_MAX_PULLS = 2_000
+SANE_MAX_RESOURCE = 10_000_000
+
+# Step-up rows store ladder STEPS in number_of_pulls, so they get their own
+# ceiling. A step-up's real cap is banner_count * 5 (five steps per banner);
+# 50 is ten banners' worth, far past any step-up sold so far, and a flat number
+# matches how the two bounds above work. The planner clamps what it charges at
+# the real cap; this only decides what counts as a data point here.
+SANE_MAX_STEPS = 50
+
+
+def months_back(month_start, count):
+    """The first day of the month `count` months before `month_start`."""
+    index = month_start.year * 12 + month_start.month - 1 - count
+    return datetime.date(index // 12, index % 12 + 1, 1)
+
+
+def pct(part, whole):
+    """Percentage rounded to one decimal; 0.0 when the denominator is empty."""
+    return round(part / whole * 100, 1) if whole else 0.0

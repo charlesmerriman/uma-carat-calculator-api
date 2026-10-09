@@ -10,12 +10,15 @@ from rest_framework.test import APIClient
 from calculatorapi import public_payload_cache
 from calculatorapi.predictions import GAME_EVENT_END_DATE_BUFFER
 from calculatorapi.models import (
+    AnalyticsSnapshot,
     AnniversaryEventBanner,
     AnniversaryEventProduct,
     BannerStepUp,
     DailyVisit,
     IncomeProfile,
+    LandingPageVisit,
     Plan,
+    ReferrerVisit,
     Uma,
     UserOshi,
     UserPlannedBanner,
@@ -736,6 +739,21 @@ class PublicPayloadCacheTests(CalculatorTestCase):
         APIClient().get('/calculator-data')
         DailyVisit.objects.create(
             date=timezone.localdate(), page_views=1, unique_visitors=1)
+        self.assertIsNotNone(public_payload_cache.read())
+
+    def test_landing_and_referrer_counts_do_not_invalidate(self):
+        # Written on EVERY visit, like DailyVisit. If these invalidated, the
+        # cache would be cleared continuously and never serve anything.
+        APIClient().get('/calculator-data')
+        LandingPageVisit.objects.create(date=timezone.localdate(), route='/', page_views=1)
+        ReferrerVisit.objects.create(date=timezone.localdate(), host='direct', page_views=1)
+        self.assertIsNotNone(public_payload_cache.read())
+
+    def test_an_analytics_snapshot_does_not_invalidate(self):
+        # The admin report's daily copy is no part of the catalogue.
+        APIClient().get('/calculator-data')
+        AnalyticsSnapshot.objects.create(
+            date=timezone.localdate(), shape='test', report={})
         self.assertIsNotNone(public_payload_cache.read())
 
     def test_a_user_plan_write_does_not_invalidate(self):
