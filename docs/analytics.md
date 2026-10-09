@@ -94,16 +94,24 @@ registered but never touched the calculator would drag every percentage down.
 The dashboard therefore reports two denominators:
 
 - **Total users** — every non-staff account.
-- **Engaged users** — accounts that changed at least one calculator setting
-  (a rank, a resource amount, a paid-product toggle) **or** planned at least
-  one banner or one campaign purchase.
+- **Engaged users** — accounts that have used the calculator in any way a new
+  account has not: changed a setting from its default (a rank, a balance, any
+  of the nine income toggles, a shop ticket count), planned a banner (in any
+  plan) or a campaign purchase, picked step-up cards or a favourite uma, made
+  an income profile or a second plan, or set a display name.
+
+The rule behind that list: **if a section counts people who did something,
+doing it makes a person engaged.** Otherwise a section's numerator would hold
+people its denominator does not, and "% of engaged" could pass 100. A new
+feature that gets a row on this page gets a clause in `people.engaged_q()`.
 
 Percentages are shown against both. "% of engaged" is usually the more honest
 answer to "what share of our *actual* users do X?".
 
 ### Site traffic
 
-Two tables, daily (last 30 days) and monthly (last 12).
+Three tables: daily (last 30 days), the last 7 days against the 7 before, and
+monthly (last 12).
 
 - **Page views** — one per *browser session*, not per click or per client-side
   route change. The SPA fires a single beacon at `POST /visit` when it loads and
@@ -117,6 +125,14 @@ the two are not meant to reconcile.** Adding up thirty daily numbers counts a
 regular visitor thirty times; the monthly row counts them once. If the two ever
 match exactly, every visitor that month came exactly once.
 
+That sum still means something, as long as it is called what it is:
+**visit-days**. The daily table's total row and the weekly comparison report it,
+never as "visitors". The monthly table divides it by the month's unique visitors
+to give **visit-days per visitor**: ten visitors where one came on twenty days
+and nine came once is 29 visit-days over 10 people, 2.9. A month where everyone
+came once reads 1.0. The month still running is marked **Partial**, since its
+figures only grow.
+
 Days with no traffic are omitted rather than shown as zero. Known crawlers,
 `curl` and Python clients are filtered out by user agent, so the numbers are
 lower — and more honest — than a raw request count.
@@ -126,13 +142,28 @@ Two things do **not** appear here: visits made while running
 at a remote API, so local work can't inflate production), and anything at all if
 a visitor blocks the request.
 
-### Paid products
+### Income settings and shop tickets
 
-Adoption of the two purchasable income sources — **Daily Carat Pack**
-(`daily_carat`) and **Training Pass** (`training_pass`). A user "has" the
-product if the toggle is on in their income settings right now.
+Every income toggle a person can switch (all nine booleans on their stats), led
+by the two purchasable income sources, **Daily Carat Pack** and **Training
+Pass**. Counted **among engaged users only**: five of the nine start on, so they
+are on for every account that never opened the calculator too, and counting
+those would make "users on" mostly lurkers.
 
-Below those, **Campaign selectors** lists every selector product a campaign
+- **Users on** / **% on** — engaged users with it on right now.
+- **Changed from default** / **% changed** — engaged users who switched it from
+  where a new account starts: on for a setting that starts off, off for one
+  that starts on. For a setting that starts on, this is the number that says
+  something; for one that starts off it equals Users on.
+
+**Shop tickets bought a month** lists how many monthly shop tickets people say
+they buy, uma and support. "Not set" follows the default an editor sets in
+Calculation constants. The counts only move the projection while Monthly shop
+tickets is on, but are kept either way.
+
+### Campaign selectors
+
+**Campaign selectors** lists every selector product a campaign
 sells (Uma and Support), with how many people plan to buy it:
 
 - **Users** — distinct people with the selector in their planned purchases.
@@ -161,8 +192,9 @@ game accounts.
 
 ### Current resources
 
-Median, mean and dropped-value count for each resource field (carats, tickets,
-crystals, shards) across **engaged users only**.
+Median, quartiles, share at zero, mean and dropped-value count for each
+resource field (carats, tickets, crystals, shards, selector tickets) across
+**engaged users only**.
 
 **Read the median, not the average.** Carat balances are long-tailed — a
 handful of genuine whales pull a mean well above where most people actually
@@ -170,9 +202,24 @@ sit, even when every value in the set is honest. A median cannot be moved by an
 extreme value at all, which makes it the figure that answers "what does a
 typical user have?"
 
+**p25 and p75** say how spread out people are: half of everyone sits between
+them. Nine people holding 0, 0, 2,000, 5,000, 9,000, 12,000, 30,000, 45,000 and
+400,000 carats give a median of 9,000, p25 2,000 and p75 30,000, so "half hold
+between 2,000 and 30,000", while the mean (55,889) says "whale". **At zero** is
+the share holding none, which the quartiles cannot show once it passes a
+quarter.
+
 ### Popular banners
 
-Separate tables for Uma and Support banners, ranked by:
+Separate tables for Uma and Support banners. **Dates are effective dates**:
+confirmed once the game announces them, predicted before that (the same
+prediction the planner shows, marked in the **Predicted** column). **Status** is
+upcoming, running or ended. On the page, ended banners are folded under
+**Ended** below each table, since people leave finished banners in their plans;
+the CSV keeps every row. The admin home page's "Top planned banner" card skips
+ended ones for the same reason.
+
+Rows are ranked by:
 
 - **Planners** — how many distinct users have this banner in their plan (the
   primary popularity signal)
@@ -195,6 +242,26 @@ dashboard leaves out).
 Being *engaged* is the one place a spare plan still counts: planning a banner
 in any plan is using the calculator, so that person is in the engaged
 denominator even if the banner tables never show them.
+
+### Step-up banners
+
+One row per step-up anyone plans or picked cards for. **Step-up plans are in
+steps, never pulls**: one step is one 10-pull bought with paid carats, at most
+five per banner, so these rows have Total steps and Avg steps and never feed a
+pull total. **Chose their cards** counts everyone who picked their own ten,
+planning to climb or not; an untouched step-up shows a default ten and stores
+nothing, so it is not counted. Plans above 50 steps are ignored as implausible
+(`SANE_MAX_STEPS`).
+
+### Demand by month
+
+Planned Uma and Support banners grouped by the **month the banner ends**, which
+is when the carats leave a saving plan, for this month and the next five, then
+**Later** (everything after, and anything still undated). Ended banners are left
+out. Per month: how many banners have planners, how many people plan at least
+one (someone with two banners that month counts once), the pulls they budget
+(implausible rows ignored), and how many people plan a step-up there, counted
+apart because those plans are in steps.
 
 ### Implausible values
 
@@ -240,6 +307,12 @@ not track, such as a banner's planners on a given day.
 
 ## Implementation notes (for developers)
 
+- **Every row-based figure starts from `banners.active_rows()`**: non-staff,
+  active plan (plus the TRANSITIONAL plan-less half until multi-plan release 2).
+  **Engaged is built from `Exists()` subqueries** (`people.engaged_q()`), never
+  joins through reverse relations, which would multiply each user's rows by
+  every related table at once. Banner dates come from ONE
+  `predictions.build_effective_date_maps()` call per report.
 - All aggregation lives in the `calculatorapi/analytics/` package, pure ORM
   queries with no HTTP concerns. `build_analytics_report()` (`report.py`)
   assembles one plain dict from the section modules (`people.py`,
@@ -296,5 +369,7 @@ not track, such as a banner's planners on a given day.
 - The view (`calculatorapi/views/analytics.py`) is wrapped with
   `admin.site.admin_view()` in `calculatorproject/urls.py`, which enforces the
   staff-only requirement and redirects everyone else to the admin login.
-- Tests cover the aggregation math, access control, and CSV response — see the
-  `Analytics*` test classes in `calculatorapi/tests/test_analytics.py`.
+- Tests: `tests/test_analytics.py` (cache, table shape, snapshots, page and
+  CSV), `tests/test_analytics_sections.py` (each section's figures) and
+  `tests/test_visits.py` (the visit counters). Run all three after an
+  analytics change.

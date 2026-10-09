@@ -31,6 +31,10 @@ light/dark theme unfold renders in.
   }
   .analytics-report thead th, .analytics-report tr.total td { font-weight: 600; }
   .analytics-report tr:last-child th, .analytics-report tr:last-child td { border-bottom: 0; }
+  .analytics-report details { margin-top: 0.75rem; }
+  .analytics-report summary { cursor: pointer; font-weight: 500; }
+  /* Wide sections (banners, step-ups) scroll inside their box, not the page. */
+  .analytics-report .module { overflow-x: auto; }
   .analytics-report a.button {
     display: inline-block;
     border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
@@ -51,7 +55,8 @@ light/dark theme unfold renders in.
   as it stands right now, and the Overview and History compare it with the daily
   snapshots kept since October 2026.
   Staff accounts are excluded from every user metric. “Engaged users” are accounts
-  that changed at least one calculator setting or planned at least one banner.
+  that used the calculator in any way a new account has not: a setting changed,
+  a banner or purchase planned, step-up cards or a favourite picked.
   Percentages are shown against both denominators because brand-new accounts
   start with everything off.
 </p>
@@ -60,7 +65,8 @@ light/dark theme unfold renders in.
 {% comment %}
 Every section is the same shape (calculatorapi/analytics/tables.py), so this
 one loop renders them all, and the CSV is the same list written out. A new
-section needs no markup here. Cells arrive already formatted as strings.
+section needs no markup here. Cells arrive already formatted as strings; rows a section folds away
+(ended banners) arrive separately as collapsed_cells.
 {% endcomment %}
 {% for section in tables %}
 <div class="module" id="{{ section.key }}">
@@ -82,6 +88,21 @@ section needs no markup here. Cells arrive already formatted as strings.
   </table>
   {% else %}
   <p>{{ section.empty }}</p>
+  {% endif %}
+  {% if section.collapsed_cells %}
+  <details>
+    <summary>{{ section.collapse.label }} ({{ section.collapsed_cells|length }})</summary>
+    <table>
+      <thead>
+        <tr>{% for column in section.columns %}<th>{{ column.label }}</th>{% endfor %}</tr>
+      </thead>
+      <tbody>
+        {% for cells in section.collapsed_cells %}
+        <tr>{% for cell in cells %}<td>{{ cell }}</td>{% endfor %}</tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </details>
   {% endif %}
 </div>
 {% endfor %}

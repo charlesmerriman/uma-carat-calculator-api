@@ -51,13 +51,16 @@ def dashboard_callback(request, context):  # pylint: disable=unused-argument
         context["kpi_cards"] = []
         return context
 
-    # Adoption counts for the two paid products, looked up by label.
-    paid = {row["label"]: row for row in report["paid_products"]}
-    daily_carat = paid.get("Daily Carat Pack", {}).get("count", 0)
-    training_pass = paid.get("Training Pass", {}).get("count", 0)
+    # Adoption counts for the two paid products, looked up by field.
+    toggles = {row["key"]: row for row in report["income_settings"]}
+    daily_carat = toggles["daily_carat"]["users_on"]
+    training_pass = toggles["training_pass"]["users_on"]
 
-    # Most-planned uma banner (list is pre-sorted by planners desc).
-    top_uma = report["popular_uma_banners"][0] if report["popular_uma_banners"] else None
+    # Most-planned uma banner that has not ended (the list is pre-sorted by
+    # planners desc). People leave finished banners in their plans, so the
+    # all-time leader is usually old news.
+    top_uma = next((banner for banner in report["popular_uma_banners"]
+                    if banner["status"] != "ended"), None)
 
     comparison = report["comparison"]
     engaged_since = _since(comparison, "engaged_users")

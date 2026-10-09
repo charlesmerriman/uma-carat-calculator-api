@@ -2,13 +2,16 @@
 
 from django.utils import timezone
 
-from .banners import banner_popularity
+from ..models import BannerTimeline
+from ..predictions import build_effective_date_maps
+from .banners import banner_popularity, demand_calendar, step_up_popularity
 from .common import pct
 from .income_settings import (
-    paid_products,
+    income_settings,
     rank_distributions,
     resource_statistics,
     selector_purchases,
+    shop_tickets,
 )
 from .people import engaged_subset, non_staff_users
 from .snapshots import comparison, history
@@ -22,13 +25,17 @@ def build_analytics_report():
     Sections:
       - overview: total vs engaged user counts
       - traffic: daily and monthly site visits (the one section with history)
-      - paid_products: daily carat pack / training pass adoption
+      - income_settings: every income toggle among engaged users, with how
+        many changed it from its default; shop_tickets: the monthly counts
       - selector_purchases / any_selector: planned buyers per campaign
         selector, and people planning at least one
       - rank_distributions: users per rank, per rank type
       - resource_averages: mean, median and dropped count per resource,
         among engaged users
-      - popular_uma_banners / popular_support_banners: ranked pull plans
+      - popular_uma_banners / popular_support_banners: ranked pull plans,
+        with effective (predicted when unconfirmed) dates and a status
+      - step_up_popularity: ranked step-up plans, in STEPS
+      - demand_calendar: planned demand by the month banners end
       - comparison: the tracked figures now vs the snapshot ~30 days back
       - history: one row per month, from the first snapshot of each
 
@@ -46,6 +53,9 @@ def build_analytics_report():
     total_users = users.count()
     engaged = engaged_subset(users)
     engaged_users = engaged.count()
+    # Resolved once for every banner section, as one calendar: the plural
+    # builder is the only correct one (.claude/rules/backend-models.md).
+    timeline_dates = build_effective_date_maps()[BannerTimeline]
 
     report = {
         "generated_at": timezone.now(),
@@ -53,14 +63,17 @@ def build_analytics_report():
         "total_users": total_users,
         "engaged_users": engaged_users,
         "engaged_pct": pct(engaged_users, total_users),
-        "paid_products": paid_products(users, total_users, engaged_users),
+        "income_settings": income_settings(engaged, engaged_users),
+        "shop_tickets": shop_tickets(engaged),
         **selector_purchases(total_users, engaged_users),
         "rank_distributions": rank_distributions(users, total_users),
         # Averaging over never-configured accounts full of zeroes would be
         # meaningless, so this section uses the engaged denominator.
         "resource_averages": resource_statistics(engaged),
-        "popular_uma_banners": banner_popularity("banner_uma"),
-        "popular_support_banners": banner_popularity("banner_support"),
+        "popular_uma_banners": banner_popularity("banner_uma", timeline_dates),
+        "popular_support_banners": banner_popularity("banner_support", timeline_dates),
+        "step_up_popularity": step_up_popularity(timeline_dates),
+        "demand_calendar": demand_calendar(timeline_dates),
     }
     # Last, because both read the figures above. Neither is ever stored in a
     # snapshot (snapshots.NOT_STORED): they are built FROM snapshots.
