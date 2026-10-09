@@ -108,6 +108,21 @@ class AdminSmokeTests(CalculatorTestCase):
         self.assertContains(res, '1 user')
         self.assertNotContains(res, '2 users')
 
+    def test_planned_by_reads_the_active_plan_only(self):
+        """A banner held only in a spare what-if plan has no planner, the same
+        rule as the analytics dashboard, so the two figures agree."""
+        banner = make_uma_banner(name='Only In A What If')
+        user = make_user(username='planner')
+        Plan.objects.create(user=user, name='Main plan', is_active=True)
+        spare = Plan.objects.create(user=user, name='What if', is_active=False)
+        UserPlannedBanner.objects.create(
+            user=user, plan=spare, banner_uma=banner, number_of_pulls=10)
+
+        res = self.client.get(reverse('admin:calculatorapi_banneruma_changelist'))
+
+        self.assertContains(res, '0 users')
+        self.assertNotContains(res, '1 user')
+
     def test_index_shows_friendly_names(self):
         res = self.client.get(reverse('admin:index'))
         self.assertContains(res, 'Uma Musume Data')      # app section heading

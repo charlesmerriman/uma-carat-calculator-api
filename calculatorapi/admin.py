@@ -41,7 +41,7 @@ from django.contrib import admin, messages
 from django.contrib.auth.admin import GroupAdmin as BaseGroupAdmin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import Group
-from django.db.models import Count, F
+from django.db.models import Count, F, Q
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
@@ -356,8 +356,21 @@ class PlannedByColumnMixin:  # pylint: disable=too-few-public-methods
         # DISTINCT USERS, not rows: an account can hold several plans, and the
         # same banner in three of them is still one person. The column says
         # "users", so that is what it counts.
+        #
+        # ACTIVE PLANS ONLY, the same rule as the analytics dashboard's
+        # "Planners" column (analytics._banner_popularity), so the two figures
+        # agree for the same banner. The spare plans are what-ifs: a banner
+        # someone keeps only in "What if I skip X" is not one they plan to
+        # pull on. The isnull half is TRANSITIONAL (multi-plan, release 1 of
+        # 2): a row the old code wrote during the deploy window has no plan
+        # yet and is still a real row. Goes with release 2.
+        active = (
+            Q(userplannedbanner__plan__is_active=True)
+            | Q(userplannedbanner__plan__isnull=True)
+        )
         return super().get_queryset(request).annotate(
-            planned_count=Count("userplannedbanner__user", distinct=True))
+            planned_count=Count(
+                "userplannedbanner__user", distinct=True, filter=active))
 
     @admin.display(description="Planned by", ordering="planned_count")
     def planned_by(self, obj):
