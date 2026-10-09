@@ -113,3 +113,63 @@ class VisitorHash(models.Model):
         # Truncated: the full digest is not a secret, but there is no reason to
         # print it into admin logs or error output either.
         return f"{self.date}: {self.visitor_hash[:8]}..."
+
+
+class LandingPageVisit(models.Model):
+    """One row per (day, page): how many visits STARTED on that page.
+
+    The SPA's beacon fires once per session from wherever the visitor arrived,
+    so the path it reports is the landing page. Only the public routes in
+    visits.KNOWN_ROUTES are kept by name; every other path (a typo, a probe, an
+    old link) counts as "other", so this table holds a short, fixed list of
+    pages and nothing a visitor typed.
+
+    Totals only, like DailyVisit: no visitor hash is involved, so a row cannot
+    be tied to anyone even inside the database, and the rows are kept. Not in
+    the admin, for the same reason as DailyVisit.
+    """
+
+    date = models.DateField()
+    route = models.CharField(max_length=40)
+    page_views = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        verbose_name = "Landing Page Visit"
+        verbose_name_plural = "Landing Page Visits"
+        ordering = ["-date", "route"]
+        constraints = [
+            # The same "find today's row and increment it" design as DailyVisit.
+            models.UniqueConstraint(fields=["date", "route"],
+                                    name="one_landing_row_per_day_and_route"),
+        ]
+
+    def __str__(self):
+        return f"{self.date} {self.route}: {self.page_views}"
+
+
+class ReferrerVisit(models.Model):
+    """One row per (day, site): how many visits a site sent us.
+
+    `host` is only the NAME of the linking site (google.com), never the rest
+    of the link; "direct" means the browser reported no referrer (a bookmark, a
+    typed address, and most chat apps), "other" anything that did not look like
+    a hostname or arrived after the day's cap (visits.MAX_REFERRER_HOSTS_PER_DAY).
+
+    Totals only, kept, not in the admin: see LandingPageVisit.
+    """
+
+    date = models.DateField()
+    host = models.CharField(max_length=100)
+    page_views = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        verbose_name = "Referrer Visit"
+        verbose_name_plural = "Referrer Visits"
+        ordering = ["-date", "host"]
+        constraints = [
+            models.UniqueConstraint(fields=["date", "host"],
+                                    name="one_referrer_row_per_day_and_host"),
+        ]
+
+    def __str__(self):
+        return f"{self.date} {self.host}: {self.page_views}"

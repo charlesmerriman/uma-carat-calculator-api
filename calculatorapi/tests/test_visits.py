@@ -10,16 +10,25 @@ from io import StringIO
 from unittest.mock import patch
 
 from django.core.management import call_command
-from django.test import RequestFactory
+from django.test import RequestFactory, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
-from calculatorapi.models import DailyVisit, MonthlyVisit, VisitorHash
+from calculatorapi.models import (
+    DailyVisit,
+    LandingPageVisit,
+    MonthlyVisit,
+    ReferrerVisit,
+    VisitorHash,
+)
 from calculatorapi.tests.base import CalculatorTestCase
 from calculatorapi.visits import (
+    MAX_REFERRER_HOSTS_PER_DAY,
     VISITOR_HASH_RETENTION_DAYS,
     build_visit_report,
+    landing_route,
     record_visit,
+    referrer_host,
 )
 
 
@@ -197,6 +206,93 @@ class VisitReportTests(CalculatorTestCase):
         self.assertEqual(len(build_visit_report(months=6)['monthly']), 6)
 
 
+@override_settings(FRONTEND_URL='https://umacaratcalculator.com')
+class VisitLandingAndReferrerTests(CalculatorTestCase):
+    """The landing page and referring site the beacon reports, reduced to a
+    short fixed vocabulary before anything is written."""
+
+    def _hit(self, agent='Mozilla/5.0', **params):
+        query = '&'.join(f'{key}={value}' for key, value in params.items())
+        request = RequestFactory().post(f'/visit?{query}', HTTP_USER_AGENT=agent)
+        return record_visit(request)
+
+    def _landing(self):
+        return dict(LandingPageVisit.objects.values_list('route', 'page_views'))
+
+    def _referrers(self):
+        return dict(ReferrerVisit.objects.values_list('host', 'page_views'))
+
+    def test_a_known_route_is_counted_by_name(self):
+        self._hit(path='/app', ref='')
+        self._hit(path='/app', ref='')
+        self.assertEqual(self._landing(), {'/app': 2})
+
+    def test_routes_are_normalised(self):
+        self.assertEqual(landing_route('/App/'), '/app')
+        self.assertEqual(landing_route('/faq?x=1#top'), '/faq')
+        self.assertEqual(landing_route(''), '/')
+
+    def test_any_other_path_is_other(self):
+        self._hit(path='/wp-admin/setup.php', ref='')
+        self._hit(path='/app/typo', ref='')
+        self.assertEqual(self._landing(), {'other': 2})
+
+    def test_nothing_is_written_when_an_old_build_sends_neither(self):
+        self._hit()
+        self.assertFalse(LandingPageVisit.objects.exists())
+        self.assertFalse(ReferrerVisit.objects.exists())
+        self.assertEqual(DailyVisit.objects.get().page_views, 1)
+
+    def test_referrer_rules(self):
+        cases = {
+            '': 'direct',                       # sent and empty: no referrer
+            'umacaratcalculator.com': 'direct',  # one of our own pages
+            'www.umacaratcalculator.com': 'direct',
+            'www.Google.com': 'google.com',
+            'old.reddit.com': 'old.reddit.com',
+            'not a host!': 'other',
+            'a' * 101: 'other',
+        }
+        for ref, expected in cases.items():
+            with self.subTest(ref=ref):
+                self.assertEqual(referrer_host(ref), expected)
+        self.assertIsNone(referrer_host(None))
+
+    def test_a_referrer_is_counted_by_site_name(self):
+        self._hit(path='/', ref='www.google.com')
+        self._hit(path='/', ref='discord.com')
+        self._hit(path='/', ref='')
+        self.assertEqual(self._referrers(),
+                         {'google.com': 1, 'discord.com': 1, 'direct': 1})
+
+    def test_new_sites_past_the_daily_cap_count_as_other(self):
+        today = timezone.localdate()
+        ReferrerVisit.objects.bulk_create(
+            ReferrerVisit(date=today, host=f'site{index}.com', page_views=1)
+            for index in range(MAX_REFERRER_HOSTS_PER_DAY))
+        self._hit(path='/', ref='spam.example')
+        self._hit(path='/', ref='site0.com')     # already listed today: still named
+        rows = self._referrers()
+        self.assertEqual(rows['other'], 1)
+        self.assertEqual(rows['site0.com'], 2)
+        self.assertNotIn('spam.example', rows)
+
+    def test_a_bot_records_neither(self):
+        self._hit(agent='Googlebot/2.1', path='/app', ref='google.com')
+        self.assertFalse(LandingPageVisit.objects.exists())
+        self.assertFalse(ReferrerVisit.objects.exists())
+
+    def test_the_report_totals_30_days_beside_the_30_before(self):
+        today = timezone.localdate()
+        LandingPageVisit.objects.create(date=today, route='/app', page_views=6)
+        LandingPageVisit.objects.create(date=today, route='/', page_views=2)
+        LandingPageVisit.objects.create(
+            date=today - datetime.timedelta(days=40), route='/faq', page_views=5)
+        rows = build_visit_report()['landing_pages']
+        self.assertEqual(rows[0], {'name': '/app', 'visits': 6, 'share': 75.0, 'earlier': 0})
+        self.assertEqual(rows[-1], {'name': '/faq', 'visits': 0, 'share': 0.0, 'earlier': 5})
+
+
 class VisitBeaconEndpointTests(CalculatorTestCase):
     """POST /visit — the public write-only beacon."""
 
@@ -208,6 +304,13 @@ class VisitBeaconEndpointTests(CalculatorTestCase):
         self.assertEqual(res.status_code, 204)
         self.assertEqual(res.content, b'')
         self.assertEqual(DailyVisit.objects.get().page_views, 1)
+
+    def test_the_landing_page_and_referrer_ride_on_the_query_string(self):
+        res = self.client.post(f'{self.url}?path=/app&ref=google.com',
+                               HTTP_USER_AGENT='Mozilla/5.0')
+        self.assertEqual(res.status_code, 204)
+        self.assertEqual(LandingPageVisit.objects.get().route, '/app')
+        self.assertEqual(ReferrerVisit.objects.get().host, 'google.com')
 
     def test_get_is_not_allowed(self):
         self.assertEqual(self.client.get(self.url).status_code, 405)

@@ -49,6 +49,13 @@ python manage.py createsuperuser
   boundary, so nobody can be followed from one month into the next. No cookie or
   client-side identifier is involved, so none of this can be correlated with
   anything outside our own database.
+- **Landing pages and referring sites are totals.** The beacon reports the
+  page a visit started on and the NAME of the site that linked it. Both are
+  reduced to a short list before anything is stored (a known route or "other";
+  a bare hostname, "direct" or "other") and counted per day with no hash
+  beside them, so they cannot be tied to a visitor even inside the database.
+  The rest of a link is never sent. Disclosed in the Privacy Policy's "Our own
+  counter" paragraph.
 - This use of planning data is disclosed in the site's Privacy Policy
   ("How We Use Your Information"), and traffic counting under "Traffic
   Measurement".
@@ -136,6 +143,16 @@ figures only grow.
 Days with no traffic are omitted rather than shown as zero. Known crawlers,
 `curl` and Python clients are filtered out by user agent, so the numbers are
 lower — and more honest — than a raw request count.
+
+**Landing pages** and **Referring sites** count where visits start and which
+site linked them, over the last 30 days beside the 30 before. Both are
+**visits, not visitors**: the beacon fires once per browser session, and no
+de-duplication applies. A landing page outside the site's own list (a typo, an
+old link, a bot's probe) counts as `other`. **"direct" runs high because of
+how browsers work**: a bookmark, a typed address and most chat apps send no
+referrer at all, and Discord's desktop app is one of them, so Discord traffic
+mostly lands in "direct". The 25 busiest sites are named and the rest share a
+last row. Subdomains are kept apart (`old.reddit.com` is not `reddit.com`).
 
 Two things do **not** appear here: visits made while running
 `npm run dev:live` (the frontend suppresses the beacon when a dev server points
@@ -414,6 +431,14 @@ it; the CSV and the JSON carry numbers only.
   `content_snapshot.PRIVATE_MODELS` (never pulled to local) and in
   `public_payload_cache._IRRELEVANT_MODELS` (writing one must not drop the
   `/calculator-data` cache). About 365 rows a year, never pruned.
+- `LandingPageVisit` (date, route) and `ReferrerVisit` (date, host) are
+  totals counted by `visits.record_visit()` from the beacon's `path` and `ref`
+  query parameters, after the bot filter, with `F()` like the daily counter.
+  `visits.KNOWN_ROUTES` is the list of nameable pages: **a new public route
+  goes there too**, or its visits read as `other`. Both tables are kept, are
+  not in the admin, and are listed in `PRIVATE_MODELS` and
+  `public_payload_cache._IRRELEVANT_MODELS` (written on every visit, they would
+  otherwise switch the `/calculator-data` cache off).
 - `DailyVisit` and `MonthlyVisit` are the permanent records; `VisitorHash` is
   disposable deduplication scratch, dropped after 90 days by
   `manage.py prune_visitor_hashes`, which runs on every deploy (the

@@ -80,6 +80,8 @@ PRIVATE_MODELS = (
     "DailyVisit",
     "MonthlyVisit",
     "VisitorHash",
+    "LandingPageVisit",
+    "ReferrerVisit",
     # Aggregates only, but production's usage figures are not local content.
     "AnalyticsSnapshot",
 )

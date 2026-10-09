@@ -119,6 +119,13 @@ _BANNER_COLUMNS = [
 
 _ENDED = {"key": "status", "value": "ended", "label": "Ended"}
 
+
+def _visit_source_columns(label):
+    """Columns for the landing-page and referrer tables (`label` names the first)."""
+    return [Column(label, "name"), Column("Visits", "visits", "int"),
+            Column("Share", "share", "pct"),
+            Column("The 30 days before", "earlier", "int")]
+
 # The Overview's figures, compared with the snapshot ~30 days back.
 _OVERVIEW_FIGURES = ("total_users", "engaged_users", "engaged_pct")
 
@@ -225,6 +232,31 @@ def _traffic_tables(report):
                 "The last 7 days include today, which is still running. Change "
                 "is blank when the earlier week had nothing to grow from."
             ),
+        ),
+        _section(
+            "landing_pages", "Landing pages (last 30 days)",
+            _visit_source_columns("Page"), report["landing_pages"],
+            help_text=(
+                "The page each visit started on. These are visits, never "
+                "visitors: one person who comes back three times counts three "
+                "times. “other” is any address that is not one of the site’s "
+                "pages, such as a typo or an old link."
+            ),
+            empty="No landing pages recorded yet.",
+            chart=charts.landing_pages(report["landing_pages"]),
+        ),
+        _section(
+            "referrers", "Referring sites (last 30 days)",
+            _visit_source_columns("Site"), report["referrers"],
+            help_text=(
+                "The site that linked each visit here, by name only. “direct” "
+                "means the browser said nothing, which covers bookmarks, typed "
+                "addresses and most chat apps: Discord’s desktop app sends no "
+                "referrer, so Discord traffic mostly lands in “direct”, and "
+                "that row runs high. The 25 busiest sites are named; the rest "
+                "share the last row."
+            ),
+            empty="No referring sites recorded yet.",
         ),
         _section(
             "monthly_visits", "Site traffic: by month",
