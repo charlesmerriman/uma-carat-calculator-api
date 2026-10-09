@@ -8,7 +8,11 @@
 # snapshot records it too (AnalyticsSnapshot.shape).
 #   v1  2026-10-09  the first cached shape
 #   v2  2026-10-09  + comparison, history (daily snapshots)
-REPORT_SHAPE = "analytics:report:v2"
+#   v3  2026-10-09  income_settings replaces paid_products; + shop_tickets,
+#                   step_up_popularity, demand_calendar, daily_totals,
+#                   traffic_weeks; banner rows gain predicted dates and status;
+#                   resources gain quartiles and share at zero
+REPORT_SHAPE = "analytics:report:v3"
 
 
 # ── Sanity bounds ────────────────────────────────────────────────────────────
@@ -39,6 +43,13 @@ REPORT_SHAPE = "analytics:report:v2"
 # every resource mean and turning a 145-avg banner into a 447,572 one.
 SANE_MAX_PULLS = 2_000
 SANE_MAX_RESOURCE = 10_000_000
+
+# Step-up rows store ladder STEPS in number_of_pulls, so they get their own
+# ceiling. A step-up's real cap is banner_count * 5 (five steps per banner);
+# 50 is ten banners' worth, far past any step-up sold so far, and a flat number
+# matches how the two bounds above work. The planner clamps what it charges at
+# the real cap; this only decides what counts as a data point here.
+SANE_MAX_STEPS = 50
 
 
 def pct(part, whole):

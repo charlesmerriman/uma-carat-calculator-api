@@ -1,7 +1,7 @@
-"""What people set in the calculator: paid products, campaign selectors,
-income ranks and the resources they hold."""
+"""What people set in the calculator: the income toggles, shop tickets,
+campaign selectors, income ranks and the resources they hold."""
 
-from statistics import median
+from statistics import median, quantiles
 
 from django.db.models import Count, Q
 
@@ -20,6 +20,10 @@ RESOURCE_FIELDS = [
     ("sr_crystals", "SR Crystals"),
     ("ssr_shards", "SSR Shards"),
     ("sr_shards", "SR Shards"),
+    # Selector tickets are not gacha tickets (they take one card outright), but
+    # a balance held is still a balance held.
+    ("uma_selector_ticket", "Uma Selector Tickets"),
+    ("support_selector_ticket", "Support Selector Tickets"),
 ]
 
 # The four income-rank FKs on CustomUser: (field name, human label).
@@ -30,10 +34,28 @@ RANK_FIELDS = [
     ("league_of_heroes_rank", "League of Heroes"),
 ]
 
-# The two paid products the client cares most about.
-PAID_PRODUCT_FIELDS = [
+# Every income toggle on GameStats: (field name, human label), in the order
+# the table lists them. The two paid products lead because they are the
+# question the client asked first. Each toggle's DEFAULT is read off the model
+# field (toggle_default), never restated here, and AnalyticsIncomeSettingsTests
+# fails if a boolean is added to GameStats without a line here.
+INCOME_TOGGLES = [
     ("daily_carat", "Daily Carat Pack"),
     ("training_pass", "Training Pass"),
+    ("misc_earnings", "Misc earnings"),
+    ("monthly_shop_tickets", "Monthly shop tickets"),
+    ("spend_tickets_on_banners", "Spend tickets on banners"),
+    ("discounted_paid_pulls", "Discounted paid pulls"),
+    ("full_price_paid_pulls", "Full-price paid pulls"),
+    ("include_purchases_in_projection", "Campaign purchases in the projection"),
+    ("webstore_bonus", "Webstore bonus"),
+]
+
+# The two monthly shop counts: (field name, column key). NULL means "the
+# default", an admin-editable constant, which is why the field is nullable.
+SHOP_TICKET_FIELDS = [
+    ("shop_uma_tickets_bought", "uma"),
+    ("shop_support_tickets_bought", "support"),
 ]
 
 # The campaign products that grant a selector ticket (see
@@ -42,18 +64,67 @@ PAID_PRODUCT_FIELDS = [
 SELECTOR_PRODUCT_TYPES = ("uma_selector", "support_selector")
 
 
-def paid_products(users, total_users, engaged_users):
-    """Adoption of the two purchasable income sources, one row each."""
+def toggle_default(field):
+    """Where a new account starts for one income toggle: the model's default."""
+    return CustomUser._meta.get_field(field).default
+
+
+def income_settings(engaged, engaged_users):
+    """One row per income toggle, counted among ENGAGED users, in one query.
+
+    WHY ENGAGED ONLY. Five of the nine toggles start ON. Every account that
+    never opened the calculator has them on too, so "users on" over everyone
+    would be mostly lurkers, and "% of engaged" could pass 100. Among engaged
+    users both numbers mean something. For a toggle that starts off nothing
+    changes: switching it on makes a person engaged (people.engaged_q), so
+    every user who has it on is already in the count.
+
+    `changed` is how many switched the toggle away from where a new account
+    starts: on for a toggle that starts off, off for one that starts on. It is
+    the only honest adoption number for a toggle that starts on, since "users
+    on" there mostly measures who never touched it.
+    """
+    counts = engaged.aggregate(**{
+        field: Count("id", filter=Q(**{field: True}))
+        for field, _ in INCOME_TOGGLES
+    })
     rows = []
-    for field, label in PAID_PRODUCT_FIELDS:
-        count = users.filter(**{field: True}).count()
+    for field, label in INCOME_TOGGLES:
+        default = toggle_default(field)
+        users_on = counts[field]
+        changed = engaged_users - users_on if default else users_on
         rows.append({
+            "key": field,
             "label": label,
-            "count": count,
-            "pct_of_total": pct(count, total_users),
-            "pct_of_engaged": pct(count, engaged_users),
+            "default": "On" if default else "Off",
+            "users_on": users_on,
+            "pct_on": pct(users_on, engaged_users),
+            "changed": changed,
+            "pct_changed": pct(changed, engaged_users),
         })
     return rows
+
+
+def shop_tickets(engaged):
+    """How many shop tickets people say they buy a month, uma and support.
+
+    One row per stored count, "Not set" (the admin default) first, then the
+    counts in order, with how many engaged users chose each. Counted whether or
+    not Monthly shop tickets is on, since the count is kept either way.
+    """
+    tallies = {}
+    for field, column in SHOP_TICKET_FIELDS:
+        for value, people in (engaged.values(field).order_by(field)
+                              .annotate(people=Count("id"))
+                              .values_list(field, "people")):
+            tallies.setdefault(value, {"uma": 0, "support": 0})[column] = people
+    # None sorts first: it is the default, the row most people sit in.
+    ordered = sorted(tallies, key=lambda value: (value is not None, value or 0))
+    return [
+        {"bought": "Not set (the default)" if value is None else str(value),
+         **tallies[value]}
+        for value in ordered
+    ]
 
 
 def rank_distributions(users, total_users):
@@ -175,15 +246,32 @@ def selector_purchases(total_users, engaged_users):
     }
 
 
-def resource_statistics(engaged):
-    """Mean, median and dropped-value count for each resource field.
+def _quartiles(values):
+    """(p25, p75) of a non-empty list.
 
-    ONE query for all eight columns, both statistics computed in Python.
+    The "inclusive" method treats the list as the whole population, so a
+    quartile lands on a real value whenever it can. Worked example, nine
+    people holding 0, 0, 2000, 5000, 9000, 12000, 30000, 45000 and 400000
+    carats: p25 is 2000 and p75 is 30000 (the 3rd and 7th values), so half of
+    them sit between the two, while the mean is 55889 because of one whale.
+    """
+    if len(values) == 1:
+        # quantiles() needs two points before Python 3.13.
+        return values[0], values[0]
+    cuts = quantiles(values, n=4, method="inclusive")
+    return cuts[0], cuts[2]
+
+
+def resource_statistics(engaged):
+    """Median, quartiles, share at zero, mean and dropped-value count for each
+    resource field.
+
+    ONE query for every column, all the statistics computed in Python.
 
     Why not in SQL: a median has no portable aggregate — Postgres has
     PERCENTILE_CONT, the SQLite the tests run on has nothing — and doing the
     mean the same way is what guarantees the two figures describe the identical
-    filtered set. The cost is materialising engaged_users x 8 ints; at the
+    filtered set. The cost is materialising engaged_users x 10 ints; at the
     current few thousand accounts that is a single query and well under a
     megabyte. If this page ever reports on a user base two or three orders of
     magnitude larger, move the mean back to a filtered Avg() and the median to a
@@ -212,10 +300,16 @@ def resource_statistics(engaged):
         # fields are plain IntegerFields and the API accepts a negative, which
         # would drag a mean down as effectively as a huge value drags it up.
         sane = [value for value in values if 0 <= value <= SANE_MAX_RESOURCE]
+        p25, p75 = _quartiles(sane) if sane else (0, 0)
         statistics.append({
             "label": label,
             "avg": round(sum(sane) / len(sane), 1) if sane else 0,
             "median": round(median(sane), 1) if sane else 0,
+            "p25": round(p25, 1),
+            "p75": round(p75, 1),
+            # The quartiles' blind spot: when a quarter of people hold none,
+            # p25 reads 0 and says nothing more. This says how many.
+            "zero_pct": pct(sane.count(0), len(sane)),
             "excluded": len(values) - len(sane),
         })
     return statistics

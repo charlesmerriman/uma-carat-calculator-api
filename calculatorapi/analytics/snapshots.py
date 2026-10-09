@@ -38,9 +38,19 @@ HISTORY_MONTHS = 12
 NOT_STORED = frozenset({"daily_visits", "monthly_visits", "comparison", "history"})
 
 
-def _paid_product(label):
-    """A reader for one paid product's user count, found by its label."""
+def _paid_product(field, label):
+    """A reader for one paid product's user count, in either report shape.
+
+    Shape v3 lists every income toggle under `income_settings`, keyed by field;
+    earlier shapes had `paid_products`, found by label. Both are read so the
+    snapshots stored before v3 keep their History and comparison. For a toggle
+    that starts off, "changed from default" is the same count the old table
+    called users.
+    """
     def read(report):
+        if "income_settings" in report:
+            return next(row["changed"] for row in report["income_settings"]
+                        if row["key"] == field)
         return next(row["count"] for row in report["paid_products"]
                     if row["label"] == label)
     return read
@@ -54,8 +64,10 @@ FIGURES = [
     ("total_users", "Total users (non-staff)", lambda report: report["total_users"]),
     ("engaged_users", "Engaged users", lambda report: report["engaged_users"]),
     ("engaged_pct", "Engaged %", lambda report: report["engaged_pct"]),
-    ("daily_carat", "Daily Carat Pack", _paid_product("Daily Carat Pack")),
-    ("training_pass", "Training Pass", _paid_product("Training Pass")),
+    ("daily_carat", "Daily Carat Pack",
+     _paid_product("daily_carat", "Daily Carat Pack")),
+    ("training_pass", "Training Pass",
+     _paid_product("training_pass", "Training Pass")),
     ("any_selector", "Any selector", lambda report: report["any_selector"]["count"]),
 ]
 
