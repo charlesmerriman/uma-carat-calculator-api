@@ -8,7 +8,7 @@ The site plans pulls on the GLOBAL server, but global dates are only confirmed
 
 This module is pure query logic — the math lives in `compute_effective_dates`
 (DB-free, unit-tested directly), with a thin ORM wrapper `build_effective_date_map`
-that feeds it — mirroring the split in `analytics.py`. `compute_effective_dates`
+that feeds it — mirroring the split in the `analytics` package. `compute_effective_dates`
 is model-agnostic (duck-typed, id-keyed), so any content type with the same
 jp_*/global_* date fields can reuse it; each model is resolved into its OWN map
 (its own anchor set) — rows are never mixed across models.

@@ -1,22 +1,31 @@
-"""The admin analytics report, and the visit counting it is built from."""
+"""The admin analytics report: its cache, table shape, snapshots, page and CSV.
+
+Per-section figures are in test_analytics_sections.py; the visit counting the
+traffic sections read is in test_visits.py.
+"""
 
 import datetime
 from io import StringIO
 from unittest.mock import patch
 
 from django.core.management import call_command
-from django.test import RequestFactory, override_settings
+from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 
-from calculatorapi.analytics import build_analytics_report
-from calculatorapi.visits import (
-    VISITOR_HASH_RETENTION_DAYS,
-    build_visit_report,
-    record_visit,
-)
+from calculatorapi.admin_dashboard import dashboard_callback
+from calculatorapi.analytics import build_analytics_report, get_report, report_tables
+from calculatorapi.analytics.common import REPORT_SHAPE
+from calculatorapi.analytics.snapshots import NOT_STORED, ensure_today
+from calculatorapi.analytics.tables import KINDS, csv_cell, page_cell
 from calculatorapi.models import (
+    AnalyticsSnapshot,
     AnniversaryEventProduct,
+    LandingPageVisit,
+    PatreonSupporter,
+    PatreonTier,
+    ReferrerVisit,
+    UserOshi,
     CustomUser,
     ClubRank,
     IncomeProfile,
@@ -24,11 +33,12 @@ from calculatorapi.models import (
     Uma,
     UserPlannedBanner,
     UserPlannedPurchase,
-    DailyVisit, MonthlyVisit, VisitorHash,
+    DailyVisit, MonthlyVisit,
 )
 from calculatorapi.tests.base import CalculatorTestCase, PLAIN_TEST_STORAGES
 from calculatorapi.tests.factories import (
     make_anniversary_event,
+    make_step_up_banner,
     make_user,
     make_timeline,
     make_uma_banner,
@@ -44,10 +54,13 @@ class AnalyticsReportEmptyTests(CalculatorTestCase):
         self.assertEqual(report['total_users'], 0)
         self.assertEqual(report['engaged_users'], 0)
         self.assertEqual(report['engaged_pct'], 0.0)
-        for product in report['paid_products']:
-            self.assertEqual(product['count'], 0)
-            self.assertEqual(product['pct_of_total'], 0.0)
-            self.assertEqual(product['pct_of_engaged'], 0.0)
+        for setting in report['income_settings']:
+            self.assertEqual(setting['users_on'], 0)
+            self.assertEqual(setting['changed'], 0)
+            self.assertEqual(setting['pct_on'], 0.0)
+        self.assertEqual(report['shop_tickets'], [])
+        self.assertEqual(report['step_up_popularity'], [])
+        self.assertEqual(report['demand_calendar'], [])
         for resource in report['resource_averages']:
             self.assertEqual(resource['avg'], 0)
             self.assertEqual(resource['median'], 0)
@@ -56,6 +69,8 @@ class AnalyticsReportEmptyTests(CalculatorTestCase):
         self.assertEqual(report['any_selector']['count'], 0)
         self.assertEqual(report['popular_uma_banners'], [])
         self.assertEqual(report['popular_support_banners'], [])
+        self.assertIsNone(report['comparison']['since'])
+        self.assertEqual(report['history'], [])
 
 
 class AnalyticsReportScenarioTests(CalculatorTestCase):
@@ -126,15 +141,14 @@ class AnalyticsReportScenarioTests(CalculatorTestCase):
         self.assertEqual(self.report['engaged_pct'], 75.0)
 
     def test_paid_product_percentages(self):
-        daily, training = self.report['paid_products'][0], self.report['paid_products'][1]
+        daily, training = self.report['income_settings'][0], self.report['income_settings'][1]
         self.assertEqual(daily['label'], 'Daily Carat Pack')
-        self.assertEqual(daily['count'], 1)          # whale only (staff ignored)
-        self.assertEqual(daily['pct_of_total'], 25.0)
-        self.assertEqual(daily['pct_of_engaged'], 33.3)
+        self.assertEqual(daily['users_on'], 1)       # whale only (staff ignored)
+        self.assertEqual(daily['changed'], 1)        # starts off, so on = changed
+        self.assertEqual(daily['pct_on'], 33.3)      # of the three engaged
         self.assertEqual(training['label'], 'Training Pass')
-        self.assertEqual(training['count'], 2)       # whale + dolphin
-        self.assertEqual(training['pct_of_total'], 50.0)
-        self.assertEqual(training['pct_of_engaged'], 66.7)
+        self.assertEqual(training['users_on'], 2)    # whale + dolphin
+        self.assertEqual(training['pct_on'], 66.7)
 
     def test_club_rank_distribution_ordered_by_income_with_not_set(self):
         club = next(d for d in self.report['rank_distributions']
@@ -373,6 +387,222 @@ class AnalyticsOutlierTests(CalculatorTestCase):
         )
 
 
+class AnalyticsReportCacheTests(CalculatorTestCase):
+    """get_report(): built at most once per five minutes, shared by every reader."""
+
+    def test_a_second_read_is_served_from_the_cache(self):
+        get_report()
+        with self.assertNumQueries(0):
+            get_report()
+
+    def test_the_cached_copy_does_not_see_new_rows(self):
+        # Staleness is the price of the cache. The TTL bounds it and the page
+        # prints when the report was built, so it is visible, not silent.
+        make_user('first')
+        self.assertEqual(get_report()['total_users'], 1)
+        make_user('second')
+        self.assertEqual(get_report()['total_users'], 1)
+
+    def test_refresh_rebuilds_and_replaces_the_cached_copy(self):
+        make_user('first')
+        get_report()
+        make_user('second')
+        self.assertEqual(get_report(refresh=True)['total_users'], 2)
+        self.assertEqual(get_report()['total_users'], 2)
+
+    def test_the_admin_index_cards_read_the_cached_report(self):
+        """The KPI cards run on every /admin/ load, so they must not rebuild."""
+        get_report()
+        with self.assertNumQueries(0):
+            context = dashboard_callback(None, {})
+        self.assertEqual(context['kpi_cards'][0]['title'], 'Total users')
+
+
+class AnalyticsTablesTests(CalculatorTestCase):
+    """The one table shape the page and the CSV both render (analytics/tables.py).
+
+    The seed gives every section at least one row, so the structure check has
+    something to check in each.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        club = ClubRank.objects.create(name='A', income_amount=100)
+        user = CustomUser.objects.create_user(
+            username='user', password='x', club_rank=club, current_carat=10)
+        timeline = make_timeline()
+        UserPlannedBanner.objects.create(
+            user=user, banner_uma=make_uma_banner(timeline), number_of_pulls=5)
+        UserPlannedBanner.objects.create(
+            user=user, banner_support=make_support_banner(timeline),
+            number_of_pulls=5)
+        make_anniversary_event(products=[
+            {'name': 'Uma Selector', 'product_type': 'uma_selector'},
+        ])
+        UserPlannedPurchase.objects.create(
+            user=user, product=AnniversaryEventProduct.objects.get())
+        UserPlannedBanner.objects.create(
+            user=user, banner_step_up=make_step_up_banner(), number_of_pulls=5)
+        PatreonSupporter.objects.create(
+            display_name='Patron', patreon_user_id='1',
+            tier=PatreonTier.objects.create(name='Junior Class', order=10))
+        UserOshi.objects.create(user=user, uma=Uma.objects.create(name='Fave'), position=0)
+        LandingPageVisit.objects.create(date=timezone.localdate(), route='/', page_views=1)
+        ReferrerVisit.objects.create(date=timezone.localdate(), host='direct', page_views=1)
+        DailyVisit.objects.create(
+            date=timezone.localdate(), page_views=1, unique_visitors=1)
+        MonthlyVisit.objects.create(
+            month=timezone.localdate().replace(day=1),
+            page_views=1, unique_visitors=1)
+        cls.tables = report_tables(build_analytics_report())
+
+    def test_every_row_fills_every_column(self):
+        """A section cannot ship with a column its rows do not fill."""
+        for section in self.tables:
+            with self.subTest(section=section['key']):
+                self.assertTrue(section['rows'], 'the seed should give this section a row')
+                keys = {column.key for column in section['columns']}
+                rows = section['rows'] + [section['footer']] * bool(section['footer'])
+                for row in rows:
+                    self.assertLessEqual(keys, row.keys())
+
+    def test_every_column_has_a_kind_the_renderers_know(self):
+        for section in self.tables:
+            for column in section['columns']:
+                self.assertIn(column.kind, KINDS, (section['key'], column.label))
+
+    def test_section_keys_are_unique(self):
+        # They are the page's anchor ids.
+        keys = [section['key'] for section in self.tables]
+        self.assertEqual(len(keys), len(set(keys)))
+
+    def test_kinds_format_for_each_renderer(self):
+        day = datetime.date(2026, 10, 9)
+        self.assertEqual(page_cell(12.5, 'pct'), '12.5%')
+        self.assertEqual(csv_cell(12.5, 'pct'), 12.5)
+        self.assertEqual(page_cell(day, 'date'), '2026-10-09')
+        self.assertEqual(csv_cell(day, 'month'), '2026-10')
+        # A predicted banner has no confirmed date: blank, never a crash.
+        self.assertEqual(page_cell(None, 'date'), '')
+        self.assertEqual(csv_cell(None, 'date'), '')
+        # Nothing ignored reads as a dash on the page, a number in the CSV.
+        self.assertEqual(page_cell(0, 'ignored'), '–')
+        self.assertEqual(csv_cell(0, 'ignored'), 0)
+        self.assertEqual(page_cell(3, 'ignored'), '3')
+
+
+def _store_snapshot(day, **report):
+    """A stored snapshot holding only the keys a test cares about, which is
+    also what a row from an older, smaller report shape looks like."""
+    return AnalyticsSnapshot.objects.create(date=day, shape='test', report=report)
+
+
+def _days_ago(days):
+    return timezone.localdate() - datetime.timedelta(days=days)
+
+
+class AnalyticsSnapshotTests(CalculatorTestCase):
+    """snapshots.ensure_today(): one stored copy of the report per day."""
+
+    def test_the_first_rebuild_of_a_day_keeps_one_snapshot(self):
+        get_report()
+        get_report(refresh=True)
+        self.assertEqual(AnalyticsSnapshot.objects.count(), 1)
+        self.assertEqual(AnalyticsSnapshot.objects.get().date, timezone.localdate())
+
+    def test_a_race_past_the_exists_check_still_leaves_one_row(self):
+        report = build_analytics_report()
+        self.assertTrue(ensure_today(report))
+        # Both requests saw "missing"; the unique date lets only one insert win.
+        with patch('django.db.models.query.QuerySet.exists', return_value=False):
+            self.assertFalse(ensure_today(report))
+        self.assertEqual(AnalyticsSnapshot.objects.count(), 1)
+
+    def test_dated_by_the_day_the_report_was_built(self):
+        report = build_analytics_report()
+        report['generated_at'] -= datetime.timedelta(days=1)
+        ensure_today(report)
+        self.assertEqual(AnalyticsSnapshot.objects.get().date, _days_ago(1))
+
+    def test_stores_the_figures_but_not_traffic_or_what_is_built_from_snapshots(self):
+        make_user('someone')
+        ensure_today(build_analytics_report())
+        row = AnalyticsSnapshot.objects.get()
+        self.assertEqual(row.shape, REPORT_SHAPE)
+        self.assertEqual(row.report['total_users'], 1)
+        self.assertFalse(NOT_STORED & row.report.keys())
+
+
+class AnalyticsComparisonTests(CalculatorTestCase):
+    """The Overview's "30 days ago": the nearest snapshot on or before then."""
+
+    def test_no_snapshot_old_enough_leaves_every_comparison_blank(self):
+        _store_snapshot(_days_ago(10), total_users=0)
+        comparison = build_analytics_report()['comparison']
+        self.assertIsNone(comparison['since'])
+        for row in comparison['figures'].values():
+            self.assertIsNone(row['then'])
+            self.assertIsNone(row['delta'])
+
+    def test_reads_the_nearest_snapshot_on_or_before_30_days_back(self):
+        _store_snapshot(_days_ago(45), total_users=1)
+        _store_snapshot(_days_ago(10), total_users=5)   # too recent
+        for name in ('a', 'b', 'c'):
+            make_user(name)
+        comparison = build_analytics_report()['comparison']
+        self.assertEqual(comparison['since'], _days_ago(45))
+        total = comparison['figures']['total_users']
+        self.assertEqual((total['now'], total['then'], total['delta']), (3, 1, 2))
+
+    def test_a_snapshot_from_before_income_settings_still_reads_daily_carat(self):
+        _store_snapshot(_days_ago(40), paid_products=[
+            {'label': 'Daily Carat Pack', 'count': 4}])
+        figures = build_analytics_report()['comparison']['figures']
+        self.assertEqual(figures['daily_carat']['then'], 4)
+
+    def test_a_figure_an_older_shape_lacks_reads_blank_not_an_error(self):
+        _store_snapshot(_days_ago(40), total_users=2)   # no paid_products, no any_selector
+        figures = build_analytics_report()['comparison']['figures']
+        self.assertEqual(figures['total_users']['delta'], -2)
+        self.assertIsNone(figures['daily_carat']['then'])
+        self.assertIsNone(figures['any_selector']['delta'])
+
+
+class AnalyticsHistoryTests(CalculatorTestCase):
+    """One row per month from its first snapshot, beside that month's visitors."""
+
+    @classmethod
+    def setUpTestData(cls):
+        this_month = timezone.localdate().replace(day=1)
+        cls.last_month = (this_month - datetime.timedelta(days=1)).replace(day=1)
+        cls.two_months_ago = (cls.last_month - datetime.timedelta(days=1)).replace(day=1)
+        _store_snapshot(cls.last_month.replace(day=3), total_users=4)
+        _store_snapshot(cls.last_month.replace(day=20), total_users=9)
+        MonthlyVisit.objects.create(
+            month=cls.last_month, page_views=50, unique_visitors=30)
+        # Traffic only: a month from before snapshots began.
+        MonthlyVisit.objects.create(
+            month=cls.two_months_ago, page_views=20, unique_visitors=12)
+        cls.history = build_analytics_report()['history']
+
+    def test_a_month_reads_its_first_snapshot(self):
+        row = self.history[0]
+        self.assertEqual(row['month'], self.last_month)
+        self.assertEqual(row['total_users'], 4)
+        self.assertEqual(row['unique_visitors'], 30)
+
+    def test_a_month_with_only_traffic_has_blank_account_figures(self):
+        row = self.history[1]
+        self.assertEqual(row['month'], self.two_months_ago)
+        self.assertIsNone(row['total_users'])
+        self.assertEqual(row['unique_visitors'], 12)
+
+    def test_a_month_with_neither_is_left_out(self):
+        # This month has no snapshot (build_analytics_report never writes one)
+        # and no traffic.
+        self.assertEqual(len(self.history), 2)
+
+
 # Rendering admin templates resolves {% static %} tags; the production
 # whitenoise manifest storage requires collectstatic, which never runs in
 # tests. Any test class that renders admin pages swaps in plain storage.
@@ -399,12 +629,115 @@ class AnalyticsDashboardViewTests(CalculatorTestCase):
         self.assertEqual(res.status_code, 302)
         self.assertIn('/admin/login/', res.url)
 
+    def test_ended_banners_fold_away_on_the_page_but_stay_in_the_csv(self):
+        now = timezone.now()
+        ended = make_timeline(global_start_date=now - datetime.timedelta(days=40),
+                              global_end_date=now - datetime.timedelta(days=10))
+        UserPlannedBanner.objects.create(
+            user=make_user('planner'), banner_uma=make_uma_banner(ended, name='Gone'),
+            number_of_pulls=10)
+        self._staff_client()
+        page = self.client.get(self.url).content.decode()
+        self.assertIn('<summary>Ended (1)</summary>', page)
+        self.assertIn('No upcoming or running Uma banners are planned.', page)
+        body = self.client.get(self.url, {'format': 'csv'}).content.decode()
+        self.assertIn('Gone,', body)
+        self.assertIn(',ended,', body)
+
+    def test_charts_are_drawn_through_unfolds_component(self):
+        today = timezone.localdate()
+        last_month = (today.replace(day=1) - datetime.timedelta(days=1)).replace(day=1)
+        DailyVisit.objects.create(date=today, page_views=7, unique_visitors=3)
+        MonthlyVisit.objects.create(month=today.replace(day=1), page_views=7,
+                                    unique_visitors=3)
+        _store_snapshot(last_month.replace(day=3), total_users=1, engaged_users=1)
+        # One answered rank type (Club), so one rank bar; the other three are
+        # all "Not set" and draw nothing.
+        ranked = CustomUser.objects.create_user(
+            username='ranked', password='x',
+            club_rank=ClubRank.objects.create(name='A', income_amount=1))
+        UserPlannedBanner.objects.create(
+            user=ranked, banner_uma=make_uma_banner(make_timeline()), number_of_pulls=10)
+        self._staff_client()
+        page = self.client.get(self.url).content.decode()
+        # Daily traffic, monthly traffic, history; then Club Rank and demand.
+        self.assertEqual(page.count('data-type="line"'), 3)
+        self.assertEqual(page.count('data-type="bar"'), 2)
+        # The JSON reaches the attribute escaped, which the browser undoes.
+        self.assertIn('data-value="{&quot;labels&quot;', page)
+
+    def test_an_empty_report_draws_no_chart(self):
+        self._staff_client()
+        self.assertNotContains(self.client.get(self.url), 'class="chart"')
+
+    def test_the_navigation_links_every_section(self):
+        self._staff_client()
+        page = self.client.get(self.url).content.decode()
+        for section in report_tables(get_report()):
+            self.assertIn(f'href="#{section["key"]}"', page)
+            self.assertIn(f'id="{section["key"]}"', page)
+
+    def test_json_returns_the_report_dict(self):
+        make_user('someone')
+        self._staff_client()
+        res = self.client.get(self.url, {'format': 'json'})
+        self.assertEqual(res['Content-Type'], 'application/json')
+        body = res.json()
+        self.assertEqual(body['total_users'], 1)
+        self.assertIsInstance(body['generated_at'], str)
+
     def test_staff_user_gets_dashboard(self):
         self._staff_client()
         res = self.client.get(self.url)
         self.assertEqual(res.status_code, 200)
         self.assertContains(res, 'Daily Carat Pack')
         self.assertContains(res, 'Download CSV')
+        self.assertContains(res, 'Refresh now')
+
+    def test_the_csv_is_the_cached_report_the_page_showed(self):
+        self._staff_client()
+        make_user('first')
+        self.client.get(self.url)
+        make_user('second')
+        body = self.client.get(self.url, {'format': 'csv'}).content.decode()
+        # Value 1, the then-cached count; no snapshot is 30 days old, so the
+        # comparison cells are blank.
+        self.assertIn('Total users (non-staff),1,,\r\n', body)
+
+    def test_a_staff_visit_keeps_one_snapshot_a_day(self):
+        self._staff_client()
+        self.client.get(self.url)
+        self.client.get(self.url)
+        self.client.get(self.url, {'format': 'csv'})
+        self.assertEqual(AnalyticsSnapshot.objects.count(), 1)
+
+    def test_page_and_csv_show_the_comparison_and_history(self):
+        _store_snapshot(_days_ago(35), total_users=0)
+        make_user('newcomer')
+        self._staff_client()
+        page = self.client.get(self.url)
+        self.assertContains(page, '30 days ago')
+        self.assertContains(page, '<td>+1</td>', html=True)
+        self.assertContains(page, 'id="history"')
+        body = self.client.get(self.url, {'format': 'csv'}).content.decode()
+        self.assertIn('Total users (non-staff),1,0,1\r\n', body)
+        self.assertIn('History', body)
+
+    def test_the_admin_index_card_says_how_much_users_grew(self):
+        since = _days_ago(35)
+        _store_snapshot(since, total_users=0)
+        make_user('newcomer')
+        cards = dashboard_callback(None, {})['kpi_cards']
+        self.assertEqual(cards[0]['footer'], f'+1 since {since:%Y-%m-%d}')
+
+    def test_refresh_rebuilds_then_redirects_to_the_plain_url(self):
+        self._staff_client()
+        make_user('first')
+        self.client.get(self.url)
+        make_user('second')
+        res = self.client.get(self.url, {'refresh': '1'})
+        self.assertRedirects(res, self.url, fetch_redirect_response=False)
+        self.assertEqual(get_report()['total_users'], 2)
 
     def test_csv_download(self):
         self._staff_client()
@@ -413,9 +746,9 @@ class AnalyticsDashboardViewTests(CalculatorTestCase):
         self.assertEqual(res['Content-Type'], 'text/csv')
         self.assertIn('attachment; filename="analytics-', res['Content-Disposition'])
         body = res.content.decode()
-        self.assertIn('Paid Products', body)
-        self.assertIn('Campaign Selectors', body)
-        self.assertIn('Popular Uma Banners', body)
+        self.assertIn('Income settings', body)
+        self.assertIn('Campaign selectors', body)
+        self.assertIn('Popular Uma banners', body)
 
     def test_csv_survives_a_planned_banner_with_no_confirmed_dates(self):
         """Regression: Download CSV used to 500 on any predicted banner.
@@ -457,258 +790,29 @@ class AnalyticsDashboardViewTests(CalculatorTestCase):
         self._seed_traffic()
         self._staff_client()
         body = self.client.get(self.url, {'format': 'csv'}).content.decode()
-        self.assertIn('Site Traffic', body)
+        self.assertIn('Site traffic', body)
         # The monthly column is a true monthly-active count and is therefore
         # SMALLER than the sum of the daily uniques. The qualifier in the header
         # is what stops a reader treating that gap as a bug.
         self.assertIn('Unique visitors (counted once per month)', body)
 
 
-class VisitRecordingTests(CalculatorTestCase):
-    """record_visit()'s counting, deduplication and bot filtering.
+class SnapshotAnalyticsCommandTests(CalculatorTestCase):
+    """manage.py snapshot_analytics: the deploy chain's daily point."""
 
-    Every test pins the calendar date rather than using the real one: the
-    monthly behaviour is the interesting part, and a suite that happened to run
-    on the 31st would otherwise straddle a month boundary and fail at random.
-    """
-
-    # Mid-month, so ±1 day never crosses a boundary by accident.
-    DAY = datetime.date(2026, 3, 15)
-
-    def setUp(self):
-        self.factory = RequestFactory()
-
-    def _hit(self, ip='203.0.113.5', agent='Mozilla/5.0', forwarded=None, day=None):
-        """One beacon request on `day`. `forwarded` sets X-Forwarded-For."""
-        headers = {'REMOTE_ADDR': ip, 'HTTP_USER_AGENT': agent}
-        if forwarded is not None:
-            headers['HTTP_X_FORWARDED_FOR'] = forwarded
-        request = self.factory.post('/visit', **headers)
-        with patch('calculatorapi.visits.timezone.localdate',
-                   return_value=day or self.DAY):
-            return record_visit(request)
-
-    def _daily(self, day=None):
-        row = DailyVisit.objects.get(date=day or self.DAY)
-        return row.page_views, row.unique_visitors
-
-    def _monthly(self, month=None):
-        row = MonthlyVisit.objects.get(month=month or self.DAY.replace(day=1))
-        return row.page_views, row.unique_visitors
-
-    def test_first_visit_creates_both_counter_rows(self):
-        self.assertTrue(self._hit())
-        self.assertEqual(self._daily(), (1, 1))
-        self.assertEqual(self._monthly(), (1, 1))
-
-    def test_repeat_visitor_adds_a_view_but_not_a_visitor(self):
-        self._hit()
-        self._hit()
-        self._hit()
-        self.assertEqual(self._daily(), (3, 1))
-        self.assertEqual(self._monthly(), (3, 1))
-        # One day, one hash: the unique constraint is doing the deduplication.
-        self.assertEqual(VisitorHash.objects.count(), 1)
-
-    def test_different_ip_counts_as_a_new_visitor(self):
-        self._hit(ip='203.0.113.5')
-        self._hit(ip='198.51.100.9')
-        self.assertEqual(self._daily(), (2, 2))
-        self.assertEqual(self._monthly(), (2, 2))
-
-    def test_different_user_agent_counts_as_a_new_visitor(self):
-        self._hit(agent='Mozilla/5.0')
-        self._hit(agent='Mozilla/5.0 (different device)')
-        self.assertEqual(self._daily(), (2, 2))
-
-    def test_forwarded_for_wins_over_remote_addr(self):
-        """Without this the load balancer's IP is all we ever see in production.
-
-        Both hits arrive from the same REMOTE_ADDR — as they would behind App
-        Platform's proxy — but carry different client addresses. If X-Forwarded-For
-        were ignored they would collapse into one visitor.
-        """
-        self._hit(ip='10.0.0.1', forwarded='203.0.113.5')
-        self._hit(ip='10.0.0.1', forwarded='198.51.100.9')
-        self.assertEqual(self._daily(), (2, 2))
-
-    def test_forwarded_for_uses_the_first_entry(self):
-        """"client, proxy1, proxy2" — the client is the leftmost entry."""
-        self._hit(ip='10.0.0.1', forwarded='203.0.113.5, 10.0.0.2, 10.0.0.3')
-        self._hit(ip='10.0.0.1', forwarded='203.0.113.5, 10.9.9.9')
-        self.assertEqual(self._daily(), (2, 1))
-
-    def test_bots_are_not_counted_at_all(self):
-        for agent in ['Googlebot/2.1', 'python-urllib/3.11', 'curl/8.0',
-                      'HeadlessChrome/120', 'Some Crawler']:
-            self.assertFalse(self._hit(agent=agent), agent)
-        self.assertFalse(DailyVisit.objects.exists())
-        self.assertFalse(MonthlyVisit.objects.exists())
-
-    def test_no_identifying_data_is_stored(self):
-        """The privacy contract, asserted rather than assumed."""
-        self._hit(ip='203.0.113.5', agent='Mozilla/5.0 (SecretDevice)')
-        stored = VisitorHash.objects.get()
-        self.assertNotIn('203.0.113.5', stored.visitor_hash)
-        self.assertNotIn('SecretDevice', stored.visitor_hash)
-        self.assertEqual(len(stored.visitor_hash), 32)
-
-    # ── The monthly-unique semantics ─────────────────────────────────────────
-
-    def test_returning_on_another_day_counts_once_for_the_month(self):
-        """The whole point of a month-scoped hash: a real monthly-active count.
-
-        Two days, one person. Each day sees a unique visitor; the month sees one.
-        """
-        self._hit(day=self.DAY)
-        self._hit(day=self.DAY + datetime.timedelta(days=1))
-
-        self.assertEqual(self._daily(self.DAY), (1, 1))
-        self.assertEqual(self._daily(self.DAY + datetime.timedelta(days=1)), (1, 1))
-        # 2 page views, but ONE visitor — not the sum of the daily uniques.
-        self.assertEqual(self._monthly(), (2, 1))
-
-    def test_the_same_visitor_is_new_again_next_month(self):
-        """The link breaks at the boundary, which is the privacy property."""
-        self._hit(day=datetime.date(2026, 3, 31))
-        self._hit(day=datetime.date(2026, 4, 1))
-
-        self.assertEqual(self._monthly(datetime.date(2026, 3, 1)), (1, 1))
-        self.assertEqual(self._monthly(datetime.date(2026, 4, 1)), (1, 1))
-
-    def test_hash_is_stable_within_a_month_and_changes_across_months(self):
-        self._hit(day=datetime.date(2026, 3, 2))
-        self._hit(day=datetime.date(2026, 3, 28))
-        march = set(VisitorHash.objects.values_list('visitor_hash', flat=True))
-        self.assertEqual(len(march), 1, 'same visitor, same month, same hash')
-
-        self._hit(day=datetime.date(2026, 4, 2))
-        everything = set(VisitorHash.objects.values_list('visitor_hash', flat=True))
-        self.assertEqual(len(everything), 2, 'new month, unrelated hash')
-
-    def test_two_visitors_across_overlapping_days(self):
-        """A mixed month: A on two days, B on one. Three views, two people."""
-        day_two = self.DAY + datetime.timedelta(days=1)
-        self._hit(ip='203.0.113.5', day=self.DAY)
-        self._hit(ip='198.51.100.9', day=self.DAY)
-        self._hit(ip='203.0.113.5', day=day_two)
-
-        self.assertEqual(self._daily(self.DAY), (2, 2))
-        self.assertEqual(self._daily(day_two), (1, 1))
-        # Sum of daily uniques would say 3; the honest answer is 2.
-        self.assertEqual(self._monthly(), (3, 2))
-
-
-class VisitReportTests(CalculatorTestCase):
-    """build_visit_report()'s windowing and monthly figures."""
-
-    def test_empty_db_reports_no_traffic(self):
-        report = build_visit_report()
-        self.assertEqual(report['daily'], [])
-        self.assertEqual(report['monthly'], [])
-
-    def test_daily_window_excludes_older_rows(self):
-        today = timezone.localdate()
-        DailyVisit.objects.create(date=today, page_views=5, unique_visitors=2)
-        DailyVisit.objects.create(
-            date=today - datetime.timedelta(days=40), page_views=99, unique_visitors=50)
-
-        daily = build_visit_report(days=30)['daily']
-        self.assertEqual([row['date'] for row in daily], [today])
-
-    def test_monthly_rows_come_from_the_monthly_counters(self):
-        MonthlyVisit.objects.create(
-            month=datetime.date(2026, 3, 1), page_views=16, unique_visitors=5)
-        MonthlyVisit.objects.create(
-            month=datetime.date(2026, 4, 1), page_views=1, unique_visitors=1)
-
-        by_month = {
-            row['month'].strftime('%Y-%m'): row
-            for row in build_visit_report()['monthly']
-        }
-        self.assertEqual(by_month['2026-03']['page_views'], 16)
-        self.assertEqual(by_month['2026-03']['unique_visitors'], 5)
-        self.assertEqual(by_month['2026-04']['page_views'], 1)
-
-    def test_monthly_window_is_limited(self):
-        for month in range(1, 13):
-            MonthlyVisit.objects.create(
-                month=datetime.date(2025, month, 1), page_views=1, unique_visitors=1)
-
-        self.assertEqual(len(build_visit_report(months=6)['monthly']), 6)
-
-
-class VisitBeaconEndpointTests(CalculatorTestCase):
-    """POST /visit — the public write-only beacon."""
-
-    def setUp(self):
-        self.url = reverse('site-visit')
-
-    def test_anonymous_post_is_accepted_and_counted(self):
-        res = self.client.post(self.url, HTTP_USER_AGENT='Mozilla/5.0')
-        self.assertEqual(res.status_code, 204)
-        self.assertEqual(res.content, b'')
-        self.assertEqual(DailyVisit.objects.get().page_views, 1)
-
-    def test_get_is_not_allowed(self):
-        self.assertEqual(self.client.get(self.url).status_code, 405)
-
-    def test_bot_gets_the_same_204_but_is_not_counted(self):
-        """The response must not reveal that the bot filter fired."""
-        res = self.client.post(self.url, HTTP_USER_AGENT='Googlebot/2.1')
-        self.assertEqual(res.status_code, 204)
-        self.assertFalse(DailyVisit.objects.exists())
-
-    def test_repeated_hits_are_eventually_throttled(self):
-        # 60/hour, so the 61st is refused. Guards the one thing standing
-        # between an open counter and anyone who wants to run it up.
-        for _ in range(60):
-            self.client.post(self.url, HTTP_USER_AGENT='Mozilla/5.0')
-        res = self.client.post(self.url, HTTP_USER_AGENT='Mozilla/5.0')
-        self.assertEqual(res.status_code, 429)
-
-
-class PruneVisitorHashesCommandTests(CalculatorTestCase):
-    """The housekeeping command must never touch the permanent counters."""
-
-    def setUp(self):
-        self.today = timezone.localdate()
-        self.old_date = self.today - datetime.timedelta(days=120)
-        DailyVisit.objects.create(
-            date=self.old_date, page_views=50, unique_visitors=20)
-        MonthlyVisit.objects.create(
-            month=self.old_date.replace(day=1), page_views=50, unique_visitors=12)
-        VisitorHash.objects.create(date=self.old_date, visitor_hash='a' * 32)
-        VisitorHash.objects.create(date=self.today, visitor_hash='b' * 32)
-
-    def test_prunes_old_hashes_but_keeps_the_counters(self):
-        call_command('prune_visitor_hashes', stdout=StringIO())
-        self.assertEqual(
-            list(VisitorHash.objects.values_list('date', flat=True)),
-            [self.today],
-        )
-        # The whole point: the historical numbers survive their scratch data.
-        self.assertEqual(DailyVisit.objects.get(date=self.old_date).page_views, 50)
-        self.assertEqual(
-            MonthlyVisit.objects.get(month=self.old_date.replace(day=1)).unique_visitors,
-            12,
-        )
-
-    def test_default_retention_cannot_break_a_month_in_progress(self):
-        """Guards the invariant the docstring warns about.
-
-        The monthly check asks "any row for this hash since the 1st?", so the
-        window has to outlast a month by a clear margin — otherwise a visitor
-        whose earlier rows were pruned mid-month gets counted twice.
-        """
-        self.assertGreaterEqual(VISITOR_HASH_RETENTION_DAYS, 45)
-
-    def test_dry_run_changes_nothing(self):
-        call_command('prune_visitor_hashes', '--dry-run', stdout=StringIO())
-        self.assertEqual(VisitorHash.objects.count(), 2)
-
-    def test_exits_cleanly_when_there_is_nothing_to_prune(self):
+    def _run(self):
         out = StringIO()
-        call_command('prune_visitor_hashes', '--days', '3650', stdout=out)
-        self.assertIn('Nothing to prune', out.getvalue())
-        self.assertEqual(VisitorHash.objects.count(), 2)
+        call_command('snapshot_analytics', stdout=out)
+        return out.getvalue()
+
+    def test_keeps_todays_snapshot_then_does_nothing(self):
+        self.assertIn('Kept the analytics snapshot', self._run())
+        self.assertIn('already exists', self._run())
+        self.assertEqual(AnalyticsSnapshot.objects.count(), 1)
+
+    def test_a_failing_report_never_fails_the_deploy(self):
+        with patch('calculatorapi.management.commands.snapshot_analytics'
+                   '.build_analytics_report', side_effect=RuntimeError('boom')):
+            output = self._run()   # returns: no exception, so exit status 0
+        self.assertIn('Snapshot skipped', output)
+        self.assertFalse(AnalyticsSnapshot.objects.exists())

@@ -162,8 +162,8 @@ python manage.py createsuperuser        # accounts are never copied, so make you
 the file out through the media Space as a private object it deletes afterwards, and replaces
 the local content tables with it. Run it again whenever local content has fallen behind.
 It copies only the tables listed in `calculatorapi/content_snapshot.py`: no accounts, plans,
-supporters, credentials or traffic counts. Both it and `load_content_snapshot` refuse any
-database that is not SQLite.
+supporters, credentials, traffic counts or analytics snapshots. Both it and
+`load_content_snapshot` refuse any database that is not SQLite.
 
 A refresh keeps local accounts and their rows. If one of those rows points at content that
 production has since deleted, the load stops and changes nothing; delete the row it names,
@@ -201,7 +201,8 @@ result depends on which tests ran before it.
 | `seed_anniversary_campaigns` | Creates or refreshes the anniversary campaigns from the source sheet. Idempotent |
 | `sync_patreon_supporters` | Syncs supporters from the Patreon API; the daily Action reaches the same reconcile over HTTP |
 | `set_patreon_tier_order` | Sets supporter tier order from `NAME=ORDER` pairs |
-| `prune_visitor_hashes` | Deletes visitor de-duplication hashes older than the retention window |
+| `prune_visitor_hashes` | Deletes visitor de-duplication hashes older than the retention window (90 days, never below 45). Runs on every deploy |
+| `snapshot_analytics` | Keeps today's copy of the admin analytics report unless one exists (the admin also keeps one on its first rebuild each day). Runs on every deploy; never fails it |
 | `purge_user_pii` | Blanks email, name and password on every non-staff account. **Irreversible**, so run it with `--dry-run` first |
 | `import_game_data` | Fills the game-data columns on Uma and SupportCard and creates or updates every Skill from `scripts/data/master_snapshot/`. `--dry-run` first; `--gametora skills.json` adds the detailed descriptions |
 | `import_game_data` also reads `support_events.json`, written by `scripts/fetch_support_events.py` from gametora (the game has no clean table for support card event skills) |

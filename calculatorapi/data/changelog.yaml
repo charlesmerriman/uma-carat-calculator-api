@@ -32,6 +32,13 @@
 # module changed. Newest entry first is conventional here but not required — the
 # page sorts by date.
 
+- key: visit-sources
+  date: 2026-10-09
+  title: "Where visits come from"
+  version: "v1.13"
+  changes:
+    - changed: "Our own visit counter now also notes which page you arrived on and which site linked you here. Only the site's name is kept, never the rest of the link, and the Privacy Policy says so."
+
 - key: favourites-for-everyone
   date: 2026-10-07
   title: "A favourite uma musume for everyone, and a target for two-card odds"

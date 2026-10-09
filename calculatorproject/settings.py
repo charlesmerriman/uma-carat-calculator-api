@@ -600,9 +600,22 @@ CACHES = {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
         "LOCATION": "calculator-data",
         "OPTIONS": {
-            # One entry is all this cache is for. The default (300) would let an
-            # accidental per-request key quietly hold 300 copies of a megabyte.
-            "MAX_ENTRIES": 8,
+            # What lives here: the /calculator-data payload (~1MB), the admin
+            # analytics report (calculatorapi.analytics.get_report, a few KB),
+            # and DRF's throttle counters: one small key per client IP per
+            # scope, each kept for its hour.
+            #
+            # The bound stops an accidental per-request key from quietly holding
+            # hundreds of copies of a megabyte (the default is 300). When the
+            # cache is full, LocMem drops the least-recently-used THIRD of its
+            # keys, and every visitor in the past hour holds a visit_beacon key,
+            # so in a busy hour it is always full. The payload is read on every
+            # /app load and stays at the recent end. The report is read only
+            # when staff look, so it is the key that falls off: at 8 entries a
+            # handful of new visitors would push it out, at 32 it takes a few
+            # dozen. Losing it costs one rebuild. Worst case is still two
+            # payloads and a few dozen counters.
+            "MAX_ENTRIES": 32,
         },
     }
 }

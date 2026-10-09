@@ -34,7 +34,14 @@ from .anniversary_event_banner import AnniversaryEventBanner
 from .anniversary_event_product import AnniversaryEventProduct
 from .user_planned_purchase import UserPlannedPurchase
 from .user_step_up_selection import UserStepUpSelection, SELECTION_SLOTS
-from .site_visit import DailyVisit, MonthlyVisit, VisitorHash
+from .site_visit import (
+    DailyVisit,
+    LandingPageVisit,
+    MonthlyVisit,
+    ReferrerVisit,
+    VisitorHash,
+)
+from .analytics_snapshot import AnalyticsSnapshot
 from .patreon_tier import PatreonTier
 from .patreon_supporter import PatreonSupporter
 from .patreon_credentials import PatreonCredentials
