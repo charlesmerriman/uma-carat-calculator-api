@@ -146,6 +146,20 @@ Separate tables for Uma and Support banners, ranked by:
 - **Avg pulls** — total pulls ÷ plan rows (how invested each planner is)
 - **Ignored** — plan rows whose pull count was too large to be a real answer
 
+**Only each account's active plan is read.** An account can hold several
+plans, and the spare ones are what-ifs: someone comparing "200 pulls" against
+"skip it" on the same banner intends one of those, not both. Counting every
+plan would report demand from a person who may intend none, and would let one
+user with five copies of a plan move an average five times. The active plan is
+the one they have open, so it is the best single answer to "what does this
+person plan to do", and it keeps every figure here meaning what it meant when
+an account had exactly one plan. The **Planned by** column on the admin's Uma
+banners and Support banners lists applies the same rule, so the two agree.
+
+Being *engaged* is the one place a spare plan still counts: planning a banner
+in any plan is using the calculator, so that person is in the engaged
+denominator even if the banner tables never show them.
+
 ### Implausible values
 
 Nothing stops a user typing 999,999,999 into a pull or resource field, and the
