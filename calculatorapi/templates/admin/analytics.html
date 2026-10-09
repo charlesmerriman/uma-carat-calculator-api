@@ -32,6 +32,20 @@ light/dark theme unfold renders in.
   .analytics-report thead th, .analytics-report tr.total td { font-weight: 600; }
   .analytics-report tr:last-child th, .analytics-report tr:last-child td { border-bottom: 0; }
   .analytics-report details { margin-top: 0.75rem; }
+  /* Charts fill a fixed-height box (maintainAspectRatio is off). */
+  .analytics-report .analytics-chart { height: 220px; margin-bottom: 1rem; }
+  .analytics-report .analytics-chart > div { height: 100%; }
+  .analytics-report .analytics-nav {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; gap: 1rem; overflow-x: auto; white-space: nowrap;
+    padding: 0.5rem 0; margin-bottom: 1rem;
+    background: var(--color-base-50, #fff);
+    border-bottom: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+    font-size: 0.85rem;
+  }
+  .dark .analytics-report .analytics-nav { background: var(--color-base-900, #111827); }
+  /* Land below the sticky nav, not under it. */
+  .analytics-report .module { scroll-margin-top: 3rem; }
   .analytics-report summary { cursor: pointer; font-weight: 500; }
   /* Wide sections (banners, step-ups) scroll inside their box, not the page. */
   .analytics-report .module { overflow-x: auto; }
@@ -60,7 +74,19 @@ light/dark theme unfold renders in.
   Percentages are shown against both denominators because brand-new accounts
   start with everything off.
 </p>
-<p><a class="button" href="?format=csv">Download CSV</a></p>
+<p>
+  <a class="button" href="?format=csv">Download CSV</a>
+  <a class="button" href="?format=json">JSON</a>
+</p>
+
+{% comment %}
+One link per section, built from the same list as the sections below, so a new
+section appears here with no edit. One line that scrolls sideways rather than
+wraps: thirty wrapped links would cover the page they navigate.
+{% endcomment %}
+<nav class="analytics-nav" aria-label="Sections">
+  {% for section in tables %}<a href="#{{ section.key }}">{{ section.title }}</a>{% endfor %}
+</nav>
 
 {% comment %}
 Every section is the same shape (calculatorapi/analytics/tables.py), so this
@@ -72,6 +98,12 @@ section needs no markup here. Cells arrive already formatted as strings; rows a 
 <div class="module" id="{{ section.key }}">
   <h2>{{ section.title }}</h2>
   {% if section.help %}<p class="help">{{ section.help }}</p>{% endif %}
+  {% if section.chart and section.cells %}
+  {# unfold's own component writes the canvas; its app.js draws it on load. #}
+  <div class="analytics-chart">
+    {% include section.chart.template with data=section.chart.data options=section.chart.options %}
+  </div>
+  {% endif %}
   {% if section.cells %}
   <table>
     <thead>

@@ -640,6 +640,48 @@ class AnalyticsDashboardViewTests(CalculatorTestCase):
         self.assertIn('Gone,', body)
         self.assertIn(',ended,', body)
 
+    def test_charts_are_drawn_through_unfolds_component(self):
+        today = timezone.localdate()
+        last_month = (today.replace(day=1) - datetime.timedelta(days=1)).replace(day=1)
+        DailyVisit.objects.create(date=today, page_views=7, unique_visitors=3)
+        MonthlyVisit.objects.create(month=today.replace(day=1), page_views=7,
+                                    unique_visitors=3)
+        _store_snapshot(last_month.replace(day=3), total_users=1, engaged_users=1)
+        # One answered rank type (Club), so one rank bar; the other three are
+        # all "Not set" and draw nothing.
+        ranked = CustomUser.objects.create_user(
+            username='ranked', password='x',
+            club_rank=ClubRank.objects.create(name='A', income_amount=1))
+        UserPlannedBanner.objects.create(
+            user=ranked, banner_uma=make_uma_banner(make_timeline()), number_of_pulls=10)
+        self._staff_client()
+        page = self.client.get(self.url).content.decode()
+        # Daily traffic, monthly traffic, history; then Club Rank and demand.
+        self.assertEqual(page.count('data-type="line"'), 3)
+        self.assertEqual(page.count('data-type="bar"'), 2)
+        # The JSON reaches the attribute escaped, which the browser undoes.
+        self.assertIn('data-value="{&quot;labels&quot;', page)
+
+    def test_an_empty_report_draws_no_chart(self):
+        self._staff_client()
+        self.assertNotContains(self.client.get(self.url), 'class="chart"')
+
+    def test_the_navigation_links_every_section(self):
+        self._staff_client()
+        page = self.client.get(self.url).content.decode()
+        for section in report_tables(get_report()):
+            self.assertIn(f'href="#{section["key"]}"', page)
+            self.assertIn(f'id="{section["key"]}"', page)
+
+    def test_json_returns_the_report_dict(self):
+        make_user('someone')
+        self._staff_client()
+        res = self.client.get(self.url, {'format': 'json'})
+        self.assertEqual(res['Content-Type'], 'application/json')
+        body = res.json()
+        self.assertEqual(body['total_users'], 1)
+        self.assertIsInstance(body['generated_at'], str)
+
     def test_staff_user_gets_dashboard(self):
         self._staff_client()
         res = self.client.get(self.url)
