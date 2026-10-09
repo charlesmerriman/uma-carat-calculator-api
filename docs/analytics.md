@@ -40,7 +40,8 @@ python manage.py createsuperuser
   numbers.
 - **No IP address is ever stored.** Traffic counting hashes IP + user agent with
   a salt that includes the calendar **month**, keeps the hash only to
-  deduplicate within that month, and discards it after 90 days.
+  deduplicate within that month, and discards it after 90 days
+  (`prune_visitor_hashes`, which runs on every deploy).
 - **A visitor can be recognised for one month, and no longer.** That span is the
   price of a real monthly-active number — counting someone once per month means
   recognising them across it — and the hash changes completely at every month
@@ -52,6 +53,14 @@ python manage.py createsuperuser
   Measurement".
 
 ## Reading the numbers
+
+### How fresh they are
+
+The report is built at most once every five minutes and then held, so reloading
+the page within that window shows the same numbers, and a CSV downloaded from it
+matches what the page showed. The page prints when its copy was built; **Refresh
+now** rebuilds it on the spot. The admin home page's stat cards read the same
+copy.
 
 ### Total vs. engaged users
 
@@ -208,13 +217,19 @@ files. The dated filenames make it easy to build a trend spreadsheet later.
 
 - All aggregation lives in `calculatorapi/analytics.py`
   (`build_analytics_report()`), pure ORM queries with no HTTP concerns.
+- Every reader goes through `get_report()`, which holds the report in the
+  default cache for five minutes under `analytics:report:v1`: the page, its CSV
+  and the admin index's KPI cards (`admin_dashboard.dashboard_callback`, which
+  runs on every `/admin/` load). Bump the key's suffix when the dict's shape
+  changes. `?refresh=1` rebuilds and redirects back to the plain URL.
 - Traffic counting lives in `calculatorapi/visits.py` — same split:
   `record_visit()` writes, `build_visit_report()` reads, and neither knows about
   HTTP responses. `views/visits.py` is the `POST /visit` endpoint (public,
   throttled, always 204 and never a body, so the bot filter can't be probed).
 - `DailyVisit` and `MonthlyVisit` are the permanent records; `VisitorHash` is
-  disposable deduplication scratch, dropped by `manage.py prune_visitor_hashes`
-  after 90 days. None are registered in the admin, on purpose — they are
+  disposable deduplication scratch, dropped after 90 days by
+  `manage.py prune_visitor_hashes`, which runs on every deploy (the
+  `run_command` in `.do/app.yaml`; a live-spec change, see that file). None are registered in the admin, on purpose — they are
   reporting output, and a hand-edited counter is worse than no counter.
 - **Monthly uniques cannot be derived from `DailyVisit` after the fact**, which
   is why `MonthlyVisit` exists as its own counter rather than a `TruncMonth`

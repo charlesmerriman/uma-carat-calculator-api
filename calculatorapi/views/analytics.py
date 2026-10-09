@@ -12,15 +12,24 @@ import csv
 
 from django.contrib import admin
 from django.http import HttpResponse
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.utils import timezone
 
-from calculatorapi.analytics import build_analytics_report
+from calculatorapi.analytics import get_report
 
 
 def analytics_dashboard(request):
-    """Render the analytics snapshot; ``?format=csv`` downloads it instead."""
-    report = build_analytics_report()
+    """Render the analytics snapshot; ``?format=csv`` downloads it instead.
+
+    Both read the cached report (analytics.get_report), so the CSV is the page
+    the person just looked at. ``?refresh=1`` is the page's "Refresh now" link:
+    it rebuilds the report, then redirects to the plain URL so a reload or a
+    bookmark of the refresh link does not rebuild on every visit.
+    """
+    if request.GET.get("refresh") == "1":
+        get_report(refresh=True)
+        return redirect(request.path)
+    report = get_report()
     if request.GET.get("format") == "csv":
         return _csv_response(report)
     context = {

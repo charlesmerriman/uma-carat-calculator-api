@@ -16,6 +16,7 @@ light/dark theme unfold renders in.
   .analytics-report h1 { font-size: 1.5rem; font-weight: 600; margin: 0 0 0.75rem; }
   .analytics-report h2 { font-size: 1.05rem; font-weight: 600; margin: 0 0 0.5rem; }
   .analytics-report p { margin: 0 0 1rem; max-width: 65ch; }
+  .analytics-report p a:not(.button) { text-decoration: underline; }
   .analytics-report .module {
     border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
     border-radius: 0.5rem;
@@ -41,7 +42,12 @@ light/dark theme unfold renders in.
 <div class="analytics-report">
 <h1>Site analytics</h1>
 <p>
-  Generated {{ report.generated_at }}. Site traffic is accumulated over time;
+  Generated {{ report.generated_at|date:"Y-m-d H:i" }} UTC and held for five
+  minutes, so a reload within that shows the same numbers.
+  <a href="?refresh=1">Refresh now</a>.
+</p>
+<p>
+  Site traffic is accumulated over time;
   every other section is a snapshot of the database as it stands right now.
   Staff accounts are excluded from every user metric. “Engaged users” are accounts
   that changed at least one calculator setting or planned at least one banner —

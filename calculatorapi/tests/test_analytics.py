@@ -9,7 +9,8 @@ from django.test import RequestFactory, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
-from calculatorapi.analytics import build_analytics_report
+from calculatorapi.admin_dashboard import dashboard_callback
+from calculatorapi.analytics import build_analytics_report, get_report
 from calculatorapi.visits import (
     VISITOR_HASH_RETENTION_DAYS,
     build_visit_report,
@@ -373,6 +374,37 @@ class AnalyticsOutlierTests(CalculatorTestCase):
         )
 
 
+class AnalyticsReportCacheTests(CalculatorTestCase):
+    """get_report(): built at most once per five minutes, shared by every reader."""
+
+    def test_a_second_read_is_served_from_the_cache(self):
+        get_report()
+        with self.assertNumQueries(0):
+            get_report()
+
+    def test_the_cached_copy_does_not_see_new_rows(self):
+        # Staleness is the price of the cache. The TTL bounds it and the page
+        # prints when the report was built, so it is visible, not silent.
+        make_user('first')
+        self.assertEqual(get_report()['total_users'], 1)
+        make_user('second')
+        self.assertEqual(get_report()['total_users'], 1)
+
+    def test_refresh_rebuilds_and_replaces_the_cached_copy(self):
+        make_user('first')
+        get_report()
+        make_user('second')
+        self.assertEqual(get_report(refresh=True)['total_users'], 2)
+        self.assertEqual(get_report()['total_users'], 2)
+
+    def test_the_admin_index_cards_read_the_cached_report(self):
+        """The KPI cards run on every /admin/ load, so they must not rebuild."""
+        get_report()
+        with self.assertNumQueries(0):
+            context = dashboard_callback(None, {})
+        self.assertEqual(context['kpi_cards'][0]['title'], 'Total users')
+
+
 # Rendering admin templates resolves {% static %} tags; the production
 # whitenoise manifest storage requires collectstatic, which never runs in
 # tests. Any test class that renders admin pages swaps in plain storage.
@@ -405,6 +437,24 @@ class AnalyticsDashboardViewTests(CalculatorTestCase):
         self.assertEqual(res.status_code, 200)
         self.assertContains(res, 'Daily Carat Pack')
         self.assertContains(res, 'Download CSV')
+        self.assertContains(res, 'Refresh now')
+
+    def test_the_csv_is_the_cached_report_the_page_showed(self):
+        self._staff_client()
+        make_user('first')
+        self.client.get(self.url)
+        make_user('second')
+        body = self.client.get(self.url, {'format': 'csv'}).content.decode()
+        self.assertIn('Total users (non-staff),1\r\n', body)
+
+    def test_refresh_rebuilds_then_redirects_to_the_plain_url(self):
+        self._staff_client()
+        make_user('first')
+        self.client.get(self.url)
+        make_user('second')
+        res = self.client.get(self.url, {'refresh': '1'})
+        self.assertRedirects(res, self.url, fetch_redirect_response=False)
+        self.assertEqual(get_report()['total_users'], 2)
 
     def test_csv_download(self):
         self._staff_client()
