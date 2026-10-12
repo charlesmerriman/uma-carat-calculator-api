@@ -120,9 +120,10 @@ class LandingPageVisit(models.Model):
 
     The SPA's beacon fires once per session from wherever the visitor arrived,
     so the path it reports is the landing page. Only the public routes in
-    visits.KNOWN_ROUTES are kept by name; every other path (a typo, a probe, an
-    old link) counts as "other", so this table holds a short, fixed list of
-    pages and nothing a visitor typed.
+    visits.KNOWN_ROUTES are kept by name, plus one bucket for every shared
+    plan's link (visits.SHARED_PLAN_ROUTE, never the id itself); every other
+    path (a typo, a probe, an old link) counts as "other", so this table holds
+    a short, fixed list of pages and nothing a visitor typed.
 
     Totals only, like DailyVisit: no visitor hash is involved, so a row cannot
     be tied to anyone even inside the database, and the rows are kept. Not in

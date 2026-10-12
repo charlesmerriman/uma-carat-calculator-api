@@ -3,6 +3,7 @@ from django.db.models import Q
 
 from .custom_user import CustomUser
 from .income_profile import IncomeProfile
+from ..public_ids import generate_public_id
 
 # The most plans one account can hold. A flat number for everyone (decided
 # 2026-09-17), not a supporter ladder. Enforced only when a plan is CREATED
@@ -56,6 +57,18 @@ class Plan(models.Model):
     plans.get_owned_plan() and nothing else; that one function is the
     ownership check for every plan route.
 
+    SHARING: A SHARED PLAN IS COPIED, NEVER VIEWED
+    ----------------------------------------------
+    A plan is editable only by its owner. Anyone else sees it by taking a COPY
+    through its link (`/app/<public_id>`), and the copy is then theirs. Five
+    columns carry this, and all five describe the plan, not the person:
+    `public_id` names the link, `is_shared` switches it on (off by default;
+    the public routes 404 until it is on), `share_stats` / `share_notes` say
+    whether the owner's stats block and row notes go with a copy (both off by
+    default), and `copy_count` is how many copies were taken. A copy starts
+    with all of them back at their defaults: a new, private plan with its own
+    id. Routes: views/plan_public.py. Copy rules: plans.copy_shared_plan().
+
     ONE ACTIVE PLAN PER ACCOUNT
     ---------------------------
     `is_active` marks the plan the calculator opens on. A boolean on the
@@ -72,10 +85,34 @@ class Plan(models.Model):
     user = models.ForeignKey(
         CustomUser, on_delete=models.CASCADE, related_name="plans"
     )
-    # Private to its owner today. If plans are ever published, the public title
+    # The id in the plan's share link. The service layer supplies this
+    # explicitly on every plan creation (plans.generate_unique_public_id, which
+    # retries a collision); the default protects direct ORM use. "Reset link"
+    # replaces it, which kills the old link for good.
+    public_id = models.CharField(
+        max_length=8, default=generate_public_id, unique=True, editable=False
+    )
+    # Private to its owner, and NEVER part of a share: the copier names their
+    # copy. If plans are ever published to a browse page, the public title
     # should be asked for at publish time rather than reusing this.
     name = models.CharField(max_length=40)
     is_active = models.BooleanField(default=False)
+    # Opt-in, per plan. Off: both public routes answer 404 exactly as they do
+    # for an id that does not exist, so a probe cannot tell the plan is there.
+    is_shared = models.BooleanField(default=False)
+    # What travels with a copy besides the rows. The owner's stats (carats,
+    # tickets, ranks) seed the copier's own income profile only when
+    # share_stats is on; row notes survive the copy only when share_notes is.
+    # Both are off by default because both are the owner's private numbers and
+    # words. The owner's planned purchases never travel either way.
+    share_stats = models.BooleanField(default=False)
+    share_notes = models.BooleanField(default=False)
+    # Copies taken through the share link, shown to the owner and to anyone on
+    # the landing card. Bumped with an F() expression (plans.count_copy), never
+    # by the owner's own Duplicate. A count rather than a copied_from FK on
+    # purpose: an FK would tie the copier's account to the sharer's, and a
+    # count survives either plan being deleted.
+    copy_count = models.PositiveIntegerField(default=0)
     # SET_NULL, not CASCADE: deleting a profile (admin, or the detach helper)
     # must never take a plan's banner rows with it. The plan just falls back to
     # the account's stats.

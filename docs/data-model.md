@@ -173,9 +173,14 @@ erDiagram
     Plan {
         int id PK
         int user_id FK
+        string public_id UK "8 letters/digits: the share link"
         string name
         bool is_active "one per user"
         int income_profile_id FK "nullable: null = the account's stats"
+        bool is_shared "default false: the link answers"
+        bool share_stats "default false"
+        bool share_notes "default false"
+        int copy_count "copies taken through the link"
         datetime created_at
         datetime updated_at
     }
@@ -485,6 +490,7 @@ An account holds up to `PLAN_CAP` (5) plans and the calculator opens on the acti
 |---|---|---|
 | Planned banner rows (`number_of_pulls`, `reserved_copies`, `note`, `primary_card`, `second_card`, `primary_target`) | `Plan` | the choices |
 | Which of the owner's stats blocks to read (`income_profile`, nullable) | `Plan` | a pointer, not a fact; dropped when a copy changes owner |
+| Its share link and what a copy carries (`public_id`, `is_shared`, `share_stats`, `share_notes`, `copy_count`) | `Plan` | about the plan, not the person; a copy starts with all five at their defaults |
 | Carats, tickets, selector tickets, shards, crystals, ranks | `CustomUser`, or an `IncomeProfile` the account owns | facts about the person (or about their other game account) |
 | The income toggles | same row as the balances | income side |
 | `UserPlannedPurchase` | the same stats block as the balances (`income_profile`, nullable) | money the person spends; it feeds income, so it follows the income it feeds |
@@ -495,8 +501,9 @@ Worked example: Alice (80,000 carats, top ranks) and Bob (12,000 carats, middlin
 both hold a plan that says "Kitasan, 200 pulls". Alice sees it comfortably funded. Bob sees
 a shortfall. Nothing on the plan differs; everything that differs is on their accounts.
 
-That portability is deliberate. A later feature lets a player publish a plan and another
-player take it, and both are `plans.copy_plan()` plus a visibility rule. A plan that never
+That portability is deliberate. A player can share a plan and another player can take a
+copy of it (next section but one, "Share links"), and that is `plans.copy_plan()` plus a
+visibility rule. A plan that never
 held anything about its author needs no stripping when it is copied and cannot leak what
 someone holds or spends. **Do not add a field to `Plan` that describes the person.**
 `reserved_copies` passes that test: only the count is stored, and which ticket or crystal
@@ -506,8 +513,9 @@ pays for each copy is derived on render from the viewer's own balances.
 (capped at 500 characters by the serializer, `NOTE_MAX_LENGTH`). It lives on the row
 because it is about the choice and should differ per plan, and `copy_plan()` keeps the
 portability rule true by blanking every note when the copy changes owner, exactly as it
-drops `income_profile`. It is never served on a public route and is excluded from the
-admin form.
+drops `income_profile`. The one override is the owner's own: a shared plan with
+`share_notes` on hands its notes to whoever copies it (`copy_plan(carry_notes=True)`). It
+is excluded from the admin form, and no public route serves it otherwise.
 
 `primary_card` / `second_card` pass it too: they are catalogue card ids saying which
 featured cards the row's odds are about (the first is the one the strip shows, null meaning
@@ -562,6 +570,53 @@ never deletes one, so lowering it later strands nobody's data.
 **Analytics count the ACTIVE plan only.** Spare plans are what-ifs; summing them would
 report demand from rows nobody intends. The admin's "Planned by" column counts distinct
 users for the same reason.
+
+#### Share links: a shared plan is copied, never viewed
+
+A plan is editable only by its owner. Anyone else sees it by taking a **copy** through its
+link, `/app/<public_id>`, and the copy is then theirs to change. There is no read-only view
+of somebody else's plan. Routes: `views/plan_public.py`, documented in
+`api-reference.md` ("Share links"). Decided 2026-10-12, replacing the read-only "shared
+mode" first proposed in web #107.
+
+| Column | Default | Meaning |
+|---|---|---|
+| `public_id` | a fresh id | 8 letters or digits (`public_ids.py`); unique. Every create path passes `plans.generate_unique_public_id()`, which redraws on a collision. "Reset link" (`plans.reset_public_id`) replaces it, killing the old link and nothing else. |
+| `is_shared` | False | Opt-in, per plan. Off, both public routes answer the same `404` as an id that was never issued (`plans.get_shared_plan` is the one visibility check, as `get_owned_plan` is the ownership one). |
+| `share_stats` | False | A copy gets its own `IncomeProfile` seeded from the sharer's stats (`plans.stats_target(source)`, the values only). Off, the copy reads the copier's own stats. |
+| `share_notes` | False | A copy keeps the row notes. Off, they are blanked, the default cross-account rule. |
+| `copy_count` | 0 | Copies taken through the link. `plans.count_copy` bumps it with `F() + 1` and `update()`, so `updated_at` does not move. |
+
+What a copy (`plans.copy_shared_plan`) carries, and why:
+
+- **The rows, always.** Catalogue ids and counts mean the same to anyone.
+- **Notes and stats only by the sharer's choice**, both off by default, because both are the
+  owner's own words and numbers.
+- **The sharer's planned purchases, never.** Purchases are account facts and were never part
+  of a share; a seeded profile starts with none (`attach_income_profile(seed_from=)`).
+- **The plan name, never.** The copier names the copy.
+- **Nothing that points back.** No `copied_from` FK: it would tie the copier's account to the
+  sharer's. The count is what the owner asked for, and it survives either plan being deleted.
+
+The copy itself starts private: a new `public_id`, all three flags off, `copy_count` 0. The
+cap applies to it like any new plan, and a refused copy is not counted (same transaction).
+The owner copying their own link gets an ordinary Duplicate and no count, so the number says
+how many other people took the plan.
+
+A guest copies too: the route returns the rows (device-store shape, no row `id`, `user` or
+`plan`) and the stats block only if the owner shared it AND the guest asked for it
+(`include_stats`), and the client keeps them on the device. The guest has to ask because
+their device holds one set of stats, so taking the owner's costs them their own (decided
+2026-10-12; an account copy needs no such choice, its seeded profile sits beside the
+account's numbers and touches nothing). That is the
+one place full rows leave an account, and only for a plan its owner shared. The count can be
+inflated by a script hitting that route; the `public_plan_copy` throttle caps the rate, not
+the intent, which is acceptable for a number that is social proof.
+
+**The migration is `0083`, not an edit to `0066`.** Django records migrations by name, and
+production applied `0066` on 2026-09-17, so columns added to it afterwards would never reach
+the production table, and every plan read would fail. A fresh test database runs the edited
+file and passes, which is why neither the suite nor `makemigrations --check` can catch it.
 
 #### Two releases: `UserPlannedBanner.user` is transitional
 

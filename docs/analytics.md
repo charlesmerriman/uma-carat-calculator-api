@@ -147,8 +147,9 @@ lower — and more honest — than a raw request count.
 **Landing pages** and **Referring sites** count where visits start and which
 site linked them, over the last 30 days beside the 30 before. Both are
 **visits, not visitors**: the beacon fires once per browser session, and no
-de-duplication applies. A landing page outside the site's own list (a typo, an
-old link, a bot's probe) counts as `other`. **"direct" runs high because of
+de-duplication applies. Every shared plan's link (`/app/<id>`) counts as one
+row, `/app/<shared>`, never by its id. A landing page outside the site's own list
+(a typo, an old link, a bot's probe) counts as `other`. **"direct" runs high because of
 how browsers work**: a bookmark, a typed address and most chat apps send no
 referrer at all, and Discord's desktop app is one of them, so Discord traffic
 mostly lands in "direct". The 25 busiest sites are named and the rest share a
@@ -435,7 +436,11 @@ it; the CSV and the JSON carry numbers only.
   totals counted by `visits.record_visit()` from the beacon's `path` and `ref`
   query parameters, after the bot filter, with `F()` like the daily counter.
   `visits.KNOWN_ROUTES` is the list of nameable pages: **a new public route
-  goes there too**, or its visits read as `other`. Both tables are kept, are
+  goes there too**, or its visits read as `other`. The one exception is a
+  shared plan's link, which cannot be listed (the id is per plan) and is
+  matched by shape instead, into `visits.SHARED_PLAN_ROUTE`, only after
+  `KNOWN_ROUTES` misses (`/app/timeline` fits the shape too). The id itself is
+  never stored: it would be a live link to someone's plan. Both tables are kept, are
   not in the admin, and are listed in `PRIVATE_MODELS` and
   `public_payload_cache._IRRELEVANT_MODELS` (written on every visit, they would
   otherwise switch the `/calculator-data` cache off).

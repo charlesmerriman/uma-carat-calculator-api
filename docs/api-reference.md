@@ -477,7 +477,8 @@ effective cutoff — see `calculatorapi/eligibility.py`.
 
 ## Plans
 
-All protected. A guest has one unnamed plan in memory and never calls these. Banner **rows**
+All protected. A guest has one unnamed plan on the device and never calls these (the share
+link's two public routes are under "Share links" below). Banner **rows**
 are not written here: they are saved by `PATCH /calculator-data` with a `plan_id`, because
 the auto-save sends stats, banners, purchases and selections as one transaction.
 
@@ -514,10 +515,12 @@ so a switch never re-downloads the catalogue half of `/calculator-data`.
 
 ### `PATCH /plans/<id>`
 
-Renames the plan, makes it the active one, and/or gives it its own stats. All keys optional.
+Renames the plan, makes it the active one, gives it its own stats, sets its sharing, and/or
+resets its share link. All keys optional.
 
 ```json
-{ "name": "F2P", "is_active": true, "separate_income": true }
+{ "name": "F2P", "is_active": true, "separate_income": true,
+  "is_shared": true, "share_stats": false, "share_notes": true, "regenerate_public_id": true }
 ```
 
 Only `is_active: true` means anything. There is no deactivate: an account always has exactly
@@ -530,6 +533,12 @@ included, unless another plan still uses it. Anything but a boolean is `400`, ch
 before anything is written. The response does not carry the stats or purchases: the
 client follows up with `GET /plans/<id>`, the same path a switch uses.
 
+`is_shared`, `share_stats` and `share_notes` are plain flags (see "Share links" below).
+`regenerate_public_id: true` gives the plan a new `public_id`, so the old link stops working;
+sharing and the copy count are left as they were. Like `separate_income`, anything but a
+boolean is `400` before anything is written. `public_id` and `copy_count` themselves are
+read-only, and a body that sends them is ignored.
+
 **Response `200`** `Plan`
 
 ### `DELETE /plans/<id>`
@@ -538,6 +547,85 @@ Deletes the plan and its rows. The account's last plan is refused (`400`). Delet
 active plan promotes the oldest survivor.
 
 **Response `200`** `{ "active_plan_id": 12 }`
+
+---
+
+## Share links
+
+A plan's owner can switch on a link, `/app/<public_id>`, that lets anyone take a **copy** of
+the plan. Nobody but the owner ever opens the plan itself: there is no read-only view, and
+neither route below writes to the source beyond its copy count. Code:
+`views/plan_public.py`.
+
+Both routes are public (`AllowAny`) and answer `404` unless the plan's `is_shared` is on,
+with the same body as an id that does not exist (`{"error": "Plan not found"}`), so a probe
+cannot tell a private plan is there. Both are throttled per account, or per address for a
+guest: `public_plan` (120/hour) and `public_plan_copy` (30/hour).
+
+### `GET /plans/public/<public_id>`
+
+The summary the landing card shows. Reading it never creates or changes anything, so a link
+preview or a crawler fetching it is harmless.
+
+**Response `200`**
+```json
+{
+  "public_id": "aB3dE5gH",
+  "updated_at": "2026-10-12T18:04:11Z",
+  "copy_count": 4,
+  "share_stats": false,
+  "share_notes": true,
+  "row_count": 2,
+  "rows": [
+    { "banner_uma": 31, "banner_support": null, "banner_step_up": null },
+    { "banner_uma": null, "banner_support": 18, "banner_step_up": null }
+  ]
+}
+```
+
+`rows` are catalogue ids in the order the owner's planner shows them; the client resolves
+names and art from the `/calculator-data` catalogue it already holds. Nothing else leaves the
+account here: no pull counts, no notes, no stats, no plan id, no plan name, nothing about the
+owner. `share_stats` / `share_notes` say what a copy would bring besides the rows.
+
+### `POST /plans/public/<public_id>/copy`
+
+Takes a copy. A `POST`, never a side effect of opening the link.
+
+**Signed in.** Body `{ "name": "Their anniversary plan" }`, validated like `POST /plans`.
+Creates a new plan in the caller's account, **inactive** (the client switches to it), and
+returns it the way `POST /plans` does. The copy carries the rows; each row's `note` only when
+the sharer turned `share_notes` on; and, when they turned `share_stats` on, a new income
+profile **owned by the copier**, seeded from the sharer's stats (the stat values only: the
+sharer's planned purchases never travel). The copy itself starts private: its own
+`public_id`, sharing off, `copy_count` 0. The source's `copy_count` goes up by one. The owner
+copying their own link gets an ordinary duplicate and no count.
+
+**Response `201`** `PlanWithRows` · **`400`** on a blank name, or at the cap
+
+**Guest.** Body `{ "include_stats": false }` (optional, default false; anything but a
+boolean is `400`, not counted). Nothing is created on the server; the client keeps the copy
+on the device. The source's `copy_count` goes up by one.
+
+**Response `200`**
+```json
+{
+  "user_planned_banner_data": [
+    { "number_of_pulls": 40, "reserved_copies": 1, "note": "pity here",
+      "primary_card": null, "second_card": null, "primary_target": null,
+      "banner_uma": 31, "banner_support": null, "banner_step_up": null }
+  ],
+  "user_stats_data": null
+}
+```
+
+Rows are in the device store's shape (`PATCH /calculator-data` row bodies: ids, no row `id`,
+no `user`, no `plan`); `note` is present only when `share_notes` is on. `user_stats_data` is
+the `UserStats` block only when the owner turned `share_stats` on AND the guest sent
+`include_stats: true`, else `null`. A device holds one set of stats, so taking the owner's
+replaces the guest's own: that is the guest's choice, made on the landing card, never a
+consequence of the owner's. This is the one route that hands
+a plan's full rows to someone other than its owner, and only for a plan its owner shared.
 
 ---
 
@@ -693,13 +781,19 @@ campaign's cutoff instead.
 ### `Plan` (from `user_plans`, and the `/plans` routes)
 
 ```json
-{ "id": 12, "name": "Main plan", "is_active": true, "income_profile_id": null, "updated_at": "2026-09-17T18:04:11Z" }
+{ "id": 12, "public_id": "aB3dE5gH", "name": "Main plan", "is_active": true,
+  "income_profile_id": null, "is_shared": false, "share_stats": false, "share_notes": false,
+  "copy_count": 0, "updated_at": "2026-09-17T18:04:11Z" }
 ```
 
-`name` is the only writable field. There is deliberately no `user`: the owner is always the
-caller. `updated_at` moves when the plan is renamed, activated, or has its rows saved.
+`name`, `is_shared`, `share_stats` and `share_notes` are the writable fields (`POST /plans`
+reads only `name`, so a plan is never created shared). There is deliberately no `user`: the
+owner is always the caller. `updated_at` moves when the plan is renamed, activated, has its
+sharing changed or its link reset, or has its rows saved; being copied does not move it.
 `income_profile_id` is non-null when the plan reads its own stats (`separate_income`); it is
-read-only, and a body that sends it is ignored.
+read-only, and a body that sends it is ignored. `public_id` (the share link's id) and
+`copy_count` (copies taken through it) are read-only too. This shape only ever reaches the
+plan's owner; the share routes have their own.
 
 ### `PlanWithRows` (from `POST /plans` and `GET /plans/<id>`)
 

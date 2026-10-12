@@ -203,7 +203,9 @@ class PlanRouteTests(CalculatorTestCase):
         self.assertTrue(res.data[0]["is_active"])
         # The whitelist: nothing about the owner rides along.
         self.assertEqual(
-            set(res.data[0].keys()), {"id", "name", "is_active", "income_profile_id", "updated_at"}
+            set(res.data[0].keys()),
+            {"id", "public_id", "name", "is_active", "income_profile_id",
+             "is_shared", "share_stats", "share_notes", "copy_count", "updated_at"},
         )
 
     def test_create_blank(self):
