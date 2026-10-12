@@ -4,7 +4,8 @@ GET  /plans/public/<public_id>        what a shared plan holds, as catalogue ids
 POST /plans/public/<public_id>/copy   take a copy of it. Signed in: a new plan
                                       in the caller's account. Guest: the rows
                                       to keep on the device, plus the owner's
-                                      stats only if the guest asks for them.
+                                      resources (stats and planned purchases)
+                                      only if the guest asks for them.
 
 Both AllowAny. Both answer 404 unless the plan's owner switched sharing on
 (plans.get_shared_plan), with the same body as an id that does not exist.
@@ -28,10 +29,11 @@ the catalogue the client already holds.
 The guest copy is the ONE place full rows leave an account, and only for a
 plan its owner chose to share: the rows in the shape the device store keeps
 (catalogue ids and counts, no row id, no user, no plan), each `note` only
-when the owner turned share_notes on, and the stats block only when the owner
-turned share_stats on AND the guest asked for it (`include_stats`). A guest's
-device holds one set of stats, so taking the owner's replaces their own; that
-has to be the guest's choice, never a side effect of the owner's. A signed-in copy never sends any of that back, it
+when the owner turned share_notes on, and the owner's resources (the stats
+block and its planned purchases) only when the owner turned share_stats on AND
+the guest asked for them (`include_stats`). A guest's device holds one set of
+resources, so taking the owner's replaces their own; that has to be the
+guest's choice, never a side effect of the owner's. A signed-in copy never sends any of that back, it
 creates the plan server-side (plans.copy_shared_plan) and returns it the way
 POST /plans does.
 
@@ -49,7 +51,13 @@ from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 
 from calculatorapi import plans
-from calculatorapi.models import PLAN_CAP, BannerTimeline, Plan, UserPlannedBanner
+from calculatorapi.models import (
+    PLAN_CAP,
+    BannerTimeline,
+    Plan,
+    UserPlannedBanner,
+    UserPlannedPurchase,
+)
 from calculatorapi.predictions import build_effective_date_maps
 from calculatorapi.views.calculator import planned_banners_in_order
 from calculatorapi.views.income_profile import stats_serializer
@@ -105,6 +113,17 @@ class SharedPlannedBannerSerializer(serializers.ModelSerializer):
         return data
 
 
+class SharedPlannedPurchaseSerializer(serializers.ModelSerializer):
+    """One of the owner's planned purchases as a guest copy stores it: the
+    device store's shape (catalogue ids and a count). No row id, no `user`, no
+    `income_profile`: nothing that points back at the owner's account."""
+
+    class Meta:
+        model = UserPlannedPurchase
+        fields = ("product", "quantity", "target_uma", "target_support")
+        read_only_fields = fields
+
+
 def _rows_in_order(plan):
     """The plan's rows in the order its owner sees them (see
     planned_banners_in_order). Only the banner FKs are joined: both sort keys
@@ -155,8 +174,8 @@ def public_plan_summary(request, public_id):
 
 def _guest_copy(request, source):
     """What a guest takes away: the rows and, if the owner shared them AND the
-    guest asked, the stats. Counted once the payload is built, so a refused or
-    failed request is not a copy."""
+    guest asked, their resources (the stats block and its purchases). Counted
+    once the payload is built, so a refused or failed request is not a copy."""
     # Checked strictly, like PATCH /plans/<id>'s operation keys: "yes" or 1 is
     # a client bug, and guessing would decide whose carats land on the device.
     include_stats = request.data.get("include_stats", False)
@@ -167,12 +186,23 @@ def _guest_copy(request, source):
         _rows_in_order(source), many=True,
         context={"share_notes": source.share_notes},
     ).data
-    stats = (
-        stats_serializer(plans.stats_target(source)).data
-        if source.share_stats and include_stats else None
-    )
+    stats = purchases = None
+    if source.share_stats and include_stats:
+        stats = stats_serializer(plans.stats_target(source)).data
+        # The same block's purchases (plans.purchase_scope), so a plan with
+        # its own resources hands out its own, not the account's.
+        purchases = SharedPlannedPurchaseSerializer(
+            UserPlannedPurchase.objects.filter(
+                **plans.purchase_scope(source)
+            ).order_by("id"),
+            many=True,
+        ).data
     plans.count_copy(source)
-    return Response({"user_planned_banner_data": rows, "user_stats_data": stats})
+    return Response({
+        "user_planned_banner_data": rows,
+        "user_stats_data": stats,
+        "user_planned_purchase_data": purchases,
+    })
 
 
 def _account_copy(request, source):

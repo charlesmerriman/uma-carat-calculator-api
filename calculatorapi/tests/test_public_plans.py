@@ -50,6 +50,17 @@ def _row(plan, pulls=10, *, banner=None, note=""):
     )
 
 
+def _purchase(owner, quantity=2, income_profile=None):
+    """One planned pack purchase in `owner`'s account (or one of its profiles)."""
+    product = AnniversaryEventProduct.objects.create(
+        anniversary_event=make_anniversary_event(), name="Pack",
+        product_type="carat_pack", usd_cost=10, paid_carat_amount=1500,
+    )
+    return UserPlannedPurchase.objects.create(
+        user=owner, income_profile=income_profile, product=product, quantity=quantity,
+    )
+
+
 def _share(plan, **flags):
     """Switch sharing on, plus whichever share options the test names."""
     for key, value in {"is_shared": True, **flags}.items():
@@ -252,7 +263,10 @@ class GuestCopyTests(CalculatorTestCase):
         res = self._copy()
 
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(set(res.data), {"user_planned_banner_data", "user_stats_data"})
+        self.assertEqual(
+            set(res.data),
+            {"user_planned_banner_data", "user_stats_data", "user_planned_purchase_data"},
+        )
         [row] = res.data["user_planned_banner_data"]
         # No row id, no owner, no plan, and no note while share_notes is off.
         self.assertEqual(
@@ -265,6 +279,7 @@ class GuestCopyTests(CalculatorTestCase):
         # Ids only, never a nested banner.
         self.assertIsInstance(row["banner_uma"], int)
         self.assertIsNone(res.data["user_stats_data"])
+        self.assertIsNone(res.data["user_planned_purchase_data"])
 
     def test_notes_travel_only_when_the_sharer_shares_them(self):
         _share(self.plan, share_notes=True)
@@ -276,10 +291,12 @@ class GuestCopyTests(CalculatorTestCase):
     def test_shared_stats_travel_only_when_the_guest_asks(self):
         """A guest's device has one set of stats, so taking the owner's
         replaces their own. The owner sharing them is not the guest asking."""
+        _purchase(self.sharer)
         _share(self.plan, share_stats=True)
 
-        self.assertIsNone(self._copy().data["user_stats_data"])
-        self.assertIsNone(self._copy(include_stats=False).data["user_stats_data"])
+        for res in (self._copy(), self._copy(include_stats=False)):
+            self.assertIsNone(res.data["user_stats_data"])
+            self.assertIsNone(res.data["user_planned_purchase_data"])
 
     def test_asking_for_stats_the_sharer_kept_gets_none(self):
         _share(self.plan)
@@ -295,10 +312,20 @@ class GuestCopyTests(CalculatorTestCase):
         self.plan.refresh_from_db()
         self.assertEqual(self.plan.copy_count, 0)
 
-    def test_stats_travel_when_shared_and_asked_for(self):
+    def test_resources_travel_when_shared_and_asked_for(self):
+        purchase = _purchase(self.sharer, quantity=3)
         _share(self.plan, share_stats=True)
 
-        stats = self._copy(include_stats=True).data["user_stats_data"]
+        res = self._copy(include_stats=True)
+
+        # The purchases come with the stats they fund, in the device store's
+        # shape: catalogue ids and a count, nothing pointing at the owner.
+        self.assertEqual(
+            res.data["user_planned_purchase_data"],
+            [{"product": purchase.product_id, "quantity": 3,
+              "target_uma": None, "target_support": None}],
+        )
+        stats = res.data["user_stats_data"]
 
         self.assertEqual(stats["current_carat"], 4321)
         self.assertEqual(stats["current_paid_carat"], 765)
@@ -309,16 +336,23 @@ class GuestCopyTests(CalculatorTestCase):
         self.assertNotIn("username", stats)
         self.assertNotIn("user", stats)
 
-    def test_shared_stats_come_from_the_plans_own_income_profile(self):
+    def test_shared_resources_come_from_the_plans_own_income_profile(self):
+        _purchase(self.sharer, quantity=9)  # the account's, not this plan's
         plans.attach_income_profile(self.plan)
         self.plan.refresh_from_db()
-        self.plan.income_profile.current_carat = 2345
-        self.plan.income_profile.save()
+        profile = self.plan.income_profile
+        profile.current_carat = 2345
+        profile.save()
+        UserPlannedPurchase.objects.filter(income_profile=profile).delete()
+        _purchase(self.sharer, quantity=4, income_profile=profile)
         _share(self.plan, share_stats=True)
 
-        stats = self._copy(include_stats=True).data["user_stats_data"]
+        res = self._copy(include_stats=True)
 
-        self.assertEqual(stats["current_carat"], 2345)
+        self.assertEqual(res.data["user_stats_data"]["current_carat"], 2345)
+        self.assertEqual(
+            [row["quantity"] for row in res.data["user_planned_purchase_data"]], [4]
+        )
 
     def test_a_guest_copy_is_counted_without_touching_the_plan(self):
         _share(self.plan)
@@ -425,8 +459,10 @@ class AccountCopyTests(CalculatorTestCase):
 
         self.assertIsNone(self._copied_plan(res).income_profile)
         self.assertEqual(res.data["user_stats_data"]["current_carat"], 100)
+        # The copier's own (empty) purchases, not the sharer's.
+        self.assertEqual(res.data["user_planned_purchase_data"], [])
 
-    def test_shared_stats_seed_a_profile_the_copier_owns_without_purchases(self):
+    def test_shared_resources_seed_a_profile_the_copier_owns(self):
         _share(self.plan, share_stats=True)
 
         res = self._copy()
@@ -437,10 +473,19 @@ class AccountCopyTests(CalculatorTestCase):
         self.assertEqual(profile.user, self.copier)
         self.assertEqual(profile.current_carat, 4321)
         self.assertEqual(res.data["user_stats_data"]["current_carat"], 4321)
-        # The sharer's purchases are their account facts and never travel.
-        self.assertEqual(UserPlannedPurchase.objects.filter(income_profile=profile).count(), 0)
-        self.assertEqual(res.data["user_planned_purchase_data"], [])
-        self.assertEqual(UserPlannedPurchase.objects.filter(user=self.copier).count(), 0)
+        # The sharer's purchases come with their stats, as the copier's own rows.
+        [copied] = UserPlannedPurchase.objects.filter(income_profile=profile)
+        self.assertEqual(copied.user, self.copier)
+        self.assertEqual(copied.quantity, 2)
+        self.assertEqual(
+            [row["quantity"] for row in res.data["user_planned_purchase_data"]], [2]
+        )
+        # The copier's account-level purchases are untouched (still none), and
+        # so are the sharer's: one row, still on their account.
+        self.assertFalse(
+            UserPlannedPurchase.objects.filter(user=self.copier, income_profile=None).exists()
+        )
+        self.assertEqual(UserPlannedPurchase.objects.filter(user=self.sharer).count(), 1)
         # And the sharer's own block is untouched: not pointed at, not moved.
         self.assertFalse(IncomeProfile.objects.filter(user=self.sharer).exists())
         self.copier.refresh_from_db()
