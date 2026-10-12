@@ -596,8 +596,8 @@ Takes a copy. A `POST`, never a side effect of opening the link.
 Creates a new plan in the caller's account, **inactive** (the client switches to it), and
 returns it the way `POST /plans` does. The copy carries the rows; each row's `note` only when
 the sharer turned `share_notes` on; and, when they turned `share_stats` on, a new income
-profile **owned by the copier**, seeded from the sharer's stats (the stat values only: the
-sharer's planned purchases never travel). The copy itself starts private: its own
+profile **owned by the copier**, seeded from the sharer's resources: their stats and the
+planned purchases of the same block, copied as the copier's own rows. The copy itself starts private: its own
 `public_id`, sharing off, `copy_count` 0. The source's `copy_count` goes up by one. The owner
 copying their own link gets an ordinary duplicate and no count.
 
@@ -615,15 +615,17 @@ on the device. The source's `copy_count` goes up by one.
       "primary_card": null, "second_card": null, "primary_target": null,
       "banner_uma": 31, "banner_support": null, "banner_step_up": null }
   ],
-  "user_stats_data": null
+  "user_stats_data": null,
+  "user_planned_purchase_data": null
 }
 ```
 
 Rows are in the device store's shape (`PATCH /calculator-data` row bodies: ids, no row `id`,
 no `user`, no `plan`); `note` is present only when `share_notes` is on. `user_stats_data` is
-the `UserStats` block only when the owner turned `share_stats` on AND the guest sent
-`include_stats: true`, else `null`. A device holds one set of stats, so taking the owner's
-replaces the guest's own: that is the guest's choice, made on the landing card, never a
+the `UserStats` block, and `user_planned_purchase_data` that block's purchases
+(`[{ "product", "quantity", "target_uma", "target_support" }]`, ids only), only when the
+owner turned `share_stats` on AND the guest sent `include_stats: true`; else both are
+`null`. A device holds one set of resources, so taking the owner's replaces the guest's own: that is the guest's choice, made on the landing card, never a
 consequence of the owner's. This is the one route that hands
 a plan's full rows to someone other than its owner, and only for a plan its owner shared.
 

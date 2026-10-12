@@ -104,7 +104,8 @@ class Plan(models.Model):
     # tickets, ranks) seed the copier's own income profile only when
     # share_stats is on; row notes survive the copy only when share_notes is.
     # Both are off by default because both are the owner's private numbers and
-    # words. The owner's planned purchases never travel either way.
+    # words. share_stats means the owner's whole stats block, so their planned
+    # purchases travel with it (purchases belong to the block they fund).
     share_stats = models.BooleanField(default=False)
     share_notes = models.BooleanField(default=False)
     # Copies taken through the share link, shown to the owner and to anyone on

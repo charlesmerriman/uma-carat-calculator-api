@@ -180,24 +180,23 @@ def attach_income_profile(plan, *, seed_from=None):
     must not change what is on screen. Without the copy the Selectors page
     would empty and the projection would move the moment it was flipped.
 
-    `seed_from` is a stats block (a CustomUser or IncomeProfile, what
-    stats_target() returns) to seed from INSTEAD, possibly someone else's:
-    copy_shared_plan() passes the sharer's when they chose to share their
-    stats. Only the stat VALUES are read from it. The new profile still
-    belongs to `plan.user` from the moment it exists, and NO purchases are
-    copied, because purchases are their owner's account facts and were never
-    part of a share. The copier starts that block with an empty purchase list.
+    `seed_from` is another PLAN whose block (its stats AND its purchases,
+    through stats_target() and purchase_scope()) seeds the new profile
+    instead, possibly someone else's: copy_shared_plan() passes the shared
+    plan when its owner chose to share their resources. Only values and
+    catalogue ids are read from it. The new profile and its purchase rows
+    belong to `plan.user` from the moment they exist, so nothing points back
+    at the sharer and later edits on either side stay their own.
     """
     if plan.income_profile_id is not None:
         return plan
-    source = seed_from if seed_from is not None else stats_target(plan)
+    seed_plan = seed_from if seed_from is not None else plan
+    source = stats_target(seed_plan)
     values = {name: getattr(source, name) for name in GameStats.field_names()}
-    # Read BEFORE the pointer moves: the scope is the block the plan reads
-    # today, and after the attach it would be the new, empty profile.
-    purchases = (
-        [] if seed_from is not None
-        else list(UserPlannedPurchase.objects.filter(**purchase_scope(plan)))
-    )
+    # Read BEFORE the pointer moves: the scope is the block the seed plan
+    # reads today, and after an attach to that same plan it would be the new,
+    # empty profile.
+    purchases = list(UserPlannedPurchase.objects.filter(**purchase_scope(seed_plan)))
     with transaction.atomic():
         profile = IncomeProfile.objects.create(user=plan.user, **values)
         UserPlannedPurchase.objects.bulk_create(
@@ -377,11 +376,11 @@ def copy_shared_plan(source, *, owner, name):
     INACTIVE, like every new plan; the client activates it.
 
     What crosses: the rows, always. The notes only if the sharer turned
-    share_notes on. The stats only if they turned share_stats on, and then as
-    a NEW income profile the copier owns, seeded from the sharer's numbers
-    (attach_income_profile's seed_from), never as a pointer to the sharer's
-    block. The sharer's purchases never. The plan name never (the copier names
-    the copy). Then the source's copy_count goes up by one, in the same
+    share_notes on. Their resources (stats AND planned purchases, one block)
+    only if they turned share_stats on, and then as a NEW income profile the
+    copier owns, seeded from the sharer's block (attach_income_profile's
+    seed_from), never as a pointer to it. The plan name never (the copier
+    names the copy). Then the source's copy_count goes up by one, in the same
     transaction, so a refused copy is never counted.
 
     The owner opening their own link and copying gets an ordinary Duplicate
@@ -400,7 +399,7 @@ def copy_shared_plan(source, *, owner, name):
             source, owner=owner, name=name, carry_notes=source.share_notes
         )
         if source.share_stats:
-            attach_income_profile(new_plan, seed_from=stats_target(source))
+            attach_income_profile(new_plan, seed_from=source)
         count_copy(source)
     return new_plan
 

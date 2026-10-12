@@ -583,17 +583,18 @@ mode" first proposed in web #107.
 |---|---|---|
 | `public_id` | a fresh id | 8 letters or digits (`public_ids.py`); unique. Every create path passes `plans.generate_unique_public_id()`, which redraws on a collision. "Reset link" (`plans.reset_public_id`) replaces it, killing the old link and nothing else. |
 | `is_shared` | False | Opt-in, per plan. Off, both public routes answer the same `404` as an id that was never issued (`plans.get_shared_plan` is the one visibility check, as `get_owned_plan` is the ownership one). |
-| `share_stats` | False | A copy gets its own `IncomeProfile` seeded from the sharer's stats (`plans.stats_target(source)`, the values only). Off, the copy reads the copier's own stats. |
+| `share_stats` | False | The sharer's resources travel: a copy gets its own `IncomeProfile` seeded from the sharer's stats (`plans.stats_target(source)`) and that block's planned purchases (`plans.purchase_scope(source)`), all as the copier's own rows. Off, the copy reads the copier's own stats and purchases. |
 | `share_notes` | False | A copy keeps the row notes. Off, they are blanked, the default cross-account rule. |
 | `copy_count` | 0 | Copies taken through the link. `plans.count_copy` bumps it with `F() + 1` and `update()`, so `updated_at` does not move. |
 
 What a copy (`plans.copy_shared_plan`) carries, and why:
 
 - **The rows, always.** Catalogue ids and counts mean the same to anyone.
-- **Notes and stats only by the sharer's choice**, both off by default, because both are the
-  owner's own words and numbers.
-- **The sharer's planned purchases, never.** Purchases are account facts and were never part
-  of a share; a seeded profile starts with none (`attach_income_profile(seed_from=)`).
+- **Notes and resources only by the sharer's choice**, both off by default, because both are
+  the owner's own words and numbers. "Resources" is the whole stats block AND its planned
+  purchases (`attach_income_profile(seed_from=source)`): purchases fund the stats they sit
+  beside, so they go together or not at all. Until 2026-10-12 purchases never travelled; the
+  owner reversed that.
 - **The plan name, never.** The copier names the copy.
 - **Nothing that points back.** No `copied_from` FK: it would tie the copier's account to the
   sharer's. The count is what the owner asked for, and it survives either plan being deleted.
@@ -604,8 +605,8 @@ The owner copying their own link gets an ordinary Duplicate and no count, so the
 how many other people took the plan.
 
 A guest copies too: the route returns the rows (device-store shape, no row `id`, `user` or
-`plan`) and the stats block only if the owner shared it AND the guest asked for it
-(`include_stats`), and the client keeps them on the device. The guest has to ask because
+`plan`) and the resources (stats block and its purchases) only if the owner shared them AND
+the guest asked for them (`include_stats`), and the client keeps them on the device. The guest has to ask because
 their device holds one set of stats, so taking the owner's costs them their own (decided
 2026-10-12; an account copy needs no such choice, its seeded profile sits beside the
 account's numbers and touches nothing). That is the
