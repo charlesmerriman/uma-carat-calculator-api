@@ -351,8 +351,9 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAuthenticated",
     ],
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
-    # The two public, unauthenticated write endpoints are throttled; nothing
-    # else needs to be, since everything else is either read-only or requires a
+    # The public, unauthenticated write endpoints are throttled, plus the one
+    # public read that hands out a user's data; nothing else needs to be,
+    # since everything else is either catalogue, read-only, or requires a
     # token.
     #
     # visit_beacon (views/visits.py) is what stops one client running the
@@ -371,6 +372,16 @@ REST_FRAMEWORK = {
         # honest use (you link an account once) and low enough that a stolen
         # token cannot be used to hammer Patreon on our behalf.
         "account_link": "20/hour",
+        # A shared plan's landing card (views/plan_public.py). A person opens a
+        # link a handful of times; 120/hour leaves room for a Discord channel
+        # behind one NAT clicking the same link, and still stops a script from
+        # walking the id space (it 404s 120 times an hour, out of 62^8).
+        "public_plan": "120/hour",
+        # Taking a copy writes a plan (or, for a guest, hands out the full rows)
+        # and bumps the copy count. Nobody copies thirty plans in an hour; a
+        # script inflating a count is capped here, not stopped, which is
+        # acceptable for a number that is social proof.
+        "public_plan_copy": "30/hour",
     },
 }
 

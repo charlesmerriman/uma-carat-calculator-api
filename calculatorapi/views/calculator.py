@@ -208,6 +208,24 @@ def build_user_context():
     }
 
 
+def planned_banners_in_order(rows, *, emap):
+    """Planned rows in the order the planner renders them: resolved start
+    date, then kind (_planned_banner_kind_rank). `rows` must select_related
+    the three banner FKs, which both keys read.
+
+    Shared by serialize_planned_banners() and the share routes
+    (views/plan_public.py), so a shared plan's landing card lists its banners
+    in the same order its owner sees them.
+    """
+    return sorted(
+        rows,
+        key=lambda pb: (
+            effective_sort_key(planned_effective_start(pb, emap)),
+            _planned_banner_kind_rank(pb),
+        ),
+    )
+
+
 def serialize_planned_banners(plan, *, emap, card_context):
     """One plan's banner rows, date-sorted and serialized.
 
@@ -215,7 +233,7 @@ def serialize_planned_banners(plan, *, emap, card_context):
     plan being switched to), so a row looks identical whichever route served
     it and the client needs one type for both.
     """
-    planned_banners = sorted(
+    planned_banners = planned_banners_in_order(
         UserPlannedBanner.objects.filter(plan=plan).select_related(
             "banner_uma__banner_timeline",
             "banner_support__banner_timeline",
@@ -230,10 +248,7 @@ def serialize_planned_banners(plan, *, emap, card_context):
             "banner_support__support_cards",
             "banner_support__supportsonsupportbanner_set",
         ),
-        key=lambda pb: (
-            effective_sort_key(planned_effective_start(pb, emap)),
-            _planned_banner_kind_rank(pb),
-        ),
+        emap=emap,
     )
     return UserPlannedBannerSerializer(
         planned_banners, many=True,

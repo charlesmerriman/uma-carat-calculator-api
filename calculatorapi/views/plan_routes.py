@@ -3,14 +3,16 @@ GET    /plans        the caller's plans (name, which is active). No rows.
 POST   /plans        create one: blank, or `copy_from` another of theirs.
 GET    /plans/<id>   one plan plus ITS banner rows, stats and purchases. What
                      a switch fetches.
-PATCH  /plans/<id>   rename it, make it the active plan, and/or give it its
-                     own stats (`separate_income`: true / false).
+PATCH  /plans/<id>   rename it, make it the active plan, give it its own
+                     stats (`separate_income`: true / false), switch its
+                     share link on or off and pick what a copy carries
+                     (`is_shared`, `share_stats`, `share_notes`), and/or
+                     reset that link (`regenerate_public_id`: true).
 DELETE /plans/<id>   delete it and its rows. The last plan is refused.
-GET    /plans/public/<public_id>  read a plan shared by its public link.
 
-The owner-specific routes require IsAuthenticated. The public-ID route is a
-GET-only share view; it reveals the plan data to anyone with its identifier.
-A guest has one unnamed plan in memory and never calls the owner routes.
+All IsAuthenticated. A guest has one unnamed plan on the device and never
+calls these. The share link's own routes, open to anyone, are in
+views/plan_public.py.
 
 WHY SWITCHING HAS ITS OWN ROUTE
 -------------------------------
@@ -30,10 +32,10 @@ OWNERSHIP
 ---------
 Every plan id below is resolved through plans.get_owned_plan() and nothing
 else. Somebody else's plan is a 404, identical to one that does not exist.
-When plans can be published, reading another person's plan gets its OWN view
-and serializer -- never a flag on these. Same reasoning as account_linking.py
-being separate from social_auth.py: one bad branch in a shared view would turn
-"show me that plan" into "let me edit it".
+Taking a copy of another person's SHARED plan has its OWN view and
+serializer (views/plan_public.py) -- never a flag on these. Same reasoning as
+account_linking.py being separate from social_auth.py: one bad branch in a
+shared view would turn "show me that plan" into "let me edit it".
 """
 
 from rest_framework import permissions, status
@@ -60,7 +62,7 @@ def _plan_list(user):
     return PlanSerializer(Plan.objects.filter(user=user), many=True).data
 
 
-def _plan_with_rows(plan):
+def plan_with_rows(plan):
     """A plan, its banner rows, its stats and its purchases, shaped like the
     matching /calculator-data keys so the client stores them with the same
     code. Everything that changes on a switch, and nothing that does not."""
@@ -77,18 +79,6 @@ def _plan_with_rows(plan):
         # The purchases of that same stats block (plans.purchase_scope).
         "user_planned_purchase_data": serialize_planned_purchases(
             plans.purchase_scope(plan), anniversary_emap=anniversary_emap
-        ),
-    }
-
-
-def _public_plan_with_rows(plan):
-    """Share the plan's income settings and banner choices, but not purchases."""
-    emap, _, card_context = build_user_context()
-    return {
-        "plan": PlanSerializer(plan).data,
-        "user_stats_data": stats_serializer(plans.stats_target(plan)).data,
-        "user_planned_banner_data": serialize_planned_banners(
-            plan, emap=emap, card_context=card_context
         ),
     }
 
@@ -124,22 +114,27 @@ def plan_list(request):
 
     # Created INACTIVE. The client switches to it with a PATCH if it wants to,
     # after it has flushed any pending save for the plan it is leaving.
-    return Response(_plan_with_rows(plan), status=status.HTTP_201_CREATED)
+    return Response(plan_with_rows(plan), status=status.HTTP_201_CREATED)
 
 
 def _update_plan(request, plan):
-    """PATCH /plans/<id>: rename, activate, and/or toggle its own stats. The
-    name goes through the serializer; the other two are operations on the
-    plan, handled beside it, because each has to do more than write a field."""
+    """PATCH /plans/<id>: rename, activate, toggle its own stats, set its
+    sharing, and/or reset its link. The name and the three share flags go
+    through the serializer as plain fields; the other three are operations on
+    the plan, handled beside it, because each has to do more than write a
+    field."""
     serializer = PlanSerializer(plan, data=request.data, partial=True)
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    # separate_income is validated BEFORE anything is written, so a bad value
-    # cannot land a rename and then refuse.
+    # The two operation keys are validated BEFORE anything is written, so a
+    # bad value cannot land a rename and then refuse.
     separate = request.data.get("separate_income")
-    if separate is not None and not isinstance(separate, bool):
-        return Response({"separate_income": ["Must be true or false."]},
-                        status=status.HTTP_400_BAD_REQUEST)
+    regenerate = request.data.get("regenerate_public_id")
+    for key, value in (("separate_income", separate),
+                       ("regenerate_public_id", regenerate)):
+        if value is not None and not isinstance(value, bool):
+            return Response({key: ["Must be true or false."]},
+                            status=status.HTTP_400_BAD_REQUEST)
     serializer.save()
     # Only `true` means anything. There is no "deactivate": an account
     # always has exactly one active plan, so the way to leave a plan is to
@@ -153,6 +148,10 @@ def _update_plan(request, plan):
         plans.attach_income_profile(plan)
     elif separate is False:
         plans.detach_income_profile(plan)
+    # "Reset link": a fresh id, so the old link stops working. Only `true`
+    # means anything; there is nothing to un-reset.
+    if regenerate is True:
+        plans.reset_public_id(plan)
     return Response(PlanSerializer(plan).data)
 
 
@@ -165,7 +164,7 @@ def plan_detail(request, plan_id):
         return Response(_NOT_FOUND, status=status.HTTP_404_NOT_FOUND)
 
     if request.method == "GET":
-        return Response(_plan_with_rows(plan))
+        return Response(plan_with_rows(plan))
 
     if request.method == "PATCH":
         return _update_plan(request, plan)
@@ -180,14 +179,3 @@ def plan_detail(request, plan_id):
     active = plans.delete_plan(plan)
     # The client needs to know where it landed if it deleted the open plan.
     return Response({"active_plan_id": active.id})
-
-
-@api_view(["GET"])
-@permission_classes([permissions.AllowAny])
-def public_plan_detail(request, public_id):
-    """Read a plan by its share identifier; deliberately has no write path."""
-    try:
-        plan = Plan.objects.get(public_id=public_id)
-    except Plan.DoesNotExist:
-        return Response(_NOT_FOUND, status=status.HTTP_404_NOT_FOUND)
-    return Response(_public_plan_with_rows(plan))

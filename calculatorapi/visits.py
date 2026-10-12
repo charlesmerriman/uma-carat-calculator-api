@@ -79,6 +79,17 @@ KNOWN_ROUTES = frozenset({
     "/login",
 })
 
+# A shared plan's link, /app/<public_id>. One bucket for all of them: the id
+# is per plan, so counting each would grow the table with every share, and a
+# share id in an analytics row would be a live link to someone's plan. Not in
+# KNOWN_ROUTES because it cannot be prerendered (it is the first public route
+# that is not; frontend appRoutes.isPublicId is the client's half).
+SHARED_PLAN_ROUTE = "/app/<shared>"
+# The id's shape AFTER landing_route lowercases the path: 8 letters or digits
+# (calculatorapi/public_ids.py). Checked only once KNOWN_ROUTES has missed,
+# because "/app/timeline" fits it too.
+_SHARED_PLAN_PATH = re.compile(r"^/app/[a-z0-9]{8}$")
+
 OTHER = "other"
 # No referrer at all: a bookmark, a typed address, and most chat apps
 # (Discord's desktop client sends none), so this runs high.
@@ -107,7 +118,11 @@ def landing_route(path):
     # The frontend sends a bare pathname; strip a query or fragment anyway,
     # since the server never trusts the client to have done it.
     route = path.split("?", 1)[0].split("#", 1)[0].lower().rstrip("/") or "/"
-    return route if route in KNOWN_ROUTES else OTHER
+    if route in KNOWN_ROUTES:
+        return route
+    if _SHARED_PLAN_PATH.match(route):
+        return SHARED_PLAN_ROUTE
+    return OTHER
 
 
 def _own_host():

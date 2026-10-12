@@ -24,6 +24,7 @@ from calculatorapi.models import (
 from calculatorapi.tests.base import CalculatorTestCase
 from calculatorapi.visits import (
     MAX_REFERRER_HOSTS_PER_DAY,
+    SHARED_PLAN_ROUTE,
     VISITOR_HASH_RETENTION_DAYS,
     build_visit_report,
     landing_route,
@@ -231,6 +232,18 @@ class VisitLandingAndReferrerTests(CalculatorTestCase):
         self.assertEqual(landing_route('/App/'), '/app')
         self.assertEqual(landing_route('/faq?x=1#top'), '/faq')
         self.assertEqual(landing_route(''), '/')
+
+    def test_shared_plan_links_share_one_bucket(self):
+        """One row for every share link, never the id: an id in an analytics
+        row would be a live link to someone's plan."""
+        self._hit(path='/app/AbCd1234', ref='')
+        self._hit(path='/app/zz99ZZ99/', ref='')
+        self.assertEqual(self._landing(), {SHARED_PLAN_ROUTE: 2})
+
+    def test_an_eight_letter_app_route_is_still_itself(self):
+        # "timeline" fits the share id's shape; the known route wins.
+        self.assertEqual(landing_route('/app/timeline'), '/app/timeline')
+        self.assertEqual(landing_route('/app/AbCd1234x'), 'other')
 
     def test_any_other_path_is_other(self):
         self._hit(path='/wp-admin/setup.php', ref='')
