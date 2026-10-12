@@ -1,15 +1,17 @@
 """The operations on a user's pull plans. Every view goes through these.
 
-Kept out of the views on purpose. A later feature lets players publish a plan
-and take somebody else's, and both are copy_plan() plus a visibility rule, so
-the copy has to be callable from places that are not the /plans routes. The
-ownership check lives here for the opposite reason: it must be impossible to
-reach a plan by id without passing through it.
+Kept out of the views on purpose. Sharing a plan is copy_plan() plus a
+visibility rule (copy_shared_plan, called from views/plan_public.py), and a
+later "browse published plans" page will be the same again, so the copy has to
+be callable from places that are not the /plans routes. The ownership check
+lives here for the opposite reason: it must be impossible to reach a plan by id
+without passing through it.
 
 What a plan is, and what it must never hold: models/plan.py.
 """
 
 from django.db import IntegrityError, transaction
+from django.db.models import F
 
 from calculatorapi.models import (
     CustomUser,
@@ -21,10 +23,27 @@ from calculatorapi.models import (
     UserPlannedBanner,
     UserPlannedPurchase,
 )
+from calculatorapi.public_ids import generate_public_id
 
 
 class PlanCapReached(Exception):
     """The account already holds PLAN_CAP plans, so another cannot be created."""
+
+
+def generate_unique_public_id():
+    """Generate a public ID that is not already assigned to a plan.
+
+    Every path that creates a plan, or resets its link, passes this explicitly
+    rather than leaning on the field default, because the default cannot see
+    the table: a collision there would surface as an IntegrityError on the
+    create instead of a quiet second draw here. At 62^8 ids the loop almost
+    never runs twice; the unique constraint is still the backstop for two
+    requests drawing the same id at the same instant.
+    """
+    public_id = generate_public_id()
+    while Plan.objects.filter(public_id=public_id).exists():
+        public_id = generate_public_id()
+    return public_id
 
 
 def get_active_plan(user):
@@ -61,7 +80,10 @@ def _find_or_create_active_plan(user):
         # transaction the caller already has open (PATCH /calculator-data).
         with transaction.atomic():
             return Plan.objects.create(
-                user=user, name=DEFAULT_PLAN_NAME, is_active=True
+                user=user,
+                name=DEFAULT_PLAN_NAME,
+                is_active=True,
+                public_id=generate_unique_public_id(),
             )
     except IntegrityError:
         # Two first requests at once (the app fires its prefetch and the real
@@ -104,6 +126,19 @@ def get_owned_plan(user, plan_id):
         raise Plan.DoesNotExist from exc
 
 
+def get_shared_plan(public_id):
+    """The plan behind a share link, or Plan.DoesNotExist.
+
+    THE visibility check for the public routes, as get_owned_plan() is the
+    ownership check for the owner's. A plan whose sharing is off and an id
+    that was never issued (or was replaced by Reset link) are deliberately the
+    same error, so nobody can probe which ids belong to a private plan.
+    """
+    return Plan.objects.select_related("income_profile", "user").get(
+        public_id=public_id, is_shared=True
+    )
+
+
 def stats_target(plan):
     """WHOSE STATS a plan is projected against: its income profile if it has
     one, else its owner's own row. Both carry the same columns
@@ -130,7 +165,7 @@ def purchase_scope(plan):
     return {"user": plan.user, "income_profile": plan.income_profile}
 
 
-def attach_income_profile(plan):
+def attach_income_profile(plan, *, seed_from=None):
     """Give `plan` its own stats: a new IncomeProfile seeded from whatever the
     plan reads today, then pointed at. No-op if it already has one.
 
@@ -144,14 +179,24 @@ def attach_income_profile(plan):
     stats block (models/user_planned_purchase.py), and turning the toggle on
     must not change what is on screen. Without the copy the Selectors page
     would empty and the projection would move the moment it was flipped.
+
+    `seed_from` is another PLAN whose block (its stats AND its purchases,
+    through stats_target() and purchase_scope()) seeds the new profile
+    instead, possibly someone else's: copy_shared_plan() passes the shared
+    plan when its owner chose to share their resources. Only values and
+    catalogue ids are read from it. The new profile and its purchase rows
+    belong to `plan.user` from the moment they exist, so nothing points back
+    at the sharer and later edits on either side stay their own.
     """
     if plan.income_profile_id is not None:
         return plan
-    source = stats_target(plan)
+    seed_plan = seed_from if seed_from is not None else plan
+    source = stats_target(seed_plan)
     values = {name: getattr(source, name) for name in GameStats.field_names()}
-    # Read BEFORE the pointer moves: the scope is the block the plan reads
-    # today, and after the attach it would be the new, empty profile.
-    purchases = list(UserPlannedPurchase.objects.filter(**purchase_scope(plan)))
+    # Read BEFORE the pointer moves: the scope is the block the seed plan
+    # reads today, and after an attach to that same plan it would be the new,
+    # empty profile.
+    purchases = list(UserPlannedPurchase.objects.filter(**purchase_scope(seed_plan)))
     with transaction.atomic():
         profile = IncomeProfile.objects.create(user=plan.user, **values)
         UserPlannedPurchase.objects.bulk_create(
@@ -230,42 +275,66 @@ def create_plan(user, name, *, copy_from=None):
     get_active_plan(user)
 
     with transaction.atomic():
-        # Lock the account row for the count-then-create, or two simultaneous
-        # POSTs both read "4" and both create a fifth. PostgreSQL honours the
-        # lock; SQLite (dev) ignores it and serialises writes anyway.
-        CustomUser.objects.select_for_update().get(pk=user.pk)
-        if Plan.objects.filter(user=user).count() >= PLAN_CAP:
-            raise PlanCapReached()
+        _refuse_at_cap(user)
         if copy_from is not None:
             return copy_plan(copy_from, owner=user, name=name)
-        return Plan.objects.create(user=user, name=name)
+        return Plan.objects.create(
+            user=user, name=name, public_id=generate_unique_public_id()
+        )
 
 
-def copy_plan(source, *, owner, name):
+def _refuse_at_cap(user):
+    """Raise PlanCapReached if `user` already holds PLAN_CAP plans. Must run
+    INSIDE the caller's transaction, before its create.
+
+    Locks the account row for the count-then-create, or two simultaneous
+    POSTs both read "4" and both create a fifth. PostgreSQL honours the lock;
+    SQLite (dev) ignores it and serialises writes anyway. Shared by
+    create_plan() and copy_shared_plan(), the two ways an account gains a plan.
+    """
+    CustomUser.objects.select_for_update().get(pk=user.pk)
+    if Plan.objects.filter(user=user).count() >= PLAN_CAP:
+        raise PlanCapReached()
+
+
+def copy_plan(source, *, owner, name, carry_notes=None):
     """Copy `source`'s banner rows into a NEW plan owned by `owner`.
 
-    `owner` need not be `source.user`. Today it always is ("Duplicate"); the
-    publish and take features are this same call across two accounts, which is
-    why it takes the owner rather than assuming it. It works across accounts
-    because a plan holds nothing about its author (models/plan.py): a row is a
-    catalogue FK, two counts and two card ids, all of which mean the same thing
-    to anyone.
-    The row's `note` is the exception and is blanked across accounts.
+    `owner` need not be `source.user`. A Duplicate is the same account; a copy
+    taken through a share link (copy_shared_plan) is this same call across two
+    accounts, which is why it takes the owner rather than assuming it. It works
+    across accounts because a plan holds nothing about its author
+    (models/plan.py): a row is a catalogue FK, two counts and two card ids, all
+    of which mean the same thing to anyone.
+    The row's `note` is the exception and is blanked across accounts, unless
+    `carry_notes` says otherwise (below).
+
+    The copy is a new, PRIVATE plan whoever makes it: a new public_id, sharing
+    off, both share options off, copy_count 0 (the model defaults, left alone
+    on purpose). Sharing the original does not share the copy.
+
+    `carry_notes`: None applies the rule above (kept within one account,
+    blanked across). True or False overrides it, which is how a sharer's
+    `share_notes` choice reaches the copy. An explicit argument rather than a
+    mode flag, so the caller states the one thing it decided.
 
     Does NOT check the cap or ownership of `source`. Both are the caller's
     job -- create_plan() does the first, get_owned_plan() the second -- so that
-    a future "take a published plan" can apply a different rule for reading
-    the source without this function growing a mode flag.
+    copy_shared_plan() can apply its own rule for reading the source (the plan
+    is shared) without this function growing a mode flag.
     """
-    # Notes are the author's private text, the one thing on a row that is NOT
-    # "a catalogue FK and two counts". Same rule as the income_profile pointer
-    # below: they survive a Duplicate inside one account and are blanked the
-    # moment a copy changes owner, so a published plan never leaks them.
     same_owner = owner.pk == source.user_id
+    # Notes are the author's private text, the one thing on a row that is NOT
+    # "a catalogue FK and two counts". Same default rule as the income_profile
+    # pointer below: they survive a Duplicate inside one account and are
+    # blanked the moment a copy changes owner, so a shared plan never leaks
+    # them unless its owner turned share_notes on.
+    keep_notes = same_owner if carry_notes is None else carry_notes
     with transaction.atomic():
         new_plan = Plan.objects.create(
             user=owner,
             name=name,
+            public_id=generate_unique_public_id(),
             # The pointer stays only within one account: a Duplicate of "my
             # alt's plan" should read my alt's numbers too. Across accounts it
             # MUST be dropped. The profile is the author's facts, and a plan
@@ -284,7 +353,7 @@ def copy_plan(source, *, owner, name):
                     banner_step_up_id=row.banner_step_up_id,
                     number_of_pulls=row.number_of_pulls,
                     reserved_copies=row.reserved_copies,
-                    note=row.note if same_owner else "",
+                    note=row.note if keep_notes else "",
                     # Catalogue ids, so they mean the same thing to anyone.
                     primary_card=row.primary_card,
                     second_card=row.second_card,
@@ -294,6 +363,66 @@ def copy_plan(source, *, owner, name):
             ]
         )
     return new_plan
+
+
+def copy_shared_plan(source, *, owner, name):
+    """`owner` takes a copy of the SHARED plan `source` into their account.
+
+    The caller has already established that `source.is_shared` is on (the
+    public routes 404 otherwise); this function does not re-check it, the same
+    split as copy_plan() leaving ownership to get_owned_plan().
+
+    Raises PlanCapReached at the cap, like create_plan(). The copy is created
+    INACTIVE, like every new plan; the client activates it.
+
+    What crosses: the rows, always. The notes only if the sharer turned
+    share_notes on. Their resources (stats AND planned purchases, one block)
+    only if they turned share_stats on, and then as a NEW income profile the
+    copier owns, seeded from the sharer's block (attach_income_profile's
+    seed_from), never as a pointer to it. The plan name never (the copier
+    names the copy). Then the source's copy_count goes up by one, in the same
+    transaction, so a refused copy is never counted.
+
+    The owner opening their own link and copying gets an ordinary Duplicate
+    and NO count: the number is meant to say how many other people took the
+    plan, and a sharer clicking their own link a few times would inflate it.
+    """
+    if owner.pk == source.user_id:
+        return create_plan(owner, name, copy_from=source)
+
+    # As in create_plan(): an account that has never opened the calculator
+    # still ends up with its Main plan as well as the copy.
+    get_active_plan(owner)
+    with transaction.atomic():
+        _refuse_at_cap(owner)
+        new_plan = copy_plan(
+            source, owner=owner, name=name, carry_notes=source.share_notes
+        )
+        if source.share_stats:
+            attach_income_profile(new_plan, seed_from=source)
+        count_copy(source)
+    return new_plan
+
+
+def count_copy(source):
+    """One more copy of `source` was taken through its share link.
+
+    An F() expression, so two copies at the same instant both count (a read,
+    add one, save would let the second overwrite the first). update() rather
+    than save() also leaves `updated_at` alone: being copied is not an edit,
+    and the landing card shows that date as "Updated".
+    Called by copy_shared_plan() and by the anonymous copy route.
+    """
+    Plan.objects.filter(pk=source.pk).update(copy_count=F("copy_count") + 1)
+
+
+def reset_public_id(plan):
+    """Give `plan` a new share id. The old link stops working for good, and
+    nothing else changes: sharing stays on or off as it was, and the count is
+    kept, since the copies already taken still happened."""
+    plan.public_id = generate_unique_public_id()
+    plan.save(update_fields=["public_id", "updated_at"])
+    return plan
 
 
 def delete_plan(plan):

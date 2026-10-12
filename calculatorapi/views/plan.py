@@ -20,14 +20,36 @@ class PlanSerializer(serializers.ModelSerializer):
     able to name a profile at all. Attaching is `separate_income` on the PATCH
     route, which creates the profile itself, and pointing a plan at an
     existing profile by id is a later feature with its own ownership check.
+
+    Sharing: the owner's share face reads all five sharing columns from here.
+    `is_shared`, `share_stats` and `share_notes` are plain writable flags (a
+    PATCH sets them; POST /plans ignores everything but `name`, so a new plan
+    is never born shared). `public_id` is read-only because the only way to
+    change it is Reset link (`regenerate_public_id` on the PATCH route, which
+    draws a fresh unused id); `copy_count` is read-only because only a copy
+    may move it. This serializer is the OWNER'S view and never answers a
+    public route: views/plan_public.py has its own, which carries none of this.
     """
 
     income_profile_id = serializers.IntegerField(read_only=True, allow_null=True)
 
     class Meta:
         model = Plan
-        fields = ("id", "name", "is_active", "income_profile_id", "updated_at")
-        read_only_fields = ("id", "is_active", "updated_at")
+        fields = (
+            "id",
+            "public_id",
+            "name",
+            "is_active",
+            "income_profile_id",
+            "is_shared",
+            "share_stats",
+            "share_notes",
+            "copy_count",
+            "updated_at",
+        )
+        read_only_fields = (
+            "id", "public_id", "is_active", "copy_count", "updated_at",
+        )
 
     def validate_name(self, value):
         # CharField already trims the ends and rejects blank. This collapses

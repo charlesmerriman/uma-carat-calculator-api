@@ -32,6 +32,19 @@
 # module changed. Newest entry first is conventional here but not required — the
 # page sorts by date.
 
+- key: share-links
+  date: 2026-10-12
+  title: "Share a plan with a link"
+  version: "v1.14"
+  changes:
+    - added: "You can now share a plan. Open the plan menu, pick Share this plan and turn the link on."
+    - added: "Anyone with the link can copy your plan, into their account or onto their device. Their copy is theirs to change, and yours stays as it is."
+    - added: "Your resources and notes go along only if you tick them. Resources means your carats, tickets, ranks and planned purchases."
+    - added: "See how many times your plan has been copied."
+    - added: "Reset the link whenever you like. The old one stops working."
+    - changed: "Monthly Shop Tickets now sit in Purchases, under the passes."
+    - added: "The \"back to top\" button is on the Changelog and FAQ pages too."
+
 - key: visit-sources
   date: 2026-10-09
   title: "Where visits come from"
