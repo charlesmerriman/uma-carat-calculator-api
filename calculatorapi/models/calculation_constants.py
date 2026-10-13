@@ -373,6 +373,49 @@ class CalculationConstants(models.Model):
         ),
     )
 
+    # ── PvP milestones ───────────────────────────────────────────────────────
+    # The key moments of a Champions Meeting / League of Heroes event, as hours
+    # after the event's start date (negative = before it). Per event TYPE, not
+    # per event: every CM runs the same schedule, so four numbers set once
+    # beat four date fields per row. Hours because there is no decimal day
+    # field and finals registration closes 4.5 days in (108 hours). Round 1
+    # starts at the event's start date, so it needs no field.
+    #
+    # The League of Heroes four are nullable: its schedule has not been
+    # gathered yet, and the PvP page shows only the milestones that are set.
+    cm_registration_opens_hours = models.IntegerField(
+        default=-72,
+        help_text="Hours from a Champions Meeting's start to registration opening. Negative = before the start.",
+    )
+    cm_round_two_hours = models.IntegerField(
+        default=48,
+        help_text="Hours from a Champions Meeting's start to round 2.",
+    )
+    cm_finals_registration_closes_hours = models.IntegerField(
+        default=108,
+        help_text="Hours from a Champions Meeting's start to finals registration closing.",
+    )
+    cm_finals_hours = models.IntegerField(
+        default=120,
+        help_text="Hours from a Champions Meeting's start to the finals.",
+    )
+    loh_registration_opens_hours = models.IntegerField(
+        null=True, blank=True,
+        help_text="As for Champions Meetings. Leave blank until known; the site hides blank ones.",
+    )
+    loh_round_two_hours = models.IntegerField(
+        null=True, blank=True,
+        help_text="As for Champions Meetings. Leave blank until known.",
+    )
+    loh_finals_registration_closes_hours = models.IntegerField(
+        null=True, blank=True,
+        help_text="As for Champions Meetings. Leave blank until known.",
+    )
+    loh_finals_hours = models.IntegerField(
+        null=True, blank=True,
+        help_text="As for Champions Meetings. Leave blank until known.",
+    )
+
     class Meta:
         verbose_name = "calculation constants"
         verbose_name_plural = "calculation constants"

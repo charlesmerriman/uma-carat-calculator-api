@@ -39,7 +39,7 @@ All theme configuration lives in the `UNFOLD` settings dict in `settings.py`:
 
 `calculatorapi/admin.py` is customized throughout: model and field `verbose_name`s (app
 section "Uma Musume Data"), inlines (timeline → banners; banner → featured umas/cards;
-Champions Meeting → recommended umas), autocomplete pickers, image previews, and
+PvP guide → its sections), autocomplete pickers, image previews, and
 `CustomUser` mounted on Django's `UserAdmin`.
 
 - `GameEvent`'s reward amounts are plain fields on its own edit page (a "Rewards"
@@ -109,9 +109,9 @@ Two deliberate behaviours:
   matching `GlobalDatesFilter`, and split JP/Global date fieldsets.
 - `ChampionsMeetingAdmin` and `LeagueOfHeroesAdmin` are deliberately the same page
   section for section — same fieldsets, same schedule-offset block, same **Track details**
-  and **Stat recommendations** groups — because the two models hold the same data and
-  render through the same timeline card. Keep them in step when editing either.
-  (`ChampionsMeetingAdmin` additionally carries the `RecommendedUmaInline`.)
+  group (with `PVP_GUIDE_POINTER` under it, where the never-shown stat recommendation
+  boxes used to be) — because the two models hold the same data and render through the
+  same timeline card. Keep them in step when editing either.
 - `PatreonSupporterAdmin` has **"Show name publicly" as a `list_editable` column**, so the
   whole list can be consent-reviewed in one pass. It is the only thing that puts a name on
   the website, and the CSV importer never sets it.
@@ -269,13 +269,37 @@ Full metric definitions: [analytics.md](analytics.md).
 
 ---
 
+## PvP guides: one page, seven inlines, decks one level down
+
+`PvpGuideAdmin` holds a whole guide on one page: the event (pick ONE of the two FKs;
+`clean()` and the `exactly_one_pvp_event` constraint refuse both or neither), the
+overview fields, and seven inlines (stats, umas, skills, style notes, decks, honorable
+mentions, team comps). `is_published` is `list_editable`, so publishing and unpublishing
+is one click on the list; a custom "Event kind" filter splits CM from LoH.
+
+- **Deck slots are a second level**, which unfold/Django inlines cannot nest. So
+  `PvpDeck` is registered on its own (`PvpDeckAdmin`, one `PvpDeckSlotInline`), and the
+  guide page's deck inline has `show_change_link = True` to reach it. A new deck gets six
+  blank slot rows (`get_extra`), one once it has slots. Every other child is inline-only;
+  `test_join_models_not_registered_top_level` lists them.
+- **`search_fields` on `PvpGuideAdmin` spans both event names**: the deck page's `guide`
+  autocomplete needs it.
+- **The skill autocomplete offers skills on global only.** Django's autocomplete view
+  applies the source FK's `limit_choices_to`, and `PvpSkillRecommendation.skill` limits to
+  a non-blank description (`test_skill_autocomplete_offers_global_skills_only`).
+- **Deleting an event that has a guide** shows Django's "protected objects" page: the
+  event FKs are `PROTECT`.
+- All nine models are in both `CONTENT_MODELS` lists (snapshot and editor group).
+- If editors find the page too heavy, promote stat rows to their own admin like decks.
+
 ## Calculation constants (Configuration)
 
 One singleton row holding every tunable number the carat projection uses, at
 **Configuration → Calculation constants** in the sidebar. Grouped into fieldsets
 (daily income, packs & passes, login campaigns & gifts, pull costs & uncap, the
-event carat decay curve, global date prediction); each field's help text names
-the source spreadsheet cell it corresponds to.
+event carat decay curve, global date prediction, PvP milestones); each field's help
+text names the source spreadsheet cell it corresponds to. The PvP milestones are hours
+after a CM / LoH start date; only an owner account can change them.
 
 Its admin is deliberately non-standard, because the usual list → add → edit flow
 makes no sense for a single row:

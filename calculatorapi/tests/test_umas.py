@@ -16,7 +16,8 @@ from django.test import override_settings
 
 from calculatorapi.models import (
     AnniversaryEventProduct,
-    ChampionsMeetingUmaRecommendation,
+    PvpGuide,
+    PvpUmaRecommendation,
     Uma,
     UmasOnUmaBanner,
     UserOshi,
@@ -207,23 +208,29 @@ class MergeDuplicateUmasRelationTests(CalculatorTestCase):
         # vanish from the person's plan.
         self.assertEqual(purchase.target_uma, self.original)
 
-    def test_champions_meeting_recommendation_follows_and_never_doubles(self):
-        cm = make_champions_meeting()
-        ChampionsMeetingUmaRecommendation.objects.create(uma=self.original, champions_meeting=cm)
-        ChampionsMeetingUmaRecommendation.objects.create(uma=self.rerun, champions_meeting=cm)
-        other_cm = make_champions_meeting(name="Other CM", cm_number=2)
-        ChampionsMeetingUmaRecommendation.objects.create(uma=self.rerun, champions_meeting=other_cm)
+    def test_pvp_uma_recommendation_follows_and_never_doubles(self):
+        # PvpUmaRecommendation is unique on (guide, style, uma): the rerun's row
+        # for a style the original already has is dropped by IntegrityError,
+        # and its rows for other styles and guides move across.
+        guide = PvpGuide.objects.create(champions_meeting=make_champions_meeting())
+        PvpUmaRecommendation.objects.create(guide=guide, style="front", uma=self.original)
+        PvpUmaRecommendation.objects.create(guide=guide, style="front", uma=self.rerun)
+        PvpUmaRecommendation.objects.create(guide=guide, style="pace", uma=self.rerun)
+        other_guide = PvpGuide.objects.create(
+            champions_meeting=make_champions_meeting(name="Other CM", cm_number=2)
+        )
+        PvpUmaRecommendation.objects.create(guide=other_guide, style="front", uma=self.rerun)
 
         merge()
 
         self.assertEqual(
             sorted(
-                ChampionsMeetingUmaRecommendation.objects.filter(uma=self.original)
-                .values_list("champions_meeting_id", flat=True)
+                PvpUmaRecommendation.objects.filter(uma=self.original)
+                .values_list("guide_id", "style")
             ),
-            sorted([cm.pk, other_cm.pk]),
+            sorted([(guide.pk, "front"), (guide.pk, "pace"), (other_guide.pk, "front")]),
         )
-        self.assertEqual(ChampionsMeetingUmaRecommendation.objects.count(), 2)
+        self.assertEqual(PvpUmaRecommendation.objects.count(), 3)
 
 
 class GameIdFromImageTests(CalculatorTestCase):

@@ -102,6 +102,18 @@ _IRRELEVANT_MODELS = frozenset({
     "sitepage",
     "faqcategory",
     "faqitem",
+    # The PvP guide's children: served by GET /pvp-guides, never here. NOT the
+    # guide itself, whose is_published feeds has_guide on both race arrays, so
+    # publishing or unpublishing a guide must drop the payload. A few rebuilds
+    # per event is fine.
+    "pvpstatconfig",
+    "pvpumarecommendation",
+    "pvpskillrecommendation",
+    "pvpstylenote",
+    "pvpdeck",
+    "pvpdeckslot",
+    "pvphonorablemention",
+    "pvpteamcomp",
     # Analytics counters. These are written on EVERY visit -- leaving them out
     # of the denylist would invalidate the cache continuously and make the whole
     # thing a no-op.

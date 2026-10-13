@@ -317,11 +317,83 @@ order; set their proper order on the Patreon tiers page afterwards.
 ## Champions Meetings & League of Heroes
 
 - **Champions Meetings**: the form is grouped into basic info, **JP / Global
-  server dates** (see *Confirmed vs. predicted dates* above), **Track details**
-  (surface, distance, weather, …) and **Stat recommendations**. Recommended umas
-  are added at the bottom of the page with a search picker.
-- **League of Heroes events**: name, **JP / Global server dates** (same
-  Confirmed/Predicted system), and image.
+  server dates** (see *Confirmed vs. predicted dates* above) and **Track details**
+  (surface, distance, weather, …). Recommended stats, umas, skills and decks go
+  in the event's PvP guide, below.
+- **League of Heroes events**: the same page as Champions Meetings, section for
+  section.
+
+## PvP guides
+
+The site's PvP tab shows a guide for each Champions Meeting and League of
+Heroes event: recommended stats, umas, skills, example decks and more. You
+write them under **Events & competitions → PvP guides**. Every part is
+optional. Fill in what you have and leave the rest empty; the site skips the
+empty parts.
+
+**Writing a guide, start to finish:**
+
+1. **Add PvP guide**, then pick the event: a **Champions Meeting** or a
+   **League of Heroes event**, not both. Each event has at most one guide.
+2. Leave **Published** unticked for now. Until it is ticked, only staff who are
+   signed in on the site can see the guide.
+3. **Overview**: pick the **scenario**, type the **style ranking**
+   (`Front >> Runaway >= End > Late > Pace`), and write the **short
+   description** and **meta analysis**. These two use the same formatting as
+   the site pages (see *Site pages and FAQ* below).
+4. Fill in the rows at the bottom of the page. Each row has a **style**
+   (Runaway, Front, Pace, Late, End, or Everyone for the whole team) and most
+   have an **order** (lower numbers show first):
+   - **Stat recommendations**: one row per style and variant. Use **Everyone**
+     with the label "Minimum" for the minimum stats. Leave a stat blank to show
+     a dash. The label is for variants like "901* + 1 Gold" or "Trackblazer".
+   - **Recommended umas**: search by name and give 1 to 5 stars. **Role** is a
+     short tag shown on the picture ("Runaway blocker"); the **note** shows when
+     someone hovers the uma. An uma runs one style, so Everyone is not allowed
+     here.
+   - **Recommended skills**: search by name (only skills already on global show
+     up), pick a **category**, and give a **tier** if the guide has tiers (0
+     means take it first). The sheet's "Green" and "Debuffs" groups are style
+     Everyone with category Green or Debuff.
+   - **Style notes**: one block of advice per style, like the sheet's "Rec.
+     Skills" paragraph.
+   - **PvP decks**: one row per deck, with its style and a **label**
+     ("Beginner", "Standard", "Whale", or anything you like). The cards go in
+     after saving; see below.
+   - **Honorable mentions**: cards worth having that did not make a deck, each
+     with a short reason.
+   - **Team comps**: like "2 Front + 1 Pace", with an optional note.
+5. **Save and continue editing.**
+
+**Filling in a deck's cards.** Once the guide is saved, each deck row has a
+**Change** link. It opens the deck's own page with six slot rows:
+
+- Slots are numbered **1 to 6**. Tick **Borrow** on the borrowed card's slot.
+- To offer an alternative for a slot, add another row with the **same slot
+  number** and **order 1** (then 2, and so on). The site shows it under the card
+  as an "or".
+- A row can have no card when its note says it all ("or any speed").
+- The **note** is the short reason for the card ("2SP", "Gold + Link").
+
+Every deck is also listed under **Events & competitions → PvP decks**.
+
+**Red text.** In any note or text box, wrap words in two equals signs to show
+them in red, like the sheet's must-haves: `==Must have==`.
+
+**Preview, then publish.** Signed in on the site with your staff account, open
+the PvP tab and pick the event. A draft shows with a bar saying only staff can
+see it. When it looks right, tick **Published** (on the guide's page, or
+straight from the PvP guides list) and save. The event's card on the Timeline
+then gets a "PvP guide" link.
+
+**Deleting.** An event that has a guide cannot be deleted. Delete the guide
+first if you really mean to.
+
+**The PvP tab's intro text** is under **Site content → Pages → PvP guides**,
+edited like the other pages below.
+
+**The key dates** (registration, round 2, finals) come from the site owner's
+settings, the same for every event, so there is nothing to fill in for them.
 
 ## Rank tables
 

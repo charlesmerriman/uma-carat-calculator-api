@@ -1,6 +1,8 @@
 // Paste this entire file into the dbdiagram.io DBML editor.
 // Generated 2026-09-10 from current Django 6.0 model definitions, without database access.
 // Updated 2026-09-13 for migrations 0054-0055: SocialAccount.avatar_url, CustomUser.display_name and avatar_uma_id.
+// Updated 2026-10-13 for 0084: the nine PvP guide tables in, ChampionsMeetingUmaRecommendation out. Table counts below predate it
+// (and the Skill tables, which were never added here).
 // 35 application models + 3 automatic join tables + 7 framework tables = 45 tables.
 // Physical PostgreSQL table/column names; aliases are the Django model names.
 // PostgreSQL types are used; local development may use SQLite.
@@ -430,7 +432,7 @@ Table calculatorapi_championsmeeting as ChampionsMeeting {
   season varchar(255) [not null]
   weather varchar(255) [not null]
   direction varchar(255) [not null]
-  speed_recommendation integer [not null]
+  speed_recommendation integer [not null, note: 'Django default: 0 since 0084. Unused; dropped in the team-builder release.']
   stamina_recommendation integer [not null]
   power_recommendation integer [not null]
   guts_recommendation integer [not null]
@@ -466,17 +468,122 @@ Table calculatorapi_leagueofheroes as LeagueOfHeroes {
   Note: 'Django model: calculatorapi.LeagueOfHeroes. Source: calculatorapi/models/league_of_heroes.py.'
 }
 
-Table calculatorapi_championsmeetingumarecommendation as ChampionsMeetingUmaRecommendation {
+// PvP guides (migration 0084; models/pvp_guide.py). All content.
+
+Table calculatorapi_pvpguide as PvpGuide {
   id bigint [pk, increment, not null]
+  champions_meeting_id bigint [null, unique, note: 'Django OneToOne, on_delete: PROTECT.']
+  league_of_heroes_id bigint [null, unique, note: 'Django OneToOne, on_delete: PROTECT.']
+  scenario_id bigint [null, note: 'Django on_delete: SET_NULL.']
+  style_ranking varchar(120) [not null]
+  short_description text [not null, note: 'Markdown.']
+  meta_analysis text [not null, note: 'Markdown.']
+  is_published boolean [not null, note: 'Django default: False. Unpublished guides 404 for everyone but staff.']
+  admin_comments text [not null, note: 'Never serialized.']
+  updated_at "timestamp with time zone" [not null]
+
+  Note: 'Django model: calculatorapi.PvpGuide. Check constraint exactly_one_pvp_event: exactly one of champions_meeting_id / league_of_heroes_id is set.'
+}
+
+Table calculatorapi_pvpstatconfig as PvpStatConfig {
+  id bigint [pk, increment, not null]
+  guide_id bigint [not null, note: 'Django on_delete: CASCADE.']
+  style varchar(10) [not null, note: 'everyone, runaway, front, pace, late, end.']
+  label varchar(60) [not null]
+  speed integer [null]
+  stamina integer [null]
+  power integer [null]
+  guts integer [null]
+  wit integer [null]
+  footnote varchar(200) [not null]
+  order smallint [not null, note: 'Django default: 0.']
+}
+
+Table calculatorapi_pvpumarecommendation as PvpUmaRecommendation {
+  id bigint [pk, increment, not null]
+  guide_id bigint [not null, note: 'Django on_delete: CASCADE.']
+  style varchar(10) [not null, note: 'Never everyone (check constraint).']
   uma_id bigint [not null, note: 'Django on_delete: CASCADE.']
-  champions_meeting_id bigint [not null, note: 'Django on_delete: CASCADE.']
+  stars smallint [not null, note: '1..5 (check constraint).']
+  role varchar(40) [not null]
+  note varchar(300) [not null]
+  order smallint [not null]
 
   indexes {
-    uma_id
-    champions_meeting_id
+    (guide_id, style, uma_id) [unique, name: 'unique_pvp_uma_per_style']
+  }
+}
+
+Table calculatorapi_pvpskillrecommendation as PvpSkillRecommendation {
+  id bigint [pk, increment, not null]
+  guide_id bigint [not null, note: 'Django on_delete: CASCADE.']
+  style varchar(10) [not null]
+  category varchar(20) [not null, note: 'acceleration, speed, green, recovery, debuff, other.']
+  tier smallint [null, note: '0..4.']
+  skill_id bigint [not null, note: 'Django on_delete: CASCADE. limit_choices_to: skills on global.']
+  note varchar(200) [not null]
+  order smallint [not null]
+
+  indexes {
+    (guide_id, style, category, skill_id) [unique, name: 'unique_pvp_skill_per_style_and_category']
+  }
+}
+
+Table calculatorapi_pvpstylenote as PvpStyleNote {
+  id bigint [pk, increment, not null]
+  guide_id bigint [not null, note: 'Django on_delete: CASCADE.']
+  style varchar(10) [not null]
+  body text [not null, note: 'Markdown.']
+
+  indexes {
+    (guide_id, style) [unique, name: 'unique_pvp_style_note']
+  }
+}
+
+Table calculatorapi_pvpdeck as PvpDeck {
+  id bigint [pk, increment, not null]
+  guide_id bigint [not null, note: 'Django on_delete: CASCADE.']
+  style varchar(10) [not null]
+  label varchar(60) [not null]
+  note varchar(300) [not null]
+  order smallint [not null]
+}
+
+Table calculatorapi_pvpdeckslot as PvpDeckSlot {
+  id bigint [pk, increment, not null]
+  deck_id bigint [not null, note: 'Django on_delete: CASCADE.']
+  slot smallint [not null, note: '1..6 (check constraint).']
+  is_borrow boolean [not null]
+  order smallint [not null, note: '0 = the card, 1+ = alternatives.']
+  support_card_id bigint [null, note: 'Django on_delete: CASCADE.']
+  note varchar(120) [not null]
+
+  indexes {
+    (deck_id, slot, order) [unique, name: 'unique_pvp_deck_slot_order']
   }
 
-  Note: 'Django model: calculatorapi.ChampionsMeetingUmaRecommendation. Source: calculatorapi/models/champions_meeting_uma_recommendation.py.'
+  Note: 'Check constraint slot_has_card_or_note: support_card_id set or note non-blank.'
+}
+
+Table calculatorapi_pvphonorablemention as PvpHonorableMention {
+  id bigint [pk, increment, not null]
+  guide_id bigint [not null, note: 'Django on_delete: CASCADE.']
+  style varchar(10) [not null]
+  support_card_id bigint [not null, note: 'Django on_delete: CASCADE.']
+  note varchar(200) [not null]
+  order smallint [not null]
+
+  indexes {
+    (guide_id, style, support_card_id) [unique, name: 'unique_pvp_mention_per_style']
+  }
+}
+
+Table calculatorapi_pvpteamcomp as PvpTeamComp {
+  id bigint [pk, increment, not null]
+  guide_id bigint [not null, note: 'Django on_delete: CASCADE.']
+  text varchar(120) [not null]
+  note varchar(200) [not null]
+  order smallint [not null]
 }
 
 // Configuration and Changelog
@@ -788,8 +895,20 @@ Ref: AnniversaryEventBanner.banner_timeline_id > BannerTimeline.id
 Ref: AnniversaryEventProduct.anniversary_event_id > AnniversaryEvent.id
 Ref: GameEvent.banner_timeline_id > BannerTimeline.id
 Ref: Scenario.banner_timeline_id > BannerTimeline.id
-Ref: ChampionsMeetingUmaRecommendation.uma_id > Uma.id
-Ref: ChampionsMeetingUmaRecommendation.champions_meeting_id > ChampionsMeeting.id
+Ref: PvpGuide.champions_meeting_id - ChampionsMeeting.id
+Ref: PvpGuide.league_of_heroes_id - LeagueOfHeroes.id
+Ref: PvpGuide.scenario_id > Scenario.id
+Ref: PvpStatConfig.guide_id > PvpGuide.id
+Ref: PvpUmaRecommendation.guide_id > PvpGuide.id
+Ref: PvpUmaRecommendation.uma_id > Uma.id
+Ref: PvpSkillRecommendation.guide_id > PvpGuide.id
+Ref: PvpStyleNote.guide_id > PvpGuide.id
+Ref: PvpDeck.guide_id > PvpGuide.id
+Ref: PvpDeckSlot.deck_id > PvpDeck.id
+Ref: PvpDeckSlot.support_card_id > SupportCard.id
+Ref: PvpHonorableMention.guide_id > PvpGuide.id
+Ref: PvpHonorableMention.support_card_id > SupportCard.id
+Ref: PvpTeamComp.guide_id > PvpGuide.id
 Ref: ChangelogChange.entry_id > ChangelogEntry.id
 Ref: CustomUser.id - PatreonSupporter.linked_user_id
 Ref: PatreonSupporter.tier_id > PatreonTier.id
@@ -838,7 +957,18 @@ TableGroup Events_and_Campaigns {
   Scenario
   ChampionsMeeting
   LeagueOfHeroes
-  ChampionsMeetingUmaRecommendation
+}
+
+TableGroup PvP_guides {
+  PvpGuide
+  PvpStatConfig
+  PvpUmaRecommendation
+  PvpSkillRecommendation
+  PvpStyleNote
+  PvpDeck
+  PvpDeckSlot
+  PvpHonorableMention
+  PvpTeamComp
 }
 
 TableGroup Configuration_and_Changelog {

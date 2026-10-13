@@ -1,0 +1,304 @@
+"""
+GET /pvp-guides/<kind>/<event_id>: one event's PvP guide, every section.
+
+Public and read-only; editors write guides in the admin. `kind` is "cm" or
+"loh", the same short tags the frontend's ?event=cm-12 links use.
+
+NOT CACHED, on the /umas and /site-content reasoning: one guide row plus a
+fixed number of prefetches (a test pins the count), tens of kilobytes, and
+fetched when someone opens the PvP page or follows a Timeline link, never on
+/app load. If it ever runs hot, R2's catalogue cache module is the shape to
+copy. No throttle: editorial content, nothing about a person.
+
+DRAFTS. An unpublished guide is a 404 with the same body as an unknown event,
+so the response never says whether a draft exists. Signed-in staff get the
+draft, flagged `is_published: false`, so an editor can preview it on the site.
+
+Umas, cards and skills are embedded as small objects rather than ids: the
+client's banner data only knows cards that were on a banner, and skills are not
+on the client at all yet.
+"""
+
+from django.db.models import Exists, OuterRef, Prefetch
+from rest_framework import permissions, serializers
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
+
+from calculatorapi.models import (
+    ChampionsMeeting,
+    PvpDeck,
+    PvpDeckSlot,
+    PvpGuide,
+    PvpHonorableMention,
+    PvpSkillRecommendation,
+    PvpStatConfig,
+    PvpStyleNote,
+    PvpTeamComp,
+    PvpUmaRecommendation,
+    Scenario,
+    Skill,
+    SupportCard,
+    Uma,
+    UmaSkill,
+    UmaSkillSource,
+)
+from calculatorapi.models.pvp_guide import STYLE_RANK
+
+# The URL's kind -> the guide's FK to that event.
+EVENT_FIELD_FOR_KIND = {
+    "cm": "champions_meeting_id",
+    "loh": "league_of_heroes_id",
+}
+
+NOT_FOUND = {"error": "Guide not found"}
+
+
+def annotate_has_guide(queryset):
+    """Add `has_guide` to a ChampionsMeeting or LeagueOfHeroes queryset: does
+    the event have a PUBLISHED guide? Drives the Timeline card's "PvP guide"
+    link and the PvP page's dropdown star. A draft counts as no guide.
+
+    One EXISTS subquery, so it costs no extra round trip. The race serializers
+    read it with getattr(..., False), so an unannotated queryset says False
+    rather than raising.
+    """
+    field = "champions_meeting" if queryset.model is ChampionsMeeting else "league_of_heroes"
+    published = PvpGuide.objects.filter(is_published=True, **{field: OuterRef("pk")})
+    return queryset.annotate(has_guide=Exists(published))
+
+
+# ── Embedded catalogue objects ───────────────────────────────────────────────
+
+class _ScenarioSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Scenario
+        fields = ("id", "name", "image")
+
+
+class _UmaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Uma
+        fields = ("id", "name", "image")
+
+
+class _SupportCardSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SupportCard
+        fields = ("id", "name", "image", "card_type", "rarity")
+
+
+class _SkillSerializer(serializers.ModelSerializer):
+    # "Lead the Pack (Maruzensky)": the outfit whose unique this skill is, or
+    # null. The sheet writes acceleration skills this way. Read from a dict the
+    # view builds in one query (context["unique_of"]), not per skill.
+    unique_of = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Skill
+        fields = ("id", "name", "description", "image", "rarity", "unique_of")
+
+    def get_unique_of(self, obj):
+        return self.context["unique_of"].get(obj.id)
+
+
+# ── The guide's sections ─────────────────────────────────────────────────────
+
+class _StatConfigSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PvpStatConfig
+        fields = ("style", "label", "speed", "stamina", "power", "guts", "wit", "footnote")
+
+
+class _UmaRecommendationSerializer(serializers.ModelSerializer):
+    uma = _UmaSerializer(read_only=True)
+
+    class Meta:
+        model = PvpUmaRecommendation
+        fields = ("style", "stars", "role", "note", "uma")
+
+
+class _SkillRecommendationSerializer(serializers.ModelSerializer):
+    skill = _SkillSerializer(read_only=True)
+
+    class Meta:
+        model = PvpSkillRecommendation
+        fields = ("style", "category", "tier", "order", "note", "skill")
+
+
+class _StyleNoteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PvpStyleNote
+        fields = ("style", "body")
+
+
+class _DeckSlotSerializer(serializers.ModelSerializer):
+    support_card = _SupportCardSerializer(read_only=True)
+
+    class Meta:
+        model = PvpDeckSlot
+        fields = ("slot", "order", "is_borrow", "note", "support_card")
+
+
+class _DeckSerializer(serializers.ModelSerializer):
+    # Arrive in (slot, order) through the prefetch's queryset ordering.
+    slots = _DeckSlotSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = PvpDeck
+        fields = ("id", "style", "label", "note", "slots")
+
+
+class _HonorableMentionSerializer(serializers.ModelSerializer):
+    support_card = _SupportCardSerializer(read_only=True)
+
+    class Meta:
+        model = PvpHonorableMention
+        fields = ("style", "note", "support_card")
+
+
+class _TeamCompSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PvpTeamComp
+        fields = ("text", "note")
+
+
+# ── Ordering ─────────────────────────────────────────────────────────────────
+# By style in STYLE_ORDER (Everyone, Runaway, Front, Pace, Late, End), done in
+# Python because the database would sort the style strings alphabetically.
+# Within a style each section has its own rule.
+
+def _by_style(row):
+    return STYLE_RANK.get(row.style, len(STYLE_RANK))
+
+
+def _stat_key(row):
+    return (_by_style(row), row.order, row.id)
+
+
+def _uma_key(row):
+    # Most stars first; the editor's order breaks ties, then the name.
+    return (_by_style(row), -row.stars, row.order, row.uma.name)
+
+
+def _skill_key(row):
+    # Tier 0 first, untiered rows last.
+    return (_by_style(row), row.tier is None, row.tier or 0, row.order, row.id)
+
+
+def _ordered_key(row):
+    return (_by_style(row), row.order, row.id)
+
+
+def guide_queryset():
+    """The guide with every section prefetched: a fixed number of queries
+    however many rows each section has."""
+    return PvpGuide.objects.select_related(
+        "champions_meeting", "league_of_heroes", "scenario",
+    ).prefetch_related(
+        "stat_configs",
+        Prefetch(
+            "uma_recommendations",
+            queryset=PvpUmaRecommendation.objects.select_related("uma"),
+        ),
+        # Layer three of the on_global rule (models/pvp_guide.py): a skill an
+        # editor picked that has since lost its description stays in the
+        # database but never reaches the site.
+        Prefetch(
+            "skill_recommendations",
+            queryset=PvpSkillRecommendation.objects.filter(
+                skill__description__regex=r"\S"
+            ).select_related("skill"),
+        ),
+        "style_notes",
+        Prefetch(
+            "decks",
+            queryset=PvpDeck.objects.prefetch_related(
+                Prefetch(
+                    "slots",
+                    queryset=PvpDeckSlot.objects.select_related("support_card")
+                    .order_by("slot", "order", "id"),
+                ),
+            ),
+        ),
+        Prefetch(
+            "honorable_mentions",
+            queryset=PvpHonorableMention.objects.select_related("support_card"),
+        ),
+        "team_comps",
+    )
+
+
+def _unique_of(skill_ids):
+    """{skill id: outfit name} for the skills that are some outfit's unique.
+
+    One query for the whole guide. If two outfits ever share a unique, the
+    lower uma id wins, so the answer is stable between requests.
+    """
+    rows = (
+        UmaSkill.objects.filter(skill_id__in=skill_ids, source=UmaSkillSource.UNIQUE)
+        .select_related("uma")
+        .order_by("uma_id")
+    )
+    owners = {}
+    for row in rows:
+        owners.setdefault(row.skill_id, row.uma.name)
+    return owners
+
+
+def serialize_guide(guide, request=None):
+    """The response body for one guide. `request` makes image URLs absolute."""
+    skill_rows = sorted(guide.skill_recommendations.all(), key=_skill_key)
+    context = {
+        "request": request,
+        "unique_of": _unique_of([row.skill_id for row in skill_rows]),
+    }
+
+    def many(serializer, rows):
+        return serializer(rows, many=True, context=context).data
+
+    event_id = guide.champions_meeting_id or guide.league_of_heroes_id
+    return {
+        "event_type": guide.event_type,
+        "event": event_id,
+        "is_published": guide.is_published,
+        "updated_at": serializers.DateTimeField().to_representation(guide.updated_at),
+        "scenario": (
+            _ScenarioSerializer(guide.scenario, context=context).data
+            if guide.scenario_id else None
+        ),
+        "style_ranking": guide.style_ranking,
+        "short_description": guide.short_description,
+        "meta_analysis": guide.meta_analysis,
+        "team_comps": many(_TeamCompSerializer, guide.team_comps.all()),
+        "stat_configs": many(
+            _StatConfigSerializer, sorted(guide.stat_configs.all(), key=_stat_key)
+        ),
+        "uma_recommendations": many(
+            _UmaRecommendationSerializer,
+            sorted(guide.uma_recommendations.all(), key=_uma_key),
+        ),
+        "skill_recommendations": many(_SkillRecommendationSerializer, skill_rows),
+        "style_notes": many(
+            _StyleNoteSerializer, sorted(guide.style_notes.all(), key=_by_style)
+        ),
+        "decks": many(_DeckSerializer, sorted(guide.decks.all(), key=_ordered_key)),
+        "honorable_mentions": many(
+            _HonorableMentionSerializer,
+            sorted(guide.honorable_mentions.all(), key=_ordered_key),
+        ),
+    }
+
+
+@api_view(["GET"])
+@permission_classes([permissions.AllowAny])
+def pvp_guide_detail(request, kind, event_id):
+    field = EVENT_FIELD_FOR_KIND.get(kind)
+    if field is None:
+        return Response(NOT_FOUND, status=404)
+
+    guide = guide_queryset().filter(**{field: event_id}).first()
+    # A draft answers exactly like a missing guide unless the caller is staff.
+    if guide is None or (not guide.is_published and not request.user.is_staff):
+        return Response(NOT_FOUND, status=404)
+
+    return Response(serialize_guide(guide, request))

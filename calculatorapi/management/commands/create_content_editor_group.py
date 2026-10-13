@@ -27,8 +27,10 @@ from calculatorapi.models import (
     BannerTimeline, BannerUma, BannerSupport, BannerStepUp,
     UmasOnUmaBanner, SupportsOnSupportBanner,
     GameEvent,
-    ChampionsMeeting, ChampionsMeetingUmaRecommendation,
+    ChampionsMeeting,
     LeagueOfHeroes,
+    PvpGuide, PvpStatConfig, PvpUmaRecommendation, PvpSkillRecommendation,
+    PvpStyleNote, PvpDeck, PvpDeckSlot, PvpHonorableMention, PvpTeamComp,
     ChangelogEntry, ChangelogChange,
     ClubRank, TeamTrialsRank, ChampionsMeetingRank, LeagueOfHeroesRank,
     AnniversaryEvent, AnniversaryEventBanner, AnniversaryEventProduct,
@@ -40,15 +42,18 @@ from calculatorapi.models import (
 
 GROUP_NAME = "Content editors"
 
-# Everything a content editor manages. The three join models are edited via
-# inlines, but inline saves still require permissions on the join model itself.
+# Everything a content editor manages. The join models and the PvP guide's
+# children are edited via inlines, but inline saves still require permissions
+# on those models themselves.
 CONTENT_MODELS = [
     Uma, SupportCard, Skill,
     BannerTimeline, BannerUma, BannerSupport, BannerStepUp,
     UmasOnUmaBanner, SupportsOnSupportBanner,
     GameEvent,
-    ChampionsMeeting, ChampionsMeetingUmaRecommendation,
+    ChampionsMeeting,
     LeagueOfHeroes,
+    PvpGuide, PvpStatConfig, PvpUmaRecommendation, PvpSkillRecommendation,
+    PvpStyleNote, PvpDeck, PvpDeckSlot, PvpHonorableMention, PvpTeamComp,
     ChangelogEntry, ChangelogChange,
     ClubRank, TeamTrialsRank, ChampionsMeetingRank, LeagueOfHeroesRank,
     # Campaigns are content: an editor sets up an anniversary's packs and

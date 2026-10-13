@@ -285,11 +285,11 @@ erDiagram
         string season
         string weather
         string direction
-        int speed_recommendation
-        int stamina_recommendation
-        int power_recommendation
-        int guts_recommendation
-        int wit_recommendation
+        int speed_recommendation "unused; drops with the team builder"
+        int stamina_recommendation "unused"
+        int power_recommendation "unused"
+        int guts_recommendation "unused"
+        int wit_recommendation "unused"
     }
 
     LeagueOfHeroes {
@@ -310,11 +310,11 @@ erDiagram
         string season
         string weather
         string direction
-        int speed_recommendation
-        int stamina_recommendation
-        int power_recommendation
-        int guts_recommendation
-        int wit_recommendation
+        int speed_recommendation "unused; drops with the team builder"
+        int stamina_recommendation "unused"
+        int power_recommendation "unused"
+        int guts_recommendation "unused"
+        int wit_recommendation "unused"
     }
 
     UserOshi }o--|| CustomUser : "user"
@@ -876,9 +876,9 @@ covers that anniversary's featured unit.
 
 ### `ChampionsMeeting` and `LeagueOfHeroes` are the same shape
 
-The two hold identical data — course details (`track` … `direction`) and five stat
-recommendations — differing only in their number field (`cm_number` / `loh_number`) and in
-`ChampionsMeeting` owning the `ChampionsMeetingUmaRecommendation` join table. They render
+The two hold identical data — course details (`track` … `direction`) — differing only in
+their number field (`cm_number` / `loh_number`). Each may have one `PvpGuide` (below),
+through a OneToOne on the guide's side, so neither model carries a guide column. They render
 through one shared frontend card (`components/timeline/RaceEventCard.tsx`), so a field
 added to one almost always belongs on the other; the same goes for their serializers and
 `ModelAdmin` fieldsets.
@@ -888,9 +888,74 @@ predict their global dates against *separate* anchor sets (see below), and mergi
 would mix those anchors. The fields are duplicated rather than pulled into an abstract base
 — a conscious trade of a little repetition for keeping each model readable on its own.
 
-The course/stat columns are non-null, so "not announced yet" is encoded as a **sentinel**:
-`"TBD"` for text and `0` for the recommendations. Both models default to those, and the
-frontend translates them into a pending state rather than rendering them raw.
+The course columns are non-null, so "not announced yet" is encoded as a **sentinel**:
+`"TBD"`. The frontend translates it into a pending state rather than rendering it raw.
+The five `*_recommendation` int columns are still on both tables but off the admin, the
+API and the client since the PvP guide shipped; they drop in the team-builder release
+(R2 of the PvP plan) once production confirms they are all zero.
+
+### `PvpGuide`: what to build for one CM or LoH
+
+`models/pvp_guide.py`. Written by the sheet's authors in the admin, served by
+`GET /pvp-guides/<kind>/<event_id>` and shown on the site's PvP page. All nine tables are
+**content** (`content_snapshot.CONTENT_MODELS`).
+
+```mermaid
+erDiagram
+    PvpGuide |o--o| ChampionsMeeting : "champions_meeting (PROTECT)"
+    PvpGuide |o--o| LeagueOfHeroes : "league_of_heroes (PROTECT)"
+    PvpGuide }o--o| Scenario : "scenario (SET_NULL)"
+    PvpStatConfig }o--|| PvpGuide : "guide"
+    PvpUmaRecommendation }o--|| PvpGuide : "guide"
+    PvpUmaRecommendation }o--|| Uma : "uma"
+    PvpSkillRecommendation }o--|| PvpGuide : "guide"
+    PvpSkillRecommendation }o--|| Skill : "skill (on global only)"
+    PvpStyleNote }o--|| PvpGuide : "guide"
+    PvpDeck }o--|| PvpGuide : "guide"
+    PvpDeckSlot }o--|| PvpDeck : "deck"
+    PvpDeckSlot }o--o| SupportCard : "support_card (nullable)"
+    PvpHonorableMention }o--|| PvpGuide : "guide"
+    PvpHonorableMention }o--|| SupportCard : "support_card"
+    PvpTeamComp }o--|| PvpGuide : "guide"
+```
+
+- **One guide table for both kinds.** The CM/LoH two-model split exists because each
+  predicts dates against its own anchors; a guide holds no dates (the client already has
+  the event's). So `PvpGuide` points at exactly one event through two nullable OneToOnes and
+  the `exactly_one_pvp_event` check constraint (the `exactly_one_banner_target` idiom),
+  repeated in `clean()` as a form error. `event_type` on the wire is derived from which FK
+  is set.
+- **`PROTECT` on both event FKs**: a guide is weeks of an editor's work, so deleting an
+  event with a guide is refused; delete the guide first.
+- **Every section is optional**, the superset of the sheet's two formats (the JP-era deck
+  lists and the global per-cup tables). Each child carries a `style`
+  (`PvpStyle`: everyone, runaway, front, pace, late, end; TextChoices, display order
+  `STYLE_ORDER`, sorted in Python) and usually an `order`.
+  - `PvpStatConfig`: several rows per style is the point (variants), five nullable stats.
+  - `PvpUmaRecommendation`: unique `(guide, style, uma)`, stars 1..5 and never
+    `style=everyone`, both as check constraints.
+  - `PvpSkillRecommendation`: `category` (`PvpSkillCategory`), optional `tier` 0..4,
+    unique `(guide, style, category, skill)`. **Only skills on global**, in three layers:
+    the FK's `limit_choices_to` (form and admin autocomplete), `clean()`, and the view's
+    prefetch filter, so a skill that loses its description later stays stored but unshown.
+  - `PvpStyleNote`: one markdown block per style, unique `(guide, style)`.
+  - `PvpDeck` → `PvpDeckSlot`: slot 1..6, `is_borrow`, `order` 0 = the card and 1+ =
+    alternatives for the same slot, unique `(deck, slot, order)`; `support_card` is
+    nullable but `slot_has_card_or_note` requires a card or a note.
+  - `PvpHonorableMention`: unique `(guide, style, support_card)`. Its own table because
+    mentions have no slots and so stay a one-level inline.
+  - `PvpTeamComp`: free text ("2 Front + 1 Pace") and a note.
+- **`has_guide`** on both race serializers is an `Exists` over published guides
+  (`views.pvp_guide.annotate_has_guide`). That is why `PvpGuide` is NOT in
+  `public_payload_cache._IRRELEVANT_MODELS` while its eight children are.
+- **`merge_duplicate_umas` / `_support_cards`** re-point the uma and card FKs here like
+  any other; a re-point that would collide with one of the unique constraints is dropped,
+  as the command does everywhere.
+- **Milestones** (registration, round 2, finals registration, finals) are not on the
+  guide or the event: they are per event TYPE, eight hour offsets on
+  `CalculationConstants`.
+- Replaced `ChampionsMeetingUmaRecommendation` (an admin inline nothing rendered; dropped
+  by `0084`).
 
 ### Through tables carry recommendation text
 

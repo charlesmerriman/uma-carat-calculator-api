@@ -46,6 +46,7 @@ from calculatorapi.views.banner_support import BannerSupportSerializer
 from calculatorapi.views.banner_step_up import BannerStepUpSerializer
 from calculatorapi.views.champions_meeting import ChampionsMeetingSerializer
 from calculatorapi.views.league_of_heroes import LeagueOfHeroesSerializer
+from calculatorapi.views.pvp_guide import annotate_has_guide
 from calculatorapi.views.game_event import GameEventSerializer
 from calculatorapi.views.banner_timeline import BannerTimelineForViewingSerializer
 from calculatorapi.views.anniversary_event import AnniversaryEventSerializer
@@ -500,11 +501,11 @@ class CalculatorViewSet(ViewSet):
             key=lambda ge: effective_sort_key(game_event_emap.get(ge.id)),
         )
         champions_meeting_data = sorted(
-            ChampionsMeeting.objects.all(),
+            annotate_has_guide(ChampionsMeeting.objects.all()),
             key=lambda cm: effective_sort_key(cm_emap.get(cm.id)),
         )
         league_of_heroes_event_data = sorted(
-            LeagueOfHeroes.objects.all(),
+            annotate_has_guide(LeagueOfHeroes.objects.all()),
             key=lambda loh: effective_sort_key(loh_emap.get(loh.id)),
         )
         banner_timeline_data = sorted(

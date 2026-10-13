@@ -17,9 +17,11 @@ Layout of this file:
   9. Site content (the About page, the carat income guide and the FAQ, plus
      the "Rebuild website" button that re-bakes them into the public site)
 
-The three join models (UmasOnUmaBanner, SupportsOnSupportBanner,
-ChampionsMeetingUmaRecommendation) are deliberately NOT registered top-level —
-they are edited through inlines on their parent pages. The "Content editors"
+The join models (UmasOnUmaBanner, SupportsOnSupportBanner, UmaSkill,
+SupportCardSkill, DailyLegendRaceUma) and every PvP guide child except PvpDeck
+are deliberately NOT registered top-level — they are edited through inlines on
+their parent pages. PvpDeck is registered because its slots need an inline of
+their own, and the admin allows only one level. The "Content editors"
 group (see management/commands/create_content_editor_group.py) still needs
 permissions on them for the inlines to save.
 """
@@ -67,7 +69,9 @@ from .models import (
     Plan, IncomeProfile,
     TeamTrialsRank, ClubRank, ChampionsMeetingRank, LeagueOfHeroesRank,
     BannerTimeline, BannerUma, BannerSupport, BannerStepUp,
-    ChampionsMeeting, ChampionsMeetingUmaRecommendation,
+    ChampionsMeeting,
+    PvpGuide, PvpStatConfig, PvpUmaRecommendation, PvpSkillRecommendation,
+    PvpStyleNote, PvpDeck, PvpDeckSlot, PvpHonorableMention, PvpTeamComp,
     SupportsOnSupportBanner, UmasOnUmaBanner,
     GameEvent, LeagueOfHeroes, Scenario,
     DailyLegendRaceRelease, DailyLegendRaceUma,
@@ -159,13 +163,6 @@ class SupportCardSkillInline(TabularInline):
     extra = 0
 
 
-class RecommendedUmaInline(TabularInline):
-    """Recommended umas for a Champions Meeting."""
-    model = ChampionsMeetingUmaRecommendation
-    autocomplete_fields = ("uma",)
-    extra = 1
-
-
 class ChangelogChangeInline(TabularInline):
     """The individual change lines of a changelog entry, edited on its page."""
     model = ChangelogChange
@@ -209,6 +206,80 @@ class AnniversaryEventProductInline(TabularInline):
     )
     ordering = ("order",)
     extra = 1
+
+
+# The PvP guide's children, all on the guide's page. Every one carries an
+# `order` column (lower shows first), so the inlines sort by it too.
+
+class PvpStatConfigInline(TabularInline):
+    """Recommended stats: one row per style and variant."""
+    model = PvpStatConfig
+    fields = ("style", "label", "speed", "stamina", "power", "guts", "wit", "footnote", "order")
+    ordering = ("order", "id")
+    extra = 1
+
+
+class PvpUmaRecommendationInline(TabularInline):
+    model = PvpUmaRecommendation
+    fields = ("style", "uma", "stars", "role", "note", "order")
+    autocomplete_fields = ("uma",)
+    ordering = ("order", "id")
+    extra = 1
+
+
+class PvpSkillRecommendationInline(TabularInline):
+    # The skill autocomplete offers global skills only: the FK's
+    # limit_choices_to reaches the autocomplete view too.
+    model = PvpSkillRecommendation
+    fields = ("style", "category", "tier", "skill", "note", "order")
+    autocomplete_fields = ("skill",)
+    ordering = ("order", "id")
+    extra = 1
+
+
+class PvpStyleNoteInline(StackedInline):
+    """One block of advice per style. Stacked: the body is a long text."""
+    model = PvpStyleNote
+    fields = ("style", "body")
+    extra = 0
+
+
+class PvpHonorableMentionInline(TabularInline):
+    model = PvpHonorableMention
+    fields = ("style", "support_card", "note", "order")
+    autocomplete_fields = ("support_card",)
+    ordering = ("order", "id")
+    extra = 1
+
+
+class PvpTeamCompInline(TabularInline):
+    model = PvpTeamComp
+    fields = ("order", "text", "note")
+    ordering = ("order", "id")
+    extra = 1
+
+
+class PvpDeckInline(TabularInline):
+    """The deck list. A deck's six slots are filled on its own page (the
+    Change link), since the admin allows one level of inlines."""
+    model = PvpDeck
+    fields = ("style", "label", "order", "note")
+    ordering = ("order", "id")
+    show_change_link = True
+    extra = 1
+
+
+class PvpDeckSlotInline(TabularInline):
+    model = PvpDeckSlot
+    fields = ("slot", "order", "is_borrow", "support_card", "note")
+    autocomplete_fields = ("support_card",)
+    ordering = ("slot", "order", "id")
+
+    def get_extra(self, request, obj=None, **kwargs):
+        # Six blank rows for a new deck, one once it has slots.
+        if obj is not None and obj.slots.exists():
+            return 1
+        return 6
 
 
 # ── 4. Game content ──────────────────────────────────────────────────────────
@@ -320,6 +391,14 @@ SCHEDULE_OFFSET_FIELDSET = (
             "It has no effect once this row's global dates are confirmed."
         ),
     },
+)
+
+# Under the track details on both event pages, where the stat recommendations
+# used to be. Those five boxes were never shown on the site; the guide's stat
+# rows replaced them.
+PVP_GUIDE_POINTER = (
+    "Recommended stats, umas, skills and decks for this event go in its PvP "
+    "guide (Events &amp; competitions, PvP guides)."
 )
 
 
@@ -872,14 +951,9 @@ class ChampionsMeetingAdmin(GlobalDatesStatusMixin, ScheduleOffsetMixin, ImagePr
         ("Track details", {
             "fields": ("track", "surface_type", "distance", "length",
                        "track_condition", "season", "weather", "direction"),
-        }),
-        ("Stat recommendations", {
-            "fields": ("speed_recommendation", "stamina_recommendation",
-                       "power_recommendation", "guts_recommendation",
-                       "wit_recommendation"),
+            "description": PVP_GUIDE_POINTER,
         }),
     )
-    inlines = (RecommendedUmaInline,)
 
 
 @admin.register(ChangelogEntry)
@@ -944,13 +1018,118 @@ class LeagueOfHeroesAdmin(GlobalDatesStatusMixin, ScheduleOffsetMixin, ImagePrev
         ("Track details", {
             "fields": ("track", "surface_type", "distance", "length",
                        "track_condition", "season", "weather", "direction"),
-        }),
-        ("Stat recommendations", {
-            "fields": ("speed_recommendation", "stamina_recommendation",
-                       "power_recommendation", "guts_recommendation",
-                       "wit_recommendation"),
+            "description": PVP_GUIDE_POINTER,
         }),
     )
+
+
+class PvpEventKindFilter(admin.SimpleListFilter):
+    """Champions Meeting or League of Heroes, read off which FK is set."""
+    title = "event kind"
+    parameter_name = "kind"
+
+    def lookups(self, request, model_admin):
+        return (("cm", "Champions Meeting"), ("loh", "League of Heroes"))
+
+    def queryset(self, request, queryset):
+        if self.value() == "cm":
+            return queryset.filter(champions_meeting__isnull=False)
+        if self.value() == "loh":
+            return queryset.filter(league_of_heroes__isnull=False)
+        return queryset
+
+
+@admin.register(PvpGuide)
+class PvpGuideAdmin(ModelAdmin):
+    """
+    One event's PvP guide, every section on one page.
+
+    Seven inlines is heavy but one level deep. Decks are the exception: a deck
+    has six slots of its own, which would be a second level, so the deck list
+    sits here and each deck's slots are filled on the deck's own page through
+    its Change link. If editors find this page too long, stat rows are the next
+    candidate for their own page.
+
+    Unpublished guides are drafts: the site returns "not found" to everyone but
+    signed-in staff, who see the draft with a banner saying so.
+    """
+    list_display = ("event_name", "event_kind", "scenario", "is_published",
+                    "deck_count", "updated_at")
+    list_display_links = ("event_name",)
+    list_editable = ("is_published",)
+    list_filter = ("is_published", PvpEventKindFilter)
+    list_select_related = ("champions_meeting", "league_of_heroes", "scenario")
+    ordering = ("-updated_at",)
+    # Both event names, so the deck page's guide autocomplete can find a guide.
+    search_fields = ("champions_meeting__name", "league_of_heroes__name")
+    autocomplete_fields = ("champions_meeting", "league_of_heroes", "scenario")
+    readonly_fields = ("updated_at",)
+    fieldsets = (
+        ("Event", {
+            "description": "Pick one event and leave the other blank.",
+            "fields": ("champions_meeting", "league_of_heroes", "is_published"),
+        }),
+        ("Overview", {
+            "fields": ("scenario", "style_ranking", "short_description", "meta_analysis"),
+        }),
+        ("Notes for editors", {
+            "fields": ("admin_comments", "updated_at"),
+        }),
+    )
+    inlines = (
+        PvpStatConfigInline,
+        PvpUmaRecommendationInline,
+        PvpSkillRecommendationInline,
+        PvpStyleNoteInline,
+        PvpDeckInline,
+        PvpHonorableMentionInline,
+        PvpTeamCompInline,
+    )
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).annotate(_deck_count=Count("decks"))
+
+    @admin.display(description="Event")
+    def event_name(self, obj):
+        return str(obj)
+
+    @admin.display(description="Kind")
+    def event_kind(self, obj):
+        return "Champions Meeting" if obj.champions_meeting_id else "League of Heroes"
+
+    @admin.display(description="Decks", ordering="_deck_count")
+    def deck_count(self, obj):
+        return obj._deck_count  # pylint: disable=protected-access
+
+
+@admin.register(PvpDeck)
+class PvpDeckAdmin(ModelAdmin):
+    """One example deck and its six slots. Reached from the guide page's deck
+    list (the Change link) or from the sidebar."""
+    list_display = ("__str__", "style", "label", "order", "slot_count")
+    list_filter = ("style", "guide")
+    list_select_related = ("guide__champions_meeting", "guide__league_of_heroes")
+    search_fields = ("label", "guide__champions_meeting__name", "guide__league_of_heroes__name")
+    autocomplete_fields = ("guide",)
+    fieldsets = (
+        (None, {
+            "fields": ("guide", "style", "label", "order", "note"),
+            "description": (
+                "Slots 1 to 6. Tick Borrow on the borrow slot. To offer an "
+                "alternative for a slot, add a second row with the same slot "
+                "number and order 1. A row with no card and a note like "
+                "\"or any speed\" is allowed."
+            ),
+        }),
+    )
+    inlines = (PvpDeckSlotInline,)
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).annotate(_slot_count=Count("slots"))
+
+    @admin.display(description="Slots", ordering="_slot_count")
+    def slot_count(self, obj):
+        return obj._slot_count  # pylint: disable=protected-access
 
 
 # ── 5. Rank / income tables ──────────────────────────────────────────────────
@@ -1329,6 +1508,24 @@ class CalculationConstantsAdmin(ModelAdmin):
                 "These move BANNER DATES, not just income."
             ),
             "fields": ("prediction_factor", "game_event_end_buffer_days"),
+        }),
+        ("PvP milestones", {
+            "description": (
+                "The key moments of every Champions Meeting and League of Heroes, "
+                "in hours after the event's start date (negative means before it). "
+                "Round 1 starts at the start date. The PvP page shows a date for "
+                "each one that is filled in."
+            ),
+            "fields": (
+                "cm_registration_opens_hours",
+                "cm_round_two_hours",
+                "cm_finals_registration_closes_hours",
+                "cm_finals_hours",
+                "loh_registration_opens_hours",
+                "loh_round_two_hours",
+                "loh_finals_registration_closes_hours",
+                "loh_finals_hours",
+            ),
         }),
     )
 

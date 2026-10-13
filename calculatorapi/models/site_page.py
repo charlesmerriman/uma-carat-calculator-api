@@ -33,6 +33,7 @@ class SitePage(models.Model):
         ABOUT = "about", "About"
         CARAT_INCOME_GUIDE = "carat-income-guide", "Carat income guide"
         DAILY_LEGEND_RACES = "daily-legend-races", "Daily legend races"
+        PVP_GUIDES = "pvp-guides", "PvP guides"
 
     slug = models.SlugField(
         max_length=50,

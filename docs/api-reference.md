@@ -643,11 +643,65 @@ These endpoints return static rank tables. All are public and support `list` and
 | `GET /leagueofheroesranks` | League of Heroes rank tiers and income amounts |
 | `GET /events` | Game events, including their own reward amounts |
 | `GET /changelog` | Patch-note entries (newest first) with nested, ordered change lines |
-| `GET /site-content` | The admin-editable pages (About, the carat income guide) and the whole FAQ, in one object — **not** an array, see below |
+| `GET /site-content` | The admin-editable pages (About, the Daily Legend Races intro, the PvP guides intro, ...) and the whole FAQ, in one object — **not** an array, see below |
 | `GET /supporters` | Patreon thank-you list — **not** an array, see below |
 | `GET /umas` | The uma catalogue as picker options: `{ id, name, image, is_variant }`, **`Uma.pickable()` only** (with an image, minus the `(All)` placeholder), sorted by name. The same list for everyone; `is_variant` flags costume variants, which only supporters and staff may add (`oshi_variants` on `GET /account`). `image` is the uma's portrait: the borderless art (`Uma.image_borderless`) when the row has it, else the bordered card art; the oshi rows and `avatar_url` on `GET /account` follow the same rule (`Uma.portrait`). Feeds the oshi picker on `/account`, which never loads `/calculator-data`. Nothing else from the uma row (no `admin_comments`, no selector gates). |
 
 All list responses return an array of the resource object, **except `/supporters`** (an object — the anonymous count is not derivable from the rows) **and `/site-content`** (an object with two halves; it is a plain view, not a viewset). Retrieve by appending `/<id>`; `/supporters` and `/site-content` have no retrieve action.
+
+---
+
+## PvP guides
+
+### `GET /pvp-guides/<kind>/<event_id>`
+
+One event's PvP guide (`views/pvp_guide.py`). Public, read-only, **not cached** (one row
+plus a fixed set of prefetches; `test_query_count_does_not_grow_with_decks` pins it), no
+throttle. `kind` is `cm` or `loh`; `event_id` is the event's database id, the `id` in
+`champions_meeting_data` / `league_of_heroes_event_data`.
+
+**`404`** `{"error": "Guide not found"}` for an unknown kind, an unknown event, an event
+with no guide, **and an unpublished guide** — the same body for all four, so the response
+never reveals that a draft exists. **Staff** (`is_staff`, by token) get a draft with
+`is_published: false`, so an editor can preview it on the site.
+
+Every section is optional and may be an empty array. Rows come sorted: by style in the
+order everyone, runaway, front, pace, late, end; then stat rows and decks by the editor's
+`order`, umas by most stars first, skills by tier (0 first, untiered last). Umas, cards
+and skills are embedded small objects, since the client's banner data only knows cards that
+were on a banner. `skill_recommendations` only ever holds skills on global
+(`Skill.objects.on_global()`); `unique_of` names the outfit whose unique the skill is, or
+`null`. `style` values: `everyone`, `runaway`, `front`, `pace`, `late`, `end` (never
+`everyone` on an uma). `category`: `acceleration`, `speed`, `green`, `recovery`,
+`debuff`, `other`. Stat values are `null` where the guide gives none. Text fields are
+markdown (`short_description`, `meta_analysis`, style note `body`) or one-line notes; both
+may hold `==highlight==` spans the client renders red.
+
+```json
+{ "event_type": "champions_meeting", "event": 12, "is_published": true, "updated_at": "ISO8601",
+  "scenario": {"id": 3, "name": "Grand Live", "image": "url | null"},
+  "style_ranking": "Front >> Runaway >= End > Late > Pace",
+  "short_description": "markdown", "meta_analysis": "markdown",
+  "team_comps": [{"text": "2 Front + 1 Pace", "note": "61% in sims"}],
+  "stat_configs": [{"style": "everyone", "label": "Minimum", "speed": 1100, "stamina": 500,
+                    "power": 900, "guts": null, "wit": 600, "footnote": ""}],
+  "uma_recommendations": [{"style": "front", "stars": 5, "role": "", "note": "Use as runaway",
+                           "uma": {"id": 41, "name": "Maruzensky", "image": "url | null"}}],
+  "skill_recommendations": [{"style": "front", "category": "acceleration", "tier": 0, "order": 0, "note": "",
+      "skill": {"id": 210, "name": "Lead the Pack", "description": "string", "image": "url | null",
+                "rarity": 5, "unique_of": "Maruzensky"}}],
+  "style_notes": [{"style": "front", "body": "markdown"}],
+  "decks": [{"id": 7, "style": "front", "label": "Standard", "note": "",
+      "slots": [{"slot": 1, "order": 0, "is_borrow": false, "note": "Gold + Link",
+                 "support_card": {"id": 302, "name": "Kitasan Black", "image": "url | null",
+                                  "card_type": "speed", "rarity": 3}},
+                {"slot": 1, "order": 1, "is_borrow": false, "note": "or any speed", "support_card": null}]}],
+  "honorable_mentions": [{"style": "front", "note": "Stats + 2SP", "support_card": {"...": "..."}}] }
+```
+
+A deck slot's `order` 0 is the card and 1+ are alternatives for the same slot; a slot row
+always has a card, a note, or both. Whether an event HAS a published guide is `has_guide`
+on the event itself (below), so the client never probes this route to find out.
 
 ---
 
@@ -1223,6 +1277,11 @@ Two things to know:
   deep in the odds.
 - **`training_pass_start_date` is a plain `YYYY-MM-DD` calendar day**, not a
   datetime.
+- **The eight PvP milestones are hours after an event's start date** (negative = before):
+  `cm_registration_opens_hours` (-72), `cm_round_two_hours` (48),
+  `cm_finals_registration_closes_hours` (108), `cm_finals_hours` (120), and the same four
+  `loh_*` names, which are `null` until League of Heroes' schedule is known. Round 1 is
+  the start date itself. The PvP page shows a date per non-null milestone.
 
 `id` is deliberately excluded — there is only ever one row.
 
@@ -1376,7 +1435,9 @@ no campaign column.
 
 Same **resolved-date** contract as `BannerTimeline`: `start_date`/`end_date` are the confirmed global dates when set, otherwise dates **predicted** from the JP schedule; `is_predicted` flags an estimate; the raw `jp_*`/`global_*` fields are exposed (`global_*` null until confirmed). Champions Meetings resolve against their own anchor set, independent of banners and League of Heroes. Schedule offsets are the one exception — they cascade across all three content types, so `applied_offset_days` here may originate from a banner.
 
-**Course details.** `track` through `direction` and the five `*_recommendation` values are hand-entered in the admin and unknown until a meeting is announced. The columns are non-null, so "unknown" is a **sentinel, not a null**: `"TBD"` for the text fields and `0` for the recommendations. Clients should treat those two values as "not announced" rather than displaying them raw.
+**Course details.** `track` through `direction` are hand-entered in the admin and unknown until a meeting is announced. The columns are non-null, so "unknown" is a **sentinel, not a null**: `"TBD"`. Clients should treat it as "not announced" rather than displaying it raw.
+
+**`has_guide`**: whether the event has a PUBLISHED PvP guide (`GET /pvp-guides/cm/<id>`); a draft counts as none. An `Exists` annotation (`views.pvp_guide.annotate_has_guide`), so publishing or unpublishing a guide drops the cached payload. The five `*_recommendation` stat fields left the wire with the PvP guide (2026-10); the guide's `stat_configs` replace them.
 
 ```json
 {
@@ -1396,8 +1457,7 @@ Same **resolved-date** contract as `BannerTimeline`: `start_date`/`end_date` are
   "image": "url | null",
   "track": "string", "surface_type": "string", "distance": "string", "length": "string",
   "track_condition": "string", "season": "string", "weather": "string", "direction": "string",
-  "speed_recommendation": 0, "stamina_recommendation": 0, "power_recommendation": 0,
-  "guts_recommendation": 0, "wit_recommendation": 0
+  "has_guide": false
 }
 ```
 
@@ -1405,7 +1465,7 @@ Same **resolved-date** contract as `BannerTimeline`: `start_date`/`end_date` are
 
 Same resolved-date contract as above, with its own anchor set (schedule offsets excepted — those cascade across all three content types). Note the standalone `GET /leagueofheroes` route serves raw confirmed dates only (`is_predicted` is always `false` and `applied_offset_days` always 0 there); predictions and offsets are emitted only via `GET /calculator-data`.
 
-**Identical to `ChampionsMeeting` apart from `event_type` and `loh_number`** — same course details, same stat recommendations, same `"TBD"`/`0` sentinels — because the two render through one shared timeline card. Treat them as one shape with two tags: a field added to one belongs on the other.
+**Identical to `ChampionsMeeting` apart from `event_type` and `loh_number`** — same course details, same `"TBD"` sentinel, same `has_guide` — because the two render through one shared timeline card. Treat them as one shape with two tags: a field added to one belongs on the other.
 
 ```json
 {
@@ -1425,7 +1485,6 @@ Same resolved-date contract as above, with its own anchor set (schedule offsets 
   "image": "url | null",
   "track": "string", "surface_type": "string", "distance": "string", "length": "string",
   "track_condition": "string", "season": "string", "weather": "string", "direction": "string",
-  "speed_recommendation": 0, "stamina_recommendation": 0, "power_recommendation": 0,
-  "guts_recommendation": 0, "wit_recommendation": 0
+  "has_guide": false
 }
 ```

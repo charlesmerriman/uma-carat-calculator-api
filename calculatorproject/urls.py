@@ -30,6 +30,7 @@ from calculatorapi.views.account_linking import (
 from calculatorapi.views.visits import site_visit
 from calculatorapi.views.patreon_supporters import patreon_sync
 from calculatorapi.views.site_content import site_content
+from calculatorapi.views.pvp_guide import pvp_guide_detail
 from calculatorapi.views.social_auth import social_auth_start, social_auth_complete
 
 router = routers.SimpleRouter(trailing_slash=False)
@@ -109,6 +110,10 @@ urlpatterns = [
     # frontend build bakes it into the prerendered HTML; a loaded page fetches
     # it once more to pick up edits made since. → views/site_content.py
     path("site-content", site_content, name="site-content"),
+    # One event's PvP guide. <kind> is "cm" or "loh", checked by the view so an
+    # unknown kind gets the same JSON 404 as an unknown event. Drafts 404 for
+    # everyone but staff. → views/pvp_guide.py
+    path("pvp-guides/<str:kind>/<int:event_id>", pvp_guide_detail, name="pvp-guide"),
     # Social sign-in (Google / Discord). The <provider> segment is validated by
     # the view against oauth.SUPPORTED_PROVIDERS rather than by a URL regex, so
     # an unknown provider gets a JSON 404 instead of Django's HTML one.

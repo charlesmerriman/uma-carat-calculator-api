@@ -165,6 +165,16 @@ UNFOLD = {
                         "link": reverse_lazy("admin:calculatorapi_leagueofheroes_changelist"),
                     },
                     {
+                        "title": _("PvP guides"),
+                        "icon": "menu_book",
+                        "link": reverse_lazy("admin:calculatorapi_pvpguide_changelist"),
+                    },
+                    {
+                        "title": _("PvP decks"),
+                        "icon": "style",
+                        "link": reverse_lazy("admin:calculatorapi_pvpdeck_changelist"),
+                    },
+                    {
                         "title": _("Anniversary campaigns"),
                         "icon": "redeem",
                         "link": reverse_lazy("admin:calculatorapi_anniversaryevent_changelist"),
