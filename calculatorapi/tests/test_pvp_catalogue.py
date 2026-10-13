@@ -63,6 +63,14 @@ class CatalogueTests(CalculatorTestCase):
         self.assertEqual([card["name"] for card in body["support_cards"]], ["Kitasan Black"])
         self.assertEqual(body["support_cards"][0]["card_type"], "speed")
 
+    def test_on_global_is_having_any_skill_link(self):
+        jp_only = SupportCard.objects.create(name="JP Card", game_id=30200, image="support_cards/30200.png")
+        body = self.fetch()
+        flags = {card["name"]: card["on_global"] for card in body["support_cards"]}
+        self.assertEqual(flags, {"Kitasan Black": True, "JP Card": False})
+        self.assertTrue(body["umas"][0]["on_global"])
+        self.assertEqual(jp_only.skills.count(), 0)
+
     def test_skills_not_on_global_are_left_out_with_their_links(self):
         body = self.fetch()
         self.assertEqual([skill["name"] for skill in body["skills"]], ["Groundwork"])

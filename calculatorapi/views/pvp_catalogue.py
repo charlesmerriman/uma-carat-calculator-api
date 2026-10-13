@@ -5,11 +5,11 @@ Public, read-only, the same for everyone, and cached (pvp_catalogue_cache.py).
 Fetched once by the builder the first time a picker opens, never on /app load.
 
     umas           Uma.pickable(): id, name, image, portrait, rarity,
-                   running_style, character_id, is_variant, apt
+                   running_style, character_id, is_variant, on_global, apt
                    ({turf, dirt, ..., end}, 1..8 = G..S, null when unknown)
                    and skills [{skill, source, level}]
     support_cards  every card with art: id, name, image, card_type, rarity,
-                   title and skills [{skill, source}]
+                   title, on_global and skills [{skill, source}]
     skills         skills ON GLOBAL only: id, name, description, image,
                    rarity, tier, group_id, cost
 
@@ -25,6 +25,12 @@ WHY NOT /umas AND /calculator-data
 only cards that were on a banner, with no skills or aptitudes at all. This is
 the one route that has both, and it is big (~500 KB raw, ~100 KB gzipped),
 which is why it is its own lazily-fetched, cached route.
+
+`on_global` says the card is in the game on global today: it has skill links,
+which import_game_data creates only for cards in the global client's
+snapshot (that import is global-only by construction). The team builder uses
+it for cards on no banner, the launch roster and event rewards, which have no
+release date: on global means out, otherwise "Not on global yet".
 
 Built from plain values() queries rather than serializers: five queries for
 the whole catalogue, and a few thousand junction rows that a nested
@@ -66,6 +72,10 @@ def build_catalogue():
     for skill in skills:
         skill["image"] = _url(skill["image"])
     global_ids = {skill["id"] for skill in skills}
+    # Cards with ANY skill link, global skill or not: the import writes links
+    # only for cards in the global snapshot. See the module docstring.
+    umas_on_global = set(UmaSkill.objects.values_list("uma_id", flat=True).distinct())
+    cards_on_global = set(SupportCardSkill.objects.values_list("support_card_id", flat=True).distinct())
 
     uma_skills = defaultdict(list)
     for row in UmaSkill.objects.filter(skill_id__in=global_ids).values(
@@ -99,6 +109,7 @@ def build_catalogue():
             # CM rule). The client checks with this; pvp_teams.py re-checks.
             "character_id": uma.character_id,
             "is_variant": uma.is_costume_variant,
+            "on_global": uma.id in umas_on_global,
             "apt": {key: getattr(uma, f"apt_{key}") for key in APTITUDE_FIELDS},
             "skills": uma_skills.get(uma.id, []),
         })
@@ -110,6 +121,7 @@ def build_catalogue():
         .values("id", "name", "image", "card_type", "rarity", "title")
     ):
         card["image"] = _url(card["image"])
+        card["on_global"] = card["id"] in cards_on_global
         card["skills"] = card_skills.get(card["id"], [])
         support_cards.append(card)
 

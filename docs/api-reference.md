@@ -721,12 +721,12 @@ fetches it once, when a picker first opens.
 
 ```json
 { "umas": [{"id": 41, "name": "Maruzensky", "image": "url", "portrait": "url",
-            "rarity": 3, "running_style": 1, "character_id": 1004, "is_variant": false,
+            "rarity": 3, "running_style": 1, "character_id": 1004, "is_variant": false, "on_global": true,
             "apt": {"turf": 8, "dirt": 1, "short": 6, "mile": 8, "medium": 7, "long": 4,
                     "front": 8, "pace": 5, "late": 2, "end": 1},
             "skills": [{"skill": 210, "source": "unique", "level": 1}]}],
   "support_cards": [{"id": 302, "name": "Kitasan Black", "image": "url", "card_type": "speed",
-                     "rarity": 3, "title": "[Fire at My Heels]",
+                     "rarity": 3, "title": "[Fire at My Heels]", "on_global": true,
                      "skills": [{"skill": 88, "source": "hint"}]}],
   "skills": [{"id": 88, "name": "Groundwork", "description": "string", "image": "url | null",
               "rarity": 1, "tier": 1, "group_id": 2001, "cost": 120}] }
@@ -736,7 +736,9 @@ fetches it once, when a picker first opens.
 with art. `skills` holds skills on global only, and a uma's or card's skill link to any
 other skill is left out. Aptitudes are 1..8 = G..S, `null` when not imported. A uma's
 `source` is `unique` / `innate` / `awakening` / `evolved` (`level` means different things
-per source, `models/uma_skill.py`); a card's is `hint` / `event`.
+per source, `models/uma_skill.py`); a card's is `hint` / `event`. `on_global`: the card is in the
+global game today, i.e. it has any skill link (the import writes links only for cards in the global
+snapshot). The builder uses it for cards on no banner, which have no release date.
 
 ### `/pvp-teams`
 

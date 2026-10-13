@@ -24,7 +24,7 @@ until one of those five tables changes.
 from django.core.cache import cache
 
 # Bump the suffix when the payload's SHAPE changes.
-CACHE_KEY = "pvp_catalogue:v1"
+CACHE_KEY = "pvp_catalogue:v2"
 
 # Backstop only, as in public_payload_cache.py.
 CACHE_TTL_SECONDS = 300
