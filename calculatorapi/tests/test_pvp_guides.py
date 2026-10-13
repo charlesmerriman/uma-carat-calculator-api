@@ -548,7 +548,7 @@ class GuideSkillsPageTests(CalculatorTestCase):
         self.assertContains(page, self.change_url())
         res = self.client.get(self.change_url())
         self.assertEqual(res.status_code, 200)
-        for label in ("Everyone", "Runaway", "Front", "Pace", "Late", "End"):
+        for label in ("General (all positions)", "Runaway", "Front", "Pace", "Late", "End"):
             self.assertContains(res, f"{label}: recommended skills")
         self.assertContains(res, 'name="skills-front-TOTAL_FORMS"')
         self.assertEqual(self.client.get(reverse("admin:calculatorapi_pvpguideskills_changelist")).status_code, 200)

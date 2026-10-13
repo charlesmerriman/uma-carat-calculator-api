@@ -289,7 +289,9 @@ def _position_inline(style, label):
 POSITION_SKILL_INLINES = tuple(
     _position_inline(style, label)
     for style, label in (
-        ("everyone", "Everyone"),
+        # The general skills: shown on the site inside EVERY position's
+        # "Recommended skills", merged with that position's own picks.
+        ("everyone", "General (all positions)"),
         ("runaway", "Runaway"),
         ("front", "Front"),
         ("pace", "Pace"),

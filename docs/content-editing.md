@@ -361,12 +361,14 @@ empty parts.
    - **Team comps**: like "2 Front + 1 Pace", with an optional note.
 5. **Save and continue editing.**
 6. **Recommended skills** have a page of their own, one table per position
-   (Everyone, Runaway, Front, Pace, Late, End). Open it with **Pick recommended
+   (General, Runaway, Front, Pace, Late, End). **General (all positions)** is for
+   skills every position should take: the site shows them inside each
+   position's recommended skills, alongside that position's own picks. Open it with **Pick recommended
    skills by position** on the guide page (or **PvP guide skills** in the
    sidebar). In each table, search the skill by name (only skills already on
    global show up), pick a **category**, and give a **tier** if the guide has
    tiers (0 means take it first). The sheet's "Green" and "Debuffs" groups go in
-   the Everyone table with category Green or Debuff.
+   the General table with category Green or Debuff.
 
 **Filling in a deck's cards.** Once the guide is saved, each deck row has a
 **Change** link. It opens the deck's own page with six slot rows:
