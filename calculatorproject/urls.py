@@ -31,6 +31,8 @@ from calculatorapi.views.visits import site_visit
 from calculatorapi.views.patreon_supporters import patreon_sync
 from calculatorapi.views.site_content import site_content
 from calculatorapi.views.pvp_guide import pvp_guide_detail
+from calculatorapi.views.pvp_catalogue import pvp_catalogue
+from calculatorapi.views.pvp_team import pvp_team_detail, pvp_team_list
 from calculatorapi.views.social_auth import social_auth_start, social_auth_complete
 
 router = routers.SimpleRouter(trailing_slash=False)
@@ -114,6 +116,13 @@ urlpatterns = [
     # unknown kind gets the same JSON 404 as an unknown event. Drafts 404 for
     # everyone but staff. → views/pvp_guide.py
     path("pvp-guides/<str:kind>/<int:event_id>", pvp_guide_detail, name="pvp-guide"),
+    # The team builder's catalogue: umas, cards and skills with aptitudes and
+    # skill links. Public, cached, fetched lazily. → views/pvp_catalogue.py
+    path("pvp-catalogue", pvp_catalogue, name="pvp-catalogue"),
+    # A signed-in player's PvP teams. Guests keep theirs on the device.
+    # → views/pvp_team.py
+    path("pvp-teams", pvp_team_list, name="pvp-team-list"),
+    path("pvp-teams/<int:team_id>", pvp_team_detail, name="pvp-team-detail"),
     # Social sign-in (Google / Discord). The <provider> segment is validated by
     # the view against oauth.SUPPORTED_PROVIDERS rather than by a URL regex, so
     # an unknown provider gets a JSON 404 instead of Django's HTML one.

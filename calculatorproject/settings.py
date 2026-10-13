@@ -641,7 +641,12 @@ CACHES = {
             # handful of new visitors would push it out, at 32 it takes a few
             # dozen. Losing it costs one rebuild. Worst case is still two
             # payloads and a few dozen counters.
-            "MAX_ENTRIES": 32,
+            #
+            # Since the PvP team builder (R2) it also holds GET /pvp-catalogue
+            # (~500 KB, calculatorapi/pvp_catalogue_cache.py), read only when
+            # someone opens the builder, so 40 keeps it from being the next key
+            # to fall off. Worst case: two payloads, two catalogues, counters.
+            "MAX_ENTRIES": 40,
         },
     }
 }

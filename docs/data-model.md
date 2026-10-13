@@ -974,6 +974,33 @@ erDiagram
   "Acceleration") and turns each "Rec. Accel" line into ordered acceleration picks.
   `--dry-run`, `--replace`, `--from-dir`. In production, editors write guides in the admin.
 
+### `PvpTeam`: a player's own team for one event
+
+`models/pvp_team.py`, all PRIVATE (`content_snapshot.PRIVATE_MODELS`, and on
+`public_payload_cache._IRRELEVANT_MODELS` so a team save never drops `/calculator-data`).
+The team builder on the PvP page saves here for a signed-in player; a guest keeps the same
+shape on the device (frontend `services/guestPvpTeamStore.ts`).
+
+- **`PvpTeam`**: `user` (CASCADE), the same nullable `champions_meeting` /
+  `league_of_heroes` pair as `PvpGuide` under `exactly_one_pvp_team_event`, a private
+  `name` (blank: the client numbers it), `is_focus` (the R2b drawer's pin, at most one per
+  account by the partial `one_focus_pvp_team_per_user`, the `Plan.is_active` idiom) and
+  `notes`, a JSON list of `{text, color}` (at most 10, 1000 characters, four colours;
+  validated by `views/pvp_team.py` `NoteSerializer`). A JSON column rather than a table
+  because notes are only ever read and written whole, with the team.
+- **`PvpTeamMember`**: `position` 0..2, `uma`, `style` (a `PvpStyle`, never `everyone`).
+  Unique per team on position and on uma.
+- **`PvpTeamCard`**: `slot` 1..6 (slot 6 is the borrowed card by convention), `support_card`.
+  Unique per member on slot and on card, the borrow slot included (the game refuses a
+  borrowed copy of a card already in the deck).
+- **Two outfits of one character** (`game_id // 100`) may not share a team. That rule spans
+  rows, so `pvp_teams.py` checks it on every save, not only on posting: a draft can be
+  incomplete but never unpostable.
+- **`PVP_TEAM_CAP_PER_EVENT` = 5**, checked on creation only, like `PLAN_CAP`.
+- Every team id goes through `pvp_teams.get_owned_team()`; somebody else's is a 404.
+- `DELETE /account` cascades; `purge_user_pii` leaves teams alone (they hold nothing about
+  the person).
+
 ### Through tables carry recommendation text
 
 `UmasOnUmaBanner` and `SupportsOnSupportBanner` are explicit through models (not Django's auto-generated M2M table) because they carry a `recommendation` field — freeform admin notes about whether a card/uma on a banner is worth pulling. This text is exposed by the `BannerTimelineForViewingSerializer` used in `banner_timeline_data`.

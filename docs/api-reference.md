@@ -711,6 +711,68 @@ A deck slot's `order` 0 is the card and 1+ are alternatives for the same slot; a
 always has a card, a note, or both. Whether an event HAS a published guide is `has_guide`
 on the event itself (below), so the client never probes this route to find out.
 
+### `GET /pvp-catalogue`
+
+The team builder's catalogue (`views/pvp_catalogue.py`). Public, the same for everyone, and
+**cached** in `pvp_catalogue_cache.py` (key `pvp_catalogue:v1`, TTL 300, dropped by any
+save or delete of an Uma, SupportCard, Skill, UmaSkill or SupportCardSkill; the same
+one-process caveat as `/calculator-data`). About 540 KB raw, 50 KB gzipped; the client
+fetches it once, when a picker first opens.
+
+```json
+{ "umas": [{"id": 41, "name": "Maruzensky", "image": "url", "portrait": "url",
+            "rarity": 3, "running_style": 1, "character_id": 1004, "is_variant": false,
+            "apt": {"turf": 8, "dirt": 1, "short": 6, "mile": 8, "medium": 7, "long": 4,
+                    "front": 8, "pace": 5, "late": 2, "end": 1},
+            "skills": [{"skill": 210, "source": "unique", "level": 1}]}],
+  "support_cards": [{"id": 302, "name": "Kitasan Black", "image": "url", "card_type": "speed",
+                     "rarity": 3, "title": "[Fire at My Heels]",
+                     "skills": [{"skill": 88, "source": "hint"}]}],
+  "skills": [{"id": 88, "name": "Groundwork", "description": "string", "image": "url | null",
+              "rarity": 1, "tier": 1, "group_id": 2001, "cost": 120}] }
+```
+
+`umas` is `Uma.pickable()` (with a picture, no `(All)`); `support_cards` is every card
+with art. `skills` holds skills on global only, and a uma's or card's skill link to any
+other skill is left out. Aptitudes are 1..8 = G..S, `null` when not imported. A uma's
+`source` is `unique` / `innate` / `awakening` / `evolved` (`level` means different things
+per source, `models/uma_skill.py`); a card's is `hint` / `event`.
+
+### `/pvp-teams`
+
+A signed-in player's teams (`views/pvp_team.py`, rules in `pvp_teams.py`). All
+`IsAuthenticated`; a guest's teams stay on the device. Every id goes through
+`pvp_teams.get_owned_team()`: somebody else's team is `404 {"error": "Team not found"}`,
+the same as one that does not exist.
+
+| Route | Body | Returns |
+|---|---|---|
+| `GET /pvp-teams` | | every team, every event, oldest first |
+| `POST /pvp-teams` | `{kind, event, name?, members?, notes?}` | `201` the team |
+| `GET /pvp-teams/<id>` | | the team |
+| `PUT /pvp-teams/<id>` | `{members, notes?}` | the team. Replaces every member and card in one transaction; `notes` left out = unchanged |
+| `PATCH /pvp-teams/<id>` | `{name?, is_focus?}` | the team. `is_focus: true` moves the account's one pin here; `false` clears it |
+| `DELETE /pvp-teams/<id>` | | `204` |
+
+A team, both ways (catalogue ids only):
+
+```json
+{ "id": 5, "kind": "cm", "event": 12, "name": "", "is_focus": false,
+  "notes": [{"text": "Pull Kitasan", "color": "yellow"}],
+  "members": [{"position": 0, "uma": 41, "style": "front",
+               "cards": [{"slot": 1, "support_card": 302}, {"slot": 6, "support_card": 88}]}],
+  "updated_at": "ISO8601" }
+```
+
+`kind` is `cm` or `loh`. `style` is `runaway` / `front` / `pace` / `late` / `end`. A draft
+may leave positions and slots empty (no entry). **`400 {"error": "<one sentence>"}`**,
+written for the player, for: an unknown event, more than 3 umas or 6 cards, two members in
+one position or two cards in one slot, the same uma twice, **two outfits of one character**,
+the same card twice in one deck (borrow slot included), an unknown uma or card, more than 10
+notes, a note over 1000 characters or an unknown colour (`yellow` / `pink` / `blue` /
+`green`), and creating a sixth team for one event (`PVP_TEAM_CAP_PER_EVENT`; a save to an
+existing team is never refused for it). A refused `PUT` leaves the team as it was.
+
 ---
 
 ## Telemetry

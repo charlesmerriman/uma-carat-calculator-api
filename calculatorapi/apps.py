@@ -13,3 +13,7 @@ class CalculatorapiConfig(AppConfig):
         # populated. -> calculatorapi/public_payload_cache.py
         from calculatorapi import public_payload_cache  # pylint: disable=import-outside-toplevel
         public_payload_cache.connect_invalidation_signals()
+        # The same for the team builder's catalogue, GET /pvp-catalogue.
+        # -> calculatorapi/pvp_catalogue_cache.py
+        from calculatorapi import pvp_catalogue_cache  # pylint: disable=import-outside-toplevel
+        pvp_catalogue_cache.connect_invalidation_signals()

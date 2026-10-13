@@ -90,6 +90,11 @@ _IRRELEVANT_MODELS = frozenset({
     "plan",
     "incomeprofile",
     "useroshi",
+    # A player's PvP teams. Saved by auto-save, so the 2026-09-23 lesson above
+    # applies in full. Served by /pvp-teams, never here.
+    "pvpteam",
+    "pvpteammember",
+    "pvpteamcard",
     # Accounts and auth.
     "customuser",
     "socialaccount",
