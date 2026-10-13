@@ -696,8 +696,16 @@ may hold `==highlight==` spans the client renders red.
                  "support_card": {"id": 302, "name": "Kitasan Black", "image": "url | null",
                                   "card_type": "speed", "rarity": 3}},
                 {"slot": 1, "order": 1, "is_borrow": false, "note": "or any speed", "support_card": null}]}],
-  "honorable_mentions": [{"style": "front", "note": "Stats + 2SP", "support_card": {"...": "..."}}] }
+  "honorable_mentions": [{"style": "front", "note": "Stats + 2SP", "support_card": {"...": "..."}}],
+  "skill_mentions": {"groundwork": {"id": 88, "name": "Groundwork", "description": "string", "image": "url | null",
+                                     "rarity": 2, "unique_of": null}} }
 ```
+
+`skill_mentions` resolves every `[[Skill name]]` written in the guide's text: `{lower-case
+name: skill object}` (the same shape as `skill` above), skills on global only, matched
+ignoring case. The client renders a mention it finds here as a skill chip and any other as
+its plain name. The admin refuses to save a mention that matches no global skill, so a
+missing key means the skill went stale since.
 
 A deck slot's `order` 0 is the card and 1+ are alternatives for the same slot; a slot row
 always has a card, a note, or both. Whether an event HAS a published guide is `has_guide`

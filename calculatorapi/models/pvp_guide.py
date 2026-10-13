@@ -34,6 +34,9 @@ Everything here is CONTENT (content_snapshot.CONTENT_MODELS), and every FK
 points at content.
 """
 
+import difflib
+import re
+
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
@@ -50,8 +53,67 @@ from .uma import Uma
 # marking a must-have.
 HIGHLIGHT_HELP = (
     "Wrap words in two equals signs to show them in red: ==Must have==. "
-    "Works in every note and text box here."
+    "Put a skill's name in double square brackets to link it: [[Groundwork]]. "
+    "Both work in every note and text box here."
 )
+
+# [[Skill name]]: a mention of a skill, linked on the site to the Skill row of
+# that name (its icon and the game's description). Matched ignoring case
+# against skills on global only; saving refuses a name that matches none
+# (SkillMentionsMixin), so every mention a visitor sees resolves.
+SKILL_MENTION = re.compile(r"\[\[([^\[\]\n]+)\]\]")
+
+
+def find_skill_mentions(text):
+    """The names inside [[...]] in one text, stripped, in order."""
+    return [match.strip() for match in SKILL_MENTION.findall(text or "")]
+
+
+def unknown_skill_mentions(names):
+    """The names that match no skill on global, ignoring case."""
+    wanted = {name.casefold(): name for name in names if name}
+    if not wanted:
+        return []
+    known = {
+        name.casefold()
+        for name in Skill.objects.on_global().values_list("name", flat=True)
+    }
+    return [name for key, name in wanted.items() if key not in known]
+
+
+def _suggest(name):
+    """Up to three global skill names close to a mistyped one."""
+    names = list(Skill.objects.on_global().values_list("name", flat=True))
+    by_key = {candidate.casefold(): candidate for candidate in names}
+    close = difflib.get_close_matches(name.casefold(), list(by_key), n=3, cutoff=0.6)
+    return [by_key[key] for key in close]
+
+
+class SkillMentionsMixin:  # pylint: disable=too-few-public-methods
+    """Refuses a save whose text mentions a skill that does not exist.
+
+    `MENTION_FIELDS` names the text fields to check. The error lands on the
+    field, with suggestions, so an editor fixes a typo instead of publishing a
+    mention that would show as plain text.
+    """
+
+    MENTION_FIELDS = ()
+
+    def clean(self):
+        errors = {}
+        for field in self.MENTION_FIELDS:
+            unknown = unknown_skill_mentions(find_skill_mentions(getattr(self, field, "")))
+            if not unknown:
+                continue
+            parts = []
+            for name in unknown:
+                suggestions = _suggest(name)
+                hint = f" (did you mean {', '.join(suggestions)}?)" if suggestions else ""
+                parts.append(f"[[{name}]]{hint}")
+            errors[field] = "No skill on global has this name: " + "; ".join(parts)
+        if errors:
+            raise ValidationError(errors)
+        super().clean()
 
 MARKDOWN_HELP = (
     "Markdown. A blank line starts a new paragraph, **bold**, *italic*, "
@@ -143,8 +205,10 @@ def _order_field():
     )
 
 
-class PvpGuide(models.Model):
+class PvpGuide(SkillMentionsMixin, models.Model):
     """One event's guide. Its children hold every section."""
+
+    MENTION_FIELDS = ("short_description", "meta_analysis")
 
     # PROTECT on both: a guide is weeks of an editor's work, so the admin
     # refuses to delete an event that still has one rather than taking the
@@ -225,15 +289,18 @@ class PvpGuide(models.Model):
             raise ValidationError(
                 "Pick one event: a Champions Meeting or a League of Heroes event, not both."
             )
+        super().clean()
 
     def __str__(self):
         event = self.event
         return str(event) if event else "PvP guide (no event)"
 
 
-class PvpStatConfig(models.Model):
+class PvpStatConfig(SkillMentionsMixin, models.Model):
     """One row of recommended stats. Several per style is the point: the sheet
     shows variants side by side ("901* + 1 Gold", "Trackblazer")."""
+
+    MENTION_FIELDS = ("footnote",)
 
     guide = models.ForeignKey(PvpGuide, on_delete=models.CASCADE, related_name="stat_configs")
     style = _style_field()
@@ -264,8 +331,10 @@ class PvpStatConfig(models.Model):
         return f"{self.get_style_display()} {self.label}".strip()
 
 
-class PvpUmaRecommendation(models.Model):
+class PvpUmaRecommendation(SkillMentionsMixin, models.Model):
     """A starred uma for one style."""
+
+    MENTION_FIELDS = ("note",)
 
     guide = models.ForeignKey(
         PvpGuide, on_delete=models.CASCADE, related_name="uma_recommendations"
@@ -311,13 +380,16 @@ class PvpUmaRecommendation(models.Model):
     def clean(self):
         if self.style == PvpStyle.EVERYONE:
             raise ValidationError({"style": "A recommended uma runs one style. Pick it."})
+        super().clean()
 
     def __str__(self):
         return f"{self.uma.name} ({self.get_style_display()}, {self.stars}★)"
 
 
-class PvpSkillRecommendation(models.Model):
+class PvpSkillRecommendation(SkillMentionsMixin, models.Model):
     """A recommended skill, linked to the game's skill data."""
+
+    MENTION_FIELDS = ("note",)
 
     guide = models.ForeignKey(
         PvpGuide, on_delete=models.CASCADE, related_name="skill_recommendations"
@@ -357,13 +429,16 @@ class PvpSkillRecommendation(models.Model):
         # Layer two, for a save that reached past the form's choices.
         if self.skill_id is not None and not self.skill.is_on_global:
             raise ValidationError({"skill": "That skill is not on global yet."})
+        super().clean()
 
     def __str__(self):
         return f"{self.skill.name} ({self.get_style_display()}, {self.get_category_display()})"
 
 
-class PvpStyleNote(models.Model):
+class PvpStyleNote(SkillMentionsMixin, models.Model):
     """One block of advice per style: the sheet's per-style "Rec. Skills" prose."""
+
+    MENTION_FIELDS = ("body",)
 
     guide = models.ForeignKey(PvpGuide, on_delete=models.CASCADE, related_name="style_notes")
     style = _style_field()
@@ -381,12 +456,14 @@ class PvpStyleNote(models.Model):
         return f"{self.get_style_display()} note"
 
 
-class PvpDeck(models.Model):
+class PvpDeck(SkillMentionsMixin, models.Model):
     """
     One example deck. Its six slots are rows of PvpDeckSlot, edited on the
     deck's own admin page: the admin allows one level of inlines, and the guide
     page already holds the deck list itself.
     """
+
+    MENTION_FIELDS = ("note",)
 
     guide = models.ForeignKey(PvpGuide, on_delete=models.CASCADE, related_name="decks")
     style = _style_field()
@@ -406,7 +483,7 @@ class PvpDeck(models.Model):
         return f"{self.guide}: {self.label} ({self.get_style_display()})"
 
 
-class PvpDeckSlot(models.Model):
+class PvpDeckSlot(SkillMentionsMixin, models.Model):
     """
     One card in a deck slot, or an alternative for it.
 
@@ -414,6 +491,8 @@ class PvpDeckSlot(models.Model):
     any speed"). A row may name no card when its note says it all, but it must
     carry one or the other (`slot_has_card_or_note`).
     """
+
+    MENTION_FIELDS = ("note",)
 
     deck = models.ForeignKey(PvpDeck, on_delete=models.CASCADE, related_name="slots")
     slot = models.PositiveSmallIntegerField(
@@ -463,18 +542,21 @@ class PvpDeckSlot(models.Model):
     def clean(self):
         if self.support_card_id is None and not self.note.strip():
             raise ValidationError("Pick a card, or write a note like \"or any speed\".")
+        super().clean()
 
     def __str__(self):
         card = self.support_card.name if self.support_card_id else self.note
         return f"Slot {self.slot}: {card}"
 
 
-class PvpHonorableMention(models.Model):
+class PvpHonorableMention(SkillMentionsMixin, models.Model):
     """
     A card worth having that did not make a deck. Its own table rather than a
     slotless deck: mentions have no slots, so they stay a one-level inline on
     the guide page.
     """
+
+    MENTION_FIELDS = ("note",)
 
     guide = models.ForeignKey(
         PvpGuide, on_delete=models.CASCADE, related_name="honorable_mentions"
@@ -500,8 +582,10 @@ class PvpHonorableMention(models.Model):
         return f"{self.support_card.name} ({self.get_style_display()})"
 
 
-class PvpTeamComp(models.Model):
+class PvpTeamComp(SkillMentionsMixin, models.Model):
     """A recommended team shape, like "2 Front + 1 Pace"."""
+
+    MENTION_FIELDS = ("text", "note")
 
     guide = models.ForeignKey(PvpGuide, on_delete=models.CASCADE, related_name="team_comps")
     text = models.CharField(max_length=120, help_text="For example: 2 Front + 1 Pace")
@@ -515,3 +599,20 @@ class PvpTeamComp(models.Model):
 
     def __str__(self):
         return str(self.text)
+
+
+class PvpGuideSkills(PvpGuide):
+    """
+    The same rows as PvpGuide, registered a second time so the admin can give
+    a guide's recommended skills a page of their own: one table per position
+    (Everyone, Runaway, Front, Pace, Late, End). See PvpGuideSkillsAdmin.
+
+    A proxy, so no table and no data of its own: it exists only because Django
+    registers one admin per model. It is in neither snapshot list for the same
+    reason (test_every_model_is_either_content_or_private skips proxies).
+    """
+
+    class Meta:
+        proxy = True
+        verbose_name = "PvP guide skills"
+        verbose_name_plural = "PvP guide skills"

@@ -351,10 +351,6 @@ empty parts.
      short tag shown on the picture ("Runaway blocker"); the **note** shows when
      someone hovers the uma. An uma runs one style, so Everyone is not allowed
      here.
-   - **Recommended skills**: search by name (only skills already on global show
-     up), pick a **category**, and give a **tier** if the guide has tiers (0
-     means take it first). The sheet's "Green" and "Debuffs" groups are style
-     Everyone with category Green or Debuff.
    - **Style notes**: one block of advice per style, like the sheet's "Rec.
      Skills" paragraph.
    - **PvP decks**: one row per deck, with its style and a **label**
@@ -364,6 +360,13 @@ empty parts.
      with a short reason.
    - **Team comps**: like "2 Front + 1 Pace", with an optional note.
 5. **Save and continue editing.**
+6. **Recommended skills** have a page of their own, one table per position
+   (Everyone, Runaway, Front, Pace, Late, End). Open it with **Pick recommended
+   skills by position** on the guide page (or **PvP guide skills** in the
+   sidebar). In each table, search the skill by name (only skills already on
+   global show up), pick a **category**, and give a **tier** if the guide has
+   tiers (0 means take it first). The sheet's "Green" and "Debuffs" groups go in
+   the Everyone table with category Green or Debuff.
 
 **Filling in a deck's cards.** Once the guide is saved, each deck row has a
 **Change** link. It opens the deck's own page with six slot rows:
@@ -379,6 +382,12 @@ Every deck is also listed under **Events & competitions → PvP decks**.
 
 **Red text.** In any note or text box, wrap words in two equals signs to show
 them in red, like the sheet's must-haves: `==Must have==`.
+
+**Linking a skill in text.** Put the skill's name in double square brackets:
+`Take [[Groundwork]] first`. On the site it shows as the skill with its icon,
+and its description appears on hover. The name must match a skill already on
+global (capital letters don't matter); if it doesn't, saving tells you which
+name is wrong and suggests close ones.
 
 **Preview, then publish.** Signed in on the site with your staff account, open
 the PvP tab and pick the event. A draft shows with a bar saying only staff can

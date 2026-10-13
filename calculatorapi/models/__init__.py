@@ -26,6 +26,7 @@ from .league_of_heroes_rank import LeagueOfHeroesRank
 from .league_of_heroes import LeagueOfHeroes
 from .pvp_guide import (
     PvpGuide,
+    PvpGuideSkills,
     PvpStatConfig,
     PvpUmaRecommendation,
     PvpSkillRecommendation,

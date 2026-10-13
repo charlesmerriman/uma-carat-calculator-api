@@ -284,6 +284,12 @@ is one click on the list; a custom "Event kind" filter splits CM from LoH.
   `test_join_models_not_registered_top_level` lists them.
 - **`search_fields` on `PvpGuideAdmin` spans both event names**: the deck page's `guide`
   autocomplete needs it.
+- **Skills have their own page, one table per position** (`PvpGuideSkillsAdmin` on the
+  `PvpGuideSkills` proxy), linked from the guide page's "Recommended skills" fieldset.
+  Six subclasses of `_PositionSkillInline` share one model, so each formset gets its own
+  prefix (`skills-<style>`; the default would collide) and carries `style` as a hidden
+  field fixed to its position. The page refuses add and delete: deleting a proxy row
+  deletes the guide.
 - **The skill autocomplete offers skills on global only.** Django's autocomplete view
   applies the source FK's `limit_choices_to`, and `PvpSkillRecommendation.skill` limits to
   a non-blank description (`test_skill_autocomplete_offers_global_skills_only`).

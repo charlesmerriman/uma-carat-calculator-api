@@ -6,6 +6,7 @@ from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
 
+from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 from django.core.management import call_command
 from django.db import IntegrityError, connection, transaction
@@ -182,7 +183,7 @@ class GuideEndpointTests(CalculatorTestCase):
             "event_type", "event", "is_published", "updated_at", "scenario", "style_ranking",
             "short_description", "meta_analysis", "team_comps", "stat_configs",
             "uma_recommendations", "skill_recommendations", "style_notes", "decks",
-            "honorable_mentions",
+            "honorable_mentions", "skill_mentions",
         })
         self.assertNotIn("admin_comments", body)
         self.assertEqual(body["event_type"], "champions_meeting")
@@ -477,3 +478,150 @@ class SheetLoaderTests(CalculatorTestCase):
         out = self.load("--dry-run")
         self.assertIn("Would create 2 guide(s)", out)
         self.assertFalse(PvpGuide.objects.exists())
+
+
+class SkillMentionTests(CalculatorTestCase):
+    """[[Skill name]] in guide text: refused when unknown, resolved by the API."""
+
+    def setUp(self):
+        self.cm = make_champions_meeting()
+        make_skill("Groundwork", 100061)
+        make_skill("Final Push", 100062)
+        make_skill("Not Yet", 900002, description="")
+
+    def test_an_unknown_mention_is_refused_with_a_suggestion(self):
+        guide = PvpGuide(champions_meeting=self.cm, short_description="Take [[Grondwork]] first.")
+        with self.assertRaises(ValidationError) as caught:
+            guide.clean()
+        message = str(caught.exception.message_dict["short_description"])
+        self.assertIn("[[Grondwork]]", message)
+        self.assertIn("Groundwork", message)
+
+    def test_a_skill_not_on_global_cannot_be_mentioned(self):
+        with self.assertRaises(ValidationError):
+            PvpTeamComp(text="2 Front", note="with [[Not Yet]]").clean()
+
+    def test_known_mentions_pass_ignoring_case(self):
+        PvpGuide(champions_meeting=self.cm, short_description="[[groundwork]] then [[Final Push]]").clean()
+
+    def test_the_api_resolves_every_mention_once(self):
+        guide = PvpGuide.objects.create(
+            champions_meeting=self.cm, is_published=True,
+            short_description="[[Groundwork]] first.",
+        )
+        PvpStyleNote.objects.create(guide=guide, style="front", body="Then [[final push]].")
+        deck = PvpDeck.objects.create(guide=guide, style="front", label="Standard")
+        PvpDeckSlot.objects.create(deck=deck, slot=1, note="for [[Groundwork]]")
+        body = APIClient().get(url("cm", self.cm.id)).json()
+        self.assertEqual(set(body["skill_mentions"]), {"groundwork", "final push"})
+        self.assertEqual(body["skill_mentions"]["final push"]["name"], "Final Push")
+        self.assertEqual(body["skill_mentions"]["groundwork"]["description"], "Does a thing.")
+
+    def test_a_mention_that_went_stale_is_left_out(self):
+        guide = PvpGuide.objects.create(champions_meeting=self.cm, is_published=True,
+                                        short_description="[[Gone Skill]]")
+        self.assertEqual(guide.short_description, "[[Gone Skill]]")
+        body = APIClient().get(url("cm", self.cm.id)).json()
+        self.assertEqual(body["skill_mentions"], {})
+
+
+@override_settings(STORAGES=PLAIN_TEST_STORAGES)
+class GuideSkillsPageTests(CalculatorTestCase):
+    """The per-position Skills page: renders, and saves each row to its position."""
+
+    def setUp(self):
+        admin = make_user(username="admin", is_staff=True)
+        admin.is_superuser = True
+        admin.save()
+        self.client.force_login(admin)
+        self.guide = PvpGuide.objects.create(champions_meeting=make_champions_meeting())
+        self.groundwork = make_skill("Groundwork", 100061)
+        self.push = make_skill("Final Push", 100062)
+        PvpSkillRecommendation.objects.create(guide=self.guide, style="front",
+                                              category="acceleration", skill=self.groundwork)
+
+    def change_url(self):
+        return reverse("admin:calculatorapi_pvpguideskills_change", args=(self.guide.pk,))
+
+    def test_the_guide_page_links_to_it_and_it_renders(self):
+        page = self.client.get(reverse("admin:calculatorapi_pvpguide_change", args=(self.guide.pk,)))
+        self.assertContains(page, self.change_url())
+        res = self.client.get(self.change_url())
+        self.assertEqual(res.status_code, 200)
+        for label in ("Everyone", "Runaway", "Front", "Pace", "Late", "End"):
+            self.assertContains(res, f"{label}: recommended skills")
+        self.assertContains(res, 'name="skills-front-TOTAL_FORMS"')
+        self.assertEqual(self.client.get(reverse("admin:calculatorapi_pvpguideskills_changelist")).status_code, 200)
+
+    def test_cannot_add_or_delete_through_it(self):
+        self.assertEqual(self.client.get(reverse("admin:calculatorapi_pvpguideskills_add")).status_code, 403)
+        res = self.client.get(reverse("admin:calculatorapi_pvpguideskills_delete", args=(self.guide.pk,)))
+        self.assertEqual(res.status_code, 403)
+
+    def test_a_row_saves_to_its_table_s_position(self):
+        existing = self.guide.skill_recommendations.get()
+        data = {}
+        for style in ("everyone", "runaway", "front", "pace", "late", "end"):
+            prefix = f"skills-{style}"
+            rows = [existing] if style == "front" else []
+            data.update({
+                f"{prefix}-TOTAL_FORMS": str(len(rows) + (1 if style == "late" else 0)),
+                f"{prefix}-INITIAL_FORMS": str(len(rows)),
+                f"{prefix}-MIN_NUM_FORMS": "0",
+                f"{prefix}-MAX_NUM_FORMS": "1000",
+            })
+            for index, row in enumerate(rows):
+                data.update({
+                    f"{prefix}-{index}-id": str(row.id), f"{prefix}-{index}-guide": str(self.guide.id),
+                    f"{prefix}-{index}-style": style, f"{prefix}-{index}-skill": str(row.skill_id),
+                    f"{prefix}-{index}-category": row.category, f"{prefix}-{index}-tier": "",
+                    f"{prefix}-{index}-note": "", f"{prefix}-{index}-order": "0",
+                })
+        data.update({
+            "skills-late-0-guide": str(self.guide.id), "skills-late-0-style": "late",
+            "skills-late-0-skill": str(self.push.id), "skills-late-0-category": "acceleration",
+            "skills-late-0-tier": "1", "skills-late-0-note": "Take [[Groundwork]] too",
+            "skills-late-0-order": "0",
+        })
+        res = self.client.post(self.change_url(), data)
+        self.assertEqual(res.status_code, 302, res.content.decode()[:2000])
+        rows = sorted(self.guide.skill_recommendations.values_list("style", "skill__name", "tier"))
+        self.assertEqual(rows, [("front", "Groundwork", None), ("late", "Final Push", 1)])
+
+
+class ProseLinkerTests(CalculatorTestCase):
+    """The loader's auto-linking of skill names in the sheet's prose."""
+
+    def setUp(self):
+        for game_id, name in enumerate(
+            ("Final Push", "Straightaway Acceleration", "Restless", "Runaway", "Acceleration",
+             "Corner Adept ○"), start=100100):
+            make_skill(name, game_id)
+
+    def test_links_whole_names_and_skips_the_stoplist(self):
+        linker = loader.ProseLinker()
+        text = "1. Seiun 2. final push, then Straightaway Acceleration. Restless runaway, restless."
+        self.assertEqual(
+            linker.link(text),
+            "1. Seiun 2. [[Final Push]], then [[Straightaway Acceleration]]. [[Restless]] runaway, restless.",
+        )
+        self.assertEqual(linker.find(text), ["Final Push", "Straightaway Acceleration", "Restless"])
+
+    def test_leaves_existing_links_and_long_results_alone(self):
+        linker = loader.ProseLinker()
+        self.assertEqual(linker.link("[[Final Push]] first"), "[[Final Push]] first")
+        self.assertEqual(linker.link("Final Push", max_length=8), "Final Push")
+
+
+@override_settings(STORAGES=PLAIN_TEST_STORAGES)
+class EditorSkillsPageTests(CalculatorTestCase):
+    """The Content editors group reaches the Skills page (a proxy has its own permissions)."""
+
+    def test_an_editor_can_open_it(self):
+        call_command("create_content_editor_group", stdout=StringIO())
+        editor = make_user(username="editor", is_staff=True)
+        editor.groups.add(Group.objects.get(name="Content editors"))
+        self.client.force_login(editor)
+        guide = PvpGuide.objects.create(champions_meeting=make_champions_meeting())
+        res = self.client.get(reverse("admin:calculatorapi_pvpguideskills_change", args=(guide.pk,)))
+        self.assertEqual(res.status_code, 200)

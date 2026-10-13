@@ -29,7 +29,7 @@ from calculatorapi.models import (
     GameEvent,
     ChampionsMeeting,
     LeagueOfHeroes,
-    PvpGuide, PvpStatConfig, PvpUmaRecommendation, PvpSkillRecommendation,
+    PvpGuide, PvpGuideSkills, PvpStatConfig, PvpUmaRecommendation, PvpSkillRecommendation,
     PvpStyleNote, PvpDeck, PvpDeckSlot, PvpHonorableMention, PvpTeamComp,
     ChangelogEntry, ChangelogChange,
     ClubRank, TeamTrialsRank, ChampionsMeetingRank, LeagueOfHeroesRank,
@@ -52,7 +52,7 @@ CONTENT_MODELS = [
     GameEvent,
     ChampionsMeeting,
     LeagueOfHeroes,
-    PvpGuide, PvpStatConfig, PvpUmaRecommendation, PvpSkillRecommendation,
+    PvpGuide, PvpGuideSkills, PvpStatConfig, PvpUmaRecommendation, PvpSkillRecommendation,
     PvpStyleNote, PvpDeck, PvpDeckSlot, PvpHonorableMention, PvpTeamComp,
     ChangelogEntry, ChangelogChange,
     ClubRank, TeamTrialsRank, ChampionsMeetingRank, LeagueOfHeroesRank,
@@ -87,7 +87,12 @@ class Command(BaseCommand):
 
         # Look permissions up through ContentType — permission primary keys
         # differ between databases, so they must never be hardcoded.
-        content_types = ContentType.objects.get_for_models(*CONTENT_MODELS).values()
+        # for_concrete_models=False: a proxy (PvpGuideSkills, the per-position
+        # skills page) has permissions of its own, under its own content type.
+        # The default maps it to PvpGuide's, and editors could not open it.
+        content_types = ContentType.objects.get_for_models(
+            *CONTENT_MODELS, for_concrete_models=False
+        ).values()
         permissions = Permission.objects.filter(content_type__in=content_types)
 
         group.permissions.set(permissions)

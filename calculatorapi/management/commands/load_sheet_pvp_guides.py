@@ -138,6 +138,7 @@ class ParsedGuide:
     stats: list = field(default_factory=list)       # dicts for PvpStatConfig
     umas: list = field(default_factory=list)        # (style, name, stars, role)
     style_notes: dict = field(default_factory=dict) # style -> markdown
+    accel_text: dict = field(default_factory=dict)  # style -> the raw "Rec. Accel" line
     decks: list = field(default_factory=list)       # dicts with "slots"
     mentions: list = field(default_factory=list)    # (style, game_id, note)
     skills: list = field(default_factory=list)      # (style, category, tier, text, note)
@@ -330,6 +331,7 @@ def _import_body(block, guide):
         parts = []
         if accel is not None and cell(block, accel, g + 1):
             parts.append(f"**Acceleration:** {cell(block, accel, g + 1)}")
+            guide.accel_text[style] = cell(block, accel, g + 1)
         if skills_prose is not None and cell(block, skills_prose, g + 1):
             parts.append(f"**Skills:** {cell(block, skills_prose, g + 1)}")
         if parts:
@@ -516,6 +518,84 @@ class SkillMatcher:
         return skill, note[:200]
 
 
+# One-word skill names that are ordinary words in PvP prose: a style, a
+# scenario, plain English. Never auto-linked; an editor can still write
+# [[Focus]] by hand.
+LINK_STOPLIST = {
+    "runaway", "trackblazer", "focus", "relax", "eager", "pressure", "restart",
+    "fighter", "rational", "comeback", "elated", "pumped", "aspire", "murmur",
+    "tether", "moxie", "superstan",
+    # "Acceleration" is a skill too, but prose (and the style note's own
+    # "Acceleration:" label) means the idea.
+    "acceleration",
+}
+
+
+class ProseLinker:
+    """Wraps skill names found in prose as [[Skill name]], so they link.
+
+    Only names without the ○ / ◎ / × markers (prose never writes those), and
+    only whole words. One-word names must match their exact capitalisation
+    ("Restless", not "restless"); longer names match ignoring case. Longest
+    names first, so "Straightaway Acceleration" is not read as two skills.
+    Text already inside [[...]] is left alone.
+    """
+
+    def __init__(self):
+        names = {}
+        for skill in Skill.objects.on_global().order_by("game_id"):
+            name = skill.name.strip()
+            if re.search(r"[○◎×]", name) or len(name) < 5 or name.casefold() in LINK_STOPLIST:
+                continue
+            names.setdefault(name.casefold(), name)
+        self.canonical = names
+        ordered = sorted(names.values(), key=len, reverse=True)
+        multi = [re.escape(name) for name in ordered if " " in name]
+        single = [re.escape(name) for name in ordered if " " not in name]
+        self.multi = re.compile(r"(?<![\w\[])(" + "|".join(multi) + r")(?![\w\]])", re.IGNORECASE) if multi else None
+        self.single = re.compile(r"(?<![\w\[])(" + "|".join(single) + r")(?![\w\]])") if single else None
+
+    def find(self, text):
+        """The canonical skill names in a text, in order of appearance."""
+        hits = []
+        for pattern in (self.multi, self.single):
+            if pattern is None:
+                continue
+            for match in pattern.finditer(text or ""):
+                hits.append((match.start(), self.canonical[match.group(1).casefold()]))
+        # A short name inside a longer one already found is not a second hit.
+        hits.sort()
+        result, last_end = [], -1
+        for start, name in hits:
+            if start >= last_end:
+                result.append(name)
+                last_end = start + len(name)
+        return result
+
+    def link(self, text, max_length=None):
+        """The text with each found name wrapped in [[...]]. Unchanged when the
+        result would pass `max_length` (a column's limit)."""
+        if not text:
+            return text
+        pieces = re.split(r"(\[\[[^\]]*\]\])", text)
+        for index, piece in enumerate(pieces):
+            if piece.startswith("[["):
+                continue
+            for pattern in (self.multi, self.single):
+                if pattern is None:
+                    continue
+                piece = pattern.sub(lambda m: f"[[{self.canonical[m.group(1).casefold()]}]]", piece)
+                # The second pattern must not re-enter what the first wrapped.
+                piece = re.sub(r"\[\[\[\[([^\]]*)\]\]\]\]", r"[[\1]]", piece)
+            pieces[index] = piece
+        linked = "".join(pieces)
+        # A name inside a name the first pass already wrapped ("[[Final [[Push]]]]").
+        linked = re.sub(r"\[\[([^\[\]]*)\[\[([^\]]*)\]\]([^\[\]]*)\]\]", r"[[\1\2\3]]", linked)
+        if max_length is not None and len(linked) > max_length:
+            return text
+        return linked
+
+
 def _uma_lookup():
     table = {}
     for uma in Uma.objects.order_by("id"):
@@ -532,6 +612,9 @@ class Command(BaseCommand):
         super().__init__(*args, **kwargs)
         self.from_dir = None
         self.unmatched = {}
+        self.linker = None
+        self.matcher = None
+        self.accel_picks = 0
 
     def add_arguments(self, parser):
         parser.add_argument("--dry-run", action="store_true",
@@ -545,6 +628,9 @@ class Command(BaseCommand):
         require_local_database()
         self.from_dir = options["from_dir"]
         self.unmatched = {"umas": set(), "cards": set(), "skills": set(), "events": []}
+        self.linker = ProseLinker()
+        self.matcher = SkillMatcher()
+        self.accel_picks = 0
 
         guides = parse_import_range(self.read_tab(IMPORT_TAB))
         for tab in CUP_TABS:
@@ -591,12 +677,13 @@ class Command(BaseCommand):
             existing.delete()
 
         scenario = Scenario.objects.filter(name__iexact=parsed.scenario).first() if parsed.scenario else None
+        link = self.linker.link
         guide = PvpGuide.objects.create(
             **{field_name: event},
             scenario=scenario,
             style_ranking=parsed.style_ranking[:120],
-            short_description=parsed.short_description,
-            meta_analysis=parsed.meta_analysis,
+            short_description=link(parsed.short_description),
+            meta_analysis=link(parsed.meta_analysis),
             is_published=True,
             admin_comments=(
                 f"Imported from the sheet's '{parsed.source}' tab by load_sheet_pvp_guides "
@@ -605,7 +692,9 @@ class Command(BaseCommand):
             ),
         )
         for order, row in enumerate(parsed.stats):
-            PvpStatConfig.objects.create(guide=guide, order=order, **row)
+            PvpStatConfig.objects.create(
+                guide=guide, order=order, **{**row, "footnote": link(row["footnote"], 200)}
+            )
 
         umas = _uma_lookup()
         seen = set()
@@ -622,12 +711,12 @@ class Command(BaseCommand):
             )
 
         for style, body in parsed.style_notes.items():
-            PvpStyleNote.objects.create(guide=guide, style=style, body=body)
+            PvpStyleNote.objects.create(guide=guide, style=style, body=link(body))
 
         cards = {card.game_id: card for card in SupportCard.objects.exclude(game_id=None)}
         for order, deck in enumerate(parsed.decks):
             row = PvpDeck.objects.create(guide=guide, style=deck["style"], label=deck["label"],
-                                         note=deck["note"], order=order)
+                                         note=link(deck["note"], 300), order=order)
             for slot in deck["slots"]:
                 card = cards.get(slot["game_id"]) if slot["game_id"] else None
                 note = slot["note"]
@@ -638,12 +727,12 @@ class Command(BaseCommand):
                     continue
                 PvpDeckSlot.objects.create(
                     deck=row, slot=slot["slot"], order=0, is_borrow=slot["slot"] == 6,
-                    support_card=card, note=note[:120],
+                    support_card=card, note=link(note[:120], 120),
                 )
                 if slot["alt"]:
                     PvpDeckSlot.objects.create(
                         deck=row, slot=slot["slot"], order=1, is_borrow=slot["slot"] == 6,
-                        note=slot["alt"][:120],
+                        note=link(slot["alt"][:120], 120),
                     )
 
         seen = set()
@@ -656,9 +745,9 @@ class Command(BaseCommand):
                 continue
             seen.add((style, card.id))
             PvpHonorableMention.objects.create(guide=guide, style=style, support_card=card,
-                                               note=note, order=order)
+                                               note=link(note, 200), order=order)
 
-        matcher = SkillMatcher()
+        matcher = self.matcher
         seen = set()
         for entry in parsed.skills:
             style, category, tier, text, order = entry[:5]
@@ -675,6 +764,17 @@ class Command(BaseCommand):
                 note=" ".join(filter(None, [note, extra]))[:200], order=order,
             )
 
+        for style, text in parsed.accel_text.items():
+            for order, name in enumerate(self.linker.find(text)):
+                skill = matcher.by_name.get(normalise(name))
+                if skill is None or (style, "acceleration", skill.id) in seen:
+                    continue
+                seen.add((style, "acceleration", skill.id))
+                PvpSkillRecommendation.objects.create(
+                    guide=guide, style=style, category="acceleration", skill=skill, order=order,
+                )
+                self.accel_picks += 1
+
         for order, (text, note) in enumerate(parsed.comps):
             PvpTeamComp.objects.create(guide=guide, text=text, note=note, order=order)
         return True
@@ -685,6 +785,7 @@ class Command(BaseCommand):
             f"{verb} {created} guide(s); left {skipped} alone "
             "(event already has a guide, or no such event here)."
         ))
+        self.stdout.write(f"Acceleration picks taken from the sheet's text: {self.accel_picks}.")
         for key, label in (("events", "Events not in this database"),
                            ("umas", "Umas not matched"),
                            ("cards", "Card game ids not in this database"),

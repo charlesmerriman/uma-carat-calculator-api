@@ -42,7 +42,13 @@ class ClassificationTests(CalculatorTestCase):
     def test_every_model_is_either_content_or_private(self):
         # The test that makes the include list safe to rely on: a new model
         # fails here until someone decides which side it is on.
-        every = {model.__name__ for model in apps.get_app_config("calculatorapi").get_models()}
+        # Proxies are skipped: they have no table, so there is nothing of
+        # theirs to snapshot (PvpGuideSkills is PvpGuide's rows again).
+        every = {
+            model.__name__
+            for model in apps.get_app_config("calculatorapi").get_models()
+            if not model._meta.proxy  # pylint: disable=protected-access
+        }
         self.assertEqual(set(CONTENT_MODELS) | set(PRIVATE_MODELS), every)
         self.assertEqual(set(CONTENT_MODELS) & set(PRIVATE_MODELS), set())
 

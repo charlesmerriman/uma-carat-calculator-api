@@ -947,6 +947,13 @@ erDiagram
   - `PvpHonorableMention`: unique `(guide, style, support_card)`. Its own table because
     mentions have no slots and so stay a one-level inline.
   - `PvpTeamComp`: free text ("2 Front + 1 Pace") and a note.
+- **`[[Skill name]]` mentions** may appear in any guide text field. `SkillMentionsMixin`
+  (`MENTION_FIELDS` per model) refuses a save whose mention matches no skill on global,
+  ignoring case, with suggestions; the API resolves them into `skill_mentions`.
+- **`PvpGuideSkills`** is a PROXY of `PvpGuide` (no table, migration `0086`) that exists
+  only so the admin can give a guide's skills a per-position page. It is in neither
+  snapshot list (the classification test skips proxies), and the editor-group command
+  fetches content types with `for_concrete_models=False` so its own permissions are granted.
 - **`has_guide`** on both race serializers is an `Exists` over published guides
   (`views.pvp_guide.annotate_has_guide`). That is why `PvpGuide` is NOT in
   `public_payload_cache._IRRELEVANT_MODELS` while its eight children are.
@@ -961,7 +968,10 @@ erDiagram
 - **Test content:** `manage.py load_sheet_pvp_guides` (LOCAL SQLite only, refuses any
   other database) reads the community sheet's `PvP ImportRange` tab (CM #14 onward, LoH #1
   onward, cards keyed by game id) and the per-cup tabs (`Virgo Cup`, `Capricorn Cup`,
-  `Aquarius Cup`) and writes published guides, listing whatever it could not match.
+  `Aquarius Cup`) and writes published guides, listing whatever it could not match. It
+  wraps whole skill names found in the sheet's prose as `[[...]]` (one-word names only in
+  their exact capitals, minus a stoplist of ordinary words like "Runaway" and
+  "Acceleration") and turns each "Rec. Accel" line into ordered acceleration picks.
   `--dry-run`, `--replace`, `--from-dir`. In production, editors write guides in the admin.
 
 ### Through tables carry recommendation text

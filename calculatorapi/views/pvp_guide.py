@@ -20,6 +20,7 @@ on the client at all yet.
 """
 
 from django.db.models import Exists, OuterRef, Prefetch
+from django.db.models.functions import Lower
 from rest_framework import permissions, serializers
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -42,7 +43,7 @@ from calculatorapi.models import (
     UmaSkill,
     UmaSkillSource,
 )
-from calculatorapi.models.pvp_guide import STYLE_RANK
+from calculatorapi.models.pvp_guide import STYLE_RANK, find_skill_mentions
 
 # The URL's kind -> the guide's FK to that event.
 EVENT_FIELD_FOR_KIND = {
@@ -245,13 +246,62 @@ def _unique_of(skill_ids):
     return owners
 
 
+def _guide_texts(guide):
+    """Every editor-written text in the guide: where [[skill]] mentions live."""
+    yield guide.short_description
+    yield guide.meta_analysis
+    for row in guide.stat_configs.all():
+        yield row.footnote
+    for row in guide.uma_recommendations.all():
+        yield row.note
+    for row in guide.skill_recommendations.all():
+        yield row.note
+    for row in guide.style_notes.all():
+        yield row.body
+    for deck in guide.decks.all():
+        yield deck.note
+        for slot in deck.slots.all():
+            yield slot.note
+    for row in guide.honorable_mentions.all():
+        yield row.note
+    for row in guide.team_comps.all():
+        yield row.text
+        yield row.note
+
+
+def _mentioned_skills(guide):
+    """The skills the guide's text mentions as [[name]], keyed by lower-case name.
+
+    One query, matched ignoring case against skills on global only (the same
+    rule the admin's save check uses), so a mention that has since gone stale
+    simply drops out and the client renders its name as plain text.
+    """
+    names = {name.lower() for text in _guide_texts(guide) for name in find_skill_mentions(text)}
+    if not names:
+        return []
+    return list(
+        Skill.objects.on_global()
+        .annotate(lower_name=Lower("name"))
+        .filter(lower_name__in=names)
+        .order_by("game_id")
+    )
+
+
 def serialize_guide(guide, request=None):
     """The response body for one guide. `request` makes image URLs absolute."""
     skill_rows = sorted(guide.skill_recommendations.all(), key=_skill_key)
+    mentioned = _mentioned_skills(guide)
     context = {
         "request": request,
-        "unique_of": _unique_of([row.skill_id for row in skill_rows]),
+        "unique_of": _unique_of(
+            [row.skill_id for row in skill_rows] + [skill.id for skill in mentioned]
+        ),
     }
+    # The first skill of a name wins (lowest game id), so a duplicate name in
+    # the game data resolves the same way on every request.
+    mentions = {}
+    for skill in mentioned:
+        mentions.setdefault(skill.lower_name, _SkillSerializer(skill, context=context).data)
 
     def many(serializer, rows):
         return serializer(rows, many=True, context=context).data
@@ -282,6 +332,8 @@ def serialize_guide(guide, request=None):
             _StyleNoteSerializer, sorted(guide.style_notes.all(), key=_by_style)
         ),
         "decks": many(_DeckSerializer, sorted(guide.decks.all(), key=_ordered_key)),
+        # {lower-case name: skill} for every [[name]] in the guide's text.
+        "skill_mentions": mentions,
         "honorable_mentions": many(
             _HonorableMentionSerializer,
             sorted(guide.honorable_mentions.all(), key=_ordered_key),

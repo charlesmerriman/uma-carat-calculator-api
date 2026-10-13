@@ -39,6 +39,7 @@ permissions on them for the inlines to save.
 
 from datetime import timedelta
 
+from django import forms
 from django.contrib import admin, messages
 from django.contrib.auth.admin import GroupAdmin as BaseGroupAdmin
 from django.contrib.auth.admin import UserAdmin
@@ -70,7 +71,7 @@ from .models import (
     TeamTrialsRank, ClubRank, ChampionsMeetingRank, LeagueOfHeroesRank,
     BannerTimeline, BannerUma, BannerSupport, BannerStepUp,
     ChampionsMeeting,
-    PvpGuide, PvpStatConfig, PvpUmaRecommendation, PvpSkillRecommendation,
+    PvpGuide, PvpGuideSkills, PvpStatConfig, PvpUmaRecommendation, PvpSkillRecommendation,
     PvpStyleNote, PvpDeck, PvpDeckSlot, PvpHonorableMention, PvpTeamComp,
     SupportsOnSupportBanner, UmasOnUmaBanner,
     GameEvent, LeagueOfHeroes, Scenario,
@@ -227,14 +228,75 @@ class PvpUmaRecommendationInline(TabularInline):
     extra = 1
 
 
-class PvpSkillRecommendationInline(TabularInline):
-    # The skill autocomplete offers global skills only: the FK's
-    # limit_choices_to reaches the autocomplete view too.
+class _PositionSkillInline(TabularInline):
+    """Recommended skills for ONE position, on the guide's Skills page.
+
+    Six subclasses, one per position, each showing only its own rows. The
+    position is fixed by the subclass, so an editor never picks it: `style`
+    rides along as a hidden field set to the subclass's value, which also keeps
+    it in the form for the unique (guide, style, category, skill) check.
+
+    Each needs its own formset prefix: six inlines of one model would all
+    default to "skill_recommendations" and overwrite each other's POST data.
+
+    The skill autocomplete offers global skills only: the FK's
+    limit_choices_to reaches the autocomplete view too.
+    """
     model = PvpSkillRecommendation
-    fields = ("style", "category", "tier", "skill", "note", "order")
+    fields = ("style", "skill", "category", "tier", "note", "order")
     autocomplete_fields = ("skill",)
-    ordering = ("order", "id")
+    ordering = ("tier", "order", "id")
     extra = 1
+    style = None  # set by each subclass
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).filter(style=self.style)
+
+    def get_formset(self, request, obj=None, **kwargs):
+        kwargs["widgets"] = {"style": forms.HiddenInput}
+        formset = super().get_formset(request, obj, **kwargs)
+        style = self.style
+
+        class PositionFormSet(formset):
+            @classmethod
+            def get_default_prefix(cls):
+                return f"skills-{style}"
+
+            def _construct_form(self, i, **form_kwargs):
+                form = super()._construct_form(i, **form_kwargs)
+                # Existing rows already carry it; blank rows start with it, and
+                # a matching initial keeps an untouched blank row "unchanged".
+                form.fields["style"].initial = style
+                if form.instance.pk is None:
+                    form.instance.style = style
+                return form
+
+        return PositionFormSet
+
+
+def _position_inline(style, label):
+    return type(
+        f"PvpSkills{style.capitalize()}Inline",
+        (_PositionSkillInline,),
+        {
+            "style": style,
+            "verbose_name": f"{label} skill",
+            "verbose_name_plural": f"{label}: recommended skills",
+        },
+    )
+
+
+POSITION_SKILL_INLINES = tuple(
+    _position_inline(style, label)
+    for style, label in (
+        ("everyone", "Everyone"),
+        ("runaway", "Runaway"),
+        ("front", "Front"),
+        ("pace", "Pace"),
+        ("late", "Late"),
+        ("end", "End"),
+    )
+)
 
 
 class PvpStyleNoteInline(StackedInline):
@@ -1063,11 +1125,18 @@ class PvpGuideAdmin(ModelAdmin):
     # Both event names, so the deck page's guide autocomplete can find a guide.
     search_fields = ("champions_meeting__name", "league_of_heroes__name")
     autocomplete_fields = ("champions_meeting", "league_of_heroes", "scenario")
-    readonly_fields = ("updated_at",)
+    readonly_fields = ("updated_at", "skills_page")
     fieldsets = (
         ("Event", {
             "description": "Pick one event and leave the other blank.",
             "fields": ("champions_meeting", "league_of_heroes", "is_published"),
+        }),
+        ("Recommended skills", {
+            "description": (
+                "Skills are picked per position on their own page. Save the guide "
+                "first, then use the link."
+            ),
+            "fields": ("skills_page",),
         }),
         ("Overview", {
             "fields": ("scenario", "style_ranking", "short_description", "meta_analysis"),
@@ -1079,7 +1148,6 @@ class PvpGuideAdmin(ModelAdmin):
     inlines = (
         PvpStatConfigInline,
         PvpUmaRecommendationInline,
-        PvpSkillRecommendationInline,
         PvpStyleNoteInline,
         PvpDeckInline,
         PvpHonorableMentionInline,
@@ -1092,6 +1160,17 @@ class PvpGuideAdmin(ModelAdmin):
     @admin.display(description="Event")
     def event_name(self, obj):
         return str(obj)
+
+    @admin.display(description="Skills page")
+    def skills_page(self, obj):
+        if obj is None or obj.pk is None:
+            return "Save the guide first."
+        count = obj.skill_recommendations.count()
+        return format_html(
+            '<a href="{}">Pick recommended skills by position</a> ({} picked)',
+            reverse("admin:calculatorapi_pvpguideskills_change", args=(obj.pk,)),
+            count,
+        )
 
     @admin.display(description="Kind")
     def event_kind(self, obj):
@@ -1131,6 +1210,50 @@ class PvpDeckAdmin(ModelAdmin):
     def slot_count(self, obj):
         return obj._slot_count  # pylint: disable=protected-access
 
+
+
+@admin.register(PvpGuideSkills)
+class PvpGuideSkillsAdmin(ModelAdmin):
+    """
+    A guide's recommended skills, one table per position.
+
+    The proxy model gives these their own page (Django registers one admin per
+    model), reached from the guide's "Pick recommended skills by position" link
+    or the sidebar. Nothing about the guide itself is editable here, and the
+    page can neither add nor delete a guide: deleting a proxy row would delete
+    the guide.
+    """
+    list_display = ("event_name", "is_published", "skill_count")
+    list_select_related = ("champions_meeting", "league_of_heroes")
+    search_fields = ("champions_meeting__name", "league_of_heroes__name")
+    ordering = ("-updated_at",)
+    fields = ("event_name", "guide_page")
+    readonly_fields = ("event_name", "guide_page")
+    inlines = POSITION_SKILL_INLINES
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).annotate(_skill_count=Count("skill_recommendations"))
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    @admin.display(description="Event")
+    def event_name(self, obj):
+        return str(obj)
+
+    @admin.display(description="Skills", ordering="_skill_count")
+    def skill_count(self, obj):
+        return obj._skill_count  # pylint: disable=protected-access
+
+    @admin.display(description="Guide")
+    def guide_page(self, obj):
+        return format_html(
+            '<a href="{}">Back to the guide</a>',
+            reverse("admin:calculatorapi_pvpguide_change", args=(obj.pk,)),
+        )
 
 # ── 5. Rank / income tables ──────────────────────────────────────────────────
 
