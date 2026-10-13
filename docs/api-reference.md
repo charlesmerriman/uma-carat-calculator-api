@@ -673,7 +673,7 @@ were on a banner. `skill_recommendations` only ever holds skills on global
 (`Skill.objects.on_global()`); `unique_of` names the outfit whose unique the skill is, or
 `null`. `style` values: `everyone`, `runaway`, `front`, `pace`, `late`, `end` (never
 `everyone` on an uma). `category`: `acceleration`, `speed`, `green`, `recovery`,
-`debuff`, `other`. Stat values are `null` where the guide gives none. Text fields are
+`debuff`, `other`. Stat values are short TEXT as the guide writes them (`"1100+"`, `"578*"`), `""` where it gives none. Text fields are
 markdown (`short_description`, `meta_analysis`, style note `body`) or one-line notes; both
 may hold `==highlight==` spans the client renders red.
 
@@ -683,8 +683,8 @@ may hold `==highlight==` spans the client renders red.
   "style_ranking": "Front >> Runaway >= End > Late > Pace",
   "short_description": "markdown", "meta_analysis": "markdown",
   "team_comps": [{"text": "2 Front + 1 Pace", "note": "61% in sims"}],
-  "stat_configs": [{"style": "everyone", "label": "Minimum", "speed": 1100, "stamina": 500,
-                    "power": 900, "guts": null, "wit": 600, "footnote": ""}],
+  "stat_configs": [{"style": "everyone", "label": "Minimum", "speed": "1200", "stamina": "578*",
+                    "power": "1100+", "guts": "", "wit": "1100+", "footnote": "*Bonus Speed every 300 Power."}],
   "uma_recommendations": [{"style": "front", "stars": 5, "role": "", "note": "Use as runaway",
                            "uma": {"id": 41, "name": "Maruzensky", "image": "url | null"}}],
   "skill_recommendations": [{"style": "front", "category": "acceleration", "tier": 0, "order": 0, "note": "",

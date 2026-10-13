@@ -59,6 +59,12 @@ MARKDOWN_HELP = (
 ) + HIGHLIGHT_HELP
 
 
+STAT_HELP = (
+    "As the guide writes it: 1200, 1100+, 578* (with the * explained in the footnote). "
+    "Leave blank for a dash."
+)
+
+
 class PvpStyle(models.TextChoices):
     """
     A running style as a guide talks about it, plus "everyone".
@@ -236,12 +242,16 @@ class PvpStatConfig(models.Model):
         blank=True,
         help_text="Optional, for a variant: \"901* + 1 Gold\", \"Trackblazer\", \"Minimum\".",
     )
-    # Null shows as an en dash, the sheet's "-" for a stat it says nothing about.
-    speed = models.PositiveIntegerField(null=True, blank=True)
-    stamina = models.PositiveIntegerField(null=True, blank=True)
-    power = models.PositiveIntegerField(null=True, blank=True)
-    guts = models.PositiveIntegerField(null=True, blank=True)
-    wit = models.PositiveIntegerField(null=True, blank=True)
+    # Text, not numbers: the sheet's values carry meaning past the number.
+    # "1100+" is at least 1100, "578*" points at a footnote, "901* + 1 Gold"
+    # is a threshold with a condition. An integer column would drop all of
+    # that and refuse what an editor copies across. Blank shows as an en dash,
+    # the sheet's "-" for a stat it says nothing about.
+    speed = models.CharField(max_length=20, blank=True, help_text=STAT_HELP)
+    stamina = models.CharField(max_length=20, blank=True)
+    power = models.CharField(max_length=20, blank=True)
+    guts = models.CharField(max_length=20, blank=True)
+    wit = models.CharField(max_length=20, blank=True)
     footnote = models.CharField(max_length=200, blank=True, help_text=HIGHLIGHT_HELP)
     order = _order_field()
 

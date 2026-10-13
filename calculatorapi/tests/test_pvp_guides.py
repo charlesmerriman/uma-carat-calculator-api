@@ -1,6 +1,13 @@
-"""The PvP guide: its constraints, GET /pvp-guides/<kind>/<id>, has_guide on the race events, and its admin."""
+"""The PvP guide: constraints, GET /pvp-guides/<kind>/<id>, has_guide, the admin, and the sheet loader."""
+
+import csv
+import tempfile
+from io import StringIO
+from pathlib import Path
+from unittest.mock import patch
 
 from django.core.exceptions import ValidationError
+from django.core.management import call_command
 from django.db import IntegrityError, connection, transaction
 from django.db.models import ProtectedError
 from django.test import override_settings
@@ -9,6 +16,7 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 
 from calculatorapi import public_payload_cache
+from calculatorapi.management.commands import load_sheet_pvp_guides as loader
 from calculatorapi.models import (
     CalculationConstants,
     PvpDeck,
@@ -154,7 +162,7 @@ class GuideEndpointTests(CalculatorTestCase):
         skill = make_skill("Lead the Pack", 100011, rarity=5)
         UmaSkill.objects.create(uma=uma, skill=skill, source="unique")
         PvpStatConfig.objects.create(guide=self.guide, style="everyone", label="Minimum",
-                                     speed=1100, stamina=500)
+                                     speed="1100", stamina="578*")
         PvpUmaRecommendation.objects.create(guide=self.guide, style="front", uma=uma, stars=5,
                                             note="Use as runaway")
         PvpSkillRecommendation.objects.create(guide=self.guide, style="front",
@@ -181,8 +189,8 @@ class GuideEndpointTests(CalculatorTestCase):
         self.assertEqual(body["event"], self.cm.id)
         self.assertEqual(body["scenario"]["name"], "Grand Live")
         self.assertEqual(body["team_comps"], [{"text": "2 Front + 1 Pace", "note": "61% in sims"}])
-        self.assertEqual(body["stat_configs"][0]["stamina"], 500)
-        self.assertIsNone(body["stat_configs"][0]["power"])
+        self.assertEqual(body["stat_configs"][0]["stamina"], "578*")
+        self.assertEqual(body["stat_configs"][0]["power"], "")
         self.assertEqual(body["uma_recommendations"][0]["uma"]["name"], "Maruzensky")
         self.assertEqual(body["uma_recommendations"][0]["note"], "Use as runaway")
         rec = body["skill_recommendations"][0]
@@ -317,7 +325,7 @@ class GuideAdminTests(CalculatorTestCase):
         cm = make_champions_meeting()
         self.guide = PvpGuide.objects.create(champions_meeting=cm, is_published=True)
         card = SupportCard.objects.create(name="Kitasan Black")
-        PvpStatConfig.objects.create(guide=self.guide, style="everyone", speed=1100)
+        PvpStatConfig.objects.create(guide=self.guide, style="everyone", speed="1100+")
         PvpUmaRecommendation.objects.create(guide=self.guide, style="front",
                                             uma=Uma.objects.create(name="Maruzensky"))
         PvpSkillRecommendation.objects.create(guide=self.guide, style="front", category="speed",
@@ -363,3 +371,109 @@ class GuideAdminTests(CalculatorTestCase):
         res = self.client.get(reverse("admin:calculatorapi_championsmeeting_change", args=(cm.pk,)))
         self.assertEqual(res.status_code, 200)
         self.assertNotContains(res, "speed_recommendation")
+
+
+class SheetLoaderTests(CalculatorTestCase):
+    """load_sheet_pvp_guides reads both sheet formats (from CSV files here)."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()  # pylint: disable=consider-using-with
+        self.addCleanup(self.tmp.cleanup)
+        self.cm14 = make_champions_meeting(name="Gemini", cm_number=14)
+        self.cm10 = make_champions_meeting(name="Aquarius", cm_number=10)
+        Uma.objects.create(name="Seiun Sky")
+        SupportCard.objects.create(name="Narita Top Road", game_id=30086)
+        make_skill("Groundwork", 100061)
+        make_skill("Sunny Days ◎", 100071)
+        make_skill("Early Lead", 100081)
+
+    def write(self, tab, rows):
+        with open(Path(self.tmp.name) / f"{tab}.csv", "w", newline="", encoding="utf-8") as handle:
+            csv.writer(handle).writerows(rows)
+
+    @staticmethod
+    def grid(height, width=33):
+        return [[""] * width for _ in range(height)]
+
+    def import_block(self):
+        rows = self.grid(47)
+        rows[0][1], rows[0][23] = "CM #14 GEMINI CUP", "A front game."
+        rows[1][9:14] = ["1200", "578*", "1100+", "1100+*", "1100+"]
+        rows[3][24] = "End >= Front"
+        rows[4][1] = "Recommended Front Runner"
+        rows[6][1], rows[7][1] = "Seiun Sky CM #2", "★★★(RA)"
+        rows[8][1], rows[8][2] = "Rec. Accel", "1. Seiun"
+        rows[11][1], rows[11][6] = "BEGINNER - FRONT", "Borrow Slot"
+        rows[12][1], rows[12][4] = "30086 Narita Top Road CM #11", "12305 Wit"
+        rows[14][1] = "Stats + FCM*"
+        rows[15][1], rows[15][31] = "red", "Highlight"
+        rows[16][1] = "or any spd"
+        return rows
+
+    def cup_tab(self):
+        rows = self.grid(20, 30)
+        rows[0][0], rows[0][6], rows[0][14] = "CM #10", "Recommended Stats", "Acceleration"
+        rows[1][14], rows[1][16] = "Front", "Groundwork"
+        rows[3][6:12] = ["Runaway", "1200*", "578*", "1000+", "400+", "1000+"]
+        rows[4][6] = "*Bonus Speed every 300 Speed."
+        rows[5][6], rows[6][6] = "Recommended Strategy", "Front >> End"
+        rows[8][14] = "Recommended Skills"
+        rows[9][14], rows[9][15] = "Green", "Tier 1"
+        rows[10][16], rows[10][18] = "Sunny Day ○/◎", "Early Lead (Taking The Lead)"
+        rows[12][1] = "Recommended Team Comp"
+        rows[13][1] = "2 Front + 1 Pace"
+        rows[14][1] = "Henry's Team"
+        rows[15][1:4] = ["Front", "Front", "End"]
+        return rows
+
+    def load(self, *args):
+        self.write(loader.IMPORT_TAB, self.import_block())
+        self.write("Aquarius Cup", self.cup_tab())
+        with patch.object(loader, "CUP_TABS", ("Aquarius Cup",)):
+            out = StringIO()
+            call_command("load_sheet_pvp_guides", "--from-dir", self.tmp.name, *args, stdout=out)
+        return out.getvalue()
+
+    def test_reads_an_import_range_block(self):
+        self.load()
+        guide = PvpGuide.objects.get(champions_meeting=self.cm14)
+        self.assertTrue(guide.is_published)
+        self.assertEqual(guide.style_ranking, "End >= Front")
+        self.assertEqual(guide.stat_configs.get().stamina, "578*")
+        uma = guide.uma_recommendations.get()
+        self.assertEqual((uma.uma.name, uma.stars, uma.role), ("Seiun Sky", 3, "RA"))
+        self.assertIn("1. Seiun", guide.style_notes.get(style="front").body)
+        slots = list(guide.decks.get().slots.order_by("slot", "order"))
+        self.assertEqual(slots[0].support_card.game_id, 30086)
+        self.assertEqual(slots[0].note, "==Stats + FCM*==")
+        self.assertEqual((slots[1].slot, slots[1].order, slots[1].note), (1, 1, "or any spd"))
+        self.assertEqual((slots[2].slot, slots[2].support_card, slots[2].note), (4, None, "Any Wit"))
+
+    def test_reads_a_per_cup_tab(self):
+        self.load()
+        guide = PvpGuide.objects.get(champions_meeting=self.cm10)
+        self.assertEqual(guide.style_ranking, "Front >> End")
+        stats = guide.stat_configs.get()
+        self.assertEqual((stats.style, stats.speed), ("runaway", "1200*"))
+        self.assertIn("Bonus Speed", stats.footnote)
+        accel = guide.skill_recommendations.get(category="acceleration")
+        self.assertEqual((accel.style, accel.skill.name), ("front", "Groundwork"))
+        green = {r.skill.name: r for r in guide.skill_recommendations.filter(category="green")}
+        self.assertEqual(set(green), {"Sunny Days ◎", "Early Lead"})
+        self.assertEqual(green["Early Lead"].tier, 1)
+        self.assertEqual(green["Early Lead"].note, "Taking The Lead")
+        self.assertEqual(list(guide.team_comps.values_list("text", "note")),
+                         [("2 Front + 1 Pace", ""), ("Front + Front + End", "Henry's Team")])
+
+    def test_keeps_existing_guides_unless_replace(self):
+        PvpGuide.objects.create(champions_meeting=self.cm14, style_ranking="Mine")
+        self.load()
+        self.assertEqual(PvpGuide.objects.get(champions_meeting=self.cm14).style_ranking, "Mine")
+        self.load("--replace")
+        self.assertEqual(PvpGuide.objects.get(champions_meeting=self.cm14).style_ranking,
+                         "End >= Front")
+
+    def test_dry_run_writes_nothing(self):
+        out = self.load("--dry-run")
+        self.assertIn("Would create 2 guide(s)", out)
+        self.assertFalse(PvpGuide.objects.exists())

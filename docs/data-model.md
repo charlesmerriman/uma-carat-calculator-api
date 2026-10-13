@@ -931,7 +931,9 @@ erDiagram
   lists and the global per-cup tables). Each child carries a `style`
   (`PvpStyle`: everyone, runaway, front, pace, late, end; TextChoices, display order
   `STYLE_ORDER`, sorted in Python) and usually an `order`.
-  - `PvpStatConfig`: several rows per style is the point (variants), five nullable stats.
+  - `PvpStatConfig`: several rows per style is the point (variants). The five stats are
+    short TEXT, because the sheet's values carry markers (`1100+`, `578*` for a footnote,
+    `901* + 1 Gold`) an integer would drop.
   - `PvpUmaRecommendation`: unique `(guide, style, uma)`, stars 1..5 and never
     `style=everyone`, both as check constraints.
   - `PvpSkillRecommendation`: `category` (`PvpSkillCategory`), optional `tier` 0..4,
@@ -956,6 +958,11 @@ erDiagram
   `CalculationConstants`.
 - Replaced `ChampionsMeetingUmaRecommendation` (an admin inline nothing rendered; dropped
   by `0084`).
+- **Test content:** `manage.py load_sheet_pvp_guides` (LOCAL SQLite only, refuses any
+  other database) reads the community sheet's `PvP ImportRange` tab (CM #14 onward, LoH #1
+  onward, cards keyed by game id) and the per-cup tabs (`Virgo Cup`, `Capricorn Cup`,
+  `Aquarius Cup`) and writes published guides, listing whatever it could not match.
+  `--dry-run`, `--replace`, `--from-dir`. In production, editors write guides in the admin.
 
 ### Through tables carry recommendation text
 
