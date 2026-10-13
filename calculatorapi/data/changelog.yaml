@@ -32,6 +32,16 @@
 # module changed. Newest entry first is conventional here but not required — the
 # page sorts by date.
 
+- key: 2026-10-fixes
+  date: 2026-10-13
+  title: "A few fixes"
+  version: "v1.15"
+  changes:
+    - fixed: "The menu bar stays at the top of the screen again as you scroll. This was broken on phones, and on the home, FAQ and other info pages on desktop."
+    - fixed: "On a shared plan, the copy button now sits above the banner list."
+    - fixed: "Hovering a support banner's pictures in the planner names that banner now, not the uma banner running at the same time. Its note box does too."
+    - changed: "The carat income guide is gone. The FAQ still explains where each income source comes from."
+
 - key: share-links
   date: 2026-10-12
   title: "Share a plan with a link"
