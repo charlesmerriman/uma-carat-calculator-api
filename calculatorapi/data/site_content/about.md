@@ -8,7 +8,7 @@ You tell the calculator what you have right now and which income applies to your
 
 ## Where the numbers come from
 
-Banner dates, event rewards and income rates are maintained here by hand and updated as the game announces them. The underlying methodology follows [Henry's resource spreadsheet](https://docs.google.com/spreadsheets/d/100t3hnYl5Qm2UR8RtPlH-8Xd9KQbBlxEdXUOIR4d394/), the community reference this site grew out of. Recent data and feature changes are listed on the [Changelog](/changelog), the [FAQ](/faq) explains each income source, and the [carat income guide](/guides/carat-income) walks through the projection step by step.
+Banner dates, event rewards and income rates are maintained here by hand and updated as the game announces them. The underlying methodology follows [Henry's resource spreadsheet](https://docs.google.com/spreadsheets/d/100t3hnYl5Qm2UR8RtPlH-8Xd9KQbBlxEdXUOIR4d394/), the community reference this site grew out of. Recent data and feature changes are listed on the [Changelog](/changelog), and the [FAQ](/faq) explains each income source.
 
 Everything the site produces is an **estimate**. Reward amounts and schedules get announced late or change, and one toggle set differently from how you play will move the total. Treat a projection as a forecast, not a promise.
 
