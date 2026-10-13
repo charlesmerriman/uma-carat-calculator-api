@@ -7,8 +7,7 @@ name: Patreon supporters sync
 # This job never sees member data: it posts a key and gets counts back. Nothing
 # it can do publishes a name — see calculatorapi/views/patreon_supporters.py.
 #
-# Required repository secrets:
-#   PATREON_SYNC_URL     e.g. https://<host>/api/patreon/sync
+# Required repository secret:
 #   PATREON_SYNC_SECRET  must match the API's PATREON_SYNC_SECRET byte-for-byte
 on:
   schedule:
@@ -25,29 +24,52 @@ jobs:
     steps:
       - name: Trigger the supporters sync
         env:
-          SYNC_URL: ${{ secrets.PATREON_SYNC_URL }}
+          # UPDATE ON A DOMAIN MOVE. Written here rather than kept in a secret on
+          # purpose: it is not sensitive (the route 403s without the key), and a
+          # secret cannot be searched. It used to be one, still pointing at the
+          # ondigitalocean.app host when that host started 301ing to the custom
+          # domain, and the sync failed daily for a week (2026-10-07 to 10-13)
+          # before anyone looked. A search for the old domain finds it here.
+          SYNC_URL: https://umacaratcalculator.com/api/patreon/sync
           SYNC_SECRET: ${{ secrets.PATREON_SYNC_SECRET }}
         run: |
           set -euo pipefail
 
-          if [ -z "${SYNC_URL:-}" ] || [ -z "${SYNC_SECRET:-}" ]; then
-            echo "PATREON_SYNC_URL / PATREON_SYNC_SECRET are not set on this repo."
-            echo "Add them under Settings -> Secrets and variables -> Actions."
+          if [ -z "${SYNC_SECRET:-}" ]; then
+            echo "PATREON_SYNC_SECRET is not set on this repo."
+            echo "Add it under Settings -> Secrets and variables -> Actions."
             exit 1
           fi
 
-          # -sS: quiet, but still print errors. Body and status captured
-          # separately so a failure can report both.
+          # -sS: quiet, but still print errors. The last line carries the status
+          # and, for a redirect, where it points, so a failure can report both.
+          #
+          # Redirects are deliberately NOT followed (no -L). curl replays a 301
+          # or 302 as a GET, which this route answers with a 405, and it would
+          # send X-Patreon-Sync-Key on to whatever host the Location header
+          # names. Following silently would also hide the stale URL for good.
           response=$(curl -sS -X POST "$SYNC_URL" \
             -H "X-Patreon-Sync-Key: $SYNC_SECRET" \
             -H "Content-Type: application/json" \
-            -w "\n%{http_code}")
+            -w "\n%{http_code} %{redirect_url}")
 
-          status=$(printf '%s' "$response" | tail -n 1)
+          meta=$(printf '%s' "$response" | tail -n 1)
           body=$(printf '%s' "$response" | sed '$d')
+          status=${meta%% *}
+          # Everything after the first space; empty when there was no redirect.
+          location=${meta#* }
 
           echo "HTTP $status"
           echo "$body"
+
+          # A redirect means the site moved and SYNC_URL above didn't. Say so
+          # directly, rather than leaving a bare "HTTP 301" to be decoded.
+          case "$status" in
+            3??)
+              echo "::error::$SYNC_URL redirects (HTTP $status) to ${location:-an unstated location}. The site has moved: update SYNC_URL in .github/workflows/patreon-sync.yml."
+              exit 1
+              ;;
+          esac
 
           # Fail loudly. A silently stale supporters list is the failure mode
           # this whole job exists to prevent, so an expired token has to show up
