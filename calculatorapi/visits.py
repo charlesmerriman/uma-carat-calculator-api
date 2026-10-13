@@ -70,7 +70,6 @@ KNOWN_ROUTES = frozenset({
     "/privacy-policy",
     "/changelog",
     "/feedback",
-    "/guides/carat-income",
     "/app",
     "/app/timeline",
     "/app/selectors",
