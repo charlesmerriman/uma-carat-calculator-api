@@ -1020,9 +1020,11 @@ by `gallery_post_event_matches_kind` (the `PvpTeam` XOR idiom). A `GenericForeig
 lose FK integrity and cascades; tables per gallery would write this twice.
 
 - **`GalleryPost`**: `public_id` (8 characters, the permanent link `/post/<public_id>`, kept
-  through re-posts), `author` (CASCADE), `kind`, `caption` (140, the one line of public text;
-  the team's name is never shown), `published_at`, `content_updated_at` (moves on every
-  re-post; Hot ages from it and New sorts by it), `is_hidden` / `hidden_reason` (`reports` or
+  through re-posts), `author` (CASCADE), `kind`, `caption` (140, the line on the feed's row;
+  the team's name is never shown), `strategy` (2,000, the longer text only the open post
+  shows; not "notes", which is a `PvpTeam`'s PRIVATE notes and forbidden in any gallery
+  payload), `published_at`, `content_updated_at` (moves on a re-post that changes the team,
+  not on one that only changes the words; Hot ages from it and New sorts by it), `is_hidden` / `hidden_reason` (`reports` or
   `moderator`) / `hidden_at` (`gallery_post_hidden_has_reason`), `view_count` and
   `copy_count` (bumped with `F() + 1`). PvP columns: the `champions_meeting` /
   `league_of_heroes` pair, `team_snapshot` (JSON, the same member shape as a team), the

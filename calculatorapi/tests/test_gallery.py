@@ -353,6 +353,41 @@ class PublishTests(GalleryFixture):
                 self.assertRefused(400, self.publish, user, self.team(user), caption=caption)
                 PvpTeam.objects.all().delete()
 
+    def test_strategy_filters_name_the_strategy(self):
+        user = self.person()
+        BlockedTerm.objects.create(term="Rude")
+        for strategy in ("x" * 2001, "see https://spam.example", "so RUDE"):
+            with self.subTest(strategy=strategy):
+                with self.assertRaises(gallery.GalleryRefused) as caught:
+                    self.publish(user, self.team(user), strategy=strategy)
+                self.assertEqual(caught.exception.status, 400)
+                self.assertEqual(caught.exception.field, "strategy")
+                PvpTeam.objects.all().delete()
+
+    def test_the_strategy_is_trimmed_and_keeps_its_line_breaks(self):
+        user = self.person()
+        post, _ = self.publish(user, self.team(user), strategy="  Line one\n\nLine two  ")
+        self.assertEqual(post.strategy, "Line one\n\nLine two")
+        post, _ = self.publish(user, self.team(user), strategy="x" * 2000)
+        self.assertEqual(len(post.strategy), 2000)
+
+    def test_changing_only_the_words_keeps_the_votes_and_the_place(self):
+        user = self.person()
+        team = self.team(user)
+        post, _ = self.publish(user, team, caption="Old", strategy="Old plan")
+        GalleryVote.objects.create(post=post, user=self.person())
+        before = post.content_updated_at
+        again, created = self.publish(user, team, caption="New", strategy="New plan")
+        self.assertFalse(created)
+        self.assertEqual((again.caption, again.strategy), ("New", "New plan"))
+        self.assertEqual(again.votes.count(), 1)
+        self.assertEqual(again.content_updated_at, before)
+        # One card is a different team: the votes were for the old one.
+        PvpTeamCard.objects.filter(member__team=team, slot=6).update(support_card=self.cards[6])
+        changed, _ = self.publish(user, team, caption="New", strategy="New plan")
+        self.assertEqual(changed.votes.count(), 0)
+        self.assertGreater(changed.content_updated_at, before)
+
     def test_the_snapshot_is_frozen(self):
         user = self.person()
         team = self.team(user)

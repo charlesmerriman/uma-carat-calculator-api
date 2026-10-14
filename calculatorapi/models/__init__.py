@@ -84,6 +84,7 @@ from .gallery import (
     GalleryReportResolution,
     GalleryVote,
     GALLERY_CAPTION_MAX_LENGTH,
+    GALLERY_STRATEGY_MAX_LENGTH,
     GALLERY_COMMENT_MAX_LENGTH,
     GALLERY_REPORT_NOTE_MAX_LENGTH,
 )

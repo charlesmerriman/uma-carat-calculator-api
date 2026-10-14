@@ -47,6 +47,10 @@ from .pvp_team import PvpTeam
 # The one line of public text a post carries. The team's own name stays
 # private: a post never shows it.
 GALLERY_CAPTION_MAX_LENGTH = 140
+# The longer text only the open post shows: why the
+# team is built the way it is, or whatever its author wants to say. Never in
+# the feed's rows. About 350 words.
+GALLERY_STRATEGY_MAX_LENGTH = 2000
 # Feedback on a team, not an essay. Also the most a spammer gets per comment.
 GALLERY_COMMENT_MAX_LENGTH = 500
 GALLERY_REPORT_NOTE_MAX_LENGTH = 200
@@ -109,6 +113,13 @@ class GalleryPost(models.Model):
     kind = models.CharField(max_length=20, choices=GalleryPostKind.choices)
     caption = models.CharField(
         max_length=GALLERY_CAPTION_MAX_LENGTH, blank=True, default=""
+    )
+    # Plain text, line breaks kept, never turned into links (the filters
+    # refuse links anyway). Only in the full post payload (serialize_posts).
+    # Not "notes": that is a PvpTeam's PRIVATE sticky notes, which the API
+    # tests forbid anywhere in a gallery payload.
+    strategy = models.CharField(
+        max_length=GALLERY_STRATEGY_MAX_LENGTH, blank=True, default=""
     )
     # Defaults rather than auto_now_add so the demo data (seed_gallery_demo)
     # can spread posts over past days; every real write sets them explicitly.

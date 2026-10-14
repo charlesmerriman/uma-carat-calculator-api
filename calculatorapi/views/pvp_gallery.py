@@ -58,13 +58,15 @@ def pvp_team_publish(request, team_id):
     except PvpTeam.DoesNotExist:
         return Response({"error": "Team not found"}, status=status.HTTP_404_NOT_FOUND)
     caption = request.data.get("caption", "")
-    if not isinstance(caption, str):
-        return Response({"error": "The caption must be text."}, status=status.HTTP_400_BAD_REQUEST)
+    strategy = request.data.get("strategy", "")
+    if not isinstance(caption, str) or not isinstance(strategy, str):
+        return Response({"error": "The caption and strategy must be text."}, status=status.HTTP_400_BAD_REQUEST)
     try:
         post, created = gallery.publish_team(
             request.user,
             team,
             caption=caption,
+            strategy=strategy,
             confirm_public_identity=request.data.get("confirm_public_identity"),
         )
     except gallery.GalleryRefused as refusal:

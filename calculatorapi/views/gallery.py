@@ -81,8 +81,12 @@ class GalleryCopyThrottle(GalleryThrottle):
 
 
 def refused(refusal):
-    """A GalleryRefused as a response: one sentence the client shows."""
-    return Response({"error": refusal.message}, status=refusal.status)
+    """A GalleryRefused as a response: one sentence the client shows, and the
+    field at fault when the refusal names one."""
+    body = {"error": refusal.message}
+    if refusal.field:
+        body["field"] = refusal.field
+    return Response(body, status=refusal.status)
 
 
 def _known_ids(posts):
@@ -162,6 +166,9 @@ def serialize_posts(posts, viewer, *, full=False):
             "poster": blocks[post.author_id],
         }
         if full:
+            # The long text is the open post's alone: a feed of rows each
+            # carrying up to 2,000 characters nobody sees there is waste.
+            row["strategy"] = post.strategy
             row["team"] = team
             row["stats"]["copies"] = post.copy_count
             row["event"] = {

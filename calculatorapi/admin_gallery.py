@@ -83,10 +83,10 @@ class GalleryPostAdmin(_ModerationActions, ModelAdmin):  # pylint: disable=too-m
     )
     list_filter = ("is_hidden", "hidden_reason", "kind")
     list_select_related = ("author", "champions_meeting", "league_of_heroes")
-    search_fields = ("public_id", "caption", "author__display_name", "author__username")
+    search_fields = ("public_id", "caption", "strategy", "author__display_name", "author__username")
     ordering = ("-content_updated_at",)
     readonly_fields = (
-        "public_id", "author", "kind", "caption", "published_at", "content_updated_at",
+        "public_id", "author", "kind", "caption", "strategy", "published_at", "content_updated_at",
         "champions_meeting", "league_of_heroes", "team_snapshot", "preview_version",
         "source_team", "view_count", "copy_count", "is_hidden", "hidden_reason", "hidden_at",
     )

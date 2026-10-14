@@ -801,7 +801,7 @@ the post's own author.
 
 | Route | Who | Returns |
 |---|---|---|
-| `POST /pvp-teams/<id>/publish` `{confirm_public_identity: true, caption?}` | owner | `201` a new post, `200` a re-post (votes cleared, link and comments kept). Needs the flag literally `true`, a display name, three umas, eighteen cards, no repeated character, a caption that passes the filters |
+| `POST /pvp-teams/<id>/publish` `{confirm_public_identity: true, caption?, strategy?}` | owner | `201` a new post, `200` a re-post (link and comments kept; votes cleared only when the team itself changed, see below). Needs the flag literally `true`, a display name, three umas, eighteen cards, no repeated character, a caption (140) and strategy (2,000) that pass the filters. A refusal about one of the two texts carries `"field": "caption"` or `"strategy"` beside `error` |
 | `GET /pvp-gallery/<kind>/<event_id>?sort=hot\|top\|new&uma=<id>&limit=N` | anyone | `{count, sort, limit, has_more, results: [row], umas: [{uma, count}]}`: the top `limit` rows (20 by default, at most 200) |
 | `GET /gallery/posts/<public_id>` | anyone | the full post |
 | `DELETE /gallery/posts/<public_id>` | author | `204`, the post with its votes, comments and reports |
@@ -816,7 +816,12 @@ the post's own author.
 | `GET /post/<public_id>` | anyone | HTML: link-preview tags, then on to the post in the app. **Not under `/api`** |
 | `GET /post/<public_id>/preview.jpg?v=<version>` | anyone | the 1200x630 preview JPEG |
 
-A feed row (the full post adds `team`, `event` (`{kind, id, label}`, the label being the event's name), `hidden` and `stats.copies`):
+A feed row (the full post adds `strategy` (the long text, `""` when none; never on a row), `team`, `event` (`{kind, id, label}`, the label being the event's name), `hidden` and `stats.copies`):
+
+A re-post whose team is unchanged (same umas, styles and cards in the snapshot) only replaces
+the words: votes, `content_updated_at` and so the post's place in Hot and New all stay. Any
+change to the team is a new version: votes cleared, `content_updated_at` moved, older
+comments flagged `earlier_version`.
 
 ```json
 { "public_id": "k3Df8aQ2", "caption": "Runaway blocker", "published_at": "ISO8601",

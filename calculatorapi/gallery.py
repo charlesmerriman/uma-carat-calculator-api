@@ -29,6 +29,7 @@ from calculatorapi.models import (
     GalleryReportReason,
     GalleryVote,
     GALLERY_CAPTION_MAX_LENGTH,
+    GALLERY_STRATEGY_MAX_LENGTH,
     GALLERY_COMMENT_MAX_LENGTH,
     GALLERY_REPORT_NOTE_MAX_LENGTH,
     PVP_DECK_SIZE,
@@ -47,12 +48,14 @@ class GalleryRefused(Exception):
     """An action the gallery's rules refuse. `message` is shown to the person
     as is (written as copy, .claude/rules/copy.md); `status` is the HTTP code
     the view answers with: 400 for something they can fix, 403 for something
-    they may not do."""
+    they may not do. `field` names the request field at fault when there is
+    one, so a form with two text boxes can mark the right one."""
 
-    def __init__(self, message, status=400):
+    def __init__(self, message, status=400, field=None):
         super().__init__(message)
         self.message = message
         self.status = status
+        self.field = field
 
 
 # ── Reading ─────────────────────────────────────────────────────────────────
@@ -134,17 +137,17 @@ def preview_version_for(snapshot):
     return hashlib.sha1(drawn.encode("utf-8")).hexdigest()[:12]
 
 
-def _clean_caption(caption):
-    caption = (caption or "").strip()
-    if len(caption) > GALLERY_CAPTION_MAX_LENGTH:
-        raise GalleryRefused(
-            f"Keep the caption to {GALLERY_CAPTION_MAX_LENGTH} characters."
-        )
+def _clean_text(text, *, field, label, limit):
+    """A post's public text, trimmed and through the filters, or
+    GalleryRefused naming `field`. `label` is what the form calls the box."""
+    text = (text or "").strip()
+    if len(text) > limit:
+        raise GalleryRefused(f"Keep the {label} to {limit:,} characters.", field=field)
     try:
-        gallery_moderation.check_text(caption)
+        gallery_moderation.check_text(text)
     except gallery_moderation.TextRefused as refusal:
-        raise GalleryRefused(str(refusal)) from refusal
-    return caption
+        raise GalleryRefused(str(refusal), field=field) from refusal
+    return text
 
 
 def check_may_publish(user):
@@ -155,14 +158,18 @@ def check_may_publish(user):
         raise GalleryRefused("Set a display name first.")
 
 
-def publish_team(user, team, *, caption="", confirm_public_identity=False):
+def publish_team(user, team, *, caption="", strategy="", confirm_public_identity=False):
     """Post `team` to its event's gallery, or replace the post already there.
 
     Returns (post, created). A replacement keeps the post's public id, so its
-    link keeps working, and its comments, which read "On an earlier version"
-    from then on; it CLEARS the votes, because they were for a different
-    team. `confirm_public_identity` must be literally True: it is the
-    person's agreement, in the dialog, to show their name, picture and tier.
+    link keeps working, and its comments. When the TEAM changed (any uma,
+    style or card), the comments read "On an earlier version" from then on
+    and the votes are CLEARED, because they were for a different team. When
+    only the words changed (`caption`, `strategy`), the votes stay and the post
+    keeps its place: a typo fix is not a new team, and must not be a free
+    bump to the top of New either. `confirm_public_identity` must be
+    literally True: it is the person's agreement, in the dialog, to show
+    their name, picture and tier.
 
     A hidden post stays hidden when replaced: re-posting is not a way out of
     moderation.
@@ -174,7 +181,8 @@ def publish_team(user, team, *, caption="", confirm_public_identity=False):
         # The view resolves the team through pvp_teams.get_owned_team; this is
         # the backstop for any other caller.
         raise GalleryRefused("That team isn't yours.", status=403)
-    caption = _clean_caption(caption)
+    caption = _clean_text(caption, field="caption", label="caption", limit=GALLERY_CAPTION_MAX_LENGTH)
+    strategy = _clean_text(strategy, field="strategy", label="strategy", limit=GALLERY_STRATEGY_MAX_LENGTH)
     snapshot = snapshot_from_team(team)
     event = (
         {"champions_meeting_id": team.champions_meeting_id}
@@ -184,6 +192,7 @@ def publish_team(user, team, *, caption="", confirm_public_identity=False):
     now = timezone.now()
     fields = {
         "caption": caption,
+        "strategy": strategy,
         "team_snapshot": snapshot,
         "preview_version": preview_version_for(snapshot),
         "source_team": team,
@@ -205,10 +214,18 @@ def publish_team(user, team, *, caption="", confirm_public_identity=False):
                 **fields,
             )
             return post, True
+        # The snapshot is built the same way every time (positions and slots
+        # in order), so equal lists are the same team.
+        same_team = post.team_snapshot == snapshot
+        if same_team:
+            # Still the new source team: a copy of the team saved under
+            # another name is the same team to everyone voting on it.
+            del fields["content_updated_at"]
         for name, value in fields.items():
             setattr(post, name, value)
         post.save(update_fields=list(fields))
-        post.votes.all().delete()
+        if not same_team:
+            post.votes.all().delete()
     return post, False
 
 

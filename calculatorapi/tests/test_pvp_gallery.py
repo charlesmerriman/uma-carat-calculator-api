@@ -17,6 +17,7 @@ from calculatorapi.models import (
     GalleryHiddenReason,
     GalleryPost,
     GalleryVote,
+    PvpTeamCard,
 )
 from calculatorapi.tests.base import PLAIN_TEST_STORAGES
 from calculatorapi.tests.factories import auth_client, make_league_of_heroes
@@ -28,7 +29,8 @@ ROW_KEYS = {
     "public_id", "caption", "published_at", "content_updated_at", "is_mine", "umas",
     "stats", "my_vote", "poster",
 }
-FULL_KEYS = ROW_KEYS | {"team", "event", "hidden"}
+# `strategy` only in full: the feed's rows never carry the long text.
+FULL_KEYS = ROW_KEYS | {"team", "event", "hidden", "strategy"}
 POSTER_KEYS = {"display_name", "portrait", "tier_name", "gallery_style"}
 # Keys that must never appear anywhere in a gallery payload.
 FORBIDDEN = {"username", "user", "author", "author_id", "name", "notes", "is_focus",
@@ -73,10 +75,13 @@ class PublishRouteTests(RouteFixture):
     def test_create_then_replace(self):
         user = self.person(SENIOR)
         team = self.team(user)
-        created = self.publish(user, team, {"confirm_public_identity": True, "caption": "Mine"})
+        created = self.publish(
+            user, team, {"confirm_public_identity": True, "caption": "Mine", "strategy": "Why"}
+        )
         self.assertEqual(created.status_code, 201)
         self.assertEqual(set(created.data), FULL_KEYS)
         self.assertEqual(created.data["caption"], "Mine")
+        self.assertEqual(created.data["strategy"], "Why")
         self.assertTrue(created.data["is_mine"])
         self.assertEqual(created.data["event"], {"kind": "cm", "id": self.cm.id, "label": self.cm.name})
         again = self.publish(user, team)
@@ -87,11 +92,21 @@ class PublishRouteTests(RouteFixture):
         user = self.person()
         team = self.team(user)
         for body in ({"confirm_public_identity": "true"}, {"confirm_public_identity": True, "caption": 5},
-                     {"confirm_public_identity": True, "caption": "www.spam.example"}):
+                     {"confirm_public_identity": True, "strategy": ["a list"]}):
             with self.subTest(body=body):
                 response = self.publish(user, team, body)
                 self.assertEqual(response.status_code, 400)
                 self.assertEqual(set(response.data), {"error"})
+
+    def test_a_refused_text_names_its_box(self):
+        user = self.person()
+        team = self.team(user)
+        for field in ("caption", "strategy"):
+            with self.subTest(field=field):
+                response = self.publish(user, team, {"confirm_public_identity": True, field: "www.spam.example"})
+                self.assertEqual(response.status_code, 400)
+                self.assertEqual(response.data["field"], field)
+                self.assertEqual(set(response.data), {"error", "field"})
 
     def test_a_blocked_account_gets_403(self):
         user = self.person()
@@ -362,6 +377,11 @@ class CommentRouteTests(RouteFixture):
 
     def test_an_earlier_version_is_flagged(self):
         self.comment(self.commenter, "Before")
+        # A changed team: re-posting the same one with new words is not a
+        # new version (gallery.publish_team).
+        PvpTeamCard.objects.filter(
+            member__team_id=self.post_row.source_team_id, slot=6
+        ).update(support_card=self.cards[6])
         gallery_repost = self.client_for(self.author).post(
             f"/pvp-teams/{self.post_row.source_team_id}/publish",
             {"confirm_public_identity": True}, format="json",
