@@ -114,6 +114,7 @@ meaning anything instead of rendering a signed-in shell around nothing.
 {
   "username": "user_a3f9c1",
   "display_name": "Rhondal",
+  "show_supporter_badge": true,
   "avatar_url": "https://…/media/umas/special-week.png",
   "oshis": [
     { "position": 0, "id": 42, "name": "Special Week", "image": "https://…/media/umas/special-week.png" }
@@ -189,7 +190,7 @@ reflecting the write.
 
 **Request** — any subset of:
 ```json
-{ "display_name": "Rhondal", "oshis": [42, 7, 113] }
+{ "display_name": "Rhondal", "oshis": [42, 7, 113], "show_supporter_badge": false }
 ```
 
 - **`display_name`** — stripped of surrounding whitespace, at most 32
@@ -776,8 +777,10 @@ A team, both ways (catalogue ids only):
   "notes": [{"text": "Pull Kitasan", "color": "yellow"}],
   "members": [{"position": 0, "uma": 41, "style": "front",
                "cards": [{"slot": 1, "support_card": 302}, {"slot": 6, "support_card": 88}]}],
-  "updated_at": "ISO8601" }
+  "updated_at": "ISO8601", "post": null }
 ```
+
+`post` (out only) is the public id of the gallery post copied from this team, or `null`.
 
 `kind` is `cm` or `loh`. `style` is `runaway` / `front` / `pace` / `late` / `end`. A draft
 may leave positions and slots empty (no entry). **`400 {"error": "<one sentence>"}`**,
@@ -787,6 +790,60 @@ the same card twice in one deck (borrow slot included), an unknown uma or card, 
 notes, a note over 1000 characters or an unknown colour (`yellow` / `pink` / `blue` /
 `green`), and creating a sixth team for one event (`PVP_TEAM_CAP_PER_EVENT`; a save to an
 existing team is never refused for it). A refused `PUT` leaves the team as it was.
+
+## Gallery
+
+Posting a PvP team and everything about a post (`views/pvp_gallery.py`, `views/gallery.py`,
+`views/gallery_share.py`; rules in `gallery.py`). A refusal is `{"error": "<one sentence>"}`
+written for the player: `400` for something they can fix, `403` for something they may not
+do. A hidden post, a blocked author's post and an unknown id are the same `404`, except to
+the post's own author.
+
+| Route | Who | Returns |
+|---|---|---|
+| `POST /pvp-teams/<id>/publish` `{confirm_public_identity: true, caption?}` | owner | `201` a new post, `200` a re-post (votes cleared, link and comments kept). Needs the flag literally `true`, a display name, three umas, eighteen cards, no repeated character, a caption that passes the filters |
+| `GET /pvp-gallery/<kind>/<event_id>?sort=hot\|top\|new&page=N` | anyone | `{count, sort, page, has_more, results: [row]}`, 20 per page |
+| `GET /gallery/posts/<public_id>` | anyone | the full post |
+| `DELETE /gallery/posts/<public_id>` | author | `204`, the post with its votes, comments and reports |
+| `PUT` / `DELETE /gallery/posts/<public_id>/vote` | signed in | `{upvotes, my_vote}`; `403` on your own post |
+| `POST /gallery/posts/<public_id>/view` | anyone | always `204`; counted once per viewer per day |
+| `POST /gallery/posts/<public_id>/copy` | anyone | `{kind, event, members}`; the client adds the team through its own path |
+| `GET /gallery/my-posts` | signed in | the caller's posts, hidden ones too (`"hidden": true`) |
+| `GET /gallery/posts/<public_id>/comments?page=N` | anyone | `{count, page, has_more, results: [comment]}`, 50 top comments per page |
+| `POST /gallery/posts/<public_id>/comments` `{body, parent?}` | signed in, display name | `201` the comment |
+| `PATCH` / `DELETE /gallery/comments/<id>` `{body}` | its author | the comment / `204` |
+| `POST /gallery/reports` `{post: public_id}` or `{comment: id}`, `reason`, `note?` | signed in | `201`, no body; `409` on a repeat |
+| `GET /post/<public_id>` | anyone | HTML: link-preview tags, then on to the post in the app. **Not under `/api`** |
+| `GET /post/<public_id>/preview.jpg?v=<version>` | anyone | the 1200x630 preview JPEG |
+
+A feed row (the full post adds `team`, `event`, `hidden` and `stats.copies`):
+
+```json
+{ "public_id": "k3Df8aQ2", "caption": "Runaway blocker", "published_at": "ISO8601",
+  "content_updated_at": "ISO8601", "is_mine": false,
+  "umas": [{"uma": 41, "style": "runaway"}],
+  "stats": {"views": 212, "upvotes": 14, "comments": 5},
+  "my_vote": false,
+  "poster": {"display_name": "MooncakeMile", "portrait": "https://...png",
+             "tier_name": "Senior Class", "gallery_style": "ssr"} }
+```
+
+`my_vote` is `null` for a guest. `poster` is `public_identity.poster_block`: `tier_name` and
+`gallery_style` (`ssr` / `sr` / `rose`) are `null` without a live pledge or with the badge
+off. `upvotes` counts people; the weighted points that rank the feed never leave the server.
+Never in any gallery payload: a username, a user id, the team's name, notes or pin, a vote
+weight, a tier order, who voted, viewed or reported.
+
+A comment: `{id, state, body, created_at, edited, earlier_version, is_author, is_mine,
+poster, replies: [comment]}`. `state` is `visible`, `deleted` ("[deleted]"), `removed`
+("[removed]") or `under_review` (your own hidden comment); only `visible` and
+`under_review` carry `body` and `poster`. `reason` is `spam`, `harassment`,
+`sexual_or_violent`, `personal_info` or `other`.
+
+Throttles (all in the `gallery` cache): `gallery_read` 120/h, `gallery_vote` 120/h,
+`gallery_view` 300/h (dropped quietly), `gallery_copy` 30/h, `gallery_publish` 20/h,
+`gallery_comment` 20/h (5/h for accounts younger than a day), `gallery_report` 20/day,
+`gallery_share` 600/h.
 
 ---
 

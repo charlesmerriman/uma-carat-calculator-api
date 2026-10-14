@@ -255,6 +255,31 @@ two, so adding a name to `MEMBER_FIELDS` is the review point.
 
 ---
 
+## Gallery moderation
+
+`admin_gallery.py`, under "Users & access": **Gallery reports** (the queue), **Gallery
+posts**, **Gallery comments** and **Blocked terms**. Nothing here can be added by hand:
+posts, comments, votes and reports come from people through the API.
+
+- **The queue** lists open reports first, each with the item, how many open reports it has
+  and whether it is hidden. Three actions work on the ITEMS behind the selected reports and
+  close their open reports with the moderator's name: **Keep** (show it again), **Remove**
+  (hide it for good; kept in the database, so reversible) and **Block author** (Remove, and
+  set `publishing_blocked`). The post and comment pages carry the same three, for something
+  spotted without a report. All three go through `gallery_moderation`, the same code the
+  auto-hide uses.
+- **Auto-hide**: three open reports from different accounts hide an item until someone
+  decides. If `MODERATION_WEBHOOK_URL` is set, a Discord channel hears about an item's first
+  report and its auto-hide, with a link to the queue (never the text, never the reporter).
+- A post's page lists its voters (admin only), for spotting a brigade of new accounts.
+- **Blocked terms** are refused in captions, comments and display names. "Whole word" is the
+  safe default; "Anywhere" also matches inside longer words. A refusal tells the person to
+  check the posting rules, never which word.
+- **Users** gain a "Moderation" fieldset: `publishing_blocked` (editable) and the person's
+  own `show_supporter_badge` (read-only). Unblocking brings everything they posted back.
+- Who moderates: staff, and anyone given the gallery models' permissions.
+  `create_content_editor_group` does not grant them: moderation is not content editing.
+
 ## Analytics dashboard
 
 `/admin/analytics/` (staff-only, linked from the admin index) shows aggregate usage

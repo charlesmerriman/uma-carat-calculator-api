@@ -380,8 +380,9 @@ serializer's pre-check gives the friendly 400 ("That name is taken."), the
 constraint is the backstop for a race, and the view maps that `IntegrityError`
 to the same 400. Migration `0057` blanks later duplicates before adding the
 constraint (insurance for local databases; prod never held a name before it).
-Personal data (a chosen name is), so `purge_user_pii` blanks it and it is never
-serialized anywhere public today.
+Personal data (a chosen name is), so `purge_user_pii` blanks it. Public in ONE place: beside
+a gallery post or comment its owner made, through `public_identity.poster_block` (posting is
+the opt-in; see "The gallery" below). Blanking it is refused while the person has a post up.
 
 → [auth-and-privacy.md](auth-and-privacy.md) for why this is not a profile
 attribute, and [api-reference.md](api-reference.md) for the route.
@@ -1000,6 +1001,66 @@ shape on the device (frontend `services/guestPvpTeamStore.ts`).
 - Every team id goes through `pvp_teams.get_owned_team()`; somebody else's is a 404.
 - `DELETE /account` cascades; `purge_user_pii` leaves teams alone (they hold nothing about
   the person).
+- A team's `gallery_posts` are the gallery posts copied from it (at most one). The post is a
+  frozen copy, so editing or deleting the team never changes it.
+
+### The gallery: `GalleryPost` and what hangs off it
+
+`models/gallery.py`, all PRIVATE (`content_snapshot.PRIVATE_MODELS`) and on
+`public_payload_cache._IRRELEVANT_MODELS`, so a vote or a comment never rebuilds
+`/calculator-data`. The rules live in `gallery.py` (posting, votes, views, copies, comments,
+reports, erasure), `gallery_ranking.py` (Hot / Top / New), `gallery_moderation.py` (text
+filters, auto-hide, the moderator's decisions, the Discord alert) and `public_identity.py`
+(the one place a person is shown beside public content).
+
+**One generic parent.** Today the only kind is a PvP team; the community plan gallery is
+meant to be a second kind of the same post. So votes, comments and reports point at
+`GalleryPost` by a real FK, and the kind-specific columns are nullable and tied to their kind
+by `gallery_post_event_matches_kind` (the `PvpTeam` XOR idiom). A `GenericForeignKey` would
+lose FK integrity and cascades; tables per gallery would write this twice.
+
+- **`GalleryPost`**: `public_id` (8 characters, the permanent link `/post/<public_id>`, kept
+  through re-posts), `author` (CASCADE), `kind`, `caption` (140, the one line of public text;
+  the team's name is never shown), `published_at`, `content_updated_at` (moves on every
+  re-post; Hot ages from it and New sorts by it), `is_hidden` / `hidden_reason` (`reports` or
+  `moderator`) / `hidden_at` (`gallery_post_hidden_has_reason`), `view_count` and
+  `copy_count` (bumped with `F() + 1`). PvP columns: the `champions_meeting` /
+  `league_of_heroes` pair, `team_snapshot` (JSON, the same member shape as a team), the
+  `preview_version` hash (umas and styles; part of the preview image URL) and `source_team`
+  (SET_NULL, never serialized). **One post per person per event** in the database
+  (`one_gallery_post_per_author_cm` / `_loh`).
+- **A post is a FROZEN COPY.** With votes on it, a live team could collect votes and then
+  swap its cards. Posting again for the same event replaces the copy, keeps the `public_id`
+  and the comments (older ones read "On an earlier version"), and **clears the votes**. A
+  hidden post stays hidden when re-posted.
+- **`GalleryVote`**: `(post, user)` unique. **No weight column**: a vote's weight comes from
+  the voter's pledge when the gallery is ranked (`benefits.VOTE_WEIGHT_LADDER`: 1, then
+  2 / 3 / 4 by tier), so a lapse takes the extra weight off every past vote at once. A post
+  also starts with its author's own weight (the head start). Weights never leave the server.
+- **`GalleryComment`**: one level of replies (`parent`; a reply to a reply attaches to its top
+  comment), `body` (500), `edited_at`, the hidden trio, and `is_deleted`: a comment deleted
+  while it has replies keeps its place as "[deleted]" with no text and no author.
+  `author` is SET_NULL for the same reason.
+- **`GalleryReport`**: exactly one of `post` / `comment` (`gallery_report_one_target`), a
+  reason, an optional note, and `resolved_at` / `resolved_by` / `resolution` (`kept` /
+  `removed`). One per person per item. Three open reports from different accounts hide the
+  item (`gallery_moderation.AUTO_HIDE_REPORTS`). `reporter` is SET_NULL so the record
+  survives the account.
+- **`BlockedTerm`**: words refused in captions, comments and display names, stored
+  normalised (NFKC, invisible characters removed, casefolded), matched as a whole word or
+  anywhere. Staff edit it in the admin; PRIVATE, so a local database starts empty.
+- **`CustomUser`** gains `show_supporter_badge` (the person's switch for their tier name and
+  look on posts and comments) and `publishing_blocked` (admin only: no posting, commenting,
+  voting or reporting, everything they posted hidden through the read filter
+  `gallery.visible_posts()` without being deleted, and their votes stop counting).
+- **Views are counted without storing viewers**: a cache key per viewer per post per day in
+  the `gallery` cache (an account id, or a day-salted digest of IP and user agent), never a
+  table. That cache and the gallery's throttle counters are kept out of `default` so they
+  cannot evict the `/calculator-data` payload from its 40 slots.
+- **Erasure**: `gallery.erase_users()` is the one function `DELETE /account` (before the row
+  goes) and `purge_user_pii` both call: posts, votes and comments go (a comment others
+  replied to becomes "[deleted]"), reports keep their record with the reporter cleared.
+- **Demo data** for local work: `manage.py seed_gallery_demo` (SQLite only; `--clear`).
 
 ### Through tables carry recommendation text
 
