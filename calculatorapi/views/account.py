@@ -1,8 +1,9 @@
 """
 GET    /account — who the caller is, and what they are entitled to.
-PATCH  /account — change the two preferences an account has: a display name
-                  and the list of favourite umas ("oshis") whose first entry
-                  is their picture.
+PATCH  /account — change the preferences an account has: a display name, the
+                  list of favourite umas ("oshis") whose first entry is their
+                  picture, and whether their supporter tier shows in the
+                  gallery (show_supporter_badge).
 DELETE /account — remove the caller's account and everything that is theirs.
 
 WHY THIS IS ITS OWN ROUTE
@@ -121,8 +122,15 @@ from rest_framework import permissions, serializers, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
-from calculatorapi import benefits, public_identity
-from calculatorapi.models import OSHI_SLOT_CAP, CustomUser, SocialAccount, Uma, UserOshi
+from calculatorapi import benefits, gallery_moderation, public_identity
+from calculatorapi.models import (
+    OSHI_SLOT_CAP,
+    CustomUser,
+    GalleryPost,
+    SocialAccount,
+    Uma,
+    UserOshi,
+)
 
 
 class LinkedProviderSerializer(serializers.ModelSerializer):
@@ -191,7 +199,9 @@ class AccountPreferencesSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ["display_name", "oshis"]
+        # show_supporter_badge: the person's switch for their tier and look
+        # beside gallery posts and comments (public_identity.poster_block).
+        fields = ["display_name", "oshis", "show_supporter_badge"]
 
     def validate_oshis(self, umas):
         """Distinct, on offer, and never MORE than the person is entitled to hold.
@@ -277,6 +287,20 @@ class AccountPreferencesSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     "That name has characters that can't be shown."
                 )
+        if not value and GalleryPost.objects.filter(author=self.instance).exists():
+            # A post shows the name, and a post with no name would show
+            # nobody. Refused with the reason rather than taking the posts
+            # down behind the person's back. Comments do not block it: with
+            # the name blank they read "Unnamed trainer", which is also how
+            # someone withdraws their name from old comments.
+            raise serializers.ValidationError("Take your posted teams down first.")
+        try:
+            # The name is public beside gallery posts and comments, so it
+            # passes the same blocked-terms list. Links are not refused here:
+            # 32 characters with no spaces are the account rules' business.
+            gallery_moderation.check_text(value, allow_links=True)
+        except gallery_moderation.TextRefused as refusal:
+            raise serializers.ValidationError(str(refusal)) from refusal
         if value:
             others = CustomUser.objects.exclude(pk=self.instance.pk)
             if others.filter(display_name__iexact=value).exists() or others.filter(
@@ -367,6 +391,9 @@ def _account_summary(user):
         # The name they chose, or "" when they have not. Not null: "" is the
         # stored value, and the client shows the handle in its place.
         "display_name": user.display_name,
+        # Whether their tier and look show beside their gallery posts and
+        # comments. Their own switch; the pledge itself is unaffected.
+        "show_supporter_badge": user.show_supporter_badge,
         # null, not "", when there is no picture: the client draws its own
         # fallback on null and would try to load "" as an image.
         "avatar_url": public_identity.current_avatar_url(oshis, slots),

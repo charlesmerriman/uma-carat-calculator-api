@@ -34,6 +34,14 @@ from calculatorapi.views.site_content import site_content
 from calculatorapi.views.pvp_guide import pvp_guide_detail
 from calculatorapi.views.pvp_catalogue import pvp_catalogue
 from calculatorapi.views.pvp_team import pvp_team_detail, pvp_team_list
+from calculatorapi.views.gallery import (
+    gallery_my_posts,
+    gallery_post_copy,
+    gallery_post_detail,
+    gallery_post_view,
+    gallery_post_vote,
+)
+from calculatorapi.views.pvp_gallery import pvp_gallery_feed, pvp_team_publish
 from calculatorapi.views.social_auth import social_auth_start, social_auth_complete
 
 router = routers.SimpleRouter(trailing_slash=False)
@@ -124,6 +132,17 @@ urlpatterns = [
     # → views/pvp_team.py
     path("pvp-teams", pvp_team_list, name="pvp-team-list"),
     path("pvp-teams/<int:team_id>", pvp_team_detail, name="pvp-team-detail"),
+    # The PvP gallery: posting a team and one event's ranked feed.
+    # → views/pvp_gallery.py
+    path("pvp-teams/<int:team_id>/publish", pvp_team_publish, name="pvp-team-publish"),
+    path("pvp-gallery/<str:kind>/<int:event_id>", pvp_gallery_feed, name="pvp-gallery-feed"),
+    # One gallery post, whatever gallery it is in: read, take down, vote,
+    # count a view, copy. → views/gallery.py
+    path("gallery/my-posts", gallery_my_posts, name="gallery-my-posts"),
+    path("gallery/posts/<str:public_id>", gallery_post_detail, name="gallery-post-detail"),
+    path("gallery/posts/<str:public_id>/vote", gallery_post_vote, name="gallery-post-vote"),
+    path("gallery/posts/<str:public_id>/view", gallery_post_view, name="gallery-post-view"),
+    path("gallery/posts/<str:public_id>/copy", gallery_post_copy, name="gallery-post-copy"),
     # Social sign-in (Google / Discord). The <provider> segment is validated by
     # the view against oauth.SUPPORTED_PROVIDERS rather than by a URL regex, so
     # an unknown provider gets a JSON 404 instead of Django's HTML one.

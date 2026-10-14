@@ -49,10 +49,11 @@ def get_owned_team(user, team_id):
 
 
 def owned_teams(user):
-    """Every team `user` holds, with members and cards in two prefetches."""
+    """Every team `user` holds, with members, cards and any gallery post
+    copied from it, in three prefetches."""
     return (
         PvpTeam.objects.filter(user=user)
-        .prefetch_related("members__cards")
+        .prefetch_related("members__cards", "gallery_posts")
     )
 
 

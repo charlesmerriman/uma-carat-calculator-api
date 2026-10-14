@@ -18,7 +18,7 @@ client draws them from GET /pvp-catalogue):
 
     {id, kind: "cm" | "loh", event, name, is_focus, notes: [{text, color}],
      members: [{position, uma, style, cards: [{slot, support_card}]}],
-     updated_at}
+     updated_at, post}    (post: the gallery post's public id, or null; out only)
 
 A refusal is a 400 with {"error": "<one sentence for the player>"}; the builder
 shows it as a toast. Never through PATCH /calculator-data: teams save on their
@@ -148,6 +148,11 @@ def serialize_team(team):
             for member in team.members.all()
         ],
         "updated_at": team.updated_at,
+        # The public id of the gallery post copied from this team, or null.
+        # So My team can say "Posted" on the right team and link to it. At
+        # most one: a post is per event, and posting another team for the
+        # same event moves the post's source to that team.
+        "post": next((post.public_id for post in team.gallery_posts.all()), None),
     }
 
 

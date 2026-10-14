@@ -387,6 +387,19 @@ REST_FRAMEWORK = {
         # script inflating a count is capped here, not stopped, which is
         # acceptable for a number that is social proof.
         "public_plan_copy": "30/hour",
+        # The gallery (views/gallery.py, views/pvp_gallery.py). Reads cover
+        # feeds, posts and comments; a busy reader stays well under 120.
+        "gallery_read": "120/hour",
+        # Every upvote and take-back. Generous: clicking around a feed is
+        # honest use; a script running votes up is capped.
+        "gallery_vote": "120/hour",
+        # Checked by hand, so an over-limit view is dropped rather than
+        # answered 429 (the client fires and forgets).
+        "gallery_view": "300/hour",
+        # The public_plan_copy figure, for the same reasons.
+        "gallery_copy": "30/hour",
+        # A re-post moves a post to the top of New and clears its votes.
+        "gallery_publish": "20/hour",
     },
 }
 
