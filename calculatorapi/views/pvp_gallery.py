@@ -4,7 +4,7 @@ The PvP team gallery: posting a team, and one event's feed.
 POST /pvp-teams/<id>/publish            post the team, or replace your post for
                                         its event (signed in)
 GET  /pvp-gallery/<kind>/<event_id>     the event's posts, ranked (anyone)
-     ?sort=hot|top|new&page=N
+     ?sort=hot|top|new&uma=<id>&limit=N
 
 Everything about one post (votes, views, copies, taking it down) is on the
 shared /gallery/posts routes (views/gallery.py).
@@ -29,9 +29,17 @@ from calculatorapi.views.gallery import (
     post_payload,
     refused,
     serialize_posts,
+    uma_tally,
 )
 
+# How many rows a feed request returns by default, and the most it may ask for.
+# "Load more" asks for a LONGER list from the top, never for the next slice:
+# Hot and Top are re-ranked on every request, so an offset page cut from a
+# fresh ranking repeats a post that sank and skips one that rose since the
+# page before it. Re-sending the rows above costs a few kilobytes; one event's
+# gallery is small (gallery_ranking.py, "Scale").
 GALLERY_PAGE_SIZE = 20
+GALLERY_LIMIT_MAX = 200
 
 
 class GalleryPublishThrottle(GalleryThrottle):
@@ -71,11 +79,13 @@ def pvp_team_publish(request, team_id):
 @permission_classes([permissions.AllowAny])
 @throttle_classes([GalleryReadThrottle])
 def pvp_gallery_feed(request, kind, event_id):
-    """One event's posts, ranked, a page at a time.
+    """One event's posts, ranked, the top `limit` of them.
 
-    The whole event is ranked and then sliced, because Hot depends on every
+    The whole event is ranked and then cut, because Hot depends on every
     post's age and points together; one event's gallery is small enough
-    (gallery_ranking.py, "Scale").
+    (gallery_ranking.py, "Scale"). `uma` keeps the posts whose team has that
+    uma; `umas` lists every uma in the event's posts, filter or not, with how
+    many posts have it, so the filter only offers umas that find something.
     """
     try:
         event = pvp_teams.resolve_event(kind, event_id)
@@ -84,19 +94,34 @@ def pvp_gallery_feed(request, kind, event_id):
     sort = request.query_params.get("sort", gallery_ranking.SORT_HOT)
     if sort not in gallery_ranking.SORTS:
         sort = gallery_ranking.SORT_HOT
-    try:
-        page = max(int(request.query_params.get("page", 1)), 1)
-    except ValueError:
-        page = 1
+    limit = _int_param(request, "limit", GALLERY_PAGE_SIZE)
+    limit = min(max(limit, 1), GALLERY_LIMIT_MAX) if limit is not None else GALLERY_PAGE_SIZE
+    # An unreadable uma is no filter at all; a readable one nobody used is an
+    # empty feed, which the client words as such.
+    uma = _int_param(request, "uma", None)
 
     posts = gallery.visible_posts().filter(**event).select_related("author")
     ranked = gallery_ranking.ranked(posts, sort)
-    start = (page - 1) * GALLERY_PAGE_SIZE
-    window = ranked[start:start + GALLERY_PAGE_SIZE]
+    tally = uma_tally(ranked)
+    if uma is not None:
+        ranked = [post for post in ranked if any(member["uma"] == uma for member in post.team_snapshot)]
     return Response({
         "count": len(ranked),
         "sort": sort,
-        "page": page,
-        "has_more": start + GALLERY_PAGE_SIZE < len(ranked),
-        "results": serialize_posts(window, request.user),
+        "limit": limit,
+        "has_more": len(ranked) > limit,
+        "results": serialize_posts(ranked[:limit], request.user),
+        "umas": tally,
     })
+
+
+def _int_param(request, name, default):
+    """A whole-number query parameter, `default` when it is missing, and None
+    when it is there but not a number."""
+    raw = request.query_params.get(name)
+    if raw is None:
+        return default
+    try:
+        return int(raw)
+    except ValueError:
+        return None

@@ -22,7 +22,7 @@ from calculatorapi.tests.base import PLAIN_TEST_STORAGES
 from calculatorapi.tests.factories import auth_client, make_league_of_heroes
 from calculatorapi.tests.test_gallery import CLASSIC, JUNIOR, SENIOR, GalleryFixture
 from calculatorapi.views.gallery import GalleryCopyThrottle, GalleryReadThrottle, GalleryVoteThrottle
-from calculatorapi.views.pvp_gallery import GALLERY_PAGE_SIZE, GalleryPublishThrottle
+from calculatorapi.views.pvp_gallery import GALLERY_LIMIT_MAX, GALLERY_PAGE_SIZE, GalleryPublishThrottle
 
 ROW_KEYS = {
     "public_id", "caption", "published_at", "content_updated_at", "is_mine", "umas",
@@ -114,7 +114,7 @@ class FeedTests(RouteFixture):
         self.post(self.person(CLASSIC, display_name="Turf"), )
         response = self.feed()
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(set(response.data), {"count", "sort", "page", "has_more", "results"})
+        self.assertEqual(set(response.data), {"count", "sort", "limit", "has_more", "results", "umas"})
         row = response.data["results"][0]
         self.assertEqual(set(row), ROW_KEYS)
         self.assertEqual(set(row["poster"]), POSTER_KEYS)
@@ -145,18 +145,61 @@ class FeedTests(RouteFixture):
         ids = [row["public_id"] for row in self.feed().data["results"]]
         self.assertEqual(ids, [shown.public_id])
 
-    def test_sort_and_paging(self):
+    def test_sort_and_limit(self):
         authors = [self.person() for _ in range(GALLERY_PAGE_SIZE + 1)]
         for author in authors:
             self.post(author)
         first = self.feed(sort="new")
         self.assertEqual(first.data["count"], GALLERY_PAGE_SIZE + 1)
+        self.assertEqual(first.data["limit"], GALLERY_PAGE_SIZE)
         self.assertTrue(first.data["has_more"])
         self.assertEqual(len(first.data["results"]), GALLERY_PAGE_SIZE)
-        second = self.feed(sort="new", page=2)
-        self.assertFalse(second.data["has_more"])
-        self.assertEqual(len(second.data["results"]), 1)
+        # "Load more" asks for a longer list from the top, so the rows it
+        # already had come back first, in the same order.
+        longer = self.feed(sort="new", limit=GALLERY_PAGE_SIZE * 2)
+        self.assertFalse(longer.data["has_more"])
+        self.assertEqual(len(longer.data["results"]), GALLERY_PAGE_SIZE + 1)
+        self.assertEqual(
+            [row["public_id"] for row in longer.data["results"][:GALLERY_PAGE_SIZE]],
+            [row["public_id"] for row in first.data["results"]],
+        )
         self.assertEqual(self.feed(sort="bogus").data["sort"], "hot")
+
+    def test_limit_is_clamped(self):
+        self.post(self.person())
+        self.assertEqual(self.feed(limit=0).data["limit"], 1)
+        self.assertEqual(self.feed(limit=10_000).data["limit"], GALLERY_LIMIT_MAX)
+        self.assertEqual(self.feed(limit="lots").data["limit"], GALLERY_PAGE_SIZE)
+
+    def test_uma_filter_and_tally(self):
+        maruzensky, oguri, gold_ship, christmas = (uma.id for uma in self.umas)
+        both = self.post(self.person())                                       # Maruzensky, Oguri, Gold Ship
+        self.post(self.person(), umas=[self.umas[0], self.umas[2], self.umas[3]])  # Maruzensky, Gold Ship, Christmas
+
+        everything = self.feed()
+        self.assertEqual(everything.data["count"], 2)
+        self.assertEqual(everything.data["umas"], [
+            {"uma": maruzensky, "count": 2},
+            {"uma": gold_ship, "count": 2},
+            {"uma": oguri, "count": 1},
+            {"uma": christmas, "count": 1},
+        ])
+
+        filtered = self.feed(uma=oguri)
+        self.assertEqual([row["public_id"] for row in filtered.data["results"]], [both.public_id])
+        self.assertEqual(filtered.data["count"], 1)
+        # The tally is the whole event's, so the menu does not shrink to the
+        # one uma already picked.
+        self.assertEqual(filtered.data["umas"], everything.data["umas"])
+
+        self.assertEqual(self.feed(uma=999_999).data["count"], 0)
+        self.assertEqual(self.feed(uma="oguri").data["count"], 2)
+
+    def test_the_tally_leaves_out_umas_gone_from_the_catalogue(self):
+        self.post(self.person())
+        gone = self.umas[2].id
+        self.umas[2].delete()
+        self.assertNotIn(gone, [entry["uma"] for entry in self.feed().data["umas"]])
 
     def test_an_unknown_event_is_a_404(self):
         self.assertEqual(APIClient().get("/pvp-gallery/cm/9999").status_code, 404)

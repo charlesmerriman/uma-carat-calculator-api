@@ -99,6 +99,21 @@ def _known_ids(posts):
     )
 
 
+
+def uma_tally(posts):
+    """[{uma, count}] over these posts' teams, most-used first then by id:
+    each uma counted once per post, and only umas still in the catalogue, so
+    the feed's filter never offers one the rows cannot draw."""
+    known, _ = _known_ids(posts)
+    counts = {}
+    for post in posts:
+        for uma in {member["uma"] for member in post.team_snapshot} & known:
+            counts[uma] = counts.get(uma, 0) + 1
+    return [
+        {"uma": uma, "count": count}
+        for uma, count in sorted(counts.items(), key=lambda item: (-item[1], item[0]))
+    ]
+
 def _comment_counts(posts):
     """{post id: comments a reader can see}. Hidden, deleted and blocked
     authors' comments are not counted, matching what the thread shows."""

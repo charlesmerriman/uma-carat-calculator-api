@@ -802,7 +802,7 @@ the post's own author.
 | Route | Who | Returns |
 |---|---|---|
 | `POST /pvp-teams/<id>/publish` `{confirm_public_identity: true, caption?}` | owner | `201` a new post, `200` a re-post (votes cleared, link and comments kept). Needs the flag literally `true`, a display name, three umas, eighteen cards, no repeated character, a caption that passes the filters |
-| `GET /pvp-gallery/<kind>/<event_id>?sort=hot\|top\|new&page=N` | anyone | `{count, sort, page, has_more, results: [row]}`, 20 per page |
+| `GET /pvp-gallery/<kind>/<event_id>?sort=hot\|top\|new&uma=<id>&limit=N` | anyone | `{count, sort, limit, has_more, results: [row], umas: [{uma, count}]}`: the top `limit` rows (20 by default, at most 200) |
 | `GET /gallery/posts/<public_id>` | anyone | the full post |
 | `DELETE /gallery/posts/<public_id>` | author | `204`, the post with its votes, comments and reports |
 | `PUT` / `DELETE /gallery/posts/<public_id>/vote` | signed in | `{upvotes, my_vote}`; `403` on your own post |
@@ -827,6 +827,13 @@ A feed row (the full post adds `team`, `event` (`{kind, id, label}`, the label b
   "poster": {"display_name": "MooncakeMile", "portrait": "https://...png",
              "tier_name": "Senior Class", "gallery_style": "ssr"} }
 ```
+
+**"Load more" asks for a longer `limit`, never a next page.** Hot and Top are re-ranked on
+every request, so an offset page cut from a fresh ranking would repeat a post that sank and
+skip one that rose since the page before. `uma` keeps the posts whose team has that uma (a
+non-number is ignored); `count` and `has_more` follow the filter, and `umas` is the whole
+event's tally either way (each uma once per post, most-used first, catalogue umas only), so
+the filter menu only offers umas that find something.
 
 `my_vote` is `null` for a guest. `poster` is `public_identity.poster_block`: `tier_name` and
 `gallery_style` (`ssr` / `sr` / `rose`) are `null` without a live pledge or with the badge
