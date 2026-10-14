@@ -18,12 +18,15 @@ Layout of this file:
      the "Rebuild website" button that re-bakes them into the public site)
 
 The join models (UmasOnUmaBanner, SupportsOnSupportBanner, UmaSkill,
-SupportCardSkill, DailyLegendRaceUma) and every PvP guide child except PvpDeck
-are deliberately NOT registered top-level — they are edited through inlines on
-their parent pages. PvpDeck is registered because its slots need an inline of
-their own, and the admin allows only one level. The "Content editors"
-group (see management/commands/create_content_editor_group.py) still needs
-permissions on them for the inlines to save.
+SupportCardSkill, DailyLegendRaceUma) and every PvP guide child are
+deliberately NOT registered top-level — they are edited through inlines on
+their parent pages. The "Content editors" group (see
+management/commands/create_content_editor_group.py) still needs permissions on
+them for the inlines to save.
+
+The PvP guide admin (one page per guide, one tab per running style, the decks
+with their cards nested) lives in admin_pvp.py, imported below so it registers
+with the site. The two event admins here only link to it (pvp_guide_link).
 """
 
 # unfold's ModelAdmin has a deeper class hierarchy than pylint's default
@@ -39,7 +42,6 @@ permissions on them for the inlines to save.
 
 from datetime import timedelta
 
-from django import forms
 from django.contrib import admin, messages
 from django.contrib.auth.admin import GroupAdmin as BaseGroupAdmin
 from django.contrib.auth.admin import UserAdmin
@@ -57,6 +59,9 @@ from unfold.admin import ModelAdmin, StackedInline, TabularInline
 from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
 
 from .admin_image_picker import SpacesImagePickerMixin
+# Importing admin_pvp registers the PvP guide admin; the mixin and fieldset
+# put the "PvP guide" link on the two event pages.
+from .admin_pvp import PVP_GUIDE_FIELDSET, PvpGuideLinkMixin
 from . import digitalocean_api, patreon_api
 from .admin_patreon_import import (
     PatreonCsvImportForm,
@@ -71,8 +76,6 @@ from .models import (
     TeamTrialsRank, ClubRank, ChampionsMeetingRank, LeagueOfHeroesRank,
     BannerTimeline, BannerUma, BannerSupport, BannerStepUp,
     ChampionsMeeting,
-    PvpGuide, PvpGuideSkills, PvpStatConfig, PvpUmaRecommendation, PvpSkillRecommendation,
-    PvpStyleNote, PvpDeck, PvpDeckSlot, PvpHonorableMention, PvpTeamComp,
     SupportsOnSupportBanner, UmasOnUmaBanner,
     GameEvent, LeagueOfHeroes, Scenario,
     DailyLegendRaceRelease, DailyLegendRaceUma,
@@ -209,143 +212,6 @@ class AnniversaryEventProductInline(TabularInline):
     extra = 1
 
 
-# The PvP guide's children, all on the guide's page. Every one carries an
-# `order` column (lower shows first), so the inlines sort by it too.
-
-class PvpStatConfigInline(TabularInline):
-    """Recommended stats: one row per style and variant."""
-    model = PvpStatConfig
-    fields = ("style", "label", "speed", "stamina", "power", "guts", "wit", "footnote", "order")
-    ordering = ("order", "id")
-    extra = 1
-
-
-class PvpUmaRecommendationInline(TabularInline):
-    model = PvpUmaRecommendation
-    fields = ("style", "uma", "stars", "role", "note", "order")
-    autocomplete_fields = ("uma",)
-    ordering = ("order", "id")
-    extra = 1
-
-
-class _PositionSkillInline(TabularInline):
-    """Recommended skills for ONE position, on the guide's Skills page.
-
-    Six subclasses, one per position, each showing only its own rows. The
-    position is fixed by the subclass, so an editor never picks it: `style`
-    rides along as a hidden field set to the subclass's value, which also keeps
-    it in the form for the unique (guide, style, category, skill) check.
-
-    Each needs its own formset prefix: six inlines of one model would all
-    default to "skill_recommendations" and overwrite each other's POST data.
-
-    The skill autocomplete offers global skills only: the FK's
-    limit_choices_to reaches the autocomplete view too.
-    """
-    model = PvpSkillRecommendation
-    fields = ("style", "skill", "category", "tier", "note", "order")
-    autocomplete_fields = ("skill",)
-    ordering = ("tier", "order", "id")
-    extra = 1
-    style = None  # set by each subclass
-
-    def get_queryset(self, request):
-        return super().get_queryset(request).filter(style=self.style)
-
-    def get_formset(self, request, obj=None, **kwargs):
-        kwargs["widgets"] = {"style": forms.HiddenInput}
-        formset = super().get_formset(request, obj, **kwargs)
-        style = self.style
-
-        class PositionFormSet(formset):
-            @classmethod
-            def get_default_prefix(cls):
-                return f"skills-{style}"
-
-            def _construct_form(self, i, **form_kwargs):
-                form = super()._construct_form(i, **form_kwargs)
-                # Existing rows already carry it; blank rows start with it, and
-                # a matching initial keeps an untouched blank row "unchanged".
-                form.fields["style"].initial = style
-                if form.instance.pk is None:
-                    form.instance.style = style
-                return form
-
-        return PositionFormSet
-
-
-def _position_inline(style, label):
-    return type(
-        f"PvpSkills{style.capitalize()}Inline",
-        (_PositionSkillInline,),
-        {
-            "style": style,
-            "verbose_name": f"{label} skill",
-            "verbose_name_plural": f"{label}: recommended skills",
-        },
-    )
-
-
-POSITION_SKILL_INLINES = tuple(
-    _position_inline(style, label)
-    for style, label in (
-        # The general skills: shown on the site inside EVERY position's
-        # "Recommended skills", merged with that position's own picks.
-        ("everyone", "General (all positions)"),
-        ("runaway", "Runaway"),
-        ("front", "Front"),
-        ("pace", "Pace"),
-        ("late", "Late"),
-        ("end", "End"),
-    )
-)
-
-
-class PvpStyleNoteInline(StackedInline):
-    """One block of advice per style. Stacked: the body is a long text."""
-    model = PvpStyleNote
-    fields = ("style", "body")
-    extra = 0
-
-
-class PvpHonorableMentionInline(TabularInline):
-    model = PvpHonorableMention
-    fields = ("style", "support_card", "note", "order")
-    autocomplete_fields = ("support_card",)
-    ordering = ("order", "id")
-    extra = 1
-
-
-class PvpTeamCompInline(TabularInline):
-    model = PvpTeamComp
-    fields = ("order", "text", "note")
-    ordering = ("order", "id")
-    extra = 1
-
-
-class PvpDeckInline(TabularInline):
-    """The deck list. A deck's six slots are filled on its own page (the
-    Change link), since the admin allows one level of inlines."""
-    model = PvpDeck
-    fields = ("style", "label", "order", "note")
-    ordering = ("order", "id")
-    show_change_link = True
-    extra = 1
-
-
-class PvpDeckSlotInline(TabularInline):
-    model = PvpDeckSlot
-    fields = ("slot", "order", "is_borrow", "support_card", "note")
-    autocomplete_fields = ("support_card",)
-    ordering = ("slot", "order", "id")
-
-    def get_extra(self, request, obj=None, **kwargs):
-        # Six blank rows for a new deck, one once it has slots.
-        if obj is not None and obj.slots.exists():
-            return 1
-        return 6
-
-
 # ── 4. Game content ──────────────────────────────────────────────────────────
 
 class GlobalDatesFilter(admin.SimpleListFilter):
@@ -456,15 +322,6 @@ SCHEDULE_OFFSET_FIELDSET = (
         ),
     },
 )
-
-# Under the track details on both event pages, where the stat recommendations
-# used to be. Those five boxes were never shown on the site; the guide's stat
-# rows replaced them.
-PVP_GUIDE_POINTER = (
-    "Recommended stats, umas, skills and decks for this event go in its PvP "
-    "guide (Events &amp; competitions, PvP guides)."
-)
-
 
 @admin.register(BannerTimeline)
 class BannerTimelineAdmin(GlobalDatesStatusMixin, ScheduleOffsetMixin, ImagePreviewMixin,
@@ -990,7 +847,7 @@ class AnniversaryEventAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmi
 
 
 @admin.register(ChampionsMeeting)
-class ChampionsMeetingAdmin(GlobalDatesStatusMixin, ScheduleOffsetMixin, ImagePreviewMixin,
+class ChampionsMeetingAdmin(PvpGuideLinkMixin, GlobalDatesStatusMixin, ScheduleOffsetMixin, ImagePreviewMixin,
                             SpacesImagePickerMixin, ModelAdmin):
     list_display = ("name", "cm_number", "jp_start_date", "global_start_date",
                     "global_end_date", "global_dates_status", "schedule_offset_display")
@@ -998,7 +855,7 @@ class ChampionsMeetingAdmin(GlobalDatesStatusMixin, ScheduleOffsetMixin, ImagePr
     date_hierarchy = "global_start_date"
     ordering = ("-global_start_date",)
     search_fields = ("name",)
-    readonly_fields = ("image_preview",)
+    readonly_fields = ("image_preview", "pvp_guide_link")
     # Editors always fill the JP dates; global dates only once the meeting is
     # confirmed (they're left blank until then, and the app predicts them).
     fieldsets = (
@@ -1015,8 +872,8 @@ class ChampionsMeetingAdmin(GlobalDatesStatusMixin, ScheduleOffsetMixin, ImagePr
         ("Track details", {
             "fields": ("track", "surface_type", "distance", "length",
                        "track_condition", "season", "weather", "direction"),
-            "description": PVP_GUIDE_POINTER,
         }),
+        PVP_GUIDE_FIELDSET,
     )
 
 
@@ -1051,7 +908,7 @@ class ChangelogEntryAdmin(ModelAdmin):
 
 
 @admin.register(LeagueOfHeroes)
-class LeagueOfHeroesAdmin(GlobalDatesStatusMixin, ScheduleOffsetMixin, ImagePreviewMixin,
+class LeagueOfHeroesAdmin(PvpGuideLinkMixin, GlobalDatesStatusMixin, ScheduleOffsetMixin, ImagePreviewMixin,
                           SpacesImagePickerMixin, ModelAdmin):
     list_display = ("name", "loh_number", "jp_start_date", "global_start_date",
                     "global_end_date", "global_dates_status", "schedule_offset_display")
@@ -1059,7 +916,7 @@ class LeagueOfHeroesAdmin(GlobalDatesStatusMixin, ScheduleOffsetMixin, ImagePrev
     date_hierarchy = "global_start_date"
     ordering = ("-global_start_date",)
     search_fields = ("name",)
-    readonly_fields = ("image_preview",)
+    readonly_fields = ("image_preview", "pvp_guide_link")
     # Mirrors ChampionsMeetingAdmin above section for section — the two content
     # types now hold the same data and render through the same timeline card, so
     # they should be the same page to edit. (This previously omitted the schedule
@@ -1082,180 +939,10 @@ class LeagueOfHeroesAdmin(GlobalDatesStatusMixin, ScheduleOffsetMixin, ImagePrev
         ("Track details", {
             "fields": ("track", "surface_type", "distance", "length",
                        "track_condition", "season", "weather", "direction"),
-            "description": PVP_GUIDE_POINTER,
         }),
+        PVP_GUIDE_FIELDSET,
     )
 
-
-class PvpEventKindFilter(admin.SimpleListFilter):
-    """Champions Meeting or League of Heroes, read off which FK is set."""
-    title = "event kind"
-    parameter_name = "kind"
-
-    def lookups(self, request, model_admin):
-        return (("cm", "Champions Meeting"), ("loh", "League of Heroes"))
-
-    def queryset(self, request, queryset):
-        if self.value() == "cm":
-            return queryset.filter(champions_meeting__isnull=False)
-        if self.value() == "loh":
-            return queryset.filter(league_of_heroes__isnull=False)
-        return queryset
-
-
-@admin.register(PvpGuide)
-class PvpGuideAdmin(ModelAdmin):
-    """
-    One event's PvP guide, every section on one page.
-
-    Seven inlines is heavy but one level deep. Decks are the exception: a deck
-    has six slots of its own, which would be a second level, so the deck list
-    sits here and each deck's slots are filled on the deck's own page through
-    its Change link. If editors find this page too long, stat rows are the next
-    candidate for their own page.
-
-    Unpublished guides are drafts: the site returns "not found" to everyone but
-    signed-in staff, who see the draft with a banner saying so.
-    """
-    list_display = ("event_name", "event_kind", "scenario", "is_published",
-                    "deck_count", "updated_at")
-    list_display_links = ("event_name",)
-    list_editable = ("is_published",)
-    list_filter = ("is_published", PvpEventKindFilter)
-    list_select_related = ("champions_meeting", "league_of_heroes", "scenario")
-    ordering = ("-updated_at",)
-    # Both event names, so the deck page's guide autocomplete can find a guide.
-    search_fields = ("champions_meeting__name", "league_of_heroes__name")
-    autocomplete_fields = ("champions_meeting", "league_of_heroes", "scenario")
-    readonly_fields = ("updated_at", "skills_page")
-    fieldsets = (
-        ("Event", {
-            "description": "Pick one event and leave the other blank.",
-            "fields": ("champions_meeting", "league_of_heroes", "is_published"),
-        }),
-        ("Recommended skills", {
-            "description": (
-                "Skills are picked per position on their own page. Save the guide "
-                "first, then use the link."
-            ),
-            "fields": ("skills_page",),
-        }),
-        ("Overview", {
-            "fields": ("scenario", "style_ranking", "short_description", "meta_analysis"),
-        }),
-        ("Notes for editors", {
-            "fields": ("admin_comments", "updated_at"),
-        }),
-    )
-    inlines = (
-        PvpStatConfigInline,
-        PvpUmaRecommendationInline,
-        PvpStyleNoteInline,
-        PvpDeckInline,
-        PvpHonorableMentionInline,
-        PvpTeamCompInline,
-    )
-
-    def get_queryset(self, request):
-        return super().get_queryset(request).annotate(_deck_count=Count("decks"))
-
-    @admin.display(description="Event")
-    def event_name(self, obj):
-        return str(obj)
-
-    @admin.display(description="Skills page")
-    def skills_page(self, obj):
-        if obj is None or obj.pk is None:
-            return "Save the guide first."
-        count = obj.skill_recommendations.count()
-        return format_html(
-            '<a href="{}">Pick recommended skills by position</a> ({} picked)',
-            reverse("admin:calculatorapi_pvpguideskills_change", args=(obj.pk,)),
-            count,
-        )
-
-    @admin.display(description="Kind")
-    def event_kind(self, obj):
-        return "Champions Meeting" if obj.champions_meeting_id else "League of Heroes"
-
-    @admin.display(description="Decks", ordering="_deck_count")
-    def deck_count(self, obj):
-        return obj._deck_count  # pylint: disable=protected-access
-
-
-@admin.register(PvpDeck)
-class PvpDeckAdmin(ModelAdmin):
-    """One example deck and its six slots. Reached from the guide page's deck
-    list (the Change link) or from the sidebar."""
-    list_display = ("__str__", "style", "label", "order", "slot_count")
-    list_filter = ("style", "guide")
-    list_select_related = ("guide__champions_meeting", "guide__league_of_heroes")
-    search_fields = ("label", "guide__champions_meeting__name", "guide__league_of_heroes__name")
-    autocomplete_fields = ("guide",)
-    fieldsets = (
-        (None, {
-            "fields": ("guide", "style", "label", "order", "note"),
-            "description": (
-                "Slots 1 to 6. Tick Borrow on the borrow slot. To offer an "
-                "alternative for a slot, add a second row with the same slot "
-                "number and order 1. A row with no card and a note like "
-                "\"or any speed\" is allowed."
-            ),
-        }),
-    )
-    inlines = (PvpDeckSlotInline,)
-
-    def get_queryset(self, request):
-        return super().get_queryset(request).annotate(_slot_count=Count("slots"))
-
-    @admin.display(description="Slots", ordering="_slot_count")
-    def slot_count(self, obj):
-        return obj._slot_count  # pylint: disable=protected-access
-
-
-
-@admin.register(PvpGuideSkills)
-class PvpGuideSkillsAdmin(ModelAdmin):
-    """
-    A guide's recommended skills, one table per position.
-
-    The proxy model gives these their own page (Django registers one admin per
-    model), reached from the guide's "Pick recommended skills by position" link
-    or the sidebar. Nothing about the guide itself is editable here, and the
-    page can neither add nor delete a guide: deleting a proxy row would delete
-    the guide.
-    """
-    list_display = ("event_name", "is_published", "skill_count")
-    list_select_related = ("champions_meeting", "league_of_heroes")
-    search_fields = ("champions_meeting__name", "league_of_heroes__name")
-    ordering = ("-updated_at",)
-    fields = ("event_name", "guide_page")
-    readonly_fields = ("event_name", "guide_page")
-    inlines = POSITION_SKILL_INLINES
-
-    def get_queryset(self, request):
-        return super().get_queryset(request).annotate(_skill_count=Count("skill_recommendations"))
-
-    def has_add_permission(self, request):
-        return False
-
-    def has_delete_permission(self, request, obj=None):
-        return False
-
-    @admin.display(description="Event")
-    def event_name(self, obj):
-        return str(obj)
-
-    @admin.display(description="Skills", ordering="_skill_count")
-    def skill_count(self, obj):
-        return obj._skill_count  # pylint: disable=protected-access
-
-    @admin.display(description="Guide")
-    def guide_page(self, obj):
-        return format_html(
-            '<a href="{}">Back to the guide</a>',
-            reverse("admin:calculatorapi_pvpguide_change", args=(obj.pk,)),
-        )
 
 # ── 5. Rank / income tables ──────────────────────────────────────────────────
 

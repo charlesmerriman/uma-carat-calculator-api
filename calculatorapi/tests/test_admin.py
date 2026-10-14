@@ -57,7 +57,6 @@ class AdminSmokeTests(CalculatorTestCase):
         'admin:calculatorapi_championsmeeting',
         'admin:calculatorapi_leagueofheroes',
         'admin:calculatorapi_pvpguide',
-        'admin:calculatorapi_pvpdeck',
         'admin:calculatorapi_clubrank',
         'admin:calculatorapi_anniversaryevent',
         'admin:calculatorapi_scenario',
@@ -136,10 +135,10 @@ class AdminSmokeTests(CalculatorTestCase):
         # Edited via inlines only — their changelists should not exist.
         for name in ['umasonumabanner', 'supportsonsupportbanner', 'umaskill',
                      'supportcardskill', 'dailylegendraceuma',
-                     # The PvP guide's children, all inlines on the guide page,
-                     # except PvpDeck, which needs a page for its slots.
+                     # The PvP guide's children, all inlines on the guide page;
+                     # a deck's cards are nested under the deck there.
                      'pvpstatconfig', 'pvpumarecommendation', 'pvpskillrecommendation',
-                     'pvpstylenote', 'pvpdeckslot', 'pvphonorablemention',
+                     'pvpstylenote', 'pvpdeck', 'pvpdeckslot', 'pvphonorablemention',
                      'pvpteamcomp']:
             with self.subTest(model=name):
                 with self.assertRaises(NoReverseMatch):

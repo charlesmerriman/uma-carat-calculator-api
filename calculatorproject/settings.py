@@ -170,16 +170,6 @@ UNFOLD = {
                         "link": reverse_lazy("admin:calculatorapi_pvpguide_changelist"),
                     },
                     {
-                        "title": _("PvP guide skills"),
-                        "icon": "bolt",
-                        "link": reverse_lazy("admin:calculatorapi_pvpguideskills_changelist"),
-                    },
-                    {
-                        "title": _("PvP decks"),
-                        "icon": "style",
-                        "link": reverse_lazy("admin:calculatorapi_pvpdeck_changelist"),
-                    },
-                    {
                         "title": _("Anniversary campaigns"),
                         "icon": "redeem",
                         "link": reverse_lazy("admin:calculatorapi_anniversaryevent_changelist"),

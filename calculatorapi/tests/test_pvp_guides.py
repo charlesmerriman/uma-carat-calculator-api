@@ -2,6 +2,7 @@
 
 import csv
 import tempfile
+from html.parser import HTMLParser
 from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
@@ -16,7 +17,7 @@ from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from rest_framework.test import APIClient
 
-from calculatorapi import public_payload_cache
+from calculatorapi import public_payload_cache, pvp_guides, pvp_sheet
 from calculatorapi.management.commands import load_sheet_pvp_guides as loader
 from calculatorapi.models import (
     CalculationConstants,
@@ -345,15 +346,39 @@ class GuideAdminTests(CalculatorTestCase):
         res = self.client.get(reverse("admin:calculatorapi_pvpguide_change", args=(self.guide.pk,)))
         self.assertEqual(res.status_code, 200)
         self.assertContains(res, "Standard")
-
-    def test_deck_pages_render(self):
-        for name in ("changelist", "add"):
-            with self.subTest(page=name):
-                res = self.client.get(reverse(f"admin:calculatorapi_pvpdeck_{name}"))
-                self.assertEqual(res.status_code, 200)
-        res = self.client.get(reverse("admin:calculatorapi_pvpdeck_change", args=(self.deck.pk,)))
-        self.assertEqual(res.status_code, 200)
+        # The deck's cards are on the guide page, nested under the deck.
         self.assertContains(res, "Kitasan Black")
+        self.assertContains(res, 'name="front-decks-0-slots-TOTAL_FORMS"')
+
+    def test_the_list_shows_what_is_filled(self):
+        res = self.client.get(reverse("admin:calculatorapi_pvpguide_changelist"))
+        self.assertContains(res, '<span class="pvp-chip">Front</span>')
+        self.assertNotContains(res, '<span class="pvp-chip">Late</span>')
+
+    def test_the_add_page_has_no_tables(self):
+        res = self.client.get(reverse("admin:calculatorapi_pvpguide_add"))
+        self.assertNotContains(res, "TOTAL_FORMS")
+        self.assertContains(res, "Pick the event and save")
+
+    def test_the_event_page_links_to_the_guide(self):
+        cm = self.guide.champions_meeting
+        res = self.client.get(reverse("admin:calculatorapi_championsmeeting_change", args=(cm.pk,)))
+        self.assertContains(res, "Open the guide")
+        self.assertContains(res, reverse("admin:calculatorapi_pvpguide_change", args=(self.guide.pk,)))
+        other = make_champions_meeting(name="No Guide Cup", cm_number=99)
+        res = self.client.get(reverse("admin:calculatorapi_championsmeeting_change", args=(other.pk,)))
+        self.assertContains(res, "Write a guide for this event")
+        self.assertContains(res, f"?event=cm-{other.pk}")
+
+    def test_the_autocomplete_carries_pictures(self):
+        res = self.client.get(reverse("admin:autocomplete"), {
+            "term": "Kitasan", "app_label": "calculatorapi",
+            "model_name": "pvphonorablemention", "field_name": "support_card",
+        })
+        self.assertEqual(res.status_code, 200)
+        row = res.json()["results"][0]
+        self.assertEqual(row["text"], "Kitasan Black")
+        self.assertNotIn("picture", row)  # no image on this card
 
     def test_skill_autocomplete_offers_global_skills_only(self):
         make_skill("Global Skill", 100099)
@@ -430,7 +455,7 @@ class SheetLoaderTests(CalculatorTestCase):
     def load(self, *args):
         self.write(loader.IMPORT_TAB, self.import_block())
         self.write("Aquarius Cup", self.cup_tab())
-        with patch.object(loader, "CUP_TABS", ("Aquarius Cup",)):
+        with patch.object(pvp_sheet, "CUP_TABS", ("Aquarius Cup",)):
             out = StringIO()
             call_command("load_sheet_pvp_guides", "--from-dir", self.tmp.name, *args, stdout=out)
         return out.getvalue()
@@ -525,9 +550,69 @@ class SkillMentionTests(CalculatorTestCase):
         self.assertEqual(body["skill_mentions"], {})
 
 
+class FormFields(HTMLParser):
+    """Every field of the page's main form, as the browser would post it,
+    leaving out the "Add another" template rows."""
+
+    def __init__(self):
+        super().__init__()
+        self.data = {}
+        self._select = None
+        self._textarea = None
+        self._select_chosen = False
+
+    @staticmethod
+    def _skip(name):
+        return not name or "__prefix__" in name
+
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        name = attrs.get("name")
+        if tag == "input":
+            if self._skip(name):
+                return
+            kind = attrs.get("type", "text")
+            if kind in ("checkbox", "radio") and "checked" not in attrs:
+                return
+            if kind == "submit":
+                return
+            # A ticked checkbox with no value attribute posts "on".
+            default = "on" if kind in ("checkbox", "radio") else ""
+            self.data[name] = attrs.get("value", default)
+        elif tag == "select" and not self._skip(name):
+            self._select = name
+            self._select_chosen = False
+            self.data.setdefault(name, "")
+        elif tag == "option" and self._select and "selected" in attrs:
+            self.data[self._select] = attrs.get("value", "")
+            self._select_chosen = True
+        elif tag == "option" and self._select and not self._select_chosen:
+            # A select with nothing marked posts its first option.
+            self.data[self._select] = attrs.get("value", "")
+        elif tag == "textarea" and not self._skip(name):
+            self._textarea = name
+            self.data[name] = ""
+
+    def handle_endtag(self, tag):
+        if tag == "select":
+            self._select = None
+        elif tag == "textarea":
+            self._textarea = None
+
+    def handle_data(self, data):
+        if self._textarea:
+            self.data[self._textarea] += data
+
+
+def form_data(response):
+    parser = FormFields()
+    parser.feed(response.content.decode())
+    return parser.data
+
+
 @override_settings(STORAGES=PLAIN_TEST_STORAGES)
-class GuideSkillsPageTests(CalculatorTestCase):
-    """The per-position Skills page: renders, and saves each row to its position."""
+class GuideTabsTests(CalculatorTestCase):
+    """The guide page: one tab per style, each row saved to its tab's style."""
 
     def setUp(self):
         admin = make_user(username="admin", is_staff=True)
@@ -537,56 +622,273 @@ class GuideSkillsPageTests(CalculatorTestCase):
         self.guide = PvpGuide.objects.create(champions_meeting=make_champions_meeting())
         self.groundwork = make_skill("Groundwork", 100061)
         self.push = make_skill("Final Push", 100062)
+        self.card = SupportCard.objects.create(name="Kitasan Black")
         PvpSkillRecommendation.objects.create(guide=self.guide, style="front",
                                               category="acceleration", skill=self.groundwork)
 
     def change_url(self):
-        return reverse("admin:calculatorapi_pvpguideskills_change", args=(self.guide.pk,))
+        return reverse("admin:calculatorapi_pvpguide_change", args=(self.guide.pk,))
 
-    def test_the_guide_page_links_to_it_and_it_renders(self):
-        page = self.client.get(reverse("admin:calculatorapi_pvpguide_change", args=(self.guide.pk,)))
-        self.assertContains(page, self.change_url())
+    def page_data(self):
+        return form_data(self.client.get(self.change_url()))
+
+    def test_every_tab_has_its_tables_and_the_general_skills_sit_on_the_guide_tab(self):
         res = self.client.get(self.change_url())
         self.assertEqual(res.status_code, 200)
-        for label in ("General (all positions)", "Runaway", "Front", "Pace", "Late", "End"):
-            self.assertContains(res, f"{label}: recommended skills")
-        self.assertContains(res, 'name="skills-front-TOTAL_FORMS"')
-        self.assertEqual(self.client.get(reverse("admin:calculatorapi_pvpguideskills_changelist")).status_code, 200)
+        for style in ("runaway", "front", "pace", "late", "end"):
+            for stem in ("uma_recommendations", "style_notes", "skill_recommendations",
+                         "decks", "honorable_mentions"):
+                self.assertContains(res, f'name="{style}-{stem}-TOTAL_FORMS"')
+        self.assertContains(res, 'name="everyone-skill_recommendations-TOTAL_FORMS"')
+        self.assertContains(res, "General skills (every position)")
+        self.assertContains(res, 'id="front-group"')
+        # The saved row's style rides along hidden, fixed to its tab.
+        self.assertContains(res, 'name="front-skill_recommendations-0-style" value="front"')
 
-    def test_cannot_add_or_delete_through_it(self):
-        self.assertEqual(self.client.get(reverse("admin:calculatorapi_pvpguideskills_add")).status_code, 403)
-        res = self.client.get(reverse("admin:calculatorapi_pvpguideskills_delete", args=(self.guide.pk,)))
-        self.assertEqual(res.status_code, 403)
-
-    def test_a_row_saves_to_its_table_s_position(self):
-        existing = self.guide.skill_recommendations.get()
-        data = {}
-        for style in ("everyone", "runaway", "front", "pace", "late", "end"):
-            prefix = f"skills-{style}"
-            rows = [existing] if style == "front" else []
-            data.update({
-                f"{prefix}-TOTAL_FORMS": str(len(rows) + (1 if style == "late" else 0)),
-                f"{prefix}-INITIAL_FORMS": str(len(rows)),
-                f"{prefix}-MIN_NUM_FORMS": "0",
-                f"{prefix}-MAX_NUM_FORMS": "1000",
-            })
-            for index, row in enumerate(rows):
-                data.update({
-                    f"{prefix}-{index}-id": str(row.id), f"{prefix}-{index}-guide": str(self.guide.id),
-                    f"{prefix}-{index}-style": style, f"{prefix}-{index}-skill": str(row.skill_id),
-                    f"{prefix}-{index}-category": row.category, f"{prefix}-{index}-tier": "",
-                    f"{prefix}-{index}-note": "", f"{prefix}-{index}-order": "0",
-                })
+    def test_a_row_saves_to_its_tab_s_style_whatever_was_posted(self):
+        data = self.page_data()
         data.update({
-            "skills-late-0-guide": str(self.guide.id), "skills-late-0-style": "late",
-            "skills-late-0-skill": str(self.push.id), "skills-late-0-category": "acceleration",
-            "skills-late-0-tier": "1", "skills-late-0-note": "Take [[Groundwork]] too",
-            "skills-late-0-order": "0",
+            "late-skill_recommendations-TOTAL_FORMS": "1",
+            "late-skill_recommendations-0-style": "front",  # tampered: the tab wins
+            "late-skill_recommendations-0-skill": str(self.push.id),
+            "late-skill_recommendations-0-category": "acceleration",
+            "late-skill_recommendations-0-tier": "1",
+            "late-skill_recommendations-0-note": "Take [[Groundwork]] too",
+            "late-skill_recommendations-0-order": "0",
+            "_continue": "1",
+            "_pvp_tab": "late",
         })
         res = self.client.post(self.change_url(), data)
-        self.assertEqual(res.status_code, 302, res.content.decode()[:2000])
+        self.assertEqual(res.status_code, 302, res.content.decode()[:3000])
+        # Save and continue lands back on the tab that was open.
+        self.assertTrue(res["Location"].endswith("#late"), res["Location"])
         rows = sorted(self.guide.skill_recommendations.values_list("style", "skill__name", "tier"))
         self.assertEqual(rows, [("front", "Groundwork", None), ("late", "Final Push", 1)])
+
+    def test_a_new_deck_saves_with_its_cards_and_blank_numbered_rows_are_skipped(self):
+        data = self.page_data()
+        prefix = "front-decks"
+        data.update({
+            f"{prefix}-TOTAL_FORMS": "1",
+            f"{prefix}-0-style": "front",
+            f"{prefix}-0-label": "Standard",
+            f"{prefix}-0-note": "",
+            f"{prefix}-0-order": "0",
+            f"{prefix}-0-guide": str(self.guide.id),
+            f"{prefix}-0-slots-TOTAL_FORMS": "6",
+            f"{prefix}-0-slots-INITIAL_FORMS": "0",
+            f"{prefix}-0-slots-MIN_NUM_FORMS": "0",
+            f"{prefix}-0-slots-MAX_NUM_FORMS": "1000",
+        })
+        for index in range(6):
+            data.update({
+                f"{prefix}-0-slots-{index}-slot": str(index + 1),
+                f"{prefix}-0-slots-{index}-order": "0",
+                f"{prefix}-0-slots-{index}-support_card": "",
+                f"{prefix}-0-slots-{index}-note": "",
+            })
+        data[f"{prefix}-0-slots-0-support_card"] = str(self.card.id)
+        data[f"{prefix}-0-slots-0-note"] = "2SP"
+        data[f"{prefix}-0-slots-5-note"] = "or any speed"
+        data[f"{prefix}-0-slots-5-is_borrow"] = "on"
+        res = self.client.post(self.change_url(), data)
+        self.assertEqual(res.status_code, 302, res.content.decode()[:3000])
+        deck = self.guide.decks.get()
+        self.assertEqual((deck.style, deck.label), ("front", "Standard"))
+        slots = list(deck.slots.values_list("slot", "support_card__name", "note", "is_borrow"))
+        self.assertEqual(slots, [(1, "Kitasan Black", "2SP", False), (6, None, "or any speed", True)])
+
+    def test_two_borrow_ticks_in_one_deck_are_refused_and_the_tab_shows_the_error(self):
+        deck = PvpDeck.objects.create(guide=self.guide, style="front", label="Standard")
+        PvpDeckSlot.objects.create(deck=deck, slot=1, support_card=self.card, is_borrow=True)
+        data = self.page_data()
+        data["front-decks-0-slots-1-note"] = "borrowed too"
+        data["front-decks-0-slots-1-is_borrow"] = "on"
+        res = self.client.post(self.change_url(), data)
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "Only one card in a deck can be the borrowed one")
+        self.assertContains(res, 'class="pvp-tab-errors"')
+        self.assertEqual(deck.slots.count(), 1)
+
+    def test_an_editor_can_open_the_page(self):
+        call_command("create_content_editor_group", stdout=StringIO())
+        editor = make_user(username="editor", is_staff=True)
+        editor.groups.add(Group.objects.get(name="Content editors"))
+        self.client.force_login(editor)
+        self.assertEqual(self.client.get(self.change_url()).status_code, 200)
+
+
+@override_settings(STORAGES=PLAIN_TEST_STORAGES)
+class GuideEventFieldTests(CalculatorTestCase):
+    """One Event dropdown stands in for the two FK pickers."""
+
+    def setUp(self):
+        admin = make_user(username="admin", is_staff=True)
+        admin.is_superuser = True
+        admin.save()
+        self.client.force_login(admin)
+        self.cm = make_champions_meeting(name="Aquarius Cup", cm_number=10)
+        self.loh = make_league_of_heroes(name="LoH 3")
+
+    def add_url(self):
+        return reverse("admin:calculatorapi_pvpguide_add")
+
+    def test_the_event_page_link_preselects_the_event(self):
+        res = self.client.get(self.add_url(), {"event": f"cm-{self.cm.pk}"})
+        self.assertContains(res, f'<option value="cm-{self.cm.pk}" selected>')
+
+    def test_adding_sets_the_right_fk(self):
+        res = self.client.post(self.add_url(), {
+            "event": f"loh-{self.loh.pk}", "scenario": "", "style_ranking": "",
+            "short_description": "", "meta_analysis": "", "admin_comments": "",
+            "_continue": "1",
+        })
+        self.assertEqual(res.status_code, 302, res.content.decode()[:3000])
+        guide = PvpGuide.objects.get()
+        self.assertEqual((guide.champions_meeting_id, guide.league_of_heroes_id), (None, self.loh.pk))
+
+    def test_an_event_with_a_guide_is_not_offered_and_is_refused(self):
+        PvpGuide.objects.create(champions_meeting=self.cm)
+        res = self.client.get(self.add_url())
+        self.assertNotContains(res, f'value="cm-{self.cm.pk}"')
+        self.assertContains(res, f'value="loh-{self.loh.pk}"')
+        res = self.client.post(self.add_url(), {
+            "event": f"cm-{self.cm.pk}", "scenario": "", "style_ranking": "",
+            "short_description": "", "meta_analysis": "", "admin_comments": "",
+        })
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(PvpGuide.objects.count(), 1)
+
+    def test_an_existing_guide_still_shows_its_own_event(self):
+        guide = PvpGuide.objects.create(champions_meeting=self.cm)
+        res = self.client.get(reverse("admin:calculatorapi_pvpguide_change", args=(guide.pk,)))
+        self.assertContains(res, f'<option value="cm-{self.cm.pk}" selected>')
+
+
+class CopyGuideTests(CalculatorTestCase):
+    """copy_guide(): the next cup's guide starts from the last one."""
+
+    def setUp(self):
+        self.source = PvpGuide.objects.create(
+            champions_meeting=make_champions_meeting(name="Old", cm_number=1),
+            style_ranking="Front > End", short_description="Old words",
+        )
+        self.target = PvpGuide.objects.create(
+            champions_meeting=make_champions_meeting(name="New", cm_number=2),
+            short_description="My own words",
+        )
+        self.uma = Uma.objects.create(name="Maruzensky")
+        self.card = SupportCard.objects.create(name="Kitasan Black")
+        PvpUmaRecommendation.objects.create(guide=self.source, style="front", uma=self.uma, stars=5)
+        PvpStyleNote.objects.create(guide=self.source, style="front", body="Go early.")
+        deck = PvpDeck.objects.create(guide=self.source, style="front", label="Standard", order=3)
+        PvpDeckSlot.objects.create(deck=deck, slot=1, support_card=self.card, note="2SP")
+        PvpDeckSlot.objects.create(deck=deck, slot=6, note="borrow", is_borrow=True)
+        PvpHonorableMention.objects.create(guide=self.source, style="front", support_card=self.card)
+        PvpStatConfig.objects.create(guide=self.source, style="everyone", speed="1200")
+
+    def test_copies_every_section_and_keeps_what_the_target_had(self):
+        PvpUmaRecommendation.objects.create(guide=self.target, style="front", uma=self.uma, stars=2)
+        copied = pvp_guides.copy_guide(self.source, self.target)
+        self.assertEqual(copied["uma_recommendations"], 0)  # already there, kept at 2 stars
+        self.assertEqual(self.target.uma_recommendations.get().stars, 2)
+        self.assertEqual(copied["decks"], 1)
+        deck = self.target.decks.get()
+        self.assertEqual(list(deck.slots.values_list("slot", "note")), [(1, "2SP"), (6, "borrow")])
+        self.assertEqual(self.target.style_notes.get().body, "Go early.")
+        self.assertEqual(self.target.honorable_mentions.count(), 1)
+        self.assertEqual(self.target.stat_configs.get().speed, "1200")
+        self.target.refresh_from_db()
+        self.assertEqual(self.target.short_description, "My own words")  # never overwritten
+        self.assertEqual(self.target.style_ranking, "Front > End")  # blank, so filled
+        # The source is untouched.
+        self.assertEqual(self.source.decks.count(), 1)
+
+    def test_only_the_chosen_sections(self):
+        copied = pvp_guides.copy_guide(self.source, self.target, ["decks"])
+        self.assertEqual(copied, {"decks": 1})
+        self.assertEqual(self.target.uma_recommendations.count(), 0)
+
+    def test_refuses_itself(self):
+        with self.assertRaises(ValueError):
+            pvp_guides.copy_guide(self.source, self.source)
+
+    def test_the_dialog_action_copies_and_sends_the_page_back(self):
+        admin = make_user(username="admin", is_staff=True)
+        admin.is_superuser = True
+        admin.save()
+        self.client.force_login(admin)
+        action_url = reverse("admin:calculatorapi_pvpguide_copy_from_guide", args=(self.target.pk,))
+        res = self.client.get(action_url)
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "Copy from another guide")
+        res = self.client.post(action_url, {
+            "_form_submitted": "1", "source": str(self.source.pk), "sections": ["decks", "overview"],
+        })
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res["HX-Redirect"], reverse("admin:calculatorapi_pvpguide_change", args=(self.target.pk,)))
+        self.assertEqual(self.target.decks.count(), 1)
+
+
+@override_settings(STORAGES=PLAIN_TEST_STORAGES)
+class LoadFromSheetButtonTests(CalculatorTestCase):
+    """The admin's "Load from the sheet": preview reports, apply writes."""
+
+    def setUp(self):
+        admin = make_user(username="admin", is_staff=True)
+        admin.is_superuser = True
+        admin.save()
+        self.client.force_login(admin)
+        self.cm = make_champions_meeting(name="Gemini", cm_number=14)
+        self.guide = PvpGuide.objects.create(champions_meeting=self.cm, style_ranking="Mine")
+        Uma.objects.create(name="Seiun Sky")
+        SupportCard.objects.create(name="Narita Top Road", game_id=30086)
+
+    def url(self):
+        return reverse("admin:calculatorapi_pvpguide_load_from_sheet", args=(self.guide.pk,))
+
+    @staticmethod
+    def fake_reader(tab):
+        block = SheetLoaderTests.import_block(SheetLoaderTests)
+        if tab == pvp_sheet.IMPORT_TAB:
+            return block
+        return [["CM #99"]]  # a cup tab for some other event
+
+    def test_the_page_renders(self):
+        res = self.client.get(self.url())
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "Preview only")
+
+    def test_preview_reports_and_writes_nothing(self):
+        with patch.object(pvp_sheet, "read_tab", self.fake_reader):
+            res = self.client.post(self.url(), {"preview": "on"})
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "Preview, nothing was saved")
+        self.assertContains(res, pvp_sheet.IMPORT_TAB)
+        self.guide.refresh_from_db()
+        self.assertEqual(self.guide.style_ranking, "Mine")
+        self.assertEqual(self.guide.decks.count(), 0)
+
+    def test_apply_replaces_the_sections(self):
+        PvpStatConfig.objects.create(guide=self.guide, style="everyone", speed="old")
+        with patch.object(pvp_sheet, "read_tab", self.fake_reader):
+            res = self.client.post(self.url(), {})
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "Done")
+        self.guide.refresh_from_db()
+        self.assertEqual(self.guide.style_ranking, "End >= Front")
+        self.assertEqual(self.guide.stat_configs.get().stamina, "578*")
+        self.assertEqual(self.guide.decks.count(), 1)
+        self.assertFalse(self.guide.is_published)  # the switch is the editor's
+
+    def test_an_event_the_sheet_lacks_is_a_form_error(self):
+        other = PvpGuide.objects.create(champions_meeting=make_champions_meeting(name="X", cm_number=77))
+        with patch.object(pvp_sheet, "read_tab", self.fake_reader):
+            res = self.client.post(
+                reverse("admin:calculatorapi_pvpguide_load_from_sheet", args=(other.pk,)), {"preview": "on"},
+            )
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "has no guide for CM #77")
 
 
 class ProseLinkerTests(CalculatorTestCase):
@@ -611,17 +913,3 @@ class ProseLinkerTests(CalculatorTestCase):
         linker = loader.ProseLinker()
         self.assertEqual(linker.link("[[Final Push]] first"), "[[Final Push]] first")
         self.assertEqual(linker.link("Final Push", max_length=8), "Final Push")
-
-
-@override_settings(STORAGES=PLAIN_TEST_STORAGES)
-class EditorSkillsPageTests(CalculatorTestCase):
-    """The Content editors group reaches the Skills page (a proxy has its own permissions)."""
-
-    def test_an_editor_can_open_it(self):
-        call_command("create_content_editor_group", stdout=StringIO())
-        editor = make_user(username="editor", is_staff=True)
-        editor.groups.add(Group.objects.get(name="Content editors"))
-        self.client.force_login(editor)
-        guide = PvpGuide.objects.create(champions_meeting=make_champions_meeting())
-        res = self.client.get(reverse("admin:calculatorapi_pvpguideskills_change", args=(guide.pk,)))
-        self.assertEqual(res.status_code, 200)

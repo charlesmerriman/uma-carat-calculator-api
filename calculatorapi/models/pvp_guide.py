@@ -340,7 +340,14 @@ class PvpUmaRecommendation(SkillMentionsMixin, models.Model):
         PvpGuide, on_delete=models.CASCADE, related_name="uma_recommendations"
     )
     style = _style_field(allow_everyone=False)
-    uma = models.ForeignKey(Uma, on_delete=models.CASCADE, related_name="pvp_recommendations")
+    # Never the "(All)" placeholder, which stands for every uma: the picker
+    # and the form both read this (the same rule as Uma.pickable's second half).
+    uma = models.ForeignKey(
+        Uma,
+        on_delete=models.CASCADE,
+        related_name="pvp_recommendations",
+        limit_choices_to=~models.Q(name__iexact=Uma.ALL_PLACEHOLDER_NAME),
+    )
     stars = models.PositiveSmallIntegerField(
         default=3,
         validators=[MinValueValidator(1), MaxValueValidator(5)],
@@ -482,6 +489,11 @@ class PvpDeck(SkillMentionsMixin, models.Model):
     def __str__(self):
         return f"{self.guide}: {self.label} ({self.get_style_display()})"
 
+    def get_inline_title(self):
+        """The caption over the deck on the guide's admin page (unfold reads
+        this name): the label and style, since the guide is the page."""
+        return f"{self.label} ({self.get_style_display()})"
+
 
 class PvpDeckSlot(SkillMentionsMixin, models.Model):
     """
@@ -599,20 +611,3 @@ class PvpTeamComp(SkillMentionsMixin, models.Model):
 
     def __str__(self):
         return str(self.text)
-
-
-class PvpGuideSkills(PvpGuide):
-    """
-    The same rows as PvpGuide, registered a second time so the admin can give
-    a guide's recommended skills a page of their own: one table per position
-    (Everyone, Runaway, Front, Pace, Late, End). See PvpGuideSkillsAdmin.
-
-    A proxy, so no table and no data of its own: it exists only because Django
-    registers one admin per model. It is in neither snapshot list for the same
-    reason (test_every_model_is_either_content_or_private skips proxies).
-    """
-
-    class Meta:
-        proxy = True
-        verbose_name = "PvP guide skills"
-        verbose_name_plural = "PvP guide skills"

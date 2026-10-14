@@ -16,6 +16,7 @@ from calculatorapi.views import (
     PatreonSupporterViewSet,
     UmaViewSet,
 )
+from calculatorapi.admin_pvp import PictureAutocompleteJsonView
 from calculatorapi.views.admin_images import admin_image_library
 from calculatorapi.views.analytics import analytics_dashboard
 from calculatorapi.views.user import user_login, user_logout
@@ -143,6 +144,15 @@ urlpatterns = [
         "admin/image-library/",
         admin.site.admin_view(admin_image_library),
         name="admin-image-library",
+    ),
+    # The admin's autocomplete JSON, with each result's picture added so the
+    # uma, card and skill pickers can show one (calculatorapi/admin_pvp.py).
+    # Before admin.site.urls: same path as the admin's own "autocomplete/",
+    # so reverse("admin:autocomplete") still names it and this view answers.
+    path(
+        "admin/autocomplete/",
+        admin.site.admin_view(PictureAutocompleteJsonView.as_view(admin_site=admin.site)),
+        name="admin-autocomplete-pictures",
     ),
     path("admin/", admin.site.urls),
     path(

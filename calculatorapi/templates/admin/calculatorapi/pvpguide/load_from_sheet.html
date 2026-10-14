@@ -1,0 +1,91 @@
+{% extends "admin/base_site.html" %}
+{% comment %}
+"Load from the sheet" for one guide: preview what the community sheet holds
+for this event, then apply. The reconcile is pvp_sheet.load_guide_from_sheet;
+this page only shows its report. Same shape as the Patreon import page.
+{% endcomment %}
+{% load i18n %}
+
+{% block content %}
+<style>
+  .pvp-page { max-width: 72ch; }
+  .pvp-page h1 { font-size: 1.5rem; font-weight: 600; margin: 0 0 0.75rem; }
+  .pvp-page h2 { font-size: 1.05rem; font-weight: 600; margin: 1.25rem 0 0.5rem; }
+  .pvp-page p, .pvp-page li { margin: 0 0 0.5rem; line-height: 1.5; }
+  .pvp-page .module {
+    border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .pvp-page .field { margin-bottom: 1rem; display: flex; gap: 0.6rem; align-items: flex-start; }
+  .pvp-page label { font-weight: 600; }
+  .pvp-page .helptext { display: block; font-size: 0.85rem; opacity: 0.75; margin-top: 0.25rem; }
+  .pvp-page .errorlist { color: #dc2626; list-style: none; padding: 0; }
+  .pvp-page .actions { display: flex; gap: 1rem; align-items: center; margin-top: 1rem; }
+  .pvp-page .button { padding: 0.5rem 1rem; border-radius: 0.375rem; font-weight: 600;
+    background: var(--color-primary-600); color: #fff; cursor: pointer; border: 0; }
+  .pvp-page .names { opacity: 0.8; }
+  .pvp-page .warn { color: #b45309; }
+</style>
+
+<div class="pvp-page">
+  <h1>Load from the sheet</h1>
+
+  <div class="module">
+    <p>
+      Reads the community sheet's guide for <strong>{{ original }}</strong> and
+      writes it into this guide: the overview text, stats, umas, advice, skills,
+      decks with their cards, honorable mentions and team comps.
+    </p>
+    <p>
+      <strong>Applying replaces every section of this guide</strong> with the
+      sheet's. Published or draft stays as it is. Preview first: the report below
+      says what would be written and which names in the sheet matched nothing here.
+    </p>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    {% for field in form %}
+      <div class="field">
+        {{ field }}
+        <div>
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {% if field.help_text %}<span class="helptext">{{ field.help_text }}</span>{% endif %}
+          {{ field.errors }}
+        </div>
+      </div>
+    {% endfor %}
+    <div class="actions">
+      <button type="submit" class="button">Read the sheet</button>
+      <a href="{% url 'admin:calculatorapi_pvpguide_change' original.pk %}">Back to the guide</a>
+    </div>
+  </form>
+
+  {% if summary %}
+    <h2>{% if was_preview %}Preview, nothing was saved{% else %}Done{% endif %}</h2>
+    <div class="module">
+      <p>Read from the sheet's <strong>{{ summary.source }}</strong> tab.</p>
+      <ul>
+        {% for section, count in summary.counts.items %}
+          <li><strong>{{ count }}</strong> {{ section }}</li>
+        {% endfor %}
+        {% if summary.accel_picks %}
+          <li><strong>{{ summary.accel_picks }}</strong> acceleration skill(s) taken from the sheet's text</li>
+        {% endif %}
+      </ul>
+      {% for label, names in summary.unmatched %}
+        <p class="warn"><strong>{{ label }} ({{ names|length }}):</strong>
+          <span class="names">{{ names|join:", " }}</span>. These were left out; add them by hand.</p>
+      {% endfor %}
+      {% if was_preview %}
+        <p>Untick <em>Preview only</em> and read the sheet again to apply this.</p>
+      {% else %}
+        <p><a href="{% url 'admin:calculatorapi_pvpguide_change' original.pk %}">Back to the guide</a> to check each tab.</p>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -29,7 +29,7 @@ from calculatorapi.models import (
     GameEvent,
     ChampionsMeeting,
     LeagueOfHeroes,
-    PvpGuide, PvpGuideSkills, PvpStatConfig, PvpUmaRecommendation, PvpSkillRecommendation,
+    PvpGuide, PvpStatConfig, PvpUmaRecommendation, PvpSkillRecommendation,
     PvpStyleNote, PvpDeck, PvpDeckSlot, PvpHonorableMention, PvpTeamComp,
     ChangelogEntry, ChangelogChange,
     ClubRank, TeamTrialsRank, ChampionsMeetingRank, LeagueOfHeroesRank,
@@ -52,7 +52,7 @@ CONTENT_MODELS = [
     GameEvent,
     ChampionsMeeting,
     LeagueOfHeroes,
-    PvpGuide, PvpGuideSkills, PvpStatConfig, PvpUmaRecommendation, PvpSkillRecommendation,
+    PvpGuide, PvpStatConfig, PvpUmaRecommendation, PvpSkillRecommendation,
     PvpStyleNote, PvpDeck, PvpDeckSlot, PvpHonorableMention, PvpTeamComp,
     ChangelogEntry, ChangelogChange,
     ClubRank, TeamTrialsRank, ChampionsMeetingRank, LeagueOfHeroesRank,
@@ -87,9 +87,11 @@ class Command(BaseCommand):
 
         # Look permissions up through ContentType — permission primary keys
         # differ between databases, so they must never be hardcoded.
-        # for_concrete_models=False: a proxy (PvpGuideSkills, the per-position
-        # skills page) has permissions of its own, under its own content type.
-        # The default maps it to PvpGuide's, and editors could not open it.
+        # for_concrete_models=False: a proxy model has permissions of its own,
+        # under its own content type, and the default would map it to the
+        # concrete model's, so editors could not open its page. No proxy is in
+        # the list today (the PvP skills proxy was folded into the guide page
+        # in 2026-10), but the flag costs nothing and the next one works.
         content_types = ContentType.objects.get_for_models(
             *CONTENT_MODELS, for_concrete_models=False
         ).values()
