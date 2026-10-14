@@ -44,6 +44,7 @@ from calculatorapi.models import (
     UmaSkillSource,
 )
 from calculatorapi.models.pvp_guide import STYLE_RANK, find_skill_mentions
+from calculatorapi.models.skill import skill_families
 
 # The URL's kind -> the guide's FK to that event.
 EVENT_FIELD_FOR_KIND = {
@@ -88,18 +89,44 @@ class _SupportCardSerializer(serializers.ModelSerializer):
         fields = ("id", "name", "image", "card_type", "rarity")
 
 
+class _SkillVersionSerializer(serializers.ModelSerializer):
+    """Another version of a recommended skill: its white, gold or evolved
+    form. `version` is the label a chip shows ("○ white", "◎ gold",
+    "evolved"); `tier` is the game's number behind it (1 white, 2 gold)."""
+
+    version = serializers.CharField(source="version_label")
+    is_evolved = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Skill
+        fields = ("id", "name", "description", "image", "rarity", "tier", "version", "is_evolved")
+
+    def get_is_evolved(self, obj):
+        return obj.evolves_from_id is not None
+
+
 class _SkillSerializer(serializers.ModelSerializer):
     # "Lead the Pack (Maruzensky)": the outfit whose unique this skill is, or
     # null. The sheet writes acceleration skills this way. Read from a dict the
     # view builds in one query (context["unique_of"]), not per skill.
     unique_of = serializers.SerializerMethodField()
+    # The skill's own version label, and its other versions (white, gold,
+    # evolved) from models.skill.skill_families, one query for the guide
+    # (context["versions"]). A guide names ONE version per row; the client
+    # shows the rest beside it and the team builder counts any of them.
+    version = serializers.CharField(source="version_label")
+    versions = serializers.SerializerMethodField()
 
     class Meta:
         model = Skill
-        fields = ("id", "name", "description", "image", "rarity", "unique_of")
+        fields = ("id", "name", "description", "image", "rarity", "unique_of", "version", "versions")
 
     def get_unique_of(self, obj):
         return self.context["unique_of"].get(obj.id)
+
+    def get_versions(self, obj):
+        rows = self.context.get("versions", {}).get(obj.id, [])
+        return _SkillVersionSerializer(rows, many=True, context=self.context).data
 
 
 # ── The guide's sections ─────────────────────────────────────────────────────
@@ -291,11 +318,11 @@ def serialize_guide(guide, request=None):
     """The response body for one guide. `request` makes image URLs absolute."""
     skill_rows = sorted(guide.skill_recommendations.all(), key=_skill_key)
     mentioned = _mentioned_skills(guide)
+    skills = [row.skill for row in skill_rows] + mentioned
     context = {
         "request": request,
-        "unique_of": _unique_of(
-            [row.skill_id for row in skill_rows] + [skill.id for skill in mentioned]
-        ),
+        "unique_of": _unique_of([skill.id for skill in skills]),
+        "versions": skill_families(skills),
     }
     # The first skill of a name wins (lowest game id), so a duplicate name in
     # the game data resolves the same way on every request.

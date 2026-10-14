@@ -1280,6 +1280,17 @@ the siblings. `evolves_from` is the other relationship, for evolved skills, and 
 until global has skill evolution (the model and the extractor are ready; the import will
 need the `skill_upgrade_*` tables then).
 
+**A skill's family is derived from those two columns, never stored.** `skill_families()`
+(`models/skill.py`) answers "the other versions of these skills" for many skills in one
+query: the rows in the same group, plus the evolutions of that group (and an evolved
+skill's base group), minus the × penalty row, minus anything not on global.
+`Skill.version_label` is the label a picker or a chip shows (`○ white`, `◎ gold`,
+`evolved`). The PvP guide stores ONE row per effect, pointing at the version the author
+named (the sheet tiers the white and gold separately when their usefulness differs), and
+the API sends the rest as `versions` (`api-reference.md`, `GET /pvp-guides`). A stored link
+would be a second truth that goes stale the day the import adds a version; this one picks
+up evolved skills the day `evolves_from` is filled.
+
 `UmaSkill` records which outfit carries which skill and how (`source`), unique on
 `(uma, skill, source)`. `level` is one nullable column with a per-source meaning: the
 awakening rank for `awakening` rows, the star count a unique applies from for `unique` rows

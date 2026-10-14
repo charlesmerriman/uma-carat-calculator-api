@@ -671,7 +671,14 @@ order everyone, runaway, front, pace, late, end; then stat rows and decks by the
 and skills are embedded small objects, since the client's banner data only knows cards that
 were on a banner. `skill_recommendations` only ever holds skills on global
 (`Skill.objects.on_global()`); `unique_of` names the outfit whose unique the skill is, or
-`null`. `style` values: `everyone`, `runaway`, `front`, `pace`, `late`, `end` (never
+`null`. **A guide names one version of a skill per row; the other versions ride along.**
+`version` is the skill's own label (`"○ white"`, `"◎ gold"`, `"evolved"`) and `versions`
+lists its other forms a player may be shown (same `group_id`, plus `evolves_from` both
+ways; never the × penalty row, never a skill not on global), each with `id`, `name`,
+`description`, `image`, `rarity`, `tier` (1 white, 2 gold), `version` and `is_evolved`,
+ordered white, gold, evolved. Derived from the game data by
+`models.skill.skill_families` in one query per guide, never stored. The team builder
+counts a team as having a recommended skill when it can get ANY version. `style` values: `everyone`, `runaway`, `front`, `pace`, `late`, `end` (never
 `everyone` on an uma). `category`: `acceleration`, `speed`, `green`, `recovery`,
 `debuff`, `other`. Stat values are short TEXT as the guide writes them (`"1100+"`, `"578*"`), `""` where it gives none. Text fields are
 markdown (`short_description`, `meta_analysis`, style note `body`) or one-line notes; both
@@ -689,7 +696,9 @@ may hold `==highlight==` spans the client renders red.
                            "uma": {"id": 41, "name": "Maruzensky", "image": "url | null"}}],
   "skill_recommendations": [{"style": "front", "category": "acceleration", "tier": 0, "order": 0, "note": "",
       "skill": {"id": 210, "name": "Lead the Pack", "description": "string", "image": "url | null",
-                "rarity": 5, "unique_of": "Maruzensky"}}],
+                "rarity": 5, "unique_of": "Maruzensky", "version": "○ white",
+                "versions": [{"id": 211, "name": "Lead the Pack ◎", "description": "string", "image": "url | null",
+                              "rarity": 2, "tier": 2, "version": "◎ gold", "is_evolved": false}]}}],
   "style_notes": [{"style": "front", "body": "markdown"}],
   "decks": [{"id": 7, "style": "front", "label": "Standard", "note": "",
       "slots": [{"slot": 1, "order": 0, "is_borrow": false, "note": "Gold + Link",
@@ -698,7 +707,7 @@ may hold `==highlight==` spans the client renders red.
                 {"slot": 1, "order": 1, "is_borrow": false, "note": "or any speed", "support_card": null}]}],
   "honorable_mentions": [{"style": "front", "note": "Stats + 2SP", "support_card": {"...": "..."}}],
   "skill_mentions": {"groundwork": {"id": 88, "name": "Groundwork", "description": "string", "image": "url | null",
-                                     "rarity": 2, "unique_of": null}} }
+                                     "rarity": 2, "unique_of": null, "version": "◎ gold", "versions": []}} }
 ```
 
 `skill_mentions` resolves every `[[Skill name]]` written in the guide's text: `{lower-case

@@ -323,6 +323,11 @@ child are inline-only (`test_join_models_not_registered_top_level`).
   Django's `autocomplete.js` runs at DOM ready**, so the widget's `media` property builds
   ONE list (`[*parent._js, "admin/pvp-pickers.js"]`): Django's Media merge only orders
   files that share a list, and `parent.media + Media(js=...)` had put it before select2.
+- **Skill versions**: the autocomplete JSON and the `skill-names/` suggestions carry
+  `version` (`Skill.version_label`: `○ white`, `◎ gold`, `evolved`) and the picker draws it
+  as a tag, so an editor picks the version the guide means; the skills tables have a
+  read-only "Other versions" column from `Skill.family()`. The family itself is derived
+  (`data-model.md`, "`Skill` is imported"); nothing to pick or maintain.
 - **The text boxes**: `MentionAwareForm` marks every `MENTION_FIELDS` input with
   `data-pvp-mentions` (`[[` suggestions from the `skill-names/` route, global skills only)
   and every textarea with `data-pvp-markdown` (a Preview toggle rendered by the vendored

@@ -19,6 +19,7 @@ from rest_framework.test import APIClient
 
 from calculatorapi import public_payload_cache, pvp_guides, pvp_sheet
 from calculatorapi.management.commands import load_sheet_pvp_guides as loader
+from calculatorapi.models.skill import skill_families
 from calculatorapi.models import (
     CalculationConstants,
     PvpDeck,
@@ -889,6 +890,83 @@ class LoadFromSheetButtonTests(CalculatorTestCase):
             )
         self.assertEqual(res.status_code, 200)
         self.assertContains(res, "has no guide for CM #77")
+
+
+@override_settings(STORAGES=PLAIN_TEST_STORAGES)
+class SkillFamilyTests(CalculatorTestCase):
+    """A skill's other versions (white, gold, evolved) are derived from the
+    game data: same group, plus evolves_from, never the × penalty row, never a
+    skill not on global."""
+
+    def setUp(self):
+        self.white = make_skill("Corner Adept ○", 200011, group_id=2001, tier=1, rarity=1)
+        self.gold = make_skill("Corner Adept ◎", 200012, group_id=2001, tier=2, rarity=2)
+        self.penalty = make_skill("Corner Adept ×", 200013, group_id=2001, tier=-1, rarity=1)
+        # An evolved form, pointing at the gold; its own group id is new.
+        self.evolved = make_skill("Corner Virtuoso", 900200012, group_id=9001, tier=1, rarity=6,
+                                  evolves_from=self.gold)
+        # Another group's gold, not on global yet: never shown.
+        self.other_white = make_skill("Straightaway Adept ○", 200021, group_id=2002, tier=1)
+        make_skill("Straightaway Adept ◎", 200022, group_id=2002, tier=2, rarity=2, description="")
+        self.lone = make_skill("Groundwork", 200031, group_id=2003, tier=1)
+
+    def test_white_sees_gold_and_evolved_in_order(self):
+        families = skill_families([self.white, self.evolved, self.other_white, self.lone])
+        self.assertEqual([row.name for row in families[self.white.id]],
+                         ["Corner Adept ◎", "Corner Virtuoso"])
+        self.assertEqual([row.name for row in families[self.evolved.id]],
+                         ["Corner Adept ○", "Corner Adept ◎"])
+        self.assertEqual(families[self.other_white.id], [])  # the gold is not on global
+        self.assertEqual(families[self.lone.id], [])
+        self.assertEqual(skill_families([]), {})
+
+    def test_the_penalty_version_is_never_a_version(self):
+        self.assertNotIn(self.penalty, self.gold.family())
+        self.assertEqual([row.version_label for row in self.gold.family()], ["○ white", "evolved"])
+
+    def test_one_query_for_any_number_of_skills(self):
+        with CaptureQueriesContext(connection) as one:
+            skill_families([self.white])
+        with CaptureQueriesContext(connection) as four:
+            skill_families([self.white, self.evolved, self.other_white, self.lone])
+        self.assertEqual(len(one), len(four))
+
+    def test_the_api_carries_every_version_on_rows_and_mentions(self):
+        cm = make_champions_meeting()
+        guide = PvpGuide.objects.create(champions_meeting=cm, is_published=True,
+                                        short_description="Take [[Corner Virtuoso]] when you can.")
+        PvpSkillRecommendation.objects.create(guide=guide, style="front", category="speed",
+                                              skill=self.white, tier=1)
+        body = APIClient().get(url("cm", cm.id)).json()
+        skill = body["skill_recommendations"][0]["skill"]
+        self.assertEqual(skill["version"], "○ white")
+        self.assertEqual(
+            [(row["name"], row["version"], row["tier"], row["is_evolved"]) for row in skill["versions"]],
+            [("Corner Adept ◎", "◎ gold", 2, False), ("Corner Virtuoso", "evolved", 1, True)],
+        )
+        mention = body["skill_mentions"]["corner virtuoso"]
+        self.assertEqual(mention["version"], "evolved")
+        self.assertEqual([row["name"] for row in mention["versions"]], ["Corner Adept ○", "Corner Adept ◎"])
+
+    def test_the_admin_picker_and_the_skills_table_name_the_version(self):
+        admin = make_user(username="admin", is_staff=True)
+        admin.is_superuser = True
+        admin.save()
+        self.client.force_login(admin)
+        res = self.client.get(reverse("admin:autocomplete"), {
+            "term": "Corner Adept", "app_label": "calculatorapi",
+            "model_name": "pvpskillrecommendation", "field_name": "skill",
+        })
+        versions = {row["text"]: row["version"] for row in res.json()["results"]}
+        self.assertEqual(versions["Corner Adept ◎ (200012)"], "◎ gold")
+        guide = PvpGuide.objects.create(champions_meeting=make_champions_meeting())
+        PvpSkillRecommendation.objects.create(guide=guide, style="front", category="speed",
+                                              skill=self.white)
+        res = self.client.get(reverse("admin:calculatorapi_pvpguide_change", args=(guide.pk,)))
+        self.assertContains(res, "◎ gold: Corner Adept ◎, evolved: Corner Virtuoso")
+        res = self.client.get(reverse("admin:calculatorapi_pvpguide_skill_names"), {"q": "Corner"})
+        names = {row["name"]: row["version"] for row in res.json()["results"]}
+        self.assertEqual(names["Corner Adept ○"], "○ white")
 
 
 class ProseLinkerTests(CalculatorTestCase):

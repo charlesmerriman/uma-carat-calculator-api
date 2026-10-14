@@ -33,15 +33,32 @@
     return "";
   }
 
+  function versionOf(data) {
+    if (data.version) {
+      return data.version;
+    }
+    if (data.element && data.element.dataset && data.element.dataset.version) {
+      return data.element.dataset.version;
+    }
+    return "";
+  }
+
   function render(data) {
     var url = pictureOf(data);
-    if (!url || !data.text) {
+    var version = versionOf(data);
+    if ((!url && !version) || !data.text) {
       return data.text;
     }
     var wrap = $('<span class="pvp-pick"></span>');
-    var img = $('<img class="pvp-pick__thumb" alt="" loading="lazy">').attr("src", url);
-    var label = $("<span></span>").text(data.text);
-    return wrap.append(img).append(label);
+    if (url) {
+      wrap.append($('<img class="pvp-pick__thumb" alt="" loading="lazy">').attr("src", url));
+    }
+    wrap.append($("<span></span>").text(data.text));
+    if (version) {
+      // "○ white" / "◎ gold" / "evolved": which version of the effect this is.
+      wrap.append($('<span class="pvp-pick__version"></span>').text(version));
+    }
+    return wrap;
   }
 
   $.fn.select2.defaults.set("templateResult", render);

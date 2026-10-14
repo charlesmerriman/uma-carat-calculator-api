@@ -139,6 +139,10 @@ class PictureAutocompleteJsonView(AutocompleteJsonView):
         url = picture_url(obj)
         if url:
             result["picture"] = url
+        # A skill's version ("○ white", "◎ gold", "evolved"), so an editor
+        # picks the one the guide means.
+        if isinstance(obj, Skill):
+            result["version"] = obj.version_label
         return result
 
 
@@ -153,14 +157,18 @@ class PictureAutocompleteSelect(AutocompleteSelect):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._pictures = {}
+        self._versions = {}
 
     def optgroups(self, name, value, attr=None):
         empty = self.choices.field.empty_values
         chosen = [item for item in value if str(item) not in empty]
-        self._pictures = {
-            str(obj.pk): picture_url(obj)
-            for obj in self.choices.queryset.filter(pk__in=chosen)
-        } if chosen else {}
+        self._pictures = {}
+        self._versions = {}
+        if chosen:
+            for obj in self.choices.queryset.filter(pk__in=chosen):
+                self._pictures[str(obj.pk)] = picture_url(obj)
+                if isinstance(obj, Skill):
+                    self._versions[str(obj.pk)] = obj.version_label
         return super().optgroups(name, value, attr)
 
     def create_option(self, name, value, label, selected, index, subindex=None, attrs=None):  # pylint: disable=too-many-arguments,too-many-positional-arguments
@@ -168,6 +176,9 @@ class PictureAutocompleteSelect(AutocompleteSelect):
         url = self._pictures.get(str(value))
         if url:
             option["attrs"]["data-picture"] = url
+        version = self._versions.get(str(value))
+        if version:
+            option["attrs"]["data-version"] = version
         return option
 
     @property
@@ -434,7 +445,8 @@ class SkillInline(GuideInline, PicturePickersMixin, TabularInline):
     model = PvpSkillRecommendation
     form = SkillForm
     template = TABULAR
-    fields = ("skill", "category", "tier", "note", "order", "style")
+    fields = ("skill", "other_versions", "category", "tier", "note", "order", "style")
+    readonly_fields = ("other_versions",)
     autocomplete_fields = ("skill",)
     ordering = ("tier", "order", "id")
     ordering_field = "order"
@@ -442,9 +454,23 @@ class SkillInline(GuideInline, PicturePickersMixin, TabularInline):
     verbose_name = "skill"
     verbose_name_plural = "Recommended skills"
     hint = (
-        "Only skills already on global can be picked. Pick a category, and a tier "
-        "if the guide has tiers (T0 is take first). Drag to reorder within a tier."
+        "Only skills already on global can be picked. Pick the version the guide "
+        "means (the picker says white, gold or evolved); the site shows the other "
+        "versions beside it, and a team with any of them counts. Pick a category, "
+        "and a tier if the guide has tiers (T0 is take first). Drag to reorder "
+        "within a tier."
     )
+
+    @admin.display(description="Other versions")
+    def other_versions(self, obj):
+        """The skill's white, gold and evolved forms (models.skill.skill_families),
+        so the editor sees what the row covers before saving."""
+        if obj is None or obj.pk is None or obj.skill_id is None:
+            return "–"
+        rows = obj.skill.family()
+        if not rows:
+            return "none"
+        return ", ".join(f"{row.version_label}: {row.name}" for row in rows)
 
 
 class DeckSlotInline(PicturePickersMixin, TabularInline):
@@ -965,7 +991,7 @@ class PvpGuideAdmin(ModelAdmin):
         if term:
             rows = rows.filter(name__icontains=term)
         results = [
-            {"name": skill.name, "picture": picture_url(skill)}
+            {"name": skill.name, "picture": picture_url(skill), "version": skill.version_label}
             for skill in rows.order_by("name")[:12]
         ]
         return JsonResponse({"results": results})

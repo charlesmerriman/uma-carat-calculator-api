@@ -182,6 +182,12 @@
         li.appendChild(img);
       }
       li.appendChild(document.createTextNode(item.name));
+      if (item.version) {
+        var tag = document.createElement("span");
+        tag.className = "pvp-pick__version";
+        tag.textContent = item.version;
+        li.appendChild(tag);
+      }
       list.appendChild(li);
     });
     list.hidden = false;
