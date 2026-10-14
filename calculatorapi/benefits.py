@@ -205,6 +205,28 @@ def oshi_variants(user):
     return oshi_variants_for(entitled_supporter(user), is_staff=user.is_staff)
 
 
+def early_access_for(supporter, *, is_staff=False):
+    """Whether an already-resolved supporter row (or staff) gets the features
+    that open to supporters and staff before everyone else: any paid tier, or
+    staff, with the same staff bypass as oshi_variants_for.
+
+    WHO, not WHAT: this says who is early, and the client decides which
+    features are still early access (frontend `PVP_EARLY_ACCESS`, the PvP page
+    from 2026-10-14 for about a week, the owner's call). So opening a feature
+    to everyone is one flag there, and the next early-access feature needs no
+    change here. A client gate, and so spoofable: nothing that must be
+    enforced rests on it.
+    """
+    return is_staff or supporter is not None
+
+
+def early_access(user):
+    """Whether `user` gets early-access features right now. False for a guest."""
+    if user is None or not user.is_authenticated:
+        return False
+    return early_access_for(entitled_supporter(user), is_staff=user.is_staff)
+
+
 class IsSupporter(permissions.BasePermission):
     """DRF permission for a whole endpoint that only supporters may reach.
 

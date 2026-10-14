@@ -121,6 +121,7 @@ meaning anything instead of rendering a signed-in shell around nothing.
   ],
   "oshi_slots": 1,
   "oshi_variants": true,
+  "early_access": true,
   "linked_providers": [
     { "provider": "google", "linked_at": "2026-07-02" },
     { "provider": "patreon", "linked_at": "2026-09-08" }
@@ -151,6 +152,12 @@ meaning anything instead of rendering a signed-in shell around nothing.
 - **`oshi_variants`** is whether a costume variant (`is_variant` on `GET /umas`)
   may be *added*: `true` for a supporter on any paid tier and for staff. The
   picker locks those tiles on `false`; the rule itself is in the `PATCH` check.
+- **`early_access`** is whether features that open to supporters first are open
+  to this account: `true` for a supporter on any paid tier and for staff
+  (`benefits.early_access_for`). It says WHO; the client knows WHICH features are
+  still early access (the PvP page from 2026-10-14, `PVP_EARLY_ACCESS` in
+  `frontend/src/hooks/usePvpAccess.ts`). A client gate only: the PvP API itself
+  stays open.
 - **`avatar_url`** (top level) is the picture to show in the navbar: the first
   oshi's `image` **while `oshi_slots >= 1`** (skipping any whose picture was
   cleared), else **`null`** — null rather than `""`, so a client draws its
