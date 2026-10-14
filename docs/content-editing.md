@@ -331,69 +331,72 @@ write them under **Events & competitions → PvP guides**. Every part is
 optional. Fill in what you have and leave the rest empty; the site skips the
 empty parts.
 
-**Writing a guide, start to finish:**
+**Starting a guide.** Open the event's own page (Champions Meetings or League of
+Heroes) and press **Write a guide for this event** at the bottom, or press **Add
+PvP guide** on the PvP guides list and pick the event from the dropdown. Each
+event has one guide, so events that already have one are not offered. Pick the
+**scenario**, leave **Published** off for now, and press **Save and continue
+editing**. The tabs appear.
 
-1. **Add PvP guide**, then pick the event: a **Champions Meeting** or a
-   **League of Heroes event**, not both. Each event has at most one guide.
-2. Leave **Published** unticked for now. Until it is ticked, only staff who are
-   signed in on the site can see the guide.
-3. **Overview**: pick the **scenario**, type the **style ranking**
-   (`Front >> Runaway >= End > Late > Pace`), and write the **short
-   description** and **meta analysis**. These two use the same formatting as
-   the site pages (see *Site pages and FAQ* below).
-4. Fill in the rows at the bottom of the page. Each row has a **style**
-   (Runaway, Front, Pace, Late, End, or Everyone for the whole team) and most
-   have an **order** (lower numbers show first):
-   - **Stat recommendations**: one row per style and variant. Use **Everyone**
-     with the label "Minimum" for the minimum stats. Leave a stat blank to show
-     a dash. The label is for variants like "901* + 1 Gold" or "Trackblazer".
-   - **Recommended umas**: search by name and give 1 to 5 stars. **Role** is a
-     short tag shown on the picture ("Runaway blocker"); the **note** shows when
-     someone hovers the uma. An uma runs one style, so Everyone is not allowed
-     here.
-   - **Style notes**: one block of advice per style, like the sheet's "Rec.
-     Skills" paragraph.
-   - **PvP decks**: one row per deck, with its style and a **label**
-     ("Beginner", "Standard", "Whale", or anything you like). The cards go in
-     after saving; see below.
-   - **Honorable mentions**: cards worth having that did not make a deck, each
-     with a short reason.
-   - **Team comps**: like "2 Front + 1 Pace", with an optional note.
-5. **Save and continue editing.**
-6. **Recommended skills** have a page of their own, one table per position
-   (General, Runaway, Front, Pace, Late, End). **General (all positions)** is for
-   skills every position should take: the site shows them inside each
-   position's recommended skills, alongside that position's own picks. Open it with **Pick recommended
-   skills by position** on the guide page (or **PvP guide skills** in the
-   sidebar). In each table, search the skill by name (only skills already on
-   global show up), pick a **category**, and give a **tier** if the guide has
-   tiers (0 means take it first). The sheet's "Green" and "Debuffs" groups go in
-   the General table with category Green or Debuff.
+**The tabs.** The page has a row of tabs at the top:
 
-**Filling in a deck's cards.** Once the guide is saved, each deck row has a
-**Change** link. It opens the deck's own page with six slot rows:
+- **Guide** holds what applies to the whole team: the **style ranking**
+  (`Front >> Runaway >= End > Late > Pace`), the **short description** and
+  **meta analysis**, the **recommended stats** table (one row per style, one
+  more per variant such as "901* + 1 Gold"; a blank stat shows as a dash),
+  **team comps** ("2 Front + 1 Pace") and the **general skills** every position
+  should take (the sheet's Green and Debuffs groups go here, with that
+  category).
+- **Runaway, Front, Pace, Late, End** each hold that style's **recommended
+  umas** (search by name, give 1 to 5 stars; **Role** is a short tag shown on
+  the picture, the **note** shows on hover), its **advice** paragraph (the
+  sheet's "Rec. Skills" text), its **recommended skills** (pick a category, and
+  a tier if the guide has tiers; T0 means take it first), its **example decks**
+  and its **honorable mentions** (cards worth having that did not make a deck).
 
-- Slots are numbered **1 to 6**. Tick **Borrow** on the borrowed card's slot.
-- To offer an alternative for a slot, add another row with the **same slot
-  number** and **order 1** (then 2, and so on). The site shows it under the card
-  as an "or".
-- A row can have no card when its note says it all ("or any speed").
-- The **note** is the short reason for the card ("2SP", "Gold + Link").
+Nothing on a style tab asks which style it is for. A number on a tab is how
+many rows it holds; a red number, after a save, is how many rows refused. The
+line under the tabs says what the guide still lacks.
 
-Every deck is also listed under **Events & competitions → PvP decks**.
+**Decks.** On a style tab, press **Add another deck**, give it a label
+("Beginner", "Standard", "Whale", or anything you like) and fill its six cards
+in the table under it: the slot is numbered already, pick the **card**, tick
+**Borrow** on the borrowed one, and add a short **note** ("2SP", "Gold +
+Link"). To offer an "or" under a card, press **Add another card**, give it the
+same slot number and set **Alternative** to 1. A row with no card and a note
+like "or any speed" is fine. A blank row you did not touch is not saved.
 
-**Red text.** In any note or text box, wrap words in two equals signs to show
-them in red, like the sheet's must-haves: `==Must have==`.
+**Order and pictures.** Drag the handle at the left of a row to reorder umas,
+skills, decks and mentions. The pickers show each uma, card and skill's picture
+so you can tell two of the same name apart.
 
-**Linking a skill in text.** Put the skill's name in double square brackets:
-`Take [[Groundwork]] first`. On the site it shows as the skill with its icon,
-and its description appears on hover. The name must match a skill already on
-global (capital letters don't matter); if it doesn't, saving tells you which
-name is wrong and suggests close ones.
+**Red text and skill links.** In any note or text box, wrap words in two
+equals signs to show them in red, like the sheet's must-haves: `==Must have==`.
+Put a skill's name in double square brackets to link it: `Take [[Groundwork]]
+first`. Typing `[[` offers the matching skill names; the name must be a skill
+already on global, and saving tells you if it is not. The long text boxes have
+a **Preview** button that shows the text as the site will.
 
-**Preview, then publish.** Signed in on the site with your staff account, open
-the PvP tab and pick the event. A draft shows with a bar saying only staff can
-see it. When it looks right, tick **Published** (on the guide's page, or
+**Saving.** Everything on every tab is one form: one **Save** at the bottom
+saves it all, and **Save and continue editing** brings you back to the tab you
+were on. Leaving the page with unsaved changes asks first.
+
+**Starting from another guide.** **Copy from another guide** at the top of the
+page copies the sections you tick from any other guide into this one. Rows
+are added to what is here; nothing you wrote is overwritten, and a row this
+guide already has (the same uma for a style, say) is skipped. Then edit.
+
+**Loading from the sheet.** **Load from the sheet** at the top of the page
+reads the community sheet's guide for this event (the cup tab if there is one,
+else the ImportRange block) and writes it into this guide. Press **Read the
+sheet** with **Preview only** ticked first: the report says what would be
+written and which names in the sheet matched nothing here. Untick it and read
+again to apply. Applying replaces every section of this guide with the sheet's;
+Published or draft stays as you set it.
+
+**Preview, then publish.** **Open on the site** at the top of the page shows
+the guide as a visitor will see it. A draft shows with a bar saying only staff
+can see it. When it looks right, tick **Published** (on the guide's page, or
 straight from the PvP guides list) and save. The event's card on the Timeline
 then gets a "PvP guide" link.
 

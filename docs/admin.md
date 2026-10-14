@@ -39,7 +39,7 @@ All theme configuration lives in the `UNFOLD` settings dict in `settings.py`:
 
 `calculatorapi/admin.py` is customized throughout: model and field `verbose_name`s (app
 section "Uma Musume Data"), inlines (timeline → banners; banner → featured umas/cards;
-PvP guide → its sections), autocomplete pickers, image previews, and
+PvP guide → its sections, one tab per running style), autocomplete pickers, image previews, and
 `CustomUser` mounted on Django's `UserAdmin`.
 
 - `GameEvent`'s reward amounts are plain fields on its own edit page (a "Rewards"
@@ -269,34 +269,81 @@ Full metric definitions: [analytics.md](analytics.md).
 
 ---
 
-## PvP guides: one page, seven inlines, decks one level down
+## PvP guides: one page per guide, one tab per running style
 
-`PvpGuideAdmin` holds a whole guide on one page: the event (pick ONE of the two FKs;
-`clean()` and the `exactly_one_pvp_event` constraint refuse both or neither), the
-overview fields, and seven inlines (stats, umas, skills, style notes, decks, honorable
-mentions, team comps). `is_published` is `list_editable`, so publishing and unpublishing
-is one click on the list; a custom "Event kind" filter splits CM from LoH.
+`calculatorapi/admin_pvp.py` (its module docstring is the long version). A guide is
+edited on one page with a tab strip: **Guide** (event, published, scenario, the overview
+text, the stats table, team comps, the general skills) and **Runaway, Front, Pace, Late,
+End**, each holding what the site's tab of that name shows, in the site's order: umas,
+the advice paragraph, skills, the example decks with their six cards, honorable mentions.
+One form, one Save. "PvP guides" is the only sidebar entry; `PvpDeck` and every other
+child are inline-only (`test_join_models_not_registered_top_level`).
 
-- **Deck slots are a second level**, which unfold/Django inlines cannot nest. So
-  `PvpDeck` is registered on its own (`PvpDeckAdmin`, one `PvpDeckSlotInline`), and the
-  guide page's deck inline has `show_change_link = True` to reach it. A new deck gets six
-  blank slot rows (`get_extra`), one once it has slots. Every other child is inline-only;
-  `test_join_models_not_registered_top_level` lists them.
-- **`search_fields` on `PvpGuideAdmin` spans both event names**: the deck page's `guide`
-  autocomplete needs it.
-- **Skills have their own page, one table per position** (`PvpGuideSkillsAdmin` on the
-  `PvpGuideSkills` proxy), linked from the guide page's "Recommended skills" fieldset.
-  Six subclasses of `_PositionSkillInline` share one model, so each formset gets its own
-  prefix (`skills-<style>`; the default would collide) and carries `style` as a hidden
-  field fixed to its position. The page refuses add and delete: deleting a proxy row
-  deletes the guide.
-- **The skill autocomplete offers skills on global only.** Django's autocomplete view
-  applies the source FK's `limit_choices_to`, and `PvpSkillRecommendation.skill` limits to
-  a non-blank description (`test_skill_autocomplete_offers_global_skills_only`).
-- **Deleting an event that has a guide** shows Django's "protected objects" page: the
-  event FKs are `PROTECT`.
-- All nine models are in both `CONTENT_MODELS` lists (snapshot and editor group).
-- If editors find the page too heavy, promote stat rows to their own admin like decks.
+- **One inline class per child table per style**, made by `for_style(base, style)`: the
+  queryset is filtered to the style, the form is a `FixedStyleForm` (the `style` field
+  hidden, its initial AND `self.initial` set to the tab's style, `clean_style()` returning
+  it whatever was posted), and the formset prefix is `<style>-<related_name>`
+  (`front-decks`, `late-uma_recommendations`), because six formsets of one model would
+  otherwise post under one name. The fix is on the form, not in `_construct_form`: Django
+  builds the "Add another" template row through `empty_form`, which skips
+  `_construct_form`. The hidden `style` goes LAST in `fields`: unfold draws the drag
+  handle in the first column's cell, and a hidden first column hides the handle.
+- **unfold renders a required choice field with no blank option**, so an untouched blank
+  row would post the first choice, count as changed and fail on its empty picker.
+  `StatConfigForm.style` and `SkillForm.category` carry a blank first choice for that
+  reason; a new child table with a required choice field needs the same.
+- **The tabs are unfold's `activeTab`** (declared on `<body>`, kept in the URL hash,
+  restored by `getCurrentTab()`, which only honours a hash naming an existing
+  `<hash>-group` element). The change form template
+  (`templates/admin/calculatorapi/pvpguide/change_form.html`) draws the nav from the
+  `pvp_tabs` template tag (`templatetags/pvp_admin.py`: rows and errors per tab, nested
+  formsets included), wraps the fieldsets in `activeTab == 'general'` and regroups the
+  inlines by `tab_group` into `<div id="<tab>-group">`. The two wrapper templates beside
+  it are unfold's `tabular.html` / `stacked.html` with one expression changed. A hidden
+  `_pvp_tab` input travels with the POST and `response_change` appends `#<tab>` to the
+  "continue editing" redirect, since the browser never sends the hash.
+- **Decks nest their cards**: `DeckInline.inlines = (DeckSlotInline,)` on unfold's
+  `NestedInlinesModelAdminMixin` (already in its `ModelAdmin`). unfold hands a nested
+  inline its PARENT row (the deck, unsaved for the template) as `obj`, which is what makes
+  `get_extra` and `DeckSlotFormSet.initial` (the missing slot numbers) per deck. The slot
+  formset's `clean()` refuses two Borrow ticks. Deck order is a hidden input the drag
+  handle writes (`DeckForm`); `PvpDeck.get_inline_title` keeps the stacked title short.
+- **The add page has no tables** (`get_inlines` returns `()` without an object): the
+  Event dropdown, scenario, published and the overview, then "Save and continue editing".
+- **One Event dropdown** (`PvpGuideForm.event`, grouped CM / LoH, events with a guide
+  left out) stands in for the two OneToOnes; `clean_event` sets the FK and refuses a
+  taken event, a check the form would otherwise skip because the FKs are not form
+  fields. The event pages link here (`PvpGuideLinkMixin`, `PVP_GUIDE_FIELDSET`), and
+  `?event=cm-12` on the add URL preselects.
+- **Pictures in the pickers**: `PictureAutocompleteJsonView` (routed at
+  `admin/autocomplete/` ahead of the admin's own pattern in `urls.py`) adds `picture` to
+  every autocomplete result, `PictureAutocompleteSelect` puts `data-picture` on the
+  chosen option, and `static/admin/pvp-pickers.js` sets select2's `templateResult` /
+  `templateSelection` defaults. **That script must load after select2 and before
+  Django's `autocomplete.js` runs at DOM ready**, so the widget's `media` property builds
+  ONE list (`[*parent._js, "admin/pvp-pickers.js"]`): Django's Media merge only orders
+  files that share a list, and `parent.media + Media(js=...)` had put it before select2.
+- **The text boxes**: `MentionAwareForm` marks every `MENTION_FIELDS` input with
+  `data-pvp-mentions` (`[[` suggestions from the `skill-names/` route, global skills only)
+  and every textarea with `data-pvp-markdown` (a Preview toggle rendered by the vendored
+  `static/admin/vendor/marked.min.js` 15.0.12, HTML escaped first, `==red==` and
+  `[[Skill]]` as marked extensions). `static/admin/pvp-guide-editor.js`.
+- **Detail actions**: "Open on the site" (`pvp_guides.site_url`, a draft for staff),
+  "Copy from another guide" (an unfold dialog; `pvp_guides.copy_guide` adds the chosen
+  sections, skipping rows the unique constraints already hold, filling only blank overview
+  fields; the dialog posts with htmx, so the action answers 200 with `HX-Redirect` rather
+  than a 302 the dialog would follow inside itself) and "Load from the sheet" (a page,
+  `pvp_sheet.load_guide_from_sheet`, preview first; see "Safety & data" in CLAUDE.md for
+  why an editor's one-event import is an admin edit and not a seed path). Bulk
+  publish / unpublish actions call `public_payload_cache.invalidate()` because
+  `queryset.update()` raises no signals and the Timeline's `has_guide` is cached.
+- **The list** orders by the event's global start (`get_ordering`, an annotation, so not
+  in `ordering` which the checks read), shows the JP date marked "(JP)" when global is not
+  confirmed, and "Filled" chips from five `.only("style")` prefetches rather than
+  conditional counts across joins.
+- `pvp_guides.py` holds the tab list, the sections, `missing_summary` (the line under the
+  tabs) and `copy_guide`; nothing in it imports the admin, so the template tag and the
+  tests read one definition.
 
 ## Calculation constants (Configuration)
 

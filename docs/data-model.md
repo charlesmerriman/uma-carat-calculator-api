@@ -950,10 +950,10 @@ erDiagram
 - **`[[Skill name]]` mentions** may appear in any guide text field. `SkillMentionsMixin`
   (`MENTION_FIELDS` per model) refuses a save whose mention matches no skill on global,
   ignoring case, with suggestions; the API resolves them into `skill_mentions`.
-- **`PvpGuideSkills`** is a PROXY of `PvpGuide` (no table, migration `0086`) that exists
-  only so the admin can give a guide's skills a per-position page. It is in neither
-  snapshot list (the classification test skips proxies), and the editor-group command
-  fetches content types with `for_concrete_models=False` so its own permissions are granted.
+- **There is no proxy model any more.** `PvpGuideSkills` (migration `0086`) gave the
+  skills a page of their own; `0088` deleted it once the admin became one page per guide
+  with a tab per style (`admin_pvp.py`, `admin.md` "PvP guides"). `0089` keeps the
+  "(All)" placeholder uma out of `PvpUmaRecommendation.uma` (`limit_choices_to`).
 - **`has_guide`** on both race serializers is an `Exists` over published guides
   (`views.pvp_guide.annotate_has_guide`). That is why `PvpGuide` is NOT in
   `public_payload_cache._IRRELEVANT_MODELS` while its eight children are.
