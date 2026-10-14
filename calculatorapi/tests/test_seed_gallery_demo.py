@@ -7,6 +7,7 @@ from unittest import mock
 
 from django.core.management import call_command
 from django.core.management.base import CommandError
+from django.test import override_settings
 from django.utils import timezone
 
 from calculatorapi import benefits, gallery_ranking, public_identity
@@ -21,10 +22,13 @@ from calculatorapi.models import (
     SupportCard,
     Uma,
 )
-from calculatorapi.tests.base import CalculatorTestCase
+from calculatorapi.tests.base import CalculatorTestCase, PLAIN_TEST_STORAGES
 from calculatorapi.tests.factories import make_champions_meeting, make_user
 
 
+# Picture URLs go through default_storage, which is Spaces unless told
+# otherwise; CI has no bucket, so it would fail there and pass locally.
+@override_settings(STORAGES=PLAIN_TEST_STORAGES)
 class SeedGalleryDemoTests(CalculatorTestCase):
 
     def setUp(self):

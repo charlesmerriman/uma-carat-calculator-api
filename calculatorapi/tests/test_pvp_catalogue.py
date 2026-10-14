@@ -1,6 +1,7 @@
 """GET /pvp-catalogue: what it carries, what it leaves out, and its cache."""
 
 from django.db import connection
+from django.test import override_settings
 from django.test.utils import CaptureQueriesContext
 from rest_framework.test import APIClient
 
@@ -13,7 +14,7 @@ from calculatorapi.models import (
     Uma,
     UmaSkill,
 )
-from calculatorapi.tests.base import CalculatorTestCase
+from calculatorapi.tests.base import CalculatorTestCase, PLAIN_TEST_STORAGES
 from calculatorapi.tests.factories import make_user
 
 
@@ -24,6 +25,9 @@ def make_skill(name, game_id, description="Does a thing."):
     )
 
 
+# Picture URLs go through default_storage, which is Spaces unless told
+# otherwise; CI has no bucket, so it would fail there and pass locally.
+@override_settings(STORAGES=PLAIN_TEST_STORAGES)
 class CatalogueTests(CalculatorTestCase):
 
     def setUp(self):

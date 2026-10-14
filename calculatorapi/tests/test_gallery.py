@@ -13,7 +13,7 @@ from unittest import mock
 import requests
 from django.core.management import call_command
 from django.db import IntegrityError, transaction
-from django.test import RequestFactory
+from django.test import override_settings, RequestFactory
 from django.utils import timezone
 from rest_framework.test import APIClient
 
@@ -36,7 +36,7 @@ from calculatorapi.models import (
     Uma,
     UserOshi,
 )
-from calculatorapi.tests.base import CalculatorTestCase
+from calculatorapi.tests.base import CalculatorTestCase, PLAIN_TEST_STORAGES
 from calculatorapi.tests.factories import make_champions_meeting, make_league_of_heroes, make_user
 
 # The prod tiers' orders (benefits.py): Senior Class 1, Classic Class 2,
@@ -267,6 +267,9 @@ class RankingTests(GalleryFixture):
         self.assertEqual((row.points, row.upvote_count), (12, 11))
 
 
+# Picture URLs go through default_storage, which is Spaces unless told
+# otherwise; CI has no bucket, so it would fail there and pass locally.
+@override_settings(STORAGES=PLAIN_TEST_STORAGES)
 class PosterBlockTests(GalleryFixture):
 
     def test_exactly_the_public_keys(self):

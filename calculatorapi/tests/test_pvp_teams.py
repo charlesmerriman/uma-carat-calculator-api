@@ -1,6 +1,7 @@
 """PvP teams: the model's constraints and the /pvp-teams routes."""
 
 from django.db import IntegrityError, transaction
+from django.test import override_settings
 from rest_framework.test import APIClient
 
 from calculatorapi import public_payload_cache, pvp_catalogue_cache
@@ -12,7 +13,7 @@ from calculatorapi.models import (
     SupportCard,
     Uma,
 )
-from calculatorapi.tests.base import CalculatorTestCase
+from calculatorapi.tests.base import CalculatorTestCase, PLAIN_TEST_STORAGES
 from calculatorapi.tests.factories import (
     auth_client,
     make_champions_meeting,
@@ -284,6 +285,9 @@ class DetailTests(PvpTeamFixture):
         self.assertEqual(kinds, ["cm", "loh"])
 
 
+# Picture URLs go through default_storage, which is Spaces unless told
+# otherwise; CI has no bucket, so it would fail there and pass locally.
+@override_settings(STORAGES=PLAIN_TEST_STORAGES)
 class LifecycleTests(PvpTeamFixture):
 
     def test_a_team_save_keeps_both_caches(self):
