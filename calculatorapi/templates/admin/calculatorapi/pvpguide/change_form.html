@@ -1,0 +1,66 @@
+{% extends "admin/change_form.html" %}
+{% load i18n pvp_admin %}
+{% comment %}
+The PvP guide page: a tab strip (Guide, then one tab per running style) over
+unfold's change form. See admin_pvp.py, "HOW THE TABS ARE DRAWN".
+
+The open tab is unfold's own `activeTab` (declared on <body>, kept in the URL
+hash). The fieldsets show on the Guide tab ("general", unfold's name for it);
+each inline shows on its `tab_group` through the two wrapper templates beside
+this file. A tab's wrapper carries id="<tab>-group" because unfold's
+getCurrentTab() only honours a hash that names an existing "-group" element.
+
+The add page has no tables (PvpGuideAdmin.get_inlines) and so no tabs: it is
+the event and the overview, then "Save and continue editing".
+{% endcomment %}
+
+{% block form_top %}
+  {% if add %}
+    <p class="pvp-note">
+      Pick the event and save. The tabs for stats, umas, skills, decks and
+      mentions appear once the guide exists.
+    </p>
+  {% else %}
+    {% pvp_tabs as tabs %}
+    <div class="pvp-tabs-wrap">
+      <nav id="pvp-tabs" aria-label="Guide sections"
+           class="bg-base-100 flex flex-row flex-wrap font-medium gap-1 p-1 rounded-default text-important md:w-auto *:flex *:flex-row *:gap-1 *:font-medium *:whitespace-nowrap *:items-center *:px-2.5 *:py-[5px] *:rounded-default *:hover:bg-base-700/[.06] dark:bg-white/[.06] *:dark:hover:bg-white/[.06] [&>.active]:bg-white [&>.active]:shadow-xs [&>.active]:dark:bg-base-700 [&>.active]:hover:bg-white [&>.active]:dark:hover:bg-base-700">
+        {% for tab in tabs.items %}
+          <a href="#{{ tab.key }}"
+             x-on:click="activeTab = '{{ tab.key }}'"
+             x-bind:class="{'active': activeTab == '{{ tab.key }}'}">
+            {{ tab.label }}
+            {% if tab.count %}<span class="pvp-tab-count" title="{{ tab.count }} saved row(s)">{{ tab.count }}</span>{% endif %}
+            {% if tab.errors %}<span class="pvp-tab-errors" title="{{ tab.errors }} problem(s) on this tab">{{ tab.errors }}</span>{% endif %}
+          </a>
+        {% endfor %}
+      </nav>
+      {% if missing %}
+        <p class="pvp-missing">{{ missing|join:" " }}</p>
+      {% endif %}
+    </div>
+    {# Which tab was open when the form was sent; response_change reads it. #}
+    <input type="hidden" name="_pvp_tab" x-bind:value="activeTab">
+    {% if tabs.first_error %}
+      {# Open the first tab that refused, unless the hash already names one. #}
+      <script>if (!window.location.hash) { window.location.hash = "{{ tabs.first_error }}"; }</script>
+    {% endif %}
+  {% endif %}
+{% endblock %}
+
+{% block field_sets %}
+  <div id="general-fields" x-show="activeTab == 'general'" class="flex flex-col gap-6">
+    {{ block.super }}
+  </div>
+{% endblock %}
+
+{% block inline_field_sets %}
+  {% regroup inline_admin_formsets by opts.tab_group as tab_groups %}
+  {% for group in tab_groups %}
+    <div id="{{ group.grouper }}-group" x-show="activeTab == '{{ group.grouper }}'" class="flex flex-col gap-6">
+      {% for inline_admin_formset in group.list %}
+        {% include inline_admin_formset.opts.template %}
+      {% endfor %}
+    </div>
+  {% endfor %}
+{% endblock %}

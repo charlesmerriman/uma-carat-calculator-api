@@ -38,9 +38,12 @@ class UserOshi(models.Model):
     is always covered.
 
     NOT PERSONAL DATA. A uma pick is the site's own art, so purge_user_pii
-    leaves these rows alone, exactly as it left avatar_uma. When the future
-    public route reads them it must join through PatreonSupporter.linked_user
-    and honour is_public, and never carry display_name or the handle alongside.
+    leaves these rows alone, exactly as it left avatar_uma.
+
+    PUBLIC ONLY THROUGH public_identity.poster_block. Since the gallery, the
+    first pick is shown beside a post or comment its owner made public, next
+    to their display name: posting is the opt-in. Never beside the generated
+    handle or the Patreon handle, and never on any other public route.
 
     CASCADE on the uma, not SET_NULL: a row with no uma is nothing, and a
     dangling slot would become a blank public tile later. The remaining rows

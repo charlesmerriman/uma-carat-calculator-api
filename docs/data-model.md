@@ -285,11 +285,11 @@ erDiagram
         string season
         string weather
         string direction
-        int speed_recommendation
-        int stamina_recommendation
-        int power_recommendation
-        int guts_recommendation
-        int wit_recommendation
+        int speed_recommendation "unused; drops with the team builder"
+        int stamina_recommendation "unused"
+        int power_recommendation "unused"
+        int guts_recommendation "unused"
+        int wit_recommendation "unused"
     }
 
     LeagueOfHeroes {
@@ -310,11 +310,11 @@ erDiagram
         string season
         string weather
         string direction
-        int speed_recommendation
-        int stamina_recommendation
-        int power_recommendation
-        int guts_recommendation
-        int wit_recommendation
+        int speed_recommendation "unused; drops with the team builder"
+        int stamina_recommendation "unused"
+        int power_recommendation "unused"
+        int guts_recommendation "unused"
+        int wit_recommendation "unused"
     }
 
     UserOshi }o--|| CustomUser : "user"
@@ -380,8 +380,9 @@ serializer's pre-check gives the friendly 400 ("That name is taken."), the
 constraint is the backstop for a race, and the view maps that `IntegrityError`
 to the same 400. Migration `0057` blanks later duplicates before adding the
 constraint (insurance for local databases; prod never held a name before it).
-Personal data (a chosen name is), so `purge_user_pii` blanks it and it is never
-serialized anywhere public today.
+Personal data (a chosen name is), so `purge_user_pii` blanks it. Public in ONE place: beside
+a gallery post or comment its owner made, through `public_identity.poster_block` (posting is
+the opt-in; see "The gallery" below). Blanking it is refused while the person has a post up.
 
 → [auth-and-privacy.md](auth-and-privacy.md) for why this is not a profile
 attribute, and [api-reference.md](api-reference.md) for the route.
@@ -876,9 +877,9 @@ covers that anniversary's featured unit.
 
 ### `ChampionsMeeting` and `LeagueOfHeroes` are the same shape
 
-The two hold identical data — course details (`track` … `direction`) and five stat
-recommendations — differing only in their number field (`cm_number` / `loh_number`) and in
-`ChampionsMeeting` owning the `ChampionsMeetingUmaRecommendation` join table. They render
+The two hold identical data — course details (`track` … `direction`) — differing only in
+their number field (`cm_number` / `loh_number`). Each may have one `PvpGuide` (below),
+through a OneToOne on the guide's side, so neither model carries a guide column. They render
 through one shared frontend card (`components/timeline/RaceEventCard.tsx`), so a field
 added to one almost always belongs on the other; the same goes for their serializers and
 `ModelAdmin` fieldsets.
@@ -888,9 +889,180 @@ predict their global dates against *separate* anchor sets (see below), and mergi
 would mix those anchors. The fields are duplicated rather than pulled into an abstract base
 — a conscious trade of a little repetition for keeping each model readable on its own.
 
-The course/stat columns are non-null, so "not announced yet" is encoded as a **sentinel**:
-`"TBD"` for text and `0` for the recommendations. Both models default to those, and the
-frontend translates them into a pending state rather than rendering them raw.
+The course columns are non-null, so "not announced yet" is encoded as a **sentinel**:
+`"TBD"`. The frontend translates it into a pending state rather than rendering it raw.
+The five `*_recommendation` int columns are still on both tables but off the admin, the
+API and the client since the PvP guide shipped; they drop in the team-builder release
+(R2 of the PvP plan) once production confirms they are all zero.
+
+### `PvpGuide`: what to build for one CM or LoH
+
+`models/pvp_guide.py`. Written by the sheet's authors in the admin, served by
+`GET /pvp-guides/<kind>/<event_id>` and shown on the site's PvP page. All nine tables are
+**content** (`content_snapshot.CONTENT_MODELS`).
+
+```mermaid
+erDiagram
+    PvpGuide |o--o| ChampionsMeeting : "champions_meeting (PROTECT)"
+    PvpGuide |o--o| LeagueOfHeroes : "league_of_heroes (PROTECT)"
+    PvpGuide }o--o| Scenario : "scenario (SET_NULL)"
+    PvpStatConfig }o--|| PvpGuide : "guide"
+    PvpUmaRecommendation }o--|| PvpGuide : "guide"
+    PvpUmaRecommendation }o--|| Uma : "uma"
+    PvpSkillRecommendation }o--|| PvpGuide : "guide"
+    PvpSkillRecommendation }o--|| Skill : "skill (on global only)"
+    PvpStyleNote }o--|| PvpGuide : "guide"
+    PvpDeck }o--|| PvpGuide : "guide"
+    PvpDeckSlot }o--|| PvpDeck : "deck"
+    PvpDeckSlot }o--o| SupportCard : "support_card (nullable)"
+    PvpHonorableMention }o--|| PvpGuide : "guide"
+    PvpHonorableMention }o--|| SupportCard : "support_card"
+    PvpTeamComp }o--|| PvpGuide : "guide"
+```
+
+- **One guide table for both kinds.** The CM/LoH two-model split exists because each
+  predicts dates against its own anchors; a guide holds no dates (the client already has
+  the event's). So `PvpGuide` points at exactly one event through two nullable OneToOnes and
+  the `exactly_one_pvp_event` check constraint (the `exactly_one_banner_target` idiom),
+  repeated in `clean()` as a form error. `event_type` on the wire is derived from which FK
+  is set.
+- **`PROTECT` on both event FKs**: a guide is weeks of an editor's work, so deleting an
+  event with a guide is refused; delete the guide first.
+- **Every section is optional**, the superset of the sheet's two formats (the JP-era deck
+  lists and the global per-cup tables). Each child carries a `style`
+  (`PvpStyle`: everyone, runaway, front, pace, late, end; TextChoices, display order
+  `STYLE_ORDER`, sorted in Python) and usually an `order`.
+  - `PvpStatConfig`: several rows per style is the point (variants). The five stats are
+    short TEXT, because the sheet's values carry markers (`1100+`, `578*` for a footnote,
+    `901* + 1 Gold`) an integer would drop.
+  - `PvpUmaRecommendation`: unique `(guide, style, uma)`, stars 1..5 and never
+    `style=everyone`, both as check constraints.
+  - `PvpSkillRecommendation`: `category` (`PvpSkillCategory`), optional `tier` 0..4,
+    unique `(guide, style, category, skill)`. **Only skills on global**, in three layers:
+    the FK's `limit_choices_to` (form and admin autocomplete), `clean()`, and the view's
+    prefetch filter, so a skill that loses its description later stays stored but unshown.
+  - `PvpStyleNote`: one markdown block per style, unique `(guide, style)`.
+  - `PvpDeck` → `PvpDeckSlot`: slot 1..6, `is_borrow`, `order` 0 = the card and 1+ =
+    alternatives for the same slot, unique `(deck, slot, order)`; `support_card` is
+    nullable but `slot_has_card_or_note` requires a card or a note.
+  - `PvpHonorableMention`: unique `(guide, style, support_card)`. Its own table because
+    mentions have no slots and so stay a one-level inline.
+  - `PvpTeamComp`: free text ("2 Front + 1 Pace") and a note.
+- **`[[Skill name]]` mentions** may appear in any guide text field. `SkillMentionsMixin`
+  (`MENTION_FIELDS` per model) refuses a save whose mention matches no skill on global,
+  ignoring case, with suggestions; the API resolves them into `skill_mentions`.
+- **There is no proxy model any more.** `PvpGuideSkills` (migration `0086`) gave the
+  skills a page of their own; `0088` deleted it once the admin became one page per guide
+  with a tab per style (`admin_pvp.py`, `admin.md` "PvP guides"). `0089` keeps the
+  "(All)" placeholder uma out of `PvpUmaRecommendation.uma` (`limit_choices_to`).
+- **`has_guide`** on both race serializers is an `Exists` over published guides
+  (`views.pvp_guide.annotate_has_guide`). That is why `PvpGuide` is NOT in
+  `public_payload_cache._IRRELEVANT_MODELS` while its eight children are.
+- **`merge_duplicate_umas` / `_support_cards`** re-point the uma and card FKs here like
+  any other; a re-point that would collide with one of the unique constraints is dropped,
+  as the command does everywhere.
+- **Milestones** (registration, round 2, finals registration, finals) are not on the
+  guide or the event: they are per event TYPE, eight hour offsets on
+  `CalculationConstants`.
+- Replaced `ChampionsMeetingUmaRecommendation` (an admin inline nothing rendered; dropped
+  by `0084`).
+- **Test content:** `manage.py load_sheet_pvp_guides` (LOCAL SQLite only, refuses any
+  other database) reads the community sheet's `PvP ImportRange` tab (CM #14 onward, LoH #1
+  onward, cards keyed by game id) and the per-cup tabs (`Virgo Cup`, `Capricorn Cup`,
+  `Aquarius Cup`) and writes published guides, listing whatever it could not match. It
+  wraps whole skill names found in the sheet's prose as `[[...]]` (one-word names only in
+  their exact capitals, minus a stoplist of ordinary words like "Runaway" and
+  "Acceleration") and turns each "Rec. Accel" line into ordered acceleration picks.
+  `--dry-run`, `--replace`, `--from-dir`. In production, editors write guides in the admin.
+
+### `PvpTeam`: a player's own team for one event
+
+`models/pvp_team.py`, all PRIVATE (`content_snapshot.PRIVATE_MODELS`, and on
+`public_payload_cache._IRRELEVANT_MODELS` so a team save never drops `/calculator-data`).
+The team builder on the PvP page saves here for a signed-in player; a guest keeps the same
+shape on the device (frontend `services/guestPvpTeamStore.ts`).
+
+- **`PvpTeam`**: `user` (CASCADE), the same nullable `champions_meeting` /
+  `league_of_heroes` pair as `PvpGuide` under `exactly_one_pvp_team_event`, a private
+  `name` (blank: the client numbers it), `is_focus` (the R2b drawer's pin, at most one per
+  account by the partial `one_focus_pvp_team_per_user`, the `Plan.is_active` idiom) and
+  `notes`, a JSON list of `{text, color}` (at most 10, 1000 characters, four colours;
+  validated by `views/pvp_team.py` `NoteSerializer`). A JSON column rather than a table
+  because notes are only ever read and written whole, with the team.
+- **`PvpTeamMember`**: `position` 0..2, `uma`, `style` (a `PvpStyle`, never `everyone`).
+  Unique per team on position and on uma.
+- **`PvpTeamCard`**: `slot` 1..6 (slot 6 is the borrowed card by convention), `support_card`.
+  Unique per member on slot and on card, the borrow slot included (the game refuses a
+  borrowed copy of a card already in the deck).
+- **Two outfits of one character** (`game_id // 100`) may not share a team. That rule spans
+  rows, so `pvp_teams.py` checks it on every save, not only on posting: a draft can be
+  incomplete but never unpostable.
+- **`PVP_TEAM_CAP_PER_EVENT` = 5**, checked on creation only, like `PLAN_CAP`.
+- Every team id goes through `pvp_teams.get_owned_team()`; somebody else's is a 404.
+- `DELETE /account` cascades; `purge_user_pii` leaves teams alone (they hold nothing about
+  the person).
+- A team's `gallery_posts` are the gallery posts copied from it (at most one). The post is a
+  frozen copy, so editing or deleting the team never changes it.
+
+### The gallery: `GalleryPost` and what hangs off it
+
+`models/gallery.py`, all PRIVATE (`content_snapshot.PRIVATE_MODELS`) and on
+`public_payload_cache._IRRELEVANT_MODELS`, so a vote or a comment never rebuilds
+`/calculator-data`. The rules live in `gallery.py` (posting, votes, views, copies, comments,
+reports, erasure), `gallery_ranking.py` (Hot / Top / New), `gallery_moderation.py` (text
+filters, auto-hide, the moderator's decisions, the Discord alert) and `public_identity.py`
+(the one place a person is shown beside public content).
+
+**One generic parent.** Today the only kind is a PvP team; the community plan gallery is
+meant to be a second kind of the same post. So votes, comments and reports point at
+`GalleryPost` by a real FK, and the kind-specific columns are nullable and tied to their kind
+by `gallery_post_event_matches_kind` (the `PvpTeam` XOR idiom). A `GenericForeignKey` would
+lose FK integrity and cascades; tables per gallery would write this twice.
+
+- **`GalleryPost`**: `public_id` (8 characters, the permanent link `/post/<public_id>`, kept
+  through re-posts), `author` (CASCADE), `kind`, `caption` (140, the line on the feed's row;
+  the team's name is never shown), `strategy` (2,000, the longer text only the open post
+  shows; not "notes", which is a `PvpTeam`'s PRIVATE notes and forbidden in any gallery
+  payload), `published_at`, `content_updated_at` (moves on a re-post that changes the team,
+  not on one that only changes the words; Hot ages from it and New sorts by it), `is_hidden` / `hidden_reason` (`reports` or
+  `moderator`) / `hidden_at` (`gallery_post_hidden_has_reason`), `view_count` and
+  `copy_count` (bumped with `F() + 1`). PvP columns: the `champions_meeting` /
+  `league_of_heroes` pair, `team_snapshot` (JSON, the same member shape as a team), the
+  `preview_version` hash (umas and styles; part of the preview image URL) and `source_team`
+  (SET_NULL, never serialized). **One post per person per event** in the database
+  (`one_gallery_post_per_author_cm` / `_loh`).
+- **A post is a FROZEN COPY.** With votes on it, a live team could collect votes and then
+  swap its cards. Posting again for the same event replaces the copy, keeps the `public_id`
+  and the comments (older ones read "On an earlier version"), and **clears the votes**. A
+  hidden post stays hidden when re-posted.
+- **`GalleryVote`**: `(post, user)` unique. **No weight column**: a vote's weight comes from
+  the voter's pledge when the gallery is ranked (`benefits.VOTE_WEIGHT_LADDER`: 1, then
+  2 / 3 / 4 by tier), so a lapse takes the extra weight off every past vote at once. A post
+  also starts with its author's own weight (the head start). Weights never leave the server.
+- **`GalleryComment`**: one level of replies (`parent`; a reply to a reply attaches to its top
+  comment), `body` (500), `edited_at`, the hidden trio, and `is_deleted`: a comment deleted
+  while it has replies keeps its place as "[deleted]" with no text and no author.
+  `author` is SET_NULL for the same reason.
+- **`GalleryReport`**: exactly one of `post` / `comment` (`gallery_report_one_target`), a
+  reason, an optional note, and `resolved_at` / `resolved_by` / `resolution` (`kept` /
+  `removed`). One per person per item. Three open reports from different accounts hide the
+  item (`gallery_moderation.AUTO_HIDE_REPORTS`). `reporter` is SET_NULL so the record
+  survives the account.
+- **`BlockedTerm`**: words refused in captions, comments and display names, stored
+  normalised (NFKC, invisible characters removed, casefolded), matched as a whole word or
+  anywhere. Staff edit it in the admin; PRIVATE, so a local database starts empty.
+- **`CustomUser`** gains `show_supporter_badge` (the person's switch for their tier name and
+  look on posts and comments) and `publishing_blocked` (admin only: no posting, commenting,
+  voting or reporting, everything they posted hidden through the read filter
+  `gallery.visible_posts()` without being deleted, and their votes stop counting).
+- **Views are counted without storing viewers**: a cache key per viewer per post per day in
+  the `gallery` cache (an account id, or a day-salted digest of IP and user agent), never a
+  table. That cache and the gallery's throttle counters are kept out of `default` so they
+  cannot evict the `/calculator-data` payload from its 40 slots.
+- **Erasure**: `gallery.erase_users()` is the one function `DELETE /account` (before the row
+  goes) and `purge_user_pii` both call: posts, votes and comments go (a comment others
+  replied to becomes "[deleted]"), reports keep their record with the reporter cleared.
+- **Demo data** for local work: `manage.py seed_gallery_demo` (SQLite only; `--clear`).
 
 ### Through tables carry recommendation text
 
@@ -1170,6 +1342,17 @@ game itself uses: the white (○), gold (◎) and penalty (×) versions of one e
 the siblings. `evolves_from` is the other relationship, for evolved skills, and stays empty
 until global has skill evolution (the model and the extractor are ready; the import will
 need the `skill_upgrade_*` tables then).
+
+**A skill's family is derived from those two columns, never stored.** `skill_families()`
+(`models/skill.py`) answers "the other versions of these skills" for many skills in one
+query: the rows in the same group, plus the evolutions of that group (and an evolved
+skill's base group), minus the × penalty row, minus anything not on global.
+`Skill.version_label` is the label a picker or a chip shows (`○ white`, `◎ gold`,
+`evolved`). The PvP guide stores ONE row per effect, pointing at the version the author
+named (the sheet tiers the white and gold separately when their usefulness differs), and
+the API sends the rest as `versions` (`api-reference.md`, `GET /pvp-guides`). A stored link
+would be a second truth that goes stale the day the import adds a version; this one picks
+up evolved skills the day `evolves_from` is filled.
 
 `UmaSkill` records which outfit carries which skill and how (`source`), unique on
 `(uma, skill, source)`. `level` is one nullable column with a per-source meaning: the

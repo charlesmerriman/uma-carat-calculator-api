@@ -17,11 +17,16 @@ Layout of this file:
   9. Site content (the About page, the carat income guide and the FAQ, plus
      the "Rebuild website" button that re-bakes them into the public site)
 
-The three join models (UmasOnUmaBanner, SupportsOnSupportBanner,
-ChampionsMeetingUmaRecommendation) are deliberately NOT registered top-level —
-they are edited through inlines on their parent pages. The "Content editors"
-group (see management/commands/create_content_editor_group.py) still needs
-permissions on them for the inlines to save.
+The join models (UmasOnUmaBanner, SupportsOnSupportBanner, UmaSkill,
+SupportCardSkill, DailyLegendRaceUma) and every PvP guide child are
+deliberately NOT registered top-level — they are edited through inlines on
+their parent pages. The "Content editors" group (see
+management/commands/create_content_editor_group.py) still needs permissions on
+them for the inlines to save.
+
+The PvP guide admin (one page per guide, one tab per running style, the decks
+with their cards nested) lives in admin_pvp.py, imported below so it registers
+with the site. The two event admins here only link to it (pvp_guide_link).
 """
 
 # unfold's ModelAdmin has a deeper class hierarchy than pylint's default
@@ -54,6 +59,11 @@ from unfold.admin import ModelAdmin, StackedInline, TabularInline
 from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
 
 from .admin_image_picker import SpacesImagePickerMixin
+# Importing admin_pvp registers the PvP guide admin; the mixin and fieldset
+# put the "PvP guide" link on the two event pages.
+from .admin_pvp import PVP_GUIDE_FIELDSET, PvpGuideLinkMixin
+# Importing admin_gallery registers the gallery's moderation pages.
+from . import admin_gallery  # noqa: F401  pylint: disable=unused-import
 from . import digitalocean_api, patreon_api
 from .admin_patreon_import import (
     PatreonCsvImportForm,
@@ -67,7 +77,7 @@ from .models import (
     Plan, IncomeProfile,
     TeamTrialsRank, ClubRank, ChampionsMeetingRank, LeagueOfHeroesRank,
     BannerTimeline, BannerUma, BannerSupport, BannerStepUp,
-    ChampionsMeeting, ChampionsMeetingUmaRecommendation,
+    ChampionsMeeting,
     SupportsOnSupportBanner, UmasOnUmaBanner,
     GameEvent, LeagueOfHeroes, Scenario,
     DailyLegendRaceRelease, DailyLegendRaceUma,
@@ -157,13 +167,6 @@ class SupportCardSkillInline(TabularInline):
     autocomplete_fields = ("skill",)
     fields = ("skill", "source", "notes")
     extra = 0
-
-
-class RecommendedUmaInline(TabularInline):
-    """Recommended umas for a Champions Meeting."""
-    model = ChampionsMeetingUmaRecommendation
-    autocomplete_fields = ("uma",)
-    extra = 1
 
 
 class ChangelogChangeInline(TabularInline):
@@ -321,7 +324,6 @@ SCHEDULE_OFFSET_FIELDSET = (
         ),
     },
 )
-
 
 @admin.register(BannerTimeline)
 class BannerTimelineAdmin(GlobalDatesStatusMixin, ScheduleOffsetMixin, ImagePreviewMixin,
@@ -847,7 +849,7 @@ class AnniversaryEventAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmi
 
 
 @admin.register(ChampionsMeeting)
-class ChampionsMeetingAdmin(GlobalDatesStatusMixin, ScheduleOffsetMixin, ImagePreviewMixin,
+class ChampionsMeetingAdmin(PvpGuideLinkMixin, GlobalDatesStatusMixin, ScheduleOffsetMixin, ImagePreviewMixin,
                             SpacesImagePickerMixin, ModelAdmin):
     list_display = ("name", "cm_number", "jp_start_date", "global_start_date",
                     "global_end_date", "global_dates_status", "schedule_offset_display")
@@ -855,7 +857,7 @@ class ChampionsMeetingAdmin(GlobalDatesStatusMixin, ScheduleOffsetMixin, ImagePr
     date_hierarchy = "global_start_date"
     ordering = ("-global_start_date",)
     search_fields = ("name",)
-    readonly_fields = ("image_preview",)
+    readonly_fields = ("image_preview", "pvp_guide_link")
     # Editors always fill the JP dates; global dates only once the meeting is
     # confirmed (they're left blank until then, and the app predicts them).
     fieldsets = (
@@ -873,13 +875,8 @@ class ChampionsMeetingAdmin(GlobalDatesStatusMixin, ScheduleOffsetMixin, ImagePr
             "fields": ("track", "surface_type", "distance", "length",
                        "track_condition", "season", "weather", "direction"),
         }),
-        ("Stat recommendations", {
-            "fields": ("speed_recommendation", "stamina_recommendation",
-                       "power_recommendation", "guts_recommendation",
-                       "wit_recommendation"),
-        }),
+        PVP_GUIDE_FIELDSET,
     )
-    inlines = (RecommendedUmaInline,)
 
 
 @admin.register(ChangelogEntry)
@@ -913,7 +910,7 @@ class ChangelogEntryAdmin(ModelAdmin):
 
 
 @admin.register(LeagueOfHeroes)
-class LeagueOfHeroesAdmin(GlobalDatesStatusMixin, ScheduleOffsetMixin, ImagePreviewMixin,
+class LeagueOfHeroesAdmin(PvpGuideLinkMixin, GlobalDatesStatusMixin, ScheduleOffsetMixin, ImagePreviewMixin,
                           SpacesImagePickerMixin, ModelAdmin):
     list_display = ("name", "loh_number", "jp_start_date", "global_start_date",
                     "global_end_date", "global_dates_status", "schedule_offset_display")
@@ -921,7 +918,7 @@ class LeagueOfHeroesAdmin(GlobalDatesStatusMixin, ScheduleOffsetMixin, ImagePrev
     date_hierarchy = "global_start_date"
     ordering = ("-global_start_date",)
     search_fields = ("name",)
-    readonly_fields = ("image_preview",)
+    readonly_fields = ("image_preview", "pvp_guide_link")
     # Mirrors ChampionsMeetingAdmin above section for section — the two content
     # types now hold the same data and render through the same timeline card, so
     # they should be the same page to edit. (This previously omitted the schedule
@@ -945,11 +942,7 @@ class LeagueOfHeroesAdmin(GlobalDatesStatusMixin, ScheduleOffsetMixin, ImagePrev
             "fields": ("track", "surface_type", "distance", "length",
                        "track_condition", "season", "weather", "direction"),
         }),
-        ("Stat recommendations", {
-            "fields": ("speed_recommendation", "stamina_recommendation",
-                       "power_recommendation", "guts_recommendation",
-                       "wit_recommendation"),
-        }),
+        PVP_GUIDE_FIELDSET,
     )
 
 
@@ -1043,6 +1036,7 @@ class CustomUserAdmin(UserAdmin, ModelAdmin):
     # two things a person can quote from their account page.
     search_fields = ("username", "display_name")
     inlines = (UserOshiInline,)
+    readonly_fields = ("show_supporter_badge",)
     # Ordinary accounts sign in through Google/Discord and deliberately hold no
     # email or name (see models/social_account.py), so those fields are dropped
     # from the form rather than sitting there inviting someone to fill them in.
@@ -1056,14 +1050,24 @@ class CustomUserAdmin(UserAdmin, ModelAdmin):
         ("Profile", {
             "fields": ("display_name",),
             "description": (
-                "What the person chose on their account page. Shown to them "
-                "alone; it appears nowhere public."
+                "What the person chose on their account page. Shown to them, "
+                "and beside anything they post or comment in the gallery."
             ),
         }),
         ("Permissions", {
             "fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions"),
         }),
         ("Important dates", {"fields": ("last_login", "date_joined")}),
+        # The gallery's posting ban, and the person's own badge switch (shown,
+        # not editable: it is their choice, made on their account page).
+        ("Moderation", {
+            "fields": ("publishing_blocked", "show_supporter_badge"),
+            "description": (
+                "Blocking stops this account posting, commenting, voting or "
+                "reporting in the gallery and hides what it already posted. "
+                "Unblocking brings it all back."
+            ),
+        }),
     ) + (
         ("Calculator stats", {
             "classes": ("collapse",),
@@ -1329,6 +1333,24 @@ class CalculationConstantsAdmin(ModelAdmin):
                 "These move BANNER DATES, not just income."
             ),
             "fields": ("prediction_factor", "game_event_end_buffer_days"),
+        }),
+        ("PvP milestones", {
+            "description": (
+                "The key moments of every Champions Meeting and League of Heroes, "
+                "in hours after the event's start date (negative means before it). "
+                "Round 1 starts at the start date. The PvP page shows a date for "
+                "each one that is filled in."
+            ),
+            "fields": (
+                "cm_registration_opens_hours",
+                "cm_round_two_hours",
+                "cm_finals_registration_closes_hours",
+                "cm_finals_hours",
+                "loh_registration_opens_hours",
+                "loh_round_two_hours",
+                "loh_finals_registration_closes_hours",
+                "loh_finals_hours",
+            ),
         }),
     )
 

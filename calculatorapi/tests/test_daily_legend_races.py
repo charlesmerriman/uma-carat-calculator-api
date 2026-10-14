@@ -148,7 +148,7 @@ class DailyLegendRaceApiTests(CalculatorTestCase):
             [('Agnes Tachyon (Summer)', 3), ('Tokai Teio', 3),
              ('Vodka', 2), ('King Halo', 1)],
         )
-        self.assertEqual(set(umas[0]), {'id', 'name', 'image', 'rarity'})
+        self.assertEqual(set(umas[0]), {'id', 'name', 'image', 'portrait', 'rarity'})
 
     def test_releases_sort_by_date(self):
         later = make_timeline(name='Later', global_start_date=_dt(2027, 4, 11))

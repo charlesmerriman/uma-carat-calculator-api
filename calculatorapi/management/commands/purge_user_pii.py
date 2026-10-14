@@ -14,6 +14,9 @@ For every user with is_staff=False it:
   - replaces the password hash with Django's unusable-password marker
   - deletes their API token, so any key still sitting in a browser's
     localStorage stops working immediately
+  - erases what they put in the gallery (gallery.erase_users, the same
+    function DELETE /account uses): posts, votes, and comments, a comment
+    others replied to staying as "[deleted]" with no text and no author
 
 Staff accounts are untouched — they still sign in with a password to reach
 /admin and the analytics dashboard.
@@ -52,7 +55,8 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from rest_framework.authtoken.models import Token
 
-from calculatorapi.models import CustomUser, PatreonSupporter
+from calculatorapi import gallery
+from calculatorapi.models import CustomUser, GalleryComment, GalleryPost, GalleryVote, PatreonSupporter
 
 CONFIRM_PHRASE = "purge"
 
@@ -85,7 +89,7 @@ class Command(BaseCommand):
             ),
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options):  # pylint: disable=too-many-locals,too-many-statements
         targets = CustomUser.objects.filter(is_staff=False)
         total = targets.count()
 
@@ -106,6 +110,9 @@ class Command(BaseCommand):
         with_pii = targets.exclude(email="", first_name="", last_name="").count()
         with_password = sum(1 for user in targets.only("password") if user.has_usable_password())
         token_count = Token.objects.filter(user__in=targets).count()
+        gallery_posts = GalleryPost.objects.filter(author__in=targets).count()
+        gallery_comments = GalleryComment.objects.filter(author__in=targets).count()
+        gallery_votes = GalleryVote.objects.filter(user__in=targets).count()
 
         self.stdout.write(f"Non-staff accounts:        {total}")
         self.stdout.write(f"  holding email/name:      {with_pii}")
@@ -115,6 +122,10 @@ class Command(BaseCommand):
         self.stdout.write(f"  holding a usable password: {with_password}")
         self.stdout.write(f"  API tokens to delete:    {token_count}")
         self.stdout.write(f"  Patreon links to clear:  {linked_supporters}")
+        self.stdout.write(
+            f"  Gallery to erase:        {gallery_posts} posts, "
+            f"{gallery_comments} comments, {gallery_votes} votes"
+        )
         self.stdout.write(
             self.style.WARNING(
                 f"Staff accounts left untouched: {CustomUser.objects.filter(is_staff=True).count()}"
@@ -162,6 +173,11 @@ class Command(BaseCommand):
                 user.set_unusable_password()
 
             CustomUser.objects.bulk_update(users, PII_FIELDS + ["password"])
+
+            # A blanked display name would leave every post and comment
+            # saying "Unnamed trainer" under a team or text the person can no
+            # longer take down. The purge removes them instead.
+            gallery.erase_users(users)
 
             # The provider rows stay untouched: they are the (provider,
             # subject_id) pairs that make a returning sign-in resolve to this

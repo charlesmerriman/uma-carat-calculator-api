@@ -4,6 +4,8 @@ from .mixins import EffectiveDateMixin, EventTypeMixin
 
 
 class ChampionsMeetingSerializer(EventTypeMixin, EffectiveDateMixin, serializers.ModelSerializer):
+    # Whether the event has a published PvP guide (views/pvp_guide.py).
+    has_guide = serializers.SerializerMethodField()
     event_type_value = "champions_meeting"
 
     class Meta:
@@ -18,6 +20,10 @@ class ChampionsMeetingSerializer(EventTypeMixin, EffectiveDateMixin, serializers
             "image",
             "track", "surface_type", "distance", "length",
             "track_condition", "season", "weather", "direction",
-            "speed_recommendation", "stamina_recommendation",
-            "power_recommendation", "guts_recommendation", "wit_recommendation",
+            "has_guide",
         )
+
+    def get_has_guide(self, obj):
+        # Annotated by views.pvp_guide.annotate_has_guide where the queryset is
+        # built; an unannotated row has no published guide as far as we know.
+        return getattr(obj, "has_guide", False)

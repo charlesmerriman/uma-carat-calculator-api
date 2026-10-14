@@ -176,7 +176,8 @@ Enforced server-side. Hiding the button is a suggestion; this has to be a rule.
 `DELETE /account` (`views/account.py`) exists because an account that holds no
 email has no other way to ask. It deletes the `CustomUser` (display name with it)
 and lets the models' `on_delete` rules decide the rest: the token, the
-`SocialAccount` rows, the oshis and the whole plan cascade; the `PatreonSupporter` row
+`SocialAccount` rows, the oshis and the whole plan cascade (gallery content first goes
+through `gallery.erase_users`, below); the `PatreonSupporter` row
 is `SET_NULL` and survives with its pointer cleared — the same treatment a
 pledge gets on an unlink, a lapse or a purge. Staff are refused (`403`); admin
 accounts are deleted in the admin, deliberately and logged. There is no undo.
@@ -201,6 +202,26 @@ SocialAccount.objects.get_or_create(
 Django only invokes the callable when it actually creates. Adding `()` would create an
 orphan `CustomUser` on **every returning sign-in** — silently, because nothing else
 breaks. Covered by `test_returning_user_same_account_no_orphan`.
+
+### The display name in public: only beside a post, only through `poster_block`
+
+Until the gallery the display name and the picture were shown to their owner alone. A
+gallery post or comment is the person choosing to show them: the post dialog and the
+comment box say exactly what will appear, and `POST /pvp-teams/<id>/publish` refuses
+without `confirm_public_identity: true`. `public_identity.poster_block(user)` is the ONE
+function that builds a person's public block (display name, first favourite uma's art, and
+the tier NAME plus look key while `show_supporter_badge` is on and a pledge is live).
+Never the generated handle, a user id, a Patreon handle, a tier order or a vote weight.
+
+The brakes: `publishing_blocked` (admin), `show_supporter_badge` (the person), taking a post
+down, deleting a comment, and blanking the display name (refused while a post is up;
+comments then read "Unnamed trainer"). Votes are stored per account and never shown.
+Views store nothing about the viewer in the database.
+
+**A link preview carries no identity and no user text.** `/post/<id>` is built from the
+event and the uma names, and its picture is the three umas with their styles. Discord and X
+keep their own copies after a take-down, so the preview must not hold a name, a portrait of
+the poster or a caption.
 
 ### `POST /login` is staff-only and non-enumerable
 
@@ -269,6 +290,10 @@ so do the oshis: they are the site's art, not personal data. **Irreversible.**
 After it runs, those accounts cannot sign in at all —
 their plans stay in the database but are unreachable. Intended to be run once in
 production.
+
+It also erases the purged accounts' gallery content through `gallery.erase_users`, the
+same function `DELETE /account` uses: posts and votes go, and comments go too except where
+others replied, which stay as "[deleted]" with no text and no author.
 
 **It always clears `PatreonSupporter.linked_user` for the accounts it purges**,
 flag or no flag. The command's job is to make an account unreachable, and a

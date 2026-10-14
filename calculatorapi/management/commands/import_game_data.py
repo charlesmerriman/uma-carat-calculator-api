@@ -67,7 +67,7 @@ from pathlib import Path
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
-from calculatorapi import public_payload_cache
+from calculatorapi import public_payload_cache, pvp_catalogue_cache
 from calculatorapi.models import Skill, SupportCard, SupportCardSkill, Uma, UmaSkill
 
 CONFIRM_PHRASE = "import"
@@ -435,6 +435,7 @@ class Command(BaseCommand):
         # Per-row saves already fire the invalidation signal, but the invariant
         # is that a bulk writer drops the cache itself, so this does too.
         public_payload_cache.invalidate()
+        pvp_catalogue_cache.invalidate()
         return written
 
     def _report(self, plans, dry_run):

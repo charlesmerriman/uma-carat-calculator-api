@@ -205,6 +205,28 @@ def oshi_variants(user):
     return oshi_variants_for(entitled_supporter(user), is_staff=user.is_staff)
 
 
+def early_access_for(supporter, *, is_staff=False):
+    """Whether an already-resolved supporter row (or staff) gets the features
+    that open to supporters and staff before everyone else: any paid tier, or
+    staff, with the same staff bypass as oshi_variants_for.
+
+    WHO, not WHAT: this says who is early, and the client decides which
+    features are still early access (frontend `PVP_EARLY_ACCESS`, the PvP page
+    from 2026-10-14 for about a week, the owner's call). So opening a feature
+    to everyone is one flag there, and the next early-access feature needs no
+    change here. A client gate, and so spoofable: nothing that must be
+    enforced rests on it.
+    """
+    return is_staff or supporter is not None
+
+
+def early_access(user):
+    """Whether `user` gets early-access features right now. False for a guest."""
+    if user is None or not user.is_authenticated:
+        return False
+    return early_access_for(entitled_supporter(user), is_staff=user.is_staff)
+
+
 class IsSupporter(permissions.BasePermission):
     """DRF permission for a whole endpoint that only supporters may reach.
 
@@ -299,3 +321,64 @@ def unlink_supporter(user):
     supporter.linked_user = None
     supporter.save(update_fields=["linked_user"])
     return True
+
+
+def _ladder_value(supporter, ladder, default):
+    """The value of the first rung `supporter` clears, top down, or `default`.
+
+    Shared by every ladder below so they read tiers the same way OSHI_SLOT_LADDER
+    does: thresholds are tier ORDERS (lower is higher), ANY_PAID_TIER catches a
+    tier added below the current bottom, and no entitlement gets the default.
+    """
+    for threshold, value in ladder:
+        if _meets(supporter, threshold):
+            return value
+    return default
+
+
+# ── Gallery looks ────────────────────────────────────────────────────────────
+# How a supporter's gallery post looks, as a KEY the client styles by
+# (`data-gallery-style`). The game's rarity ladder for the top two (an SSR
+# rainbow foil, then SR gold) and a rose edge with a heart for the first paid
+# tier. Not gold / silver / bronze (owner, 2026-10-14): bronze is the default
+# light theme's own brand colour and reads as last place, and silver is the
+# game's R, the rarity players throw away.
+#
+# A key, never an order: the client must not learn tier ranks from it. Staff get
+# no look of their own; a look says "supports the site".
+GALLERY_STYLE_SSR = "ssr"
+GALLERY_STYLE_SR = "sr"
+GALLERY_STYLE_ROSE = "rose"
+GALLERY_STYLE_LADDER = (
+    (1, GALLERY_STYLE_SSR),
+    (2, GALLERY_STYLE_SR),
+    (ANY_PAID_TIER, GALLERY_STYLE_ROSE),
+)
+
+
+def gallery_style_for(supporter):
+    """The look key for an already-resolved supporter row, or None."""
+    return _ladder_value(supporter, GALLERY_STYLE_LADDER, None)
+
+
+# ── Gallery vote weight ──────────────────────────────────────────────────────
+# How much one upvote counts in the gallery ranking (gallery_ranking.py), and
+# how big a head start a post gets from its own author. The second COUNTED
+# benefit after oshi slots, and the same rule applies with more force: a weight
+# NEVER leaves the server. It is not in GET /account and not in any gallery
+# payload; rows show the plain count of people who upvoted, and the FAQ says
+# supporter votes count extra.
+#
+# Derived from the pledge as it is when the gallery is RANKED, not when the vote
+# was cast, so a lapse takes the extra weight off every past vote at once.
+FREE_VOTE_WEIGHT = 1
+VOTE_WEIGHT_LADDER = (
+    (1, 4),
+    (2, 3),
+    (ANY_PAID_TIER, 2),
+)
+
+
+def vote_weight_for(supporter):
+    """How much a vote from an already-resolved supporter row counts."""
+    return _ladder_value(supporter, VOTE_WEIGHT_LADDER, FREE_VOTE_WEIGHT)

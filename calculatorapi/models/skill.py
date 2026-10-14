@@ -133,3 +133,75 @@ class Skill(models.Model):
     def siblings(self):
         """The other versions of this effect: same group, different tier."""
         return Skill.objects.filter(group_id=self.group_id).exclude(pk=self.pk).order_by("-tier")
+
+    @property
+    def version_label(self):
+        """"○ white", "◎ gold" or "evolved": how a picker or a chip names
+        this version of the effect. The × penalty version keeps its own label
+        but is never offered as a recommendation."""
+        if self.evolves_from_id:
+            return "evolved"
+        return self.get_tier_display()
+
+    def family(self):
+        """The other versions of this skill a player can be shown, in order:
+        white, gold, then evolved. See skill_families()."""
+        return skill_families([self]).get(self.pk, [])
+
+
+def _root_group(skill):
+    """The group an evolved skill's base belongs to, or the skill's own."""
+    if skill.evolves_from_id:
+        return skill.evolves_from.group_id
+    return skill.group_id
+
+
+def _version_rank(skill):
+    # White (1), gold (2), then evolved; the game id breaks ties.
+    if skill.evolves_from_id:
+        return (3, skill.game_id)
+    return (skill.tier, skill.game_id)
+
+
+def skill_families(skills):
+    """{skill id: [the other versions of that skill]} for many skills at once.
+
+    A FAMILY IS DERIVED, NEVER STORED. The game data already ties the
+    versions of one effect together: the white (○), gold (◎) and × penalty
+    rows share a `group_id`, and an evolved skill points at its base through
+    `evolves_from`. So a guide stores one row per effect, pointing at the
+    version its author named, and the other versions come from here: the
+    rows in the same group plus the evolutions of that group (and, for an
+    evolved skill, its base's group), minus the × penalty version and minus
+    anything not on global (SkillQuerySet.on_global, the one rule for what a
+    player may be shown). One query for the whole set, so the guide API's
+    query count stays flat however many skills a guide holds.
+
+    When global gets skill evolution, the import fills `evolves_from` and
+    evolved versions appear here without a code change.
+    """
+    skills = list(skills)
+    if not skills:
+        return {}
+    group_ids = {skill.group_id for skill in skills}
+    rows = (
+        Skill.objects.on_global()
+        .filter(
+            models.Q(group_id__in=group_ids)
+            | models.Q(evolves_from__group_id__in=group_ids)
+            | models.Q(evolutions__group_id__in=group_ids)
+        )
+        .exclude(tier=SkillTier.PENALTY)
+        .select_related("evolves_from")
+        .distinct()
+    )
+    by_root = {}
+    for row in rows:
+        by_root.setdefault(_root_group(row), []).append(row)
+    families = {}
+    for skill in skills:
+        members = by_root.get(_root_group(skill), [])
+        families[skill.pk] = sorted(
+            (row for row in members if row.pk != skill.pk), key=_version_rank,
+        )
+    return families

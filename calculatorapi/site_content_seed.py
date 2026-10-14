@@ -43,6 +43,13 @@ PAGES = {
             "global, and how long grinding Star Pieces for one of them takes."
         ),
     },
+    "pvp-guides": {
+        "title": "PvP Guides",
+        "meta_description": (
+            "What to build for each Uma Musume Champions Meeting and League of "
+            "Heroes on global: recommended stats, umas, skills and support decks."
+        ),
+    },
 }
 
 

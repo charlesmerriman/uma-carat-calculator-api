@@ -39,7 +39,7 @@ All theme configuration lives in the `UNFOLD` settings dict in `settings.py`:
 
 `calculatorapi/admin.py` is customized throughout: model and field `verbose_name`s (app
 section "Uma Musume Data"), inlines (timeline → banners; banner → featured umas/cards;
-Champions Meeting → recommended umas), autocomplete pickers, image previews, and
+PvP guide → its sections, one tab per running style), autocomplete pickers, image previews, and
 `CustomUser` mounted on Django's `UserAdmin`.
 
 - `GameEvent`'s reward amounts are plain fields on its own edit page (a "Rewards"
@@ -109,9 +109,9 @@ Two deliberate behaviours:
   matching `GlobalDatesFilter`, and split JP/Global date fieldsets.
 - `ChampionsMeetingAdmin` and `LeagueOfHeroesAdmin` are deliberately the same page
   section for section — same fieldsets, same schedule-offset block, same **Track details**
-  and **Stat recommendations** groups — because the two models hold the same data and
-  render through the same timeline card. Keep them in step when editing either.
-  (`ChampionsMeetingAdmin` additionally carries the `RecommendedUmaInline`.)
+  group (with `PVP_GUIDE_POINTER` under it, where the never-shown stat recommendation
+  boxes used to be) — because the two models hold the same data and render through the
+  same timeline card. Keep them in step when editing either.
 - `PatreonSupporterAdmin` has **"Show name publicly" as a `list_editable` column**, so the
   whole list can be consent-reviewed in one pass. It is the only thing that puts a name on
   the website, and the CSV importer never sets it.
@@ -255,6 +255,31 @@ two, so adding a name to `MEMBER_FIELDS` is the review point.
 
 ---
 
+## Gallery moderation
+
+`admin_gallery.py`, under "Users & access": **Gallery reports** (the queue), **Gallery
+posts**, **Gallery comments** and **Blocked terms**. Nothing here can be added by hand:
+posts, comments, votes and reports come from people through the API.
+
+- **The queue** lists open reports first, each with the item, how many open reports it has
+  and whether it is hidden. Three actions work on the ITEMS behind the selected reports and
+  close their open reports with the moderator's name: **Keep** (show it again), **Remove**
+  (hide it for good; kept in the database, so reversible) and **Block author** (Remove, and
+  set `publishing_blocked`). The post and comment pages carry the same three, for something
+  spotted without a report. All three go through `gallery_moderation`, the same code the
+  auto-hide uses.
+- **Auto-hide**: three open reports from different accounts hide an item until someone
+  decides. If `MODERATION_WEBHOOK_URL` is set, a Discord channel hears about an item's first
+  report and its auto-hide, with a link to the queue (never the text, never the reporter).
+- A post's page lists its voters (admin only), for spotting a brigade of new accounts.
+- **Blocked terms** are refused in captions, comments and display names. "Whole word" is the
+  safe default; "Anywhere" also matches inside longer words. A refusal tells the person to
+  check the posting rules, never which word.
+- **Users** gain a "Moderation" fieldset: `publishing_blocked` (editable) and the person's
+  own `show_supporter_badge` (read-only). Unblocking brings everything they posted back.
+- Who moderates: staff, and anyone given the gallery models' permissions.
+  `create_content_editor_group` does not grant them: moderation is not content editing.
+
 ## Analytics dashboard
 
 `/admin/analytics/` (staff-only, linked from the admin index) shows aggregate usage
@@ -269,13 +294,95 @@ Full metric definitions: [analytics.md](analytics.md).
 
 ---
 
+## PvP guides: one page per guide, one tab per running style
+
+`calculatorapi/admin_pvp.py` (its module docstring is the long version). A guide is
+edited on one page with a tab strip: **Guide** (event, published, scenario, the overview
+text, the stats table, team comps, the general skills) and **Runaway, Front, Pace, Late,
+End**, each holding what the site's tab of that name shows, in the site's order: umas,
+the advice paragraph, skills, the example decks with their six cards, honorable mentions.
+One form, one Save. "PvP guides" is the only sidebar entry; `PvpDeck` and every other
+child are inline-only (`test_join_models_not_registered_top_level`).
+
+- **One inline class per child table per style**, made by `for_style(base, style)`: the
+  queryset is filtered to the style, the form is a `FixedStyleForm` (the `style` field
+  hidden, its initial AND `self.initial` set to the tab's style, `clean_style()` returning
+  it whatever was posted), and the formset prefix is `<style>-<related_name>`
+  (`front-decks`, `late-uma_recommendations`), because six formsets of one model would
+  otherwise post under one name. The fix is on the form, not in `_construct_form`: Django
+  builds the "Add another" template row through `empty_form`, which skips
+  `_construct_form`. The hidden `style` goes LAST in `fields`: unfold draws the drag
+  handle in the first column's cell, and a hidden first column hides the handle.
+- **unfold renders a required choice field with no blank option**, so an untouched blank
+  row would post the first choice, count as changed and fail on its empty picker.
+  `StatConfigForm.style` and `SkillForm.category` carry a blank first choice for that
+  reason; a new child table with a required choice field needs the same.
+- **The tabs are unfold's `activeTab`** (declared on `<body>`, kept in the URL hash,
+  restored by `getCurrentTab()`, which only honours a hash naming an existing
+  `<hash>-group` element). The change form template
+  (`templates/admin/calculatorapi/pvpguide/change_form.html`) draws the nav from the
+  `pvp_tabs` template tag (`templatetags/pvp_admin.py`: rows and errors per tab, nested
+  formsets included), wraps the fieldsets in `activeTab == 'general'` and regroups the
+  inlines by `tab_group` into `<div id="<tab>-group">`. The two wrapper templates beside
+  it are unfold's `tabular.html` / `stacked.html` with one expression changed. A hidden
+  `_pvp_tab` input travels with the POST and `response_change` appends `#<tab>` to the
+  "continue editing" redirect, since the browser never sends the hash.
+- **Decks nest their cards**: `DeckInline.inlines = (DeckSlotInline,)` on unfold's
+  `NestedInlinesModelAdminMixin` (already in its `ModelAdmin`). unfold hands a nested
+  inline its PARENT row (the deck, unsaved for the template) as `obj`, which is what makes
+  `get_extra` and `DeckSlotFormSet.initial` (the missing slot numbers) per deck. The slot
+  formset's `clean()` refuses two Borrow ticks. Deck order is a hidden input the drag
+  handle writes (`DeckForm`); `PvpDeck.get_inline_title` keeps the stacked title short.
+- **The add page has no tables** (`get_inlines` returns `()` without an object): the
+  Event dropdown, scenario, published and the overview, then "Save and continue editing".
+- **One Event dropdown** (`PvpGuideForm.event`, grouped CM / LoH, events with a guide
+  left out) stands in for the two OneToOnes; `clean_event` sets the FK and refuses a
+  taken event, a check the form would otherwise skip because the FKs are not form
+  fields. The event pages link here (`PvpGuideLinkMixin`, `PVP_GUIDE_FIELDSET`), and
+  `?event=cm-12` on the add URL preselects.
+- **Pictures in the pickers**: `PictureAutocompleteJsonView` (routed at
+  `admin/autocomplete/` ahead of the admin's own pattern in `urls.py`) adds `picture` to
+  every autocomplete result, `PictureAutocompleteSelect` puts `data-picture` on the
+  chosen option, and `static/admin/pvp-pickers.js` sets select2's `templateResult` /
+  `templateSelection` defaults. **That script must load after select2 and before
+  Django's `autocomplete.js` runs at DOM ready**, so the widget's `media` property builds
+  ONE list (`[*parent._js, "admin/pvp-pickers.js"]`): Django's Media merge only orders
+  files that share a list, and `parent.media + Media(js=...)` had put it before select2.
+- **Skill versions**: the autocomplete JSON and the `skill-names/` suggestions carry
+  `version` (`Skill.version_label`: `○ white`, `◎ gold`, `evolved`) and the picker draws it
+  as a tag, so an editor picks the version the guide means; the skills tables have a
+  read-only "Other versions" column from `Skill.family()`. The family itself is derived
+  (`data-model.md`, "`Skill` is imported"); nothing to pick or maintain.
+- **The text boxes**: `MentionAwareForm` marks every `MENTION_FIELDS` input with
+  `data-pvp-mentions` (`[[` suggestions from the `skill-names/` route, global skills only)
+  and every textarea with `data-pvp-markdown` (a Preview toggle rendered by the vendored
+  `static/admin/vendor/marked.min.js` 15.0.12, HTML escaped first, `==red==` and
+  `[[Skill]]` as marked extensions). `static/admin/pvp-guide-editor.js`.
+- **Detail actions**: "Open on the site" (`pvp_guides.site_url`, a draft for staff),
+  "Copy from another guide" (an unfold dialog; `pvp_guides.copy_guide` adds the chosen
+  sections, skipping rows the unique constraints already hold, filling only blank overview
+  fields; the dialog posts with htmx, so the action answers 200 with `HX-Redirect` rather
+  than a 302 the dialog would follow inside itself) and "Load from the sheet" (a page,
+  `pvp_sheet.load_guide_from_sheet`, preview first; see "Safety & data" in CLAUDE.md for
+  why an editor's one-event import is an admin edit and not a seed path). Bulk
+  publish / unpublish actions call `public_payload_cache.invalidate()` because
+  `queryset.update()` raises no signals and the Timeline's `has_guide` is cached.
+- **The list** orders by the event's global start (`get_ordering`, an annotation, so not
+  in `ordering` which the checks read), shows the JP date marked "(JP)" when global is not
+  confirmed, and "Filled" chips from five `.only("style")` prefetches rather than
+  conditional counts across joins.
+- `pvp_guides.py` holds the tab list, the sections, `missing_summary` (the line under the
+  tabs) and `copy_guide`; nothing in it imports the admin, so the template tag and the
+  tests read one definition.
+
 ## Calculation constants (Configuration)
 
 One singleton row holding every tunable number the carat projection uses, at
 **Configuration → Calculation constants** in the sidebar. Grouped into fieldsets
 (daily income, packs & passes, login campaigns & gifts, pull costs & uncap, the
-event carat decay curve, global date prediction); each field's help text names
-the source spreadsheet cell it corresponds to.
+event carat decay curve, global date prediction, PvP milestones); each field's help
+text names the source spreadsheet cell it corresponds to. The PvP milestones are hours
+after a CM / LoH start date; only an owner account can change them.
 
 Its admin is deliberately non-standard, because the usual list → add → edit flow
 makes no sense for a single row:

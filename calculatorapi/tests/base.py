@@ -1,6 +1,6 @@
 """The base class every test inherits, and the test-only settings shared across modules."""
 
-from django.core.cache import cache
+from django.core.cache import caches
 from django.test import TestCase
 
 
@@ -23,8 +23,11 @@ class CalculatorTestCase(TestCase):
     """
 
     def run(self, result=None):
-        """Clear the cache, then run the test exactly as TestCase would."""
-        cache.clear()
+        """Clear every cache, then run the test exactly as TestCase would.
+        Every alias, not just "default": the gallery keeps its view marks,
+        throttle counters and preview images in caches of its own."""
+        for alias in caches:
+            caches[alias].clear()
         return super().run(result)
 
 

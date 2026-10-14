@@ -1,8 +1,9 @@
 """
 GET    /account — who the caller is, and what they are entitled to.
-PATCH  /account — change the two preferences an account has: a display name
-                  and the list of favourite umas ("oshis") whose first entry
-                  is their picture.
+PATCH  /account — change the preferences an account has: a display name, the
+                  list of favourite umas ("oshis") whose first entry is their
+                  picture, and whether their supporter tier shows in the
+                  gallery (show_supporter_badge).
 DELETE /account — remove the caller's account and everything that is theirs.
 
 WHY THIS IS ITS OWN ROUTE
@@ -121,8 +122,15 @@ from rest_framework import permissions, serializers, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
-from calculatorapi import benefits
-from calculatorapi.models import OSHI_SLOT_CAP, CustomUser, SocialAccount, Uma, UserOshi
+from calculatorapi import benefits, gallery, gallery_moderation, public_identity
+from calculatorapi.models import (
+    OSHI_SLOT_CAP,
+    CustomUser,
+    GalleryPost,
+    SocialAccount,
+    Uma,
+    UserOshi,
+)
 
 
 class LinkedProviderSerializer(serializers.ModelSerializer):
@@ -191,7 +199,9 @@ class AccountPreferencesSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ["display_name", "oshis"]
+        # show_supporter_badge: the person's switch for their tier and look
+        # beside gallery posts and comments (public_identity.poster_block).
+        fields = ["display_name", "oshis", "show_supporter_badge"]
 
     def validate_oshis(self, umas):
         """Distinct, on offer, and never MORE than the person is entitled to hold.
@@ -277,6 +287,20 @@ class AccountPreferencesSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     "That name has characters that can't be shown."
                 )
+        if not value and GalleryPost.objects.filter(author=self.instance).exists():
+            # A post shows the name, and a post with no name would show
+            # nobody. Refused with the reason rather than taking the posts
+            # down behind the person's back. Comments do not block it: with
+            # the name blank they read "Unnamed trainer", which is also how
+            # someone withdraws their name from old comments.
+            raise serializers.ValidationError("Take your posted teams down first.")
+        try:
+            # The name is public beside gallery posts and comments, so it
+            # passes the same blocked-terms list. Links are not refused here:
+            # 32 characters with no spaces are the account rules' business.
+            gallery_moderation.check_text(value, allow_links=True)
+        except gallery_moderation.TextRefused as refusal:
+            raise serializers.ValidationError(str(refusal)) from refusal
         if value:
             others = CustomUser.objects.exclude(pk=self.instance.pk)
             if others.filter(display_name__iexact=value).exists() or others.filter(
@@ -284,44 +308,6 @@ class AccountPreferencesSerializer(serializers.ModelSerializer):
             ).exists():
                 raise serializers.ValidationError(DISPLAY_NAME_TAKEN)
         return value
-
-
-def _oshi_rows(user):
-    """Every stored oshi, first to last, as the wire shape.
-
-    All of them, not just the covered ones: the page greys out what the
-    current tier no longer covers rather than pretending it is gone. `image`
-    is the storage URL of the uma's portrait (borderless art, else the
-    bordered art), like GET /umas, and "" if an editor has since cleared
-    the picture — the row is still theirs, the client just has nothing to draw.
-    """
-    return [
-        {
-            "position": position,
-            "id": row.uma.pk,
-            "name": row.uma.name,
-            "image": row.uma.portrait.url if row.uma.portrait else "",
-        }
-        for position, row in enumerate(
-            user.oshis.select_related("uma").order_by("position")
-        )
-    ]
-
-
-def _current_avatar_url(oshis, slots):
-    """The picture for the navbar: the first oshi's art, or None.
-
-    None — not "" — when there is nothing to show, so the client draws its
-    default rather than loading an empty src. Nothing while `slots` is 0,
-    which since the free slot (2026-10-07) no signed-in account hits; the
-    guard stays because the count is the server's to decide, not this
-    function's to assume. The first row with an image, rather than strictly
-    position 0, so an editor clearing one uma's picture degrades to the next
-    pick instead of to a broken tile.
-    """
-    if slots < 1:
-        return None
-    return next((row["image"] for row in oshis if row["image"]), None)
 
 
 def _supporter_block(supporter):
@@ -360,6 +346,10 @@ def _delete_account(user):
     path: we hold no email to send anything to, by design, which is why the
     account page makes the person type a confirmation before it sends this.
 
+    Their gallery content goes through gallery.erase_users first: posts,
+    votes and comments (a comment others replied to stays as "[deleted]",
+    with no text and no author).
+
     WHAT STAYS, with its pointer cleared:
       * Their PatreonSupporter row (linked_user is SET_NULL). It is a fact
         about a pledge, not about this account: it keeps its publication
@@ -379,6 +369,9 @@ def _delete_account(user):
             status=status.HTTP_403_FORBIDDEN,
         )
     with transaction.atomic():
+        # Before the row goes: a comment's author is SET_NULL, which would
+        # leave its text behind. erase_users clears it, or removes it.
+        gallery.erase_users([user])
         user.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -395,7 +388,7 @@ def _account_summary(user):
     # picture, so the three can never disagree within one response.
     supporter = benefits.entitled_supporter(user)
     slots = benefits.oshi_slots_for(supporter, is_staff=user.is_staff)
-    oshis = _oshi_rows(user)
+    oshis = public_identity.oshi_rows(user)
 
     return {
         # The generated handle ("user_a3f9c1"), never a real name — social
@@ -405,9 +398,12 @@ def _account_summary(user):
         # The name they chose, or "" when they have not. Not null: "" is the
         # stored value, and the client shows the handle in its place.
         "display_name": user.display_name,
+        # Whether their tier and look show beside their gallery posts and
+        # comments. Their own switch; the pledge itself is unaffected.
+        "show_supporter_badge": user.show_supporter_badge,
         # null, not "", when there is no picture: the client draws its own
         # fallback on null and would try to load "" as an image.
-        "avatar_url": _current_avatar_url(oshis, slots),
+        "avatar_url": public_identity.current_avatar_url(oshis, slots),
         # Every pick, in order, covered or not; and how many the account
         # covers (1 free, more by tier). Top-level and not inside the
         # supporter block because a free account has a count too.
@@ -417,6 +413,9 @@ def _account_summary(user):
         # count (supporter or staff), so the picker locks the right tiles
         # without a second copy of the rule.
         "oshi_variants": benefits.oshi_variants_for(supporter, is_staff=user.is_staff),
+        # Whether features still in early access open for them (supporter or
+        # staff); the client knows which features those are.
+        "early_access": benefits.early_access_for(supporter, is_staff=user.is_staff),
         "linked_providers": LinkedProviderSerializer(linked, many=True).data,
         "supporter": _supporter_block(supporter),
     }
