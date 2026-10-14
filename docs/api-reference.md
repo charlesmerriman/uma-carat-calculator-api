@@ -697,7 +697,7 @@ may hold `==highlight==` spans the client renders red.
   "stat_configs": [{"style": "everyone", "label": "Minimum", "speed": "1200", "stamina": "578*",
                     "power": "1100+", "guts": "", "wit": "1100+", "footnote": "*Bonus Speed every 300 Power."}],
   "uma_recommendations": [{"style": "front", "stars": 5, "role": "", "note": "Use as runaway",
-                           "uma": {"id": 41, "name": "Maruzensky", "image": "url | null"}}],
+                           "uma": {"id": 41, "name": "Maruzensky", "image": "url | null", "portrait": "url | null"}}],
   "skill_recommendations": [{"style": "front", "category": "acceleration", "tier": 0, "order": 0, "note": "",
       "skill": {"id": 210, "name": "Lead the Pack", "description": "string", "image": "url | null",
                 "rarity": 5, "unique_of": "Maruzensky", "version": "○ white", "tier": 1, "is_evolved": false,
@@ -1148,7 +1148,7 @@ server (`1` / `2` / `3`, blank counts as `3`), so the client never repeats that 
   "is_predicted": true,
   "applied_offset_days": 0,
   "umas": [
-    { "id": 12, "name": "Hishi Amazon", "image": "https://…/umas/…png", "rarity": 3 }
+    { "id": 12, "name": "Hishi Amazon", "image": "https://…/umas/…png", "portrait": "https://…/umas_borderless/…png", "rarity": 3 }
   ]
 }
 ```
@@ -1243,11 +1243,17 @@ editor narrowing a cutoff cannot 400 a plan its owner never touched.
   "is_recommended": false,
   "admin_comments": "string | null",
   "banner_timeline": { "id": 1, "name": "string", "start_date": "ISO8601", "end_date": "ISO8601", "is_predicted": false, "jp_start_date": "ISO8601 | null", "jp_end_date": "ISO8601 | null", "global_start_date": "ISO8601 | null", "global_end_date": "ISO8601 | null", "image": "url | null" },
-  "umas": [ { "id": 1, "name": "string", "image": "url | null", "admin_comments": "string | null", "purpose": "string", "first_jp_date": "ISO8601 | null", "is_time_limited": false, "is_three_star": true, "rarity": "1 | 2 | 3 | null" } ],
+  "umas": [ { "id": 1, "name": "string", "image": "url | null", "portrait": "url | null", "admin_comments": "string | null", "purpose": "string", "first_jp_date": "ISO8601 | null", "is_time_limited": false, "is_three_star": true, "rarity": "1 | 2 | 3 | null" } ],
   "rate_up_picks": "int | null",
   "rate_overrides": { "<uma id>": 0.005 }
 }
 ```
+
+An uma's `image` is the game's bordered card art and `portrait` is `Uma.portrait`: the
+borderless cut when the row has one, else the same bordered art. The site draws umas from
+`portrait` inside a frame of its own (frontend `FramedUma`); `image` stays for anything
+that still wants the game's frame. Every uma on `/calculator-data` carries both, the Daily
+Legend Races ones included.
 
 `rarity`, `rate_up_picks` and `rate_overrides` are the **inputs to the rate-up rule** the
 client applies (`data-model.md`, "Rate-up rates"). `rarity` is the game's star count, null

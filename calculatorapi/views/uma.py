@@ -9,6 +9,10 @@ class UmaSerializer(FirstJpDateMixin, serializers.ModelSerializer):
     # (unknown rarity counts as ★3). Declared because ModelSerializer only
     # maps model FIELDS by itself; the wire name and values are unchanged.
     is_three_star = serializers.BooleanField(read_only=True)
+    # The borderless cut when there is one, else the bordered art
+    # (Uma.portrait). The calculator and the Timeline draw it inside a frame
+    # of their own; `image` stays the bordered card art for everything else.
+    portrait = serializers.ImageField(read_only=True)
 
     class Meta:
         model = Uma
@@ -16,6 +20,7 @@ class UmaSerializer(FirstJpDateMixin, serializers.ModelSerializer):
             "id",
             "name",
             "image",
+            "portrait",
             "admin_comments",
             # Public and rendered: the Timeline tile's hover overlay.
             "purpose",

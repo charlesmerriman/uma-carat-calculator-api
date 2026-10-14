@@ -78,9 +78,13 @@ class _ScenarioSerializer(serializers.ModelSerializer):
 
 
 class _UmaSerializer(serializers.ModelSerializer):
+    # The borderless cut (Uma.portrait): the site draws every uma inside a
+    # frame of its own (frontend FramedUma). `image` stays the bordered art.
+    portrait = serializers.ImageField(read_only=True)
+
     class Meta:
         model = Uma
-        fields = ("id", "name", "image")
+        fields = ("id", "name", "image", "portrait")
 
 
 class _SupportCardSerializer(serializers.ModelSerializer):
