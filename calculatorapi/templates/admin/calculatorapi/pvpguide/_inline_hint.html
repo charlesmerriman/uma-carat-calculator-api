@@ -1,0 +1,8 @@
+{% comment %}
+One line above a table on the guide page: the inline's `hint` (admin_pvp.py),
+in the words the editing chapter uses. Included through unfold's
+`template_before`.
+{% endcomment %}
+{% if inline_admin_formset.opts.hint %}
+  <p class="pvp-hint">{{ inline_admin_formset.opts.hint }}</p>
+{% endif %}

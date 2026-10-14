@@ -16,6 +16,7 @@ from calculatorapi.views import (
     PatreonSupporterViewSet,
     UmaViewSet,
 )
+from calculatorapi.admin_pvp import PictureAutocompleteJsonView
 from calculatorapi.views.admin_images import admin_image_library
 from calculatorapi.views.analytics import analytics_dashboard
 from calculatorapi.views.user import user_login, user_logout
@@ -30,6 +31,21 @@ from calculatorapi.views.account_linking import (
 from calculatorapi.views.visits import site_visit
 from calculatorapi.views.patreon_supporters import patreon_sync
 from calculatorapi.views.site_content import site_content
+from calculatorapi.views.pvp_guide import pvp_guide_detail
+from calculatorapi.views.pvp_catalogue import pvp_catalogue
+from calculatorapi.views.pvp_team import pvp_team_detail, pvp_team_list
+from calculatorapi.views.gallery import (
+    gallery_comment_detail,
+    gallery_my_posts,
+    gallery_post_comments,
+    gallery_post_copy,
+    gallery_post_detail,
+    gallery_post_view,
+    gallery_post_vote,
+    gallery_report,
+)
+from calculatorapi.views.pvp_gallery import pvp_gallery_feed, pvp_team_publish
+from calculatorapi.views.gallery_share import share_page, share_preview
 from calculatorapi.views.social_auth import social_auth_start, social_auth_complete
 
 router = routers.SimpleRouter(trailing_slash=False)
@@ -109,6 +125,36 @@ urlpatterns = [
     # frontend build bakes it into the prerendered HTML; a loaded page fetches
     # it once more to pick up edits made since. → views/site_content.py
     path("site-content", site_content, name="site-content"),
+    # One event's PvP guide. <kind> is "cm" or "loh", checked by the view so an
+    # unknown kind gets the same JSON 404 as an unknown event. Drafts 404 for
+    # everyone but staff. → views/pvp_guide.py
+    path("pvp-guides/<str:kind>/<int:event_id>", pvp_guide_detail, name="pvp-guide"),
+    # The team builder's catalogue: umas, cards and skills with aptitudes and
+    # skill links. Public, cached, fetched lazily. → views/pvp_catalogue.py
+    path("pvp-catalogue", pvp_catalogue, name="pvp-catalogue"),
+    # A signed-in player's PvP teams. Guests keep theirs on the device.
+    # → views/pvp_team.py
+    path("pvp-teams", pvp_team_list, name="pvp-team-list"),
+    path("pvp-teams/<int:team_id>", pvp_team_detail, name="pvp-team-detail"),
+    # The PvP gallery: posting a team and one event's ranked feed.
+    # → views/pvp_gallery.py
+    path("pvp-teams/<int:team_id>/publish", pvp_team_publish, name="pvp-team-publish"),
+    path("pvp-gallery/<str:kind>/<int:event_id>", pvp_gallery_feed, name="pvp-gallery-feed"),
+    # One gallery post, whatever gallery it is in: read, take down, vote,
+    # count a view, copy. → views/gallery.py
+    path("gallery/my-posts", gallery_my_posts, name="gallery-my-posts"),
+    path("gallery/posts/<str:public_id>", gallery_post_detail, name="gallery-post-detail"),
+    path("gallery/posts/<str:public_id>/vote", gallery_post_vote, name="gallery-post-vote"),
+    path("gallery/posts/<str:public_id>/view", gallery_post_view, name="gallery-post-view"),
+    path("gallery/posts/<str:public_id>/copy", gallery_post_copy, name="gallery-post-copy"),
+    path("gallery/posts/<str:public_id>/comments", gallery_post_comments, name="gallery-post-comments"),
+    path("gallery/comments/<int:comment_id>", gallery_comment_detail, name="gallery-comment-detail"),
+    path("gallery/reports", gallery_report, name="gallery-report"),
+    # A gallery post's permanent link and its link-preview picture. Served
+    # at /post on the SITE's host, not under /api: an ingress rule in
+    # .do/app.yaml sends /post here. → views/gallery_share.py
+    path("post/<str:public_id>", share_page, name="gallery-share"),
+    path("post/<str:public_id>/preview.jpg", share_preview, name="gallery-share-preview"),
     # Social sign-in (Google / Discord). The <provider> segment is validated by
     # the view against oauth.SUPPORTED_PROVIDERS rather than by a URL regex, so
     # an unknown provider gets a JSON 404 instead of Django's HTML one.
@@ -129,6 +175,15 @@ urlpatterns = [
         "admin/image-library/",
         admin.site.admin_view(admin_image_library),
         name="admin-image-library",
+    ),
+    # The admin's autocomplete JSON, with each result's picture added so the
+    # uma, card and skill pickers can show one (calculatorapi/admin_pvp.py).
+    # Before admin.site.urls: same path as the admin's own "autocomplete/",
+    # so reverse("admin:autocomplete") still names it and this view answers.
+    path(
+        "admin/autocomplete/",
+        admin.site.admin_view(PictureAutocompleteJsonView.as_view(admin_site=admin.site)),
+        name="admin-autocomplete-pictures",
     ),
     path("admin/", admin.site.urls),
     path(

@@ -1,0 +1,235 @@
+/*
+ * Styles for the PvP guide admin page (admin_pvp.py) and its list.
+ *
+ * Colours come from unfold's CSS custom properties (see
+ * spaces-image-picker.css for the rules of that game): --color-base-* for the
+ * neutrals, --color-primary-* for the brand ramp, color-mix() for alpha.
+ * Dark mode keys off the `dark` class unfold puts on <html>.
+ */
+
+/* ── The tab strip ──────────────────────────────────────────────────────── */
+
+.pvp-tabs-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.pvp-tab-count,
+.pvp-tab-errors {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.35rem;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.pvp-tab-count {
+  background: color-mix(in srgb, var(--color-base-500) 18%, transparent);
+  color: var(--color-base-700);
+}
+
+.dark .pvp-tab-count {
+  color: var(--color-base-200);
+}
+
+.pvp-tab-errors {
+  background: #dc2626;
+  color: #fff;
+}
+
+.pvp-missing,
+.pvp-hint,
+.pvp-note {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--color-base-600);
+}
+
+.dark .pvp-missing,
+.dark .pvp-hint,
+.dark .pvp-note {
+  color: var(--color-base-400);
+}
+
+.pvp-hint {
+  margin: -0.75rem 0 1rem;
+}
+
+.pvp-note {
+  margin-bottom: 1.25rem;
+}
+
+/* ── The guide list ─────────────────────────────────────────────────────── */
+
+.pvp-chip {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--color-primary-500) 18%, transparent);
+  color: var(--color-primary-800);
+}
+
+.dark .pvp-chip {
+  color: var(--color-primary-300);
+}
+
+/* ── Pictures in the pickers (pvp-pickers.js) ───────────────────────────── */
+
+.pvp-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.pvp-pick__thumb {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  border-radius: 4px;
+  object-fit: cover;
+  background: color-mix(in srgb, var(--color-base-500) 12%, transparent);
+}
+
+.select2-selection .pvp-pick__thumb {
+  width: 20px;
+  height: 20px;
+}
+
+/* "○ white" / "◎ gold" / "evolved" beside a skill's name. */
+.pvp-pick__version {
+  margin-left: 0.25rem;
+  padding: 0 0.4rem;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+  background: color-mix(in srgb, var(--color-base-500) 16%, transparent);
+  color: var(--color-base-700);
+}
+
+.dark .pvp-pick__version {
+  color: var(--color-base-200);
+}
+
+/* ── The text boxes: preview and skill suggestions (pvp-guide-editor.js) ── */
+
+.pvp-editor-bar {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+}
+
+.pvp-editor-bar button {
+  padding: 0.15rem 0.6rem;
+  border-radius: 0.375rem;
+  border: 1px solid color-mix(in srgb, var(--color-base-500) 35%, transparent);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8rem;
+}
+
+.pvp-editor-bar button[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--color-primary-500) 18%, transparent);
+  border-color: color-mix(in srgb, var(--color-primary-500) 50%, transparent);
+}
+
+.pvp-preview {
+  margin-top: 0.5rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--color-base-500) 25%, transparent);
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  max-width: 70ch;
+}
+
+.pvp-preview[hidden] {
+  display: none;
+}
+
+.pvp-preview p { margin: 0 0 0.6rem; }
+.pvp-preview p:last-child { margin-bottom: 0; }
+.pvp-preview ul, .pvp-preview ol { margin: 0 0 0.6rem 1.25rem; }
+.pvp-preview ul { list-style: disc; }
+.pvp-preview ol { list-style: decimal; }
+.pvp-preview h1, .pvp-preview h2, .pvp-preview h3 { font-weight: 600; margin: 0.6rem 0 0.3rem; }
+.pvp-preview a { color: var(--color-primary-600); text-decoration: underline; }
+.pvp-preview code { font-family: ui-monospace, monospace; font-size: 0.85em; }
+
+.pvp-preview mark.pvp-red {
+  background: transparent;
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.pvp-preview .pvp-skill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0 0.4rem;
+  border-radius: 0.375rem;
+  border: 1px solid color-mix(in srgb, var(--color-primary-500) 45%, transparent);
+  background: color-mix(in srgb, var(--color-primary-500) 12%, transparent);
+  font-weight: 600;
+  font-size: 0.85em;
+}
+
+.pvp-suggest {
+  position: absolute;
+  z-index: 60;
+  min-width: 16rem;
+  max-height: 16rem;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0.25rem;
+  list-style: none;
+  border: 1px solid color-mix(in srgb, var(--color-base-500) 30%, transparent);
+  border-radius: 0.5rem;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  font-size: 0.85rem;
+}
+
+.dark .pvp-suggest {
+  background: var(--color-base-800);
+}
+
+.pvp-suggest li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.5rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+}
+
+.pvp-suggest li[aria-selected="true"],
+.pvp-suggest li:hover {
+  background: color-mix(in srgb, var(--color-primary-500) 18%, transparent);
+}
+
+.pvp-suggest img {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+}
+
+.pvp-suggest .pvp-suggest__empty {
+  cursor: default;
+  opacity: 0.7;
+}

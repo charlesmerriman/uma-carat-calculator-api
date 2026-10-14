@@ -5,7 +5,7 @@ WHAT WENT WRONG: when the banner backfill met a rerun banner ("Seiun Sky (Rerun)
 Narita Brian (Rerun)") it created a second Uma row named "Seiun Sky (Rerun)" instead
 of linking the banner to the existing "Seiun Sky". The two rows share the image, so
 they are visibly the same card, but everything keyed on the uma (banner links,
-oshis, step-up picks, selector targets, CM recommendations) is split between them.
+oshis, step-up picks, selector targets, PvP guide recommendations) is split between them.
 
 WHY IT MATTERS NOW: the skills work gives Uma a unique `game_id`, backfilled from
 the number the image filename starts with. Two rows with one image would trip that
@@ -47,7 +47,6 @@ from django.db import IntegrityError, transaction
 
 from calculatorapi import public_payload_cache
 from calculatorapi.models import (
-    ChampionsMeetingUmaRecommendation,
     Uma,
     UmasOnUmaBanner,
 )
@@ -58,13 +57,12 @@ CONFIRM_PHRASE = "merge"
 RERUN_SUFFIX = re.compile(r"\s*\(rerun\)\s*$", re.IGNORECASE)
 
 # Junction models with NO unique constraint covering the uma, so the database
-# would happily hold the same banner or meeting twice after a re-point. For
+# would happily hold the same banner twice after a re-point. For
 # these the collision check is explicit: the named field, plus the uma, must not
 # already exist on the kept row. Every other relation has a real constraint and
 # lets IntegrityError decide.
 UNCONSTRAINED_JUNCTIONS = {
     UmasOnUmaBanner: "banner_uma",
-    ChampionsMeetingUmaRecommendation: "champions_meeting",
 }
 
 

@@ -317,11 +317,97 @@ order; set their proper order on the Patreon tiers page afterwards.
 ## Champions Meetings & League of Heroes
 
 - **Champions Meetings**: the form is grouped into basic info, **JP / Global
-  server dates** (see *Confirmed vs. predicted dates* above), **Track details**
-  (surface, distance, weather, …) and **Stat recommendations**. Recommended umas
-  are added at the bottom of the page with a search picker.
-- **League of Heroes events**: name, **JP / Global server dates** (same
-  Confirmed/Predicted system), and image.
+  server dates** (see *Confirmed vs. predicted dates* above) and **Track details**
+  (surface, distance, weather, …). Recommended stats, umas, skills and decks go
+  in the event's PvP guide, below.
+- **League of Heroes events**: the same page as Champions Meetings, section for
+  section.
+
+## PvP guides
+
+The site's PvP tab shows a guide for each Champions Meeting and League of
+Heroes event: recommended stats, umas, skills, example decks and more. You
+write them under **Events & competitions → PvP guides**. Every part is
+optional. Fill in what you have and leave the rest empty; the site skips the
+empty parts.
+
+**Starting a guide.** Open the event's own page (Champions Meetings or League of
+Heroes) and press **Write a guide for this event** at the bottom, or press **Add
+PvP guide** on the PvP guides list and pick the event from the dropdown. Each
+event has one guide, so events that already have one are not offered. Pick the
+**scenario**, leave **Published** off for now, and press **Save and continue
+editing**. The tabs appear.
+
+**The tabs.** The page has a row of tabs at the top:
+
+- **Guide** holds what applies to the whole team: the **style ranking**
+  (`Front >> Runaway >= End > Late > Pace`), the **short description** and
+  **meta analysis**, the **recommended stats** table (one row per style, one
+  more per variant such as "901* + 1 Gold"; a blank stat shows as a dash),
+  **team comps** ("2 Front + 1 Pace") and the **general skills** every position
+  should take (the sheet's Green and Debuffs groups go here, with that
+  category).
+- **Runaway, Front, Pace, Late, End** each hold that style's **recommended
+  umas** (search by name, give 1 to 5 stars; **Role** is a short tag shown on
+  the picture, the **note** shows on hover), its **advice** paragraph (the
+  sheet's "Rec. Skills" text), its **recommended skills** (pick a category, and
+  a tier if the guide has tiers; T0 means take it first), its **example decks**
+  and its **honorable mentions** (cards worth having that did not make a deck).
+
+Nothing on a style tab asks which style it is for. A number on a tab is how
+many rows it holds; a red number, after a save, is how many rows refused. The
+line under the tabs says what the guide still lacks.
+
+**Decks.** On a style tab, press **Add another deck**, give it a label
+("Beginner", "Standard", "Whale", or anything you like) and fill its six cards
+in the table under it: the slot is numbered already, pick the **card**, tick
+**Borrow** on the borrowed one, and add a short **note** ("2SP", "Gold +
+Link"). To offer an "or" under a card, press **Add another card**, give it the
+same slot number and set **Alternative** to 1. A row with no card and a note
+like "or any speed" is fine. A blank row you did not touch is not saved.
+
+**Order and pictures.** Drag the handle at the left of a row to reorder umas,
+skills, decks and mentions. The pickers show each uma, card and skill's picture
+so you can tell two of the same name apart.
+
+**Red text and skill links.** In any note or text box, wrap words in two
+equals signs to show them in red, like the sheet's must-haves: `==Must have==`.
+Put a skill's name in double square brackets to link it: `Take [[Groundwork]]
+first`. Typing `[[` offers the matching skill names; the name must be a skill
+already on global, and saving tells you if it is not. The long text boxes have
+a **Preview** button that shows the text as the site will.
+
+**Saving.** Everything on every tab is one form: one **Save** at the bottom
+saves it all, and **Save and continue editing** brings you back to the tab you
+were on. Leaving the page with unsaved changes asks first.
+
+**Starting from another guide.** **Copy from another guide** at the top of the
+page copies the sections you tick from any other guide into this one. Rows
+are added to what is here; nothing you wrote is overwritten, and a row this
+guide already has (the same uma for a style, say) is skipped. Then edit.
+
+**Loading from the sheet.** **Load from the sheet** at the top of the page
+reads the community sheet's guide for this event (the cup tab if there is one,
+else the ImportRange block) and writes it into this guide. Press **Read the
+sheet** with **Preview only** ticked first: the report says what would be
+written and which names in the sheet matched nothing here. Untick it and read
+again to apply. Applying replaces every section of this guide with the sheet's;
+Published or draft stays as you set it.
+
+**Preview, then publish.** **Open on the site** at the top of the page shows
+the guide as a visitor will see it. A draft shows with a bar saying only staff
+can see it. When it looks right, tick **Published** (on the guide's page, or
+straight from the PvP guides list) and save. The event's card on the Timeline
+then gets a "PvP guide" link.
+
+**Deleting.** An event that has a guide cannot be deleted. Delete the guide
+first if you really mean to.
+
+**The PvP tab's intro text** is under **Site content → Pages → PvP guides**,
+edited like the other pages below.
+
+**The key dates** (registration, round 2, finals) come from the site owner's
+settings, the same for every event, so there is nothing to fill in for them.
 
 ## Rank tables
 

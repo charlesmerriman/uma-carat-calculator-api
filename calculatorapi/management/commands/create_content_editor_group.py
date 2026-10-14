@@ -27,8 +27,10 @@ from calculatorapi.models import (
     BannerTimeline, BannerUma, BannerSupport, BannerStepUp,
     UmasOnUmaBanner, SupportsOnSupportBanner,
     GameEvent,
-    ChampionsMeeting, ChampionsMeetingUmaRecommendation,
+    ChampionsMeeting,
     LeagueOfHeroes,
+    PvpGuide, PvpStatConfig, PvpUmaRecommendation, PvpSkillRecommendation,
+    PvpStyleNote, PvpDeck, PvpDeckSlot, PvpHonorableMention, PvpTeamComp,
     ChangelogEntry, ChangelogChange,
     ClubRank, TeamTrialsRank, ChampionsMeetingRank, LeagueOfHeroesRank,
     AnniversaryEvent, AnniversaryEventBanner, AnniversaryEventProduct,
@@ -40,15 +42,18 @@ from calculatorapi.models import (
 
 GROUP_NAME = "Content editors"
 
-# Everything a content editor manages. The three join models are edited via
-# inlines, but inline saves still require permissions on the join model itself.
+# Everything a content editor manages. The join models and the PvP guide's
+# children are edited via inlines, but inline saves still require permissions
+# on those models themselves.
 CONTENT_MODELS = [
     Uma, SupportCard, Skill,
     BannerTimeline, BannerUma, BannerSupport, BannerStepUp,
     UmasOnUmaBanner, SupportsOnSupportBanner,
     GameEvent,
-    ChampionsMeeting, ChampionsMeetingUmaRecommendation,
+    ChampionsMeeting,
     LeagueOfHeroes,
+    PvpGuide, PvpStatConfig, PvpUmaRecommendation, PvpSkillRecommendation,
+    PvpStyleNote, PvpDeck, PvpDeckSlot, PvpHonorableMention, PvpTeamComp,
     ChangelogEntry, ChangelogChange,
     ClubRank, TeamTrialsRank, ChampionsMeetingRank, LeagueOfHeroesRank,
     # Campaigns are content: an editor sets up an anniversary's packs and
@@ -82,7 +87,14 @@ class Command(BaseCommand):
 
         # Look permissions up through ContentType — permission primary keys
         # differ between databases, so they must never be hardcoded.
-        content_types = ContentType.objects.get_for_models(*CONTENT_MODELS).values()
+        # for_concrete_models=False: a proxy model has permissions of its own,
+        # under its own content type, and the default would map it to the
+        # concrete model's, so editors could not open its page. No proxy is in
+        # the list today (the PvP skills proxy was folded into the guide page
+        # in 2026-10), but the flag costs nothing and the next one works.
+        content_types = ContentType.objects.get_for_models(
+            *CONTENT_MODELS, for_concrete_models=False
+        ).values()
         permissions = Permission.objects.filter(content_type__in=content_types)
 
         group.permissions.set(permissions)

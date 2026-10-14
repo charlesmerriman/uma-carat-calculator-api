@@ -114,12 +114,14 @@ meaning anything instead of rendering a signed-in shell around nothing.
 {
   "username": "user_a3f9c1",
   "display_name": "Rhondal",
+  "show_supporter_badge": true,
   "avatar_url": "https://…/media/umas/special-week.png",
   "oshis": [
     { "position": 0, "id": 42, "name": "Special Week", "image": "https://…/media/umas/special-week.png" }
   ],
   "oshi_slots": 1,
   "oshi_variants": true,
+  "early_access": true,
   "linked_providers": [
     { "provider": "google", "linked_at": "2026-07-02" },
     { "provider": "patreon", "linked_at": "2026-09-08" }
@@ -150,6 +152,12 @@ meaning anything instead of rendering a signed-in shell around nothing.
 - **`oshi_variants`** is whether a costume variant (`is_variant` on `GET /umas`)
   may be *added*: `true` for a supporter on any paid tier and for staff. The
   picker locks those tiles on `false`; the rule itself is in the `PATCH` check.
+- **`early_access`** is whether features that open to supporters first are open
+  to this account: `true` for a supporter on any paid tier and for staff
+  (`benefits.early_access_for`). It says WHO; the client knows WHICH features are
+  still early access (the PvP page from 2026-10-14, `PVP_EARLY_ACCESS` in
+  `frontend/src/hooks/usePvpAccess.ts`). A client gate only: the PvP API itself
+  stays open.
 - **`avatar_url`** (top level) is the picture to show in the navbar: the first
   oshi's `image` **while `oshi_slots >= 1`** (skipping any whose picture was
   cleared), else **`null`** — null rather than `""`, so a client draws its
@@ -189,7 +197,7 @@ reflecting the write.
 
 **Request** — any subset of:
 ```json
-{ "display_name": "Rhondal", "oshis": [42, 7, 113] }
+{ "display_name": "Rhondal", "oshis": [42, 7, 113], "show_supporter_badge": false }
 ```
 
 - **`display_name`** — stripped of surrounding whitespace, at most 32
@@ -643,11 +651,218 @@ These endpoints return static rank tables. All are public and support `list` and
 | `GET /leagueofheroesranks` | League of Heroes rank tiers and income amounts |
 | `GET /events` | Game events, including their own reward amounts |
 | `GET /changelog` | Patch-note entries (newest first) with nested, ordered change lines |
-| `GET /site-content` | The admin-editable pages (About, the carat income guide) and the whole FAQ, in one object — **not** an array, see below |
+| `GET /site-content` | The admin-editable pages (About, the Daily Legend Races intro, the PvP guides intro, ...) and the whole FAQ, in one object — **not** an array, see below |
 | `GET /supporters` | Patreon thank-you list — **not** an array, see below |
 | `GET /umas` | The uma catalogue as picker options: `{ id, name, image, is_variant }`, **`Uma.pickable()` only** (with an image, minus the `(All)` placeholder), sorted by name. The same list for everyone; `is_variant` flags costume variants, which only supporters and staff may add (`oshi_variants` on `GET /account`). `image` is the uma's portrait: the borderless art (`Uma.image_borderless`) when the row has it, else the bordered card art; the oshi rows and `avatar_url` on `GET /account` follow the same rule (`Uma.portrait`). Feeds the oshi picker on `/account`, which never loads `/calculator-data`. Nothing else from the uma row (no `admin_comments`, no selector gates). |
 
 All list responses return an array of the resource object, **except `/supporters`** (an object — the anonymous count is not derivable from the rows) **and `/site-content`** (an object with two halves; it is a plain view, not a viewset). Retrieve by appending `/<id>`; `/supporters` and `/site-content` have no retrieve action.
+
+---
+
+## PvP guides
+
+### `GET /pvp-guides/<kind>/<event_id>`
+
+One event's PvP guide (`views/pvp_guide.py`). Public, read-only, **not cached** (one row
+plus a fixed set of prefetches; `test_query_count_does_not_grow_with_decks` pins it), no
+throttle. `kind` is `cm` or `loh`; `event_id` is the event's database id, the `id` in
+`champions_meeting_data` / `league_of_heroes_event_data`.
+
+**`404`** `{"error": "Guide not found"}` for an unknown kind, an unknown event, an event
+with no guide, **and an unpublished guide** — the same body for all four, so the response
+never reveals that a draft exists. **Staff** (`is_staff`, by token) get a draft with
+`is_published: false`, so an editor can preview it on the site.
+
+Every section is optional and may be an empty array. Rows come sorted: by style in the
+order everyone, runaway, front, pace, late, end; then stat rows and decks by the editor's
+`order`, umas by most stars first, skills by tier (0 first, untiered last). Umas, cards
+and skills are embedded small objects, since the client's banner data only knows cards that
+were on a banner. `skill_recommendations` only ever holds skills on global
+(`Skill.objects.on_global()`); `unique_of` names the outfit whose unique the skill is, or
+`null`. **A guide names one version of a skill per row; the other versions ride along.**
+`version` is the skill's own label (`"○ white"`, `"◎ gold"`, `"evolved"`) and `versions`
+lists its other forms a player may be shown (same `group_id`, plus `evolves_from` both
+ways; never the × penalty row, never a skill not on global), each with `id`, `name`,
+`description`, `image`, `rarity`, `tier` (1 white, 2 gold), `version` and `is_evolved`,
+ordered white, gold, evolved; the skill itself carries `tier` and `is_evolved` too.
+Derived from the game data by `models.skill.skill_families` in one query per guide, never
+stored. The team builder counts a source that teaches the pick or a HIGHER version: a card
+that teaches the gold teaches the white too, so a gold on the team covers a white pick and
+a white never covers a gold (owner, 2026-10-14); an evolved pick is covered by its base,
+which is what gets evolved. `style` values: `everyone`, `runaway`, `front`, `pace`, `late`, `end` (never
+`everyone` on an uma). `category`: `acceleration`, `speed`, `green`, `recovery`,
+`debuff`, `other`. Stat values are short TEXT as the guide writes them (`"1100+"`, `"578*"`), `""` where it gives none. Text fields are
+markdown (`short_description`, `meta_analysis`, style note `body`) or one-line notes; both
+may hold `==highlight==` spans the client renders red.
+
+```json
+{ "event_type": "champions_meeting", "event": 12, "is_published": true, "updated_at": "ISO8601",
+  "scenario": {"id": 3, "name": "Grand Live", "image": "url | null"},
+  "style_ranking": "Front >> Runaway >= End > Late > Pace",
+  "short_description": "markdown", "meta_analysis": "markdown",
+  "team_comps": [{"text": "2 Front + 1 Pace", "note": "61% in sims"}],
+  "stat_configs": [{"style": "everyone", "label": "Minimum", "speed": "1200", "stamina": "578*",
+                    "power": "1100+", "guts": "", "wit": "1100+", "footnote": "*Bonus Speed every 300 Power."}],
+  "uma_recommendations": [{"style": "front", "stars": 5, "role": "", "note": "Use as runaway",
+                           "uma": {"id": 41, "name": "Maruzensky", "image": "url | null", "portrait": "url | null"}}],
+  "skill_recommendations": [{"style": "front", "category": "acceleration", "tier": 0, "order": 0, "note": "",
+      "skill": {"id": 210, "name": "Lead the Pack", "description": "string", "image": "url | null",
+                "rarity": 5, "unique_of": "Maruzensky", "version": "○ white", "tier": 1, "is_evolved": false,
+                "versions": [{"id": 211, "name": "Lead the Pack ◎", "description": "string", "image": "url | null",
+                              "rarity": 2, "tier": 2, "version": "◎ gold", "is_evolved": false}]}}],
+  "style_notes": [{"style": "front", "body": "markdown"}],
+  "decks": [{"id": 7, "style": "front", "label": "Standard", "note": "",
+      "slots": [{"slot": 1, "order": 0, "is_borrow": false, "note": "Gold + Link",
+                 "support_card": {"id": 302, "name": "Kitasan Black", "image": "url | null",
+                                  "card_type": "speed", "rarity": 3}},
+                {"slot": 1, "order": 1, "is_borrow": false, "note": "or any speed", "support_card": null}]}],
+  "honorable_mentions": [{"style": "front", "note": "Stats + 2SP", "support_card": {"...": "..."}}],
+  "skill_mentions": {"groundwork": {"id": 88, "name": "Groundwork", "description": "string", "image": "url | null",
+                                     "rarity": 2, "unique_of": null, "version": "◎ gold", "tier": 2,
+                                     "is_evolved": false, "versions": []}} }
+```
+
+`skill_mentions` resolves every `[[Skill name]]` written in the guide's text: `{lower-case
+name: skill object}` (the same shape as `skill` above), skills on global only, matched
+ignoring case. The client renders a mention it finds here as a skill chip and any other as
+its plain name. The admin refuses to save a mention that matches no global skill, so a
+missing key means the skill went stale since.
+
+A deck slot's `order` 0 is the card and 1+ are alternatives for the same slot; a slot row
+always has a card, a note, or both. Whether an event HAS a published guide is `has_guide`
+on the event itself (below), so the client never probes this route to find out.
+
+### `GET /pvp-catalogue`
+
+The team builder's catalogue (`views/pvp_catalogue.py`). Public, the same for everyone, and
+**cached** in `pvp_catalogue_cache.py` (key `pvp_catalogue:v1`, TTL 300, dropped by any
+save or delete of an Uma, SupportCard, Skill, UmaSkill or SupportCardSkill; the same
+one-process caveat as `/calculator-data`). About 540 KB raw, 50 KB gzipped; the client
+fetches it once, when a picker first opens.
+
+```json
+{ "umas": [{"id": 41, "name": "Maruzensky", "image": "url", "portrait": "url",
+            "rarity": 3, "running_style": 1, "character_id": 1004, "is_variant": false, "on_global": true,
+            "apt": {"turf": 8, "dirt": 1, "short": 6, "mile": 8, "medium": 7, "long": 4,
+                    "front": 8, "pace": 5, "late": 2, "end": 1},
+            "skills": [{"skill": 210, "source": "unique", "level": 1}]}],
+  "support_cards": [{"id": 302, "name": "Kitasan Black", "image": "url", "card_type": "speed",
+                     "rarity": 3, "title": "[Fire at My Heels]", "on_global": true,
+                     "skills": [{"skill": 88, "source": "hint"}]}],
+  "skills": [{"id": 88, "name": "Groundwork", "description": "string", "image": "url | null",
+              "rarity": 1, "tier": 1, "group_id": 2001, "cost": 120}] }
+```
+
+`umas` is `Uma.pickable()` (with a picture, no `(All)`); `support_cards` is every card
+with art. `skills` holds skills on global only, and a uma's or card's skill link to any
+other skill is left out. Aptitudes are 1..8 = G..S, `null` when not imported. A uma's
+`source` is `unique` / `innate` / `awakening` / `evolved` (`level` means different things
+per source, `models/uma_skill.py`); a card's is `hint` / `event`. `on_global`: the card is in the
+global game today, i.e. it has any skill link (the import writes links only for cards in the global
+snapshot). The builder uses it for cards on no banner, which have no release date.
+
+### `/pvp-teams`
+
+A signed-in player's teams (`views/pvp_team.py`, rules in `pvp_teams.py`). All
+`IsAuthenticated`; a guest's teams stay on the device. Every id goes through
+`pvp_teams.get_owned_team()`: somebody else's team is `404 {"error": "Team not found"}`,
+the same as one that does not exist.
+
+| Route | Body | Returns |
+|---|---|---|
+| `GET /pvp-teams` | | every team, every event, oldest first |
+| `POST /pvp-teams` | `{kind, event, name?, members?, notes?}` | `201` the team |
+| `GET /pvp-teams/<id>` | | the team |
+| `PUT /pvp-teams/<id>` | `{members, notes?}` | the team. Replaces every member and card in one transaction; `notes` left out = unchanged |
+| `PATCH /pvp-teams/<id>` | `{name?, is_focus?}` | the team. `is_focus: true` moves the account's one pin here; `false` clears it |
+| `DELETE /pvp-teams/<id>` | | `204` |
+
+A team, both ways (catalogue ids only):
+
+```json
+{ "id": 5, "kind": "cm", "event": 12, "name": "", "is_focus": false,
+  "notes": [{"text": "Pull Kitasan", "color": "yellow"}],
+  "members": [{"position": 0, "uma": 41, "style": "front",
+               "cards": [{"slot": 1, "support_card": 302}, {"slot": 6, "support_card": 88}]}],
+  "updated_at": "ISO8601", "post": null }
+```
+
+`post` (out only) is the public id of the gallery post copied from this team, or `null`.
+
+`kind` is `cm` or `loh`. `style` is `runaway` / `front` / `pace` / `late` / `end`. A draft
+may leave positions and slots empty (no entry). **`400 {"error": "<one sentence>"}`**,
+written for the player, for: an unknown event, more than 3 umas or 6 cards, two members in
+one position or two cards in one slot, the same uma twice, **two outfits of one character**,
+the same card twice in one deck (borrow slot included), an unknown uma or card, more than 10
+notes, a note over 1000 characters or an unknown colour (`yellow` / `pink` / `blue` /
+`green`), and creating a sixth team for one event (`PVP_TEAM_CAP_PER_EVENT`; a save to an
+existing team is never refused for it). A refused `PUT` leaves the team as it was.
+
+## Gallery
+
+Posting a PvP team and everything about a post (`views/pvp_gallery.py`, `views/gallery.py`,
+`views/gallery_share.py`; rules in `gallery.py`). A refusal is `{"error": "<one sentence>"}`
+written for the player: `400` for something they can fix, `403` for something they may not
+do. A hidden post, a blocked author's post and an unknown id are the same `404`, except to
+the post's own author.
+
+| Route | Who | Returns |
+|---|---|---|
+| `POST /pvp-teams/<id>/publish` `{confirm_public_identity: true, caption?, strategy?}` | owner | `201` a new post, `200` a re-post (link and comments kept; votes cleared only when the team itself changed, see below). Needs the flag literally `true`, a display name, three umas, eighteen cards, no repeated character, a caption (140) and strategy (2,000) that pass the filters. A refusal about one of the two texts carries `"field": "caption"` or `"strategy"` beside `error` |
+| `GET /pvp-gallery/<kind>/<event_id>?sort=hot\|top\|new&uma=<id>&limit=N` | anyone | `{count, sort, limit, has_more, results: [row], umas: [{uma, count}]}`: the top `limit` rows (20 by default, at most 200) |
+| `GET /gallery/posts/<public_id>` | anyone | the full post |
+| `DELETE /gallery/posts/<public_id>` | author | `204`, the post with its votes, comments and reports |
+| `PUT` / `DELETE /gallery/posts/<public_id>/vote` | signed in | `{upvotes, my_vote}`; `403` on your own post |
+| `POST /gallery/posts/<public_id>/view` | anyone | always `204`; counted once per viewer per day |
+| `POST /gallery/posts/<public_id>/copy` | anyone | `{kind, event, members}`; the client adds the team through its own path |
+| `GET /gallery/my-posts` | signed in | the caller's posts, hidden ones too (`"hidden": true`) |
+| `GET /gallery/posts/<public_id>/comments?page=N` | anyone | `{count, page, has_more, results: [comment]}`, 50 top comments per page |
+| `POST /gallery/posts/<public_id>/comments` `{body, parent?}` | signed in, display name | `201` the comment |
+| `PATCH` / `DELETE /gallery/comments/<id>` `{body}` | its author | the comment / `204` |
+| `POST /gallery/reports` `{post: public_id}` or `{comment: id}`, `reason`, `note?` | signed in | `201`, no body; `409` on a repeat |
+| `GET /post/<public_id>` | anyone | HTML: link-preview tags, then on to the post in the app. **Not under `/api`** |
+| `GET /post/<public_id>/preview.jpg?v=<version>` | anyone | the 1200x630 preview JPEG |
+
+A feed row (the full post adds `strategy` (the long text, `""` when none; never on a row), `team`, `event` (`{kind, id, label}`, the label being the event's name), `hidden` and `stats.copies`):
+
+A re-post whose team is unchanged (same umas, styles and cards in the snapshot) only replaces
+the words: votes, `content_updated_at` and so the post's place in Hot and New all stay. Any
+change to the team is a new version: votes cleared, `content_updated_at` moved, older
+comments flagged `earlier_version`.
+
+```json
+{ "public_id": "k3Df8aQ2", "caption": "Runaway blocker", "published_at": "ISO8601",
+  "content_updated_at": "ISO8601", "is_mine": false,
+  "umas": [{"uma": 41, "style": "runaway"}],
+  "stats": {"views": 212, "upvotes": 14, "comments": 5},
+  "my_vote": false,
+  "poster": {"display_name": "MooncakeMile", "portrait": "https://...png",
+             "tier_name": "Senior Class", "gallery_style": "ssr"} }
+```
+
+**"Load more" asks for a longer `limit`, never a next page.** Hot and Top are re-ranked on
+every request, so an offset page cut from a fresh ranking would repeat a post that sank and
+skip one that rose since the page before. `uma` keeps the posts whose team has that uma (a
+non-number is ignored); `count` and `has_more` follow the filter, and `umas` is the whole
+event's tally either way (each uma once per post, most-used first, catalogue umas only), so
+the filter menu only offers umas that find something.
+
+`my_vote` is `null` for a guest. `poster` is `public_identity.poster_block`: `tier_name` and
+`gallery_style` (`ssr` / `sr` / `rose`) are `null` without a live pledge or with the badge
+off. `upvotes` counts people; the weighted points that rank the feed never leave the server.
+Never in any gallery payload: a username, a user id, the team's name, notes or pin, a vote
+weight, a tier order, who voted, viewed or reported.
+
+A comment: `{id, state, body, created_at, edited, earlier_version, is_author, is_mine,
+poster, replies: [comment]}`. `state` is `visible`, `deleted` ("[deleted]"), `removed`
+("[removed]") or `under_review` (your own hidden comment); only `visible` and
+`under_review` carry `body` and `poster`. `reason` is `spam`, `harassment`,
+`sexual_or_violent`, `personal_info` or `other`.
+
+Throttles (all in the `gallery` cache): `gallery_read` 120/h, `gallery_vote` 120/h,
+`gallery_view` 300/h (dropped quietly), `gallery_copy` 30/h, `gallery_publish` 20/h,
+`gallery_comment` 20/h (5/h for accounts younger than a day), `gallery_report` 20/day,
+`gallery_share` 600/h.
 
 ---
 
@@ -945,7 +1160,7 @@ server (`1` / `2` / `3`, blank counts as `3`), so the client never repeats that 
   "is_predicted": true,
   "applied_offset_days": 0,
   "umas": [
-    { "id": 12, "name": "Hishi Amazon", "image": "https://…/umas/…png", "rarity": 3 }
+    { "id": 12, "name": "Hishi Amazon", "image": "https://…/umas/…png", "portrait": "https://…/umas_borderless/…png", "rarity": 3 }
   ]
 }
 ```
@@ -1040,11 +1255,17 @@ editor narrowing a cutoff cannot 400 a plan its owner never touched.
   "is_recommended": false,
   "admin_comments": "string | null",
   "banner_timeline": { "id": 1, "name": "string", "start_date": "ISO8601", "end_date": "ISO8601", "is_predicted": false, "jp_start_date": "ISO8601 | null", "jp_end_date": "ISO8601 | null", "global_start_date": "ISO8601 | null", "global_end_date": "ISO8601 | null", "image": "url | null" },
-  "umas": [ { "id": 1, "name": "string", "image": "url | null", "admin_comments": "string | null", "purpose": "string", "first_jp_date": "ISO8601 | null", "is_time_limited": false, "is_three_star": true, "rarity": "1 | 2 | 3 | null" } ],
+  "umas": [ { "id": 1, "name": "string", "image": "url | null", "portrait": "url | null", "admin_comments": "string | null", "purpose": "string", "first_jp_date": "ISO8601 | null", "is_time_limited": false, "is_three_star": true, "rarity": "1 | 2 | 3 | null" } ],
   "rate_up_picks": "int | null",
   "rate_overrides": { "<uma id>": 0.005 }
 }
 ```
+
+An uma's `image` is the game's bordered card art and `portrait` is `Uma.portrait`: the
+borderless cut when the row has one, else the same bordered art. The site draws umas from
+`portrait` inside a frame of its own (frontend `FramedUma`); `image` stays for anything
+that still wants the game's frame. Every uma on `/calculator-data` carries both, the Daily
+Legend Races ones included.
 
 `rarity`, `rate_up_picks` and `rate_overrides` are the **inputs to the rate-up rule** the
 client applies (`data-model.md`, "Rate-up rates"). `rarity` is the game's star count, null
@@ -1223,6 +1444,11 @@ Two things to know:
   deep in the odds.
 - **`training_pass_start_date` is a plain `YYYY-MM-DD` calendar day**, not a
   datetime.
+- **The eight PvP milestones are hours after an event's start date** (negative = before):
+  `cm_registration_opens_hours` (-72), `cm_round_two_hours` (48),
+  `cm_finals_registration_closes_hours` (108), `cm_finals_hours` (120), and the same four
+  `loh_*` names, which are `null` until League of Heroes' schedule is known. Round 1 is
+  the start date itself. The PvP page shows a date per non-null milestone.
 
 `id` is deliberately excluded — there is only ever one row.
 
@@ -1376,7 +1602,9 @@ no campaign column.
 
 Same **resolved-date** contract as `BannerTimeline`: `start_date`/`end_date` are the confirmed global dates when set, otherwise dates **predicted** from the JP schedule; `is_predicted` flags an estimate; the raw `jp_*`/`global_*` fields are exposed (`global_*` null until confirmed). Champions Meetings resolve against their own anchor set, independent of banners and League of Heroes. Schedule offsets are the one exception — they cascade across all three content types, so `applied_offset_days` here may originate from a banner.
 
-**Course details.** `track` through `direction` and the five `*_recommendation` values are hand-entered in the admin and unknown until a meeting is announced. The columns are non-null, so "unknown" is a **sentinel, not a null**: `"TBD"` for the text fields and `0` for the recommendations. Clients should treat those two values as "not announced" rather than displaying them raw.
+**Course details.** `track` through `direction` are hand-entered in the admin and unknown until a meeting is announced. The columns are non-null, so "unknown" is a **sentinel, not a null**: `"TBD"`. Clients should treat it as "not announced" rather than displaying it raw.
+
+**`has_guide`**: whether the event has a PUBLISHED PvP guide (`GET /pvp-guides/cm/<id>`); a draft counts as none. An `Exists` annotation (`views.pvp_guide.annotate_has_guide`), so publishing or unpublishing a guide drops the cached payload. The five `*_recommendation` stat fields left the wire with the PvP guide (2026-10); the guide's `stat_configs` replace them.
 
 ```json
 {
@@ -1396,8 +1624,7 @@ Same **resolved-date** contract as `BannerTimeline`: `start_date`/`end_date` are
   "image": "url | null",
   "track": "string", "surface_type": "string", "distance": "string", "length": "string",
   "track_condition": "string", "season": "string", "weather": "string", "direction": "string",
-  "speed_recommendation": 0, "stamina_recommendation": 0, "power_recommendation": 0,
-  "guts_recommendation": 0, "wit_recommendation": 0
+  "has_guide": false
 }
 ```
 
@@ -1405,7 +1632,7 @@ Same **resolved-date** contract as `BannerTimeline`: `start_date`/`end_date` are
 
 Same resolved-date contract as above, with its own anchor set (schedule offsets excepted — those cascade across all three content types). Note the standalone `GET /leagueofheroes` route serves raw confirmed dates only (`is_predicted` is always `false` and `applied_offset_days` always 0 there); predictions and offsets are emitted only via `GET /calculator-data`.
 
-**Identical to `ChampionsMeeting` apart from `event_type` and `loh_number`** — same course details, same stat recommendations, same `"TBD"`/`0` sentinels — because the two render through one shared timeline card. Treat them as one shape with two tags: a field added to one belongs on the other.
+**Identical to `ChampionsMeeting` apart from `event_type` and `loh_number`** — same course details, same `"TBD"` sentinel, same `has_guide` — because the two render through one shared timeline card. Treat them as one shape with two tags: a field added to one belongs on the other.
 
 ```json
 {
@@ -1425,7 +1652,6 @@ Same resolved-date contract as above, with its own anchor set (schedule offsets 
   "image": "url | null",
   "track": "string", "surface_type": "string", "distance": "string", "length": "string",
   "track_condition": "string", "season": "string", "weather": "string", "direction": "string",
-  "speed_recommendation": 0, "stamina_recommendation": 0, "power_recommendation": 0,
-  "guts_recommendation": 0, "wit_recommendation": 0
+  "has_guide": false
 }
 ```

@@ -1,0 +1,28 @@
+{% comment %}
+unfold's admin/edit_inline/tabular.html with one change: the inline shows
+when the open tab is its `tab_group` (admin_pvp.py), not "general". Keep the
+rest identical to unfold's so an upgrade is a diff of one line.
+{% endcomment %}
+<div id="{{ inline_admin_formset.formset.prefix }}-group" data-inline-type="tabular" x-show="activeTab == '{{ inline_admin_formset.opts.tab_group }}'">
+    <div class="tabular inline-related {% if forloop.last %}last-related{% endif %}">
+        <fieldset class="module relative {{ inline_admin_formset.classes }} min-w-0" aria-labelledby="{{ inline_admin_formset.formset.prefix }}-heading">
+            {% if inline_admin_formset.is_collapsible %}<details><summary class="*:mb-0">{% endif %}
+
+            {% include "unfold/helpers/inline_heading.html" %}
+
+            {% if inline_admin_formset.is_collapsible %}</summary>{% endif %}
+
+            {% if inline_admin_formset.opts.template_before %}
+                {% include inline_admin_formset.opts.template_before %}
+            {% endif %}
+
+            {% include "unfold/helpers/edit_inline/tabular_table.html" %}
+
+            {% if inline_admin_formset.opts.template_after %}
+                {% include inline_admin_formset.opts.template_after %}
+            {% endif %}
+
+            {% if inline_admin_formset.is_collapsible %}</details>{% endif %}
+        </fieldset>
+    </div>
+</div>

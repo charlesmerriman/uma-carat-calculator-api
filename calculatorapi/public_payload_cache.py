@@ -90,6 +90,18 @@ _IRRELEVANT_MODELS = frozenset({
     "plan",
     "incomeprofile",
     "useroshi",
+    # A player's PvP teams. Saved by auto-save, so the 2026-09-23 lesson above
+    # applies in full. Served by /pvp-teams, never here.
+    "pvpteam",
+    "pvpteammember",
+    "pvpteamcard",
+    # The gallery. A vote, a view or a comment is a write on every click, so
+    # the same lesson applies; none of it is on /calculator-data.
+    "gallerypost",
+    "galleryvote",
+    "gallerycomment",
+    "galleryreport",
+    "blockedterm",
     # Accounts and auth.
     "customuser",
     "socialaccount",
@@ -102,6 +114,18 @@ _IRRELEVANT_MODELS = frozenset({
     "sitepage",
     "faqcategory",
     "faqitem",
+    # The PvP guide's children: served by GET /pvp-guides, never here. NOT the
+    # guide itself, whose is_published feeds has_guide on both race arrays, so
+    # publishing or unpublishing a guide must drop the payload. A few rebuilds
+    # per event is fine.
+    "pvpstatconfig",
+    "pvpumarecommendation",
+    "pvpskillrecommendation",
+    "pvpstylenote",
+    "pvpdeck",
+    "pvpdeckslot",
+    "pvphonorablemention",
+    "pvpteamcomp",
     # Analytics counters. These are written on EVERY visit -- leaving them out
     # of the denylist would invalidate the cache continuously and make the whole
     # thing a no-op.

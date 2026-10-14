@@ -76,6 +76,17 @@ class OshiLadderTests(OshiTestCase):
         self._pledge(self.junior)
         self.assertTrue(benefits.oshi_variants(self.user))
 
+    def test_early_access_is_for_any_paid_tier_and_staff(self):
+        self.assertFalse(benefits.early_access(self.user))
+        self.assertFalse(benefits.early_access(None))
+        self.assertTrue(benefits.early_access(make_user("staffer", is_staff=True)))
+        self._pledge(self.junior)
+        self.assertTrue(benefits.early_access(self.user))
+
+    def test_a_lapse_ends_early_access(self):
+        self._pledge(self.junior, is_active=False)
+        self.assertFalse(benefits.early_access(self.user))
+
     def test_a_lapse_takes_costume_variants_away(self):
         self._pledge(self.junior, is_active=False)
         self.assertFalse(benefits.oshi_variants(self.user))
@@ -139,6 +150,13 @@ class OshiPictureTests(OshiTestCase):
         self.assertTrue(self._get()["oshi_variants"])
         client, _ = auth_client(make_user("staffer", is_staff=True))
         self.assertTrue(client.get("/account").json()["oshi_variants"])
+
+    def test_the_account_says_who_gets_early_access(self):
+        self.assertFalse(self._get()["early_access"])
+        self._pledge(self.junior)
+        self.assertTrue(self._get()["early_access"])
+        client, _ = auth_client(make_user("staffer", is_staff=True))
+        self.assertTrue(client.get("/account").json()["early_access"])
 
     def test_a_free_account_s_pick_is_its_picture(self):
         self._patch({"oshis": self._ids(3)})

@@ -17,7 +17,6 @@ from .champions_meeting import ChampionsMeeting
 from .banner_uma import BannerUma
 from .banner_support import BannerSupport
 from .banner_step_up import BannerStepUp
-from .champions_meeting_uma_recommendation import ChampionsMeetingUmaRecommendation
 from .umas_on_uma_banner import UmasOnUmaBanner
 from .supports_on_support_banner import SupportsOnSupportBanner
 from .game_event import GameEvent
@@ -25,6 +24,19 @@ from .scenario import Scenario
 from .daily_legend_race import DailyLegendRaceRelease, DailyLegendRaceUma
 from .league_of_heroes_rank import LeagueOfHeroesRank
 from .league_of_heroes import LeagueOfHeroes
+from .pvp_guide import (
+    PvpGuide,
+    PvpStatConfig,
+    PvpUmaRecommendation,
+    PvpSkillRecommendation,
+    PvpStyleNote,
+    PvpDeck,
+    PvpDeckSlot,
+    PvpHonorableMention,
+    PvpTeamComp,
+    PvpStyle,
+    PvpSkillCategory,
+)
 from .changelog_entry import ChangelogEntry
 from .changelog_change import ChangelogChange
 from .social_account import SocialAccount
@@ -48,3 +60,31 @@ from .patreon_credentials import PatreonCredentials
 from .site_page import SitePage
 from .faq_category import FaqCategory
 from .faq_item import FaqItem
+from .pvp_team import (
+    PvpTeam,
+    PvpTeamMember,
+    PvpTeamCard,
+    PvpNoteColor,
+    PVP_TEAM_CAP_PER_EVENT,
+    PVP_TEAM_SIZE,
+    PVP_DECK_SIZE,
+    PVP_BORROW_SLOT,
+    PVP_NOTE_CAP,
+    PVP_NOTE_MAX_LENGTH,
+)
+from .gallery import (
+    BlockedTerm,
+    BlockedTermMatch,
+    GalleryComment,
+    GalleryHiddenReason,
+    GalleryPost,
+    GalleryPostKind,
+    GalleryReport,
+    GalleryReportReason,
+    GalleryReportResolution,
+    GalleryVote,
+    GALLERY_CAPTION_MAX_LENGTH,
+    GALLERY_STRATEGY_MAX_LENGTH,
+    GALLERY_COMMENT_MAX_LENGTH,
+    GALLERY_REPORT_NOTE_MAX_LENGTH,
+)

@@ -51,6 +51,8 @@ class LeagueOfHeroes(models.Model):
     season = models.CharField(max_length=255, default="TBD")
     weather = models.CharField(max_length=255, default="TBD")
     direction = models.CharField(max_length=255, default="TBD")
+    # The five recommendations: see the note on ChampionsMeeting. Unused, and
+    # dropped in the team-builder release.
     speed_recommendation = models.IntegerField(default=0)
     stamina_recommendation = models.IntegerField(default=0)
     power_recommendation = models.IntegerField(default=0)

@@ -34,11 +34,16 @@ class ChampionsMeeting(models.Model):
     season = models.CharField(max_length=255)
     weather = models.CharField(max_length=255)
     direction = models.CharField(max_length=255)
-    speed_recommendation = models.IntegerField()
-    stamina_recommendation = models.IntegerField()
-    power_recommendation = models.IntegerField()
-    guts_recommendation = models.IntegerField()
-    wit_recommendation = models.IntegerField()
+    # Never rendered, and replaced by the PvP guide's stat rows
+    # (models/pvp_guide.py, PvpStatConfig). Off the admin form and the API
+    # since the guide shipped; the columns drop in the team-builder release once
+    # production confirms they are all zero. The default keeps an admin add
+    # working while the form no longer offers them.
+    speed_recommendation = models.IntegerField(default=0)
+    stamina_recommendation = models.IntegerField(default=0)
+    power_recommendation = models.IntegerField(default=0)
+    guts_recommendation = models.IntegerField(default=0)
+    wit_recommendation = models.IntegerField(default=0)
 
     class Meta:
         # Proper-noun casing (default capfirst would render "Champions meetings").
