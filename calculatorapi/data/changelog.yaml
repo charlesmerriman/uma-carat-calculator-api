@@ -32,6 +32,28 @@
 # module changed. Newest entry first is conventional here but not required — the
 # page sorts by date.
 
+- key: pvp-early-access
+  date: 2026-10-14
+  title: "PvP guides, teams and a gallery"
+  version: "v2.0"
+  changes:
+    - added: "There's a PvP tab now. Patreon supporters get it first, and it opens to everyone soon."
+    - added: "Pick a Champions Meeting or League of Heroes event to see its course, scenario and key dates."
+    - added: "An event's guide covers the stats to aim for, the best umas for each running style, the skills worth having and some example decks. Skills come with their in-game descriptions."
+    - added: "Cards released since the last event get their own list."
+    - added: "Build your team on My team: three umas, a running style each, six support cards apiece."
+    - added: "Search cards by name or by a skill they teach. Anything the guide recommends is marked."
+    - added: "Teams save to your account, or on this device if you aren't signed in."
+    - added: "The Team button in the menu bar opens your team over any planner page. Stick notes on it while you plan your pulls."
+    - added: "The gallery: post your team and browse everyone else's, sorted by Hot, Top or New."
+    - added: "Upvote, comment, or copy a team into your own."
+    - added: "Every post has its own link. Paste it in Discord or on X and it shows the three umas."
+    - added: "Supporters' upvotes count for more, and their posts stand out."
+    - added: "Posts and comments have a Report button."
+    - added: "Your account page lists your gallery posts. A switch there hides your Patreon tier on them."
+    - changed: "Every uma on the site sits in the same silver frame now. Your own favourites get a rainbow one."
+    - changed: "The Privacy Policy and Terms now cover the gallery: what everyone can see when you post or comment, and what you can't post."
+
 - key: 2026-10-fixes
   date: 2026-10-13
   title: "A few fixes"
