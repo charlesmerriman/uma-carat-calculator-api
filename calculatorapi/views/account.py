@@ -121,7 +121,7 @@ from rest_framework import permissions, serializers, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
-from calculatorapi import benefits
+from calculatorapi import benefits, public_identity
 from calculatorapi.models import OSHI_SLOT_CAP, CustomUser, SocialAccount, Uma, UserOshi
 
 
@@ -286,44 +286,6 @@ class AccountPreferencesSerializer(serializers.ModelSerializer):
         return value
 
 
-def _oshi_rows(user):
-    """Every stored oshi, first to last, as the wire shape.
-
-    All of them, not just the covered ones: the page greys out what the
-    current tier no longer covers rather than pretending it is gone. `image`
-    is the storage URL of the uma's portrait (borderless art, else the
-    bordered art), like GET /umas, and "" if an editor has since cleared
-    the picture — the row is still theirs, the client just has nothing to draw.
-    """
-    return [
-        {
-            "position": position,
-            "id": row.uma.pk,
-            "name": row.uma.name,
-            "image": row.uma.portrait.url if row.uma.portrait else "",
-        }
-        for position, row in enumerate(
-            user.oshis.select_related("uma").order_by("position")
-        )
-    ]
-
-
-def _current_avatar_url(oshis, slots):
-    """The picture for the navbar: the first oshi's art, or None.
-
-    None — not "" — when there is nothing to show, so the client draws its
-    default rather than loading an empty src. Nothing while `slots` is 0,
-    which since the free slot (2026-10-07) no signed-in account hits; the
-    guard stays because the count is the server's to decide, not this
-    function's to assume. The first row with an image, rather than strictly
-    position 0, so an editor clearing one uma's picture degrades to the next
-    pick instead of to a broken tile.
-    """
-    if slots < 1:
-        return None
-    return next((row["image"] for row in oshis if row["image"]), None)
-
-
 def _supporter_block(supporter):
     """The caller's Patreon entitlement, from the already-resolved row (or None).
 
@@ -395,7 +357,7 @@ def _account_summary(user):
     # picture, so the three can never disagree within one response.
     supporter = benefits.entitled_supporter(user)
     slots = benefits.oshi_slots_for(supporter, is_staff=user.is_staff)
-    oshis = _oshi_rows(user)
+    oshis = public_identity.oshi_rows(user)
 
     return {
         # The generated handle ("user_a3f9c1"), never a real name — social
@@ -407,7 +369,7 @@ def _account_summary(user):
         "display_name": user.display_name,
         # null, not "", when there is no picture: the client draws its own
         # fallback on null and would try to load "" as an image.
-        "avatar_url": _current_avatar_url(oshis, slots),
+        "avatar_url": public_identity.current_avatar_url(oshis, slots),
         # Every pick, in order, covered or not; and how many the account
         # covers (1 free, more by tier). Top-level and not inside the
         # supporter block because a free account has a count too.

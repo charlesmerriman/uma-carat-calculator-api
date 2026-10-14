@@ -32,6 +32,24 @@ class CustomUser(GameStats, AbstractUser):
             "handle. Unique among non-blank names, ignoring case."
         ),
     )
+    # GALLERY (models/gallery.py). The person's own switch: off hides their
+    # supporter look AND tier name beside everything they post or comment.
+    # Their pledge is unaffected; only what others see changes.
+    show_supporter_badge = models.BooleanField(
+        default=True,
+        help_text="The person's choice to show their supporter tier on gallery posts and comments.",
+    )
+    # Admin only, never settable through PATCH /account. Blocks posting,
+    # commenting, voting and reporting, and hides everything they posted
+    # through the gallery's read filter WITHOUT deleting it, so unblocking
+    # restores it. Their votes stop counting. Applies to every gallery.
+    publishing_blocked = models.BooleanField(
+        default=False,
+        help_text=(
+            "Stops this account posting, commenting, voting or reporting in the "
+            "gallery, and hides what it already posted until unblocked."
+        ),
+    )
     # The 25 stat fields (ranks, income toggles, balances) come from GameStats.
     # They are THIS ACCOUNT'S numbers. A plan can read an IncomeProfile's set
     # instead (models/income_profile.py); plans.stats_target() decides which.

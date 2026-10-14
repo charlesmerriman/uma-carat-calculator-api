@@ -87,6 +87,14 @@ PRIVATE_MODELS = (
     "PvpTeam",
     "PvpTeamMember",
     "PvpTeamCard",
+    # The gallery: posts, votes, comments and reports are people's own
+    # activity. Blocked terms are moderation config, not content: a local
+    # database starts with an empty list rather than a copy of prod's.
+    "GalleryPost",
+    "GalleryVote",
+    "GalleryComment",
+    "GalleryReport",
+    "BlockedTerm",
     "PatreonSupporter",
     "PatreonCredentials",
     "DailyVisit",
