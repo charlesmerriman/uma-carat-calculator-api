@@ -7,14 +7,20 @@ gallery_moderation.py), so a rule is pinned once however many routes use it.
 """
 
 import datetime
+from io import StringIO
+from unittest import mock
 
+import requests
+from django.core.management import call_command
 from django.db import IntegrityError, transaction
 from django.test import RequestFactory
 from django.utils import timezone
+from rest_framework.test import APIClient
 
 from calculatorapi import benefits, gallery, gallery_moderation, gallery_ranking, public_identity
 from calculatorapi.models import (
     BlockedTerm,
+    GalleryComment,
     GalleryHiddenReason,
     GalleryPost,
     GalleryPostKind,
@@ -524,3 +530,205 @@ class TextFilterTests(CalculatorTestCase):
 
     def test_terms_are_stored_normalised(self):
         self.assertEqual(BlockedTerm.objects.create(term="  ＢＡＤ ").term, "bad")
+
+
+class CommentTests(GalleryFixture):
+
+    def setUp(self):
+        super().setUp()
+        self.author = self.person()
+        self.post_row = self.post(self.author)
+        self.commenter = self.person()
+
+    def test_needs_a_name_and_not_blocked(self):
+        nameless = self.person()
+        nameless.display_name = ""
+        nameless.save()
+        blocked = self.person()
+        blocked.publishing_blocked = True
+        blocked.save()
+        for user, status in ((nameless, 400), (blocked, 403)):
+            with self.assertRaises(gallery.GalleryRefused) as caught:
+                gallery.add_comment(user, self.post_row, "Nice team")
+            self.assertEqual(caught.exception.status, status)
+
+    def test_text_rules(self):
+        BlockedTerm.objects.create(term="rude")
+        for body in ("", "   ", "x" * 501, "so rude", "see www.example.com"):
+            with self.subTest(body=body):
+                with self.assertRaises(gallery.GalleryRefused):
+                    gallery.add_comment(self.commenter, self.post_row, body)
+
+    def test_the_same_text_twice_in_a_day_is_refused(self):
+        gallery.add_comment(self.commenter, self.post_row, "Great team")
+        other = self.post(self.person())
+        with self.assertRaises(gallery.GalleryRefused) as caught:
+            gallery.add_comment(self.commenter, other, "Great team")
+        self.assertEqual(caught.exception.message, "You've already posted that comment.")
+
+    def test_one_level_of_replies(self):
+        top = gallery.add_comment(self.commenter, self.post_row, "Top")
+        reply = gallery.add_comment(self.author, self.post_row, "Reply", top.pk)
+        deeper = gallery.add_comment(self.person(), self.post_row, "Reply to the reply", reply.pk)
+        self.assertEqual(reply.parent, top)
+        self.assertEqual(deeper.parent, top)
+
+    def test_a_reply_to_a_comment_on_another_post_is_refused(self):
+        elsewhere = gallery.add_comment(self.commenter, self.post(self.person()), "Elsewhere")
+        with self.assertRaises(gallery.GalleryRefused):
+            gallery.add_comment(self.author, self.post_row, "Reply", elsewhere.pk)
+
+    def test_edit_marks_it_edited(self):
+        comment = gallery.add_comment(self.commenter, self.post_row, "First")
+        gallery.edit_comment(comment, "Second")
+        comment.refresh_from_db()
+        self.assertEqual((comment.body, comment.edited_at is not None), ("Second", True))
+
+    def test_delete_with_and_without_replies(self):
+        lonely = gallery.add_comment(self.commenter, self.post_row, "Lonely")
+        gallery.delete_comment(lonely)
+        self.assertFalse(GalleryComment.objects.filter(pk=lonely.pk).exists())
+        answered = gallery.add_comment(self.commenter, self.post_row, "Answered")
+        gallery.add_comment(self.author, self.post_row, "Answer", answered.pk)
+        gallery.delete_comment(answered)
+        answered.refresh_from_db()
+        self.assertEqual((answered.is_deleted, answered.body, answered.author), (True, "", None))
+
+    def test_the_thread_shows_states_to_the_right_people(self):
+        visible = gallery.add_comment(self.commenter, self.post_row, "Visible")
+        hidden = gallery.add_comment(self.person(), self.post_row, "Hidden, no replies")
+        GalleryComment.objects.filter(pk=hidden.pk).update(
+            is_hidden=True, hidden_reason=GalleryHiddenReason.REPORTS
+        )
+        removed = gallery.add_comment(self.person(), self.post_row, "Removed, with a reply")
+        gallery.add_comment(self.author, self.post_row, "A reply", removed.pk)
+        GalleryComment.objects.filter(pk=removed.pk).update(
+            is_hidden=True, hidden_reason=GalleryHiddenReason.MODERATOR
+        )
+        states = {c.pk: state for c, state, _ in gallery.thread(self.post_row)}
+        self.assertEqual(states, {visible.pk: "visible", removed.pk: "removed"})
+        own = {c.pk: state for c, state, _ in gallery.thread(self.post_row, hidden.author)}
+        self.assertEqual(own[hidden.pk], "under_review")
+
+
+class ReportTests(GalleryFixture):
+
+    def setUp(self):
+        super().setUp()
+        self.author = self.person()
+        self.post_row = self.post(self.author)
+
+    def report(self, user=None, **target):
+        target = target or {"post": self.post_row}
+        return gallery.report(user or self.person(), reason=GalleryReportReason.SPAM, **target)
+
+    def test_not_your_own_and_not_twice(self):
+        with self.assertRaises(gallery.GalleryRefused):
+            self.report(self.author)
+        reporter = self.person()
+        self.report(reporter)
+        with self.assertRaises(gallery.GalleryRefused) as caught:
+            self.report(reporter)
+        self.assertEqual(caught.exception.status, 409)
+
+    def test_three_people_hide_it(self):
+        self.report()
+        self.report()
+        self.post_row.refresh_from_db()
+        self.assertFalse(self.post_row.is_hidden)
+        self.report()
+        self.post_row.refresh_from_db()
+        self.assertEqual((self.post_row.is_hidden, self.post_row.hidden_reason), (True, "reports"))
+
+    def test_comments_hide_too(self):
+        comment = gallery.add_comment(self.person(), self.post_row, "Spam spam")
+        for _ in range(3):
+            self.report(comment=comment)
+        comment.refresh_from_db()
+        self.assertTrue(comment.is_hidden)
+
+    def test_keep_restores_and_closes(self):
+        for _ in range(3):
+            self.report()
+        moderator = make_user("mod", is_staff=True)
+        gallery_moderation.keep(self.post_row, moderator)
+        self.post_row.refresh_from_db()
+        self.assertFalse(self.post_row.is_hidden)
+        self.assertFalse(self.post_row.reports.filter(resolved_at__isnull=True).exists())
+        self.assertEqual(set(self.post_row.reports.values_list("resolution", flat=True)), {"kept"})
+
+    def test_remove_and_block(self):
+        self.report()
+        moderator = make_user("mod", is_staff=True)
+        gallery_moderation.block_author(self.post_row, moderator)
+        self.post_row.refresh_from_db()
+        self.author.refresh_from_db()
+        self.assertEqual(self.post_row.hidden_reason, "moderator")
+        self.assertTrue(self.author.publishing_blocked)
+        self.assertEqual(self.post_row.reports.get().resolved_by, moderator)
+
+    def test_the_alert_is_off_when_blank_and_quiet_about_people(self):
+        with self.settings(MODERATION_WEBHOOK_URL=""), mock.patch("requests.post") as post:
+            with self.captureOnCommitCallbacks(execute=True):
+                self.report()
+        post.assert_not_called()
+        with self.settings(MODERATION_WEBHOOK_URL="https://hook.example/x"), \
+                mock.patch("requests.post") as post:
+            with self.captureOnCommitCallbacks(execute=True):
+                comment = gallery.add_comment(self.person(display_name="Snitch"), self.post_row, "secret text")
+                self.report(comment=comment)
+        post.assert_called_once()
+        sent = post.call_args.kwargs["json"]["content"]
+        self.assertIn("reported", sent)
+        self.assertNotIn("secret text", sent)
+        self.assertNotIn("Snitch", sent)
+
+    def test_a_failing_webhook_never_fails_the_report(self):
+        with self.settings(MODERATION_WEBHOOK_URL="https://hook.example/x"), \
+                mock.patch("requests.post", side_effect=requests.ConnectionError):
+            with self.captureOnCommitCallbacks(execute=True):
+                self.report()
+        self.assertEqual(GalleryReport.objects.count(), 1)
+
+
+class EraseTests(GalleryFixture):
+
+    def test_erase_users(self):
+        leaving = self.person()
+        staying = self.person()
+        their_post = self.post(leaving)
+        other_post = self.post(staying)
+        GalleryVote.objects.create(post=other_post, user=leaving)
+        lonely = gallery.add_comment(leaving, other_post, "Lonely")
+        answered = gallery.add_comment(leaving, other_post, "Answered")
+        reply_kept = gallery.add_comment(staying, other_post, "Kept reply", answered.pk)
+        their_reply = gallery.add_comment(leaving, other_post, "Their reply", answered.pk)
+        filed = gallery.report(leaving, reason=GalleryReportReason.OTHER, post=other_post)
+
+        gallery.erase_users([leaving])
+
+        self.assertFalse(GalleryPost.objects.filter(pk=their_post.pk).exists())
+        self.assertFalse(GalleryVote.objects.filter(user=leaving).exists())
+        self.assertFalse(GalleryComment.objects.filter(pk__in=[lonely.pk, their_reply.pk]).exists())
+        answered.refresh_from_db()
+        self.assertEqual((answered.is_deleted, answered.body, answered.author), (True, "", None))
+        self.assertTrue(GalleryComment.objects.filter(pk=reply_kept.pk).exists())
+        filed.refresh_from_db()
+        self.assertIsNone(filed.reporter)
+
+    def test_account_deletion_erases_first(self):
+        leaving = self.person()
+        other_post = self.post(self.person())
+        answered = gallery.add_comment(leaving, other_post, "Answered")
+        gallery.add_comment(self.person(), other_post, "Reply", answered.pk)
+        client = APIClient()
+        client.force_authenticate(leaving)
+        self.assertEqual(client.delete("/account").status_code, 204)
+        answered.refresh_from_db()
+        self.assertEqual((answered.body, answered.is_deleted), ("", True))
+
+    def test_purge_erases_the_gallery(self):
+        leaving = self.person()
+        self.post(leaving)
+        call_command("purge_user_pii", "--no-input", stdout=StringIO())
+        self.assertFalse(GalleryPost.objects.exists())

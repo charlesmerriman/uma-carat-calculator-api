@@ -331,6 +331,30 @@ UNFOLD = {
                         "permission": _requires_perm("calculatorapi.view_userstepupselection"),
                     },
                     {
+                        "title": _("Gallery reports"),
+                        "icon": "flag",
+                        "link": reverse_lazy("admin:calculatorapi_galleryreport_changelist"),
+                        "permission": _requires_perm("calculatorapi.view_galleryreport"),
+                    },
+                    {
+                        "title": _("Gallery posts"),
+                        "icon": "photo_library",
+                        "link": reverse_lazy("admin:calculatorapi_gallerypost_changelist"),
+                        "permission": _requires_perm("calculatorapi.view_gallerypost"),
+                    },
+                    {
+                        "title": _("Gallery comments"),
+                        "icon": "forum",
+                        "link": reverse_lazy("admin:calculatorapi_gallerycomment_changelist"),
+                        "permission": _requires_perm("calculatorapi.view_gallerycomment"),
+                    },
+                    {
+                        "title": _("Blocked terms"),
+                        "icon": "block",
+                        "link": reverse_lazy("admin:calculatorapi_blockedterm_changelist"),
+                        "permission": _requires_perm("calculatorapi.view_blockedterm"),
+                    },
+                    {
                         "title": _("Linked accounts"),
                         "icon": "link",
                         "link": reverse_lazy("admin:calculatorapi_socialaccount_changelist"),
@@ -400,6 +424,13 @@ REST_FRAMEWORK = {
         "gallery_copy": "30/hour",
         # A re-post moves a post to the top of New and clears its votes.
         "gallery_publish": "20/hour",
+        # Comments, and a lower rate for accounts younger than a day
+        # (views/gallery.py GalleryCommentThrottle): sign-in costs a Google,
+        # Discord or Patreon account, and this caps a fresh batch's first day.
+        "gallery_comment": "20/hour",
+        "gallery_comment_new": "5/hour",
+        # Reports. Plenty for anyone honest; a report campaign is capped.
+        "gallery_report": "20/day",
     },
 }
 
@@ -459,6 +490,11 @@ PATREON_SYNC_SECRET = os.getenv("PATREON_SYNC_SECRET", "")
 # the button then says it is not configured instead of calling anything.
 DO_API_TOKEN = os.getenv("DO_API_TOKEN", "")
 DO_APP_ID = os.getenv("DO_APP_ID", "")
+
+# A Discord webhook the gallery pings when a post or comment is first
+# reported, and again when reports hide it (gallery_moderation.alert). Blank
+# means no alert, which is the default locally and in tests.
+MODERATION_WEBHOOK_URL = os.getenv("MODERATION_WEBHOOK_URL", "")
 
 # Where the SPA lives. In production the ingress serves it from the same host
 # as the API; in dev it is the Vite server on :5173.

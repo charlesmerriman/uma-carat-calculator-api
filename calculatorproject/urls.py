@@ -35,11 +35,14 @@ from calculatorapi.views.pvp_guide import pvp_guide_detail
 from calculatorapi.views.pvp_catalogue import pvp_catalogue
 from calculatorapi.views.pvp_team import pvp_team_detail, pvp_team_list
 from calculatorapi.views.gallery import (
+    gallery_comment_detail,
     gallery_my_posts,
+    gallery_post_comments,
     gallery_post_copy,
     gallery_post_detail,
     gallery_post_view,
     gallery_post_vote,
+    gallery_report,
 )
 from calculatorapi.views.pvp_gallery import pvp_gallery_feed, pvp_team_publish
 from calculatorapi.views.social_auth import social_auth_start, social_auth_complete
@@ -143,6 +146,9 @@ urlpatterns = [
     path("gallery/posts/<str:public_id>/vote", gallery_post_vote, name="gallery-post-vote"),
     path("gallery/posts/<str:public_id>/view", gallery_post_view, name="gallery-post-view"),
     path("gallery/posts/<str:public_id>/copy", gallery_post_copy, name="gallery-post-copy"),
+    path("gallery/posts/<str:public_id>/comments", gallery_post_comments, name="gallery-post-comments"),
+    path("gallery/comments/<int:comment_id>", gallery_comment_detail, name="gallery-comment-detail"),
+    path("gallery/reports", gallery_report, name="gallery-report"),
     # Social sign-in (Google / Discord). The <provider> segment is validated by
     # the view against oauth.SUPPORTED_PROVIDERS rather than by a URL regex, so
     # an unknown provider gets a JSON 404 instead of Django's HTML one.

@@ -62,6 +62,8 @@ from .admin_image_picker import SpacesImagePickerMixin
 # Importing admin_pvp registers the PvP guide admin; the mixin and fieldset
 # put the "PvP guide" link on the two event pages.
 from .admin_pvp import PVP_GUIDE_FIELDSET, PvpGuideLinkMixin
+# Importing admin_gallery registers the gallery's moderation pages.
+from . import admin_gallery  # noqa: F401  pylint: disable=unused-import
 from . import digitalocean_api, patreon_api
 from .admin_patreon_import import (
     PatreonCsvImportForm,
@@ -1034,6 +1036,7 @@ class CustomUserAdmin(UserAdmin, ModelAdmin):
     # two things a person can quote from their account page.
     search_fields = ("username", "display_name")
     inlines = (UserOshiInline,)
+    readonly_fields = ("show_supporter_badge",)
     # Ordinary accounts sign in through Google/Discord and deliberately hold no
     # email or name (see models/social_account.py), so those fields are dropped
     # from the form rather than sitting there inviting someone to fill them in.
@@ -1047,14 +1050,24 @@ class CustomUserAdmin(UserAdmin, ModelAdmin):
         ("Profile", {
             "fields": ("display_name",),
             "description": (
-                "What the person chose on their account page. Shown to them "
-                "alone; it appears nowhere public."
+                "What the person chose on their account page. Shown to them, "
+                "and beside anything they post or comment in the gallery."
             ),
         }),
         ("Permissions", {
             "fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions"),
         }),
         ("Important dates", {"fields": ("last_login", "date_joined")}),
+        # The gallery's posting ban, and the person's own badge switch (shown,
+        # not editable: it is their choice, made on their account page).
+        ("Moderation", {
+            "fields": ("publishing_blocked", "show_supporter_badge"),
+            "description": (
+                "Blocking stops this account posting, commenting, voting or "
+                "reporting in the gallery and hides what it already posted. "
+                "Unblocking brings it all back."
+            ),
+        }),
     ) + (
         ("Calculator stats", {
             "classes": ("collapse",),

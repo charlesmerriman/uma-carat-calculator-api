@@ -122,7 +122,7 @@ from rest_framework import permissions, serializers, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
-from calculatorapi import benefits, gallery_moderation, public_identity
+from calculatorapi import benefits, gallery, gallery_moderation, public_identity
 from calculatorapi.models import (
     OSHI_SLOT_CAP,
     CustomUser,
@@ -346,6 +346,10 @@ def _delete_account(user):
     path: we hold no email to send anything to, by design, which is why the
     account page makes the person type a confirmation before it sends this.
 
+    Their gallery content goes through gallery.erase_users first: posts,
+    votes and comments (a comment others replied to stays as "[deleted]",
+    with no text and no author).
+
     WHAT STAYS, with its pointer cleared:
       * Their PatreonSupporter row (linked_user is SET_NULL). It is a fact
         about a pledge, not about this account: it keeps its publication
@@ -365,6 +369,9 @@ def _delete_account(user):
             status=status.HTTP_403_FORBIDDEN,
         )
     with transaction.atomic():
+        # Before the row goes: a comment's author is SET_NULL, which would
+        # leave its text behind. erase_users clears it, or removes it.
+        gallery.erase_users([user])
         user.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
 

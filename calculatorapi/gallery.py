@@ -11,20 +11,26 @@ gallery_ranking.py. What is shown about a poster: public_identity.py. The
 text filters: gallery_moderation.py.
 """
 
+import datetime
 import hashlib
 
 from django.conf import settings
 from django.core.cache import cache
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import F
 from django.utils import timezone
 
 from calculatorapi import gallery_moderation, visits
 from calculatorapi.models import (
+    GalleryComment,
     GalleryPost,
     GalleryPostKind,
+    GalleryReport,
+    GalleryReportReason,
     GalleryVote,
     GALLERY_CAPTION_MAX_LENGTH,
+    GALLERY_COMMENT_MAX_LENGTH,
+    GALLERY_REPORT_NOTE_MAX_LENGTH,
     PVP_DECK_SIZE,
     PVP_TEAM_SIZE,
     SupportCard,
@@ -320,3 +326,171 @@ def copy_snapshot(request, post):
     if not (user is not None and user.is_authenticated and user.pk == post.author_id):
         GalleryPost.objects.filter(pk=post.pk).update(copy_count=F("copy_count") + 1)
     return snapshot_for_display(post.team_snapshot)
+
+
+# ── Comments ────────────────────────────────────────────────────────────────
+
+# The same text from the same person within this window is refused: the cheap
+# half of spam is pasting one line under every post.
+REPEAT_WINDOW = datetime.timedelta(hours=24)
+
+
+def _clean_comment(body):
+    body = (body or "").strip()
+    if not body:
+        raise GalleryRefused("Write something first.")
+    if len(body) > GALLERY_COMMENT_MAX_LENGTH:
+        raise GalleryRefused(f"Keep comments to {GALLERY_COMMENT_MAX_LENGTH} characters.")
+    try:
+        gallery_moderation.check_text(body)
+    except gallery_moderation.TextRefused as refusal:
+        raise GalleryRefused(str(refusal)) from refusal
+    return body
+
+
+def add_comment(user, post, body, parent_id=None):
+    """A new comment on `post`, or a reply. Returns the comment.
+
+    One level of replies: a reply to a reply is attached to the top comment it
+    sits under, so the thread never nests deeper than the page draws it.
+    Commenting needs what posting needs (a display name, not blocked): the
+    comment shows the same public block.
+    """
+    check_may_publish(user)
+    body = _clean_comment(body)
+    parent = None
+    if parent_id is not None:
+        try:
+            parent = post.comments.get(pk=int(parent_id), is_hidden=False)
+        except (TypeError, ValueError, GalleryComment.DoesNotExist) as error:
+            raise GalleryRefused("That comment isn't there any more.") from error
+        parent = parent.parent or parent
+    since = timezone.now() - REPEAT_WINDOW
+    if GalleryComment.objects.filter(author=user, body=body, created_at__gte=since).exists():
+        raise GalleryRefused("You've already posted that comment.")
+    return GalleryComment.objects.create(post=post, author=user, parent=parent, body=body)
+
+
+def get_own_comment(user, comment_id):
+    """The comment with this id IF `user` wrote it and it is not deleted, else
+    GalleryComment.DoesNotExist. Somebody else's comment reads as missing."""
+    try:
+        return GalleryComment.objects.select_related("post").get(
+            pk=int(comment_id), author=user, is_deleted=False
+        )
+    except (TypeError, ValueError) as error:
+        raise GalleryComment.DoesNotExist from error
+
+
+def edit_comment(comment, body):
+    """Replace a comment's text. It runs the same filters as a new one and is
+    marked edited, so a reply that answered the old text still makes sense."""
+    comment.body = _clean_comment(body)
+    comment.edited_at = timezone.now()
+    comment.save(update_fields=["body", "edited_at"])
+    return comment
+
+
+def delete_comment(comment):
+    """Remove a comment. One with replies stays as "[deleted]", body and author
+    cleared, so the replies under it keep their place."""
+    if comment.parent_id is None and comment.replies.exists():
+        comment.body = ""
+        comment.author = None
+        comment.is_deleted = True
+        comment.save(update_fields=["body", "author", "is_deleted"])
+    else:
+        comment.delete()
+
+
+def thread(post, viewer=None):
+    """The post's comments a viewer may see: top comments oldest first, each
+    with its replies. A list of (comment, state, [(reply, state), ...]).
+
+    state is "visible", "deleted" ("[deleted]"), "removed" ("[removed]", hidden
+    by moderation or by its author's block) or "under_review" (the viewer's
+    OWN hidden comment, so they know why nobody else sees it). A removed top
+    comment with no visible replies is left out: the placeholder only exists
+    to keep a conversation's shape.
+    """
+    viewer_id = viewer.pk if viewer is not None and viewer.is_authenticated else None
+    comments = list(post.comments.select_related("author"))
+
+    def state(comment):
+        if comment.is_deleted:
+            return "deleted"
+        hidden = comment.is_hidden or (comment.author and comment.author.publishing_blocked)
+        if not hidden:
+            return "visible"
+        return "under_review" if comment.author_id == viewer_id else "removed"
+
+    replies = {}
+    for comment in comments:
+        if comment.parent_id:
+            replies.setdefault(comment.parent_id, []).append((comment, state(comment)))
+    result = []
+    for comment in comments:
+        if comment.parent_id:
+            continue
+        under = [(reply, kind) for reply, kind in replies.get(comment.pk, []) if kind != "removed"]
+        kind = state(comment)
+        if kind in ("removed", "deleted") and not under:
+            continue
+        result.append((comment, kind, under))
+    return result
+
+
+# ── Reports ─────────────────────────────────────────────────────────────────
+
+
+def report(user, *, reason, post=None, comment=None, note=""):
+    """File a report on a post or a comment. Returns the report.
+
+    Raises GalleryRefused for your own item (400), when blocked (403) and on a
+    repeat (409). Then gallery_moderation decides whether the item hides and
+    whether a moderator is pinged.
+    """
+    if user.publishing_blocked:
+        raise GalleryRefused("Your account can't report in the gallery.", status=403)
+    target = post or comment
+    if target.author_id == user.pk:
+        raise GalleryRefused("You can't report your own post or comment.")
+    if reason not in GalleryReportReason.values:
+        raise GalleryRefused("Pick a reason.")
+    note = (note or "").strip()[:GALLERY_REPORT_NOTE_MAX_LENGTH]
+    try:
+        with transaction.atomic():
+            filed = GalleryReport.objects.create(
+                reporter=user, post=post, comment=comment, reason=reason, note=note
+            )
+    except IntegrityError as error:
+        raise GalleryRefused("You've already reported this.", status=409) from error
+    gallery_moderation.after_report(filed)
+    return filed
+
+
+# ── Erasing a person ────────────────────────────────────────────────────────
+
+
+def erase_users(users):
+    """Remove what these accounts put in the gallery. Called by
+    DELETE /account (before the account row goes) and purge_user_pii.
+
+      * their posts, with every vote, comment and report on them;
+      * their votes;
+      * their comments: removed when nobody replied, otherwise "[deleted]"
+        with the author and the text cleared, so replies keep their place;
+      * their reports stay, with the reporter cleared: the moderation record.
+
+    ONE function for both paths, so an account deletion and a purge cannot
+    drift into erasing different things. Takes a queryset or list of users.
+    """
+    ids = [user.pk for user in users]
+    GalleryPost.objects.filter(author_id__in=ids).delete()
+    GalleryVote.objects.filter(user_id__in=ids).delete()
+    comments = GalleryComment.objects.filter(author_id__in=ids)
+    # Replies first: a reply has no replies of its own, so it always goes.
+    comments.filter(parent__isnull=False).delete()
+    comments.filter(replies__isnull=True).delete()
+    comments.update(body="", author=None, is_deleted=True, edited_at=None)
+    GalleryReport.objects.filter(reporter_id__in=ids).update(reporter=None)

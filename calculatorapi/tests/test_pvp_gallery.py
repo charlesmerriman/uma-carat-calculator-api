@@ -5,14 +5,20 @@ The rules behind them are tested in test_gallery.py; this module checks the
 routes apply them and send exactly the fields they should.
 """
 
+from django.test import override_settings
+from django.urls import reverse
 from rest_framework.test import APIClient
 
+from calculatorapi import gallery
 from calculatorapi.models import (
     BlockedTerm,
+    CustomUser,
+    GalleryReport,
     GalleryHiddenReason,
     GalleryPost,
     GalleryVote,
 )
+from calculatorapi.tests.base import PLAIN_TEST_STORAGES
 from calculatorapi.tests.factories import auth_client, make_league_of_heroes
 from calculatorapi.tests.test_gallery import CLASSIC, JUNIOR, SENIOR, GalleryFixture
 from calculatorapi.views.gallery import GalleryCopyThrottle, GalleryReadThrottle, GalleryVoteThrottle
@@ -267,3 +273,130 @@ class AccountPreferenceTests(RouteFixture):
         self.client_for(user).patch("/account", {"publishing_blocked": True}, format="json")
         user.refresh_from_db()
         self.assertFalse(user.publishing_blocked)
+
+
+class CommentRouteTests(RouteFixture):
+
+    def setUp(self):
+        super().setUp()
+        self.author = self.person(SENIOR)
+        self.post_row = self.post(self.author)
+        self.url = f"/gallery/posts/{self.post_row.public_id}/comments"
+        self.commenter = self.person()
+
+    def comment(self, user, body, parent=None):
+        payload = {"body": body} if parent is None else {"body": body, "parent": parent}
+        return self.client_for(user).post(self.url, payload, format="json")
+
+    def test_thread_shape(self):
+        top = self.comment(self.commenter, "Nice").data
+        self.assertEqual(set(top), {"id", "state", "body", "created_at", "edited", "earlier_version",
+                                    "is_author", "is_mine", "poster", "replies"})
+        reply = self.comment(self.author, "Thanks", top["id"]).data
+        self.assertTrue(reply["is_author"])
+        thread = APIClient().get(self.url).data
+        self.assertEqual(set(thread), {"count", "page", "has_more", "results"})
+        self.assertEqual(thread["results"][0]["replies"][0]["body"], "Thanks")
+        self.assertEqual(thread["results"][0]["replies"][0]["poster"]["gallery_style"], "ssr")
+        self.assertFalse(all_keys(thread) & FORBIDDEN)
+
+    def test_guests_read_but_cannot_write(self):
+        self.assertEqual(APIClient().get(self.url).status_code, 200)
+        self.assertEqual(APIClient().post(self.url, {"body": "Hi"}, format="json").status_code, 401)
+
+    def test_feed_counts_visible_comments(self):
+        self.comment(self.commenter, "One")
+        self.comment(self.person(), "Two")
+        self.assertEqual(self.feed().data["results"][0]["stats"]["comments"], 2)
+
+    def test_edit_and_delete_only_your_own(self):
+        mine = self.comment(self.commenter, "Mine").data
+        url = f"/gallery/comments/{mine['id']}"
+        self.assertEqual(self.client_for(self.person()).patch(url, {"body": "x"}, format="json").status_code, 404)
+        edited = self.client_for(self.commenter).patch(url, {"body": "Edited"}, format="json")
+        self.assertTrue(edited.data["edited"])
+        self.assertEqual(self.client_for(self.commenter).delete(url).status_code, 204)
+
+    def test_an_earlier_version_is_flagged(self):
+        self.comment(self.commenter, "Before")
+        gallery_repost = self.client_for(self.author).post(
+            f"/pvp-teams/{self.post_row.source_team_id}/publish",
+            {"confirm_public_identity": True}, format="json",
+        )
+        self.assertEqual(gallery_repost.status_code, 200)
+        self.comment(self.person(), "After")
+        flags = [row["earlier_version"] for row in APIClient().get(self.url).data["results"]]
+        self.assertEqual(flags, [True, False])
+
+
+class ReportRouteTests(RouteFixture):
+
+    def setUp(self):
+        super().setUp()
+        self.author = self.person()
+        self.post_row = self.post(self.author)
+
+    def report(self, user, body):
+        return self.client_for(user).post("/gallery/reports", body, format="json")
+
+    def test_report_a_post_then_a_repeat(self):
+        reporter = self.person()
+        body = {"post": self.post_row.public_id, "reason": "spam"}
+        self.assertEqual(self.report(reporter, body).status_code, 201)
+        self.assertEqual(self.report(reporter, body).status_code, 409)
+
+    def test_report_a_comment(self):
+        comment = gallery.add_comment(self.person(), self.post_row, "Bad words")
+        response = self.report(self.person(), {"comment": comment.pk, "reason": "harassment", "note": "rude"})
+        self.assertEqual(response.status_code, 201)
+
+    def test_refusals(self):
+        self.assertEqual(APIClient().post("/gallery/reports", {}, format="json").status_code, 401)
+        self.assertEqual(self.report(self.person(), {"reason": "spam"}).status_code, 400)
+        self.assertEqual(self.report(self.person(), {"post": "nothere1", "reason": "spam"}).status_code, 404)
+        self.assertEqual(
+            self.report(self.person(), {"post": self.post_row.public_id, "reason": "bogus"}).status_code, 400
+        )
+        self.assertEqual(
+            self.report(self.author, {"post": self.post_row.public_id, "reason": "spam"}).status_code, 400
+        )
+
+
+@override_settings(STORAGES=PLAIN_TEST_STORAGES)
+class ModerationAdminTests(RouteFixture):
+
+    def setUp(self):
+        super().setUp()
+        self.boss = CustomUser.objects.create_superuser(username="boss", password="x")
+        self.client.force_login(self.boss)
+        self.post_row = self.post(self.person())
+        comment = gallery.add_comment(self.person(), self.post_row, "Spam")
+        for target in ({"post": self.post_row}, {"comment": comment}):
+            for _ in range(3):
+                gallery.report(self.person(), reason="spam", **target)
+        BlockedTerm.objects.create(term="rude")
+
+    def test_pages_render(self):
+        for name in ("galleryreport", "gallerypost", "gallerycomment", "blockedterm"):
+            with self.subTest(name=name):
+                response = self.client.get(reverse(f"admin:calculatorapi_{name}_changelist"))
+                self.assertEqual(response.status_code, 200)
+        response = self.client.get(reverse("admin:calculatorapi_gallerypost_change", args=[self.post_row.pk]))
+        self.assertEqual(response.status_code, 200)
+
+    def test_keep_from_the_queue(self):
+        reports = GalleryReport.objects.filter(post=self.post_row)
+        self.client.post(reverse("admin:calculatorapi_galleryreport_changelist"), {
+            "action": "keep_items", "_selected_action": [report.pk for report in reports],
+        })
+        self.post_row.refresh_from_db()
+        self.assertFalse(self.post_row.is_hidden)
+        self.assertEqual(set(reports.values_list("resolved_by", flat=True)), {self.boss.pk})
+
+    def test_block_from_the_post_page(self):
+        self.client.post(reverse("admin:calculatorapi_gallerypost_changelist"), {
+            "action": "block_authors", "_selected_action": [self.post_row.pk],
+        })
+        self.post_row.refresh_from_db()
+        self.assertTrue(self.post_row.author.publishing_blocked)
+        self.assertEqual(self.post_row.hidden_reason, "moderator")

@@ -8,6 +8,11 @@ DELETE /gallery/posts/<public_id>/vote    take the upvote back        (signed in
 POST   /gallery/posts/<public_id>/view    count a view                (anyone)
 POST   /gallery/posts/<public_id>/copy    the team, for "Copy to my teams" (anyone)
 GET    /gallery/my-posts                  the caller's own posts, hidden too (signed in)
+GET    /gallery/posts/<public_id>/comments   the thread, oldest first (anyone)
+POST   /gallery/posts/<public_id>/comments   comment or reply      (signed in)
+PATCH  /gallery/comments/<id>             edit your comment       (its author)
+DELETE /gallery/comments/<id>             delete your comment     (its author)
+POST   /gallery/reports                   report a post or comment (signed in)
 
 The feed that lists posts is per gallery (views/pvp_gallery.py); these routes
 are shared so the community plan gallery reuses them unchanged.
@@ -24,7 +29,10 @@ answer the same 404, except to the post's own author, who sees theirs with
 "hidden": true so the account page can say it is under review.
 """
 
+import datetime
+
 from django.db.models import Count
+from django.utils import timezone
 from rest_framework import permissions, status
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.response import Response
@@ -224,3 +232,182 @@ def gallery_my_posts(request):
         GalleryPost.objects.filter(author=request.user).select_related("author")
     ).order_by("-content_updated_at", "-id")
     return Response(serialize_posts(list(posts), request.user, full=True))
+
+
+# ── Comments ────────────────────────────────────────────────────────────────
+
+COMMENT_PAGE_SIZE = 50
+# How old an account must be before it comments at the ordinary rate.
+NEW_ACCOUNT_AGE = datetime.timedelta(days=1)
+
+
+class GalleryCommentThrottle(UserRateThrottle):
+    """Reading a thread counts as a read; writing counts as a comment, at a
+    lower rate for accounts younger than a day. One class switching scope per
+    request, because DRF throttles a view, not a method."""
+
+    scope = "gallery_comment"
+
+    def allow_request(self, request, view):
+        if request.method == "GET":
+            self.scope = "gallery_read"
+        elif request.user.is_authenticated and (
+            request.user.date_joined > timezone.now() - NEW_ACCOUNT_AGE
+        ):
+            self.scope = "gallery_comment_new"
+        else:
+            self.scope = "gallery_comment"
+        self.rate = self.get_rate()
+        self.num_requests, self.duration = self.parse_rate(self.rate)
+        return super().allow_request(request, view)
+
+
+class GalleryReportThrottle(UserRateThrottle):
+    scope = "gallery_report"
+
+
+def _serialize_comment(comment, state, post, viewer, blocks):  # pylint: disable=too-many-arguments,too-many-positional-arguments
+    """One comment. A deleted or removed one keeps its place and its id (so
+    replies stay under it) but carries no text and no person."""
+    shown = state in ("visible", "under_review")
+    return {
+        "id": comment.pk,
+        "state": state,
+        "body": comment.body if shown else "",
+        "created_at": comment.created_at,
+        "edited": shown and comment.edited_at is not None,
+        # Written about the team before its author last re-posted it.
+        "earlier_version": comment.created_at < post.content_updated_at,
+        "is_author": shown and comment.author_id == post.author_id,
+        "is_mine": viewer is not None and viewer.is_authenticated and comment.author_id == viewer.pk,
+        "poster": blocks.get(comment.author_id) if shown else None,
+    }
+
+
+def serialize_thread(post, viewer, entries):
+    """gallery.thread() entries on the wire, each with its replies."""
+    people = []
+    for comment, _, replies in entries:
+        people.append(comment.author)
+        people.extend(reply.author for reply, _ in replies)
+    blocks = public_identity.poster_blocks(people)
+    return [
+        {
+            **_serialize_comment(comment, state, post, viewer, blocks),
+            "replies": [
+                _serialize_comment(reply, reply_state, post, viewer, blocks)
+                for reply, reply_state in replies
+            ],
+        }
+        for comment, state, replies in entries
+    ]
+
+
+@api_view(["GET", "POST"])
+@permission_classes([permissions.AllowAny])
+@throttle_classes([GalleryCommentThrottle])
+def gallery_post_comments(request, public_id):
+    """GET: the thread, a page of top comments at a time, oldest first.
+    POST {"body", "parent"?}: comment, signed in."""
+    post = _post_or_404(public_id, request.user)
+    if post is None:
+        return Response(NOT_FOUND, status=status.HTTP_404_NOT_FOUND)
+    if request.method == "POST":
+        if not request.user.is_authenticated:
+            return Response({"error": "Sign in to comment."}, status=status.HTTP_401_UNAUTHORIZED)
+        body = request.data.get("body", "")
+        if not isinstance(body, str):
+            return Response({"error": "Write something first."}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            comment = gallery.add_comment(request.user, post, body, request.data.get("parent"))
+        except gallery.GalleryRefused as refusal:
+            return refused(refusal)
+        blocks = public_identity.poster_blocks([comment.author])
+        return Response(
+            {**_serialize_comment(comment, "visible", post, request.user, blocks), "replies": []},
+            status=status.HTTP_201_CREATED,
+        )
+    entries = gallery.thread(post, request.user)
+    try:
+        page = max(int(request.query_params.get("page", 1)), 1)
+    except ValueError:
+        page = 1
+    start = (page - 1) * COMMENT_PAGE_SIZE
+    window = entries[start:start + COMMENT_PAGE_SIZE]
+    return Response({
+        "count": len(entries),
+        "page": page,
+        "has_more": start + COMMENT_PAGE_SIZE < len(entries),
+        "results": serialize_thread(post, request.user, window),
+    })
+
+
+@api_view(["PATCH", "DELETE"])
+@permission_classes([permissions.IsAuthenticated])
+@throttle_classes([GalleryCommentThrottle])
+def gallery_comment_detail(request, comment_id):
+    """PATCH {"body"}: edit your comment. DELETE: delete it. Somebody else's
+    comment reads as missing."""
+    try:
+        comment = gallery.get_own_comment(request.user, comment_id)
+    except GalleryComment.DoesNotExist:
+        return Response({"error": "Comment not found"}, status=status.HTTP_404_NOT_FOUND)
+    if request.method == "DELETE":
+        gallery.delete_comment(comment)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    body = request.data.get("body", "")
+    if not isinstance(body, str):
+        return Response({"error": "Write something first."}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        gallery.edit_comment(comment, body)
+    except gallery.GalleryRefused as refusal:
+        return refused(refusal)
+    blocks = public_identity.poster_blocks([comment.author])
+    state = "under_review" if comment.is_hidden else "visible"
+    return Response(
+        {**_serialize_comment(comment, state, comment.post, request.user, blocks), "replies": []}
+    )
+
+
+@api_view(["POST"])
+@permission_classes([permissions.IsAuthenticated])
+@throttle_classes([GalleryReportThrottle])
+def gallery_report(request):
+    """POST {"post": public_id} or {"comment": id}, with "reason" and an
+    optional "note". 201 with no body: the reporter learns nothing about what
+    happens next, which is the point."""
+    reason = request.data.get("reason", "")
+    note = request.data.get("note", "")
+    if not isinstance(note, str) or not isinstance(reason, str):
+        return Response({"error": "Pick a reason."}, status=status.HTTP_400_BAD_REQUEST)
+    target = {}
+    if request.data.get("post"):
+        post = _post_or_404(str(request.data["post"]), request.user)
+        if post is None:
+            return Response(NOT_FOUND, status=status.HTTP_404_NOT_FOUND)
+        target["post"] = post
+    elif request.data.get("comment"):
+        comment = _visible_comment(request.data["comment"], request.user)
+        if comment is None:
+            return Response({"error": "Comment not found"}, status=status.HTTP_404_NOT_FOUND)
+        target["comment"] = comment
+    else:
+        return Response({"error": "Say what you're reporting."}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        gallery.report(request.user, reason=reason, note=note, **target)
+    except gallery.GalleryRefused as refusal:
+        return refused(refusal)
+    return Response(status=status.HTTP_201_CREATED)
+
+
+def _visible_comment(comment_id, viewer):
+    """A comment the viewer can see (and so can report), or None."""
+    try:
+        comment = GalleryComment.objects.select_related("post", "author").get(
+            pk=int(comment_id), is_hidden=False, is_deleted=False
+        )
+    except (TypeError, ValueError, GalleryComment.DoesNotExist):
+        return None
+    if comment.author is not None and comment.author.publishing_blocked:
+        return None
+    return comment if _post_or_404(comment.post.public_id, viewer) else None
