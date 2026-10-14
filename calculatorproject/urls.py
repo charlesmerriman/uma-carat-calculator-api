@@ -45,6 +45,7 @@ from calculatorapi.views.gallery import (
     gallery_report,
 )
 from calculatorapi.views.pvp_gallery import pvp_gallery_feed, pvp_team_publish
+from calculatorapi.views.gallery_share import share_page, share_preview
 from calculatorapi.views.social_auth import social_auth_start, social_auth_complete
 
 router = routers.SimpleRouter(trailing_slash=False)
@@ -149,6 +150,11 @@ urlpatterns = [
     path("gallery/posts/<str:public_id>/comments", gallery_post_comments, name="gallery-post-comments"),
     path("gallery/comments/<int:comment_id>", gallery_comment_detail, name="gallery-comment-detail"),
     path("gallery/reports", gallery_report, name="gallery-report"),
+    # A gallery post's permanent link and its link-preview picture. Served
+    # at /post on the SITE's host, not under /api: an ingress rule in
+    # .do/app.yaml sends /post here. → views/gallery_share.py
+    path("post/<str:public_id>", share_page, name="gallery-share"),
+    path("post/<str:public_id>/preview.jpg", share_preview, name="gallery-share-preview"),
     # Social sign-in (Google / Discord). The <provider> segment is validated by
     # the view against oauth.SUPPORTED_PROVIDERS rather than by a URL regex, so
     # an unknown provider gets a JSON 404 instead of Django's HTML one.

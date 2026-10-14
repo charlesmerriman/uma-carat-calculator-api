@@ -139,6 +139,17 @@ ingress:
     match:
       path:
         prefix: /static
+  # A gallery post's permanent link (/post/<id>) and its preview picture.
+  # Django builds that page per post so Discord and X can show the team: their
+  # crawlers do not run JavaScript, so the static site's /app/pvp tags could
+  # never describe one post. Without this rule /post falls through to the
+  # static site's catch-all and every link unfurls as the plain site.
+  - component:
+      name: calculatorproject
+      preserve_path_prefix: true
+    match:
+      path:
+        prefix: /post
 name: umamusme-calculator
 region: nyc
 services:

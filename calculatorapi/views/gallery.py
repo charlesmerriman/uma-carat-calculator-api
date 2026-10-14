@@ -31,6 +31,7 @@ answer the same 404, except to the post's own author, who sees theirs with
 
 import datetime
 
+from django.core.cache import caches
 from django.db.models import Count
 from django.utils import timezone
 from rest_framework import permissions, status
@@ -44,7 +45,15 @@ from calculatorapi.models import GalleryComment, GalleryPost, GalleryVote, Suppo
 NOT_FOUND = {"error": "This team isn't available any more."}
 
 
-class GalleryReadThrottle(UserRateThrottle):
+class GalleryThrottle(UserRateThrottle):
+    """Every gallery throttle counts in the "gallery" cache, not "default",
+    so browsing the gallery cannot push the /calculator-data payload out of
+    its 40 slots (settings.CACHES explains)."""
+
+    cache = caches["gallery"]
+
+
+class GalleryReadThrottle(GalleryThrottle):
     """Feeds, posts and comments. A page of posts is one ranking query plus a
     few lookups; 120/hour is a busy reader with room to spare, and stops a
     script walking the id space."""
@@ -52,11 +61,11 @@ class GalleryReadThrottle(UserRateThrottle):
     scope = "gallery_read"
 
 
-class GalleryVoteThrottle(UserRateThrottle):
+class GalleryVoteThrottle(GalleryThrottle):
     scope = "gallery_vote"
 
 
-class GalleryViewThrottle(UserRateThrottle):
+class GalleryViewThrottle(GalleryThrottle):
     """Checked by hand in the view, not through @throttle_classes: an
     over-limit view is dropped quietly (still 204) rather than answered 429,
     because the client fires it and forgets."""
@@ -64,7 +73,7 @@ class GalleryViewThrottle(UserRateThrottle):
     scope = "gallery_view"
 
 
-class GalleryCopyThrottle(UserRateThrottle):
+class GalleryCopyThrottle(GalleryThrottle):
     """The public_plan_copy figure: nobody copies thirty teams in an hour, and
     a script inflating a copy count is capped, not stopped."""
 
@@ -241,7 +250,7 @@ COMMENT_PAGE_SIZE = 50
 NEW_ACCOUNT_AGE = datetime.timedelta(days=1)
 
 
-class GalleryCommentThrottle(UserRateThrottle):
+class GalleryCommentThrottle(GalleryThrottle):
     """Reading a thread counts as a read; writing counts as a comment, at a
     lower rate for accounts younger than a day. One class switching scope per
     request, because DRF throttles a view, not a method."""
@@ -262,7 +271,7 @@ class GalleryCommentThrottle(UserRateThrottle):
         return super().allow_request(request, view)
 
 
-class GalleryReportThrottle(UserRateThrottle):
+class GalleryReportThrottle(GalleryThrottle):
     scope = "gallery_report"
 
 

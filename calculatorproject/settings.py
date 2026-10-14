@@ -431,6 +431,9 @@ REST_FRAMEWORK = {
         "gallery_comment_new": "5/hour",
         # Reports. Plenty for anyone honest; a report campaign is capped.
         "gallery_report": "20/day",
+        # The /post/<id> share page and its preview picture. High: Discord and
+        # X crawl from a few shared addresses, and every paste is a fetch.
+        "gallery_share": "600/hour",
     },
 }
 
@@ -687,7 +690,29 @@ CACHES = {
             # to fall off. Worst case: two payloads, two catalogues, counters.
             "MAX_ENTRIES": 40,
         },
-    }
+    },
+    # The gallery's own small keys, kept OUT of "default" on purpose: one
+    # "already counted" key per viewer per post per day (gallery.record_view)
+    # and every gallery throttle counter (views/gallery.py GalleryThrottle).
+    # In "default" they would crowd its 40 slots and push the /calculator-data
+    # payload out, and every visitor after that would pay the ~2s rebuild (the
+    # 2026-09-23 outage). Values are a few bytes each, so the bound is high.
+    # Same single-process caveat as "default": it lives in this process.
+    "gallery": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "gallery",
+        "OPTIONS": {"MAX_ENTRIES": 20000},
+    },
+    # Rendered link-preview images (calculatorapi/gallery_preview.py), about
+    # 100 KB each. Rendered on request and kept here, never written to
+    # storage: default storage is the production Spaces bucket even on a
+    # developer's machine. 64 entries caps it near 6 MB; a dropped image costs
+    # one re-render the next time a crawler asks.
+    "gallery-previews": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "gallery-previews",
+        "OPTIONS": {"MAX_ENTRIES": 64},
+    },
 }
 
 # Log all Django errors to stdout so DigitalOcean runtime logs capture tracebacks.

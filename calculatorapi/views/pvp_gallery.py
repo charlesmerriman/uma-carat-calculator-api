@@ -20,16 +20,21 @@ are gallery.publish_team's; this view only shapes the request.
 from rest_framework import permissions, status
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.response import Response
-from rest_framework.throttling import UserRateThrottle
 
 from calculatorapi import gallery, gallery_ranking, pvp_teams
 from calculatorapi.models import PvpTeam
-from calculatorapi.views.gallery import GalleryReadThrottle, post_payload, refused, serialize_posts
+from calculatorapi.views.gallery import (
+    GalleryReadThrottle,
+    GalleryThrottle,
+    post_payload,
+    refused,
+    serialize_posts,
+)
 
 GALLERY_PAGE_SIZE = 20
 
 
-class GalleryPublishThrottle(UserRateThrottle):
+class GalleryPublishThrottle(GalleryThrottle):
     """Posting again replaces your post and moves it to the top of New, so it
     is capped: a handful of honest re-posts an hour, not a bump every minute."""
 

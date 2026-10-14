@@ -15,7 +15,7 @@ import datetime
 import hashlib
 
 from django.conf import settings
-from django.core.cache import cache
+from django.core.cache import caches
 from django.db import IntegrityError, transaction
 from django.db.models import F
 from django.utils import timezone
@@ -311,7 +311,8 @@ def record_view(request, post):
         return False
     if visits._BOT_UA.search(request.META.get("HTTP_USER_AGENT", "")):  # pylint: disable=protected-access
         return False
-    if not cache.add(_viewer_key(request, post), 1, VIEW_WINDOW_SECONDS):
+    # The "gallery" cache, never "default": see its comment in settings.CACHES.
+    if not caches["gallery"].add(_viewer_key(request, post), 1, VIEW_WINDOW_SECONDS):
         return False
     GalleryPost.objects.filter(pk=post.pk).update(view_count=F("view_count") + 1)
     return True
