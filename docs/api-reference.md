@@ -816,7 +816,7 @@ the post's own author.
 | `GET /post/<public_id>` | anyone | HTML: link-preview tags, then on to the post in the app. **Not under `/api`** |
 | `GET /post/<public_id>/preview.jpg?v=<version>` | anyone | the 1200x630 preview JPEG |
 
-A feed row (the full post adds `team`, `event`, `hidden` and `stats.copies`):
+A feed row (the full post adds `team`, `event` (`{kind, id, label}`, the label being the event's name), `hidden` and `stats.copies`):
 
 ```json
 { "public_id": "k3Df8aQ2", "caption": "Runaway blocker", "published_at": "ISO8601",

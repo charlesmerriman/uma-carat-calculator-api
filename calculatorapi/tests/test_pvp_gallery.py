@@ -78,7 +78,7 @@ class PublishRouteTests(RouteFixture):
         self.assertEqual(set(created.data), FULL_KEYS)
         self.assertEqual(created.data["caption"], "Mine")
         self.assertTrue(created.data["is_mine"])
-        self.assertEqual(created.data["event"], {"kind": "cm", "id": self.cm.id})
+        self.assertEqual(created.data["event"], {"kind": "cm", "id": self.cm.id, "label": self.cm.name})
         again = self.publish(user, team)
         self.assertEqual(again.status_code, 200)
         self.assertEqual(again.data["public_id"], created.data["public_id"])

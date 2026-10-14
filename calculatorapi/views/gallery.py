@@ -149,7 +149,15 @@ def serialize_posts(posts, viewer, *, full=False):
         if full:
             row["team"] = team
             row["stats"]["copies"] = post.copy_count
-            row["event"] = {"kind": post.event_kind, "id": post.champions_meeting_id or post.league_of_heroes_id}
+            row["event"] = {
+                "kind": post.event_kind,
+                "id": post.champions_meeting_id or post.league_of_heroes_id,
+                # The event's name, for the account page's "Your posts", which
+                # has no event list. "label", not "name": every gallery test
+                # forbids a "name" key anywhere, so a team's private name can
+                # never slip into a payload unnoticed.
+                "label": post.event.name,
+            }
             row["hidden"] = post.is_hidden or post.author.publishing_blocked
         rows.append(row)
     return rows
@@ -164,7 +172,9 @@ def _post_or_404(public_id, viewer):
 
 def post_payload(post, viewer):
     """One post in full, with fresh counts."""
-    annotated = gallery_ranking.with_points(GalleryPost.objects.filter(pk=post.pk)).select_related("author")
+    annotated = gallery_ranking.with_points(GalleryPost.objects.filter(pk=post.pk)).select_related(
+        "author", "champions_meeting", "league_of_heroes"
+    )
     return serialize_posts(list(annotated), viewer, full=True)[0]
 
 
@@ -238,7 +248,9 @@ def gallery_my_posts(request):
     """GET /gallery/my-posts: the caller's own posts, hidden ones included,
     newest first, for the account page's "Your posts"."""
     posts = gallery_ranking.with_points(
-        GalleryPost.objects.filter(author=request.user).select_related("author")
+        GalleryPost.objects.filter(author=request.user).select_related(
+            "author", "champions_meeting", "league_of_heroes"
+        )
     ).order_by("-content_updated_at", "-id")
     return Response(serialize_posts(list(posts), request.user, full=True))
 
