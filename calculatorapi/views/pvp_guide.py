@@ -110,19 +110,28 @@ class _SkillSerializer(serializers.ModelSerializer):
     # null. The sheet writes acceleration skills this way. Read from a dict the
     # view builds in one query (context["unique_of"]), not per skill.
     unique_of = serializers.SerializerMethodField()
-    # The skill's own version label, and its other versions (white, gold,
-    # evolved) from models.skill.skill_families, one query for the guide
-    # (context["versions"]). A guide names ONE version per row; the client
-    # shows the rest beside it and the team builder counts any of them.
+    # The skill's own version (label, tier, evolved flag) and its other
+    # versions (white, gold, evolved) from models.skill.skill_families, one
+    # query for the guide (context["versions"]). A guide names ONE version per
+    # row; the client shows the rest beside it. The team builder counts a
+    # source that teaches the pick or a HIGHER version: a card that teaches
+    # the gold teaches the white too (owner, 2026-10-14), never the reverse.
     version = serializers.CharField(source="version_label")
+    is_evolved = serializers.SerializerMethodField()
     versions = serializers.SerializerMethodField()
 
     class Meta:
         model = Skill
-        fields = ("id", "name", "description", "image", "rarity", "unique_of", "version", "versions")
+        fields = (
+            "id", "name", "description", "image", "rarity", "unique_of",
+            "version", "tier", "is_evolved", "versions",
+        )
 
     def get_unique_of(self, obj):
         return self.context["unique_of"].get(obj.id)
+
+    def get_is_evolved(self, obj):
+        return obj.evolves_from_id is not None
 
     def get_versions(self, obj):
         rows = self.context.get("versions", {}).get(obj.id, [])

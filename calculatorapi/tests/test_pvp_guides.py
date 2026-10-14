@@ -939,13 +939,13 @@ class SkillFamilyTests(CalculatorTestCase):
                                               skill=self.white, tier=1)
         body = APIClient().get(url("cm", cm.id)).json()
         skill = body["skill_recommendations"][0]["skill"]
-        self.assertEqual(skill["version"], "○ white")
+        self.assertEqual((skill["version"], skill["tier"], skill["is_evolved"]), ("○ white", 1, False))
         self.assertEqual(
             [(row["name"], row["version"], row["tier"], row["is_evolved"]) for row in skill["versions"]],
             [("Corner Adept ◎", "◎ gold", 2, False), ("Corner Virtuoso", "evolved", 1, True)],
         )
         mention = body["skill_mentions"]["corner virtuoso"]
-        self.assertEqual(mention["version"], "evolved")
+        self.assertEqual((mention["version"], mention["is_evolved"]), ("evolved", True))
         self.assertEqual([row["name"] for row in mention["versions"]], ["Corner Adept ○", "Corner Adept ◎"])
 
     def test_the_admin_picker_and_the_skills_table_name_the_version(self):

@@ -456,9 +456,9 @@ class SkillInline(GuideInline, PicturePickersMixin, TabularInline):
     hint = (
         "Only skills already on global can be picked. Pick the version the guide "
         "means (the picker says white, gold or evolved); the site shows the other "
-        "versions beside it, and a team with any of them counts. Pick a category, "
-        "and a tier if the guide has tiers (T0 is take first). Drag to reorder "
-        "within a tier."
+        "versions beside it, and a team that has the gold counts for a white pick "
+        "(a card teaching the gold teaches the white too). Pick a category, and a "
+        "tier if the guide has tiers (T0 is take first). Drag to reorder within a tier."
     )
 
     @admin.display(description="Other versions")
