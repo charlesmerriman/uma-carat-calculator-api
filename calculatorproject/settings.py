@@ -18,6 +18,17 @@ DEBUG = os.getenv("DEBUG", "False") == "True"
 
 ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 
+# Django refuses any request with more than this many form fields and answers
+# a bare 400 (TooManyFieldsSent) before the view runs. The default of 1000 is a
+# guard against hash-flooding attacks, sized for ordinary forms. The PvP guide
+# admin page saves every table of a guide in ONE form (stats, team comps, and
+# the umas, skills, decks with their six cards and mentions of five styles),
+# and a filled guide posts well over 1000 fields, so saving one returned 400
+# in prod on 2026-10-15. 10,000 leaves room for guides to grow about eightfold.
+# Only the admin posts forms this shape; the API takes JSON, which this limit
+# does not count.
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 10_000
+
 INSTALLED_APPS = [
     # django-unfold must come BEFORE django.contrib.admin so its templates
     # override the stock admin's (Django resolves app templates in order).

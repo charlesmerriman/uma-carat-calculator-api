@@ -1,4 +1,7 @@
 """The PvP guide: constraints, GET /pvp-guides/<kind>/<id>, has_guide, the admin, and the sheet loader."""
+# One module per feature area, and this area has the admin page, the endpoint and
+# the sheet loader in it.
+# pylint: disable=too-many-lines
 
 import csv
 import tempfile
@@ -710,6 +713,28 @@ class GuideTabsTests(CalculatorTestCase):
         self.assertContains(res, "Only one card in a deck can be the borrowed one")
         self.assertContains(res, 'class="pvp-tab-errors"')
         self.assertEqual(deck.slots.count(), 1)
+
+    def test_a_filled_guide_posts_past_django_s_default_field_limit_and_still_saves(self):
+        # One Save posts every table of the guide. A filled guide runs past the
+        # 1000 fields Django allows by default (DATA_UPLOAD_MAX_NUMBER_FIELDS),
+        # and prod answered a bare 400 (TooManyFieldsSent) before the view ran
+        # on 2026-10-15. settings.py raises the limit; this round-trips a page
+        # shaped like a real guide so that it stays raised.
+        for index, style in enumerate(("runaway", "front", "pace", "late", "end")):
+            for number in range(3):
+                deck = PvpDeck.objects.create(guide=self.guide, style=style,
+                                              label=f"Deck {number}", order=number)
+                for slot in range(1, 7):
+                    PvpDeckSlot.objects.create(deck=deck, slot=slot, support_card=self.card)
+            for number in range(8):
+                skill = make_skill(f"{style} skill {number}", 100100 + index * 8 + number)
+                PvpSkillRecommendation.objects.create(guide=self.guide, style=style,
+                                                      category="acceleration", skill=skill)
+        data = self.page_data()
+        # The page must still be the shape that broke, or this proves nothing.
+        self.assertGreater(len(data), 1000)
+        res = self.client.post(self.change_url(), data)
+        self.assertEqual(res.status_code, 302, res.content.decode()[:3000])
 
     def test_an_editor_can_open_the_page(self):
         call_command("create_content_editor_group", stdout=StringIO())
