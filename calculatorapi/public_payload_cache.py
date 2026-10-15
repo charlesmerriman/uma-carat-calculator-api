@@ -10,10 +10,32 @@ catalogue serializes ~900 nested cards twice over (once under
 ``banner_timeline_data``, once under ``banner_uma_data``/``banner_support_data``)
 and none of it varies per visitor.
 
-So the public half is built once, rendered to JSON bytes, and kept. A guest is
-then answered with those bytes verbatim -- no queries, no serializers, no JSON
-rendering. A signed-in user pays a ``json.loads`` on them (single-digit ms) and
-gets their own user-scoped keys merged in, still skipping the whole catalogue.
+So the public half is built once, rendered to JSON bytes, gzipped, and kept. A
+guest is then answered with those gzip bytes verbatim -- no queries, no
+serializers, no JSON parsing or rendering, no compression. A signed-in user pays
+a decompress and a ``json.loads`` (~6ms locally) and gets their own user-scoped
+keys merged in, still skipping the whole catalogue.
+
+WHY GZIP, AND WHY ONCE
+----------------------
+Until 2026-10 the cache held the raw JSON and every guest hit did
+``json.loads`` + a DRF re-render of it: 12.5ms of CPU and a 9MB burst of Python
+objects per request locally, several times that on the production shared vCPU.
+Under a banner-launch crowd on 2026-10-14 that pinned the CPU at 99% and pushed
+the 512MB instance into an out-of-memory restart. Serving the stored bytes as
+they are costs 0.04ms and 1.2MB.
+
+The bytes are gzipped at store time (level 6: 1.24MB -> ~103KB, ~8ms once per
+rebuild) for two reasons. Each gunicorn thread is tied up for as long as it
+takes to push the body out to the ingress, and a twelfth of the bytes is a
+twelfth of that time. And compressing once here is the whole trick:
+Django's GZipMiddleware would compress the megabyte again on every request,
+which spends the CPU this module exists to save.
+
+Only the gzip is kept, not the raw JSON beside it. The rare client that does
+not accept gzip, and every signed-in read, pay a ~1ms decompress instead. In
+exchange there is one value to store, evict and invalidate, so two copies can
+never drift apart.
 
 WHY IT IS SAFE TO HOLD INDEFINITELY
 -----------------------------------
@@ -53,13 +75,21 @@ land immediately again, move CACHES onto a shared backend (Redis) -- nothing
 else in this module needs to change.
 """
 
+import gzip
+
 from django.core.cache import cache
 
 # Bump the suffix when the payload's SHAPE changes (a key added or removed, a
-# serializer field altered). A deploy does not clear the cache on its own --
-# the process restart does -- but an explicit version means a rolling restart
-# can never serve a half-old shape to a new frontend.
-CACHE_KEY = "calculator_data:public:v1"
+# serializer field altered) or the stored FORMAT does. A deploy does not clear
+# the cache on its own -- the process restart does -- but an explicit version
+# means a rolling restart can never serve a half-old shape to a new frontend.
+# v2 (2026-10): the value became gzip bytes instead of raw JSON.
+CACHE_KEY = "calculator_data:public:v2"
+
+# Level 6 is gzip's default. Level 9 saves another 3KB for twice the time,
+# level 1 costs 30KB more for less than half; neither moves the needle when
+# it runs once per content edit.
+GZIP_LEVEL = 6
 
 # Backstop only. With one worker the signal below does the real work and this
 # never matters; with several it caps how long a process can serve stale
@@ -141,13 +171,22 @@ _IRRELEVANT_MODELS = frozenset({
 
 
 def read():
-    """The cached public payload as JSON bytes, or None on a miss."""
+    """The cached public payload as GZIPPED JSON bytes, or None on a miss.
+
+    ``gzip.decompress()`` it for the JSON itself.
+    """
     return cache.get(CACHE_KEY)
 
 
 def store(json_bytes):
-    """Keep the rendered public payload for the next request."""
-    cache.set(CACHE_KEY, json_bytes, CACHE_TTL_SECONDS)
+    """Compress the rendered public payload, keep it, and return the gzip.
+
+    Returned so the request that paid for the rebuild can answer from it
+    without a second cache read.
+    """
+    gzipped = gzip.compress(json_bytes, compresslevel=GZIP_LEVEL)
+    cache.set(CACHE_KEY, gzipped, CACHE_TTL_SECONDS)
+    return gzipped
 
 
 def invalidate(**_kwargs):
