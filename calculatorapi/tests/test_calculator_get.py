@@ -836,10 +836,22 @@ class PublicPayloadCacheTests(CalculatorTestCase):
         cached = json.loads(gzip.decompress(public_payload_cache.read()))
         self.assertEqual(set(cached.keys()), _EXPECTED_GET_KEYS)
 
-    # The guest response is the cached gzip sent as it is. A browser, and the
-    # Cloudflare edge in front of the ingress, both ask for gzip; the Django
-    # test client asks for nothing, so every other guest test here exercises
-    # the decompressing branch.
+
+
+class GuestPayloadEncodingTests(CalculatorTestCase):
+    """How the cached payload goes out to a guest: the stored gzip, as it is.
+
+    A browser, and the Cloudflare edge in front of the ingress, both ask for
+    gzip; the Django test client asks for nothing, so every other guest test
+    in this module exercises the decompressing branch.
+    -> views/calculator.py::_guest_payload_response
+    """
+
+    def setUp(self):
+        self.user = make_user()
+        self.client, self.token = auth_client(self.user)
+        self.timeline = make_timeline(name='Cached Banner')
+        self.uma_banner = make_uma_banner(timeline=self.timeline)
 
     def test_a_guest_asking_for_gzip_gets_the_cached_bytes_as_they_are(self):
         cold = APIClient().get('/calculator-data').content   # a miss, identity
