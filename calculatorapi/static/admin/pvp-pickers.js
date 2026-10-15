@@ -63,4 +63,83 @@
 
   $.fn.select2.defaults.set("templateResult", render);
   $.fn.select2.defaults.set("templateSelection", render);
+
+  /*
+   * Pickers on a hidden tab wait for their tab.
+   *
+   * Django's autocomplete.js initialises every .admin-autocomplete at DOM
+   * ready through $.fn.djangoAdminSelect2. A full guide has 150 or more,
+   * nearly all on tabs that are not open, and select2 takes a few ms each,
+   * so the page sat for half a second after it had drawn (measured in
+   * headless Chrome on a fast machine; a laptop pays more) before it would
+   * respond. The helper is wrapped here (this file loads after
+   * autocomplete.js, before DOM ready): a picker on a tab that is not open
+   * is held back (opening the tab then costs about 0.4 s for 30), and the
+   * hash naming its tab (the tab links are #<tab> anchors, and "Save and
+   * continue" lands on one) initialises it then, on the next animation
+   * frame, once Alpine has shown the tab, so select2 measures a visible
+   * element. The tabs are the links in #pvp-tabs and each tab's wrapper is
+   * #<tab>-group (templates/admin/calculatorapi/pvpguide/change_form.html);
+   * a picker outside every wrapper (the Guide tab's scenario) and every
+   * picker on a page without the tab strip initialise as before. Rows added
+   * with "Add another" come through the same helper (formset:added), on the
+   * open tab, so they initialise at once.
+   */
+  var initialise = $.fn.djangoAdminSelect2;
+  if (!initialise) {
+    return;
+  }
+  var pending = {};
+
+  function tabKeys() {
+    return $("#pvp-tabs a[href^='#']").map(function () {
+      return this.hash.slice(1);
+    }).get();
+  }
+
+  function currentTab() {
+    var hash = window.location.hash.replace(/^#/, "");
+    return tabKeys().indexOf(hash) >= 0 ? hash : "general";
+  }
+
+  function tabOf(element) {
+    var keys = tabKeys();
+    for (var i = 0; i < keys.length; i++) {
+      var group = document.getElementById(keys[i] + "-group");
+      if (group && group.contains(element)) {
+        return keys[i];
+      }
+    }
+    return null;
+  }
+
+  $.fn.djangoAdminSelect2 = function () {
+    var open = currentTab();
+    var now = this.filter(function () {
+      var tab = tabOf(this);
+      if (tab === null || tab === open) {
+        return true;
+      }
+      (pending[tab] = pending[tab] || []).push(this);
+      return false;
+    });
+    initialise.call(now);
+    return this;
+  };
+
+  function wake(tab) {
+    var selects = pending[tab];
+    if (!selects) {
+      return;
+    }
+    delete pending[tab];
+    initialise.call($(selects));
+  }
+
+  window.addEventListener("hashchange", function () {
+    var tab = currentTab();
+    window.requestAnimationFrame(function () {
+      wake(tab);
+    });
+  });
 })();

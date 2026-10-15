@@ -372,9 +372,20 @@ child are inline-only (`test_join_models_not_registered_top_level`).
   read the decks' prefetched `slots`, and the line under the tabs is set in
   `render_change_form` rather than a second `get_object`. The page costs about 60
   queries whatever it holds, plus one per deck for the nested cards
-  (`test_the_page_and_an_unchanged_save_ask_nothing_per_row`). What remains is unfold's
-  markup, about 2.5 ms a row to render, and a 3.5 MB page for the browser: a page with
-  fewer rows is the only thing that cuts that.
+  (`test_the_page_and_an_unchanged_save_ask_nothing_per_row`). What remains server side
+  is unfold's markup, about 2.5 ms a row to render, and a 3.5 MB page for the browser: a
+  page with fewer rows is the only thing that cuts that.
+- **Pickers on a hidden tab wait for their tab.** Django's `autocomplete.js` initialises
+  every picker at DOM ready through `$.fn.djangoAdminSelect2`, a few ms each: a full
+  guide's 159 held the page for about half a second after it had drawn (headless Chrome
+  on a fast machine; a laptop pays more). `static/admin/pvp-pickers.js` wraps that
+  helper (it loads after `autocomplete.js`, so the helper exists, and before DOM ready,
+  so the wrap is in place when it is called): a picker on a tab that is not open is held
+  back, and the hash naming its tab (the tab links are `#<tab>` anchors) initialises it
+  on the next animation frame, once Alpine has shown the tab, about 0.4 s for a tab of
+  30. Pickers outside the tab wrappers, and on pages without the tab strip, initialise
+  as before. No Django test covers it (it is browser work); a headless Chrome run over
+  CDP is how it was measured, see the memory note `admin-performance-2026-10`.
 - **A save validates what changed.** Django saves only the rows that changed but validates
   every row, five or six queries each (the id and the pick fetched again, the foreign key,
   the unique constraint, the check constraints); a full guide cost about 1,200 queries to

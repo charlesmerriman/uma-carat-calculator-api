@@ -524,6 +524,7 @@ class AdminQueryCountTests(CalculatorTestCase):
     def test_the_skill_list_asks_nothing_per_row(self):
         url = reverse("admin:calculatorapi_skill_changelist")
         self._skills(0, 4)
+        self.client.get(url)  # warm the per-process caches (content types) first
         with CaptureQueriesContext(connection) as four:
             self.assertEqual(self.client.get(url).status_code, 200)
         self._skills(4, 40)
@@ -539,6 +540,7 @@ class AdminQueryCountTests(CalculatorTestCase):
         skills = self._skills(0, 8)
         UmaSkill.objects.create(uma=uma, skill=skills[0], source="innate")
         url = reverse("admin:calculatorapi_uma_change", args=(uma.pk,))
+        self.client.get(url)  # warm the per-process caches (content types) first
         with CaptureQueriesContext(connection) as one:
             self.assertEqual(self.client.get(url).status_code, 200)
         for skill in skills[1:]:

@@ -749,6 +749,9 @@ class GuideTabsTests(CalculatorTestCase):
         for style in ("front", "late"):
             PvpDeck.objects.create(guide=self.guide, style=style, label=f"{style} deck")
         self._fill(1, 2)
+        # Warm the per-process caches (content types, the log entry's) first,
+        # or the first page and the first save pay a lookup the next do not.
+        self.assertEqual(self.client.post(self.change_url(), self.page_data()).status_code, 302)
         with CaptureQueriesContext(connection) as page_one:
             data = self.page_data()
         with CaptureQueriesContext(connection) as save_one:
