@@ -21,7 +21,7 @@ Not part of the public API: `/admin/analytics/` is a staff-only aggregate analyt
 
 ## Authentication
 
-Ordinary accounts are created and authenticated **only** through Google, Discord or Patreon (OAuth2 authorization code flow). There is no registration endpoint, and `POST /login` is restricted to staff. A social account stores nothing but the provider's opaque subject id and a generated `user_xxxxxx` handle — no email, name, or password. See `calculatorapi/oauth.py` and `calculatorapi/views/social_auth.py`.
+Ordinary accounts are created and authenticated **only** through Google, Discord or Patreon (OAuth2 authorization code flow). There is no registration endpoint and no password login (staff sign in at `/admin`, behind a second factor; the API has no route that takes a password). A social account stores nothing but the provider's opaque subject id and a generated `user_xxxxxx` handle — no email, name, or password. See `calculatorapi/oauth.py` and `calculatorapi/views/social_auth.py`.
 
 ### `GET /auth/<provider>/start`
 
@@ -69,27 +69,6 @@ Public. Redeems the one-time authorization code and returns an API token. The co
 **Response `404`** — unknown provider.
 
 The redirect URI is derived server-side as `<FRONTEND_URL>/auth/callback` and must match the value registered in the provider console exactly.
-
----
-
-### `POST /login`
-
-Public route, **staff only**. Authenticates a staff user by password and returns their auth token. This exists so admins can reach `/admin` and the analytics dashboard; ordinary accounts have unusable passwords and must use the social endpoints above.
-
-**Request body**
-```json
-{ "username": "string", "password": "string" }
-```
-
-**Response `200`**
-```json
-{ "token": "string" }
-```
-
-**Response `400`** — wrong credentials **or** a correct password on a non-staff account. Both return an identical body, so the endpoint cannot be used to discover which usernames exist.
-```json
-{ "error": "Invalid Credentials" }
-```
 
 ---
 

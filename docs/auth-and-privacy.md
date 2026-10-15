@@ -228,11 +228,14 @@ event and the uma names, and its picture is the three umas with their styles. Di
 keep their own copies after a take-down, so the preview must not hold a name, a portrait of
 the poster or a caption.
 
-### `POST /login` is staff-only and non-enumerable
+### There is no password login on the API
 
-A correct password on a non-staff account returns the same status **and the same body**
-as a wrong password, so the endpoint cannot be used to enumerate usernames. Covered by
-`test_non_staff_rejection_is_indistinguishable_from_wrong_password`.
+`POST /login` (staff-only, token-issuing) was removed on 2026-10-15: a password alone
+bought a bearer token, around the admin's second factor, and that token could write
+changelog entries and game events through the API with no admin history row. Those write
+actions went with it; both viewsets are read-only by construction now. Staff sign in at
+`/admin` (→ [admin.md](admin.md), "Signing in"); nothing on the API takes a password.
+Covered by `test_password_login_endpoint_no_longer_exists`.
 
 ### Redirect URI must match byte-for-byte
 

@@ -32,8 +32,8 @@ def make_ranks():
 def make_user(username='testuser', password='testpass123', is_staff=False):
     """Create a CustomUser with all required FK ranks set.
 
-    `is_staff` matters for /login, which is staff-only now that ordinary
-    accounts sign in through Google/Discord.
+    `is_staff` opens the admin (behind the second factor) and the API's
+    staff-only answers: draft guides, the oshi slot cap, early access.
     """
     club, tt, cm, loh = make_ranks()
     return CustomUser.objects.create_user(

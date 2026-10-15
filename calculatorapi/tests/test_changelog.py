@@ -64,13 +64,14 @@ class ChangelogEndpointTests(CalculatorTestCase):
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.json()['version'], 'v1.1')
 
-    def test_writes_require_admin(self):
-        # Guests and non-admin users cannot create entries.
-        guest = APIClient().post('/changelog', {'title': 'x', 'date': '2026-07-17'})
-        self.assertIn(guest.status_code, (401, 403))
-        user_client, _ = auth_client(make_user())
-        res = user_client.post('/changelog', {'title': 'x', 'date': '2026-07-17'})
-        self.assertIn(res.status_code, (401, 403))
+    def test_the_route_is_read_only(self):
+        # No write actions at all, not merely gated ones: a staff token used
+        # to be able to create entries here, around the admin and its history.
+        staff_client, _ = auth_client(make_user('staffer', is_staff=True))
+        for client in (APIClient(), staff_client):
+            res = client.post('/changelog', {'title': 'x', 'date': '2026-07-17'})
+            self.assertEqual(res.status_code, 405)
+        self.assertEqual(staff_client.delete(f'/changelog/{self.newer.id}').status_code, 405)
 
 
 class ShippedChangelogFileTests(CalculatorTestCase):
