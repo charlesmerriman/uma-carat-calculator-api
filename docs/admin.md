@@ -112,6 +112,12 @@ Two deliberate behaviours:
   group (with `PVP_GUIDE_POINTER` under it, where the never-shown stat recommendation
   boxes used to be) — because the two models hold the same data and render through the
   same timeline card. Keep them in step when editing either.
+- **A column never costs a query per row.** The ones that would are batched:
+  `SkillAdmin.versions` (siblings of the page's rows in one lookup, attached in
+  `get_changelist_instance`), `AnniversaryEventAdmin.confirmed_start_date` (a `Min`
+  annotation), `GalleryReportAdmin.open_on_item` (two filtered `Count`s), and every FK a
+  column shows is in `list_select_related`. `AdminQueryCountTests` in `tests/test_admin.py`
+  holds the line; add a case there for a new column that reads past the row.
 - `PatreonSupporterAdmin` has **"Show name publicly" as a `list_editable` column**, so the
   whole list can be consent-reviewed in one pass. It is the only thing that puts a name on
   the website, and the CSV importer never sets it.
@@ -354,6 +360,33 @@ child are inline-only (`test_join_models_not_registered_top_level`).
   Django's `autocomplete.js` runs at DOM ready**, so the widget's `media` property builds
   ONE list (`[*parent._js, "admin/pvp-pickers.js"]`): Django's Media merge only orders
   files that share a list, and `parent.media + Media(js=...)` had put it before select2.
+- **No query per row.** Django's picker fetches the chosen option by pk on every render,
+  and a filled guide renders a few hundred. `PicturePickersMixin` loads each inline's rows
+  with their picks (`select_related` on its `autocomplete_fields`, plus the parent, which a
+  row's `__str__` names) and `KnownRowForm` hands each picker the pick, so a saved row
+  renders without a lookup; the same object answers the form field on a save when the
+  posted value is the one the row holds (`KnownChoiceField`). The mixin is generic: the six
+  autocomplete inlines in `admin.py` (umas on a banner, a card's skills, a campaign's
+  parts, a legend-race batch) use it too, which also gives their pickers pictures. "Other
+  versions" is one `skill_families` lookup per table, the pre-numbered blank slot rows
+  read the decks' prefetched `slots`, and the line under the tabs is set in
+  `render_change_form` rather than a second `get_object`. The page costs about 60
+  queries whatever it holds, plus one per deck for the nested cards
+  (`test_the_page_and_an_unchanged_save_ask_nothing_per_row`). What remains is unfold's
+  markup, about 2.5 ms a row to render, and a 3.5 MB page for the browser: a page with
+  fewer rows is the only thing that cuts that.
+- **A save validates what changed.** Django saves only the rows that changed but validates
+  every row, five or six queries each (the id and the pick fetched again, the foreign key,
+  the unique constraint, the check constraints); a full guide cost about 1,200 queries to
+  save. `ChildRowForm`, the base of every child row form, sets Django's `empty_permitted` on
+  a bound saved row, so `full_clean()` returns before any check when `has_changed()` is
+  false. A changed row and a new row are validated in full. One consequence: a row that is
+  already invalid in the database (a mention of a skill since renamed, say) no longer
+  blocks the save until someone touches it.
+- **One borrowed slot, not one ticked row.** `DeckSlotFormSet.clean()` counts distinct slot
+  numbers: the card in slot 6 and its "or" alternative are the same borrow, and the sheet
+  loader ticks both (41 of the loaded decks were refusing every save under the old per-row
+  rule). Untouched rows are read off their saved instance, since they have no `cleaned_data`.
 - **Skill versions**: the autocomplete JSON and the `skill-names/` suggestions carry
   `version` (`Skill.version_label`: `○ white`, `◎ gold`, `evolved`) and the picker draws it
   as a tag, so an editor picks the version the guide means; the skills tables have a

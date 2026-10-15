@@ -8,7 +8,9 @@ from unittest.mock import patch
 from django.contrib.auth.models import Group
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
+from django.db import connection
 from django.test import override_settings
+from django.test.utils import CaptureQueriesContext
 from django.urls import NoReverseMatch, reverse
 
 from calculatorapi import image_library
@@ -22,7 +24,7 @@ from calculatorapi.image_library import (
 )
 from calculatorapi.management.commands.create_content_editor_group import CONTENT_MODELS
 from calculatorapi.models import (
-    CustomUser, Uma, SocialAccount, Plan, UserPlannedBanner,
+    CustomUser, Skill, Uma, UmaSkill, SocialAccount, Plan, UserPlannedBanner,
 )
 from calculatorapi.tests.base import CalculatorTestCase, PLAIN_TEST_STORAGES
 from calculatorapi.tests.factories import make_uma_banner, make_user
@@ -496,3 +498,52 @@ class SpacesImagePickerFormTests(CalculatorTestCase):
                 self.assertContains(res, 'spaces-picker')
                 self.assertContains(res, 'name="image-library-key"')
                 self.assertContains(res, 'spaces-image-picker.js')
+
+
+@override_settings(STORAGES=PLAIN_TEST_STORAGES)
+class AdminQueryCountTests(CalculatorTestCase):
+    """The pages that used to ask a query per row ask the same however many
+    rows they show. The PvP guide page has its own in test_pvp_guides."""
+
+    def setUp(self):
+        self.client.force_login(
+            CustomUser.objects.create_superuser(username="boss", password="x"))
+
+    @staticmethod
+    def _skills(start, stop):
+        # Pairs share a group: Skill 0 and Skill 1 are the white and gold of
+        # one effect, which is what the "Versions" column names.
+        return [
+            Skill.objects.create(
+                name=f"Skill {number}", game_id=100000 + number, group_id=10000 + number // 2,
+                tier=1 + number % 2, rarity=1, icon_id=1,
+            )
+            for number in range(start, stop)
+        ]
+
+    def test_the_skill_list_asks_nothing_per_row(self):
+        url = reverse("admin:calculatorapi_skill_changelist")
+        self._skills(0, 4)
+        with CaptureQueriesContext(connection) as four:
+            self.assertEqual(self.client.get(url).status_code, 200)
+        self._skills(4, 40)
+        with CaptureQueriesContext(connection) as forty:
+            res = self.client.get(url)
+        self.assertContains(res, "◎ gold Skill 1 (100001)")
+        self.assertEqual(len(four), len(forty))
+
+    def test_an_inline_with_a_picker_asks_nothing_per_row(self):
+        # The uma page's skills: each row's picker is handed its skill with
+        # the row (PicturePickersMixin), and the row's title names the uma.
+        uma = Uma.objects.create(name="Special Week")
+        skills = self._skills(0, 8)
+        UmaSkill.objects.create(uma=uma, skill=skills[0], source="innate")
+        url = reverse("admin:calculatorapi_uma_change", args=(uma.pk,))
+        with CaptureQueriesContext(connection) as one:
+            self.assertEqual(self.client.get(url).status_code, 200)
+        for skill in skills[1:]:
+            UmaSkill.objects.create(uma=uma, skill=skill, source="awakening", level=2)
+        with CaptureQueriesContext(connection) as eight:
+            res = self.client.get(url)
+        self.assertContains(res, "Skill 7")
+        self.assertEqual(len(one), len(eight))

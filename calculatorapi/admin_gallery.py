@@ -21,7 +21,7 @@ from people, through the API.
 """
 
 from django.contrib import admin, messages
-from django.db.models import F
+from django.db.models import Count, F, Q
 from django.urls import reverse
 from django.utils.html import format_html
 from unfold.admin import ModelAdmin, TabularInline
@@ -153,6 +153,21 @@ class GalleryReportAdmin(ModelAdmin):
     def has_add_permission(self, request):
         return False
 
+    def get_queryset(self, request):
+        # "Open reports on it", counted in the list query rather than once
+        # per row. A report names a post or a comment, so one of the two
+        # counts is always zero.
+        return super().get_queryset(request).annotate(
+            _open_on_post=Count(
+                "post__reports", distinct=True,
+                filter=Q(post__reports__resolved_at__isnull=True),
+            ),
+            _open_on_comment=Count(
+                "comment__reports", distinct=True,
+                filter=Q(comment__reports__resolved_at__isnull=True),
+            ),
+        )
+
     @staticmethod
     def _item(report):
         return report.post or report.comment
@@ -169,7 +184,7 @@ class GalleryReportAdmin(ModelAdmin):
 
     @admin.display(description="Open reports on it")
     def open_on_item(self, obj):
-        return self._item(obj).reports.filter(resolved_at__isnull=True).count()
+        return obj._open_on_post if obj.post_id else obj._open_on_comment  # pylint: disable=protected-access
 
     @admin.display(description="Hidden", boolean=True)
     def item_hidden(self, obj):

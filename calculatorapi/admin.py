@@ -46,7 +46,7 @@ from django.contrib import admin, messages
 from django.contrib.auth.admin import GroupAdmin as BaseGroupAdmin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import Group
-from django.db.models import Count, F, Q
+from django.db.models import Count, F, Min, Q
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
@@ -61,7 +61,7 @@ from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationFo
 from .admin_image_picker import SpacesImagePickerMixin
 # Importing admin_pvp registers the PvP guide admin; the mixin and fieldset
 # put the "PvP guide" link on the two event pages.
-from .admin_pvp import PVP_GUIDE_FIELDSET, PvpGuideLinkMixin
+from .admin_pvp import PVP_GUIDE_FIELDSET, PicturePickersMixin, PvpGuideLinkMixin
 # Importing admin_gallery registers the gallery's moderation pages.
 from . import admin_gallery  # noqa: F401  pylint: disable=unused-import
 from . import digitalocean_api, patreon_api
@@ -139,21 +139,21 @@ class BannerSupportInline(TabularInline):
     extra = 0
 
 
-class UmaOnBannerInline(TabularInline):
+class UmaOnBannerInline(PicturePickersMixin, TabularInline):
     """The umas featured on an uma banner, edited on the banner page."""
     model = UmasOnUmaBanner
     autocomplete_fields = ("uma",)  # searchable picker instead of a 200-item dropdown
     extra = 1
 
 
-class SupportOnBannerInline(TabularInline):
+class SupportOnBannerInline(PicturePickersMixin, TabularInline):
     """The support cards featured on a support banner."""
     model = SupportsOnSupportBanner
     autocomplete_fields = ("support_card",)
     extra = 1
 
 
-class UmaSkillInline(TabularInline):
+class UmaSkillInline(PicturePickersMixin, TabularInline):
     """The skills an outfit carries, on the uma's page. Filled by the import."""
     model = UmaSkill
     autocomplete_fields = ("skill",)
@@ -161,7 +161,7 @@ class UmaSkillInline(TabularInline):
     extra = 0
 
 
-class SupportCardSkillInline(TabularInline):
+class SupportCardSkillInline(PicturePickersMixin, TabularInline):
     """The skills a support card gives, by hint or event. Filled by the import."""
     model = SupportCardSkill
     autocomplete_fields = ("skill",)
@@ -176,7 +176,7 @@ class ChangelogChangeInline(TabularInline):
     extra = 1
 
 
-class AnniversaryEventBannerInline(TabularInline):
+class AnniversaryEventBannerInline(PicturePickersMixin, TabularInline):
     """The banner "Parts" a campaign spans, edited on the campaign's page.
 
     Editing the link here rather than on BannerTimeline keeps that shared model
@@ -190,7 +190,7 @@ class AnniversaryEventBannerInline(TabularInline):
     extra = 1
 
 
-class DailyLegendRaceUmaInline(TabularInline):
+class DailyLegendRaceUmaInline(PicturePickersMixin, TabularInline):
     """The umas in one daily legend race batch.
 
     No order column: the site sorts a batch by star count, then by name. An
@@ -573,6 +573,7 @@ class SkillAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
     search_fields = ("name", "=game_id", "=group_id")
     readonly_fields = ("image_preview", "versions", "on_global")
     autocomplete_fields = ("evolves_from",)
+    list_select_related = ("evolves_from",)
     fieldsets = (
         (None, {"fields": ("name", "game_id", "image", "image_preview", "admin_comments")}),
         ("Text", {
@@ -600,14 +601,34 @@ class SkillAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
     def on_global(self, obj):
         return obj.is_on_global
 
+    def get_changelist_instance(self, request):
+        # "Versions" names each row's siblings. One query for the page's rows
+        # rather than one per row (siblings() is a query each): the page's
+        # rows are swapped for a list carrying their siblings, which is what
+        # the template iterates. The change page's column takes the one query.
+        changelist = super().get_changelist_instance(request)
+        rows = list(changelist.result_list)
+        by_group = {}
+        for skill in Skill.objects.filter(group_id__in={row.group_id for row in rows}).order_by("-tier"):
+            by_group.setdefault(skill.group_id, []).append(skill)
+        for row in rows:
+            row.sibling_rows = [
+                skill for skill in by_group.get(row.group_id, []) if skill.pk != row.pk
+            ]
+        changelist.result_list = rows
+        return changelist
+
     @admin.display(description="Versions")
     def versions(self, obj):
         """The other tiers of this effect, plus the evolution link when set."""
         if obj.pk is None:
             return "—"
+        siblings = getattr(obj, "sibling_rows", None)
+        if siblings is None:
+            siblings = obj.siblings()
         parts = [
             f"{sibling.get_tier_display()} {sibling.name} ({sibling.game_id})"
-            for sibling in obj.siblings()
+            for sibling in siblings
         ]
         if obj.evolves_from_id:
             parts.append(f"evolved from {obj.evolves_from.name} ({obj.evolves_from.game_id})")
@@ -828,6 +849,9 @@ class AnniversaryEventAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmi
         return super().get_queryset(request).annotate(
             _part_count=Count("banner_links", distinct=True),
             _product_count=Count("products", distinct=True),
+            # The earliest confirmed part start, for "Starts" (Min ignores the
+            # join's repeats, so it sits beside the distinct counts).
+            _starts=Min("banner_links__banner_timeline__global_start_date"),
         )
 
     @admin.display(description="Parts", ordering="_part_count")
@@ -838,14 +862,9 @@ class AnniversaryEventAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmi
     def product_count(self, obj):
         return obj._product_count  # pylint: disable=protected-access
 
-    @admin.display(description="Starts")
+    @admin.display(description="Starts", ordering="_starts")
     def confirmed_start_date(self, obj):
-        starts = [
-            link.banner_timeline.global_start_date
-            for link in obj.banner_links.select_related("banner_timeline")
-            if link.banner_timeline.global_start_date is not None
-        ]
-        return min(starts) if starts else "—"
+        return obj._starts or "—"  # pylint: disable=protected-access
 
 
 @admin.register(ChampionsMeeting)
@@ -1431,6 +1450,7 @@ class PatreonSupporterAdmin(ModelAdmin):
     # in, when the name they signed the message with isn't the one on the row.
     search_fields = ("display_name", "email")
     autocomplete_fields = ("tier",)
+    list_select_related = ("tier",)
     readonly_fields = ("patreon_user_id", "linked_user")
 
     @admin.display(boolean=True, description="Website account")

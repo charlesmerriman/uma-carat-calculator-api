@@ -705,9 +705,84 @@ class GuideTabsTests(CalculatorTestCase):
         data["front-decks-0-slots-1-is_borrow"] = "on"
         res = self.client.post(self.change_url(), data)
         self.assertEqual(res.status_code, 200)
-        self.assertContains(res, "Only one card in a deck can be the borrowed one")
+        self.assertContains(res, "Only one slot in a deck can be the borrowed one")
         self.assertContains(res, 'class="pvp-tab-errors"')
         self.assertEqual(deck.slots.count(), 1)
+
+    def test_a_borrowed_slot_s_alternative_is_the_same_borrow(self):
+        # The sheet loader ticks Borrow on a slot's card AND its "or"
+        # alternative: one borrowed slot, so it saves, touched or not.
+        deck = PvpDeck.objects.create(guide=self.guide, style="front", label="Standard")
+        PvpDeckSlot.objects.create(deck=deck, slot=6, support_card=self.card, is_borrow=True)
+        PvpDeckSlot.objects.create(deck=deck, slot=6, order=1, note="or any speed", is_borrow=True)
+        data = self.page_data()
+        self.assertEqual(self.client.post(self.change_url(), data).status_code, 302)
+        data["front-decks-0-slots-1-note"] = "or any stamina"
+        self.assertEqual(self.client.post(self.change_url(), data).status_code, 302)
+        # A second borrowed SLOT is still refused, against untouched rows too.
+        data["front-decks-0-slots-2-note"] = "borrowed too"
+        data["front-decks-0-slots-2-is_borrow"] = "on"
+        res = self.client.post(self.change_url(), data)
+        self.assertContains(res, "Only one slot in a deck can be the borrowed one")
+
+    def _fill(self, start, stop):
+        """One more row in every table for each number in the range, and a
+        card in that slot number of every deck."""
+        for number in range(start, stop):
+            uma = Uma.objects.create(name=f"Uma {number}")
+            PvpUmaRecommendation.objects.create(guide=self.guide, style="front", uma=uma,
+                                                order=number)
+            skill = make_skill(f"Skill {number}", 100200 + number)
+            PvpSkillRecommendation.objects.create(guide=self.guide, style="pace",
+                                                  category="speed", skill=skill, order=number)
+            PvpStatConfig.objects.create(guide=self.guide, style="everyone", speed=str(number),
+                                         order=number)
+            PvpTeamComp.objects.create(guide=self.guide, text=f"Comp {number}", order=number)
+            for deck in self.guide.decks.all():
+                PvpDeckSlot.objects.create(deck=deck, slot=number, support_card=self.card)
+
+    def test_the_page_and_an_unchanged_save_ask_nothing_per_row(self):
+        # A row costs no query: the page (its pickers, "Other versions") and a
+        # save that touched nothing (ChildRowForm) ask the database the same
+        # whether a table holds one row or six. Decks are the exception, one
+        # query each for their nested cards, so the deck count is held still.
+        for style in ("front", "late"):
+            PvpDeck.objects.create(guide=self.guide, style=style, label=f"{style} deck")
+        self._fill(1, 2)
+        with CaptureQueriesContext(connection) as page_one:
+            data = self.page_data()
+        with CaptureQueriesContext(connection) as save_one:
+            self.assertEqual(self.client.post(self.change_url(), data).status_code, 302)
+        self._fill(2, 7)
+        with CaptureQueriesContext(connection) as page_six:
+            data = self.page_data()
+        self.assertEqual(len(page_one), len(page_six))
+        with CaptureQueriesContext(connection) as save_six:
+            self.assertEqual(self.client.post(self.change_url(), data).status_code, 302)
+        self.assertEqual(len(save_one), len(save_six))
+        self.assertEqual(PvpDeckSlot.objects.count(), 12)
+
+    def test_a_changed_row_is_validated_and_an_untouched_one_is_left_alone(self):
+        maru = Uma.objects.create(name="Maruzensky")
+        oguri = Uma.objects.create(name="Oguri Cap")
+        PvpUmaRecommendation.objects.create(guide=self.guide, style="front", uma=maru, order=0)
+        PvpUmaRecommendation.objects.create(guide=self.guide, style="front", uma=oguri, order=1)
+        # A row written past the form's checks (here a mention of no skill)
+        # does not block a save that leaves it alone...
+        PvpTeamComp.objects.create(guide=self.guide, text="2 Front", note="[[Nope]]")
+        data = self.page_data()
+        self.assertEqual(self.client.post(self.change_url(), data).status_code, 302)
+        # ...a changed row is checked in full: the same uma twice for a style...
+        data["front-uma_recommendations-1-uma"] = str(maru.id)
+        res = self.client.post(self.change_url(), data)
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "already exists")
+        # ...and touching the bad note is what surfaces its mention.
+        data = self.page_data()
+        data["team_comps-0-note"] = "[[Nope]] still"
+        res = self.client.post(self.change_url(), data)
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "No skill on global has this name")
 
     def test_a_filled_guide_posts_past_django_s_default_field_limit_and_still_saves(self):
         # One Save posts every table of the guide. A filled guide runs past the
