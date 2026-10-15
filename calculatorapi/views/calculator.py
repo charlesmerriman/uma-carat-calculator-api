@@ -1,4 +1,6 @@
+import gzip
 import json
+import re
 
 from rest_framework.viewsets import ViewSet
 from rest_framework.decorators import action
@@ -7,6 +9,8 @@ from rest_framework.response import Response
 from rest_framework import permissions, status
 from django.db import transaction
 from django.db.models import Prefetch
+from django.http import HttpResponse
+from django.utils.cache import patch_vary_headers
 from calculatorapi import plans, public_payload_cache
 from calculatorapi.eligibility import build_first_jp_date_maps
 from calculatorapi.ledger import (
@@ -324,6 +328,35 @@ def _build_user_payload(user, *, emap, anniversary_emap, card_context):
     }
 
 
+# The same test Django's own GZipMiddleware uses. It ignores q-values, so a
+# client sending "gzip;q=0" would still get gzip; no browser or proxy does.
+_ACCEPTS_GZIP = re.compile(r"\bgzip\b")
+
+
+def _guest_payload_response(request, gzipped):
+    """The cached public payload as the HTTP body, compressed when allowed.
+
+    Every browser, and Cloudflare in front of the ingress, sends
+    `Accept-Encoding: gzip`, so in production the stored bytes go out
+    untouched. Cloudflare may re-encode them as brotli for the browser, which
+    is its CPU, not ours. Anything that does not ask for gzip (curl without
+    --compressed, the test client) gets them decompressed.
+    """
+    # HttpResponse, not the JsonResponse pylint suggests: JsonResponse
+    # serializes a dict, and the whole point is that these bytes already are.
+    # pylint: disable=http-response-with-content-type-json
+    if _ACCEPTS_GZIP.search(request.META.get("HTTP_ACCEPT_ENCODING", "")):
+        response = HttpResponse(gzipped, content_type="application/json")
+        response["Content-Encoding"] = "gzip"
+    else:
+        response = HttpResponse(gzip.decompress(gzipped), content_type="application/json")
+    # The same URL now answers in two encodings, so any cache between here and
+    # the browser has to key on the request's Accept-Encoding. Patched, not
+    # set: DRF adds `Accept` and corsheaders adds `origin` after this returns.
+    patch_vary_headers(response, ("Accept-Encoding",))
+    return response
+
+
 class CalculatorViewSet(ViewSet):
     def get_permissions(self):
         # GET serves mostly reference data, so guests may read it; the PATCH
@@ -343,28 +376,37 @@ class CalculatorViewSet(ViewSet):
         a guest is answered straight from the cached JSON, and a signed-in user
         has only their own user-scoped keys read and merged over it.
         """
-        cached_json = public_payload_cache.read()
-        if cached_json is None:
+        payload = None
+        gzipped = public_payload_cache.read()
+        if gzipped is None:
             payload = self._build_public_payload()
-            public_payload_cache.store(JSONRenderer().render(payload))
-        else:
-            # ~4ms for the megabyte, against the ~2s the cache just saved. A
-            # guest could be answered with those bytes verbatim via HttpResponse
-            # and skip even this, but that costs the endpoint its DRF Response
-            # -- and with it .data, content negotiation, and one uniform shape
-            # across both branches -- to save single-digit milliseconds.
-            payload = json.loads(cached_json)
+            gzipped = public_payload_cache.store(JSONRenderer().render(payload))
 
-        if request.user.is_authenticated:
-            emap, anniversary_emap, card_context = build_user_context()
-            payload.update(
-                _build_user_payload(
-                    request.user,
-                    emap=emap,
-                    anniversary_emap=anniversary_emap,
-                    card_context=card_context,
-                )
+        # A guest is answered with the cached bytes exactly as stored. This
+        # used to json.loads them and let DRF render them straight back to the
+        # same JSON, on the theory that it cost "single-digit milliseconds".
+        # Measured on 2026-10-14 it was 12.5ms and a 9MB burst of objects per
+        # request locally (several times that on the production shared vCPU),
+        # and a banner-launch crowd of guests running it at once pinned the CPU
+        # and ran the instance out of memory. Sending the bytes costs 0.04ms.
+        # What it gives up: DRF's content negotiation (there is only one
+        # renderer anyway) and `.data` on the test client, so guest tests read
+        # `res.json()`.
+        if not request.user.is_authenticated:
+            return _guest_payload_response(request, gzipped)
+
+        # The rebuild above already holds the dict; only a cache hit parses.
+        if payload is None:
+            payload = json.loads(gzip.decompress(gzipped))
+        emap, anniversary_emap, card_context = build_user_context()
+        payload.update(
+            _build_user_payload(
+                request.user,
+                emap=emap,
+                anniversary_emap=anniversary_emap,
+                card_context=card_context,
             )
+        )
 
         return Response(payload, status=status.HTTP_200_OK)
 

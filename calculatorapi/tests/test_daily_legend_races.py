@@ -115,7 +115,7 @@ class DailyLegendRaceApiTests(CalculatorTestCase):
         self.banner = make_timeline(name='Banner', global_start_date=_dt(2026, 12, 21, 22))
 
     def _rows(self):
-        return self.client.get('/calculator-data').data['daily_legend_race_data']
+        return self.client.get('/calculator-data').json()['daily_legend_race_data']
 
     def test_row_has_a_start_and_no_end_date_key_at_all(self):
         release = make_daily_legend_race(

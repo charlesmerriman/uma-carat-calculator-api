@@ -1,6 +1,7 @@
 """GET /calculator-data: the payload, the guest-readable reference endpoints, and the cache."""
 
 import datetime
+import gzip
 import json
 
 from django.core.cache import cache
@@ -64,10 +65,10 @@ class CalculatorGetTests(CalculatorTestCase):
         # Guests get the full reference payload; user-scoped keys are empty/null.
         res = APIClient().get('/calculator-data')
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(set(res.data.keys()), _EXPECTED_GET_KEYS)
-        self.assertIsNone(res.data['user_stats_data'])
-        self.assertEqual(res.data['user_planned_banner_data'], [])
-        self.assertEqual(res.data['user_planned_purchase_data'], [])
+        self.assertEqual(set(res.json().keys()), _EXPECTED_GET_KEYS)
+        self.assertIsNone(res.json()['user_stats_data'])
+        self.assertEqual(res.json()['user_planned_banner_data'], [])
+        self.assertEqual(res.json()['user_planned_purchase_data'], [])
 
     def test_get_with_invalid_token_returns_401(self):
         # TokenAuthentication rejects a present-but-invalid token before
@@ -493,7 +494,7 @@ class ScenarioApiTests(CalculatorTestCase):
 
         response = self.client.get('/calculator-data')
         row = next(
-            r for r in response.data['scenario_data'] if r['id'] == scenario.id
+            r for r in response.json()['scenario_data'] if r['id'] == scenario.id
         )
 
         self.assertEqual(row['name'], 'Hashire! Mecha Umamusume')
@@ -510,7 +511,7 @@ class ScenarioApiTests(CalculatorTestCase):
 
         response = self.client.get('/calculator-data')
         row = next(
-            r for r in response.data['scenario_data'] if r['id'] == scenario.id
+            r for r in response.json()['scenario_data'] if r['id'] == scenario.id
         )
 
         # The frontend pins the scenario's band directly above this banner's
@@ -525,7 +526,7 @@ class ScenarioApiTests(CalculatorTestCase):
 
         response = self.client.get('/calculator-data')
         row = next(
-            r for r in response.data['scenario_data'] if r['id'] == scenario.id
+            r for r in response.json()['scenario_data'] if r['id'] == scenario.id
         )
 
         self.assertIsNone(row['image'])
@@ -536,7 +537,7 @@ class ScenarioApiTests(CalculatorTestCase):
 
         response = self.client.get('/calculator-data')
         row = next(
-            r for r in response.data['scenario_data'] if r['id'] == scenario.id
+            r for r in response.json()['scenario_data'] if r['id'] == scenario.id
         )
 
         self.assertIsNone(row['start_date'])
@@ -549,7 +550,7 @@ class ScenarioApiTests(CalculatorTestCase):
         response = self.client.get('/calculator-data')
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data['scenario_data']), 1)
+        self.assertEqual(len(response.json()['scenario_data']), 1)
 
 
 class AnniversaryEventApiTests(CalculatorTestCase):
@@ -673,7 +674,7 @@ class AnniversaryEventApiTests(CalculatorTestCase):
     def test_campaigns_are_public(self):
         res = APIClient().get('/calculator-data')
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(len(res.data['anniversary_event_data']), 1)
+        self.assertEqual(len(res.json()['anniversary_event_data']), 1)
 
 
 class PublicPayloadCacheTests(CalculatorTestCase):
@@ -702,11 +703,11 @@ class PublicPayloadCacheTests(CalculatorTestCase):
         with self.assertNumQueries(0):
             res = APIClient().get('/calculator-data')
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(set(res.data.keys()), _EXPECTED_GET_KEYS)
+        self.assertEqual(set(res.json().keys()), _EXPECTED_GET_KEYS)
 
     def test_cached_response_matches_an_uncached_one(self):
-        cold = APIClient().get('/calculator-data').data
-        warm = APIClient().get('/calculator-data').data
+        cold = APIClient().get('/calculator-data').json()
+        warm = APIClient().get('/calculator-data').json()
         self.assertEqual(json.dumps(cold, default=str),
                          json.dumps(warm, default=str))
 
@@ -724,13 +725,13 @@ class PublicPayloadCacheTests(CalculatorTestCase):
     def test_a_new_banner_shows_up_on_the_next_request(self):
         # The invalidation the content editor actually cares about.
         first = APIClient().get('/calculator-data')
-        names = [t['name'] for t in first.data['banner_timeline_data']]
+        names = [t['name'] for t in first.json()['banner_timeline_data']]
         self.assertNotIn('Second Banner', names)
 
         make_timeline(name='Second Banner')
 
         second = APIClient().get('/calculator-data')
-        names = [t['name'] for t in second.data['banner_timeline_data']]
+        names = [t['name'] for t in second.json()['banner_timeline_data']]
         self.assertIn('Second Banner', names)
 
     def test_a_visit_row_does_not_invalidate(self):
@@ -799,10 +800,10 @@ class PublicPayloadCacheTests(CalculatorTestCase):
         self.assertEqual(len(signed_in.data['user_planned_banner_data']), 1)
 
         guest = APIClient().get('/calculator-data')
-        self.assertIsNone(guest.data['user_stats_data'])
-        self.assertEqual(guest.data['user_planned_banner_data'], [])
-        self.assertEqual(guest.data['user_planned_purchase_data'], [])
-        self.assertEqual(guest.data['user_step_up_selection_data'], [])
+        self.assertIsNone(guest.json()['user_stats_data'])
+        self.assertEqual(guest.json()['user_planned_banner_data'], [])
+        self.assertEqual(guest.json()['user_planned_purchase_data'], [])
+        self.assertEqual(guest.json()['user_step_up_selection_data'], [])
 
     def test_signed_in_rows_merge_over_a_guest_cached_payload(self):
         # The reverse order: a guest warms the cache, then a signed-in user must
@@ -832,5 +833,62 @@ class PublicPayloadCacheTests(CalculatorTestCase):
     def test_cached_payload_carries_every_expected_key(self):
         # A key missing from the cached half would only show up for guests.
         APIClient().get('/calculator-data')
-        cached = json.loads(public_payload_cache.read())
+        cached = json.loads(gzip.decompress(public_payload_cache.read()))
         self.assertEqual(set(cached.keys()), _EXPECTED_GET_KEYS)
+
+
+
+class GuestPayloadEncodingTests(CalculatorTestCase):
+    """How the cached payload goes out to a guest: the stored gzip, as it is.
+
+    A browser, and the Cloudflare edge in front of the ingress, both ask for
+    gzip; the Django test client asks for nothing, so every other guest test
+    in this module exercises the decompressing branch.
+    -> views/calculator.py::_guest_payload_response
+    """
+
+    def setUp(self):
+        self.user = make_user()
+        self.client, self.token = auth_client(self.user)
+        self.timeline = make_timeline(name='Cached Banner')
+        self.uma_banner = make_uma_banner(timeline=self.timeline)
+
+    def test_a_guest_asking_for_gzip_gets_the_cached_bytes_as_they_are(self):
+        cold = APIClient().get('/calculator-data').content   # a miss, identity
+        res = APIClient().get('/calculator-data', HTTP_ACCEPT_ENCODING='gzip, deflate, br')
+        self.assertEqual(res['Content-Encoding'], 'gzip')
+        self.assertEqual(res.content, public_payload_cache.read())
+        self.assertEqual(gzip.decompress(res.content), cold)
+
+    def test_the_first_guest_after_a_rebuild_gets_gzip_too(self):
+        # The miss path answers from what store() returned, not a second read.
+        res = APIClient().get('/calculator-data', HTTP_ACCEPT_ENCODING='gzip')
+        self.assertEqual(res['Content-Encoding'], 'gzip')
+        self.assertEqual(set(json.loads(gzip.decompress(res.content))), _EXPECTED_GET_KEYS)
+
+    def test_a_guest_not_asking_for_gzip_gets_plain_json(self):
+        APIClient().get('/calculator-data')
+        res = APIClient().get('/calculator-data', HTTP_ACCEPT_ENCODING='identity')
+        self.assertFalse(res.has_header('Content-Encoding'))
+        self.assertEqual(res['Content-Type'], 'application/json')
+        self.assertEqual(set(res.json()), _EXPECTED_GET_KEYS)
+
+    def test_the_guest_response_varies_on_accept_encoding(self):
+        # One URL, two encodings: a cache keyed on the URL alone could hand
+        # gzip to a client that cannot read it. The existing Vary values
+        # (DRF's Accept, corsheaders' Origin) must survive alongside it.
+        res = APIClient().get('/calculator-data', HTTP_ACCEPT_ENCODING='gzip')
+        vary = {v.strip().lower() for v in res['Vary'].split(',')}
+        self.assertTrue({'accept-encoding', 'accept', 'origin'} <= vary, vary)
+
+    def test_a_signed_in_hit_is_never_served_the_shared_gzip(self):
+        # The cached bytes are the GUEST payload. A signed-in request asking
+        # for gzip must still get its own rows merged in, so it cannot take
+        # the shortcut.
+        APIClient().get('/calculator-data')
+        UserPlannedBanner.objects.create(
+            user=self.user, banner_uma=self.uma_banner, number_of_pulls=3)
+
+        res = self.client.get('/calculator-data', HTTP_ACCEPT_ENCODING='gzip')
+        self.assertFalse(res.has_header('Content-Encoding'))
+        self.assertEqual(len(res.json()['user_planned_banner_data']), 1)

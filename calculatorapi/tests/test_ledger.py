@@ -80,7 +80,7 @@ class CalculationConstantsTests(CalculatorTestCase):
     def test_endpoint_serves_the_constants_as_numbers(self):
         res = APIClient().get('/calculator-data')
         self.assertEqual(res.status_code, 200)
-        payload = res.data['calculation_constants']
+        payload = res.json()['calculation_constants']
         self.assertEqual(payload['daily_base_carats'], 75)
         # Decimals must arrive as numbers, not DRF's default strings: the client
         # multiplies by them, and "0.664" * 2 is a silent NaN in JavaScript.
@@ -93,7 +93,7 @@ class CalculationConstantsTests(CalculatorTestCase):
         constants.misc_earnings_monthly = 4200
         constants.save()
         res = APIClient().get('/calculator-data')
-        self.assertEqual(res.data['calculation_constants']['misc_earnings_monthly'], 4200)
+        self.assertEqual(res.json()['calculation_constants']['misc_earnings_monthly'], 4200)
 
     def test_prediction_factor_drives_predicted_dates(self):
         # The whole point of making it editable: changing it must move the dates
@@ -431,7 +431,7 @@ class LedgerSerializerTests(CalculatorTestCase):
                         carats_throughout=900)
         res = APIClient().get('/calculator-data')
         self.assertEqual(res.status_code, 200)
-        row, = res.data['income_ledger']
+        row, = res.json()['income_ledger']
         self.assertEqual(row['date'], _iso(_dt(2025, 6, 1)))
         self.assertEqual(row['throughout_end'], _iso(_dt(2025, 6, 8)))
         self.assertEqual(row['carats'], 1200)
@@ -444,6 +444,6 @@ class LedgerSerializerTests(CalculatorTestCase):
                               global_end_date=_dt(2025, 7, 8))
         res = APIClient().get('/calculator-data')
         self.assertEqual(res.status_code, 200)
-        row, = res.data['income_ledger']
+        row, = res.json()['income_ledger']
         self.assertEqual((row['kind'], row['event_number']),
                          ('league_of_heroes', 1))
