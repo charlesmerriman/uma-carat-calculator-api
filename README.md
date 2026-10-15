@@ -135,6 +135,8 @@ pip install -r requirements-dev.txt    # runtime dependencies plus lint tooling
 cp .env.example .env
 python manage.py migrate
 python manage.py createsuperuser       # a staff account for /admin
+# The first /admin login sets up an authenticator app (docs/admin.md, "Signing
+# in"); ADMIN_REQUIRE_OTP=False in .env keeps the local admin password-only.
 python manage.py runserver
 ```
 

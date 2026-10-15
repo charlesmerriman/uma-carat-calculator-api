@@ -7,6 +7,64 @@ content editor, see [content-editing.md](content-editing.md).
 
 ---
 
+## Signing in: password, authenticator code, lockout
+
+Since 2026-10-15 the admin login takes a **password and a code from an authenticator
+app**, and five wrong passwords pause sign-in for that username from that address for
+15 minutes. The code is `calculatorapi/admin_site.py` (the site class, the login form, the
+setup and backup-code pages) and the "Admin login" block in `settings.py`; the site is
+installed as `admin.site` through `calculatorproject/apps.py`, which is why
+`INSTALLED_APPS` carries `unfold.apps.BasicAppConfig` rather than plain `unfold`.
+
+**First login.** A staff account with no authenticator yet types its password and leaves
+the code blank. It is NOT signed in; it lands on `/admin/two-factor/setup/`, scans the QR
+code with any TOTP app (Google Authenticator, Microsoft Authenticator, Authy, 1Password,
+Bitwarden), types the first code, and is signed in. Ten **backup codes** are shown once,
+right then; each signs in once in place of the app. Keep them in a password manager.
+
+**Every login after that.** Username, password, and the six digits the app shows, or a
+backup code. Six digits is read as the app, anything else as a backup code; there is no
+device dropdown. **Two-factor settings** (sidebar, Security; also the header dropdown)
+shows the device, how many backup codes are left, and issues a new set, which cancels
+the old one.
+
+**Lost phone.** The owner opens the person's user page, deletes the "Authenticator app"
+row in the two-factor inline, and the person's next login is a first login again. Their
+backup codes keep working until the new set replaces them.
+
+**Lost phone AND backup codes, and you are the only owner.** Set `ADMIN_REQUIRE_OTP=False`
+on the API component in the DigitalOcean dashboard (the app restarts), sign in with the
+password, delete the lost authenticator on your user page, remove the variable again (the
+default is on), and enrol at the next login. The variable is the whole recovery path on
+purpose: it takes DigitalOcean access, a higher bar than the admin's own login.
+
+**Locally.** `ADMIN_REQUIRE_OTP=False` in `backend/.env` keeps the local admin
+password-only. Leave it unset to walk through the real flow.
+
+**How the gate works.** `CalculatorAdminSite.has_permission` is `AdminSite`'s (staff and
+active) and then `request.user.is_verified()`, which `django_otp.middleware.OTPMiddleware`
+answers from the device id stored in the session at login. Every admin page and every view
+wrapped in `admin.site.admin_view()` (analytics, the image library, the autocomplete) goes
+through it, so **a staff-only view mounted any other way skips the second factor**. A
+session that is signed in but not verified sees only the login page. Tests get past the
+gate through `tests/base.py`'s `VerifiedClient`, whose `force_login` also marks a staff
+session verified; the login form itself is tested with a plain `Client` in
+`tests/test_admin_security.py`.
+
+**The lockout** is django-axes (`AXES_*` in settings). The pair (username, forwarded
+client address) is refused for 15 minutes after 5 wrong passwords, a right password
+resets the count, and the PAIR is the unit so nobody can lock the owner out by hammering
+the username alone. The address is `visits.client_ip`, the first `X-Forwarded-For` entry,
+which a caller can set: a determined attacker rotating it is not stopped by the lockout.
+The second factor is the wall; the lockout quiets sprays and keeps a record. Under
+**Security** in the sidebar (owner only: the content editors group holds no axes
+permission): **Sign-in log**, every successful login with its sign-out time, and
+**Locked out**, the live counters, where deleting a row unlocks the pair early. axes's own
+log lines go to stdout too, so `doctl apps logs` shows them.
+
+**Early access is not staff.** A tester gets the early-access switch on their user page
+(see "Early access grants" below), never `is_staff`: staff-ness is admin login.
+
 ## django-unfold theming
 
 The admin is themed with **django-unfold**.

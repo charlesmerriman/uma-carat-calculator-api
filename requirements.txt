@@ -4,7 +4,9 @@ asgiref==3.11.0
 attrs==25.4.0
 dj-database-url==3.1.2
 Django==6.0
+django-axes==8.3.1
 django-cors-headers==4.9.0
+django-otp==1.7.4
 django-unfold==0.101.0
 djangorestframework==3.16.1
 drf-spectacular==0.29.0
@@ -24,4 +26,5 @@ django-storages==1.14.6
 boto3==1.38.23
 Pillow==11.3.0
 python-dotenv==1.1.0
+qrcode==8.2
 requests==2.32.5

@@ -173,7 +173,7 @@ def _record_landing_and_referrer(request, today):
         _bump(ReferrerVisit, date=today, host=host)
 
 
-def _client_ip(request):
+def client_ip(request):
     """The visitor's IP, honouring the proxy in front of us.
 
     REMOTE_ADDR alone is wrong in production: App Platform terminates TLS at a
@@ -182,10 +182,13 @@ def _client_ip(request):
     read 1 forever. X-Forwarded-For carries "client, proxy1, proxy2", so the
     FIRST entry is the original client.
 
-    That first entry is client-settable and therefore not trustworthy. It is
-    fine here because the only thing a forged value can do is inflate a unique
-    count on a staff-only dashboard. Do not reuse this for anything that gates
-    access.
+    That first entry is client-settable and therefore not trustworthy. Fine
+    here, where a forged value can only inflate a unique count on a staff-only
+    dashboard, and in the gallery's per-viewer marks. It also keys the admin
+    login LOCKOUT (settings.AXES_CLIENT_IP_CALLABLE), with eyes open: a forged
+    header buys a fresh counter, so the lockout stops sprays rather than a
+    determined attacker, and the second factor is what gates access. Do not
+    reuse this for anything that must gate access on its own.
     """
     forwarded = request.META.get("HTTP_X_FORWARDED_FOR", "")
     if forwarded:
@@ -239,7 +242,7 @@ def record_visit(request):
     try:
         day_row, _ = DailyVisit.objects.get_or_create(date=today)
         month_row, _ = MonthlyVisit.objects.get_or_create(month=month_start)
-        visitor = _visitor_hash(_client_ip(request), user_agent, today)
+        visitor = _visitor_hash(client_ip(request), user_agent, today)
 
         # F() rather than read-modify-write: two simultaneous beacons would
         # otherwise read the same value and one increment would vanish. This

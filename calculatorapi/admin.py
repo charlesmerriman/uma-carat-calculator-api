@@ -16,6 +16,9 @@ Layout of this file:
   8. Patreon supporters (the public thank-you list, plus its CSV importer)
   9. Site content (the About page, the carat income guide and the FAQ, plus
      the "Rebuild website" button that re-bakes them into the public site)
+ 10. Security (django-axes's sign-in log and lockout counters, read-only;
+     the two-factor devices themselves are inlines on the user page, and
+     the login flow is calculatorapi/admin_site.py)
 
 The join models (UmasOnUmaBanner, SupportsOnSupportBanner, UmaSkill,
 SupportCardSkill, DailyLegendRaceUma) and every PvP guide child are
@@ -55,6 +58,9 @@ from django.utils.html import format_html
 # django-unfold themes the admin, but only for admins that inherit its base
 # classes — a plain admin.ModelAdmin would render unstyled under unfold's
 # templates. Hence every ModelAdmin/TabularInline below extends unfold's.
+from axes.models import AccessAttempt, AccessLog
+from django_otp.plugins.otp_static.models import StaticDevice
+from django_otp.plugins.otp_totp.models import TOTPDevice
 from unfold.admin import ModelAdmin, StackedInline, TabularInline
 from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
 
@@ -101,6 +107,15 @@ admin.site.index_title = "Content management"
 # Custom index adds a "Reports" box linking to the analytics dashboard
 # (templates/admin/custom_index.html extends the default index).
 admin.site.index_template = "admin/custom_index.html"
+
+# django-otp registers plain ModelAdmins for its device models when its plugins
+# load (they sit before this app in INSTALLED_APPS). Plain admins render
+# unstyled under unfold, and a device only means anything beside its owner, so
+# they come off the site and the inlines on CustomUserAdmin (section 6) take
+# over. The guard keeps this safe if a plugin ever stops registering them.
+for _device_model in (TOTPDevice, StaticDevice):
+    if admin.site.is_registered(_device_model):
+        admin.site.unregister(_device_model)
 
 
 # ── 2. Shared helpers ────────────────────────────────────────────────────────
@@ -1039,6 +1054,43 @@ CALCULATOR_STATS_FIELDS = (
 )
 
 
+class _ReadOnlyDeviceInline(TabularInline):
+    """A staff account's two-factor devices, listed read-only on its user
+    page. Nothing is typed in here: an authenticator's secret is minted on the
+    setup page and the backup codes on the settings page, both by the person
+    themselves (calculatorapi/admin_site.py). DELETE is the one action, and it
+    is the lost-phone procedure: with no confirmed authenticator left, the
+    person's next login walks them through setting up a new one."""
+    extra = 0
+    can_delete = True
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+
+class TOTPDeviceInline(_ReadOnlyDeviceInline):
+    model = TOTPDevice
+    verbose_name = "Authenticator app"
+    verbose_name_plural = "Authenticator app (two-factor)"
+    fields = ("name", "confirmed", "created_at", "last_used_at")
+    readonly_fields = fields
+
+
+class StaticDeviceInline(_ReadOnlyDeviceInline):
+    model = StaticDevice
+    verbose_name = "Backup codes"
+    verbose_name_plural = "Backup codes (two-factor)"
+    fields = ("name", "codes_left", "created_at", "last_used_at")
+    readonly_fields = fields
+
+    @admin.display(description="Unused codes")
+    def codes_left(self, obj):
+        return obj.token_set.count()
+
+
 @admin.register(CustomUser)
 class CustomUserAdmin(UserAdmin, ModelAdmin):
     """
@@ -1112,6 +1164,13 @@ class CustomUserAdmin(UserAdmin, ModelAdmin):
             "fields": CALCULATOR_STATS_FIELDS,
         }),
     )
+
+    def get_inlines(self, request, obj=None):
+        # The two-factor rows only mean something on an account that can sign
+        # in to this admin; an ordinary account's page stays as it was.
+        if obj is not None and obj.is_staff:
+            return (*self.inlines, TOTPDeviceInline, StaticDeviceInline)
+        return self.inlines
 
     def _set_early_access(self, request, queryset, value, verb):
         """Flip the switch on every selected account that is not already
@@ -1809,3 +1868,49 @@ class FaqCategoryAdmin(ModelAdmin):
     @admin.display(description="Questions", ordering="_question_count")
     def question_count(self, obj):
         return obj._question_count  # pylint: disable=protected-access
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 10. Security: django-axes's tables, read-only
+# ═══════════════════════════════════════════════════════════════════════════
+# axes keeps two tables. AccessAttempt is the live lockout counter, one row per
+# (username, address) pair with recent wrong passwords; AccessLog is one row
+# per successful sign-in, with its sign-out time. Both are written by axes and
+# only ever READ here (its own admins are switched off in settings:
+# AXES_ENABLE_ADMIN). Deleting an AccessAttempt row IS the unlock, which is why
+# delete stays on. Owner-only in practice: the content editors group holds no
+# axes permission, so the Security sidebar group hides from them.
+# The posted form data axes stores (post_data) is left off both pages on
+# purpose: there is nothing to learn from it that the row does not already say.
+
+
+class _ReadOnlyAdmin(ModelAdmin):
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(AccessAttempt)
+class AccessAttemptAdmin(_ReadOnlyAdmin):
+    """Who is locked out, or on their way to it. A row is deleted by axes when
+    the cool-off passes, or by hand here to unlock someone early."""
+    list_display = ("username", "ip_address", "failures_since_start", "attempt_time")
+    search_fields = ("username", "ip_address")
+    ordering = ("-attempt_time",)
+    fields = ("username", "ip_address", "failures_since_start", "attempt_time",
+              "path_info", "user_agent")
+    readonly_fields = fields
+    actions = ("delete_selected",)
+
+
+@admin.register(AccessLog)
+class AccessLogAdmin(_ReadOnlyAdmin):
+    """Every successful admin sign-in: who, from where, when, and when they
+    signed out (blank while the session is still open)."""
+    list_display = ("username", "ip_address", "attempt_time", "logout_time")
+    search_fields = ("username", "ip_address")
+    ordering = ("-attempt_time",)
+    fields = ("username", "ip_address", "attempt_time", "logout_time", "path_info", "user_agent")
+    readonly_fields = fields
