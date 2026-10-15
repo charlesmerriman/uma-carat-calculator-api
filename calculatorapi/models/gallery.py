@@ -38,6 +38,9 @@ from django.db.models import Q
 from django.utils import timezone
 
 from calculatorapi.public_ids import PUBLIC_ID_LENGTH, generate_public_id
+# The same folding the matcher applies, so a stored term and the text it
+# is checked against are normalised identically. -> text_folding.py
+from calculatorapi.text_folding import normalise
 
 from .champions_meeting import ChampionsMeeting
 from .custom_user import CustomUser
@@ -402,9 +405,5 @@ class BlockedTerm(models.Model):
         return self.term
 
     def save(self, *args, **kwargs):
-        # Imported here: the normaliser lives with the matcher that relies on
-        # both sides being normalised identically.
-        from calculatorapi.gallery_moderation import normalise  # pylint: disable=import-outside-toplevel
-
         self.term = normalise(self.term).strip()
         super().save(*args, **kwargs)
