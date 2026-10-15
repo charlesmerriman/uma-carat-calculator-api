@@ -738,6 +738,18 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTH_USER_MODEL = "calculatorapi.CustomUser"
 
+# `manage.py test` runs through a runner that swaps the password hasher for
+# the fastest one for the length of the run: a production PBKDF2 hash is
+# tuned to be slow, and the suite creates a user with a password in most of
+# its tests. The runner sets the environment variable below in the parent
+# process; a parallel worker started with forkserver() or spawn() (Python
+# 3.14's default) imports this file afresh and applies the same swap by
+# reading it. Never set the variable by hand: outside a test process tree it
+# would store weak hashes. -> calculatorproject/test_runner.py
+TEST_RUNNER = "calculatorproject.test_runner.FastHashRunner"
+if os.environ.get("CALCULATOR_TEST_RUN") == "1":
+    PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
+
 # Pinned rather than @latest: the docs page runs this third-party JavaScript,
 # and anyone who pastes a token into its "Authorize" box is trusting it.
 _SWAGGER_UI = "https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.32.15"

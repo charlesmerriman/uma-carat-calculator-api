@@ -9,6 +9,7 @@ from base64 import b32encode
 from io import StringIO
 
 from axes.models import AccessAttempt, AccessLog
+from django.conf import settings
 from django.contrib.auth.models import Group
 from django.core.management import call_command
 from django.test import Client, override_settings
@@ -34,6 +35,22 @@ SECURITY_SETTINGS = {
     "OTP_TOTP_THROTTLE_FACTOR": 0,
     "OTP_STATIC_THROTTLE_FACTOR": 0,
 }
+
+
+class FastHasherTests(CalculatorTestCase):
+    """The suite runs on the fast password hasher (calculatorproject/test_runner.py).
+
+    Here, beside the password tests, because a silent return to PBKDF2 would
+    not fail anything else: the suite would only get slow again, by minutes.
+    Checked in the process the test runs in, which under --parallel is a
+    worker, so this covers the forkserver path too.
+    """
+
+    def test_the_suite_runs_on_the_fast_hasher(self):
+        from calculatorproject.test_runner import FAST_PASSWORD_HASHERS  # pylint: disable=import-outside-toplevel
+        self.assertEqual(settings.PASSWORD_HASHERS, FAST_PASSWORD_HASHERS)
+        user = CustomUser.objects.create_user(username="hashcheck", password=PASSWORD)
+        self.assertTrue(user.password.startswith("md5$"))
 
 
 def app_code(device):
