@@ -129,6 +129,16 @@ def _patreon_config():
         # patreon_api.py for the member sync. See the settings comment.
         "client_secret": settings.PATREON_OAUTH_CLIENT_SECRET,
         "extra_authorize_params": {},
+        # Patreon's iOS app claims EVERY www.patreon.com URL as a universal
+        # link (its apple-app-site-association lists "/*"), so on an iPhone
+        # with the app installed the consent screen opened in the APP, and the
+        # app sent the callback to a NEW browser tab. That tab has none of the
+        # sessionStorage the SPA parked before leaving, so every Patreon
+        # sign-in and link from such a phone failed with "no longer valid".
+        # The same file excludes any URL whose fragment is exactly this, which
+        # keeps consent in the tab that started it. A fragment never reaches
+        # Patreon's server, so the OAuth request itself is unchanged.
+        "authorize_fragment": "no_universal_links",
     }
 
 
@@ -178,7 +188,11 @@ def build_authorize_url(provider, state, redirect_uri=None):
         "state": state,
         **config["extra_authorize_params"],
     }
-    return f"{config['authorize_url']}?{urlencode(params)}"
+    url = f"{config['authorize_url']}?{urlencode(params)}"
+    # Only Patreon sets one (see _patreon_config); .get so the other providers
+    # need no placeholder key.
+    fragment = config.get("authorize_fragment")
+    return f"{url}#{fragment}" if fragment else url
 
 
 def _post_token_request(config, code, redirect_uri=None):

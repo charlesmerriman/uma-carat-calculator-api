@@ -573,7 +573,7 @@ class UserStepUpSelectionTests(CalculatorTestCase):
         )
         res = APIClient().get('/calculator-data')
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.data['user_step_up_selection_data'], [])
+        self.assertEqual(res.json()['user_step_up_selection_data'], [])
 
     def test_selections_are_scoped_to_their_owner(self):
         other = make_user(username='other')

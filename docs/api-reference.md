@@ -318,6 +318,14 @@ always read fresh per request and never enter the cache. Invalidation hangs off
 `public_payload_cache.invalidate()` itself. Full reasoning, and the single-process deployment
 assumption it rests on, in `calculatorapi/public_payload_cache.py`.
 
+**A guest's response is the cached bytes as they are, gzipped.** The cache holds the
+rendered JSON compressed once at store time, and a guest whose `Accept-Encoding` lists
+`gzip` (every browser, and Cloudflare in front of the ingress) gets exactly those bytes
+with `Content-Encoding: gzip`; anyone else gets them decompressed. Both carry
+`Vary: Accept-Encoding, Accept, origin`. The JSON is identical either way. A signed-in
+response is a normal DRF render with the user keys merged in, and is never served from
+the shared bytes.
+
 **Response `200`**
 ```json
 {

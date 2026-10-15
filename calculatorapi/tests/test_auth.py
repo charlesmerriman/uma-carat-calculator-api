@@ -445,6 +445,18 @@ class PatreonOAuthProviderTests(CalculatorTestCase):
         self.assertEqual(scope, "identity")
         self.assertNotIn("email", scope)
 
+    def test_the_consent_url_opts_out_of_the_ios_app(self):
+        """Without the fragment, an iPhone with the Patreon app installed opens
+        consent in the app, which returns to a fresh browser tab that never
+        parked the state, so the callback fails. Sign-in and linking share
+        this builder, so one check covers both. The OAuth params must survive
+        untouched: the fragment rides after the query, never inside it."""
+        url = urlparse(oauth.build_authorize_url("patreon", "ST8", CANONICAL_REDIRECT))
+
+        self.assertEqual(url.fragment, "no_universal_links")
+        self.assertEqual(parse_qs(url.query)["state"], ["ST8"])
+        self.assertEqual(parse_qs(url.query)["redirect_uri"], [CANONICAL_REDIRECT])
+
     def test_subject_id_is_read_from_the_json_api_resource(self):
         payload = {"data": {"type": "user", "id": "1234567", "attributes": {}}}
 
