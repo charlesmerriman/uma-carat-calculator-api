@@ -915,8 +915,6 @@ erDiagram
     PvpDeck }o--|| PvpGuide : "guide"
     PvpDeckSlot }o--|| PvpDeck : "deck"
     PvpDeckSlot }o--o| SupportCard : "support_card (nullable)"
-    PvpHonorableMention }o--|| PvpGuide : "guide"
-    PvpHonorableMention }o--|| SupportCard : "support_card"
     PvpTeamComp }o--|| PvpGuide : "guide"
 ```
 
@@ -945,8 +943,8 @@ erDiagram
   - `PvpDeck` → `PvpDeckSlot`: slot 1..6, `is_borrow`, `order` 0 = the card and 1+ =
     alternatives for the same slot, unique `(deck, slot, order)`; `support_card` is
     nullable but `slot_has_card_or_note` requires a card or a note.
-  - `PvpHonorableMention`: unique `(guide, style, support_card)`. Its own table because
-    mentions have no slots and so stay a one-level inline.
+  - There is no honorable-mentions table (dropped in `0092`): a guide that wants that row
+    adds a deck labelled "Honorable mentions", and the sheet import skips the block.
   - `PvpTeamComp`: free text ("2 Front + 1 Pace") and a note.
 - **`[[Skill name]]` mentions** may appear in any guide text field. `SkillMentionsMixin`
   (`MENTION_FIELDS` per model) refuses a save whose mention matches no skill on global,

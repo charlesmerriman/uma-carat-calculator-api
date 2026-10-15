@@ -351,8 +351,8 @@ editing**. The tabs appear.
   umas** (search by name, give 1 to 5 stars; **Role** is a short tag shown on
   the picture, the **note** shows on hover), its **advice** paragraph (the
   sheet's "Rec. Skills" text), its **recommended skills** (pick a category, and
-  a tier if the guide has tiers; T0 means take it first), its **example decks**
-  and its **honorable mentions** (cards worth having that did not make a deck).
+  a tier if the guide has tiers; T0 means take it first) and its **example
+  decks**. For a row of honorable mentions, add a deck with that label.
 
 Nothing on a style tab asks which style it is for. A number on a tab is how
 many rows it holds; a red number, after a save, is how many rows refused. The

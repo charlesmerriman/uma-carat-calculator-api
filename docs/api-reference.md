@@ -724,7 +724,6 @@ may hold `==highlight==` spans the client renders red.
                  "support_card": {"id": 302, "name": "Kitasan Black", "image": "url | null",
                                   "card_type": "speed", "rarity": 3}},
                 {"slot": 1, "order": 1, "is_borrow": false, "note": "or any speed", "support_card": null}]}],
-  "honorable_mentions": [{"style": "front", "note": "Stats + 2SP", "support_card": {"...": "..."}}],
   "skill_mentions": {"groundwork": {"id": 88, "name": "Groundwork", "description": "string", "image": "url | null",
                                      "rarity": 2, "unique_of": null, "version": "◎ gold", "tier": 2,
                                      "is_evolved": false, "versions": []}} }

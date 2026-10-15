@@ -32,7 +32,6 @@ from .pvp_guide import (
     PvpStyleNote,
     PvpDeck,
     PvpDeckSlot,
-    PvpHonorableMention,
     PvpTeamComp,
     PvpStyle,
     PvpSkillCategory,

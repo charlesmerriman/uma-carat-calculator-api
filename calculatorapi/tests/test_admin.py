@@ -138,7 +138,7 @@ class AdminSmokeTests(CalculatorTestCase):
                      # The PvP guide's children, all inlines on the guide page;
                      # a deck's cards are nested under the deck there.
                      'pvpstatconfig', 'pvpumarecommendation', 'pvpskillrecommendation',
-                     'pvpstylenote', 'pvpdeck', 'pvpdeckslot', 'pvphonorablemention',
+                     'pvpstylenote', 'pvpdeck', 'pvpdeckslot',
                      'pvpteamcomp']:
             with self.subTest(model=name):
                 with self.assertRaises(NoReverseMatch):

@@ -23,7 +23,9 @@ Two formats, the same two the PvpGuide model was designed around:
    "30086 Narita Top Road CM #11" (game id first), umas "Seiun Sky CM #2".
    Gives: scenario, stats, short description, meta analysis, style ranking,
    starred umas, per-style "Rec. Accel" / "Rec. Skills" prose, decks with
-   borrow slots, alternates and red highlights, and honourable mentions.
+   borrow slots, alternates and red highlights. Its honourable mentions
+   block is skipped: the site has no such section (an editor who wants one
+   adds a deck for it).
 2. The per-cup tabs Henry writes now (`Virgo Cup`, `Capricorn Cup`,
    `Aquarius Cup`): a stat table, acceleration skills per style, tiered
    recommended skills, team comps and "Henry's Team". No decks. Their layout
@@ -61,7 +63,6 @@ from calculatorapi.models import (
     LeagueOfHeroes,
     PvpDeck,
     PvpDeckSlot,
-    PvpHonorableMention,
     PvpSkillRecommendation,
     PvpStatConfig,
     PvpStyleNote,
@@ -137,7 +138,6 @@ class ParsedGuide:
     style_notes: dict = field(default_factory=dict) # style -> markdown
     accel_text: dict = field(default_factory=dict)  # style -> the raw "Rec. Accel" line
     decks: list = field(default_factory=list)       # dicts with "slots"
-    mentions: list = field(default_factory=list)    # (style, game_id, note)
     skills: list = field(default_factory=list)      # (style, category, tier, text, note)
     comps: list = field(default_factory=list)       # (text, note)
 
@@ -174,7 +174,7 @@ def _card_or_placeholder(text):
 
 
 def _parse_card_rows(rows, header_row, first_col, limit=6):
-    """Cards, notes, red flags and alternates under a deck or mentions header.
+    """Cards, notes, red flags and alternates under a deck header.
 
     Returns (slots, footnotes): slots is a list of six dicts or None, one per
     column; footnotes is any "*..." line found under the block.
@@ -303,15 +303,6 @@ def _import_body(block, guide):
             accel = r
         elif first == "Rec. Skills":
             skills_prose = r
-        elif first.startswith("HONORABLE MENTIONS"):
-            header = r + 1
-            while header < r + 5 and not _row_has(block, header, GROUPS.values()):
-                header += 1
-            for style, g in GROUPS.items():
-                slots, _ = _parse_card_rows(block, header, g)
-                for slot in slots:
-                    if slot and slot["game_id"]:
-                        guide.mentions.append((style, slot["game_id"], slot["note"][:200]))
         for style, g in GROUPS.items():
             title = cell(block, r, g)
             if title and cell(block, r, g + 5) == "Borrow Slot":
@@ -664,7 +655,7 @@ class SheetImporter:
             )
         guide.save()
         for related in ("stat_configs", "uma_recommendations", "style_notes", "decks",
-                        "honorable_mentions", "skill_recommendations", "team_comps"):
+                        "skill_recommendations", "team_comps"):
             getattr(guide, related).all().delete()
 
         counts = {}
@@ -716,20 +707,6 @@ class SheetImporter:
                         note=link(slot["alt"][:120], 120),
                     )
         counts["decks"] = len(parsed.decks)
-
-        seen = set()
-        counts["mentions"] = 0
-        for order, (style, game_id, note_text) in enumerate(parsed.mentions):
-            card = cards.get(game_id)
-            if card is None:
-                self.unmatched["cards"].add(game_id)
-                continue
-            if (style, card.id) in seen:
-                continue
-            seen.add((style, card.id))
-            PvpHonorableMention.objects.create(guide=guide, style=style, support_card=card,
-                                               note=link(note_text, 200), order=order)
-            counts["mentions"] += 1
 
         matcher = self.matcher
         seen = set()

@@ -11,7 +11,7 @@ page of its own (fourteen decks per guide). Here the page has a **Guide** tab
 (event, published, scenario, overview text, the stats table, team comps, the
 general skills) and a tab per style (Runaway, Front, Pace, Late, End), each
 holding exactly what the site's tab of that name shows: umas, the advice
-paragraph, skills, the example decks with their cards, honorable mentions.
+paragraph, skills, the example decks with their cards.
 Nothing on a style tab asks which style it is for. One form, one Save.
 
 HOW A TAB KNOWS ITS STYLE
@@ -85,7 +85,6 @@ from .models import (
     PvpDeck,
     PvpDeckSlot,
     PvpGuide,
-    PvpHonorableMention,
     PvpSkillRecommendation,
     PvpStatConfig,
     PvpStyleNote,
@@ -514,20 +513,6 @@ class DeckInline(GuideInline, StackedInline):
     )
 
 
-class MentionInline(GuideInline, PicturePickersMixin, TabularInline):
-    model = PvpHonorableMention
-    form = MentionAwareForm
-    template = TABULAR
-    fields = ("support_card", "note", "order", "style")
-    autocomplete_fields = ("support_card",)
-    ordering = ("order", "id")
-    ordering_field = "order"
-    hide_ordering_field = True
-    verbose_name = "mention"
-    verbose_name_plural = "Honorable mentions"
-    hint = "Cards worth having that did not make a deck, each with a short reason."
-
-
 class StyleInlineMixin:
     """The per-style copy of a child inline: its rows only, its own prefix."""
 
@@ -588,7 +573,6 @@ STYLE_INLINES = tuple(
         for_style(StyleNoteInline, style),
         for_style(SkillInline, style),
         for_style(DeckInline, style),
-        for_style(MentionInline, style),
     )
 )
 
@@ -777,7 +761,6 @@ class PvpGuideAdmin(ModelAdmin):
                 Prefetch("style_notes", PvpStyleNote.objects.only("id", "guide_id", "style")),
                 Prefetch("skill_recommendations", PvpSkillRecommendation.objects.only("id", "guide_id", "style")),
                 Prefetch("decks", PvpDeck.objects.only("id", "guide_id", "style")),
-                Prefetch("honorable_mentions", PvpHonorableMention.objects.only("id", "guide_id", "style")),
             )
         )
 

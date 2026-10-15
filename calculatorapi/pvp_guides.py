@@ -37,7 +37,6 @@ SECTIONS = (
     ("style_notes", "Advice per style"),
     ("skill_recommendations", "Recommended skills"),
     ("decks", "Example decks and their cards"),
-    ("honorable_mentions", "Honorable mentions"),
 )
 SECTION_KEYS = tuple(key for key, _ in SECTIONS)
 OVERVIEW_FIELDS = ("scenario", "style_ranking", "short_description", "meta_analysis")
@@ -48,7 +47,6 @@ STYLE_TABLES = (
     ("advice", "style_notes"),
     ("skills", "skill_recommendations"),
     ("decks", "decks"),
-    ("mentions", "honorable_mentions"),
 )
 
 
@@ -103,7 +101,7 @@ def missing_summary(guide):
         tables = present.get(key)
         if not tables:
             continue
-        gaps = [name for name in ("umas", "advice", "decks", "mentions") if name not in tables]
+        gaps = [name for name in ("umas", "advice", "decks") if name not in tables]
         if gaps:
             sentences.append(f"{label}: no {', no '.join(gaps)}.")
     if empty and len(empty) == len(STYLE_TABS):
@@ -134,8 +132,8 @@ def copy_guide(source, target, sections=SECTION_KEYS):  # pylint: disable=too-ma
     target already has.
 
     Rows that would collide with a unique constraint (the same uma for a
-    style, the same skill for a style and category, the same mention for a
-    style, a style that already has advice) are skipped, never overwritten.
+    style, the same skill for a style and category, a style that already has
+    advice) are skipped, never overwritten.
     Overview text is copied only into blank fields. Copied rows go after the
     target's own, in the source's order. Returns {section: rows copied}.
 
@@ -164,7 +162,6 @@ def copy_guide(source, target, sections=SECTION_KEYS):  # pylint: disable=too-ma
         "team_comps": None,
         "uma_recommendations": ("style", "uma_id"),
         "skill_recommendations": ("style", "category", "skill_id"),
-        "honorable_mentions": ("style", "support_card_id"),
     }
     for section, unique in simple.items():
         if section not in wanted:

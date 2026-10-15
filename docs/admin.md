@@ -300,7 +300,7 @@ Full metric definitions: [analytics.md](analytics.md).
 edited on one page with a tab strip: **Guide** (event, published, scenario, the overview
 text, the stats table, team comps, the general skills) and **Runaway, Front, Pace, Late,
 End**, each holding what the site's tab of that name shows, in the site's order: umas,
-the advice paragraph, skills, the example decks with their six cards, honorable mentions.
+the advice paragraph, skills, the example decks with their six cards.
 One form, one Save. "PvP guides" is the only sidebar entry; `PvpDeck` and every other
 child are inline-only (`test_join_models_not_registered_top_level`).
 

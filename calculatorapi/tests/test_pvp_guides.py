@@ -28,7 +28,6 @@ from calculatorapi.models import (
     PvpDeck,
     PvpDeckSlot,
     PvpGuide,
-    PvpHonorableMention,
     PvpSkillRecommendation,
     PvpStatConfig,
     PvpStyleNote,
@@ -178,8 +177,6 @@ class GuideEndpointTests(CalculatorTestCase):
         PvpDeckSlot.objects.create(deck=deck, slot=1, support_card=card, note="Gold + Link")
         PvpDeckSlot.objects.create(deck=deck, slot=1, order=1, note="or any speed")
         PvpDeckSlot.objects.create(deck=deck, slot=6, is_borrow=True, support_card=card)
-        PvpHonorableMention.objects.create(guide=self.guide, style="front", support_card=card,
-                                           note="Stats + 2SP")
         PvpTeamComp.objects.create(guide=self.guide, text="2 Front + 1 Pace", note="61% in sims")
 
         body = self.client.get(url("cm", self.cm.id)).json()
@@ -188,7 +185,7 @@ class GuideEndpointTests(CalculatorTestCase):
             "event_type", "event", "is_published", "updated_at", "scenario", "style_ranking",
             "short_description", "meta_analysis", "team_comps", "stat_configs",
             "uma_recommendations", "skill_recommendations", "style_notes", "decks",
-            "honorable_mentions", "skill_mentions",
+            "skill_mentions",
         })
         self.assertNotIn("admin_comments", body)
         self.assertEqual(body["event_type"], "champions_meeting")
@@ -211,7 +208,6 @@ class GuideEndpointTests(CalculatorTestCase):
         self.assertIsNone(slots[1]["support_card"])
         self.assertEqual(slots[1]["note"], "or any speed")
         self.assertIs(slots[2]["is_borrow"], True)
-        self.assertEqual(body["honorable_mentions"][0]["support_card"]["name"], "Kitasan Black")
 
     def test_sections_sort_by_style_then_their_own_rule(self):
         for style in ("end", "front", "everyone", "runaway"):
@@ -337,7 +333,6 @@ class GuideAdminTests(CalculatorTestCase):
         PvpSkillRecommendation.objects.create(guide=self.guide, style="front", category="speed",
                                               skill=make_skill("Lead the Pack", 100011))
         PvpStyleNote.objects.create(guide=self.guide, style="front", body="Go early.")
-        PvpHonorableMention.objects.create(guide=self.guide, style="front", support_card=card)
         PvpTeamComp.objects.create(guide=self.guide, text="2 Front + 1 Pace")
         self.deck = PvpDeck.objects.create(guide=self.guide, style="front", label="Standard")
         PvpDeckSlot.objects.create(deck=self.deck, slot=1, support_card=card)
@@ -377,7 +372,7 @@ class GuideAdminTests(CalculatorTestCase):
     def test_the_autocomplete_carries_pictures(self):
         res = self.client.get(reverse("admin:autocomplete"), {
             "term": "Kitasan", "app_label": "calculatorapi",
-            "model_name": "pvphonorablemention", "field_name": "support_card",
+            "model_name": "pvpdeckslot", "field_name": "support_card",
         })
         self.assertEqual(res.status_code, 200)
         row = res.json()["results"][0]
@@ -641,7 +636,7 @@ class GuideTabsTests(CalculatorTestCase):
         self.assertEqual(res.status_code, 200)
         for style in ("runaway", "front", "pace", "late", "end"):
             for stem in ("uma_recommendations", "style_notes", "skill_recommendations",
-                         "decks", "honorable_mentions"):
+                         "decks"):
                 self.assertContains(res, f'name="{style}-{stem}-TOTAL_FORMS"')
         self.assertContains(res, 'name="everyone-skill_recommendations-TOTAL_FORMS"')
         self.assertContains(res, "General skills (every position)")
@@ -810,7 +805,6 @@ class CopyGuideTests(CalculatorTestCase):
         deck = PvpDeck.objects.create(guide=self.source, style="front", label="Standard", order=3)
         PvpDeckSlot.objects.create(deck=deck, slot=1, support_card=self.card, note="2SP")
         PvpDeckSlot.objects.create(deck=deck, slot=6, note="borrow", is_borrow=True)
-        PvpHonorableMention.objects.create(guide=self.source, style="front", support_card=self.card)
         PvpStatConfig.objects.create(guide=self.source, style="everyone", speed="1200")
 
     def test_copies_every_section_and_keeps_what_the_target_had(self):
@@ -822,7 +816,6 @@ class CopyGuideTests(CalculatorTestCase):
         deck = self.target.decks.get()
         self.assertEqual(list(deck.slots.values_list("slot", "note")), [(1, "2SP"), (6, "borrow")])
         self.assertEqual(self.target.style_notes.get().body, "Go early.")
-        self.assertEqual(self.target.honorable_mentions.count(), 1)
         self.assertEqual(self.target.stat_configs.get().speed, "1200")
         self.target.refresh_from_db()
         self.assertEqual(self.target.short_description, "My own words")  # never overwritten

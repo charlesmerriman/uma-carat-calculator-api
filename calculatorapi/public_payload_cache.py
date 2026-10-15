@@ -154,7 +154,6 @@ _IRRELEVANT_MODELS = frozenset({
     "pvpstylenote",
     "pvpdeck",
     "pvpdeckslot",
-    "pvphonorablemention",
     "pvpteamcomp",
     # Analytics counters. These are written on EVERY visit -- leaving them out
     # of the denylist would invalidate the cache continuously and make the whole

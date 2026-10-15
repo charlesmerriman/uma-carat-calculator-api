@@ -53,7 +53,6 @@ CONTENT_MODELS = (
     "PvpStyleNote",
     "PvpDeck",
     "PvpDeckSlot",
-    "PvpHonorableMention",
     "PvpTeamComp",
     "GameEvent",
     "Scenario",
