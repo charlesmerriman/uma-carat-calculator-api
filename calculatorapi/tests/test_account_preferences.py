@@ -180,6 +180,7 @@ class AccountPreferencesTests(CalculatorTestCase):  # pylint: disable=too-many-p
             "username": "admin",
             "is_staff": True,
             "is_superuser": True,
+            "early_access": True,
             "current_carat": 999_999,
             "email": "someone@example.com",
         })
@@ -189,6 +190,8 @@ class AccountPreferencesTests(CalculatorTestCase):  # pylint: disable=too-many-p
         self.assertEqual(self.user.username, "user_a3f9c1")
         self.assertFalse(self.user.is_staff)
         self.assertFalse(self.user.is_superuser)
+        # The owner's grant, never the person's own: it is not on the whitelist.
+        self.assertFalse(self.user.early_access)
         self.assertEqual(self.user.current_carat, 0)
         self.assertEqual(self.user.email, "user_a3f9c1@test.com")
 

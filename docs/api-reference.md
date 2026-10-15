@@ -153,8 +153,10 @@ meaning anything instead of rendering a signed-in shell around nothing.
   may be *added*: `true` for a supporter on any paid tier and for staff. The
   picker locks those tiles on `false`; the rule itself is in the `PATCH` check.
 - **`early_access`** is whether features that open to supporters first are open
-  to this account: `true` for a supporter on any paid tier and for staff
-  (`benefits.early_access_for`). It says WHO; the client knows WHICH features are
+  to this account: `true` for a supporter on any paid tier, for staff, and for an
+  account the owner granted it in the admin (`CustomUser.early_access`, which
+  opens nothing else a supporter gets) (`benefits.early_access_for`). It says
+  WHO; the client knows WHICH features are
   still early access (the PvP page from 2026-10-14, `PVP_EARLY_ACCESS` in
   `frontend/src/hooks/usePvpAccess.ts`). A client gate only: the PvP API itself
   stays open.

@@ -205,10 +205,18 @@ def oshi_variants(user):
     return oshi_variants_for(entitled_supporter(user), is_staff=user.is_staff)
 
 
-def early_access_for(supporter, *, is_staff=False):
-    """Whether an already-resolved supporter row (or staff) gets the features
-    that open to supporters and staff before everyone else: any paid tier, or
-    staff, with the same staff bypass as oshi_variants_for.
+def early_access_for(supporter, *, is_staff=False, granted=False):
+    """Whether an already-resolved supporter row, staff, or an account the
+    owner granted it gets the features that open to supporters first: any
+    paid tier, staff (the same bypass as oshi_variants_for), or
+    `CustomUser.early_access` ticked in the admin.
+
+    `granted` is the third way in (2026-10-15), so a tester can try early
+    features without being made staff, which opens the admin login and every
+    ladder in this module. Like `is_staff` it is CustomUser's own field, not a
+    copy of Patreon's, so reading it creates no second truth to drift. And it
+    opens THIS and nothing else: not the oshi ladder, not the gallery look,
+    not the vote weight. Those stay with the pledge.
 
     WHO, not WHAT: this says who is early, and the client decides which
     features are still early access (frontend `PVP_EARLY_ACCESS`, the PvP page
@@ -217,14 +225,16 @@ def early_access_for(supporter, *, is_staff=False):
     change here. A client gate, and so spoofable: nothing that must be
     enforced rests on it.
     """
-    return is_staff or supporter is not None
+    return granted or is_staff or supporter is not None
 
 
 def early_access(user):
     """Whether `user` gets early-access features right now. False for a guest."""
     if user is None or not user.is_authenticated:
         return False
-    return early_access_for(entitled_supporter(user), is_staff=user.is_staff)
+    return early_access_for(
+        entitled_supporter(user), is_staff=user.is_staff, granted=user.early_access
+    )
 
 
 class IsSupporter(permissions.BasePermission):

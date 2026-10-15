@@ -63,7 +63,10 @@ reported as `oshi_variants`; a held one is never taken away.
 → `views/account.py`, `models/user_oshi.py`
 
 Staff accounts are the exception: they keep password login so `/admin` and the
-analytics dashboard remain reachable.
+analytics dashboard remain reachable. Being staff is **not** how a tester gets a
+look at early-access features: that is `CustomUser.early_access`, an admin-only
+switch that opens early access and nothing else (→ [data-model.md](data-model.md),
+"`CustomUser.early_access`"). Staff-ness opens the admin login.
 
 ---
 

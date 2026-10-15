@@ -1049,7 +1049,11 @@ class CustomUserAdmin(UserAdmin, ModelAdmin):
     form = UserChangeForm
     add_form = UserCreationForm
     change_password_form = AdminPasswordChangeForm
-    list_display = ("username", "display_name", "is_staff", "date_joined")
+    list_display = ("username", "display_name", "is_staff", "early_access", "date_joined")
+    # UserAdmin's defaults plus the early-access switch, so "who has it" is
+    # one click rather than a scroll through every account.
+    list_filter = ("is_staff", "is_superuser", "is_active", "early_access", "groups")
+    actions = ("grant_early_access", "revoke_early_access")
     # UserAdmin's default searches email and the real-name fields, which
     # ordinary accounts never hold. The handle and the chosen name are the
     # two things a person can quote from their account page.
@@ -1076,6 +1080,21 @@ class CustomUserAdmin(UserAdmin, ModelAdmin):
         ("Permissions", {
             "fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions"),
         }),
+        # The owner's grant of early access: the third way in beside a live
+        # pledge and staff (benefits.early_access_for). A field here and not a
+        # Group, because it is a site entitlement rather than an admin
+        # permission, and a group costs a query on every request. Its own
+        # fieldset, directly under Permissions, so the eye lands on it before
+        # it lands on is_staff.
+        ("Early access", {
+            "fields": ("early_access",),
+            "description": (
+                "Opens features that are still in early access to this account, "
+                "the same as a live pledge or staff. Use this for testers instead "
+                "of making them staff: staff can sign in to this admin and skip "
+                "every supporter limit. It gives nothing else a supporter gets."
+            ),
+        }),
         ("Important dates", {"fields": ("last_login", "date_joined")}),
         # The gallery's posting ban, and the person's own badge switch (shown,
         # not editable: it is their choice, made on their account page).
@@ -1093,6 +1112,31 @@ class CustomUserAdmin(UserAdmin, ModelAdmin):
             "fields": CALCULATOR_STATS_FIELDS,
         }),
     )
+
+    def _set_early_access(self, request, queryset, value, verb):
+        """Flip the switch on every selected account that is not already
+        there, and write a history row for each. The change form logs through
+        the admin's own machinery; a bulk action has to say so itself, or the
+        account's History page stays silent about who granted what. One save
+        per row rather than a queryset update() for the same reason, and
+        because the list is a handful of testers, never thousands."""
+        changed = 0
+        for user in queryset.exclude(early_access=value):
+            user.early_access = value
+            user.save(update_fields=["early_access"])
+            self.log_change(request, user, f"{verb} early access.")
+            changed += 1
+        self.message_user(
+            request, f"{verb} early access for {changed} account(s).", messages.SUCCESS
+        )
+
+    @admin.action(description="Grant early access to selected users")
+    def grant_early_access(self, request, queryset):
+        self._set_early_access(request, queryset, True, "Granted")
+
+    @admin.action(description="Revoke early access from selected users")
+    def revoke_early_access(self, request, queryset):
+        self._set_early_access(request, queryset, False, "Revoked")
 
 
 @admin.register(SocialAccount)

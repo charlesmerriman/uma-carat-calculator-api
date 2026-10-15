@@ -387,6 +387,20 @@ the opt-in; see "The gallery" below). Blanking it is refused while the person ha
 → [auth-and-privacy.md](auth-and-privacy.md) for why this is not a profile
 attribute, and [api-reference.md](api-reference.md) for the route.
 
+### `CustomUser.early_access` — the owner's grant, not a pledge
+
+A plain boolean (`0093`, 2026-10-15), ticked in the admin and nowhere else:
+`PATCH /account`'s serializer field list is the whitelist and does not carry it.
+It is the **third way into `benefits.early_access_for`**, beside a live pledge
+and `is_staff`, and it opens ONLY that: not the oshi ladder, not the gallery
+look, not the vote weight, not `ad_free`. It exists so a tester or a friend can
+try features still in early access without being made staff, which used to be
+the habit: staff can sign in to the admin, bypass every supporter ladder, and
+are excluded from analytics. No end date: revoking it is unticking it, and the
+admin history says who did what when (the two bulk actions on the user
+changelist log through `log_change` for the same reason). Not personal data, so
+`purge_user_pii` leaves it alone.
+
 ### `UserOshi` — favourite umas, the first of which is the picture
 
 The umas a person picked as favourites ("oshis" in the code and on the wire,
