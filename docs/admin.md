@@ -304,6 +304,12 @@ the advice paragraph, skills, the example decks with their six cards, honorable 
 One form, one Save. "PvP guides" is the only sidebar entry; `PvpDeck` and every other
 child are inline-only (`test_join_models_not_registered_top_level`).
 
+- **One Save posts over 1000 fields.** Every saved row sends its visible fields plus the
+  hidden id, parent and style, every formset adds four management fields and a blank
+  extra row, and a filled guide with its decks runs to 1500 or more. Django's default
+  `DATA_UPLOAD_MAX_NUMBER_FIELDS` of 1000 answered a bare 400 (`TooManyFieldsSent`) before
+  the view ran, which is what "the admin gives a 400 on Save" means. `settings.py` raises
+  it to 10,000; `test_pvp_guides` posts past the old limit to keep it raised.
 - **One inline class per child table per style**, made by `for_style(base, style)`: the
   queryset is filtered to the style, the form is a `FixedStyleForm` (the `style` field
   hidden, its initial AND `self.initial` set to the tab's style, `clean_style()` returning
