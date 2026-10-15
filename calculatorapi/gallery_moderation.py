@@ -27,7 +27,6 @@ WHAT IS REFUSED, AND WHY EACH
 
 import logging
 import re
-import unicodedata
 
 import requests
 from django.conf import settings
@@ -35,6 +34,7 @@ from django.db import transaction
 from django.urls import reverse
 from django.utils import timezone
 
+from calculatorapi.text_folding import normalise
 from calculatorapi.models import (
     BlockedTerm,
     BlockedTermMatch,
@@ -55,19 +55,8 @@ _LINK = re.compile(
     re.IGNORECASE,
 )
 
-# Characters that render as nothing and exist to split a word past a filter.
-_INVISIBLE = dict.fromkeys(map(ord, "\u200b\u200c\u200d\u2060\ufeff\u00ad"))
-
-
 class TextRefused(Exception):
     """Public text a filter refused. The message is shown to the person as is."""
-
-
-def normalise(text):
-    """Text as the matcher sees it: NFKC (folds full-width and other
-    look-alike forms onto plain letters), invisible characters removed,
-    lowercased. BlockedTerm.save() stores its term through this too."""
-    return unicodedata.normalize("NFKC", text).translate(_INVISIBLE).casefold()
 
 
 def _matches(term, match, text):
