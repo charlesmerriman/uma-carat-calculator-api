@@ -1,0 +1,61 @@
+{% extends 'admin/base_site.html' %}
+{% comment %}
+Two-factor settings for the signed-in staff account: whether the second factor
+is on, the authenticator's dates, how many backup codes are left, and the one
+action, issuing a new set of codes. Replacing a lost phone is NOT done here
+(you could not sign in to reach this page): the owner deletes the authenticator
+on your user page and your next login sets a new one up.
+{% endcomment %}
+
+{% load i18n unfold %}
+
+{% block title %}{{ title }} | {{ site_title }}{% endblock %}
+
+{% block breadcrumbs %}{% endblock %}
+
+{% block content %}
+    <div class="max-w-xl">
+        {% if not otp_required %}
+            <div class="errornote bg-primary-100 mb-6 px-3 py-2.5 rounded-default text-primary-800 dark:bg-primary-500/20 dark:text-primary-300">
+                {% translate "The second factor is switched off on this server (ADMIN_REQUIRE_OTP), so sign-in takes the password alone right now." %}
+            </div>
+        {% endif %}
+
+        <h2 class="font-semibold mb-2 text-font-important-light dark:text-font-important-dark">{% translate "Authenticator app" %}</h2>
+        {% if authenticator %}
+            <p class="mb-6 text-font-default-light dark:text-font-default-dark">
+                {% blocktranslate trimmed with since=authenticator.created_at|date:"j M Y" %}
+                    Set up on {{ since }}.
+                {% endblocktranslate %}
+                {% if authenticator.last_used_at %}
+                    {% blocktranslate trimmed with when=authenticator.last_used_at|date:"j M Y, H:i" %}
+                        Last used {{ when }} (UTC).
+                    {% endblocktranslate %}
+                {% endif %}
+                {% translate "New phone, or lost it? Ask the site owner to remove the authenticator from your account; your next sign-in sets up a new one." %}
+            </p>
+        {% else %}
+            <p class="mb-6 text-font-default-light dark:text-font-default-dark">
+                {% translate "None yet. Your next sign-in with the second factor on will set one up." %}
+            </p>
+        {% endif %}
+
+        <h2 class="font-semibold mb-2 text-font-important-light dark:text-font-important-dark">{% translate "Backup codes" %}</h2>
+        <p class="mb-4 text-font-default-light dark:text-font-default-dark">
+            {% blocktranslate count left=backup_codes_left %}
+                {{ left }} unused code left.
+            {% plural %}
+                {{ left }} unused codes left.
+            {% endblocktranslate %}
+            {% translate "Each signs you in once in place of the app. Issuing a new set cancels every code from the old one." %}
+        </p>
+
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="regenerate">
+            {% component "unfold/components/button.html" with submit=1 variant="default" %}
+                {% translate "Issue new backup codes" %}
+            {% endcomponent %}
+        </form>
+    </div>
+{% endblock %}

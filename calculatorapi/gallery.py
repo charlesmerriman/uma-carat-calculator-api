@@ -301,7 +301,7 @@ def _viewer_key(request, post):
     if user is not None and user.is_authenticated:
         who = f"u{user.pk}"
     else:
-        ip = visits._client_ip(request)  # pylint: disable=protected-access
+        ip = visits.client_ip(request)
         agent = request.META.get("HTTP_USER_AGENT", "")
         raw = f"{settings.SECRET_KEY}:{timezone.now().date().isoformat()}:{ip}:{agent}"
         who = hashlib.sha256(raw.encode("utf-8")).hexdigest()[:32]

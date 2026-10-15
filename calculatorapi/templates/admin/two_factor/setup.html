@@ -1,0 +1,61 @@
+{% extends 'unfold/layouts/unauthenticated.html' %}
+{% comment %}
+First login of a staff account with no authenticator yet. Reached only through
+the session note the login view leaves (calculatorapi/admin_site.py,
+two_factor_setup); nobody is signed in while this page is open. The QR code is
+the device's otpauth:// URL; the key beneath it is the same secret for apps
+that cannot scan.
+{% endcomment %}
+
+{% load i18n unfold %}
+
+{% block title %}
+    {{ title }} | {{ site_title }}
+{% endblock %}
+
+{% block content %}
+    {% include "unfold/helpers/unauthenticated_title.html" with title=title subtitle=username %}
+
+    <p class="mb-4 text-sm text-font-default-light dark:text-font-default-dark">
+        {% translate "From now on, signing in to this admin takes your password and a code from an authenticator app on your phone. It takes a minute to set up." %}
+    </p>
+
+    <ol class="list-decimal mb-6 ml-5 space-y-2 text-sm text-font-default-light dark:text-font-default-dark">
+        <li>{% translate "Install an authenticator app if you do not have one: Google Authenticator, Microsoft Authenticator, Authy, 1Password and Bitwarden all work." %}</li>
+        <li>{% translate "In the app, add an account by scanning this code." %}</li>
+        <li>{% translate "Type the 6-digit code the app shows, below." %}</li>
+    </ol>
+
+    <div class="bg-white border border-base-200 flex justify-center mb-4 p-4 rounded-default dark:border-base-800 [&_svg]:h-auto [&_svg]:w-48">
+        {{ qr_svg|safe }}
+    </div>
+
+    <details class="mb-6 text-sm text-font-subtle-light dark:text-font-subtle-dark">
+        <summary class="cursor-pointer">{% translate "Cannot scan? Enter the key by hand" %}</summary>
+        <p class="mt-2">
+            {% translate "Choose time-based, and enter this key:" %}
+            <code class="block break-all font-mono mt-1 select-all text-font-important-light dark:text-font-important-dark">{{ manual_key }}</code>
+        </p>
+    </details>
+
+    <form method="post" id="setup-form">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            {% include "unfold/helpers/messages/error.html" with errors=form.non_field_errors %}
+        {% endif %}
+
+        {% include "unfold/helpers/field.html" with field=form.code %}
+
+        <div class="flex flex-col gap-3 mt-6">
+            {% component "unfold/components/button.html" with submit=1 variant="primary" class="w-full" %}
+                {% translate "Confirm and sign in" %}
+            {% endcomponent %}
+
+            {% url 'admin:login' as login_url %}
+            {% component "unfold/components/button.html" with href=login_url variant="secondary" class="w-full" %}
+                {% translate "Back to sign in" %}
+            {% endcomponent %}
+        </div>
+    </form>
+{% endblock %}

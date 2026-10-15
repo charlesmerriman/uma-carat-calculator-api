@@ -68,7 +68,10 @@ def user_login(request):
     """
     username = request.data.get("username")
     password = request.data.get("password")
-    user = authenticate(username=username, password=password)
+    # The request goes along so django-axes can count a wrong password here
+    # too (its backend refuses to run without one). Still a password-only
+    # door with no second factor: its removal is the next change.
+    user = authenticate(request=request, username=username, password=password)
     if user and user.is_staff:
         token, _created = Token.objects.get_or_create(user=user)
         return Response({"token": token.key}, status=status.HTTP_200_OK)

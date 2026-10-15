@@ -1,0 +1,35 @@
+{% extends 'admin/base_site.html' %}
+{% comment %}
+Shown ONCE, right after enrolment or after "Issue new backup codes": the view
+pops the codes out of the session before rendering, so a reload lands on the
+status page instead. Each code signs in once in place of the app.
+{% endcomment %}
+
+{% load i18n unfold %}
+
+{% block title %}{{ title }} | {{ site_title }}{% endblock %}
+
+{% block breadcrumbs %}{% endblock %}
+
+{% block content %}
+    <div class="max-w-xl">
+        <p class="mb-4 text-font-default-light dark:text-font-default-dark">
+            {% translate "Each of these codes signs you in once, in place of the app, if your phone is lost or not to hand. Keep them somewhere safe, such as your password manager." %}
+        </p>
+
+        <div class="errornote bg-primary-100 mb-6 px-3 py-2.5 rounded-default text-primary-800 dark:bg-primary-500/20 dark:text-primary-300">
+            {% translate "You will not see these again. If you lose them, issue a new set from Two-factor settings; that cancels these." %}
+        </div>
+
+        <ul class="bg-white border border-base-200 font-mono gap-x-8 gap-y-2 grid grid-cols-2 mb-8 p-4 rounded-default select-all text-base dark:bg-base-900 dark:border-base-800">
+            {% for code in codes %}
+                <li>{{ code }}</li>
+            {% endfor %}
+        </ul>
+
+        {% url 'admin:index' as index_url %}
+        {% component "unfold/components/button.html" with href=index_url variant="primary" %}
+            {% translate "I have saved them, continue" %}
+        {% endcomponent %}
+    </div>
+{% endblock %}

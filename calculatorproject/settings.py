@@ -1,3 +1,4 @@
+from datetime import timedelta
 from pathlib import Path
 import os
 import dj_database_url
@@ -30,15 +31,30 @@ ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split("
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10_000
 
 INSTALLED_APPS = [
-    # django-unfold must come BEFORE django.contrib.admin so its templates
-    # override the stock admin's (Django resolves app templates in order).
-    "unfold",
-    "django.contrib.admin",
+    # django-unfold must come BEFORE the admin so its templates override the
+    # stock admin's (Django resolves app templates in order). BasicAppConfig,
+    # not plain "unfold": unfold's default config replaces admin.site with its
+    # own instance in ready(), which would undo the site swap on the next line.
+    "unfold.apps.BasicAppConfig",
+    # Django's admin app with default_site pointed at our AdminSite subclass:
+    # unfold's theme plus django-otp's second factor. -> calculatorproject/apps.py
+    "calculatorproject.apps.CalculatorAdminConfig",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    # Two-factor for the admin login: the device base, the authenticator-app
+    # (TOTP) device and the backup codes. Listed BEFORE calculatorapi so their
+    # stock device admins register first and calculatorapi/admin.py can take
+    # them off the site again (a device is managed beside its owner, as
+    # inlines on the user page). -> calculatorapi/admin_site.py
+    "django_otp",
+    "django_otp.plugins.otp_totp",
+    "django_otp.plugins.otp_static",
+    # Login lockout: counts wrong passwords per (username, address) in the
+    # database and refuses the pair for a cool-off. Settings further down.
+    "axes",
     "rest_framework",
     "rest_framework.authtoken",
     "drf_spectacular",
@@ -84,6 +100,11 @@ UNFOLD = {
             "icon": "monitoring",
             "title": _("Analytics dashboard"),
             "link": reverse_lazy("admin-analytics"),
+        },
+        {
+            "icon": "lock",
+            "title": _("Two-factor settings"),
+            "link": reverse_lazy("admin:two_factor"),
         },
     ],
     # Brand palette. Unfold injects each shade as `--color-primary-<n>` and uses
@@ -379,6 +400,34 @@ UNFOLD = {
                     },
                 ],
             },
+            # The admin's own front door. The first item is everyone's (your
+            # authenticator and backup codes); the two logs are axes's tables,
+            # owner-only because the content editors group holds no axes
+            # permission. -> calculatorapi/admin_site.py, admin.py section 10
+            {
+                "title": _("Security"),
+                "separator": True,
+                "collapsible": True,
+                "items": [
+                    {
+                        "title": _("Two-factor settings"),
+                        "icon": "lock",
+                        "link": reverse_lazy("admin:two_factor"),
+                    },
+                    {
+                        "title": _("Sign-in log"),
+                        "icon": "history",
+                        "link": reverse_lazy("admin:axes_accesslog_changelist"),
+                        "permission": _requires_perm("axes.view_accesslog"),
+                    },
+                    {
+                        "title": _("Locked out"),
+                        "icon": "lock_clock",
+                        "link": reverse_lazy("admin:axes_accessattempt_changelist"),
+                        "permission": _requires_perm("axes.view_accessattempt"),
+                    },
+                ],
+            },
         ],
     },
 }
@@ -550,6 +599,49 @@ OAUTH_ALLOWED_REDIRECT_URIS = frozenset([OAUTH_REDIRECT_URI, *_extra_redirect_ur
 # provider's consent screen without leaving replay material lying around.
 OAUTH_STATE_MAX_AGE_SECONDS = 600
 
+# ── Admin login: the second factor and the lockout ───────────────────────────
+# Whether /admin asks for an authenticator code after the password. ON unless
+# the env var says "False", in production and locally alike. Turning it on
+# cannot lock anyone out: a staff account with no authenticator yet is walked
+# through setting one up at its next login (calculatorapi/admin_site.py). The
+# switch exists for two reasons. A local .env can set it to False so the
+# local admin stays password-only. And it is the recovery path if a phone AND
+# its backup codes are both lost: set False in the DigitalOcean dashboard,
+# sign in, delete the lost authenticator on the user page, set it back to
+# True, enrol again. -> docs/admin.md ("Signing in and two-factor")
+ADMIN_REQUIRE_OTP = os.getenv("ADMIN_REQUIRE_OTP", "True") == "True"
+# The label an authenticator app shows beside the code.
+OTP_TOTP_ISSUER = "Uma Carat Calculator"
+
+# django-axes. Its backend runs FIRST so a locked-out pair is refused before
+# the password is checked at all; it authenticates nobody itself, ModelBackend
+# still does that. Every password login in this project goes through
+# authenticate() with a request (the admin form), which axes requires.
+AUTHENTICATION_BACKENDS = [
+    "axes.backends.AxesStandaloneBackend",
+    "django.contrib.auth.backends.ModelBackend",
+]
+AXES_FAILURE_LIMIT = 5
+AXES_COOLOFF_TIME = timedelta(minutes=15)
+# Lock the (username, address) PAIR, never either alone. Username alone lets
+# anyone lock the owner out with five wrong passwords; address alone is
+# sidestepped by rotating addresses. The address is the forwarded client
+# address (visits.client_ip): behind App Platform, REMOTE_ADDR is the proxy
+# and keying on it would lock every visitor at once. That forwarded entry is
+# client-settable, so a determined attacker with a fresh header every five
+# guesses is not stopped here. This stops sprays; the second factor is the
+# wall. -> docs/admin.md
+AXES_LOCKOUT_PARAMETERS = [["username", "ip_address"]]
+AXES_CLIENT_IP_CALLABLE = "calculatorapi.visits.client_ip"
+# A correct login clears the pair's count, so a typo a week never adds up.
+AXES_RESET_ON_SUCCESS = True
+# Rendered with the admin's own unauthenticated layout. The status code stays
+# axes's default, 429.
+AXES_LOCKOUT_TEMPLATE = "admin/two_factor/lockout.html"
+# axes's stock admins are plain ModelAdmins and render unstyled under unfold;
+# calculatorapi/admin.py registers themed read-only ones (the Security group).
+AXES_ENABLE_ADMIN = False
+
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
@@ -558,8 +650,15 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    # Gives request.user an is_verified() answering "did THIS session pass
+    # the second factor", from the device id django-otp stored at login. Must
+    # follow AuthenticationMiddleware, which sets request.user.
+    "django_otp.middleware.OTPMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    # Last: turns a lockout raised inside a login form into the 429 page
+    # (AXES_LOCKOUT_TEMPLATE) instead of the form's "wrong password".
+    "axes.middleware.AxesMiddleware",
 ]
 
 ROOT_URLCONF = "calculatorproject.urls"
@@ -747,6 +846,12 @@ LOGGING = {
         "django": {
             "handlers": ["console"],
             "level": "WARNING",
+        },
+        # Failed admin logins, lockouts and resets, one line each, so
+        # `doctl apps logs` can answer "is someone hammering the login".
+        "axes": {
+            "handlers": ["console"],
+            "level": "INFO",
         },
         "django.request": {
             "handlers": ["console"],
