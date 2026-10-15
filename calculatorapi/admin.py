@@ -16,6 +16,9 @@ Layout of this file:
   8. Patreon supporters (the public thank-you list, plus its CSV importer)
   9. Site content (the About page, the carat income guide and the FAQ, plus
      the "Rebuild website" button that re-bakes them into the public site)
+ 10. Security (django-axes's sign-in log and lockout counters, read-only;
+     the two-factor devices themselves are inlines on the user page, and
+     the login flow is calculatorapi/admin_site.py)
 
 The join models (UmasOnUmaBanner, SupportsOnSupportBanner, UmaSkill,
 SupportCardSkill, DailyLegendRaceUma) and every PvP guide child are
@@ -46,7 +49,7 @@ from django.contrib import admin, messages
 from django.contrib.auth.admin import GroupAdmin as BaseGroupAdmin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import Group
-from django.db.models import Count, F, Q
+from django.db.models import Count, F, Min, Q
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
@@ -55,13 +58,16 @@ from django.utils.html import format_html
 # django-unfold themes the admin, but only for admins that inherit its base
 # classes — a plain admin.ModelAdmin would render unstyled under unfold's
 # templates. Hence every ModelAdmin/TabularInline below extends unfold's.
+from axes.models import AccessAttempt, AccessLog
+from django_otp.plugins.otp_static.models import StaticDevice
+from django_otp.plugins.otp_totp.models import TOTPDevice
 from unfold.admin import ModelAdmin, StackedInline, TabularInline
 from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
 
 from .admin_image_picker import SpacesImagePickerMixin
 # Importing admin_pvp registers the PvP guide admin; the mixin and fieldset
 # put the "PvP guide" link on the two event pages.
-from .admin_pvp import PVP_GUIDE_FIELDSET, PvpGuideLinkMixin
+from .admin_pvp import PVP_GUIDE_FIELDSET, PicturePickersMixin, PvpGuideLinkMixin
 # Importing admin_gallery registers the gallery's moderation pages.
 from . import admin_gallery  # noqa: F401  pylint: disable=unused-import
 from . import digitalocean_api, patreon_api
@@ -102,6 +108,15 @@ admin.site.index_title = "Content management"
 # (templates/admin/custom_index.html extends the default index).
 admin.site.index_template = "admin/custom_index.html"
 
+# django-otp registers plain ModelAdmins for its device models when its plugins
+# load (they sit before this app in INSTALLED_APPS). Plain admins render
+# unstyled under unfold, and a device only means anything beside its owner, so
+# they come off the site and the inlines on CustomUserAdmin (section 6) take
+# over. The guard keeps this safe if a plugin ever stops registering them.
+for _device_model in (TOTPDevice, StaticDevice):
+    if admin.site.is_registered(_device_model):
+        admin.site.unregister(_device_model)
+
 
 # ── 2. Shared helpers ────────────────────────────────────────────────────────
 
@@ -139,21 +154,21 @@ class BannerSupportInline(TabularInline):
     extra = 0
 
 
-class UmaOnBannerInline(TabularInline):
+class UmaOnBannerInline(PicturePickersMixin, TabularInline):
     """The umas featured on an uma banner, edited on the banner page."""
     model = UmasOnUmaBanner
     autocomplete_fields = ("uma",)  # searchable picker instead of a 200-item dropdown
     extra = 1
 
 
-class SupportOnBannerInline(TabularInline):
+class SupportOnBannerInline(PicturePickersMixin, TabularInline):
     """The support cards featured on a support banner."""
     model = SupportsOnSupportBanner
     autocomplete_fields = ("support_card",)
     extra = 1
 
 
-class UmaSkillInline(TabularInline):
+class UmaSkillInline(PicturePickersMixin, TabularInline):
     """The skills an outfit carries, on the uma's page. Filled by the import."""
     model = UmaSkill
     autocomplete_fields = ("skill",)
@@ -161,7 +176,7 @@ class UmaSkillInline(TabularInline):
     extra = 0
 
 
-class SupportCardSkillInline(TabularInline):
+class SupportCardSkillInline(PicturePickersMixin, TabularInline):
     """The skills a support card gives, by hint or event. Filled by the import."""
     model = SupportCardSkill
     autocomplete_fields = ("skill",)
@@ -176,7 +191,7 @@ class ChangelogChangeInline(TabularInline):
     extra = 1
 
 
-class AnniversaryEventBannerInline(TabularInline):
+class AnniversaryEventBannerInline(PicturePickersMixin, TabularInline):
     """The banner "Parts" a campaign spans, edited on the campaign's page.
 
     Editing the link here rather than on BannerTimeline keeps that shared model
@@ -190,7 +205,7 @@ class AnniversaryEventBannerInline(TabularInline):
     extra = 1
 
 
-class DailyLegendRaceUmaInline(TabularInline):
+class DailyLegendRaceUmaInline(PicturePickersMixin, TabularInline):
     """The umas in one daily legend race batch.
 
     No order column: the site sorts a batch by star count, then by name. An
@@ -573,6 +588,7 @@ class SkillAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
     search_fields = ("name", "=game_id", "=group_id")
     readonly_fields = ("image_preview", "versions", "on_global")
     autocomplete_fields = ("evolves_from",)
+    list_select_related = ("evolves_from",)
     fieldsets = (
         (None, {"fields": ("name", "game_id", "image", "image_preview", "admin_comments")}),
         ("Text", {
@@ -600,14 +616,34 @@ class SkillAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
     def on_global(self, obj):
         return obj.is_on_global
 
+    def get_changelist_instance(self, request):
+        # "Versions" names each row's siblings. One query for the page's rows
+        # rather than one per row (siblings() is a query each): the page's
+        # rows are swapped for a list carrying their siblings, which is what
+        # the template iterates. The change page's column takes the one query.
+        changelist = super().get_changelist_instance(request)
+        rows = list(changelist.result_list)
+        by_group = {}
+        for skill in Skill.objects.filter(group_id__in={row.group_id for row in rows}).order_by("-tier"):
+            by_group.setdefault(skill.group_id, []).append(skill)
+        for row in rows:
+            row.sibling_rows = [
+                skill for skill in by_group.get(row.group_id, []) if skill.pk != row.pk
+            ]
+        changelist.result_list = rows
+        return changelist
+
     @admin.display(description="Versions")
     def versions(self, obj):
         """The other tiers of this effect, plus the evolution link when set."""
         if obj.pk is None:
             return "—"
+        siblings = getattr(obj, "sibling_rows", None)
+        if siblings is None:
+            siblings = obj.siblings()
         parts = [
             f"{sibling.get_tier_display()} {sibling.name} ({sibling.game_id})"
-            for sibling in obj.siblings()
+            for sibling in siblings
         ]
         if obj.evolves_from_id:
             parts.append(f"evolved from {obj.evolves_from.name} ({obj.evolves_from.game_id})")
@@ -828,6 +864,9 @@ class AnniversaryEventAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmi
         return super().get_queryset(request).annotate(
             _part_count=Count("banner_links", distinct=True),
             _product_count=Count("products", distinct=True),
+            # The earliest confirmed part start, for "Starts" (Min ignores the
+            # join's repeats, so it sits beside the distinct counts).
+            _starts=Min("banner_links__banner_timeline__global_start_date"),
         )
 
     @admin.display(description="Parts", ordering="_part_count")
@@ -838,14 +877,9 @@ class AnniversaryEventAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmi
     def product_count(self, obj):
         return obj._product_count  # pylint: disable=protected-access
 
-    @admin.display(description="Starts")
+    @admin.display(description="Starts", ordering="_starts")
     def confirmed_start_date(self, obj):
-        starts = [
-            link.banner_timeline.global_start_date
-            for link in obj.banner_links.select_related("banner_timeline")
-            if link.banner_timeline.global_start_date is not None
-        ]
-        return min(starts) if starts else "—"
+        return obj._starts or "—"  # pylint: disable=protected-access
 
 
 @admin.register(ChampionsMeeting)
@@ -1020,6 +1054,43 @@ CALCULATOR_STATS_FIELDS = (
 )
 
 
+class _ReadOnlyDeviceInline(TabularInline):
+    """A staff account's two-factor devices, listed read-only on its user
+    page. Nothing is typed in here: an authenticator's secret is minted on the
+    setup page and the backup codes on the settings page, both by the person
+    themselves (calculatorapi/admin_site.py). DELETE is the one action, and it
+    is the lost-phone procedure: with no confirmed authenticator left, the
+    person's next login walks them through setting up a new one."""
+    extra = 0
+    can_delete = True
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+
+class TOTPDeviceInline(_ReadOnlyDeviceInline):
+    model = TOTPDevice
+    verbose_name = "Authenticator app"
+    verbose_name_plural = "Authenticator app (two-factor)"
+    fields = ("name", "confirmed", "created_at", "last_used_at")
+    readonly_fields = fields
+
+
+class StaticDeviceInline(_ReadOnlyDeviceInline):
+    model = StaticDevice
+    verbose_name = "Backup codes"
+    verbose_name_plural = "Backup codes (two-factor)"
+    fields = ("name", "codes_left", "created_at", "last_used_at")
+    readonly_fields = fields
+
+    @admin.display(description="Unused codes")
+    def codes_left(self, obj):
+        return obj.token_set.count()
+
+
 @admin.register(CustomUser)
 class CustomUserAdmin(UserAdmin, ModelAdmin):
     """
@@ -1030,7 +1101,11 @@ class CustomUserAdmin(UserAdmin, ModelAdmin):
     form = UserChangeForm
     add_form = UserCreationForm
     change_password_form = AdminPasswordChangeForm
-    list_display = ("username", "display_name", "is_staff", "date_joined")
+    list_display = ("username", "display_name", "is_staff", "early_access", "date_joined")
+    # UserAdmin's defaults plus the early-access switch, so "who has it" is
+    # one click rather than a scroll through every account.
+    list_filter = ("is_staff", "is_superuser", "is_active", "early_access", "groups")
+    actions = ("grant_early_access", "revoke_early_access")
     # UserAdmin's default searches email and the real-name fields, which
     # ordinary accounts never hold. The handle and the chosen name are the
     # two things a person can quote from their account page.
@@ -1057,6 +1132,21 @@ class CustomUserAdmin(UserAdmin, ModelAdmin):
         ("Permissions", {
             "fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions"),
         }),
+        # The owner's grant of early access: the third way in beside a live
+        # pledge and staff (benefits.early_access_for). A field here and not a
+        # Group, because it is a site entitlement rather than an admin
+        # permission, and a group costs a query on every request. Its own
+        # fieldset, directly under Permissions, so the eye lands on it before
+        # it lands on is_staff.
+        ("Early access", {
+            "fields": ("early_access",),
+            "description": (
+                "Opens features that are still in early access to this account, "
+                "the same as a live pledge or staff. Use this for testers instead "
+                "of making them staff: staff can sign in to this admin and skip "
+                "every supporter limit. It gives nothing else a supporter gets."
+            ),
+        }),
         ("Important dates", {"fields": ("last_login", "date_joined")}),
         # The gallery's posting ban, and the person's own badge switch (shown,
         # not editable: it is their choice, made on their account page).
@@ -1074,6 +1164,38 @@ class CustomUserAdmin(UserAdmin, ModelAdmin):
             "fields": CALCULATOR_STATS_FIELDS,
         }),
     )
+
+    def get_inlines(self, request, obj=None):
+        # The two-factor rows only mean something on an account that can sign
+        # in to this admin; an ordinary account's page stays as it was.
+        if obj is not None and obj.is_staff:
+            return (*self.inlines, TOTPDeviceInline, StaticDeviceInline)
+        return self.inlines
+
+    def _set_early_access(self, request, queryset, value, verb):
+        """Flip the switch on every selected account that is not already
+        there, and write a history row for each. The change form logs through
+        the admin's own machinery; a bulk action has to say so itself, or the
+        account's History page stays silent about who granted what. One save
+        per row rather than a queryset update() for the same reason, and
+        because the list is a handful of testers, never thousands."""
+        changed = 0
+        for user in queryset.exclude(early_access=value):
+            user.early_access = value
+            user.save(update_fields=["early_access"])
+            self.log_change(request, user, f"{verb} early access.")
+            changed += 1
+        self.message_user(
+            request, f"{verb} early access for {changed} account(s).", messages.SUCCESS
+        )
+
+    @admin.action(description="Grant early access to selected users")
+    def grant_early_access(self, request, queryset):
+        self._set_early_access(request, queryset, True, "Granted")
+
+    @admin.action(description="Revoke early access from selected users")
+    def revoke_early_access(self, request, queryset):
+        self._set_early_access(request, queryset, False, "Revoked")
 
 
 @admin.register(SocialAccount)
@@ -1431,6 +1553,7 @@ class PatreonSupporterAdmin(ModelAdmin):
     # in, when the name they signed the message with isn't the one on the row.
     search_fields = ("display_name", "email")
     autocomplete_fields = ("tier",)
+    list_select_related = ("tier",)
     readonly_fields = ("patreon_user_id", "linked_user")
 
     @admin.display(boolean=True, description="Website account")
@@ -1745,3 +1868,49 @@ class FaqCategoryAdmin(ModelAdmin):
     @admin.display(description="Questions", ordering="_question_count")
     def question_count(self, obj):
         return obj._question_count  # pylint: disable=protected-access
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 10. Security: django-axes's tables, read-only
+# ═══════════════════════════════════════════════════════════════════════════
+# axes keeps two tables. AccessAttempt is the live lockout counter, one row per
+# (username, address) pair with recent wrong passwords; AccessLog is one row
+# per successful sign-in, with its sign-out time. Both are written by axes and
+# only ever READ here (its own admins are switched off in settings:
+# AXES_ENABLE_ADMIN). Deleting an AccessAttempt row IS the unlock, which is why
+# delete stays on. Owner-only in practice: the content editors group holds no
+# axes permission, so the Security sidebar group hides from them.
+# The posted form data axes stores (post_data) is left off both pages on
+# purpose: there is nothing to learn from it that the row does not already say.
+
+
+class _ReadOnlyAdmin(ModelAdmin):
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(AccessAttempt)
+class AccessAttemptAdmin(_ReadOnlyAdmin):
+    """Who is locked out, or on their way to it. A row is deleted by axes when
+    the cool-off passes, or by hand here to unlock someone early."""
+    list_display = ("username", "ip_address", "failures_since_start", "attempt_time")
+    search_fields = ("username", "ip_address")
+    ordering = ("-attempt_time",)
+    fields = ("username", "ip_address", "failures_since_start", "attempt_time",
+              "path_info", "user_agent")
+    readonly_fields = fields
+    actions = ("delete_selected",)
+
+
+@admin.register(AccessLog)
+class AccessLogAdmin(_ReadOnlyAdmin):
+    """Every successful admin sign-in: who, from where, when, and when they
+    signed out (blank while the session is still open)."""
+    list_display = ("username", "ip_address", "attempt_time", "logout_time")
+    search_fields = ("username", "ip_address")
+    ordering = ("-attempt_time",)
+    fields = ("username", "ip_address", "attempt_time", "logout_time", "path_info", "user_agent")
+    readonly_fields = fields

@@ -44,51 +44,19 @@ class AuthTests(CalculatorTestCase):
         with self.assertRaises(NoReverseMatch):
             reverse('register')
 
-    # login (staff only) ───────────────────────────────────────────────────────
+    # login ────────────────────────────────────────────────────────────────────
 
-    def test_staff_login_returns_200_and_token(self):
+    def test_password_login_endpoint_no_longer_exists(self):
+        """The staff token login went on 2026-10-15: a password alone bought a
+        bearer token, around the admin's second factor. Staff sign in at
+        /admin; everyone else through a provider."""
         make_user('staffuser', 'correctpass', is_staff=True)
         res = self.client.post('/login', {'username': 'staffuser', 'password': 'correctpass'}, format='json')
-        self.assertEqual(res.status_code, 200)
-        self.assertIn('token', res.data)
+        self.assertEqual(res.status_code, 404)
 
-    def test_non_staff_login_rejected_despite_correct_password(self):
-        """Ordinary accounts must go through a provider, even if a password
-        somehow remains set on the row."""
-        make_user('loginuser', 'correctpass')
-        res = self.client.post('/login', {'username': 'loginuser', 'password': 'correctpass'}, format='json')
-        self.assertEqual(res.status_code, 400)
-        self.assertNotIn('token', res.data)
-
-    def test_non_staff_rejection_is_indistinguishable_from_wrong_password(self):
-        """Same status AND same body, so /login can't be used to discover which
-        usernames exist."""
-        make_user('loginuser', 'correctpass')
-        valid_pw = self.client.post('/login', {'username': 'loginuser', 'password': 'correctpass'}, format='json')
-        wrong_pw = self.client.post('/login', {'username': 'loginuser', 'password': 'wrongpass'}, format='json')
-        no_such_user = self.client.post('/login', {'username': 'nobody', 'password': 'whatever'}, format='json')
-        self.assertEqual(valid_pw.status_code, wrong_pw.status_code, no_such_user.status_code)
-        self.assertEqual(valid_pw.data, wrong_pw.data)
-        self.assertEqual(valid_pw.data, no_such_user.data)
-
-    def test_login_wrong_password_returns_400(self):
-        make_user('staffuser', 'correctpass', is_staff=True)
-        res = self.client.post('/login', {'username': 'staffuser', 'password': 'wrongpass'}, format='json')
-        self.assertEqual(res.status_code, 400)
-
-    def test_login_nonexistent_user_returns_400(self):
-        res = self.client.post('/login', {'username': 'nobody', 'password': 'whatever'}, format='json')
-        self.assertEqual(res.status_code, 400)
-
-    def test_social_user_with_unusable_password_cannot_login(self):
-        """A social account has no usable password; an empty/blank attempt must
-        not slip through Django's authenticate()."""
-        user = make_user('socialuser')
-        user.set_unusable_password()
-        user.save()
-        for attempt in ('', '!', 'testpass123'):
-            res = self.client.post('/login', {'username': 'socialuser', 'password': attempt}, format='json')
-            self.assertEqual(res.status_code, 400, f'password {attempt!r} was accepted')
+    def test_login_route_is_not_reversible(self):
+        with self.assertRaises(NoReverseMatch):
+            reverse('login')
 
     # logout ───────────────────────────────────────────────────────────────────
 

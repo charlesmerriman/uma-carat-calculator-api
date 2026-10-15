@@ -424,10 +424,10 @@ class ReferenceEndpointGuestAccessTests(CalculatorTestCase):
             with self.subTest(url=url):
                 self.assertEqual(client.get(url).status_code, 200)
 
-    def test_event_writes_still_require_admin(self):
-        # Guests (and non-admin users) must not be able to write reference data.
-        res = APIClient().post('/events', {'name': 'x'})
-        self.assertIn(res.status_code, (401, 403))
+    def test_events_route_is_read_only(self):
+        # Reference data is edited in the admin; the API has no write actions,
+        # for a guest or for a staff token (those went on 2026-10-15).
+        self.assertEqual(APIClient().post('/events', {'name': 'x'}).status_code, 405)
 
     def test_events_endpoint_serves_confirmed_only_no_prediction(self):
         # The standalone /events route must never predict -- a JP-only banner

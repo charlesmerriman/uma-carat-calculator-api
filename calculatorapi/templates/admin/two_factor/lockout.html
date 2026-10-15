@@ -1,0 +1,34 @@
+{% extends 'unfold/layouts/unauthenticated.html' %}
+{% comment %}
+django-axes's lockout page (settings.AXES_LOCKOUT_TEMPLATE), served with a 429
+after AXES_FAILURE_LIMIT wrong passwords for one username from one address.
+`cooloff_timedelta` is axes's context; widthratio turns its seconds into
+minutes without a custom filter.
+{% endcomment %}
+
+{% load i18n unfold %}
+
+{% block title %}
+    {% translate "Too many attempts" %} | {{ site_title }}
+{% endblock %}
+
+{% block content %}
+    {% include "unfold/helpers/unauthenticated_title.html" with title=_("Too many sign-in attempts") subtitle=site_title %}
+
+    <p class="mb-4 text-font-default-light dark:text-font-default-dark">
+        {% if cooloff_timedelta %}
+            {% widthratio cooloff_timedelta.total_seconds 60 1 as minutes %}
+            {% blocktranslate trimmed with limit=failure_limit %}
+                After {{ limit }} wrong passwords, sign-in for this account from your connection is paused for {{ minutes }} minutes. Nothing is locked for good: wait, then try again.
+            {% endblocktranslate %}
+        {% else %}
+            {% blocktranslate trimmed with limit=failure_limit %}
+                After {{ limit }} wrong passwords, sign-in for this account from your connection is paused. Try again later.
+            {% endblocktranslate %}
+        {% endif %}
+    </p>
+
+    <p class="text-sm text-font-subtle-light dark:text-font-subtle-dark">
+        {% translate "If this was not you, someone is guessing at your password. It still needs the code from your phone to get anywhere." %}
+    </p>
+{% endblock %}

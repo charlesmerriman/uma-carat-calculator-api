@@ -5,10 +5,13 @@ import tempfile
 from io import StringIO
 from unittest.mock import patch
 
+from django.contrib.admin.models import LogEntry
 from django.contrib.auth.models import Group
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
+from django.db import connection
 from django.test import override_settings
+from django.test.utils import CaptureQueriesContext
 from django.urls import NoReverseMatch, reverse
 
 from calculatorapi import image_library
@@ -22,7 +25,7 @@ from calculatorapi.image_library import (
 )
 from calculatorapi.management.commands.create_content_editor_group import CONTENT_MODELS
 from calculatorapi.models import (
-    CustomUser, Uma, SocialAccount, Plan, UserPlannedBanner,
+    CustomUser, Skill, Uma, UmaSkill, SocialAccount, Plan, UserPlannedBanner,
 )
 from calculatorapi.tests.base import CalculatorTestCase, PLAIN_TEST_STORAGES
 from calculatorapi.tests.factories import make_uma_banner, make_user
@@ -138,7 +141,7 @@ class AdminSmokeTests(CalculatorTestCase):
                      # The PvP guide's children, all inlines on the guide page;
                      # a deck's cards are nested under the deck there.
                      'pvpstatconfig', 'pvpumarecommendation', 'pvpskillrecommendation',
-                     'pvpstylenote', 'pvpdeck', 'pvpdeckslot', 'pvphonorablemention',
+                     'pvpstylenote', 'pvpdeck', 'pvpdeckslot',
                      'pvpteamcomp']:
             with self.subTest(model=name):
                 with self.assertRaises(NoReverseMatch):
@@ -254,6 +257,68 @@ class SocialAccountAdminTests(CalculatorTestCase):
         self.assertEqual(res.status_code, 200)
         self.assertNotContains(res, 'name="email"')
         self.assertNotContains(res, 'name="first_name"')
+
+
+@override_settings(STORAGES=PLAIN_TEST_STORAGES)
+class EarlyAccessAdminTests(CalculatorTestCase):
+    """The owner's early-access grant: on the user form, and as two bulk
+    actions that leave a history row each, so a tester never needs is_staff."""
+
+    def setUp(self):
+        self.superuser = CustomUser.objects.create_superuser(username='root', password='x')
+        self.client.force_login(self.superuser)
+        self.testers = [make_user('user_tester1'), make_user('user_tester2')]
+        self.changelist = reverse('admin:calculatorapi_customuser_changelist')
+
+    def _run(self, action, users):
+        return self.client.post(
+            self.changelist,
+            {'action': action, '_selected_action': [u.pk for u in users]},
+            follow=True,
+        )
+
+    def test_change_form_offers_the_switch(self):
+        res = self.client.get(
+            reverse('admin:calculatorapi_customuser_change', args=[self.testers[0].pk]))
+        self.assertContains(res, 'name="early_access"')
+
+    def test_changelist_filters_by_it(self):
+        self.testers[0].early_access = True
+        self.testers[0].save(update_fields=['early_access'])
+        res = self.client.get(self.changelist, {'early_access__exact': '1'})
+        self.assertContains(res, 'user_tester1')
+        self.assertNotContains(res, 'user_tester2')
+
+    def test_grant_action_sets_the_switch_and_writes_history(self):
+        res = self._run('grant_early_access', self.testers)
+        self.assertEqual(res.status_code, 200)
+        for tester in self.testers:
+            tester.refresh_from_db()
+            self.assertTrue(tester.early_access)
+        # One history row per account, naming the change, so the History
+        # page answers "who granted this and when".
+        rows = LogEntry.objects.filter(object_id__in=[str(t.pk) for t in self.testers])
+        self.assertEqual(rows.count(), 2)
+        self.assertTrue(all('Granted early access' in r.get_change_message() for r in rows))
+        self.assertContains(res, 'Granted early access for 2 account(s).')
+
+    def test_grant_skips_accounts_that_already_have_it(self):
+        self.testers[0].early_access = True
+        self.testers[0].save(update_fields=['early_access'])
+        res = self._run('grant_early_access', self.testers)
+        self.assertContains(res, 'Granted early access for 1 account(s).')
+        self.assertEqual(LogEntry.objects.count(), 1)
+
+    def test_revoke_action_clears_it(self):
+        for tester in self.testers:
+            tester.early_access = True
+            tester.save(update_fields=['early_access'])
+        res = self._run('revoke_early_access', self.testers[:1])
+        self.assertContains(res, 'Revoked early access for 1 account(s).')
+        self.testers[0].refresh_from_db()
+        self.testers[1].refresh_from_db()
+        self.assertFalse(self.testers[0].early_access)
+        self.assertTrue(self.testers[1].early_access)
 
 
 class ImageLibraryTests(CalculatorTestCase):
@@ -496,3 +561,54 @@ class SpacesImagePickerFormTests(CalculatorTestCase):
                 self.assertContains(res, 'spaces-picker')
                 self.assertContains(res, 'name="image-library-key"')
                 self.assertContains(res, 'spaces-image-picker.js')
+
+
+@override_settings(STORAGES=PLAIN_TEST_STORAGES)
+class AdminQueryCountTests(CalculatorTestCase):
+    """The pages that used to ask a query per row ask the same however many
+    rows they show. The PvP guide page has its own in test_pvp_guides."""
+
+    def setUp(self):
+        self.client.force_login(
+            CustomUser.objects.create_superuser(username="boss", password="x"))
+
+    @staticmethod
+    def _skills(start, stop):
+        # Pairs share a group: Skill 0 and Skill 1 are the white and gold of
+        # one effect, which is what the "Versions" column names.
+        return [
+            Skill.objects.create(
+                name=f"Skill {number}", game_id=100000 + number, group_id=10000 + number // 2,
+                tier=1 + number % 2, rarity=1, icon_id=1,
+            )
+            for number in range(start, stop)
+        ]
+
+    def test_the_skill_list_asks_nothing_per_row(self):
+        url = reverse("admin:calculatorapi_skill_changelist")
+        self._skills(0, 4)
+        self.client.get(url)  # warm the per-process caches (content types) first
+        with CaptureQueriesContext(connection) as four:
+            self.assertEqual(self.client.get(url).status_code, 200)
+        self._skills(4, 40)
+        with CaptureQueriesContext(connection) as forty:
+            res = self.client.get(url)
+        self.assertContains(res, "◎ gold Skill 1 (100001)")
+        self.assertEqual(len(four), len(forty))
+
+    def test_an_inline_with_a_picker_asks_nothing_per_row(self):
+        # The uma page's skills: each row's picker is handed its skill with
+        # the row (PicturePickersMixin), and the row's title names the uma.
+        uma = Uma.objects.create(name="Special Week")
+        skills = self._skills(0, 8)
+        UmaSkill.objects.create(uma=uma, skill=skills[0], source="innate")
+        url = reverse("admin:calculatorapi_uma_change", args=(uma.pk,))
+        self.client.get(url)  # warm the per-process caches (content types) first
+        with CaptureQueriesContext(connection) as one:
+            self.assertEqual(self.client.get(url).status_code, 200)
+        for skill in skills[1:]:
+            UmaSkill.objects.create(uma=uma, skill=skill, source="awakening", level=2)
+        with CaptureQueriesContext(connection) as eight:
+            res = self.client.get(url)
+        self.assertContains(res, "Skill 7")
+        self.assertEqual(len(one), len(eight))

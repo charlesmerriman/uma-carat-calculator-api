@@ -30,7 +30,7 @@ from calculatorapi.models import (
     ChampionsMeeting,
     LeagueOfHeroes,
     PvpGuide, PvpStatConfig, PvpUmaRecommendation, PvpSkillRecommendation,
-    PvpStyleNote, PvpDeck, PvpDeckSlot, PvpHonorableMention, PvpTeamComp,
+    PvpStyleNote, PvpDeck, PvpDeckSlot, PvpTeamComp,
     ChangelogEntry, ChangelogChange,
     ClubRank, TeamTrialsRank, ChampionsMeetingRank, LeagueOfHeroesRank,
     AnniversaryEvent, AnniversaryEventBanner, AnniversaryEventProduct,
@@ -53,7 +53,7 @@ CONTENT_MODELS = [
     ChampionsMeeting,
     LeagueOfHeroes,
     PvpGuide, PvpStatConfig, PvpUmaRecommendation, PvpSkillRecommendation,
-    PvpStyleNote, PvpDeck, PvpDeckSlot, PvpHonorableMention, PvpTeamComp,
+    PvpStyleNote, PvpDeck, PvpDeckSlot, PvpTeamComp,
     ChangelogEntry, ChangelogChange,
     ClubRank, TeamTrialsRank, ChampionsMeetingRank, LeagueOfHeroesRank,
     # Campaigns are content: an editor sets up an anniversary's packs and

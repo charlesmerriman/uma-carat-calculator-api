@@ -72,8 +72,8 @@ get back a DRF token. Scopes are limited to identity, and a player account holds
 the provider's opaque id and a generated handle. The redirect URI comes from a server-side
 allowlist and is sealed into a signed `state`, so the sign-in endpoint can't be used as an
 open redirector. Linking a second provider is a separate, authenticated flow that can never
-create an account. Password login exists for staff only, and it answers a wrong password
-exactly as it answers a non-staff account.
+create an account. Nothing on the API takes a password: staff sign in at `/admin`, with a
+password and an authenticator code.
 
 ### Patreon supporters
 
@@ -118,7 +118,7 @@ aggregates only, never per-user rows. The public changelog is authored in
 | `GET /auth/<provider>/start`, `POST /auth/social` | OAuth sign-in with `google`, `discord` or `patreon` |
 | `GET /account` | The signed-in account and its supporter benefits |
 | `GET /account/link/<provider>/start`, `POST /account/link/<provider>/complete`, `DELETE /account/link/<provider>` | Link or unlink a provider on a signed-in account |
-| `POST /login`, `POST /logout` | Staff password login, and logout |
+| `POST /logout` | Logout, for every kind of account |
 | `POST /visit` | Anonymous visit beacon, throttled |
 | `POST /patreon/sync` | Supporter sync, authorised by a shared-secret header |
 | `GET /teamtrialranks`, `/clubranks`, `/championsmeetingranks`, `/leagueofheroesranks`, `/leagueofheroes`, `/events`, `/changelog`, `/supporters` | Read-only reference data |
@@ -135,6 +135,8 @@ pip install -r requirements-dev.txt    # runtime dependencies plus lint tooling
 cp .env.example .env
 python manage.py migrate
 python manage.py createsuperuser       # a staff account for /admin
+# The first /admin login sets up an authenticator app (docs/admin.md, "Signing
+# in"); ADMIN_REQUIRE_OTP=False in .env keeps the local admin password-only.
 python manage.py runserver
 ```
 

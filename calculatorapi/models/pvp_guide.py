@@ -561,39 +561,6 @@ class PvpDeckSlot(SkillMentionsMixin, models.Model):
         return f"Slot {self.slot}: {card}"
 
 
-class PvpHonorableMention(SkillMentionsMixin, models.Model):
-    """
-    A card worth having that did not make a deck. Its own table rather than a
-    slotless deck: mentions have no slots, so they stay a one-level inline on
-    the guide page.
-    """
-
-    MENTION_FIELDS = ("note",)
-
-    guide = models.ForeignKey(
-        PvpGuide, on_delete=models.CASCADE, related_name="honorable_mentions"
-    )
-    style = _style_field()
-    support_card = models.ForeignKey(
-        SupportCard, on_delete=models.CASCADE, related_name="pvp_mentions"
-    )
-    note = models.CharField(max_length=200, blank=True, help_text=HIGHLIGHT_HELP)
-    order = _order_field()
-
-    class Meta:
-        ordering = ("order", "id")
-        verbose_name = "honorable mention"
-        verbose_name_plural = "honorable mentions"
-        constraints = [
-            models.UniqueConstraint(
-                fields=["guide", "style", "support_card"], name="unique_pvp_mention_per_style",
-            ),
-        ]
-
-    def __str__(self):
-        return f"{self.support_card.name} ({self.get_style_display()})"
-
-
 class PvpTeamComp(SkillMentionsMixin, models.Model):
     """A recommended team shape, like "2 Front + 1 Pace"."""
 

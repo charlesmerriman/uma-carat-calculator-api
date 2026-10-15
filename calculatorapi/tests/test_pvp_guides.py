@@ -1,4 +1,7 @@
 """The PvP guide: constraints, GET /pvp-guides/<kind>/<id>, has_guide, the admin, and the sheet loader."""
+# One module per feature area, and this area has the admin page, the endpoint and
+# the sheet loader in it.
+# pylint: disable=too-many-lines
 
 import csv
 import tempfile
@@ -25,7 +28,6 @@ from calculatorapi.models import (
     PvpDeck,
     PvpDeckSlot,
     PvpGuide,
-    PvpHonorableMention,
     PvpSkillRecommendation,
     PvpStatConfig,
     PvpStyleNote,
@@ -175,8 +177,6 @@ class GuideEndpointTests(CalculatorTestCase):
         PvpDeckSlot.objects.create(deck=deck, slot=1, support_card=card, note="Gold + Link")
         PvpDeckSlot.objects.create(deck=deck, slot=1, order=1, note="or any speed")
         PvpDeckSlot.objects.create(deck=deck, slot=6, is_borrow=True, support_card=card)
-        PvpHonorableMention.objects.create(guide=self.guide, style="front", support_card=card,
-                                           note="Stats + 2SP")
         PvpTeamComp.objects.create(guide=self.guide, text="2 Front + 1 Pace", note="61% in sims")
 
         body = self.client.get(url("cm", self.cm.id)).json()
@@ -185,7 +185,7 @@ class GuideEndpointTests(CalculatorTestCase):
             "event_type", "event", "is_published", "updated_at", "scenario", "style_ranking",
             "short_description", "meta_analysis", "team_comps", "stat_configs",
             "uma_recommendations", "skill_recommendations", "style_notes", "decks",
-            "honorable_mentions", "skill_mentions",
+            "skill_mentions",
         })
         self.assertNotIn("admin_comments", body)
         self.assertEqual(body["event_type"], "champions_meeting")
@@ -208,7 +208,6 @@ class GuideEndpointTests(CalculatorTestCase):
         self.assertIsNone(slots[1]["support_card"])
         self.assertEqual(slots[1]["note"], "or any speed")
         self.assertIs(slots[2]["is_borrow"], True)
-        self.assertEqual(body["honorable_mentions"][0]["support_card"]["name"], "Kitasan Black")
 
     def test_sections_sort_by_style_then_their_own_rule(self):
         for style in ("end", "front", "everyone", "runaway"):
@@ -334,7 +333,6 @@ class GuideAdminTests(CalculatorTestCase):
         PvpSkillRecommendation.objects.create(guide=self.guide, style="front", category="speed",
                                               skill=make_skill("Lead the Pack", 100011))
         PvpStyleNote.objects.create(guide=self.guide, style="front", body="Go early.")
-        PvpHonorableMention.objects.create(guide=self.guide, style="front", support_card=card)
         PvpTeamComp.objects.create(guide=self.guide, text="2 Front + 1 Pace")
         self.deck = PvpDeck.objects.create(guide=self.guide, style="front", label="Standard")
         PvpDeckSlot.objects.create(deck=self.deck, slot=1, support_card=card)
@@ -374,7 +372,7 @@ class GuideAdminTests(CalculatorTestCase):
     def test_the_autocomplete_carries_pictures(self):
         res = self.client.get(reverse("admin:autocomplete"), {
             "term": "Kitasan", "app_label": "calculatorapi",
-            "model_name": "pvphonorablemention", "field_name": "support_card",
+            "model_name": "pvpdeckslot", "field_name": "support_card",
         })
         self.assertEqual(res.status_code, 200)
         row = res.json()["results"][0]
@@ -638,7 +636,7 @@ class GuideTabsTests(CalculatorTestCase):
         self.assertEqual(res.status_code, 200)
         for style in ("runaway", "front", "pace", "late", "end"):
             for stem in ("uma_recommendations", "style_notes", "skill_recommendations",
-                         "decks", "honorable_mentions"):
+                         "decks"):
                 self.assertContains(res, f'name="{style}-{stem}-TOTAL_FORMS"')
         self.assertContains(res, 'name="everyone-skill_recommendations-TOTAL_FORMS"')
         self.assertContains(res, "General skills (every position)")
@@ -707,9 +705,109 @@ class GuideTabsTests(CalculatorTestCase):
         data["front-decks-0-slots-1-is_borrow"] = "on"
         res = self.client.post(self.change_url(), data)
         self.assertEqual(res.status_code, 200)
-        self.assertContains(res, "Only one card in a deck can be the borrowed one")
+        self.assertContains(res, "Only one slot in a deck can be the borrowed one")
         self.assertContains(res, 'class="pvp-tab-errors"')
         self.assertEqual(deck.slots.count(), 1)
+
+    def test_a_borrowed_slot_s_alternative_is_the_same_borrow(self):
+        # The sheet loader ticks Borrow on a slot's card AND its "or"
+        # alternative: one borrowed slot, so it saves, touched or not.
+        deck = PvpDeck.objects.create(guide=self.guide, style="front", label="Standard")
+        PvpDeckSlot.objects.create(deck=deck, slot=6, support_card=self.card, is_borrow=True)
+        PvpDeckSlot.objects.create(deck=deck, slot=6, order=1, note="or any speed", is_borrow=True)
+        data = self.page_data()
+        self.assertEqual(self.client.post(self.change_url(), data).status_code, 302)
+        data["front-decks-0-slots-1-note"] = "or any stamina"
+        self.assertEqual(self.client.post(self.change_url(), data).status_code, 302)
+        # A second borrowed SLOT is still refused, against untouched rows too.
+        data["front-decks-0-slots-2-note"] = "borrowed too"
+        data["front-decks-0-slots-2-is_borrow"] = "on"
+        res = self.client.post(self.change_url(), data)
+        self.assertContains(res, "Only one slot in a deck can be the borrowed one")
+
+    def _fill(self, start, stop):
+        """One more row in every table for each number in the range, and a
+        card in that slot number of every deck."""
+        for number in range(start, stop):
+            uma = Uma.objects.create(name=f"Uma {number}")
+            PvpUmaRecommendation.objects.create(guide=self.guide, style="front", uma=uma,
+                                                order=number)
+            skill = make_skill(f"Skill {number}", 100200 + number)
+            PvpSkillRecommendation.objects.create(guide=self.guide, style="pace",
+                                                  category="speed", skill=skill, order=number)
+            PvpStatConfig.objects.create(guide=self.guide, style="everyone", speed=str(number),
+                                         order=number)
+            PvpTeamComp.objects.create(guide=self.guide, text=f"Comp {number}", order=number)
+            for deck in self.guide.decks.all():
+                PvpDeckSlot.objects.create(deck=deck, slot=number, support_card=self.card)
+
+    def test_the_page_and_an_unchanged_save_ask_nothing_per_row(self):
+        # A row costs no query: the page (its pickers, "Other versions") and a
+        # save that touched nothing (ChildRowForm) ask the database the same
+        # whether a table holds one row or six. Decks are the exception, one
+        # query each for their nested cards, so the deck count is held still.
+        for style in ("front", "late"):
+            PvpDeck.objects.create(guide=self.guide, style=style, label=f"{style} deck")
+        self._fill(1, 2)
+        # Warm the per-process caches (content types, the log entry's) first,
+        # or the first page and the first save pay a lookup the next do not.
+        self.assertEqual(self.client.post(self.change_url(), self.page_data()).status_code, 302)
+        with CaptureQueriesContext(connection) as page_one:
+            data = self.page_data()
+        with CaptureQueriesContext(connection) as save_one:
+            self.assertEqual(self.client.post(self.change_url(), data).status_code, 302)
+        self._fill(2, 7)
+        with CaptureQueriesContext(connection) as page_six:
+            data = self.page_data()
+        self.assertEqual(len(page_one), len(page_six))
+        with CaptureQueriesContext(connection) as save_six:
+            self.assertEqual(self.client.post(self.change_url(), data).status_code, 302)
+        self.assertEqual(len(save_one), len(save_six))
+        self.assertEqual(PvpDeckSlot.objects.count(), 12)
+
+    def test_a_changed_row_is_validated_and_an_untouched_one_is_left_alone(self):
+        maru = Uma.objects.create(name="Maruzensky")
+        oguri = Uma.objects.create(name="Oguri Cap")
+        PvpUmaRecommendation.objects.create(guide=self.guide, style="front", uma=maru, order=0)
+        PvpUmaRecommendation.objects.create(guide=self.guide, style="front", uma=oguri, order=1)
+        # A row written past the form's checks (here a mention of no skill)
+        # does not block a save that leaves it alone...
+        PvpTeamComp.objects.create(guide=self.guide, text="2 Front", note="[[Nope]]")
+        data = self.page_data()
+        self.assertEqual(self.client.post(self.change_url(), data).status_code, 302)
+        # ...a changed row is checked in full: the same uma twice for a style...
+        data["front-uma_recommendations-1-uma"] = str(maru.id)
+        res = self.client.post(self.change_url(), data)
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "already exists")
+        # ...and touching the bad note is what surfaces its mention.
+        data = self.page_data()
+        data["team_comps-0-note"] = "[[Nope]] still"
+        res = self.client.post(self.change_url(), data)
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "No skill on global has this name")
+
+    def test_a_filled_guide_posts_past_django_s_default_field_limit_and_still_saves(self):
+        # One Save posts every table of the guide. A filled guide runs past the
+        # 1000 fields Django allows by default (DATA_UPLOAD_MAX_NUMBER_FIELDS),
+        # and prod answered a bare 400 (TooManyFieldsSent) before the view ran
+        # on 2026-10-15. settings.py raises the limit; this round-trips a page
+        # shaped like a real guide so that it stays raised.
+        for index, style in enumerate(("runaway", "front", "pace", "late", "end")):
+            for number in range(3):
+                deck = PvpDeck.objects.create(guide=self.guide, style=style,
+                                              label=f"Deck {number}", order=number)
+                for slot in range(1, 7):
+                    PvpDeckSlot.objects.create(deck=deck, slot=slot, support_card=self.card)
+            for number in range(8):
+                skill = make_skill(f"{style} skill {number}", 100100 + index * 8 + number)
+                PvpSkillRecommendation.objects.create(guide=self.guide, style=style,
+                                                      category="acceleration", skill=skill)
+        data = self.page_data()
+        # The page must still be the shape that broke, or this proves nothing.
+        self.assertGreater(len(data), 1000)
+        res = self.client.post(self.change_url(), data)
+        self.assertEqual(res.status_code, 302, res.content.decode()[:3000])
 
     def test_an_editor_can_open_the_page(self):
         call_command("create_content_editor_group", stdout=StringIO())
@@ -785,7 +883,6 @@ class CopyGuideTests(CalculatorTestCase):
         deck = PvpDeck.objects.create(guide=self.source, style="front", label="Standard", order=3)
         PvpDeckSlot.objects.create(deck=deck, slot=1, support_card=self.card, note="2SP")
         PvpDeckSlot.objects.create(deck=deck, slot=6, note="borrow", is_borrow=True)
-        PvpHonorableMention.objects.create(guide=self.source, style="front", support_card=self.card)
         PvpStatConfig.objects.create(guide=self.source, style="everyone", speed="1200")
 
     def test_copies_every_section_and_keeps_what_the_target_had(self):
@@ -797,7 +894,6 @@ class CopyGuideTests(CalculatorTestCase):
         deck = self.target.decks.get()
         self.assertEqual(list(deck.slots.values_list("slot", "note")), [(1, "2SP"), (6, "borrow")])
         self.assertEqual(self.target.style_notes.get().body, "Go early.")
-        self.assertEqual(self.target.honorable_mentions.count(), 1)
         self.assertEqual(self.target.stat_configs.get().speed, "1200")
         self.target.refresh_from_db()
         self.assertEqual(self.target.short_description, "My own words")  # never overwritten

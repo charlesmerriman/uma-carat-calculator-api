@@ -1,10 +1,34 @@
 name: CI
 
-on: [push, pull_request]
+# Runs on a push to develop or master ONLY (owner's call, 2026-10-15), not on
+# pull requests: the suite runs locally while the work is done, and a PR no
+# longer waits on an eight-minute check. The cost is that a merge that breaks
+# something shows up HERE, on the develop push after it, not before: a red run
+# on develop is the next thing to fix. Branch protection on both branches must
+# not require this check (it can never report on a PR now).
+on:
+  push:
+    branches: [develop, master]
 
 jobs:
-  backend:
+  # The suite is split across four jobs that run side by side (the matrix),
+  # and each job splits its share across the runner's four cores
+  # (--parallel). Serially the 1,281 tests took 411 s on a runner; --parallel
+  # alone brought that to 188 s, the runner's cores being the ceiling; four
+  # shards bring the wall time to roughly a quarter of that again, each
+  # paying ~20 s of setup.
+  #
+  # A shard's share is every fourth test MODULE by name (round robin over the
+  # sorted list), so every module lands in exactly one shard with nothing to
+  # maintain when a module is added. Tests live only in
+  # calculatorapi/tests/test_*.py (CLAUDE.md); a test anywhere else would be
+  # run by no shard, which is the one way this goes quietly wrong.
+  tests:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
 
     steps:
       - uses: actions/checkout@v7
@@ -18,8 +42,29 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements-dev.txt
 
-      - name: Run tests
-        run: python manage.py test
+      # tblib (requirements-dev.txt) lets a failing --parallel process hand
+      # its traceback back whole.
+      - name: Run tests (shard ${{ matrix.shard }} of ${{ strategy.job-total }})
+        run: |
+          labels=$(ls calculatorapi/tests/test_*.py | sort \
+            | awk -v n=${{ strategy.job-total }} -v s=${{ matrix.shard }} 'NR % n == s' \
+            | sed 's#/#.#g; s#\.py$##' | tr '\n' ' ')
+          echo "modules in this shard: $labels"
+          python manage.py test $labels --parallel
+
+  # Its own job so it runs beside the tests rather than after them.
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version-file: .python-version
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
 
       - name: Lint
         run: pylint calculatorapi/ calculatorproject/

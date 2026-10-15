@@ -30,7 +30,6 @@ from calculatorapi.models import (
     PvpDeck,
     PvpDeckSlot,
     PvpGuide,
-    PvpHonorableMention,
     PvpSkillRecommendation,
     PvpStatConfig,
     PvpStyleNote,
@@ -189,14 +188,6 @@ class _DeckSerializer(serializers.ModelSerializer):
         fields = ("id", "style", "label", "note", "slots")
 
 
-class _HonorableMentionSerializer(serializers.ModelSerializer):
-    support_card = _SupportCardSerializer(read_only=True)
-
-    class Meta:
-        model = PvpHonorableMention
-        fields = ("style", "note", "support_card")
-
-
 class _TeamCompSerializer(serializers.ModelSerializer):
     class Meta:
         model = PvpTeamComp
@@ -261,10 +252,6 @@ def guide_queryset():
                 ),
             ),
         ),
-        Prefetch(
-            "honorable_mentions",
-            queryset=PvpHonorableMention.objects.select_related("support_card"),
-        ),
         "team_comps",
     )
 
@@ -302,8 +289,6 @@ def _guide_texts(guide):
         yield deck.note
         for slot in deck.slots.all():
             yield slot.note
-    for row in guide.honorable_mentions.all():
-        yield row.note
     for row in guide.team_comps.all():
         yield row.text
         yield row.note
@@ -374,10 +359,6 @@ def serialize_guide(guide, request=None):
         "decks": many(_DeckSerializer, sorted(guide.decks.all(), key=_ordered_key)),
         # {lower-case name: skill} for every [[name]] in the guide's text.
         "skill_mentions": mentions,
-        "honorable_mentions": many(
-            _HonorableMentionSerializer,
-            sorted(guide.honorable_mentions.all(), key=_ordered_key),
-        ),
     }
 
 

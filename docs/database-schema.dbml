@@ -565,19 +565,6 @@ Table calculatorapi_pvpdeckslot as PvpDeckSlot {
   Note: 'Check constraint slot_has_card_or_note: support_card_id set or note non-blank.'
 }
 
-Table calculatorapi_pvphonorablemention as PvpHonorableMention {
-  id bigint [pk, increment, not null]
-  guide_id bigint [not null, note: 'Django on_delete: CASCADE.']
-  style varchar(10) [not null]
-  support_card_id bigint [not null, note: 'Django on_delete: CASCADE.']
-  note varchar(200) [not null]
-  order smallint [not null]
-
-  indexes {
-    (guide_id, style, support_card_id) [unique, name: 'unique_pvp_mention_per_style']
-  }
-}
-
 Table calculatorapi_pvpteamcomp as PvpTeamComp {
   id bigint [pk, increment, not null]
   guide_id bigint [not null, note: 'Django on_delete: CASCADE.']
@@ -951,8 +938,6 @@ Ref: PvpStyleNote.guide_id > PvpGuide.id
 Ref: PvpDeck.guide_id > PvpGuide.id
 Ref: PvpDeckSlot.deck_id > PvpDeck.id
 Ref: PvpDeckSlot.support_card_id > SupportCard.id
-Ref: PvpHonorableMention.guide_id > PvpGuide.id
-Ref: PvpHonorableMention.support_card_id > SupportCard.id
 Ref: PvpTeamComp.guide_id > PvpGuide.id
 Ref: PvpTeam.user_id > CustomUser.id
 Ref: PvpTeam.champions_meeting_id > ChampionsMeeting.id
@@ -1022,7 +1007,6 @@ TableGroup PvP_guides {
   PvpStyleNote
   PvpDeck
   PvpDeckSlot
-  PvpHonorableMention
   PvpTeamComp
 }
 

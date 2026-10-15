@@ -7,6 +7,64 @@ content editor, see [content-editing.md](content-editing.md).
 
 ---
 
+## Signing in: password, authenticator code, lockout
+
+Since 2026-10-15 the admin login takes a **password and a code from an authenticator
+app**, and five wrong passwords pause sign-in for that username from that address for
+15 minutes. The code is `calculatorapi/admin_site.py` (the site class, the login form, the
+setup and backup-code pages) and the "Admin login" block in `settings.py`; the site is
+installed as `admin.site` through `calculatorproject/apps.py`, which is why
+`INSTALLED_APPS` carries `unfold.apps.BasicAppConfig` rather than plain `unfold`.
+
+**First login.** A staff account with no authenticator yet types its password and leaves
+the code blank. It is NOT signed in; it lands on `/admin/two-factor/setup/`, scans the QR
+code with any TOTP app (Google Authenticator, Microsoft Authenticator, Authy, 1Password,
+Bitwarden), types the first code, and is signed in. Ten **backup codes** are shown once,
+right then; each signs in once in place of the app. Keep them in a password manager.
+
+**Every login after that.** Username, password, and the six digits the app shows, or a
+backup code. Six digits is read as the app, anything else as a backup code; there is no
+device dropdown. **Two-factor settings** (sidebar, Security; also the header dropdown)
+shows the device, how many backup codes are left, and issues a new set, which cancels
+the old one.
+
+**Lost phone.** The owner opens the person's user page, deletes the "Authenticator app"
+row in the two-factor inline, and the person's next login is a first login again. Their
+backup codes keep working until the new set replaces them.
+
+**Lost phone AND backup codes, and you are the only owner.** Set `ADMIN_REQUIRE_OTP=False`
+on the API component in the DigitalOcean dashboard (the app restarts), sign in with the
+password, delete the lost authenticator on your user page, remove the variable again (the
+default is on), and enrol at the next login. The variable is the whole recovery path on
+purpose: it takes DigitalOcean access, a higher bar than the admin's own login.
+
+**Locally.** `ADMIN_REQUIRE_OTP=False` in `backend/.env` keeps the local admin
+password-only. Leave it unset to walk through the real flow.
+
+**How the gate works.** `CalculatorAdminSite.has_permission` is `AdminSite`'s (staff and
+active) and then `request.user.is_verified()`, which `django_otp.middleware.OTPMiddleware`
+answers from the device id stored in the session at login. Every admin page and every view
+wrapped in `admin.site.admin_view()` (analytics, the image library, the autocomplete) goes
+through it, so **a staff-only view mounted any other way skips the second factor**. A
+session that is signed in but not verified sees only the login page. Tests get past the
+gate through `tests/base.py`'s `VerifiedClient`, whose `force_login` also marks a staff
+session verified; the login form itself is tested with a plain `Client` in
+`tests/test_admin_security.py`.
+
+**The lockout** is django-axes (`AXES_*` in settings). The pair (username, forwarded
+client address) is refused for 15 minutes after 5 wrong passwords, a right password
+resets the count, and the PAIR is the unit so nobody can lock the owner out by hammering
+the username alone. The address is `visits.client_ip`, the first `X-Forwarded-For` entry,
+which a caller can set: a determined attacker rotating it is not stopped by the lockout.
+The second factor is the wall; the lockout quiets sprays and keeps a record. Under
+**Security** in the sidebar (owner only: the content editors group holds no axes
+permission): **Sign-in log**, every successful login with its sign-out time, and
+**Locked out**, the live counters, where deleting a row unlocks the pair early. axes's own
+log lines go to stdout too, so `doctl apps logs` shows them.
+
+**Early access is not staff.** A tester gets the early-access switch on their user page
+(see "Early access grants" below), never `is_staff`: staff-ness is admin login.
+
 ## django-unfold theming
 
 The admin is themed with **django-unfold**.
@@ -112,6 +170,12 @@ Two deliberate behaviours:
   group (with `PVP_GUIDE_POINTER` under it, where the never-shown stat recommendation
   boxes used to be) — because the two models hold the same data and render through the
   same timeline card. Keep them in step when editing either.
+- **A column never costs a query per row.** The ones that would are batched:
+  `SkillAdmin.versions` (siblings of the page's rows in one lookup, attached in
+  `get_changelist_instance`), `AnniversaryEventAdmin.confirmed_start_date` (a `Min`
+  annotation), `GalleryReportAdmin.open_on_item` (two filtered `Count`s), and every FK a
+  column shows is in `list_select_related`. `AdminQueryCountTests` in `tests/test_admin.py`
+  holds the line; add a case there for a new column that reads past the row.
 - `PatreonSupporterAdmin` has **"Show name publicly" as a `list_editable` column**, so the
   whole list can be consent-reviewed in one pass. It is the only thing that puts a name on
   the website, and the CSV importer never sets it.
@@ -280,6 +344,18 @@ posts, comments, votes and reports come from people through the API.
 - Who moderates: staff, and anyone given the gallery models' permissions.
   `create_content_editor_group` does not grant them: moderation is not content editing.
 
+## Early access grants
+
+**Users** also carry an "Early access" fieldset, directly under Permissions: one switch,
+`early_access`. Ticked, the account gets every feature the site still holds in early
+access, exactly as a live pledge or staff would (`benefits.early_access_for`), and
+nothing else a supporter gets. Use it for testers and friends; **never tick `is_staff`
+for that**, which opens this admin's login and skips every supporter limit. The
+changelist filters on it and has "Grant early access" / "Revoke early access" bulk
+actions; both write a row on each account's History page, so who granted what and when
+is always on record. The person cannot set it themselves (`PATCH /account` ignores it),
+and `purge_user_pii` leaves it in place.
+
 ## Analytics dashboard
 
 `/admin/analytics/` (staff-only, linked from the admin index) shows aggregate usage
@@ -300,10 +376,16 @@ Full metric definitions: [analytics.md](analytics.md).
 edited on one page with a tab strip: **Guide** (event, published, scenario, the overview
 text, the stats table, team comps, the general skills) and **Runaway, Front, Pace, Late,
 End**, each holding what the site's tab of that name shows, in the site's order: umas,
-the advice paragraph, skills, the example decks with their six cards, honorable mentions.
+the advice paragraph, skills, the example decks with their six cards.
 One form, one Save. "PvP guides" is the only sidebar entry; `PvpDeck` and every other
 child are inline-only (`test_join_models_not_registered_top_level`).
 
+- **One Save posts over 1000 fields.** Every saved row sends its visible fields plus the
+  hidden id, parent and style, every formset adds four management fields and a blank
+  extra row, and a filled guide with its decks runs to 1500 or more. Django's default
+  `DATA_UPLOAD_MAX_NUMBER_FIELDS` of 1000 answered a bare 400 (`TooManyFieldsSent`) before
+  the view ran, which is what "the admin gives a 400 on Save" means. `settings.py` raises
+  it to 10,000; `test_pvp_guides` posts past the old limit to keep it raised.
 - **One inline class per child table per style**, made by `for_style(base, style)`: the
   queryset is filtered to the style, the form is a `FixedStyleForm` (the `style` field
   hidden, its initial AND `self.initial` set to the tab's style, `clean_style()` returning
@@ -348,6 +430,44 @@ child are inline-only (`test_join_models_not_registered_top_level`).
   Django's `autocomplete.js` runs at DOM ready**, so the widget's `media` property builds
   ONE list (`[*parent._js, "admin/pvp-pickers.js"]`): Django's Media merge only orders
   files that share a list, and `parent.media + Media(js=...)` had put it before select2.
+- **No query per row.** Django's picker fetches the chosen option by pk on every render,
+  and a filled guide renders a few hundred. `PicturePickersMixin` loads each inline's rows
+  with their picks (`select_related` on its `autocomplete_fields`, plus the parent, which a
+  row's `__str__` names) and `KnownRowForm` hands each picker the pick, so a saved row
+  renders without a lookup; the same object answers the form field on a save when the
+  posted value is the one the row holds (`KnownChoiceField`). The mixin is generic: the six
+  autocomplete inlines in `admin.py` (umas on a banner, a card's skills, a campaign's
+  parts, a legend-race batch) use it too, which also gives their pickers pictures. "Other
+  versions" is one `skill_families` lookup per table, the pre-numbered blank slot rows
+  read the decks' prefetched `slots`, and the line under the tabs is set in
+  `render_change_form` rather than a second `get_object`. The page costs about 60
+  queries whatever it holds, plus one per deck for the nested cards
+  (`test_the_page_and_an_unchanged_save_ask_nothing_per_row`). What remains server side
+  is unfold's markup, about 2.5 ms a row to render, and a 3.5 MB page for the browser: a
+  page with fewer rows is the only thing that cuts that.
+- **Pickers on a hidden tab wait for their tab.** Django's `autocomplete.js` initialises
+  every picker at DOM ready through `$.fn.djangoAdminSelect2`, a few ms each: a full
+  guide's 159 held the page for about half a second after it had drawn (headless Chrome
+  on a fast machine; a laptop pays more). `static/admin/pvp-pickers.js` wraps that
+  helper (it loads after `autocomplete.js`, so the helper exists, and before DOM ready,
+  so the wrap is in place when it is called): a picker on a tab that is not open is held
+  back, and the hash naming its tab (the tab links are `#<tab>` anchors) initialises it
+  on the next animation frame, once Alpine has shown the tab, about 0.4 s for a tab of
+  30. Pickers outside the tab wrappers, and on pages without the tab strip, initialise
+  as before. No Django test covers it (it is browser work); a headless Chrome run over
+  CDP is how it was measured, see the memory note `admin-performance-2026-10`.
+- **A save validates what changed.** Django saves only the rows that changed but validates
+  every row, five or six queries each (the id and the pick fetched again, the foreign key,
+  the unique constraint, the check constraints); a full guide cost about 1,200 queries to
+  save. `ChildRowForm`, the base of every child row form, sets Django's `empty_permitted` on
+  a bound saved row, so `full_clean()` returns before any check when `has_changed()` is
+  false. A changed row and a new row are validated in full. One consequence: a row that is
+  already invalid in the database (a mention of a skill since renamed, say) no longer
+  blocks the save until someone touches it.
+- **One borrowed slot, not one ticked row.** `DeckSlotFormSet.clean()` counts distinct slot
+  numbers: the card in slot 6 and its "or" alternative are the same borrow, and the sheet
+  loader ticks both (41 of the loaded decks were refusing every save under the old per-row
+  rule). Untouched rows are read off their saved instance, since they have no `cleaned_data`.
 - **Skill versions**: the autocomplete JSON and the `skill-names/` suggestions carry
   `version` (`Skill.version_label`: `○ white`, `◎ gold`, `evolved`) and the picker draws it
   as a tag, so an editor picks the version the guide means; the skills tables have a

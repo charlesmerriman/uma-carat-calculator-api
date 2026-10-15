@@ -87,6 +87,24 @@ class OshiLadderTests(OshiTestCase):
         self._pledge(self.junior, is_active=False)
         self.assertFalse(benefits.early_access(self.user))
 
+    def test_an_admin_grant_is_the_third_way_into_early_access(self):
+        self.user.early_access = True
+        self.user.save(update_fields=["early_access"])
+        self.assertTrue(benefits.early_access(self.user))
+        # And ONLY early access: the grant is not a pledge, so none of the
+        # supporter ladders move.
+        self.assertEqual(benefits.oshi_slots(self.user), benefits.FREE_OSHI_SLOTS)
+        self.assertFalse(benefits.oshi_variants(self.user))
+        self.assertEqual(benefits.benefit_keys(self.user), [])
+        self.assertIsNone(benefits.entitled_supporter(self.user))
+
+    def test_revoking_the_grant_ends_early_access(self):
+        self.user.early_access = True
+        self.user.save(update_fields=["early_access"])
+        self.user.early_access = False
+        self.user.save(update_fields=["early_access"])
+        self.assertFalse(benefits.early_access(self.user))
+
     def test_a_lapse_takes_costume_variants_away(self):
         self._pledge(self.junior, is_active=False)
         self.assertFalse(benefits.oshi_variants(self.user))
@@ -157,6 +175,17 @@ class OshiPictureTests(OshiTestCase):
         self.assertTrue(self._get()["early_access"])
         client, _ = auth_client(make_user("staffer", is_staff=True))
         self.assertTrue(client.get("/account").json()["early_access"])
+
+    def test_a_granted_account_is_early_but_not_a_supporter(self):
+        tester = make_user("tester")
+        tester.early_access = True
+        tester.save(update_fields=["early_access"])
+        client, _ = auth_client(tester)
+        body = client.get("/account").json()
+        self.assertTrue(body["early_access"])
+        self.assertFalse(body["supporter"]["is_supporter"])
+        self.assertEqual(body["oshi_slots"], benefits.FREE_OSHI_SLOTS)
+        self.assertFalse(body["oshi_variants"])
 
     def test_a_free_account_s_pick_is_its_picture(self):
         self._patch({"oshis": self._ids(3)})
