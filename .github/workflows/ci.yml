@@ -1,9 +1,17 @@
 name: CI
 
-on: [push, pull_request]
+# Runs on a push to develop or master ONLY (owner's call, 2026-10-15), not on
+# pull requests: the suite runs locally while the work is done, and a PR no
+# longer waits on an eight-minute check. The cost is that a merge that breaks
+# something shows up HERE, on the develop push after it, not before: a red run
+# on develop is the next thing to fix. Branch protection on both branches must
+# not require this check (it can never report on a PR now).
+on:
+  push:
+    branches: [develop, master]
 
 jobs:
-  backend:
+  tests:
     runs-on: ubuntu-latest
 
     steps:
@@ -18,8 +26,26 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements-dev.txt
 
+      # --parallel splits the suite across the runner's cores, one SQLite
+      # database per process: 1,281 tests took 7 minutes serially here and 36
+      # seconds on four local cores. tblib (requirements-dev.txt) lets a
+      # failing process hand its traceback back whole.
       - name: Run tests
-        run: python manage.py test
+        run: python manage.py test --parallel
+
+  # Its own job so it runs beside the tests rather than after them.
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version-file: .python-version
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
 
       - name: Lint
         run: pylint calculatorapi/ calculatorproject/
