@@ -11,8 +11,24 @@ on:
     branches: [develop, master]
 
 jobs:
+  # The suite is split across four jobs that run side by side (the matrix),
+  # and each job splits its share across the runner's four cores
+  # (--parallel). Serially the 1,281 tests took 411 s on a runner; --parallel
+  # alone brought that to 188 s, the runner's cores being the ceiling; four
+  # shards bring the wall time to roughly a quarter of that again, each
+  # paying ~20 s of setup.
+  #
+  # A shard's share is every fourth test MODULE by name (round robin over the
+  # sorted list), so every module lands in exactly one shard with nothing to
+  # maintain when a module is added. Tests live only in
+  # calculatorapi/tests/test_*.py (CLAUDE.md); a test anywhere else would be
+  # run by no shard, which is the one way this goes quietly wrong.
   tests:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
 
     steps:
       - uses: actions/checkout@v7
@@ -26,12 +42,15 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements-dev.txt
 
-      # --parallel splits the suite across the runner's cores, one SQLite
-      # database per process: 1,281 tests took 7 minutes serially here and 36
-      # seconds on four local cores. tblib (requirements-dev.txt) lets a
-      # failing process hand its traceback back whole.
-      - name: Run tests
-        run: python manage.py test --parallel
+      # tblib (requirements-dev.txt) lets a failing --parallel process hand
+      # its traceback back whole.
+      - name: Run tests (shard ${{ matrix.shard }} of ${{ strategy.job-total }})
+        run: |
+          labels=$(ls calculatorapi/tests/test_*.py | sort \
+            | awk -v n=${{ strategy.job-total }} -v s=${{ matrix.shard }} 'NR % n == s' \
+            | sed 's#/#.#g; s#\.py$##' | tr '\n' ' ')
+          echo "modules in this shard: $labels"
+          python manage.py test $labels --parallel
 
   # Its own job so it runs beside the tests rather than after them.
   lint:
