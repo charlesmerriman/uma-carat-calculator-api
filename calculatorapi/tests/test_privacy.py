@@ -5,7 +5,6 @@ from io import StringIO
 
 from django.core.management import call_command
 from rest_framework.authtoken.models import Token
-from rest_framework.test import APIClient
 
 from calculatorapi.models import (
     CustomUser,
@@ -50,12 +49,6 @@ class PurgeUserPiiTests(CalculatorTestCase):
         self.assertFalse(self.user.has_usable_password())
         self.assertFalse(self.user.check_password('oldpassword'))
 
-    def test_purged_user_cannot_login(self):
-        self._run()
-        res = APIClient().post(
-            '/login', {'username': 'olduser', 'password': 'oldpassword'}, format='json')
-        self.assertEqual(res.status_code, 400)
-
     def test_purge_deletes_non_staff_tokens(self):
         _client, token = auth_client(self.user)
         self._run()
@@ -67,10 +60,8 @@ class PurgeUserPiiTests(CalculatorTestCase):
         self.staff.refresh_from_db()
         self.assertEqual(self.staff.email, 'adminuser@test.com')
         self.assertTrue(self.staff.has_usable_password())
+        self.assertTrue(self.staff.check_password('adminpass'))
         self.assertTrue(Token.objects.filter(key=staff_token.key).exists())
-        res = APIClient().post(
-            '/login', {'username': 'adminuser', 'password': 'adminpass'}, format='json')
-        self.assertEqual(res.status_code, 200)
 
     def test_purge_preserves_saved_plans(self):
         """Plans stay in the database — the accounts just become unreachable."""

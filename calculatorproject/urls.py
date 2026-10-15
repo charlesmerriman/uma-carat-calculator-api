@@ -19,7 +19,7 @@ from calculatorapi.views import (
 from calculatorapi.admin_pvp import PictureAutocompleteJsonView
 from calculatorapi.views.admin_images import admin_image_library
 from calculatorapi.views.analytics import analytics_dashboard
-from calculatorapi.views.user import user_login, user_logout
+from calculatorapi.views.user import user_logout
 from calculatorapi.views.account import account_detail
 from calculatorapi.views.plan_routes import plan_detail, plan_list
 from calculatorapi.views.plan_public import public_plan_copy, public_plan_summary
@@ -73,9 +73,11 @@ router.register(r"umas", UmaViewSet, basename="uma")
 
 urlpatterns = [
     path("", include(router.urls)),
-    # Password login is staff-only now; ordinary accounts use /auth/* below.
-    # There is intentionally no "register" route — see views/user.py.
-    path("login", user_login, name="login"),
+    # Logout for every kind of account: deletes the bearer token. There is no
+    # password login here (the staff one went on 2026-10-15: it handed out a
+    # token for a password alone, around the admin's second factor) and
+    # intentionally no "register" route. Ordinary accounts use /auth/* below;
+    # staff sign in at /admin. -> views/user.py
     path("logout", user_logout, name="logout"),
     # GET: who the caller is, and what they are entitled to. Authenticated-only
     # and never cached — it is the SPA's source of truth for "am I signed in?",

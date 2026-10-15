@@ -21,12 +21,15 @@ class ChangelogEntrySerializer(serializers.ModelSerializer):
 
 
 class ChangelogEntryViewSet(ViewSet):
-    def get_permissions(self):
-        # create/update/destroy are admin-only; list/retrieve serve the public
-        # changelog and are open to guests.
-        if self.action in ("create", "update", "destroy"):
-            return [permissions.IsAdminUser()]
-        return [permissions.AllowAny()]
+    """The public changelog, read-only by construction.
+
+    Entries are authored in calculatorapi/data/changelog.yaml and synced on
+    deploy, or typed in the admin. The API's own create/update/destroy went
+    on 2026-10-15 together with the staff token login that was their only
+    key: a bearer token could edit the changelog around the admin's second
+    factor and its history. No write ACTIONS, not merely gated ones.
+    """
+    permission_classes = [permissions.AllowAny]
 
     def list(self, request):
         entries = ChangelogEntry.objects.all().order_by("-date", "-id")
@@ -40,29 +43,3 @@ class ChangelogEntryViewSet(ViewSet):
             return Response(status=status.HTTP_404_NOT_FOUND)
         serializer = ChangelogEntrySerializer(entry)
         return Response(serializer.data)
-
-    def create(self, request):
-        serializer = ChangelogEntrySerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def update(self, request, pk=None):
-        try:
-            entry = ChangelogEntry.objects.get(pk=pk)
-        except ChangelogEntry.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-        serializer = ChangelogEntrySerializer(entry, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def destroy(self, request, pk=None):
-        try:
-            entry = ChangelogEntry.objects.get(pk=pk)
-        except ChangelogEntry.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-        entry.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
