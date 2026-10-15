@@ -286,6 +286,18 @@ posts, comments, votes and reports come from people through the API.
 - Who moderates: staff, and anyone given the gallery models' permissions.
   `create_content_editor_group` does not grant them: moderation is not content editing.
 
+## Early access grants
+
+**Users** also carry an "Early access" fieldset, directly under Permissions: one switch,
+`early_access`. Ticked, the account gets every feature the site still holds in early
+access, exactly as a live pledge or staff would (`benefits.early_access_for`), and
+nothing else a supporter gets. Use it for testers and friends; **never tick `is_staff`
+for that**, which opens this admin's login and skips every supporter limit. The
+changelist filters on it and has "Grant early access" / "Revoke early access" bulk
+actions; both write a row on each account's History page, so who granted what and when
+is always on record. The person cannot set it themselves (`PATCH /account` ignores it),
+and `purge_user_pii` leaves it in place.
+
 ## Analytics dashboard
 
 `/admin/analytics/` (staff-only, linked from the admin index) shows aggregate usage

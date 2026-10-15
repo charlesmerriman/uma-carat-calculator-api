@@ -413,9 +413,12 @@ def _account_summary(user):
         # count (supporter or staff), so the picker locks the right tiles
         # without a second copy of the rule.
         "oshi_variants": benefits.oshi_variants_for(supporter, is_staff=user.is_staff),
-        # Whether features still in early access open for them (supporter or
-        # staff); the client knows which features those are.
-        "early_access": benefits.early_access_for(supporter, is_staff=user.is_staff),
+        # Whether features still in early access open for them (supporter,
+        # staff, or granted in the admin); the client knows which features
+        # those are.
+        "early_access": benefits.early_access_for(
+            supporter, is_staff=user.is_staff, granted=user.early_access
+        ),
         "linked_providers": LinkedProviderSerializer(linked, many=True).data,
         "supporter": _supporter_block(supporter),
     }

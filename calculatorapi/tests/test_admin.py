@@ -5,6 +5,7 @@ import tempfile
 from io import StringIO
 from unittest.mock import patch
 
+from django.contrib.admin.models import LogEntry
 from django.contrib.auth.models import Group
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
@@ -256,6 +257,68 @@ class SocialAccountAdminTests(CalculatorTestCase):
         self.assertEqual(res.status_code, 200)
         self.assertNotContains(res, 'name="email"')
         self.assertNotContains(res, 'name="first_name"')
+
+
+@override_settings(STORAGES=PLAIN_TEST_STORAGES)
+class EarlyAccessAdminTests(CalculatorTestCase):
+    """The owner's early-access grant: on the user form, and as two bulk
+    actions that leave a history row each, so a tester never needs is_staff."""
+
+    def setUp(self):
+        self.superuser = CustomUser.objects.create_superuser(username='root', password='x')
+        self.client.force_login(self.superuser)
+        self.testers = [make_user('user_tester1'), make_user('user_tester2')]
+        self.changelist = reverse('admin:calculatorapi_customuser_changelist')
+
+    def _run(self, action, users):
+        return self.client.post(
+            self.changelist,
+            {'action': action, '_selected_action': [u.pk for u in users]},
+            follow=True,
+        )
+
+    def test_change_form_offers_the_switch(self):
+        res = self.client.get(
+            reverse('admin:calculatorapi_customuser_change', args=[self.testers[0].pk]))
+        self.assertContains(res, 'name="early_access"')
+
+    def test_changelist_filters_by_it(self):
+        self.testers[0].early_access = True
+        self.testers[0].save(update_fields=['early_access'])
+        res = self.client.get(self.changelist, {'early_access__exact': '1'})
+        self.assertContains(res, 'user_tester1')
+        self.assertNotContains(res, 'user_tester2')
+
+    def test_grant_action_sets_the_switch_and_writes_history(self):
+        res = self._run('grant_early_access', self.testers)
+        self.assertEqual(res.status_code, 200)
+        for tester in self.testers:
+            tester.refresh_from_db()
+            self.assertTrue(tester.early_access)
+        # One history row per account, naming the change, so the History
+        # page answers "who granted this and when".
+        rows = LogEntry.objects.filter(object_id__in=[str(t.pk) for t in self.testers])
+        self.assertEqual(rows.count(), 2)
+        self.assertTrue(all('Granted early access' in r.get_change_message() for r in rows))
+        self.assertContains(res, 'Granted early access for 2 account(s).')
+
+    def test_grant_skips_accounts_that_already_have_it(self):
+        self.testers[0].early_access = True
+        self.testers[0].save(update_fields=['early_access'])
+        res = self._run('grant_early_access', self.testers)
+        self.assertContains(res, 'Granted early access for 1 account(s).')
+        self.assertEqual(LogEntry.objects.count(), 1)
+
+    def test_revoke_action_clears_it(self):
+        for tester in self.testers:
+            tester.early_access = True
+            tester.save(update_fields=['early_access'])
+        res = self._run('revoke_early_access', self.testers[:1])
+        self.assertContains(res, 'Revoked early access for 1 account(s).')
+        self.testers[0].refresh_from_db()
+        self.testers[1].refresh_from_db()
+        self.assertFalse(self.testers[0].early_access)
+        self.assertTrue(self.testers[1].early_access)
 
 
 class ImageLibraryTests(CalculatorTestCase):

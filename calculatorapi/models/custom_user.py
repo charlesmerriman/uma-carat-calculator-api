@@ -50,6 +50,26 @@ class CustomUser(GameStats, AbstractUser):
             "gallery, and hides what it already posted until unblocked."
         ),
     )
+    # Admin only, never settable through PATCH /account (the serializer's
+    # field list is the whitelist). The owner's grant: it opens the features
+    # that are still in early access to this account the way a live pledge or
+    # staff does, through the ONE function every route reads,
+    # benefits.early_access_for, so the three ways in can never disagree.
+    #
+    # It replaces the old habit of ticking is_staff for a tester or a friend.
+    # Staff-ness is far more than "let them try the PvP page": it opens the
+    # admin login, bypasses every supporter ladder and drops the account from
+    # analytics. This opens early access and NOTHING else a supporter gets: no
+    # extra favourite slots, no badge, no gallery look, no vote weight (owner,
+    # 2026-10-15). A plain switch with no end date: the admin history records
+    # who granted it and when, and revoking it is unticking it.
+    early_access = models.BooleanField(
+        default=False,
+        help_text=(
+            "Opens features still in early access to this account, as a live "
+            "pledge or staff would. Nothing else a supporter gets."
+        ),
+    )
     # The 25 stat fields (ranks, income toggles, balances) come from GameStats.
     # They are THIS ACCOUNT'S numbers. A plan can read an IncomeProfile's set
     # instead (models/income_profile.py); plans.stats_target() decides which.
