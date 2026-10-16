@@ -930,6 +930,21 @@
   "condition_2": ""
  },
  {
+  "id": 100471,
+  "name": "Raise My Soul's Blade!",
+  "description": "Increase velocity when positioned toward the front late-race with 400m remaining. Increase velocity greatly instead if it's a G1 or similarly major race and the skill user is favored.",
+  "rarity": 5,
+  "group_id": 10047,
+  "group_rate": 1,
+  "icon_id": 20013,
+  "skill_category": 5,
+  "cost": null,
+  "precondition_1": "",
+  "condition_1": "phase>=2&remain_distance<=401&remain_distance>=399&order_rate<=40&grade==100&popularity<=3",
+  "precondition_2": "",
+  "condition_2": "phase>=2&remain_distance<=401&remain_distance>=399&order_rate<=40"
+ },
+ {
   "id": 100481,
   "name": "Pop & Polish",
   "description": "Get pumped and increase velocity when pressured or trying to pass another runner toward the front on the final straight.",
@@ -1380,6 +1395,36 @@
   "condition_2": ""
  },
  {
+  "id": 110081,
+  "name": "Into High Gear!",
+  "description": "If positioned midpack on a downhill mid-race or later, increase velocity for a moderate duration after the downhill. If it's at Tokyo Racecourse, also kick into high gear.",
+  "rarity": 5,
+  "group_id": 11008,
+  "group_rate": 1,
+  "icon_id": 20013,
+  "skill_category": 5,
+  "cost": null,
+  "precondition_1": "phase>=1&slope==2&order_rate>=50&order_rate<=80&track_id==10006",
+  "condition_1": "slope==0@slope==1",
+  "precondition_2": "phase>=1&slope==2&order_rate>=50&order_rate<=80",
+  "condition_2": "slope==0@slope==1"
+ },
+ {
+  "id": 110091,
+  "name": "Queen's Lumination",
+  "description": "Moderately increase velocity continuously when toward the front on a straight in the second half of the race. Effect increases if leading and close to the runner behind.",
+  "rarity": 5,
+  "group_id": 11009,
+  "group_rate": 1,
+  "icon_id": 20013,
+  "skill_category": 5,
+  "cost": null,
+  "precondition_1": "",
+  "condition_1": "distance_rate>=50&corner==0&order==1&bashin_diff_behind<=1",
+  "precondition_2": "",
+  "condition_2": "distance_rate>=50&corner==0&order<=2"
+ },
+ {
   "id": 110101,
   "name": "Joyful Voyage!",
   "description": "If positioned toward the front with 200m remaining, increase velocity. Then, if also positioned near the leading Umamusume, gather strength to move slightly forward.",
@@ -1453,6 +1498,21 @@
   "condition_1": "remain_distance<=401&remain_distance>=399&order_rate<=40&activate_count_all>=7",
   "precondition_2": "",
   "condition_2": "remain_distance<=401&remain_distance>=399&order_rate<=40&activate_count_all<=6"
+ },
+ {
+  "id": 110161,
+  "name": "Free from the Ashes",
+  "description": "Increase velocity when in the front part of the pack on the latter half of the final corner late-race. If the race is long and the user engaged in a challenge mid-race, massively increase instead.",
+  "rarity": 5,
+  "group_id": 11016,
+  "group_rate": 1,
+  "icon_id": 20013,
+  "skill_category": 5,
+  "cost": null,
+  "precondition_1": "phase==1&blocked_side_continuetime>=2",
+  "condition_1": "distance_type==4&phase>=2&is_finalcorner_laterhalf==1&order_rate<=40",
+  "precondition_2": "",
+  "condition_2": "phase>=2&is_finalcorner_laterhalf==1&order_rate<=40"
  },
  {
   "id": 110171,
@@ -9870,6 +9930,21 @@
   "condition_2": ""
  },
  {
+  "id": 900471,
+  "name": "Raise My Soul's Blade!",
+  "description": "Slightly increase velocity when positioned toward the front late-race with 400m remaining. If it's a G1 or similarly major race and the skill user is favored, increase velocity moderately instead.",
+  "rarity": 1,
+  "group_id": 90047,
+  "group_rate": 2,
+  "icon_id": 20011,
+  "skill_category": 5,
+  "cost": 200,
+  "precondition_1": "",
+  "condition_1": "phase>=2&remain_distance<=401&remain_distance>=399&order_rate<=40&grade==100&popularity<=3",
+  "precondition_2": "",
+  "condition_2": "phase>=2&remain_distance<=401&remain_distance>=399&order_rate<=40"
+ },
+ {
   "id": 900481,
   "name": "Pop & Polish",
   "description": "Slightly increase velocity when pressured or trying to pass another runner toward the front on the final straight.",
@@ -10305,6 +10380,36 @@
   "condition_2": ""
  },
  {
+  "id": 910081,
+  "name": "Into High Gear!",
+  "description": "If positioned midpack on a downhill mid-race or later, slightly increase velocity for a moderate duration after the downhill. If it's at Tokyo Racecourse, also kick into high gear.",
+  "rarity": 1,
+  "group_id": 91008,
+  "group_rate": 2,
+  "icon_id": 20011,
+  "skill_category": 5,
+  "cost": 200,
+  "precondition_1": "phase>=1&slope==2&order_rate>=50&order_rate<=80&track_id==10006",
+  "condition_1": "slope==0@slope==1",
+  "precondition_2": "phase>=1&slope==2&order_rate>=50&order_rate<=80",
+  "condition_2": "slope==0@slope==1"
+ },
+ {
+  "id": 910091,
+  "name": "Queen's Lumination",
+  "description": "Very slightly increase velocity continuously when toward the front on a straight in the second half of the race. Effect increases if leading and close to the runner behind.",
+  "rarity": 1,
+  "group_id": 91009,
+  "group_rate": 2,
+  "icon_id": 20011,
+  "skill_category": 5,
+  "cost": 200,
+  "precondition_1": "",
+  "condition_1": "distance_rate>=50&corner==0&order==1&bashin_diff_behind<=1",
+  "precondition_2": "",
+  "condition_2": "distance_rate>=50&corner==0&order<=2"
+ },
+ {
   "id": 910101,
   "name": "Joyful Voyage!",
   "description": "If positioned toward the front with 200m remaining, slightly increase velocity. Then, if also positioned near the leading Umamusume, move minimally forward.",
@@ -10378,6 +10483,21 @@
   "condition_1": "remain_distance<=401&remain_distance>=399&order_rate<=40&activate_count_all>=7",
   "precondition_2": "",
   "condition_2": "remain_distance<=401&remain_distance>=399&order_rate<=40&activate_count_all<=6"
+ },
+ {
+  "id": 910161,
+  "name": "Free from the Ashes",
+  "description": "Slightly increase velocity when positioned in the front part of the pack on the latter half of the final corner late-race.",
+  "rarity": 1,
+  "group_id": 91016,
+  "group_rate": 2,
+  "icon_id": 20011,
+  "skill_category": 5,
+  "cost": 200,
+  "precondition_1": "",
+  "condition_1": "phase>=2&is_finalcorner_laterhalf==1&order_rate<=40",
+  "precondition_2": "",
+  "condition_2": ""
  },
  {
   "id": 910171,
