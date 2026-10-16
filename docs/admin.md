@@ -484,7 +484,12 @@ child are inline-only (`test_join_models_not_registered_top_level`).
   fields; the dialog posts with htmx, so the action answers 200 with `HX-Redirect` rather
   than a 302 the dialog would follow inside itself) and "Load from the sheet" (a page,
   `pvp_sheet.load_guide_from_sheet`, preview first; see "Safety & data" in CLAUDE.md for
-  why an editor's one-event import is an admin edit and not a seed path). Bulk
+  why an editor's one-event import is an admin edit and not a seed path), and "Fill track
+  green skills" (a page, `pvp_track_skills.suggest` then `.fill`: evaluates each skill's
+  raw game `condition` against the event's track fields and adds the ◎ of every matching
+  ○/◎ family to Everyone / Green; additive, skips a family the guide names in any version,
+  reports event fields it can't read instead of guessing; racecourse ids come from the
+  racecourse skills' own names, so there is no id table). Bulk
   publish / unpublish actions call `public_payload_cache.invalidate()` because
   `queryset.update()` raises no signals and the Timeline's `has_guide` is cached.
 - **The list** orders by the event's global start (`get_ordering`, an annotation, so not

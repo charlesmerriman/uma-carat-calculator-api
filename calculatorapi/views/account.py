@@ -409,6 +409,11 @@ def _account_summary(user):
         # supporter block because a free account has a count too.
         "oshis": oshis,
         "oshi_slots": slots,
+        # The umas the rainbow frame goes on: every outfit of each COVERED
+        # pick (Uma.outfit_ids). Resolved here because only the server knows
+        # which outfits share a character; the pages just test membership.
+        # `oshis` keeps the exact picks, for the picker and the account page.
+        "oshi_uma_ids": Uma.outfit_ids(row["id"] for row in oshis[:slots]),
         # Whether a costume variant may be ADDED. Resolved here like the slot
         # count (supporter or staff), so the picker locks the right tiles
         # without a second copy of the rule.

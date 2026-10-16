@@ -1,7 +1,8 @@
 """Pull plans: the /plans routes, plan-scoped saving, copying, and the 0067 backfill."""
 
-# A setUp that builds a scenario keeps one attribute per object under test.
-# pylint: disable=too-many-instance-attributes
+# A setUp that builds a scenario keeps one attribute per object under test,
+# and plans touch enough of the app that one module covering them runs long.
+# pylint: disable=too-many-instance-attributes,too-many-lines
 
 from importlib import import_module
 
@@ -149,6 +150,30 @@ class CopyPlanTests(CalculatorTestCase):
         taken = plans.copy_plan(self.source, owner=taker, name="Taken")
         self.assertEqual(taken.banners.count(), 2)
         self.assertFalse(taken.banners.exclude(note="").exists())
+
+    def test_row_options_copy_everywhere_but_pull_history_stays_home(self):
+        """The options are choices and cross accounts; pulls_already_made is
+        the author's own game history and follows the notes' rule."""
+        self.source.banners.filter(banner_uma=self.uma_banner).update(
+            tickets_to_use=3, paid_carat_use="discount",
+            excluded_from_projection=True, pulls_already_made=120)
+
+        duplicate = plans.copy_plan(self.source, owner=self.user, name="Copy")
+        row = duplicate.banners.get(banner_uma=self.uma_banner)
+        self.assertEqual(
+            (row.tickets_to_use, row.paid_carat_use, row.excluded_from_projection,
+             row.pulls_already_made),
+            (3, "discount", True, 120),
+        )
+
+        taker = make_user(username="options-taker")
+        row = plans.copy_plan(self.source, owner=taker, name="Taken").banners.get(
+            banner_uma=self.uma_banner)
+        self.assertEqual(
+            (row.tickets_to_use, row.paid_carat_use, row.excluded_from_projection),
+            (3, "discount", True),
+        )
+        self.assertEqual(row.pulls_already_made, 0)
 
     def test_odds_cards_copy_everywhere(self):
         """Card ids are catalogue facts, so unlike notes they cross accounts."""
@@ -580,6 +605,19 @@ class IncomeProfileTests(CalculatorTestCase):
         # Idempotent: a second attach keeps the same profile.
         plans.attach_income_profile(self.plan)
         self.assertEqual(IncomeProfile.objects.count(), 1)
+
+    def test_attach_copies_skipped_race_events_and_they_diverge_after(self):
+        self.user.skipped_race_events = {"champions_meeting": [4]}
+        self.user.save()
+        plans.attach_income_profile(self.plan)
+        profile = self.plan.income_profile
+        self.assertEqual(profile.skipped_race_events, {"champions_meeting": [4]})
+
+        # The alt account changes its own skips; the account's are untouched.
+        profile.skipped_race_events = {"league_of_heroes": [2]}
+        profile.save()
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.skipped_race_events, {"champions_meeting": [4]})
 
     def test_attach_from_a_plan_that_shares_a_profile_seeds_from_that_profile(self):
         """Duplicate keeps the pointer; turning it "on" for the copy (a no-op)

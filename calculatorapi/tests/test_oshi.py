@@ -210,6 +210,31 @@ class OshiPictureTests(OshiTestCase):
             ],
         )
 
+    def test_the_rainbow_goes_on_every_outfit_of_a_pick(self):
+        """oshi_uma_ids: the pick plus every outfit sharing its character
+        (game_id // 100), and no other character's."""
+        oguri = Uma.objects.create(name="Oguri Cap", image="umas/oguri.png", game_id=100601)
+        xmas = Uma.objects.create(name="Oguri Cap (Christmas)", image="umas/oguri-x.png", game_id=100602)
+        Uma.objects.create(name="Tamamo Cross", image="umas/tamamo.png", game_id=100701)
+
+        self.assertEqual(self._get()["oshi_uma_ids"], [])
+        self._patch({"oshis": [oguri.id]})
+
+        self.assertEqual(self._get()["oshi_uma_ids"], sorted([oguri.id, xmas.id]))
+
+    def test_an_uma_with_no_game_id_matches_only_itself(self):
+        self._patch({"oshis": self._ids(0)})
+        self.assertEqual(self._get()["oshi_uma_ids"], self._ids(0))
+
+    def test_only_covered_picks_get_the_rainbow(self):
+        pledge = self._pledge(self.junior)
+        self._patch({"oshis": self._ids(0, 1, 2)})
+        self.assertEqual(self._get()["oshi_uma_ids"], sorted(self._ids(0, 1, 2)))
+        pledge.is_active = False
+        pledge.save()
+
+        self.assertEqual(self._get()["oshi_uma_ids"], self._ids(0))
+
     def test_reordering_changes_the_picture(self):
         self._pledge(self.classic)
         self._patch({"oshis": self._ids(0, 1)})

@@ -503,7 +503,7 @@ An account holds up to `PLAN_CAP` (5) plans and the calculator opens on the acti
 
 | Data | Lives on | Why |
 |---|---|---|
-| Planned banner rows (`number_of_pulls`, `reserved_copies`, `note`, `primary_card`, `second_card`, `primary_target`) | `Plan` | the choices |
+| Planned banner rows (`number_of_pulls`, `reserved_copies`, `note`, `primary_card`, `second_card`, `primary_target`, the row options) | `Plan` | the choices |
 | Which of the owner's stats blocks to read (`income_profile`, nullable) | `Plan` | a pointer, not a fact; dropped when a copy changes owner |
 | Its share link and what a copy carries (`public_id`, `is_shared`, `share_stats`, `share_notes`, `copy_count`) | `Plan` | about the plan, not the person; a copy starts with all five at their defaults |
 | Carats, tickets, selector tickets, shards, crystals, ranks | `CustomUser`, or an `IncomeProfile` the account owns | facts about the person (or about their other game account) |
@@ -546,6 +546,15 @@ first card to before a free copy goes to the second. Null means the client's def
 the banner type (one copy of an uma, MLB of a support card). The serializer checks the
 range, which is fine where a membership check is not: no content edit can put a stored
 value outside 1..5. Copied across accounts like the ids.
+
+**Row options** (migration `0096`): `tickets_to_use` (nullable count; a number wins over
+the stats block's `spend_tickets_on_banners`, owner's call 2026-10-16),
+`paid_carat_use` (nullable `none`/`discount`/`all`, overriding the two paid-pull
+toggles), `pulls_already_made` (count, default 0) and `excluded_from_projection`
+(boolean). Each one's unset value is the old behaviour, so adding them moved no plan's
+numbers. Three are choices and copy everywhere. `pulls_already_made` is a fact about the
+author's game account, so `copy_plan()` blanks it across accounts like `note`, and the
+guest copy's whitelist leaves it out. An excluded row also drops out of `plan_totals()`.
 
 Accepted consequence: purchases are shared by every plan that reads the same stats block.
 A pack planned to fund a step-up in one plan still credits its carats while another plan
@@ -591,7 +600,8 @@ users for the same reason.
 A plan is editable only by its owner. Anyone else sees it by taking a **copy** through its
 link, `/app/<public_id>`, and the copy is then theirs to change. There is no read-only view
 of somebody else's plan. Routes: `views/plan_public.py`, documented in
-`api-reference.md` ("Share links"). Decided 2026-10-12, replacing the read-only "shared
+`api-reference.md` ("Share links"). The link the owner copies is `/plan/<public_id>`, a
+link-preview page (`views/plan_share.py`, 2026-10-16) that sends people on to the card. Decided 2026-10-12, replacing the read-only "shared
 mode" first proposed in web #107.
 
 | Column | Default | Meaning |

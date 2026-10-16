@@ -29,6 +29,7 @@ from calculatorapi.tests.base import CalculatorTestCase
 from calculatorapi.tests.factories import (
     auth_client,
     make_anniversary_event,
+    make_step_up_banner,
     make_support_banner,
     make_timeline,
     make_uma_banner,
@@ -38,7 +39,7 @@ from calculatorapi.tests.factories import (
 PUBLIC_ID = r"^[A-Za-z0-9]{8}$"
 SUMMARY_KEYS = {
     "public_id", "updated_at", "copy_count", "share_stats", "share_notes",
-    "row_count", "rows",
+    "row_count", "pull_count", "step_count", "rows",
 }
 
 
@@ -174,10 +175,12 @@ class SummaryRouteTests(CalculatorTestCase):
 
         self.assertEqual(res.status_code, 200)
         # The whitelist, both ways: nothing about the owner, no plan id, no
-        # name, no pull counts, no notes, no stats, even with both options on.
+        # name, no per-row counts, no notes, no stats, even with both options on.
         self.assertEqual(set(res.data), SUMMARY_KEYS)
         self.assertEqual(res.data["public_id"], self.plan.public_id)
         self.assertEqual(res.data["row_count"], 2)
+        self.assertEqual(res.data["pull_count"], 49)
+        self.assertEqual(res.data["step_count"], 0)
         self.assertCountEqual(
             res.data["rows"],
             [
@@ -190,6 +193,28 @@ class SummaryRouteTests(CalculatorTestCase):
         self.assertEqual(res.data["copy_count"], 0)
         self.assertNotIn("my secret", str(res.content))
         self.assertNotIn(DEFAULT_PLAN_NAME, str(res.content))
+
+    def test_a_step_up_row_counts_steps_not_pulls(self):
+        """number_of_pulls carries STEPS on a step-up row; the totals keep them apart."""
+        _row(self.plan, pulls=30)
+        UserPlannedBanner.objects.create(
+            user=self.sharer, plan=self.plan, banner_step_up=make_step_up_banner(),
+            number_of_pulls=4, reserved_copies=0,
+        )
+        _share(self.plan)
+
+        res = self._get()
+
+        self.assertEqual((res.data["pull_count"], res.data["step_count"]), (30, 4))
+
+    def test_a_row_left_out_of_the_projection_is_left_out_of_the_totals(self):
+        _row(self.plan, pulls=30)
+        maybe = _row(self.plan, pulls=200)
+        maybe.excluded_from_projection = True
+        maybe.save()
+        _share(self.plan)
+
+        self.assertEqual(self._get().data["pull_count"], 30)
 
     def test_rows_come_in_the_order_the_owner_sees_them(self):
         now = timezone.now()
@@ -272,8 +297,12 @@ class GuestCopyTests(CalculatorTestCase):
         self.assertEqual(
             set(row),
             {"number_of_pulls", "reserved_copies", "primary_card", "second_card",
-             "primary_target", "banner_uma", "banner_support", "banner_step_up"},
+             "primary_target", "tickets_to_use", "paid_carat_use",
+             "excluded_from_projection",
+             "banner_uma", "banner_support", "banner_step_up"},
         )
+        # Never the sharer's own pull history.
+        self.assertNotIn("pulls_already_made", row)
         self.assertEqual(row["number_of_pulls"], 42)
         self.assertEqual(row["banner_uma"], self.row.banner_uma_id)
         # Ids only, never a nested banner.

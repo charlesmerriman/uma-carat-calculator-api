@@ -107,6 +107,23 @@ class GameStats(models.Model):
     # JP cutoff). Tickets projected from campaigns carry their campaign's cutoff.
     uma_selector_ticket = models.IntegerField(default=0)
     support_selector_ticket = models.IntegerField(default=0)
+    # Race events the player will NOT take part in, so the projection credits
+    # nothing for them: {"champions_meeting": [ids], "league_of_heroes": [ids]},
+    # keyed by the income ledger's row kinds (ledger.KIND_*), ids being the
+    # events' pks. Empty (the default) means "taking part in everything", which
+    # is how every plan projected before this existed.
+    #
+    # On the stats block, not the plan, because it is a fact about the game
+    # account's income, the same kind of fact as champions_meeting_rank: an alt
+    # account on its own IncomeProfile skips its own events.
+    #
+    # JSON rather than a table of (owner, event) rows: as a column it rides
+    # everything the stats block already has (stats_target, the profile copy,
+    # the guest store, guest migration, auto-save) instead of needing its own
+    # reconcile. The cost is no FK: an event an editor deletes leaves a dead id,
+    # which the client ignores because no ledger row carries it. The shape is
+    # checked by GameStatsSerializer.validate_skipped_race_events.
+    skipped_race_events = models.JSONField(default=dict, blank=True)
 
     class Meta:
         abstract = True

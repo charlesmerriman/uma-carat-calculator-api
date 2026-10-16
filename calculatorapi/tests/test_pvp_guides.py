@@ -1,4 +1,5 @@
-"""The PvP guide: constraints, GET /pvp-guides/<kind>/<id>, has_guide, the admin, and the sheet loader."""
+"""The PvP guide: constraints, GET /pvp-guides/<kind>/<id>, has_guide, the admin, the sheet loader
+and the track green filler."""
 # One module per feature area, and this area has the admin page, the endpoint and
 # the sheet loader in it.
 # pylint: disable=too-many-lines
@@ -20,7 +21,7 @@ from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from rest_framework.test import APIClient
 
-from calculatorapi import public_payload_cache, pvp_guides, pvp_sheet
+from calculatorapi import public_payload_cache, pvp_guides, pvp_sheet, pvp_track_skills
 from calculatorapi.management.commands import load_sheet_pvp_guides as loader
 from calculatorapi.models.skill import skill_families
 from calculatorapi.models import (
@@ -986,6 +987,146 @@ class LoadFromSheetButtonTests(CalculatorTestCase):
             )
         self.assertEqual(res.status_code, 200)
         self.assertContains(res, "has no guide for CM #77")
+
+
+def make_family(name, group_id, condition, gold=None):
+    """A general skill family as the game ships it: ○, ◎ and ×, plus an
+    optional gold skill, all sharing one condition. Returns the ◎."""
+    base = group_id * 10
+    make_skill(f"{name} ○", base + 2, group_id=group_id, tier=1, condition=condition)
+    pick = make_skill(f"{name} ◎", base + 1, group_id=group_id, tier=2, condition=condition)
+    make_skill(f"{name} ×", base + 3, group_id=group_id, tier=-1, condition=condition)
+    if gold:
+        make_skill(gold, base + 4, group_id=group_id, tier=3, rarity=2, condition=condition)
+    return pick
+
+
+@override_settings(STORAGES=PLAIN_TEST_STORAGES)
+class TrackGreenSkillTests(CalculatorTestCase):  # pylint: disable=too-many-instance-attributes
+    """"Fill track green skills": the event's track fields, matched against
+    each skill's own game condition."""
+
+    def setUp(self):
+        self.right = make_family("Right-Handed", 20001, "rotation==1", gold="Right-Handed Demon")
+        self.left = make_family("Left-Handed", 20002, "rotation==2")
+        self.tokyo = make_family("Tokyo Racecourse", 20003, "track_id==10006")
+        self.nakayama = make_family("Nakayama Racecourse", 20004, "track_id==10005")
+        self.standard = make_family("Standard Distance", 20013, "is_basis_distance==1")
+        self.firm = make_family("Firm Conditions", 20015, "ground_condition==1")
+        self.wet = make_family(
+            "Wet Conditions", 20016, "ground_condition==2@ground_condition==3@ground_condition==4",
+        )
+        self.spring = make_family("Spring Runner", 20017, "season==1@season==5")
+        self.winter = make_family("Winter Runner", 20020, "season==4")
+        self.sunny = make_family("Sunny Days", 20021, "weather==1")
+        self.sharp = make_family("Sharp Turns", 20224, "track_id==10001@track_id==10005")
+        self.muddy = make_family(
+            "Muddy", 20234, "ground_type==2&ground_condition==3@ground_type==2&ground_condition==4",
+        )
+        # One-offs with a track condition but no ○/◎ pair, and a skill whose
+        # condition reads more than the track.
+        make_skill("Unchanging", 300021, group_id=30002, tier=1, rarity=2, condition="season==4")
+        make_skill("Medium Race Enthusiast", 1200011, condition="distance_type==3&ground_type==1")
+        make_skill("Corner Adept ◎", 200351, group_id=20035, tier=2, condition="corner!=0&rotation==1")
+        make_skill("Corner Adept ○", 200352, group_id=20035, tier=1, condition="corner!=0&rotation==1")
+        # Announced but not released: no condition yet.
+        make_skill("Kyoto Racecourse ◎", 200061, group_id=20006, tier=2)
+
+        # make_champions_meeting is Tokyo, Turf, Long, 2400m, Good, Spring, Sunny, Right.
+        self.cm = make_champions_meeting(name="Taurus", cm_number=30)
+        self.guide = PvpGuide.objects.create(champions_meeting=self.cm)
+
+    def suggested(self):
+        return pvp_track_skills.suggest(self.guide)
+
+    def test_matches_each_track_field_and_adds_the_double_circle(self):
+        result = self.suggested()
+        self.assertEqual(
+            result["add"],
+            [self.right, self.tokyo, self.standard, self.wet, self.spring, self.sunny],
+        )
+        self.assertEqual(result["already"], [])
+        self.assertEqual(result["problems"], [])
+
+    def test_conditions_with_alternatives_and_joined_clauses(self):
+        self.cm.track, self.cm.surface_type, self.cm.track_condition = "Nakayama", "Dirt", "Heavy"
+        self.cm.season, self.cm.length, self.cm.direction = "Winter", "2500m", "Left-Handed"
+        self.cm.save()
+        self.assertEqual(
+            self.suggested()["add"],
+            [self.left, self.nakayama, self.wet, self.winter, self.sunny, self.sharp, self.muddy],
+        )
+
+    def test_a_track_with_no_racecourse_skill_is_reported(self):
+        for track in ("Longchamp", "Toyko"):
+            with self.subTest(track=track):
+                self.cm.track = track
+                self.cm.save()
+                result = self.suggested()
+                self.assertNotIn(self.tokyo, result["add"])
+                self.assertIn(self.right, result["add"])
+                self.assertIn(f'Track is "{track}"', result["problems"][0])
+
+    def test_an_unreadable_field_skips_only_its_skills(self):
+        # The live data has season and weather swapped on one event.
+        self.cm.season, self.cm.weather = "Cloudy", "Fall"
+        self.cm.save()
+        result = self.suggested()
+        self.assertEqual(len(result["problems"]), 2)
+        self.assertIn('Season is "Cloudy"', result["problems"][0])
+        for skill in (self.spring, self.winter, self.sunny):
+            self.assertNotIn(skill, result["add"])
+        self.assertIn(self.tokyo, result["add"])
+
+    def test_a_family_the_guide_names_in_any_version_is_left_alone(self):
+        tokyo_white = Skill.objects.get(name="Tokyo Racecourse ○")
+        PvpSkillRecommendation.objects.create(
+            guide=self.guide, style="front", category="speed", skill=tokyo_white,
+        )
+        result = self.suggested()
+        self.assertNotIn(self.tokyo, result["add"])
+        self.assertEqual(result["already"], [self.tokyo])
+
+    def test_fill_appends_to_everyone_green_and_is_safe_twice(self):
+        existing = make_skill("Maverick ◎", 200501, tier=2)
+        PvpSkillRecommendation.objects.create(
+            guide=self.guide, style="everyone", category="green", skill=existing, order=4,
+        )
+        added = pvp_track_skills.fill(self.guide)
+        self.assertEqual(len(added), 6)
+        rows = list(
+            self.guide.skill_recommendations.filter(style="everyone", category="green")
+            .order_by("order").values_list("skill__name", "order")
+        )
+        self.assertEqual(rows[0], ("Maverick ◎", 4))
+        self.assertEqual(rows[1], ("Right-Handed ◎", 5))
+        self.assertEqual(rows[-1], ("Sunny Days ◎", 10))
+        self.assertEqual(pvp_track_skills.fill(self.guide), [])
+
+    def test_the_admin_page_previews_then_adds(self):
+        admin = make_user(username="admin", is_staff=True)
+        admin.is_superuser = True
+        admin.save()
+        self.client.force_login(admin)
+        action_url = reverse("admin:calculatorapi_pvpguide_fill_track_greens", args=(self.guide.pk,))
+        res = self.client.get(action_url)
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "Will add (6)")
+        self.assertContains(res, "Tokyo Racecourse ◎")
+        self.assertEqual(self.guide.skill_recommendations.count(), 0)
+        res = self.client.post(action_url)
+        self.assertRedirects(
+            res, reverse("admin:calculatorapi_pvpguide_change", args=(self.guide.pk,)),
+            fetch_redirect_response=False,
+        )
+        self.assertEqual(self.guide.skill_recommendations.count(), 6)
+
+    def test_parse_condition_refuses_what_it_cannot_read(self):
+        self.assertIsNone(pvp_track_skills.parse_condition("phase_random==2&order_rate>50x"))
+        self.assertEqual(
+            pvp_track_skills.parse_condition("a==1&b>=2@c!=3"),
+            [[("a", "==", 1), ("b", ">=", 2)], [("c", "!=", 3)]],
+        )
 
 
 @override_settings(STORAGES=PLAIN_TEST_STORAGES)

@@ -1,9 +1,10 @@
 <!doctype html>
 {% comment %}
-  The page behind a gallery post's link, /post/<public_id> (views/gallery_share.py).
-  Crawlers read the tags and stop: none of them run the script. A person is
-  moved on to the post in the app before the page paints. Everything below
-  is generated: no caption, no display name, nothing a person wrote.
+  The page behind a share link: a gallery post's /post/<public_id>
+  (views/gallery_share.py) and a shared plan's /plan/<public_id>
+  (views/plan_share.py). Crawlers read the tags and stop: none of them run the
+  script. A person is moved on to the app before the page paints. What the
+  tags may say is each view's business; its module docstring sets the rule.
 {% endcomment %}
 <html lang="en">
 <head>
@@ -20,9 +21,10 @@
   <meta property="og:title" content="{{ title }}">
   <meta property="og:description" content="{{ description }}">
   <meta property="og:image" content="{{ image_url }}">
-  <meta property="og:image:type" content="{{ image_type }}">
-  <meta property="og:image:width" content="{{ image_width }}">
-  <meta property="og:image:height" content="{{ image_height }}">
+  {% comment %} Left out for uploaded art, whose size the page doesn't know. {% endcomment %}
+  {% if image_type %}<meta property="og:image:type" content="{{ image_type }}">{% endif %}
+  {% if image_width %}<meta property="og:image:width" content="{{ image_width }}">
+  <meta property="og:image:height" content="{{ image_height }}">{% endif %}
   <meta property="og:image:alt" content="{{ image_alt }}">
   <meta name="twitter:card" content="{{ twitter_card }}">
   <meta name="twitter:title" content="{{ title }}">
@@ -32,6 +34,6 @@
   <script>window.location.replace("{{ app_url|escapejs }}");</script>
 </head>
 <body style="background:#111827;color:#f3f4f6;font-family:system-ui,sans-serif">
-  <noscript><p><a href="{{ app_url }}" style="color:#E6D28A">Open this team on Uma Musume Carat Calculator</a></p></noscript>
+  <noscript><p><a href="{{ app_url }}" style="color:#E6D28A">{{ open_label }}</a></p></noscript>
 </body>
 </html>

@@ -99,6 +99,7 @@ meaning anything instead of rendering a signed-in shell around nothing.
     { "position": 0, "id": 42, "name": "Special Week", "image": "https://…/media/umas/special-week.png" }
   ],
   "oshi_slots": 1,
+  "oshi_uma_ids": [42, 57],
   "oshi_variants": true,
   "early_access": true,
   "linked_providers": [
@@ -128,6 +129,12 @@ meaning anything instead of rendering a signed-in shell around nothing.
   `benefits.OSHI_SLOT_LADDER`, not a tier order — a client should draw that
   many tiles and do no arithmetic. Top-level rather than inside `supporter`
   because a free account has a count too.
+- **`oshi_uma_ids`** is every uma the rainbow favourite frame goes on: each
+  COVERED pick (the first `oshi_slots`) and every other outfit of its character
+  (`Uma.outfit_ids`, by `game_id // 100`), sorted. A favourite Special Week gives
+  Special Week (Summer) too. Resolved here because only the server knows which
+  outfits share a character; a client tests membership and nothing else. `oshis`
+  stays the exact picks (the picker and the account page read it).
 - **`oshi_variants`** is whether a costume variant (`is_variant` on `GET /umas`)
   may be *added*: `true` for a supporter on any paid tier and for staff. The
   picker locks those tiles on `false`; the rule itself is in the `PATCH` check.
@@ -407,9 +414,6 @@ exits it normally, so Django would otherwise commit the accepted half.
     "training_pass":          false,
     "misc_earnings":          true,
     "monthly_shop_tickets":   true,
-  "shop_uma_tickets_bought": null,
-  "shop_support_tickets_bought": null,
-  "spend_tickets_on_banners": true,
     "shop_uma_tickets_bought": null,
     "shop_support_tickets_bought": null,
     "spend_tickets_on_banners": true,
@@ -424,7 +428,8 @@ exits it normally, so Django would otherwise commit the accepted half.
     "club_rank":              1,
     "team_trials_rank":       1,
     "champions_meeting_rank": 1,
-    "league_of_heroes_rank":  1
+    "league_of_heroes_rank":  1,
+    "skipped_race_events":    { "champions_meeting": [14] }
   },
   "user_planned_banner_data": [
     { "id": 5, "number_of_pulls": 20, "reserved_copies": 0, "banner_uma": 3, "banner_support": null },
@@ -459,6 +464,16 @@ free copy (a 200-pull exchange or a reserved copy) goes to `second_card`: an int
 1 to 5 (outside that is a 400), `null` for the client's default (1 on an uma row, 5 on a
 support row). Omitting it on a row with an `id` keeps the stored value; send `null` to
 go back to the default.
+
+The row options, each optional (omitting one on a row with an `id` keeps the stored
+value), and each one's unset value is the behaviour from before it existed:
+
+| Field | Values | Meaning |
+|---|---|---|
+| `tickets_to_use` | `null` or 0..9999 | At most this many matching gacha tickets pay for the row. `null` = automatic (as many as needed, or none while `spend_tickets_on_banners` is off). A number wins over that switch. |
+| `paid_carat_use` | `null`, `"none"`, `"discount"`, `"all"` | Which paid-carat pulls the row may buy. `null` = follow `discounted_paid_pulls` / `full_price_paid_pulls`. Ignored on a step-up row. |
+| `pulls_already_made` | 0..9999, default 0 | Pulls already made on this live banner. Cost nothing; they move the 200-pull exchange for the odds. Blanked when a plan is copied to another account, and never sent in a guest copy. |
+| `excluded_from_projection` | boolean, default `false` | The row spends nothing (and leaves the shared-plan totals), but stays in the plan. |
 
 For a planned purchase, **at most one** of `target_uma` / `target_support` may be set, it
 must match the product's type, and a carat pack may have neither. A selector target is
@@ -573,6 +588,8 @@ preview or a crawler fetching it is harmless.
   "share_stats": false,
   "share_notes": true,
   "row_count": 2,
+  "pull_count": 120,
+  "step_count": 0,
   "rows": [
     { "banner_uma": 31, "banner_support": null, "banner_step_up": null },
     { "banner_uma": null, "banner_support": 18, "banner_step_up": null }
@@ -582,8 +599,28 @@ preview or a crawler fetching it is harmless.
 
 `rows` are catalogue ids in the order the owner's planner shows them; the client resolves
 names and art from the `/calculator-data` catalogue it already holds. Nothing else leaves the
-account here: no pull counts, no notes, no stats, no plan id, no plan name, nothing about the
+account here: no per-row counts, no notes, no stats, no plan id, no plan name, nothing about the
 owner. `share_stats` / `share_notes` say what a copy would bring besides the rows.
+`pull_count` sums the ordinary rows' pulls and `step_count` the step-up rows' steps (that
+column counts steps on a step-up row); neither is ever converted into the other.
+
+### `GET /plan/<public_id>` (not under `/api`)
+
+The link the owner copies. An HTML page, not JSON, served on the site's host through the
+`/plan` ingress rule in `.do/app.yaml`, the same way `/post/<id>` is: Discord's and X's
+crawlers don't run JavaScript, and the static site serves every `/app/<id>` from one shell,
+so only a page the server builds per plan can describe it. Crawlers read the tags; a
+browser runs one line of script and lands on `/app/<public_id>`. Code:
+`views/plan_share.py`, template `share/link_preview.html` (shared with `/post`).
+
+The tags carry the pull and step totals, the banner count, the first three banner names,
+the plan's notes (only when `share_notes` is on, trimmed to 200 characters) and the first
+banner's art. Never the plan name, the plan id or anything about the owner. A plan that is
+not shared and an unknown id get the same answer: the site's own tags, a **200**, still
+redirected to `/app/<public_id>`. Opening it creates and counts nothing. Throttled per
+address at `plan_share` (600/hour), counted in the `gallery` cache.
+
+An older `/app/<public_id>` link keeps working; it just unfurls as the plain site.
 
 ### `POST /plans/public/<public_id>/copy`
 
@@ -971,11 +1008,21 @@ Patreon quota.
   "club_rank":              1,
   "team_trials_rank":       1,
   "champions_meeting_rank": 1,
-  "league_of_heroes_rank":  1
+  "league_of_heroes_rank":  1,
+  "skipped_race_events":    {}
 }
 ```
 
 Rank fields are returned as integer IDs (primary keys).
+
+`skipped_race_events` lists the race events the player is not taking part in:
+`{"champions_meeting": [ids], "league_of_heroes": [ids]}`, keyed by the income ledger's
+race row kinds, each id an event pk. The client drops those events' ledger rows, so they
+pay nothing anywhere in the projection. `{}` (the default) means taking part in
+everything. Either key may be absent; lists come back de-duplicated and sorted, and an
+empty one is not stored. Ids are deliberately not checked against the event tables (an
+editor deleting an event must not 400 the owner's next save); an unknown kind, a non-list,
+a non-positive or boolean id, or more than 500 ids per kind is a `400`.
 
 `uma_selector_ticket` / `support_selector_ticket` are **not** gacha tickets. A gacha
 ticket is worth one pull and is spent by the pull strategy; a selector takes a specific
@@ -1030,6 +1077,10 @@ On GET, `banner_uma` and `banner_support` are expanded to nested objects (not ID
   "primary_card": null,
   "second_card": null,
   "primary_target": null,
+  "tickets_to_use": null,
+  "paid_carat_use": null,
+  "pulls_already_made": 0,
+  "excluded_from_projection": false,
   "banner_uma": { ... BannerUma object ... },
   "banner_support": null
 }

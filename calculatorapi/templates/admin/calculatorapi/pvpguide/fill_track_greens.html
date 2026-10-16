@@ -1,0 +1,83 @@
+{% extends "admin/base_site.html" %}
+{% comment %}
+"Fill track green skills" for one guide: what the event's track calls for,
+then a button that adds it. The matching is pvp_track_skills.suggest; this
+page only shows its report. Same look as load_from_sheet.html.
+{% endcomment %}
+{% load i18n %}
+
+{% block content %}
+<style>
+  .pvp-page { max-width: 72ch; }
+  .pvp-page h1 { font-size: 1.5rem; font-weight: 600; margin: 0 0 0.75rem; }
+  .pvp-page h2 { font-size: 1.05rem; font-weight: 600; margin: 1.25rem 0 0.5rem; }
+  .pvp-page p, .pvp-page li { margin: 0 0 0.5rem; line-height: 1.5; }
+  .pvp-page .module {
+    border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .pvp-page ul { padding-left: 1.25rem; list-style: disc; }
+  .pvp-page .actions { display: flex; gap: 1rem; align-items: center; margin-top: 1rem; }
+  .pvp-page .button { padding: 0.5rem 1rem; border-radius: 0.375rem; font-weight: 600;
+    background: var(--color-primary-600); color: #fff; cursor: pointer; border: 0; }
+  .pvp-page .names { opacity: 0.8; }
+  .pvp-page .warn { color: #b45309; }
+</style>
+
+<div class="pvp-page">
+  <h1>Fill track green skills</h1>
+
+  <div class="module">
+    <p>
+      Adds the green skills <strong>{{ event }}</strong> calls for to the
+      <strong>Everyone</strong> tab's Green list: the racecourse, direction,
+      ground, season, weather and distance skills, as the game's own skill data
+      describes them. Skills that don't depend on the track (Maverick, post
+      proficiency and so on) are yours to add.
+    </p>
+    <p>
+      Read from the event: {{ event.track }}, {{ event.surface_type }},
+      {{ event.length }} ({{ event.distance }}), {{ event.direction }},
+      {{ event.track_condition }}, {{ event.season }}, {{ event.weather }}.
+      Nothing already in the guide is changed. Save any edits on the guide page
+      first: this goes back to it when done.
+    </p>
+  </div>
+
+  {% if suggestion.problems %}
+    <div class="module">
+      <h2>Couldn't read everything</h2>
+      <ul>
+        {% for problem in suggestion.problems %}<li class="warn">{{ problem }}</li>{% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+
+  <div class="module">
+    {% if suggestion.add %}
+      <h2>Will add ({{ suggestion.add|length }})</h2>
+      <ul>
+        {% for skill in suggestion.add %}<li>{{ skill.name }}</li>{% endfor %}
+      </ul>
+    {% else %}
+      <p>Nothing to add.</p>
+    {% endif %}
+    {% if suggestion.already %}
+      <p class="names"><strong>Already in the guide, in some version:</strong>
+        {% for skill in suggestion.already %}{{ skill.name }}{% if not forloop.last %}, {% endif %}{% endfor %}.</p>
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+      <div class="actions">
+        {% if suggestion.add %}
+          <button type="submit" class="button">Add {{ suggestion.add|length }} skill{{ suggestion.add|length|pluralize }}</button>
+        {% endif %}
+        <a href="{% url 'admin:calculatorapi_pvpguide_change' original.pk %}">Back to the guide</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
