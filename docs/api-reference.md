@@ -465,6 +465,16 @@ free copy (a 200-pull exchange or a reserved copy) goes to `second_card`: an int
 support row). Omitting it on a row with an `id` keeps the stored value; send `null` to
 go back to the default.
 
+The row options, each optional (omitting one on a row with an `id` keeps the stored
+value), and each one's unset value is the behaviour from before it existed:
+
+| Field | Values | Meaning |
+|---|---|---|
+| `tickets_to_use` | `null` or 0..9999 | At most this many matching gacha tickets pay for the row. `null` = automatic (as many as needed, or none while `spend_tickets_on_banners` is off). A number wins over that switch. |
+| `paid_carat_use` | `null`, `"none"`, `"discount"`, `"all"` | Which paid-carat pulls the row may buy. `null` = follow `discounted_paid_pulls` / `full_price_paid_pulls`. Ignored on a step-up row. |
+| `pulls_already_made` | 0..9999, default 0 | Pulls already made on this live banner. Cost nothing; they move the 200-pull exchange for the odds. Blanked when a plan is copied to another account, and never sent in a guest copy. |
+| `excluded_from_projection` | boolean, default `false` | The row spends nothing (and leaves the shared-plan totals), but stays in the plan. |
+
 For a planned purchase, **at most one** of `target_uma` / `target_support` may be set, it
 must match the product's type, and a carat pack may have neither. A selector target is
 additionally rejected (`400`) when the card was released on JP after the product's
@@ -1067,6 +1077,10 @@ On GET, `banner_uma` and `banner_support` are expanded to nested objects (not ID
   "primary_card": null,
   "second_card": null,
   "primary_target": null,
+  "tickets_to_use": null,
+  "paid_carat_use": null,
+  "pulls_already_made": 0,
+  "excluded_from_projection": false,
   "banner_uma": { ... BannerUma object ... },
   "banner_support": null
 }

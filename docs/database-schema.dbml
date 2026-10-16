@@ -101,6 +101,10 @@ Table calculatorapi_userplannedbanner as UserPlannedBanner {
   primary_card integer [null, note: 'Card id (uma or support, following the row\'s target) the odds strip is about. Null = the client\'s default. Not an FK; never checked against the banner.']
   second_card integer [null, note: 'Card id for two-card odds. Null = off.']
   primary_target smallint [null, note: 'Copies the two-card odds take primary_card to (1..5, serializer-checked) before a free copy goes to second_card. Null = the client\'s default for the banner type.']
+  tickets_to_use smallint [null, note: 'At most this many matching tickets pay for the row. Null = automatic (follows spend_tickets_on_banners).']
+  paid_carat_use varchar(8) [null, note: 'none / discount / all; overrides the two paid-pull toggles. Null = follow them. Ignored on step-ups.']
+  pulls_already_made smallint [not null, note: 'Django default: 0. Pulls already made on the live banner; move the 200-pull exchange only. Blanked on a cross-account copy.']
+  excluded_from_projection boolean [not null, note: 'Django default: False. The row spends nothing and leaves the share totals.']
 
   indexes {
     user_id

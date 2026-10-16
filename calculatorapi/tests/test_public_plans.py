@@ -207,6 +207,15 @@ class SummaryRouteTests(CalculatorTestCase):
 
         self.assertEqual((res.data["pull_count"], res.data["step_count"]), (30, 4))
 
+    def test_a_row_left_out_of_the_projection_is_left_out_of_the_totals(self):
+        _row(self.plan, pulls=30)
+        maybe = _row(self.plan, pulls=200)
+        maybe.excluded_from_projection = True
+        maybe.save()
+        _share(self.plan)
+
+        self.assertEqual(self._get().data["pull_count"], 30)
+
     def test_rows_come_in_the_order_the_owner_sees_them(self):
         now = timezone.now()
         later = make_uma_banner(make_timeline(
@@ -288,8 +297,12 @@ class GuestCopyTests(CalculatorTestCase):
         self.assertEqual(
             set(row),
             {"number_of_pulls", "reserved_copies", "primary_card", "second_card",
-             "primary_target", "banner_uma", "banner_support", "banner_step_up"},
+             "primary_target", "tickets_to_use", "paid_carat_use",
+             "excluded_from_projection",
+             "banner_uma", "banner_support", "banner_step_up"},
         )
+        # Never the sharer's own pull history.
+        self.assertNotIn("pulls_already_made", row)
         self.assertEqual(row["number_of_pulls"], 42)
         self.assertEqual(row["banner_uma"], self.row.banner_uma_id)
         # Ids only, never a nested banner.

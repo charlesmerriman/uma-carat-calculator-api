@@ -18,6 +18,10 @@ NOTE_MAX_LENGTH = 500
 # two-card target can ask for (the client's MAX_COPIES).
 MAX_TARGET_COPIES = 5
 
+# The ceiling on a row's two option counts (tickets_to_use, pulls_already_made).
+# A sanity bound, not a game rule.
+MAX_ROW_COUNT = 9999
+
 
 class UserPlannedBannerSerializer(serializers.ModelSerializer):
     banner_uma = serializers.PrimaryKeyRelatedField(
@@ -50,6 +54,17 @@ class UserPlannedBannerSerializer(serializers.ModelSerializer):
         allow_null=True,
     )
 
+    # Optional with model defaults, like `note`: a cached bundle from before
+    # these existed must keep saving, and on an existing row a body without
+    # them keeps what is stored. A cap rather than the column's 32767, because
+    # no banner runs long enough for a player to pull more on it than this.
+    tickets_to_use = serializers.IntegerField(
+        min_value=0, max_value=MAX_ROW_COUNT, required=False, allow_null=True
+    )
+    pulls_already_made = serializers.IntegerField(
+        min_value=0, max_value=MAX_ROW_COUNT, required=False
+    )
+
     class Meta:
         model = UserPlannedBanner
         fields = (
@@ -66,6 +81,12 @@ class UserPlannedBannerSerializer(serializers.ModelSerializer):
             # Copies the first card is taken to on a two-card row; null = the
             # client's default for the banner type.
             "primary_target",
+            # Row options; each one's unset value is the old behaviour. See
+            # the model for what each overrides.
+            "tickets_to_use",
+            "paid_carat_use",
+            "pulls_already_made",
+            "excluded_from_projection",
             "banner_uma",
             "banner_support",
             "banner_step_up",

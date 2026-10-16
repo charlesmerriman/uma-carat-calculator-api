@@ -81,6 +81,49 @@ class UserPlannedBanner(models.Model):
     #   the strip, so it copies across accounts like the ids.
     primary_target = models.PositiveSmallIntegerField(null=True, blank=True)
 
+    # ── Row options (the panel under a row, beside its note) ──────────────────
+    # Each one overrides a projection default for THIS row only, and each one's
+    # "unset" value is what every row did before it existed, so no plan's
+    # numbers moved when they were added.
+    #
+    # tickets_to_use: at most this many matching gacha tickets pay for the
+    #   row's pulls. NULL = automatic: as many as the pulls need, or none while
+    #   the stats block's spend_tickets_on_banners is off. A number here wins
+    #   over that switch (owner's call, 2026-10-16): an explicit per-row choice
+    #   beats the global default. 0 holds every ticket back on this row alone.
+    tickets_to_use = models.PositiveSmallIntegerField(null=True, blank=True)
+
+    # paid_carat_use: which paid-carat pulls the row may buy, overriding the
+    #   stats block's discounted_paid_pulls / full_price_paid_pulls pair.
+    #   NULL = follow them. Ignored on a step-up row, which is paid-only by
+    #   definition (its whole ladder costs paid carats).
+    PAID_NONE = "none"
+    PAID_DISCOUNT = "discount"
+    PAID_ALL = "all"
+    PAID_CARAT_USE_CHOICES = [
+        (PAID_NONE, "Don't use paid carats"),
+        (PAID_DISCOUNT, "Daily discount pull only"),
+        (PAID_ALL, "Discount and full price"),
+    ]
+    paid_carat_use = models.CharField(
+        max_length=8, choices=PAID_CARAT_USE_CHOICES, null=True, blank=True
+    )
+
+    # pulls_already_made: pulls the player has ALREADY made on this banner
+    #   while it is live. They cost nothing in the projection (those carats
+    #   have left the balance the player typed in); they only move the
+    #   200-pull exchange, so the odds and the pity-threshold colouring see the
+    #   banner's real counter. A fact about the player's game account rather
+    #   than a choice, which is why plans.copy_plan() blanks it whenever a copy
+    #   changes owner, exactly like `note`.
+    pulls_already_made = models.PositiveSmallIntegerField(default=0)
+
+    # excluded_from_projection: the row stays in the plan (greyed) but spends
+    #   nothing, so a "maybe" banner can be weighed without deleting it. Income
+    #   is unaffected either way: it is a pure function of each banner's end
+    #   date, never of the rows around it.
+    excluded_from_projection = models.BooleanField(default=False)
+
     class Meta:
         constraints = [
             # Exactly one target, now across three columns. Widened from the
