@@ -358,6 +358,13 @@ def copy_plan(source, *, owner, name, carry_notes=None):
                     primary_card=row.primary_card,
                     second_card=row.second_card,
                     primary_target=row.primary_target,
+                    # Choices about the row: they mean the same thing to anyone.
+                    tickets_to_use=row.tickets_to_use,
+                    paid_carat_use=row.paid_carat_use,
+                    excluded_from_projection=row.excluded_from_projection,
+                    # A fact about the AUTHOR'S game account (pulls they made),
+                    # so it follows the notes' rule, never the choices'.
+                    pulls_already_made=row.pulls_already_made if same_owner else 0,
                 )
                 for row in source.banners.all()
             ]

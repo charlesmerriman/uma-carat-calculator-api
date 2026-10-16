@@ -800,3 +800,76 @@ class PlannedBannerOddsCardTests(CalculatorTestCase):
             })
             self.assertEqual(res.status_code, 400, bad)
         self.assertFalse(UserPlannedBanner.objects.filter(user=self.user).exists())
+
+
+class PlannedBannerRowOptionsTests(CalculatorTestCase):
+    """The row options panel's four fields ride the planned-banner payload."""
+
+    def setUp(self):
+        self.user = make_user()
+        self.client, _ = auth_client(self.user)
+        self.banner = make_uma_banner()
+
+    def _patch(self, row):
+        return self.client.patch(
+            '/calculator-data',
+            {'user_planned_banner_data': [row]},
+            format='json',
+        )
+
+    def test_defaults_are_the_behaviour_from_before_the_options(self):
+        res = self._patch({'banner_uma': self.banner.id, 'number_of_pulls': 50})
+        self.assertEqual(res.status_code, 200)
+        row = self.client.get('/calculator-data').data['user_planned_banner_data'][0]
+        self.assertIsNone(row['tickets_to_use'])
+        self.assertIsNone(row['paid_carat_use'])
+        self.assertEqual(row['pulls_already_made'], 0)
+        self.assertFalse(row['excluded_from_projection'])
+
+    def test_round_trip(self):
+        res = self._patch({
+            'banner_uma': self.banner.id, 'number_of_pulls': 50,
+            'tickets_to_use': 0, 'paid_carat_use': 'none',
+            'pulls_already_made': 140, 'excluded_from_projection': True,
+        })
+        self.assertEqual(res.status_code, 200)
+        planned = UserPlannedBanner.objects.get(user=self.user)
+        # 0 is a real answer ("no tickets here"), distinct from NULL (automatic).
+        self.assertEqual(planned.tickets_to_use, 0)
+        self.assertEqual(planned.paid_carat_use, 'none')
+        self.assertEqual(planned.pulls_already_made, 140)
+        self.assertTrue(planned.excluded_from_projection)
+
+    def test_a_body_without_them_keeps_what_is_stored(self):
+        """A cached bundle from before the options must not wipe them."""
+        planned = UserPlannedBanner.objects.create(
+            user=self.user, plan=plans.get_active_plan(self.user),
+            banner_uma=self.banner, number_of_pulls=50,
+            tickets_to_use=4, paid_carat_use='all', pulls_already_made=10,
+            excluded_from_projection=True,
+        )
+        res = self._patch({
+            'id': planned.id, 'banner_uma': self.banner.id, 'number_of_pulls': 60,
+        })
+        self.assertEqual(res.status_code, 200)
+        planned.refresh_from_db()
+        self.assertEqual(planned.number_of_pulls, 60)
+        self.assertEqual(
+            (planned.tickets_to_use, planned.paid_carat_use,
+             planned.pulls_already_made, planned.excluded_from_projection),
+            (4, 'all', 10, True),
+        )
+
+    def test_out_of_range_values_are_a_400(self):
+        bad_rows = [
+            {'tickets_to_use': -1},
+            {'tickets_to_use': 10000},
+            {'pulls_already_made': -5},
+            {'paid_carat_use': 'some'},
+        ]
+        for extra in bad_rows:
+            with self.subTest(extra=extra):
+                res = self._patch(
+                    {'banner_uma': self.banner.id, 'number_of_pulls': 50, **extra})
+                self.assertEqual(res.status_code, 400)
+        self.assertFalse(UserPlannedBanner.objects.filter(user=self.user).exists())

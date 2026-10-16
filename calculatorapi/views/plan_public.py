@@ -102,6 +102,11 @@ class SharedPlannedBannerSerializer(serializers.ModelSerializer):
             "primary_card",
             "second_card",
             "primary_target",
+            # The row options that are choices. NOT pulls_already_made: that
+            # is the owner's own pull history, so a guest copy starts at 0.
+            "tickets_to_use",
+            "paid_carat_use",
+            "excluded_from_projection",
             "banner_uma",
             "banner_support",
             "banner_step_up",
@@ -148,9 +153,13 @@ def plan_totals(rows):
     `number_of_pulls` counts STEPS on a step-up row (the column's overload,
     models/user_planned_banner.py), so the two are summed apart and never
     converted: a step's pull count depends on the ladder, and the preview and
-    the card only state what the owner typed."""
-    pulls = sum(row.number_of_pulls for row in rows if not row.banner_step_up_id)
-    steps = sum(row.number_of_pulls for row in rows if row.banner_step_up_id)
+    the card only state what the owner typed.
+
+    A row the owner left out of the projection is left out here too: it is a
+    "maybe", and a total that counts it would claim more than the plan spends."""
+    counted = [row for row in rows if not row.excluded_from_projection]
+    pulls = sum(row.number_of_pulls for row in counted if not row.banner_step_up_id)
+    steps = sum(row.number_of_pulls for row in counted if row.banner_step_up_id)
     return pulls, steps
 
 
