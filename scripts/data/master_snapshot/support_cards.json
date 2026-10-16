@@ -840,6 +840,26 @@
   "skill_set_id": 9081084
  },
  {
+  "id": 10085,
+  "chara_id": 1076,
+  "chara_name": "Sakura Laurel",
+  "name": "[Tracen Academy] Sakura Laurel",
+  "title": "[Tracen Academy]",
+  "rarity": 1,
+  "card_type": "stamina",
+  "skill_set_id": 9081076
+ },
+ {
+  "id": 10086,
+  "chara_id": 1078,
+  "chara_name": "Yamanin Zephyr",
+  "name": "[Tracen Academy] Yamanin Zephyr",
+  "title": "[Tracen Academy]",
+  "rarity": 1,
+  "card_type": "guts",
+  "skill_set_id": 9081078
+ },
+ {
   "id": 20001,
   "chara_id": 1005,
   "chara_name": "Fuji Kiseki",
@@ -1358,6 +1378,16 @@
   "rarity": 2,
   "card_type": "power",
   "skill_set_id": 9081077
+ },
+ {
+  "id": 20054,
+  "chara_id": 1015,
+  "chara_name": "T.M. Opera O",
+  "name": "[Mighty Fotografia] T.M. Opera O",
+  "title": "[Mighty Fotografia]",
+  "rarity": 2,
+  "card_type": "stamina",
+  "skill_set_id": 9081015
  },
  {
   "id": 30001,
@@ -2528,6 +2558,46 @@
   "rarity": 3,
   "card_type": "speed",
   "skill_set_id": 9081037
+ },
+ {
+  "id": 30123,
+  "chara_id": 1016,
+  "chara_name": "Narita Brian",
+  "name": "[Glad Tidings] Narita Brian",
+  "title": "[Glad Tidings]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081016
+ },
+ {
+  "id": 30124,
+  "chara_id": 1018,
+  "chara_name": "Air Groove",
+  "name": "[Are You Merry?] Air Groove",
+  "title": "[Are You Merry?]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081018
+ },
+ {
+  "id": 30125,
+  "chara_id": 1076,
+  "chara_name": "Sakura Laurel",
+  "name": "[Don't Stop Anymore!] Sakura Laurel",
+  "title": "[Don't Stop Anymore!]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081076
+ },
+ {
+  "id": 30126,
+  "chara_id": 1078,
+  "chara_name": "Yamanin Zephyr",
+  "name": "[To Winds Untraveled] Yamanin Zephyr",
+  "title": "[To Winds Untraveled]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081078
  },
  {
   "id": 30145,

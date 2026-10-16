@@ -1,12 +1,13 @@
 {
- "extracted_at": "2026-09-17T04:16:56+00:00",
- "mdb_size_bytes": 16969728,
- "mdb_modified_at": "2026-09-17T04:03:44+00:00",
+ "extracted_at": "2026-10-16T17:07:07+00:00",
+ "mdb_size_bytes": 17182720,
+ "mdb_modified_at": "2026-10-14T23:08:16+00:00",
  "counts": {
-  "skills": 726,
-  "cards": 105,
-  "card_skills": 857,
-  "support_cards": 255,
-  "support_hints": 1541
+  "skills": 734,
+  "skill_text_ahead": 388,
+  "cards": 109,
+  "card_skills": 889,
+  "support_cards": 262,
+  "support_hints": 1604
  }
 }

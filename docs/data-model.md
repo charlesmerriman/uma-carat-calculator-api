@@ -1392,6 +1392,19 @@ backend, but anything that shows skills to a player (the CM planner, a skill pag
 through `on_global()`. Every skill in the global client has a description today, so the
 filter's "Not yet" side is empty; the rule exists so it holds when that changes.
 
+**"On global" includes announced skills (2026-10-16).** The global client ships the
+official English name and description of upcoming skills before it defines them (388 on
+2026-10-14: the next months of uniques and their inherited copies, new general skills, two
+evolved skills per outfit, event bonus skills). The import makes rows of the uniques,
+inherited copies and general skills, so the PvP guide writers can name skills for CMs that
+are not out yet. Those rows have a description, so the rule counts them: in practice
+"on global" now reads "Global has published its English text", released or not. An
+announced row has no `icon_id` and no `cost`; its `rarity`, `group_id` and `tier` are
+guessed from the id and name (`import_game_data.guessed_structure`) and written once, so an
+editor's correction sticks; the day the client defines the skill, every column becomes the
+game's. Evolved and event bonus skills are skipped. A stored "released" flag, JP data and
+the evolution model are the later pass in the workspace-root `skills-plan-3.md`.
+
 ## The game's master database (`master.mdb`) and the committed snapshot
 
 The skills work imports from the global game client's own database rather than a fan
@@ -1408,7 +1421,7 @@ The tables the extractor reads, and the two places the schema is not what it loo
 | Need | Table | Notes |
 |---|---|---|
 | skills | `skill_data` (718 rows) | `rarity` 1 white, 2 gold, 3/4 the pre- and post-★3 uniques of a ★1/★2 character, 5 unique. No 6 (evolved) on global yet. `group_id` groups white with gold; `group_rate` is the tier (1 white, 2 gold, -1 the × penalty version). `icon_id` is one of 63. `condition_1` is the activation condition, kept verbatim |
-| skill text | `text_data` cat 47 (name), 48 (description) | keyed by skill id; every skill has both |
+| skill text | `text_data` cat 47 (name), 48 (description) | keyed by skill id; every skill has both. The text runs ahead of `skill_data`: names and descriptions of skills the client does not define yet go to `skill_text_ahead.json` (id, name, description; 388 on 2026-10-14) |
 | skill point cost | `single_mode_skill_need_point` | absent for every unique and 18 white/gold skills, so nullable |
 | uma outfits | `card_data` (105, of which 2 are tutorial variants above id 9,000,000, skipped) | `default_rarity` is the initial star count; `running_style` 1 front, 2 pace, 3 late, 4 end; `talent_*` are the growth bonuses in percent |
 | per-star stats and aptitudes | `card_rarity_data` (334) | one row per outfit per star. `speed`..`wiz` are the base stats at that star; `max_*` is the cap (1200 everywhere); `proper_*` aptitudes on the game's 1..8 scale (G F E D C B A S). **`skill_set` is not a skill id**: it keys the `skill_set` table, whose `skill_id1` is the unique skill that star carries |

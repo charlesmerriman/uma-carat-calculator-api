@@ -1680,6 +1680,114 @@
   ]
  },
  {
+  "id": 100802,
+  "chara_id": 1008,
+  "chara_name": "Vodka",
+  "name": "[Fiery Aqua Vitae] Vodka",
+  "title": "[Fiery Aqua Vitae]",
+  "default_rarity": 3,
+  "running_style": "late",
+  "growth": {
+   "speed": 20,
+   "stamina": 0,
+   "power": 0,
+   "guts": 10,
+   "wit": 0
+  },
+  "stars": [
+   {
+    "star": 3,
+    "unique_skill_id": 110081,
+    "stats": {
+     "speed": 98,
+     "stamina": 82,
+     "power": 99,
+     "guts": 81,
+     "wit": 90
+    },
+    "max_stats": {
+     "speed": 1200,
+     "stamina": 1200,
+     "power": 1200,
+     "guts": 1200,
+     "wit": 1200
+    },
+    "aptitude": {
+     "turf": 7,
+     "dirt": 1,
+     "short": 2,
+     "mile": 7,
+     "medium": 7,
+     "long": 3,
+     "front": 5,
+     "pace": 6,
+     "late": 7,
+     "end": 2
+    }
+   },
+   {
+    "star": 4,
+    "unique_skill_id": 110081,
+    "stats": {
+     "speed": 109,
+     "stamina": 91,
+     "power": 111,
+     "guts": 91,
+     "wit": 98
+    },
+    "max_stats": {
+     "speed": 1200,
+     "stamina": 1200,
+     "power": 1200,
+     "guts": 1200,
+     "wit": 1200
+    },
+    "aptitude": {
+     "turf": 7,
+     "dirt": 1,
+     "short": 2,
+     "mile": 7,
+     "medium": 7,
+     "long": 3,
+     "front": 5,
+     "pace": 6,
+     "late": 7,
+     "end": 2
+    }
+   },
+   {
+    "star": 5,
+    "unique_skill_id": 110081,
+    "stats": {
+     "speed": 120,
+     "stamina": 100,
+     "power": 122,
+     "guts": 100,
+     "wit": 108
+    },
+    "max_stats": {
+     "speed": 1200,
+     "stamina": 1200,
+     "power": 1200,
+     "guts": 1200,
+     "wit": 1200
+    },
+    "aptitude": {
+     "turf": 7,
+     "dirt": 1,
+     "short": 2,
+     "mile": 7,
+     "medium": 7,
+     "long": 3,
+     "front": 5,
+     "pace": 6,
+     "late": 7,
+     "end": 2
+    }
+   }
+  ]
+ },
+ {
   "id": 100901,
   "chara_id": 1009,
   "chara_name": "Daiwa Scarlet",
@@ -1809,6 +1917,114 @@
      "mile": 7,
      "medium": 7,
      "long": 6,
+     "front": 7,
+     "pace": 7,
+     "late": 3,
+     "end": 1
+    }
+   }
+  ]
+ },
+ {
+  "id": 100902,
+  "chara_id": 1009,
+  "chara_name": "Daiwa Scarlet",
+  "name": "[Nuit Étoilée de Scarlet] Daiwa Scarlet",
+  "title": "[Nuit Étoilée de Scarlet]",
+  "default_rarity": 3,
+  "running_style": "front",
+  "growth": {
+   "speed": 20,
+   "stamina": 0,
+   "power": 0,
+   "guts": 0,
+   "wit": 10
+  },
+  "stars": [
+   {
+    "star": 3,
+    "unique_skill_id": 110091,
+    "stats": {
+     "speed": 88,
+     "stamina": 82,
+     "power": 100,
+     "guts": 98,
+     "wit": 82
+    },
+    "max_stats": {
+     "speed": 1200,
+     "stamina": 1200,
+     "power": 1200,
+     "guts": 1200,
+     "wit": 1200
+    },
+    "aptitude": {
+     "turf": 7,
+     "dirt": 1,
+     "short": 2,
+     "mile": 6,
+     "medium": 7,
+     "long": 7,
+     "front": 7,
+     "pace": 7,
+     "late": 3,
+     "end": 1
+    }
+   },
+   {
+    "star": 4,
+    "unique_skill_id": 110091,
+    "stats": {
+     "speed": 98,
+     "stamina": 91,
+     "power": 111,
+     "guts": 109,
+     "wit": 91
+    },
+    "max_stats": {
+     "speed": 1200,
+     "stamina": 1200,
+     "power": 1200,
+     "guts": 1200,
+     "wit": 1200
+    },
+    "aptitude": {
+     "turf": 7,
+     "dirt": 1,
+     "short": 2,
+     "mile": 6,
+     "medium": 7,
+     "long": 7,
+     "front": 7,
+     "pace": 7,
+     "late": 3,
+     "end": 1
+    }
+   },
+   {
+    "star": 5,
+    "unique_skill_id": 110091,
+    "stats": {
+     "speed": 108,
+     "stamina": 100,
+     "power": 122,
+     "guts": 120,
+     "wit": 100
+    },
+    "max_stats": {
+     "speed": 1200,
+     "stamina": 1200,
+     "power": 1200,
+     "guts": 1200,
+     "wit": 1200
+    },
+    "aptitude": {
+     "turf": 7,
+     "dirt": 1,
+     "short": 2,
+     "mile": 6,
+     "medium": 7,
+     "long": 7,
      "front": 7,
      "pace": 7,
      "late": 3,
@@ -3257,6 +3473,114 @@
      "stamina": 109,
      "power": 122,
      "guts": 108,
+     "wit": 98
+    },
+    "max_stats": {
+     "speed": 1200,
+     "stamina": 1200,
+     "power": 1200,
+     "guts": 1200,
+     "wit": 1200
+    },
+    "aptitude": {
+     "turf": 7,
+     "dirt": 1,
+     "short": 2,
+     "mile": 6,
+     "medium": 7,
+     "long": 7,
+     "front": 1,
+     "pace": 7,
+     "late": 7,
+     "end": 4
+    }
+   }
+  ]
+ },
+ {
+  "id": 101602,
+  "chara_id": 1016,
+  "chara_name": "Narita Brian",
+  "name": "[Ravenous Wolf] Narita Brian",
+  "title": "[Ravenous Wolf]",
+  "default_rarity": 3,
+  "running_style": "pace",
+  "growth": {
+   "speed": 10,
+   "stamina": 10,
+   "power": 0,
+   "guts": 10,
+   "wit": 0
+  },
+  "stars": [
+   {
+    "star": 3,
+    "unique_skill_id": 110161,
+    "stats": {
+     "speed": 93,
+     "stamina": 98,
+     "power": 82,
+     "guts": 97,
+     "wit": 80
+    },
+    "max_stats": {
+     "speed": 1200,
+     "stamina": 1200,
+     "power": 1200,
+     "guts": 1200,
+     "wit": 1200
+    },
+    "aptitude": {
+     "turf": 7,
+     "dirt": 1,
+     "short": 2,
+     "mile": 6,
+     "medium": 7,
+     "long": 7,
+     "front": 1,
+     "pace": 7,
+     "late": 7,
+     "end": 4
+    }
+   },
+   {
+    "star": 4,
+    "unique_skill_id": 110161,
+    "stats": {
+     "speed": 103,
+     "stamina": 109,
+     "power": 92,
+     "guts": 108,
+     "wit": 88
+    },
+    "max_stats": {
+     "speed": 1200,
+     "stamina": 1200,
+     "power": 1200,
+     "guts": 1200,
+     "wit": 1200
+    },
+    "aptitude": {
+     "turf": 7,
+     "dirt": 1,
+     "short": 2,
+     "mile": 6,
+     "medium": 7,
+     "long": 7,
+     "front": 1,
+     "pace": 7,
+     "late": 7,
+     "end": 4
+    }
+   },
+   {
+    "star": 5,
+    "unique_skill_id": 110161,
+    "stats": {
+     "speed": 113,
+     "stamina": 120,
+     "power": 101,
+     "guts": 118,
      "wit": 98
     },
     "max_stats": {
@@ -8575,6 +8899,114 @@
      "pace": 4,
      "late": 1,
      "end": 1
+    }
+   }
+  ]
+ },
+ {
+  "id": 104701,
+  "chara_id": 1047,
+  "chara_name": "Zenno Rob Roy",
+  "name": "[Heroic Author] Zenno Rob Roy",
+  "title": "[Heroic Author]",
+  "default_rarity": 3,
+  "running_style": "pace",
+  "growth": {
+   "speed": 0,
+   "stamina": 10,
+   "power": 0,
+   "guts": 0,
+   "wit": 20
+  },
+  "stars": [
+   {
+    "star": 3,
+    "unique_skill_id": 100471,
+    "stats": {
+     "speed": 88,
+     "stamina": 97,
+     "power": 91,
+     "guts": 74,
+     "wit": 100
+    },
+    "max_stats": {
+     "speed": 1200,
+     "stamina": 1200,
+     "power": 1200,
+     "guts": 1200,
+     "wit": 1200
+    },
+    "aptitude": {
+     "turf": 7,
+     "dirt": 1,
+     "short": 1,
+     "mile": 3,
+     "medium": 7,
+     "long": 7,
+     "front": 1,
+     "pace": 7,
+     "late": 7,
+     "end": 3
+    }
+   },
+   {
+    "star": 4,
+    "unique_skill_id": 100471,
+    "stats": {
+     "speed": 98,
+     "stamina": 108,
+     "power": 101,
+     "guts": 82,
+     "wit": 111
+    },
+    "max_stats": {
+     "speed": 1200,
+     "stamina": 1200,
+     "power": 1200,
+     "guts": 1200,
+     "wit": 1200
+    },
+    "aptitude": {
+     "turf": 7,
+     "dirt": 1,
+     "short": 1,
+     "mile": 3,
+     "medium": 7,
+     "long": 7,
+     "front": 1,
+     "pace": 7,
+     "late": 7,
+     "end": 3
+    }
+   },
+   {
+    "star": 5,
+    "unique_skill_id": 100471,
+    "stats": {
+     "speed": 108,
+     "stamina": 118,
+     "power": 111,
+     "guts": 91,
+     "wit": 122
+    },
+    "max_stats": {
+     "speed": 1200,
+     "stamina": 1200,
+     "power": 1200,
+     "guts": 1200,
+     "wit": 1200
+    },
+    "aptitude": {
+     "turf": 7,
+     "dirt": 1,
+     "short": 1,
+     "mile": 3,
+     "medium": 7,
+     "long": 7,
+     "front": 1,
+     "pace": 7,
+     "late": 7,
+     "end": 3
     }
    }
   ]

@@ -15,6 +15,17 @@ WHAT IT WRITES, and what it leaves alone:
                reason to make an editor add 718 rows by hand. Never touches
                image or admin_comments. `description_detailed` is written only
                when `--gametora FILE` is given (see below).
+  Skill, text ahead of release (skill_text_ahead.json): the client ships the
+               official English name and description of upcoming skills
+               before it defines them. Uniques, their inherited copies and
+               general skills (five- and six-digit ids) become rows so a guide
+               can name them early. Rarity, group and tier are GUESSED from
+               the id and name (guessed_structure) and written only when the
+               row is created, so an editor's correction sticks; icon and
+               cost stay empty. Name and description follow the game on every
+               run. The day the client defines the skill it moves to
+               skills.json and every column is overwritten as above. Evolved
+               (nine-digit) and event bonus (seven-digit) ids are skipped.
   Uma          title, rarity, running_style, the ten apt_* grades, the five
                base_* stats at the initial star count, the five growth_*
                bonuses. `rarity` is what the selector pickers read, through
@@ -69,6 +80,7 @@ from django.db import transaction
 
 from calculatorapi import public_payload_cache, pvp_catalogue_cache
 from calculatorapi.models import Skill, SupportCard, SupportCardSkill, Uma, UmaSkill
+from calculatorapi.models.skill import SkillRarity, SkillTier
 
 CONFIRM_PHRASE = "import"
 
@@ -95,12 +107,71 @@ def load_snapshot(directory):
         if not path.is_file():
             raise CommandError(f"snapshot file missing: {path}")
         files[name] = json.loads(path.read_text(encoding="utf-8"))
-    # Event skills come from gametora, not the game, so the file is optional.
-    events = directory / "support_events.json"
-    files["support_events"] = (
-        json.loads(events.read_text(encoding="utf-8")) if events.is_file() else []
-    )
+    # Optional: event skills come from gametora, not the game, and a snapshot
+    # from before 2026-10-16 has no text-ahead file.
+    for name in ("support_events", "skill_text_ahead"):
+        path = directory / f"{name}.json"
+        files[name] = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else []
     return files
+
+
+# Which text-ahead skills become rows, by the length of the id. Evolved skills
+# (nine digits) wait for the evolution work: nothing in the global client says
+# which gold skill each one evolves from. Seven-digit ids are event and League
+# of Heroes bonus skills, not skills a trainee learns.
+AHEAD_ID_LENGTHS = (5, 6)
+
+
+def takes_ahead(skill):
+    """Should this text-ahead skill become a row? See AHEAD_ID_LENGTHS."""
+    return len(str(skill["id"])) in AHEAD_ID_LENGTHS and bool(skill["description"].strip())
+
+
+def guessed_structure(skill_id, name, known_ids):
+    """
+    Rarity, group and tier for a skill the client has text for but does not
+    define yet, read off its id and name. Checked against the 734 skills the
+    client does define (2026-10-16):
+
+      group_id   id // 10, for every kind. Right for all of them.
+      5 digits   a ★1/★2 outfit's starting unique: rarity 3.
+      1xxxx1     an outfit's unique: rarity 4 when that outfit also has a
+                 starting unique (the id with the outfit digit dropped,
+                 100661 -> 10661), else 5. Right for every unique.
+      9xxxx1     a unique's inherited copy: rarity 1, tier 2. Right for all.
+      general    the name's own mark (× penalty, ◎, ○); else an `...1` id
+                 whose `...2` sibling exists is the gold; else white. Right
+                 for 444 of 490: the misses are old penalty skills named
+                 without a ×, and tier-3 golds.
+
+    `known_ids` is every id the snapshot knows, defined or not, for the
+    sibling checks. A wrong guess is an editor's fix in the Skill admin, and
+    the game's own values replace it once the skill is defined.
+    """
+    digits = str(skill_id)
+    group_id = skill_id // 10
+    if len(digits) == 5:
+        return {"rarity": SkillRarity.UNIQUE_BEFORE_THREE_STAR, "group_id": group_id,
+                "tier": SkillTier.WHITE}
+    if digits[0] == "1":
+        has_starting_unique = digits[1] == "0" and int("1" + digits[2:]) in known_ids
+        rarity = SkillRarity.UNIQUE_AT_THREE_STAR if has_starting_unique else SkillRarity.UNIQUE
+        return {"rarity": rarity, "group_id": group_id, "tier": SkillTier.WHITE}
+    if digits[0] == "9":
+        return {"rarity": SkillRarity.WHITE, "group_id": group_id, "tier": SkillTier.GOLD}
+
+    mark = name.rstrip()[-1:]
+    if mark == "×":
+        rarity, tier = SkillRarity.WHITE, SkillTier.PENALTY
+    elif mark == "◎":
+        rarity, tier = SkillRarity.WHITE, SkillTier.GOLD
+    elif mark == "○":
+        rarity, tier = SkillRarity.WHITE, SkillTier.WHITE
+    elif skill_id % 10 == 1 and skill_id + 1 in known_ids:
+        rarity, tier = SkillRarity.GOLD, SkillTier.GOLD
+    else:
+        rarity, tier = SkillRarity.WHITE, SkillTier.WHITE
+    return {"rarity": rarity, "group_id": group_id, "tier": tier}
 
 
 def uma_values(card):
@@ -244,7 +315,7 @@ class Command(BaseCommand):
         )
         known_skills = {skill["id"] for skill in snapshot["skills"]}
         plans = [
-            self._plan_skills(snapshot["skills"], detailed),
+            self._plan_skills(snapshot["skills"], detailed, snapshot["skill_text_ahead"]),
             uma_plan,
             support_plan,
             self._plan_junction(
@@ -326,19 +397,24 @@ class Command(BaseCommand):
         }
 
     @staticmethod
-    def _plan_skills(skills, detailed):
+    def _plan_skills(skills, detailed, ahead=()):
         """
         Like _plan, but a skill with no row is CREATED rather than reported:
         `created` holds unsaved Skill instances, `changed` (row, diff) pairs.
+
+        `ahead` is the text-ahead file. Its skills are created with a guessed
+        structure, and after that only their name and description follow the
+        game (see the module docstring).
         """
         by_game_id = {row.game_id: row for row in Skill.objects.all()}
         changed, created, unchanged = [], [], 0
-        for skill in skills:
-            values = skill_values(skill, detailed)
-            row = by_game_id.get(skill["id"])
+
+        def plan_row(game_id, values, create_values):
+            nonlocal unchanged
+            row = by_game_id.get(game_id)
             if row is None:
-                created.append(Skill(game_id=skill["id"], **values))
-                continue
+                created.append(Skill(game_id=game_id, **values, **create_values))
+                return
             diff = {
                 column: value for column, value in values.items()
                 if getattr(row, column) != value
@@ -347,9 +423,22 @@ class Command(BaseCommand):
                 changed.append((row, diff))
             else:
                 unchanged += 1
+
+        for skill in skills:
+            plan_row(skill["id"], skill_values(skill, detailed), {})
+
+        defined = {skill["id"] for skill in skills}
+        known_ids = defined | {skill["id"] for skill in ahead}
+        taken = [skill for skill in ahead if skill["id"] not in defined and takes_ahead(skill)]
+        for skill in taken:
+            plan_row(
+                skill["id"],
+                {"name": skill["name"], "description": skill["description"]},
+                guessed_structure(skill["id"], skill["name"], known_ids),
+            )
         return {
             "label": "skill", "changed": changed, "created": created,
-            "unchanged": unchanged, "missing": [], "mismatched": [],
+            "unchanged": unchanged, "missing": [], "mismatched": [], "ahead": len(taken),
         }
 
     @staticmethod
@@ -458,6 +547,11 @@ class Command(BaseCommand):
                     f"{'would create' if dry_run else 'creating'} {len(created)}, "
                     f"already current {plan['unchanged']}"
                 )
+                if plan.get("ahead"):
+                    self.stdout.write(
+                        f"    {plan['ahead']} of them are text the client shipped ahead of "
+                        f"release; their rarity and tier are guesses until it defines them"
+                    )
             else:
                 self.stdout.write(
                     f"\n{label}s: {verb.lower()} {len(plan['changed'])}, "

@@ -28,7 +28,9 @@ A recommended skill points at a real Skill row so it gets its icon and the
 game's description. Only skills on global may be picked or shown, enforced in
 three layers: the FK's limit_choices_to (the admin's autocomplete and form),
 PvpSkillRecommendation.clean(), and the filter in views/pvp_guide.py. See
-SkillQuerySet.on_global for the rule itself.
+SkillQuerySet.on_global for the rule itself. Since 2026-10-16 that includes
+skills the game has announced but not released (their official text ships
+ahead in the client), so a guide for a CM that is not out yet can name them.
 
 Everything here is CONTENT (content_snapshot.CONTENT_MODELS), and every FK
 points at content.

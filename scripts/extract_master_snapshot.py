@@ -12,6 +12,8 @@ What comes out, one file per concern (all sorted by id, so re-runs diff cleanly)
   meta.json           when, from which mdb (size, mtime), and row counts
   skills.json         every skill: name, description, rarity, white/gold group,
                       icon, skill point cost, activation conditions
+  skill_text_ahead.json  skills the client has official English text for but
+                      does not define yet: id, name, description only
   cards.json          every uma outfit ("card"): names, initial stars, running
                       style, growth bonuses, and per-star stats + aptitudes
   card_skills.json    which skills each outfit has: unique / innate / awakening
@@ -36,8 +38,10 @@ Two places the schema is not what it looks like:
     card's `skill_set_id` (which several cards of one character share as
     `hint_id`). Rows with hint_gain_type 1 are stat hints and are skipped.
 
-Global only, by construction: this mdb is the global client's, so it holds
-nothing that has not released on global. Tutorial cards (ids above 9,000,000,
+Global only, by construction: this mdb is the global client's, so it defines
+nothing that has not released on global. Its TEXT runs ahead, though: the
+names and descriptions of upcoming skills ship before their definitions, and
+skill_text_ahead.json carries them. Tutorial cards (ids above 9,000,000,
 default_rarity 0) are skipped. Evolved skills (rarity 6) do not exist on global
 yet; the `skill_upgrade_*` tables are empty and are not read.
 
@@ -132,6 +136,28 @@ def extract_skills(conn):
             "condition_2": row["condition_2"],
         })
     return skills
+
+
+def extract_skill_text_ahead(conn, skills):
+    """
+    Skills the client has English text for but does not define yet.
+
+    The global client ships the text of upcoming content ahead of the content
+    itself: on 2026-10-14 its name table held 1,122 skills against 734
+    `skill_data` rows. The other 388 carry the official English name AND
+    description: the next months of uniques with their inherited copies,
+    general skills from cards to come, two evolved skills per outfit (nine-digit
+    ids), and event bonus skills (seven-digit ids). All of it is written here,
+    as the game has it; import_game_data decides which kinds become rows.
+    """
+    names = text_map(conn, TEXT_SKILL_NAME)
+    descriptions = text_map(conn, TEXT_SKILL_DESC)
+    defined = {skill["id"] for skill in skills}
+    return [
+        {"id": skill_id, "name": names[skill_id], "description": descriptions.get(skill_id, "")}
+        for skill_id in sorted(names)
+        if skill_id not in defined and names[skill_id].strip()
+    ]
 
 
 def extract_cards(conn):
@@ -257,6 +283,7 @@ def extract(mdb_path):
     conn.row_factory = sqlite3.Row  # columns by name, so no positional unpacking
     try:
         skills = extract_skills(conn)
+        skill_text_ahead = extract_skill_text_ahead(conn, skills)
         cards, card_skills = extract_cards(conn)
         support_cards, support_hints = extract_support_cards(conn)
     finally:
@@ -271,6 +298,7 @@ def extract(mdb_path):
         ).isoformat(timespec="seconds"),
         "counts": {
             "skills": len(skills),
+            "skill_text_ahead": len(skill_text_ahead),
             "cards": len(cards),
             "card_skills": len(card_skills),
             "support_cards": len(support_cards),
@@ -280,6 +308,7 @@ def extract(mdb_path):
     return {
         "meta.json": meta,
         "skills.json": skills,
+        "skill_text_ahead.json": skill_text_ahead,
         "cards.json": cards,
         "card_skills.json": card_skills,
         "support_cards.json": support_cards,

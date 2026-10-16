@@ -52,10 +52,25 @@ def slugify(name):
     return re.sub(r"\s+", "-", cleaned.strip())
 
 
-def get(url):
+def get(url, attempts=3):
+    """
+    The page's text. A network failure (a TLS handshake that times out, say)
+    is retried with a short backoff: one flaky connection among ~260 used to
+    kill the whole run. An HTTPError is an answer, not a failure, and goes
+    straight to the caller, which treats a 404 as "try the next slug".
+    """
     request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-    with urllib.request.urlopen(request, timeout=30) as response:
-        return response.read().decode("utf-8")
+    for attempt in range(1, attempts + 1):
+        try:
+            with urllib.request.urlopen(request, timeout=30) as response:
+                return response.read().decode("utf-8")
+        except urllib.error.HTTPError:
+            raise
+        except (urllib.error.URLError, TimeoutError):
+            if attempt == attempts:
+                raise
+            time.sleep(2 * attempt)
+    raise AssertionError("unreachable")
 
 
 def current_build_id(any_slug):
