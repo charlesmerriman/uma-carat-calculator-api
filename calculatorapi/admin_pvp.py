@@ -97,7 +97,7 @@ from unfold.widgets import (
     UnfoldAdminSelectWidget,
 )
 
-from . import public_payload_cache, pvp_sheet
+from . import public_payload_cache, pvp_sheet, pvp_track_skills
 from .models import (
     ChampionsMeeting,
     LeagueOfHeroes,
@@ -902,7 +902,7 @@ class PvpGuideAdmin(ModelAdmin):
     search_fields = ("champions_meeting__name", "league_of_heroes__name")
     autocomplete_fields = ("scenario",)
     actions = ("publish_selected", "unpublish_selected")
-    actions_detail = ("open_on_site", "copy_from_guide", "load_from_sheet")
+    actions_detail = ("open_on_site", "copy_from_guide", "load_from_sheet", "fill_track_greens")
     readonly_fields = ("site_link", "updated_at")
     fieldsets = (
         (None, {
@@ -1142,6 +1142,49 @@ class PvpGuideAdmin(ModelAdmin):
         }
         return TemplateResponse(
             request, "admin/calculatorapi/pvpguide/load_from_sheet.html", context,
+        )
+
+    @action(
+        description="Fill track green skills",
+        url_path="fill-track-greens",
+        icon="auto_fix_high",
+        permissions=["change"],
+    )
+    def fill_track_greens(self, request, object_id):
+        """Add the green skills the event's track calls for.
+
+        GET shows what would be added and which event fields couldn't be read;
+        POST adds them to Everyone / Green. pvp_track_skills.py does the
+        matching. Additive only: a family the guide already names, in any
+        version, style or category, is left alone.
+        """
+        guide = get_object_or_404(
+            PvpGuide.objects.select_related("champions_meeting", "league_of_heroes"), pk=object_id,
+        )
+        if request.method == "POST":
+            added = pvp_track_skills.fill(guide)
+            if added:
+                # bulk_create raises no signals.
+                public_payload_cache.invalidate()
+                self.message_user(
+                    request,
+                    f"Added {len(added)} track green skill(s) to Everyone: "
+                    + ", ".join(skill.name for skill in added) + ". Check the Everyone tab.",
+                    messages.SUCCESS,
+                )
+            else:
+                self.message_user(request, "Nothing to add: the guide already has them all.")
+            return redirect(reverse("admin:calculatorapi_pvpguide_change", args=(guide.pk,)))
+        context = {
+            **self.admin_site.each_context(request),
+            "title": f"Fill track green skills: {guide}",
+            "opts": self.model._meta,  # pylint: disable=protected-access
+            "original": guide,
+            "event": guide.event,
+            "suggestion": pvp_track_skills.suggest(guide),
+        }
+        return TemplateResponse(
+            request, "admin/calculatorapi/pvpguide/fill_track_greens.html", context,
         )
 
     # ── Extra routes ──

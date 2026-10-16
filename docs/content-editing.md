@@ -394,6 +394,16 @@ written and which names in the sheet matched nothing here. Untick it and read
 again to apply. Applying replaces every section of this guide with the sheet's;
 Published or draft stays as you set it.
 
+**Filling in the track skills.** **Fill track green skills** at the top of
+the page adds the green skills this event's track calls for (racecourse,
+direction, ground, season, weather and distance) to the Everyone tab's Green
+list. It shows what it will add first, then **Add** puts them in. Skills the
+guide already has, in any version, are left alone, so pressing it twice is
+safe. If the event's track details have a typo or aren't filled in yet, the
+page says which one; fix it on the event and press the button again. Skills
+that don't depend on the track (Maverick, post proficiency and so on) are
+still yours to add.
+
 **Preview, then publish.** **Open on the site** at the top of the page shows
 the guide as a visitor will see it. A draft shows with a bar saying only staff
 can see it. When it looks right, tick **Published** (on the guide's page, or
