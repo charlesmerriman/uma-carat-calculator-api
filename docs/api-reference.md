@@ -99,6 +99,7 @@ meaning anything instead of rendering a signed-in shell around nothing.
     { "position": 0, "id": 42, "name": "Special Week", "image": "https://…/media/umas/special-week.png" }
   ],
   "oshi_slots": 1,
+  "oshi_uma_ids": [42, 57],
   "oshi_variants": true,
   "early_access": true,
   "linked_providers": [
@@ -128,6 +129,12 @@ meaning anything instead of rendering a signed-in shell around nothing.
   `benefits.OSHI_SLOT_LADDER`, not a tier order — a client should draw that
   many tiles and do no arithmetic. Top-level rather than inside `supporter`
   because a free account has a count too.
+- **`oshi_uma_ids`** is every uma the rainbow favourite frame goes on: each
+  COVERED pick (the first `oshi_slots`) and every other outfit of its character
+  (`Uma.outfit_ids`, by `game_id // 100`), sorted. A favourite Special Week gives
+  Special Week (Summer) too. Resolved here because only the server knows which
+  outfits share a character; a client tests membership and nothing else. `oshis`
+  stays the exact picks (the picker and the account page read it).
 - **`oshi_variants`** is whether a costume variant (`is_variant` on `GET /umas`)
   may be *added*: `true` for a supporter on any paid tier and for staff. The
   picker locks those tiles on `false`; the rule itself is in the `PATCH` check.

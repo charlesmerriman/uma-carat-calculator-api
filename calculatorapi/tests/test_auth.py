@@ -279,7 +279,8 @@ class AccountEndpointTests(CalculatorTestCase):
         self.assertEqual(
             set(res.data),
             {'username', 'display_name', 'show_supporter_badge', 'avatar_url', 'oshis',
-             'oshi_slots', 'oshi_variants', 'early_access', 'linked_providers', 'supporter'},
+             'oshi_slots', 'oshi_uma_ids', 'oshi_variants', 'early_access', 'linked_providers',
+             'supporter'},
         )
         self.assertEqual(res.data['username'], 'accountuser')
 

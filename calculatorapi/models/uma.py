@@ -162,6 +162,34 @@ class Uma(models.Model):
         """The game's character id: an outfit id is `<character><outfit>`."""
         return self.game_id // 100 if self.game_id else None
 
+    @classmethod
+    def outfit_ids(cls, uma_ids):
+        """Every uma id that shares a character with one of `uma_ids`, those
+        ids included, sorted: a favourite Oguri Cap gives every Oguri Cap
+        outfit. GET /account sends it so the rainbow frame goes on any outfit
+        of a favourite, on every page, without each page needing to know about
+        characters (owner, 2026-10-16).
+
+        The character is `game_id // 100`, so one character's outfits are the
+        game ids in [character * 100, character * 100 + 99]: a range per
+        character rather than loading the whole catalogue to compare in
+        Python. An uma with no game id (not imported yet) matches only itself.
+        """
+        ids = set(uma_ids)
+        characters = {
+            game_id // 100
+            for game_id in cls.objects.filter(pk__in=ids, game_id__isnull=False)
+            .values_list("game_id", flat=True)
+        }
+        if characters:
+            same_character = models.Q()
+            for character in characters:
+                same_character |= models.Q(
+                    game_id__gte=character * 100, game_id__lt=(character + 1) * 100
+                )
+            ids.update(cls.objects.filter(same_character).values_list("pk", flat=True))
+        return sorted(ids)
+
     # The one catalogue row that is not a uma at all: a banner uses it to
     # mean "every uma". Matched by exact name so a real uma could never be
     # caught by it.
