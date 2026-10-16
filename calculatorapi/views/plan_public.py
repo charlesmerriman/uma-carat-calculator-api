@@ -21,10 +21,12 @@ branch in a shared view would turn "show me that plan" into "let me edit it".
 
 WHAT LEAVES THE ACCOUNT
 -----------------------
-The summary: catalogue ids, a row count, the copy count, the last-updated date
-and the two share options. No pull counts, no notes, no stats, no plan id, no
-plan name, nothing about the owner. The landing card resolves the ids against
-the catalogue the client already holds.
+The summary: catalogue ids, a row count, the plan's pull and step totals, the
+copy count, the last-updated date and the two share options. No per-row
+counts, no notes, no stats, no plan id, no plan name, nothing about the owner.
+The landing card resolves the ids against the catalogue the client already
+holds. (The totals arrived with the link preview, owner's call 2026-10-16:
+the same two numbers the preview at /plan/<id> states, views/plan_share.py.)
 
 The guest copy is the ONE place full rows leave an account, and only for a
 plan its owner chose to share: the rows in the shape the device store keeps
@@ -124,20 +126,37 @@ class SharedPlannedPurchaseSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-def _rows_in_order(plan):
+def rows_in_order(plan):
     """The plan's rows in the order its owner sees them (see
-    planned_banners_in_order). Only the banner FKs are joined: both sort keys
-    read them, and neither payload here nests a banner."""
+    planned_banners_in_order). The banner FKs are joined because both sort
+    keys read them, and their timelines because the link preview
+    (views/plan_share.py) looks for art on them; one join is cheaper than a
+    query per row there."""
     rows = UserPlannedBanner.objects.filter(plan=plan).select_related(
-        "banner_uma", "banner_support", "banner_step_up"
+        "banner_uma__banner_timeline",
+        "banner_support__banner_timeline",
+        "banner_step_up__banner_timeline",
     )
     return planned_banners_in_order(
         rows, emap=build_effective_date_maps()[BannerTimeline]
     )
 
 
+def plan_totals(rows):
+    """(pulls, steps) across a plan's rows.
+
+    `number_of_pulls` counts STEPS on a step-up row (the column's overload,
+    models/user_planned_banner.py), so the two are summed apart and never
+    converted: a step's pull count depends on the ladder, and the preview and
+    the card only state what the owner typed."""
+    pulls = sum(row.number_of_pulls for row in rows if not row.banner_step_up_id)
+    steps = sum(row.number_of_pulls for row in rows if row.banner_step_up_id)
+    return pulls, steps
+
+
 def _summary(plan):
-    rows = _rows_in_order(plan)
+    rows = rows_in_order(plan)
+    pulls, steps = plan_totals(rows)
     return {
         "public_id": plan.public_id,
         "updated_at": plan.updated_at,
@@ -146,6 +165,8 @@ def _summary(plan):
         "share_stats": plan.share_stats,
         "share_notes": plan.share_notes,
         "row_count": len(rows),
+        "pull_count": pulls,
+        "step_count": steps,
         # Exactly one of the three is set on every row (the model's
         # exactly_one_banner_target constraint).
         "rows": [
@@ -183,7 +204,7 @@ def _guest_copy(request, source):
         return Response({"include_stats": ["Must be true or false."]},
                         status=status.HTTP_400_BAD_REQUEST)
     rows = SharedPlannedBannerSerializer(
-        _rows_in_order(source), many=True,
+        rows_in_order(source), many=True,
         context={"share_notes": source.share_notes},
     ).data
     stats = purchases = None

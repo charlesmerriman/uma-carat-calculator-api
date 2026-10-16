@@ -84,6 +84,7 @@ def _default_context(public_id):
         "image_height": 512,
         "image_alt": "The Uma Musume Carat Calculator umagon mascot.",
         "twitter_card": "summary",
+        "open_label": "Open this team on Uma Musume Carat Calculator",
     }
 
 
@@ -117,6 +118,7 @@ def share_context(post):
         "image_height": gallery_preview.HEIGHT,
         "image_alt": team,
         "twitter_card": "summary_large_image",
+        "open_label": "Open this team on Uma Musume Carat Calculator",
     }
 
 
@@ -132,7 +134,7 @@ def share_page(request, public_id):
         return HttpResponse("Too many requests", status=429, content_type="text/plain")
     post = _available(public_id)
     context = share_context(post) if post is not None else _default_context(public_id)
-    return render(request, "gallery/share.html", context)
+    return render(request, "share/link_preview.html", context)
 
 
 def share_preview(request, public_id):

@@ -494,6 +494,8 @@ REST_FRAMEWORK = {
         # The /post/<id> share page and its preview picture. High: Discord and
         # X crawl from a few shared addresses, and every paste is a fetch.
         "gallery_share": "600/hour",
+        # The /plan/<id> share page (views/plan_share.py), for the same reason.
+        "plan_share": "600/hour",
     },
 }
 
@@ -815,7 +817,8 @@ CACHES = {
     },
     # The gallery's own small keys, kept OUT of "default" on purpose: one
     # "already counted" key per viewer per post per day (gallery.record_view)
-    # and every gallery throttle counter (views/gallery.py GalleryThrottle).
+    # and every gallery throttle counter (views/gallery.py GalleryThrottle),
+    # plus the /plan/<id> share page's (views/plan_share.py PlanShareThrottle).
     # In "default" they would crowd its 40 slots and push the /calculator-data
     # payload out, and every visitor after that would pay the ~2s rebuild (the
     # 2026-09-23 outage). Values are a few bytes each, so the bound is high.

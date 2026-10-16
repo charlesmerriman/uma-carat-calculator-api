@@ -580,6 +580,8 @@ preview or a crawler fetching it is harmless.
   "share_stats": false,
   "share_notes": true,
   "row_count": 2,
+  "pull_count": 120,
+  "step_count": 0,
   "rows": [
     { "banner_uma": 31, "banner_support": null, "banner_step_up": null },
     { "banner_uma": null, "banner_support": 18, "banner_step_up": null }
@@ -589,8 +591,28 @@ preview or a crawler fetching it is harmless.
 
 `rows` are catalogue ids in the order the owner's planner shows them; the client resolves
 names and art from the `/calculator-data` catalogue it already holds. Nothing else leaves the
-account here: no pull counts, no notes, no stats, no plan id, no plan name, nothing about the
+account here: no per-row counts, no notes, no stats, no plan id, no plan name, nothing about the
 owner. `share_stats` / `share_notes` say what a copy would bring besides the rows.
+`pull_count` sums the ordinary rows' pulls and `step_count` the step-up rows' steps (that
+column counts steps on a step-up row); neither is ever converted into the other.
+
+### `GET /plan/<public_id>` (not under `/api`)
+
+The link the owner copies. An HTML page, not JSON, served on the site's host through the
+`/plan` ingress rule in `.do/app.yaml`, the same way `/post/<id>` is: Discord's and X's
+crawlers don't run JavaScript, and the static site serves every `/app/<id>` from one shell,
+so only a page the server builds per plan can describe it. Crawlers read the tags; a
+browser runs one line of script and lands on `/app/<public_id>`. Code:
+`views/plan_share.py`, template `share/link_preview.html` (shared with `/post`).
+
+The tags carry the pull and step totals, the banner count, the first three banner names,
+the plan's notes (only when `share_notes` is on, trimmed to 200 characters) and the first
+banner's art. Never the plan name, the plan id or anything about the owner. A plan that is
+not shared and an unknown id get the same answer: the site's own tags, a **200**, still
+redirected to `/app/<public_id>`. Opening it creates and counts nothing. Throttled per
+address at `plan_share` (600/hour), counted in the `gallery` cache.
+
+An older `/app/<public_id>` link keeps working; it just unfurls as the plain site.
 
 ### `POST /plans/public/<public_id>/copy`
 

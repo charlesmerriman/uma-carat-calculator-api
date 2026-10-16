@@ -150,6 +150,15 @@ ingress:
     match:
       path:
         prefix: /post
+  # A shared plan's link (/plan/<id>), for the same reason: Django builds the
+  # preview per plan (views/plan_share.py), then sends people on to the
+  # landing card at /app/<id>. The site has no route of its own under /plan.
+  - component:
+      name: calculatorproject
+      preserve_path_prefix: true
+    match:
+      path:
+        prefix: /plan
 name: umamusme-calculator
 region: nyc
 services:
