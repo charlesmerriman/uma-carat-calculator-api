@@ -40,7 +40,9 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         unlinked = Skill.objects.filter(image="") | Skill.objects.filter(image__isnull=True)
-        unlinked = unlinked.order_by("icon_id", "game_id")
+        # A skill the game has only announced has no icon yet; it is linked
+        # on the deploy after the client defines it.
+        unlinked = unlinked.exclude(icon_id__isnull=True).order_by("icon_id", "game_id")
 
         # One storage round trip per icon, not per skill: 63 checks, not 718.
         present = {}

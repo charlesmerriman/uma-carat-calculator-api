@@ -34,6 +34,14 @@ class SkillQuerySet(models.QuerySet):
     import. `Skill.is_on_global` is the same rule for one row; keep the two in
     step. `\\S` rather than `!= ""` so whitespace alone does not count as text.
 
+    "ON GLOBAL" INCLUDES ANNOUNCED (2026-10-16). The global client ships the
+    official text of upcoming skills before it defines them, and the import
+    makes rows of those (import_game_data, "text ahead of release") so a guide
+    can name them early. They have a description, so this rule counts them:
+    in practice it reads "Global has published its English text", released or
+    not. Such a row is the one with no `icon_id`. A stored released flag is
+    the later fix, in workspace-root skills-plan-3.md.
+
     Anything that shows skills to a player (the CM planner, a skill page) must
     go through `on_global()`. A skill that is not there yet may sit in the
     backend, but a player never sees it.
@@ -52,6 +60,10 @@ class Skill(models.Model):
 
     Every row here comes from `manage.py import_game_data` reading the committed
     snapshot, and the import overwrites the game-owned columns on every run.
+    The exception is a skill the game has only announced: its rarity, group
+    and tier are guesses written once (an editor may correct them), its icon
+    and cost are empty, and all of them become the game's own values the day
+    the client defines it.
     The editor-owned columns are `image` (usually set in bulk by
     `link_skill_images`, but a hand pick sticks) and `admin_comments`.
 
@@ -89,7 +101,12 @@ class Skill(models.Model):
         help_text="Which version within the group this is.",
     )
     icon_id = models.PositiveIntegerField(
-        help_text="One of 63 generic icons, shared by every skill of its kind.",
+        null=True,
+        blank=True,
+        help_text=(
+            "One of 63 generic icons, shared by every skill of its kind. Empty for a "
+            "skill the game has only announced (text ahead of release)."
+        ),
     )
     cost = models.PositiveSmallIntegerField(
         null=True,

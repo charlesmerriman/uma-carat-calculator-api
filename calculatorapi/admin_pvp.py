@@ -611,7 +611,8 @@ class SkillInline(GuideInline, PicturePickersMixin, TabularInline):
     verbose_name = "skill"
     verbose_name_plural = "Recommended skills"
     hint = (
-        "Only skills already on global can be picked. Pick the version the guide "
+        "Only skills with global's English text can be picked, which includes the ones "
+        "the game has announced but not released yet. Pick the version the guide "
         "means (the picker says white, gold or evolved); the site shows the other "
         "versions beside it, and a team that has the gold counts for a white pick "
         "(a card teaching the gold teaches the white too). Pick a category, and a "

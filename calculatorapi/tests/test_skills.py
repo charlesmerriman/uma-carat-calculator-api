@@ -31,7 +31,10 @@ def snapshot_skill(skill_id=200012, name="Right-Handed ○", **overrides):
     return skill
 
 
-def write_snapshot(directory, skills, card_skills=(), hints=(), events=None):
+# One argument per snapshot file, so the count is the file count.
+def write_snapshot(  # pylint: disable=too-many-arguments
+    directory, skills, card_skills=(), hints=(), *, events=None, ahead=None,
+):
     directory = Path(directory)
     (directory / "skills.json").write_text(json.dumps(list(skills)), encoding="utf-8")
     (directory / "cards.json").write_text("[]", encoding="utf-8")
@@ -40,7 +43,14 @@ def write_snapshot(directory, skills, card_skills=(), hints=(), events=None):
     (directory / "support_hints.json").write_text(json.dumps(list(hints)), encoding="utf-8")
     if events is not None:
         (directory / "support_events.json").write_text(json.dumps(list(events)), encoding="utf-8")
+    if ahead is not None:
+        (directory / "skill_text_ahead.json").write_text(json.dumps(list(ahead)), encoding="utf-8")
     return directory
+
+
+def ahead_skill(skill_id, name, description="Increase velocity when it counts."):
+    """One skill as skill_text_ahead.json carries it: announced, text only."""
+    return {"id": skill_id, "name": name, "description": description}
 
 
 def import_game_data(directory, *flags):
@@ -131,14 +141,101 @@ class SkillImportTests(CalculatorTestCase):
         self.assertEqual(Skill.objects.count(), 1)
 
     def test_the_committed_snapshot_imports_every_skill(self):
-        # The real file: 718 skills, every one with a name, and the two
-        # halves of every ★1/★2 unique both present.
+        # The real files: 718+ defined skills plus the announced ones, every
+        # one with a name, and the two halves of every ★1/★2 unique both
+        # present (Twin Turbo's announced pair included).
         import_game_data(SNAPSHOT_DIR)
 
         self.assertGreaterEqual(Skill.objects.count(), 718)
         self.assertFalse(Skill.objects.filter(name="").exists())
         self.assertEqual(Skill.objects.filter(rarity=3).count(), Skill.objects.filter(rarity=4).count())
-        self.assertEqual(Skill.objects.values("icon_id").distinct().count(), 63)
+        defined = Skill.objects.exclude(icon_id__isnull=True)
+        self.assertEqual(defined.values("icon_id").distinct().count(), 63)
+        announced = Skill.objects.filter(icon_id__isnull=True)
+        self.assertGreaterEqual(announced.count(), 100)
+        self.assertEqual(announced.on_global().count(), announced.count())
+        self.assertFalse(announced.filter(game_id__gte=1_000_000).exists())
+
+
+class SkillTextAheadImportTests(CalculatorTestCase):
+    """Skills the client has announced (text only) become rows a guide can name."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()  # pylint: disable=consider-using-with
+        self.addCleanup(self.tmp.cleanup)
+        self.defined = [snapshot_skill()]
+        self.ahead = [
+            ahead_skill(10661, "Engines LIT!"),             # ★1/★2 starting unique
+            ahead_skill(100661, "Turbo BLAST!"),            # its ★3 unique
+            ahead_skill(110681, "Bring on the Banquet!"),   # an outfit's unique
+            ahead_skill(900661, "Turbo BLAST!"),            # the inherited copy
+            ahead_skill(202491, "Razor-Sharp Steps"),       # gold: its ...2 sibling exists
+            ahead_skill(202492, "Sharp Steps"),             # white
+            ahead_skill(202512, "Downhill Turner ◎"),       # the mark decides
+            ahead_skill(202513, "Downhill Turner ×"),
+            ahead_skill(100902111, "Rough Queen"),          # evolved: skipped
+            ahead_skill(1300011, "Energetic Hero"),         # event bonus: skipped
+            ahead_skill(202999, "No Text Yet", description=" "),  # no description: skipped
+        ]
+
+    def _structure(self, game_id):
+        skill = Skill.objects.get(game_id=game_id)
+        return (skill.rarity, skill.group_id, skill.tier)
+
+    def test_creates_announced_skills_with_a_guessed_structure(self):
+        write_snapshot(self.tmp.name, self.defined, ahead=self.ahead)
+
+        out = import_game_data(self.tmp.name)
+
+        self.assertCountEqual(
+            Skill.objects.filter(icon_id__isnull=True).values_list("game_id", flat=True),
+            [10661, 100661, 110681, 900661, 202491, 202492, 202512, 202513],
+        )
+        self.assertEqual(self._structure(10661), (3, 1066, 1))
+        self.assertEqual(self._structure(100661), (4, 10066, 1))
+        self.assertEqual(self._structure(110681), (5, 11068, 1))
+        self.assertEqual(self._structure(900661), (1, 90066, 2))
+        self.assertEqual(self._structure(202491), (2, 20249, 2))
+        self.assertEqual(self._structure(202492), (1, 20249, 1))
+        self.assertEqual(self._structure(202512), (1, 20251, 2))
+        self.assertEqual(self._structure(202513), (1, 20251, -1))
+        announced = Skill.objects.get(game_id=110681)
+        self.assertEqual(announced.name, "Bring on the Banquet!")
+        self.assertIsNone(announced.cost)
+        # The point of it all: a guide may pick it already.
+        self.assertTrue(announced.is_on_global)
+        self.assertIn("creating 9", out)
+        self.assertIn("8 of them are text the client shipped ahead of release", out)
+
+    def test_an_editors_correction_sticks_until_the_game_defines_it(self):
+        write_snapshot(self.tmp.name, self.defined, ahead=[ahead_skill(202492, "Sharp Steps")])
+        import_game_data(self.tmp.name)
+        Skill.objects.filter(game_id=202492).update(rarity=2, tier=2)
+
+        # Still announced; the client revised the text.
+        write_snapshot(self.tmp.name, self.defined, ahead=[
+            ahead_skill(202492, "Sharp Steps", description="Revised text."),
+        ])
+        import_game_data(self.tmp.name)
+        skill = Skill.objects.get(game_id=202492)
+        self.assertEqual((skill.rarity, skill.tier), (2, 2))
+        self.assertEqual(skill.description, "Revised text.")
+
+        # Released: the game's own values replace every guess.
+        write_snapshot(self.tmp.name, self.defined + [snapshot_skill(
+            202492, "Sharp Steps", rarity=1, group_id=20249, group_rate=1, icon_id=20011, cost=120,
+        )], ahead=[])
+        import_game_data(self.tmp.name)
+        skill.refresh_from_db()
+        self.assertEqual((skill.rarity, skill.tier, skill.icon_id, skill.cost), (1, 1, 20011, 120))
+        self.assertEqual(Skill.objects.filter(game_id=202492).count(), 1)
+
+    def test_a_snapshot_without_the_file_imports_as_before(self):
+        write_snapshot(self.tmp.name, self.defined)
+
+        import_game_data(self.tmp.name)
+
+        self.assertEqual(Skill.objects.count(), 1)
 
 
 class SkillVersionsTests(CalculatorTestCase):
@@ -209,6 +306,19 @@ class LinkSkillImagesTests(CalculatorTestCase):
         self.assertEqual(self.same_icon.image.name, "skills/10011.png")
         self.assertFalse(self.without_icon.image)
         self.assertIn("skills/10014.png", out)
+
+    def test_an_announced_skill_is_neither_linked_nor_reported(self):
+        # No icon until the game defines it; that is not a missing file.
+        announced = Skill.objects.create(
+            game_id=110681, name="Bring on the Banquet!", description="Increase velocity...",
+            rarity=5, group_id=11068, tier=1,
+        )
+
+        out = self._run()
+
+        announced.refresh_from_db()
+        self.assertFalse(announced.image)
+        self.assertNotIn("None", out)
 
     def test_leaves_a_hand_picked_image_alone(self):
         self.with_icon.image = "skills/custom.png"

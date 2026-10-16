@@ -594,7 +594,10 @@ class SkillAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
         ("Text", {
             "description": (
                 "A skill with no description has not released on global yet. It "
-                "stays here in the admin and is never shown to players."
+                "stays here in the admin and is never shown to players. A skill "
+                "with a description but no icon id is one the game has announced "
+                "but not released: guides may use it already, and its rarity and "
+                "tier below are guesses you may correct until it releases."
             ),
             "fields": ("description", "description_detailed", "on_global"),
         }),

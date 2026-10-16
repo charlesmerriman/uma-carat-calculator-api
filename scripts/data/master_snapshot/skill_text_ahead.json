@@ -1,0 +1,1942 @@
+[
+ {
+  "id": 10661,
+  "name": "Engines LIT!",
+  "description": "Very slightly increase velocity continuously for an extremely long duration when leading by a fair margin halfway through mid-race, but very slightly lose steam at the end of late-race."
+ },
+ {
+  "id": 100431,
+  "name": "Ding Dong, Boo!",
+  "description": "Moderately increase velocity when dueling. If it's a dirt race, chomp on fiercely to also increase acceleration."
+ },
+ {
+  "id": 100551,
+  "name": "Magical☆Marvelous★World",
+  "description": "Increase velocity when close to another runner midpack around halfway through the race. Increase this skill's effectiveness if at least 4 runners are in view."
+ },
+ {
+  "id": 100571,
+  "name": "Lyrical Journey",
+  "description": "Moderately increase velocity continuously when toward the back sometime upon approaching late-race. Effect increases if far from the lead and the race is medium or long."
+ },
+ {
+  "id": 100651,
+  "name": "Hands in the Air Like Ya Don't Care!",
+  "description": "Moderately crank the velocity when vibing toward the front sometime upon approaching late-race. If it's like a sprint or mile race or smth, moderately crank the velocity CONTINUOUSLY!"
+ },
+ {
+  "id": 100661,
+  "name": "Turbo BLAST!",
+  "description": "Slightly increase velocity continuously for an extremely long duration when leading by a fair margin halfway through mid-race, but very slightly lose steam at the end of late-race."
+ },
+ {
+  "id": 100701,
+  "name": "Seirios",
+  "description": "Slightly increase acceleration when positioned midpack with 800m remaining. Increase acceleration greatly instead if it's a 2400m race and the skill user is favored."
+ },
+ {
+  "id": 100761,
+  "name": "World in Bloom",
+  "description": "Moderately increase velocity when positioned midpack halfway through the race. If it's a long-distance race, increase this skill's duration and greatly recover endurance."
+ },
+ {
+  "id": 100831,
+  "name": "Mission: Triumph",
+  "description": "Increase velocity when positioned midpack on a straight around halfway through the race or later. If it's downhill, increase velocity continuously."
+ },
+ {
+  "id": 100841,
+  "name": "Sublimated Thunder",
+  "description": "Unleash dark power to surge ahead on the final straight after being toward the back late-race. If it's a medium-distance race at Tokyo Racecourse, surge ahead massively instead."
+ },
+ {
+  "id": 100851,
+  "name": "Ever Supreme",
+  "description": "If the skill user ran calmly, moderately surge ahead and very slightly intimidate the first 4 runners when positioned toward the back at the start of late-race."
+ },
+ {
+  "id": 101041,
+  "name": "Sunrise Banner—Katsuragi Ace!",
+  "description": "Moderately increase velocity and moderately recover endurance when leading on the third corner. If it's a medium-distance race at Tokyo Racecourse, increase this skill's duration."
+ },
+ {
+  "id": 101051,
+  "name": "Ad Astra",
+  "description": "Increase velocity when in midpack around halfway through the race. If the race is medium and at least 7 skills have activated, greatly increase velocity instead."
+ },
+ {
+  "id": 101061,
+  "name": "Bang! Miracle Shot ☆",
+  "description": "Moderately increase velocity continuously when in midpack on the latter half of the final corner. If unfavored and the race is long, greatly increase velocity continuously instead."
+ },
+ {
+  "id": 110021,
+  "name": "Ahead of the Horizon",
+  "description": "Moderately surge ahead when leading at the start of late-race. If it's on the third corner and the skill user led by a large margin mid-race, greatly surge ahead instead."
+ },
+ {
+  "id": 110121,
+  "name": "First Bite of the Feast!",
+  "description": "Increase velocity and very slightly increase acceleration for a moderate duration when toward the back on a downhill just before late-race after passing another runner 3 times mid-race."
+ },
+ {
+  "id": 110271,
+  "name": "A Warm Cup for You",
+  "description": "Increase velocity for a moderate duration when 2nd or worse and within 4 lengths of the lead on a downhill just before late-race. If the race is medium, also very slightly increase acceleration."
+ },
+ {
+  "id": 110311,
+  "name": "Fresh☆Parlor",
+  "description": "Moderately increase velocity continuously when positioned toward the front in the early part of mid-race. Oh, and have a dollop of moderate endurance recovery too!"
+ },
+ {
+  "id": 110321,
+  "name": "Summer Halation",
+  "description": "Greatly increase velocity for a moderate duration when well-positioned on a corner in the second half of the race. If at Nakayama Racecourse, also increase acceleration based on Speed."
+ },
+ {
+  "id": 110411,
+  "name": "Cherry☆Scramble",
+  "description": "Very slightly increase acceleration for a brief duration when toward the front with 400m remaining. Effect and duration increase based on how long the user engaged in a challenge mid-race."
+ },
+ {
+  "id": 110481,
+  "name": "Us Girlies Keep Winnin'! ♪",
+  "description": "Moderately increase velocity continuously when positioned midpack around halfway through the race. Increase this skill's effectiveness when the user's mood is great."
+ },
+ {
+  "id": 110511,
+  "name": "Flowering Dreams",
+  "description": "Increase velocity when positioned somewhere from 2nd to midpack with 200m remaining. If there are at least 3 runners nearby, also slightly surge ahead."
+ },
+ {
+  "id": 110531,
+  "name": "Scorching Summer Tech!",
+  "description": "Moderately increase velocity when positioned toward the front with 200m remaining. Increase velocity greatly instead if it's a sprint and the skill user passed another runner late-race."
+ },
+ {
+  "id": 110621,
+  "name": "Tumbly Power Drive!",
+  "description": "Moderately increase velocity for a duration based on remaining endurance when in midpack on a second-half corner. If the race is medium, also very slightly increase acceleration."
+ },
+ {
+  "id": 110671,
+  "name": "Rain Cloud Bolt",
+  "description": "Shine brilliantly, increasing velocity and moderately recovering endurance when positioned midpack around halfway through the race."
+ },
+ {
+  "id": 110681,
+  "name": "Bring on the Banquet!",
+  "description": "Surge ahead for a moderate duration and very slightly increase acceleration when positioned toward the front on a late-race corner far from the finish."
+ },
+ {
+  "id": 110691,
+  "name": "Watch! Me! BLOOM!",
+  "description": "If the skill user engaged in a challenge mid-race, her determination to realize her dreams increases acceleration continuously when well-positioned with 650m remaining."
+ },
+ {
+  "id": 110711,
+  "name": "Danser le Présent",
+  "description": "Expend endurance to increase velocity and slightly surge ahead when well-positioned on the final straight late-race with another runner close behind."
+ },
+ {
+  "id": 200184,
+  "name": "Summer Gust",
+  "description": "Increase performance in summer races, increasing Speed and Power."
+ },
+ {
+  "id": 201043,
+  "name": "Crescent Gust",
+  "description": "Increase velocity on a corner. (Mile)"
+ },
+ {
+  "id": 201253,
+  "name": "Crescent Gale",
+  "description": "Increase velocity on a corner. (Front Runner)"
+ },
+ {
+  "id": 201393,
+  "name": "Sharp Arc",
+  "description": "Increase velocity on a corner. (Late Surger)"
+ },
+ {
+  "id": 201602,
+  "name": "Solid Preparation",
+  "description": "Increase acceleration when many skills activate early-race."
+ },
+ {
+  "id": 202171,
+  "name": "Master of Declines",
+  "description": "Increase velocity on a downhill."
+ },
+ {
+  "id": 202491,
+  "name": "Razor-Sharp Steps",
+  "description": "Increase acceleration in the early part of late-race if the skill user stayed toward the back without rushing until the start of late-race. (End Closer)"
+ },
+ {
+  "id": 202492,
+  "name": "Sharp Steps",
+  "description": "Slightly increase acceleration in the early part of late-race if the skill user stayed toward the back without rushing until the start of late-race. (End Closer)"
+ },
+ {
+  "id": 202511,
+  "name": "Gonna Be Ur #1 FRFR",
+  "description": "Press coverage goes to the skill user's head, moderately increasing chance of rushing."
+ },
+ {
+  "id": 202521,
+  "name": "Beautiful Form",
+  "description": "Surge ahead when positioned toward the back on a third corner just before the final corner. (Medium/Long)"
+ },
+ {
+  "id": 202522,
+  "name": "Break the Mold",
+  "description": "Slightly surge ahead when positioned toward the back on a third corner just before the final corner. (Medium/Long)"
+ },
+ {
+  "id": 202531,
+  "name": "Superb Gait",
+  "description": "Increase velocity mid-race. (Mile/Medium)"
+ },
+ {
+  "id": 202532,
+  "name": "Graceful Gait",
+  "description": "Slightly increase velocity mid-race. (Mile/Medium)"
+ },
+ {
+  "id": 202541,
+  "name": "Vying for the Throne",
+  "description": "When positioned midpack or further back on the final corner, slightly decrease the velocity of 3 runners ahead and 3 behind. Increase skill user's velocity. (Late Surger)"
+ },
+ {
+  "id": 202542,
+  "name": "Pressure",
+  "description": "When positioned midpack or further back on the final corner, minimally decrease the velocity of 3 runners ahead and 3 behind. Slightly increase skill user's velocity. (Late Surger)"
+ },
+ {
+  "id": 202551,
+  "name": "Divine Speed",
+  "description": "Surge ahead and slightly recover endurance sometime during the second half of the race."
+ },
+ {
+  "id": 202552,
+  "name": "High Speed",
+  "description": "Slightly surge ahead and minimally recover endurance sometime during the second half of the race."
+ },
+ {
+  "id": 202561,
+  "name": "Sure Shot",
+  "description": "Increase velocity when positioned toward the back upon approaching late-race. (Long)"
+ },
+ {
+  "id": 202562,
+  "name": "Locked On",
+  "description": "Slightly increase velocity when positioned toward the back upon approaching late-race. (Long)"
+ },
+ {
+  "id": 202571,
+  "name": "Miracle for My Future",
+  "description": "Increase acceleration late-race to pull off a miracle. (Sprint)"
+ },
+ {
+  "id": 202581,
+  "name": "Light-Footed as a Hare",
+  "description": "Recover endurance and moderately increase velocity mid-race. (Long)"
+ },
+ {
+  "id": 202582,
+  "name": "Undistracted",
+  "description": "Slightly recover endurance and very slightly increase velocity mid-race. (Long)"
+ },
+ {
+  "id": 202591,
+  "name": "In One Fell Swoop",
+  "description": "If still going strong, surge ahead in the early part of late-race. (Late, Long)"
+ },
+ {
+  "id": 202592,
+  "name": "Hurry Up!",
+  "description": "If still going strong, slightly surge ahead in the early part of late-race. (Late, Long)"
+ },
+ {
+  "id": 202601,
+  "name": "Luminescence",
+  "description": "Surge ahead upon activating 13 skills this race. (Medium)"
+ },
+ {
+  "id": 202602,
+  "name": "Ignition",
+  "description": "Slightly surge ahead upon activating 13 skills this race. (Medium)"
+ },
+ {
+  "id": 202612,
+  "name": "Unrestrained Passion",
+  "description": "Slightly increase velocity when positioned midpack or further back upon approaching mid-race. (Late Surger)"
+ },
+ {
+  "id": 202621,
+  "name": "Rampaging Passion",
+  "description": "Increase velocity when positioned midpack or further back upon approaching late-race. (Late Surger)"
+ },
+ {
+  "id": 202622,
+  "name": "Start the Charge",
+  "description": "Slightly increase velocity when positioned midpack or further back upon approaching late-race. (Late Surger)"
+ },
+ {
+  "id": 202641,
+  "name": "A Journey in a Step",
+  "description": "Moderately increase velocity for a medium duration when positioned midpack mid-race. (Late Surger)"
+ },
+ {
+  "id": 202642,
+  "name": "First Step",
+  "description": "Very slightly increase velocity for a medium duration when positioned midpack mid-race. (Late Surger)"
+ },
+ {
+  "id": 202651,
+  "name": "Part the Clouds",
+  "description": "Increase Speed and Power when both attributes exceed a certain amount. (Mile/Medium)"
+ },
+ {
+  "id": 202652,
+  "name": "Confident",
+  "description": "Slightly increase Speed and Power when both attributes exceed a certain amount. (Mile/Medium)"
+ },
+ {
+  "id": 202661,
+  "name": "Rising Pulse",
+  "description": "Surge ahead when positioned midpack in the early part of late-race. (Medium/Long)"
+ },
+ {
+  "id": 202662,
+  "name": "Rising Heat",
+  "description": "Slightly surge ahead when positioned midpack in the early part of late-race. (Medium/Long)"
+ },
+ {
+  "id": 202671,
+  "name": "High Voltage",
+  "description": "Increase acceleration when positioned toward the front in the early part of late-race. (Mile)"
+ },
+ {
+  "id": 202672,
+  "name": "Beating Heart",
+  "description": "Slightly increase acceleration when positioned toward the front in the early part of late-race. (Mile)"
+ },
+ {
+  "id": 202681,
+  "name": "Send It! ☆",
+  "description": "Increase velocity and moderately recover endurance mid-race. (Long)"
+ },
+ {
+  "id": 202682,
+  "name": "Pop Off!",
+  "description": "Slightly increase velocity and very slightly recover endurance mid-race. (Long)"
+ },
+ {
+  "id": 202691,
+  "name": "Before Anyone!",
+  "description": "Increase acceleration in the start dash. (Medium)"
+ },
+ {
+  "id": 202692,
+  "name": "Goin' First",
+  "description": "Slightly increase acceleration in the start dash. (Medium)"
+ },
+ {
+  "id": 202701,
+  "name": "Singularity",
+  "description": "Increase Speed when the Speed attribute greatly exceeds a certain amount. If the Wit attribute also greatly exceeds that amount, increase Speed greatly instead. (Pace, Medium)"
+ },
+ {
+  "id": 202702,
+  "name": "Adventurer",
+  "description": "Slightly increase Speed when the Speed attribute greatly exceeds a certain amount. If the Wit attribute also greatly exceeds that amount, increase Speed moderately instead. (Pace, Medium)"
+ },
+ {
+  "id": 210261,
+  "name": "Wisdom of the Sun",
+  "description": "Increase velocity when engaging in a challenge mid-race. Increase this skill's effectiveness based on the number of skills the user has learned."
+ },
+ {
+  "id": 210262,
+  "name": "Sun's Blessing",
+  "description": "Slightly increase velocity when engaging in a challenge mid-race. Increase this skill's effectiveness based on the number of skills the user has learned."
+ },
+ {
+  "id": 210271,
+  "name": "Wisdom of the Sea",
+  "description": "Increase acceleration in the early part of early-race. Increase this skill's effectiveness based on the number of skills the user has learned."
+ },
+ {
+  "id": 210272,
+  "name": "Sea's Blessing",
+  "description": "Slightly increase acceleration in the early part of early-race. Increase this skill's effectiveness based on the number of skills the user has learned."
+ },
+ {
+  "id": 210281,
+  "name": "Wisdom of the Earth",
+  "description": "Increase velocity around halfway through late-race. Increase this skill's effectiveness based on the number of skills the user has learned."
+ },
+ {
+  "id": 210282,
+  "name": "Earth's Blessing",
+  "description": "Slightly increase velocity around halfway through late-race. Increase this skill's effectiveness based on the number of skills the user has learned."
+ },
+ {
+  "id": 900431,
+  "name": "Ding Dong, Boo!",
+  "description": "Very slightly increase velocity when dueling. If it's a dirt race, also slightly increase acceleration."
+ },
+ {
+  "id": 900551,
+  "name": "Magical☆Marvelous★World",
+  "description": "Slightly increase velocity when close to another runner midpack around halfway through the race. Increase this skill's effectiveness if at least 4 runners are in view."
+ },
+ {
+  "id": 900571,
+  "name": "Lyrical Journey",
+  "description": "Very slightly increase velocity continuously when toward the back sometime upon approaching late-race. Effect increases if far from the lead and the race is medium or long."
+ },
+ {
+  "id": 900651,
+  "name": "Hands in the Air Like Ya Don't Care!",
+  "description": "Very slightly increase velocity when positioned toward the front sometime upon approaching late-race. If it's a sprint or mile race, very slightly increase velocity continuously."
+ },
+ {
+  "id": 900661,
+  "name": "Turbo BLAST!",
+  "description": "Minimally increase velocity continuously for an extremely long duration when leading by a fair margin halfway through mid-race, but very slightly lose steam at the end of late-race."
+ },
+ {
+  "id": 900701,
+  "name": "Seirios",
+  "description": "Minimally increase acceleration when positioned midpack with 800m remaining. If it's a 2400m race and the skill user is favored, increase acceleration moderately instead."
+ },
+ {
+  "id": 900761,
+  "name": "World in Bloom",
+  "description": "Very slightly increase velocity when positioned midpack halfway through the race. If it's a long-distance race, increase this skill's duration and moderately recover endurance."
+ },
+ {
+  "id": 900831,
+  "name": "Mission: Triumph",
+  "description": "Slightly increase velocity when positioned midpack on a straight around halfway through the race or later. If it's downhill, slightly increase velocity continuously."
+ },
+ {
+  "id": 900841,
+  "name": "Sublimated Thunder",
+  "description": "Slightly surge ahead when positioned toward the back on the final straight late-race."
+ },
+ {
+  "id": 900851,
+  "name": "Ever Supreme",
+  "description": "If the skill user ran calmly, very slightly surge ahead and very minimally intimidate the first 4 runners when positioned toward the back at the start of late-race."
+ },
+ {
+  "id": 900991,
+  "name": "Shine On, Tomakomai! ☆",
+  "description": "Minimally increase acceleration when well-positioned in the last spurt after engaging in a challenge on a mid-race corner in a dirt race."
+ },
+ {
+  "id": 901041,
+  "name": "Sunrise Banner—Katsuragi Ace!",
+  "description": "Very slightly increase velocity and very slightly recover endurance when leading on the third corner. If it's a medium-distance race at Tokyo Racecourse, increase this skill's duration."
+ },
+ {
+  "id": 901051,
+  "name": "Ad Astra",
+  "description": "Slightly increase velocity when in midpack around halfway through the race. If the race is medium and at least 7 skills have activated, moderately increase velocity instead."
+ },
+ {
+  "id": 901061,
+  "name": "Bang! Miracle Shot ☆",
+  "description": "Very slightly increase velocity continuously when in midpack on the latter half of the final corner. If unfavored and the race is long, moderately increase velocity continuously instead."
+ },
+ {
+  "id": 910021,
+  "name": "Ahead of the Horizon",
+  "description": "Very slightly surge ahead when leading at the start of late-race. If it's on the third corner and the skill user led by a large margin mid-race, moderately surge ahead instead."
+ },
+ {
+  "id": 910121,
+  "name": "First Bite of the Feast!",
+  "description": "Slightly increase velocity and very minimally increase acceleration for a moderate duration when toward the back on a downhill just before late-race after passing another runner 3 times mid-race."
+ },
+ {
+  "id": 910271,
+  "name": "A Warm Cup for You",
+  "description": "Slightly increase velocity for a moderate duration when 2nd or worse and within 4 lengths of the lead on a downhill just before late-race. If the race is medium, also very minimally increase acceleration."
+ },
+ {
+  "id": 910311,
+  "name": "Fresh☆Parlor",
+  "description": "Very slightly increase velocity continuously and very slightly recover endurance when positioned toward the front in the early part of mid-race."
+ },
+ {
+  "id": 910321,
+  "name": "Summer Halation",
+  "description": "Moderately increase velocity for a moderate duration when well-positioned on a corner in the second half of the race. If at Nakayama Racecourse, also increase acceleration based on Speed."
+ },
+ {
+  "id": 910411,
+  "name": "Cherry☆Scramble",
+  "description": "Very minimally increase acceleration for a brief duration when toward the front with 400m remaining. Effect and duration increase based on how long the user engaged in a challenge mid-race."
+ },
+ {
+  "id": 910481,
+  "name": "Us Girlies Keep Winnin'! ♪",
+  "description": "Very slightly increase velocity continuously when positioned midpack around halfway through the race. Increase this skill's effectiveness when the user's mood is great."
+ },
+ {
+  "id": 910511,
+  "name": "Flowering Dreams",
+  "description": "Slightly increase velocity when positioned somewhere from 2nd to midpack with 200m remaining. If there are at least 3 runners nearby, also minimally surge ahead."
+ },
+ {
+  "id": 910531,
+  "name": "Scorching Summer Tech!",
+  "description": "Very slightly increase velocity when positioned toward the front with 200m remaining. If it's a sprint and the skill user passed another runner late-race, increase velocity moderately instead."
+ },
+ {
+  "id": 910621,
+  "name": "Tumbly Power Drive!",
+  "description": "Very slightly increase velocity for a duration based on remaining endurance when in midpack on a second-half corner. If the race is medium, also very minimally increase acceleration."
+ },
+ {
+  "id": 910671,
+  "name": "Rain Cloud Bolt",
+  "description": "Slightly increase velocity and very slightly recover endurance when positioned midpack around halfway through the race."
+ },
+ {
+  "id": 910681,
+  "name": "Bring on the Banquet!",
+  "description": "Slightly surge ahead for a moderate duration and very minimally increase acceleration when positioned toward the front on a late-race corner far from the finish."
+ },
+ {
+  "id": 910691,
+  "name": "Watch! Me! BLOOM!",
+  "description": "If the skill user engaged in a challenge mid-race, slightly increase acceleration continuously when well-positioned with 650m remaining."
+ },
+ {
+  "id": 910711,
+  "name": "Danser le Présent",
+  "description": "Expend endurance to slightly increase velocity and minimally surge ahead when well-positioned on the final straight late-race with another runner close behind."
+ },
+ {
+  "id": 1000013,
+  "name": "Carnival Bonus",
+  "description": "Increase attributes by +{0}％ in the Racing Carnival. {1}％ chance to also raise runner's mood to Great. This skill will disappear when the event ends."
+ },
+ {
+  "id": 1000014,
+  "name": "Carnival Bonus",
+  "description": "Increase attributes by +{0}％ in the Racing Carnival. {1}％ chance to also raise runner's mood to Great. This skill will disappear when the event ends."
+ },
+ {
+  "id": 1300011,
+  "name": "Energetic Hero",
+  "description": "Increase all attributes, ignore negative skill effects, and very slightly increase acceleration for the duration of the race when mood is great."
+ },
+ {
+  "id": 1300021,
+  "name": "Sunny Hero",
+  "description": "Greatly increase all attributes and very slightly increase acceleration for the duration of the race when the weather is sunny and the track is firm."
+ },
+ {
+  "id": 1300031,
+  "name": "Rainy Hero",
+  "description": "Massively increase Speed and Stamina and slightly increase acceleration for the duration of the race when the weather is rainy and the track is heavy."
+ },
+ {
+  "id": 1300041,
+  "name": "Inner Hero",
+  "description": "Moderately increase velocity and acceleration for a medium duration at the start when in brackets 1–3. Also recover endurance and moderately increase acceleration upon entering late-race."
+ },
+ {
+  "id": 1300051,
+  "name": "Outer Hero",
+  "description": "Massively increase Speed, Stamina, and Power when in brackets 6–8. Also moderately increase acceleration upon entering late-race."
+ },
+ {
+  "id": 1300061,
+  "name": "Friendly Hero",
+  "description": "Recover endurance and moderately increase acceleration late-race if the team has activated at least 6 skills. Effect increases if at least 10 have activated."
+ },
+ {
+  "id": 1300071,
+  "name": "Dashing Hero",
+  "description": "Greatly surge ahead, recover endurance, and very slightly increase acceleration upon entering late-race."
+ },
+ {
+  "id": 100101111,
+  "name": "Gluttonous Ruler",
+  "description": "Recover endurance and slightly increase velocity mid-race. (Pace Chaser)"
+ },
+ {
+  "id": 100101211,
+  "name": "Accelerating to My Dreams!",
+  "description": "Greatly increase velocity during the last spurt."
+ },
+ {
+  "id": 100102111,
+  "name": "Sunshine 'n' Spirit!",
+  "description": "Increase velocity for a medium duration when positioned midpack or further back mid-race. (Late Surger)"
+ },
+ {
+  "id": 100102211,
+  "name": "Ruler of Summer",
+  "description": "Increase velocity for a medium duration after passing another runner mid-race."
+ },
+ {
+  "id": 100103111,
+  "name": "Overwhelming Advance",
+  "description": "Increase velocity, very slightly increase acceleration, and slightly recover endurance after passing another runner late-race. (Long)"
+ },
+ {
+  "id": 100103211,
+  "name": "Gutsiest in Japan",
+  "description": "Take inspiration from everyone's hopes, greatly increasing velocity on the final corner. (Long)"
+ },
+ {
+  "id": 100201111,
+  "name": "Fully Focused",
+  "description": "Decrease time lost to slow starts and slightly increase acceleration at the start of the race."
+ },
+ {
+  "id": 100201211,
+  "name": "Otherworldly Front-Runner",
+  "description": "Increase acceleration and slightly surge ahead when leading on the final corner. (Front Runner)"
+ },
+ {
+  "id": 100202111,
+  "name": "Ultramarine Getaway",
+  "description": "Greatly increase velocity when positioned toward the front mid-race. (Front Runner)"
+ },
+ {
+  "id": 100202211,
+  "name": "Ráfaga Azul",
+  "description": "Greatly increase acceleration at the start of the race. (Medium)"
+ },
+ {
+  "id": 100301111,
+  "name": "Talented Technique",
+  "description": "Increase acceleration and moderately increase velocity when moving sideways. (Pace Chaser)"
+ },
+ {
+  "id": 100301211,
+  "name": "Teio Step",
+  "description": "Increase navigation for a medium duration and moderately increase velocity and acceleration mid-race. (Medium)"
+ },
+ {
+  "id": 100302111,
+  "name": "Racing Prodigy",
+  "description": "Recover endurance and slightly increase velocity when positioned toward the front mid-race. (Pace Chaser)"
+ },
+ {
+  "id": 100302211,
+  "name": "To the Ends of the Earth",
+  "description": "Recover endurance and slightly increase velocity when moving sideways. (Medium)"
+ },
+ {
+  "id": 100401111,
+  "name": "Let's Floor It, Baby!",
+  "description": "Greatly increase velocity when positioned toward the front mid-race. (Mile)"
+ },
+ {
+  "id": 100401211,
+  "name": "Revved Up Red-Hot",
+  "description": "Greatly increase velocity when leading in the second half of the race. (Mile)"
+ },
+ {
+  "id": 100402111,
+  "name": "You Can't Handle Me ☆",
+  "description": "Greatly recover endurance on an uphill. (Front Runner)"
+ },
+ {
+  "id": 100402211,
+  "name": "Queen of the Stage",
+  "description": "Greatly increase velocity when positioned toward the front upon approaching mid-race. (Mile)"
+ },
+ {
+  "id": 100501111,
+  "name": "Dazzling Star",
+  "description": "Greatly increase velocity when trying to pass another runner. (Mile)"
+ },
+ {
+  "id": 100501211,
+  "name": "Entertainer",
+  "description": "Recover endurance and slightly increase velocity when positioned toward the front mid-race. (Pace Chaser)"
+ },
+ {
+  "id": 100502111,
+  "name": "Stunning Trick",
+  "description": "When positioned toward the front mid-race and a runner behind rushes, reduce that runner's endurance and increase the skill user's own velocity."
+ },
+ {
+  "id": 100502211,
+  "name": "Glittering Star",
+  "description": "Greatly increase velocity when positioned toward the front on the final corner. (Pace Chaser)"
+ },
+ {
+  "id": 100601111,
+  "name": "Kasamatsu's Bottomless Pit",
+  "description": "Greatly recover endurance mid-race. (Pace Chaser)"
+ },
+ {
+  "id": 100601211,
+  "name": "Cornered by the Beast",
+  "description": "Increase acceleration and slightly recover endurance on corners."
+ },
+ {
+  "id": 100602111,
+  "name": "Full Belly, Full Energy",
+  "description": "Greatly recover endurance mid-race. (Pace Chaser)"
+ },
+ {
+  "id": 100602211,
+  "name": "Holiday Miracle",
+  "description": "Increase velocity and slightly recover endurance when near the inner rail on the final corner. (Long)"
+ },
+ {
+  "id": 100701111,
+  "name": "Her Lordship Seeth All",
+  "description": "Moderately widen field of view and slightly recover endurance when moving sideways. (End Closer)"
+ },
+ {
+  "id": 100701211,
+  "name": "It's All Goin' Downhill from Here!",
+  "description": "Recover endurance and slightly increase velocity on a downhill. (End Closer)"
+ },
+ {
+  "id": 100702111,
+  "name": "Golshi's Out-of-Body Experience",
+  "description": "Increase velocity for a medium duration when near the inner rail on the final corner. (Long)"
+ },
+ {
+  "id": 100702211,
+  "name": "Have Some Squid, Kid!",
+  "description": "Increase velocity for a medium duration when positioned toward the back mid-race. (Medium)"
+ },
+ {
+  "id": 100801111,
+  "name": "A Swig of Strength",
+  "description": "Recover endurance and slightly increase velocity when entering a mid-race straight."
+ },
+ {
+  "id": 100801211,
+  "name": "Feet of Fury",
+  "description": "Greatly increase acceleration when positioned toward the back late-race. (Mile)"
+ },
+ {
+  "id": 100802111,
+  "name": "Cuttin' Through!",
+  "description": "Increase maneuverability and slightly recover endurance when the way ahead is blocked in the last spurt."
+ },
+ {
+  "id": 100802211,
+  "name": "Kick It into Top Gear!",
+  "description": "Massively increase velocity when positioned 2nd or later within 4 lengths of the lead on the final straight. (Late Surger)"
+ },
+ {
+  "id": 100901111,
+  "name": "Perfectly Tuned",
+  "description": "Increase velocity and slightly recover endurance when positioned toward the front mid-race. (Medium)"
+ },
+ {
+  "id": 100901211,
+  "name": "First Place Is MINE!",
+  "description": "Recover endurance and slightly increase velocity when positioned toward the front mid-race. (Pace Chaser)"
+ },
+ {
+  "id": 100902111,
+  "name": "Rough Queen",
+  "description": "Greatly recover endurance on an uphill. (Front Runner)"
+ },
+ {
+  "id": 100902211,
+  "name": "Door to My Dream",
+  "description": "Massively increase velocity when leading on the final straight with another runner within 1 length behind. (Front Runner)"
+ },
+ {
+  "id": 101001111,
+  "name": "Shootin' Straight Ahead!",
+  "description": "Greatly increase velocity when positioned toward the front mid-race. (Mile)"
+ },
+ {
+  "id": 101001211,
+  "name": "Frontier Spirit",
+  "description": "Greatly increase velocity when positioned toward the front upon approaching mid-race. (Mile)"
+ },
+ {
+  "id": 101002111,
+  "name": "Takin' Y'all on a Wild Ride!",
+  "description": "Greatly increase velocity when positioned toward the front upon approaching mid-race. (Mile)"
+ },
+ {
+  "id": 101002211,
+  "name": "May the Best Uma Win!",
+  "description": "Increase acceleration and slightly widen field of view when positioned toward the front in the early part of late-race. (Pace Chaser)"
+ },
+ {
+  "id": 101101111,
+  "name": "Yamato Nadeshiko",
+  "description": "Greatly increase velocity late-race. (Medium)"
+ },
+ {
+  "id": 101101211,
+  "name": "Indomitable Spirit",
+  "description": "Increase acceleration and slightly widen field of view when positioned midpack or further back in the early part of late-race. (Late Surger)"
+ },
+ {
+  "id": 101102111,
+  "name": "Comforting Heal",
+  "description": "Recover endurance and slightly increase velocity mid-race. (Long)"
+ },
+ {
+  "id": 101102211,
+  "name": "The Magic of Courage",
+  "description": "Recover endurance and slightly increase velocity when positioned midpack or further back mid-race. (Late Surger)"
+ },
+ {
+  "id": 101201111,
+  "name": "Cry of Victory",
+  "description": "Greatly increase velocity and very slightly increase acceleration when trying to pass another runner on the final corner or later. (Medium)"
+ },
+ {
+  "id": 101201211,
+  "name": "Pororoca Roar",
+  "description": "Greatly increase velocity in the last spurt when positioned toward the back late-race. (End Closer)"
+ },
+ {
+  "id": 101202111,
+  "name": "Engaging Engine!",
+  "description": "Increase velocity for a medium duration when positioned toward the back mid-race. (End Closer)"
+ },
+ {
+  "id": 101202211,
+  "name": "Cake-Cuttin' Time!",
+  "description": "Increase acceleration for a medium duration in the early part of late-race if the skill user reached late-race without rushing. (End, Medium)"
+ },
+ {
+  "id": 101301111,
+  "name": "As Befits a Mejiro",
+  "description": "Greatly increase velocity when positioned toward the front mid-race. (Long)"
+ },
+ {
+  "id": 101301211,
+  "name": "Top-Class Composure",
+  "description": "Recover endurance and slightly increase velocity when positioned toward the front upon approaching mid-race. (Pace Chaser)"
+ },
+ {
+  "id": 101302111,
+  "name": "Rigorous Rest",
+  "description": "Recover endurance and slightly increase velocity mid-race. (Long)"
+ },
+ {
+  "id": 101302211,
+  "name": "Above the Cloudline",
+  "description": "Greatly increase velocity on a straight."
+ },
+ {
+  "id": 101303111,
+  "name": "Classy Summer",
+  "description": "Increase velocity for a medium duration when positioned toward the front upon approaching late-race. (Long)"
+ },
+ {
+  "id": 101303211,
+  "name": "An Earnest Breather",
+  "description": "If the skill user began the race without a late start, massively recover endurance in the early part of mid-race. (Pace, Long)"
+ },
+ {
+  "id": 101401111,
+  "name": "Eyes of the Condor",
+  "description": "Widen field of view and slightly increase velocity early-race. (Medium)"
+ },
+ {
+  "id": 101401211,
+  "name": "Performing Perfecto!",
+  "description": "Recover endurance and slightly increase velocity when positioned toward the front upon approaching mid-race. (Pace Chaser)"
+ },
+ {
+  "id": 101402111,
+  "name": "Heroic Flurry",
+  "description": "Greatly increase passing ability when positioned near the back late-race. (Mile)"
+ },
+ {
+  "id": 101402211,
+  "name": "Rising Condor",
+  "description": "Increase velocity for a medium duration after passing from the outside on the final corner. (Late Surger)"
+ },
+ {
+  "id": 101501111,
+  "name": "Entrance of the Centurial Overlord!",
+  "description": "Increase velocity for a medium duration when positioned toward the front on the final corner. (Pace Chaser)"
+ },
+ {
+  "id": 101501211,
+  "name": "The Leading Actor",
+  "description": "Greatly increase velocity when positioned toward the front mid-race. (Medium)"
+ },
+ {
+  "id": 101502111,
+  "name": "Maestro of the Waltz",
+  "description": "Greatly recover endurance on a corner."
+ },
+ {
+  "id": 101502211,
+  "name": "Never a Beat Late!",
+  "description": "Greatly increase velocity when positioned toward the front upon approaching late-race. (Long)"
+ },
+ {
+  "id": 101601111,
+  "name": "Decisive Strike",
+  "description": "Greatly increase velocity on a straight."
+ },
+ {
+  "id": 101601211,
+  "name": "In the Wolf's Maw",
+  "description": "Greatly increase velocity during the last spurt."
+ },
+ {
+  "id": 101602111,
+  "name": "Blazing Wolf",
+  "description": "Increase velocity for a medium duration when trying to pass another runner in the second half of the race. (Pace/Late)"
+ },
+ {
+  "id": 101602211,
+  "name": "Ravenous Beast",
+  "description": "Greatly increase acceleration late-race if the skill user led or was within 4 lengths of the lead just before late-race. (Pace, Long)"
+ },
+ {
+  "id": 101701111,
+  "name": "Eyes of an Emperor",
+  "description": "Greatly surge ahead late-race. (Medium)"
+ },
+ {
+  "id": 101701211,
+  "name": "Unquestioned Might",
+  "description": "Increase performance on corners, increasing velocity for a medium duration."
+ },
+ {
+  "id": 101702111,
+  "name": "Unwavering Expression",
+  "description": "Greatly recover endurance when positioned toward the front upon approaching mid-race. (Pace Chaser)"
+ },
+ {
+  "id": 101702211,
+  "name": "Autumn Grace",
+  "description": "Increase performance in autumn races, greatly increasing Speed and Power."
+ },
+ {
+  "id": 101801111,
+  "name": "As the Empress Wills",
+  "description": "Increase velocity for a medium duration when positioned toward the front late-race. (Pace Chaser)"
+ },
+ {
+  "id": 101801211,
+  "name": "Untouchable Beauty",
+  "description": "Increase navigation and slightly surge ahead late-race."
+ },
+ {
+  "id": 101802111,
+  "name": "Dignified Empress",
+  "description": "Increase velocity for a medium duration when trying to pass another runner. (Mile)"
+ },
+ {
+  "id": 101802211,
+  "name": "Moonlight Sommelier",
+  "description": "Increase acceleration and slightly surge ahead on a corner."
+ },
+ {
+  "id": 101901111,
+  "name": "Ultimate Uma Simp",
+  "description": "Increase velocity and slightly recover endurance when near several other runners."
+ },
+ {
+  "id": 101901211,
+  "name": "Best View of Anyone!",
+  "description": "For a medium duration, increase navigation and moderately increase acceleration late-race. (Dirt)"
+ },
+ {
+  "id": 101902111,
+  "name": "Run Like the Fic's Due Tomorrow!",
+  "description": "Increase velocity and slightly recover endurance after passing another runner mid-race."
+ },
+ {
+  "id": 101902211,
+  "name": "Back for More Moe!",
+  "description": "Increase velocity and slightly recover endurance when positioned toward the back mid-race. (Dirt)"
+ },
+ {
+  "id": 102001111,
+  "name": "Quick Reel",
+  "description": "Increase velocity for a medium duration when in the lead by a fair margin mid-race. (Long)"
+ },
+ {
+  "id": 102001211,
+  "name": "Breakaway Scheme",
+  "description": "Increase velocity for a medium duration when positioned toward the front mid-race. (Front Runner)"
+ },
+ {
+  "id": 102002111,
+  "name": "Run If You Can ♪",
+  "description": "Increase velocity and slightly recover endurance when positioned toward the front mid-race. (Front Runner)"
+ },
+ {
+  "id": 102002211,
+  "name": "Record Runner",
+  "description": "Increase velocity and slightly recover endurance when passed or engaged in a challenge early or mid-race. (Front Runner)"
+ },
+ {
+  "id": 102101111,
+  "name": "Gone in a Flash",
+  "description": "Greatly increase velocity when positioned midpack or further back mid-race. (Late Surger)"
+ },
+ {
+  "id": 102101211,
+  "name": "Paradise Tail",
+  "description": "Greatly increase velocity after activating several skills mid-race."
+ },
+ {
+  "id": 102102111,
+  "name": "A Prayer for Our Predecessors",
+  "description": "Greatly increase velocity when positioned toward the front mid-race. (Medium)"
+ },
+ {
+  "id": 102102211,
+  "name": "C'mon, Let's Do This!",
+  "description": "Greatly increase velocity after passing another runner mid-race."
+ },
+ {
+  "id": 102201111,
+  "name": "Royal Star",
+  "description": "Increase ability to break out of the pack and slightly recover endurance on the final corner. (Pace Chaser)"
+ },
+ {
+  "id": 102201211,
+  "name": "Heavenly Descent",
+  "description": "Increase acceleration on a downhill. (Pace Chaser)"
+ },
+ {
+  "id": 102202111,
+  "name": "Emboldening Memories",
+  "description": "Greatly increase velocity when positioned toward the front mid-race. (Mile)"
+ },
+ {
+  "id": 102202211,
+  "name": "Spear of Morrígan",
+  "description": "Increase acceleration and slightly widen field of view when positioned toward the front in the early part of late-race. (Pace Chaser)"
+ },
+ {
+  "id": 102301111,
+  "name": "All According to Plan",
+  "description": "Greatly recover endurance when positioned toward the front upon approaching mid-race. (Pace Chaser)"
+ },
+ {
+  "id": 102301211,
+  "name": "Strategic Cooldown",
+  "description": "Greatly recover endurance mid-race. (Long)"
+ },
+ {
+  "id": 102302111,
+  "name": "Very Important Positioning",
+  "description": "Greatly recover endurance when trying to pass another runner. (Long)"
+ },
+ {
+  "id": 102302211,
+  "name": "Speedy Santa",
+  "description": "Greatly increase velocity during the last spurt."
+ },
+ {
+  "id": 102401111,
+  "name": "You copy?",
+  "description": "Greatly recover endurance on a straight mid-race."
+ },
+ {
+  "id": 102401211,
+  "name": "I copy!",
+  "description": "Increase maneuverability and slightly recover endurance when the way ahead is blocked in the last spurt."
+ },
+ {
+  "id": 102402111,
+  "name": "Soft White Whisper",
+  "description": "Reduce the endurance of runners ahead and slightly increase own velocity when the way ahead is jammed mid-race. (Medium)"
+ },
+ {
+  "id": 102402211,
+  "name": "Barrel Roll!",
+  "description": "Greatly recover endurance with flawless cornering."
+ },
+ {
+  "id": 102501111,
+  "name": "Coffee Break",
+  "description": "Recover endurance and slightly increase velocity when positioned midpack or further back mid-race. (Late Surger)"
+ },
+ {
+  "id": 102501211,
+  "name": "Don't Leave Me...",
+  "description": "Slightly leech endurance from runners ahead and slightly increase velocity when positioned toward the back mid-race. (Long)"
+ },
+ {
+  "id": 102601111,
+  "name": "Overclock",
+  "description": "Greatly increase acceleration in the start dash. (Front Runner)"
+ },
+ {
+  "id": 102601211,
+  "name": "Overcome Any Strife",
+  "description": "Recover endurance and slightly increase velocity when positioned toward the front mid-race. (Medium)"
+ },
+ {
+  "id": 102602111,
+  "name": "Malfunction Mitigation",
+  "description": "Increase velocity and slightly recover endurance when positioned toward the front mid-race. (Front Runner)"
+ },
+ {
+  "id": 102602211,
+  "name": "Perfect Boost",
+  "description": "Decrease time lost to slow starts and very slightly increase all attributes."
+ },
+ {
+  "id": 102701111,
+  "name": "Let Those Muscles SING!",
+  "description": "Greatly increase velocity when positioned toward the front mid-race. (Medium)"
+ },
+ {
+  "id": 102701211,
+  "name": "Bulk Up & Away!",
+  "description": "Greatly increase velocity after passing another runner from the outside on the final corner. (Late Surger)"
+ },
+ {
+  "id": 102702111,
+  "name": "Helping Grant Your Dream",
+  "description": "Increase acceleration on a downhill. (Pace Chaser)"
+ },
+ {
+  "id": 102702211,
+  "name": "Give You a Taste of Glory",
+  "description": "Greatly increase velocity on a downhill."
+ },
+ {
+  "id": 102801111,
+  "name": "Full Tank!",
+  "description": "Increase navigation for a medium duration, moderately increase acceleration, and slightly increase velocity mid-race. (Sprint)"
+ },
+ {
+  "id": 102801211,
+  "name": "Always Hungry for More!",
+  "description": "Recover endurance and slightly increase velocity mid-race. (Pace Chaser)"
+ },
+ {
+  "id": 102901111,
+  "name": "Like They Do in the City!",
+  "description": "Increase acceleration and moderately increase navigation for a medium duration when the way ahead is blocked in the last spurt."
+ },
+ {
+  "id": 102901211,
+  "name": "Snow Gals Know Howta Sled!",
+  "description": "Moderately increase acceleration for a medium duration on a downhill. (Pace Chaser)"
+ },
+ {
+  "id": 103001111,
+  "name": "Heroic Determination",
+  "description": "Moderately increase acceleration and slightly surge ahead on a downhill. (Pace Chaser)"
+ },
+ {
+  "id": 103001211,
+  "name": "Dark Assassin",
+  "description": "Recover endurance and slightly increase velocity mid-race. (Long)"
+ },
+ {
+  "id": 103002111,
+  "name": "I Can Do This!",
+  "description": "Recover endurance and slightly increase velocity when positioned toward the front upon approaching mid-race. (Pace Chaser)"
+ },
+ {
+  "id": 103002211,
+  "name": "Trick and Treat",
+  "description": "When positioned toward the front mid-race and a runner behind rushes, reduce that runner's endurance and increase the skill user's own velocity."
+ },
+ {
+  "id": 103101111,
+  "name": "Stubborn Sis",
+  "description": "Recover endurance and slightly increase velocity on an uphill. (Front Runner)"
+ },
+ {
+  "id": 103101211,
+  "name": "Wind God's Wrath",
+  "description": "Slightly decrease the velocity of runners behind and increase own velocity for a medium duration when positioned toward the front mid-race. (Medium)"
+ },
+ {
+  "id": 103102111,
+  "name": "Perfect ♪ Order Up!",
+  "description": "Decrease time lost to slow starts and very slightly increase all attributes."
+ },
+ {
+  "id": 103102211,
+  "name": "Slick Serving",
+  "description": "Increase velocity and slightly increase acceleration on a corner. (Front Runner)"
+ },
+ {
+  "id": 103201111,
+  "name": "Latent One",
+  "description": "Greatly increase velocity late-race. (Medium)"
+ },
+ {
+  "id": 103201211,
+  "name": "Efficient Rest Methodology",
+  "description": "Recover endurance and slightly increase velocity when positioned toward the front mid-race. (Pace Chaser)"
+ },
+ {
+  "id": 103202111,
+  "name": "Devil's Laplace",
+  "description": "Greatly increase Speed when the Speed attribute greatly exceeds a certain amount. If the Wit attribute also greatly exceeds that amount, increase Speed massively instead. (Pace, Medium)"
+ },
+ {
+  "id": 103202211,
+  "name": "Blinding Luxon",
+  "description": "Increase velocity mid-race. Increase this skill's effectiveness based on how high the Speed attribute is. (Pace Chaser)"
+ },
+ {
+  "id": 103301111,
+  "name": "Quiet Promise",
+  "description": "Recover endurance and slightly increase velocity when following directly behind a runner. (End Closer)"
+ },
+ {
+  "id": 103301211,
+  "name": "Self-Destructive Comet",
+  "description": "Greatly increase velocity in the last spurt when positioned toward the back late-race. (End Closer)"
+ },
+ {
+  "id": 103401111,
+  "name": "Firefighter's Ascent",
+  "description": "Greatly increase velocity after activating several skills mid-race."
+ },
+ {
+  "id": 103401211,
+  "name": "Expert on the Dirt",
+  "description": "Increase velocity and greatly recover endurance when positioned toward the back mid-race. (Dirt)"
+ },
+ {
+  "id": 103402111,
+  "name": "Fan Dance",
+  "description": "Greatly increase velocity when near the inner rail on the final corner. (Long)"
+ },
+ {
+  "id": 103402211,
+  "name": "Standout Step",
+  "description": "Increase acceleration and slightly widen field of view on a straight during the last spurt. (End Closer)"
+ },
+ {
+  "id": 103501111,
+  "name": "Never Ever Give Up",
+  "description": "Moderately increase acceleration and slightly increase velocity for a medium duration when trying to pass another runner. (Late Surger)"
+ },
+ {
+  "id": 103501211,
+  "name": "Winning Road",
+  "description": "Increase velocity and slightly recover endurance when positioned midpack or further back mid-race. (Late Surger)"
+ },
+ {
+  "id": 103502111,
+  "name": "Superpowered Engines!",
+  "description": "Increase velocity for a medium duration on an uphill. (Late Surger)"
+ },
+ {
+  "id": 103502211,
+  "name": "I Can Fly!",
+  "description": "Increase velocity for a medium duration when well-positioned on a straight during the last spurt. (Medium)"
+ },
+ {
+  "id": 103601111,
+  "name": "Uplift",
+  "description": "Increase velocity and slightly recover endurance when positioned toward the back mid-race. (Medium)"
+ },
+ {
+  "id": 103601211,
+  "name": "Lose Myself",
+  "description": "Increase velocity and slightly surge ahead on a straight. (End Closer)"
+ },
+ {
+  "id": 103701111,
+  "name": "Blinding Magia",
+  "description": "Increase navigation and moderately surge ahead late-race."
+ },
+ {
+  "id": 103701211,
+  "name": "On My Honor",
+  "description": "Greatly increase velocity during the last spurt."
+ },
+ {
+  "id": 103702111,
+  "name": "Recipe for Victory",
+  "description": "Surge ahead for a medium duration late-race. (Medium)"
+ },
+ {
+  "id": 103702211,
+  "name": "Dark Flash",
+  "description": "Greatly increase velocity on a straight. (Medium)"
+ },
+ {
+  "id": 103801111,
+  "name": "#CuteChaos♪",
+  "description": "Slightly surge ahead and moderately narrow the field of view of runners behind when positioned toward the front late-race. (Pace Chaser)"
+ },
+ {
+  "id": 103801211,
+  "name": "#GotYouDownBad♪",
+  "description": "Intimidate runners behind and slightly increase velocity when positioned toward the front early-race. (Sprint)"
+ },
+ {
+  "id": 103802111,
+  "name": "#ThinkOfMe",
+  "description": "Intimidate runners behind and slightly increase velocity when positioned toward the front early-race. (Sprint)"
+ },
+ {
+  "id": 103802211,
+  "name": "#BeautifulSprint",
+  "description": "Increase acceleration and slightly widen field of view late-race. (Sprint)"
+ },
+ {
+  "id": 103901111,
+  "name": "Unstoppable Princess",
+  "description": "Greatly increase acceleration and moderately increase navigation when the way ahead is blocked during the last spurt."
+ },
+ {
+  "id": 103901211,
+  "name": "Rising Road Rage",
+  "description": "Increase velocity and slightly increase acceleration after passing from the outside on the final corner. (Late Surger)"
+ },
+ {
+  "id": 104001111,
+  "name": "Pristine Foresight",
+  "description": "Recover endurance, moderately increase own velocity, and moderately decrease velocity of runners ahead when positioned toward the back upon approaching mid-race. (Mile)"
+ },
+ {
+  "id": 104001211,
+  "name": "Star of the Runway",
+  "description": "Increase acceleration and slightly widen field of view when positioned midpack or further back in the early part of late-race. (Late Surger)"
+ },
+ {
+  "id": 104002111,
+  "name": "Golden Formation",
+  "description": "Decrease movement of runners ahead and slightly recover endurance when positioned toward the back early-race. (Mile)"
+ },
+ {
+  "id": 104002211,
+  "name": "Geared to Strike",
+  "description": "Recover endurance and slightly increase velocity when positioned midpack or further back upon approaching mid-race. (Late Surger)"
+ },
+ {
+  "id": 104101111,
+  "name": "Bakushin SPRINT!",
+  "description": "Increase acceleration and slightly increase velocity late-race. (Sprint)"
+ },
+ {
+  "id": 104101211,
+  "name": "Bakushin LEAD!",
+  "description": "Greatly increase velocity when leading by a large margin mid-race. (Sprint)"
+ },
+ {
+  "id": 104102111,
+  "name": "Full Charge! BAKUSHIIIN!",
+  "description": "Greatly increase velocity when positioned toward the front upon approaching late-race. (Sprint)"
+ },
+ {
+  "id": 104102211,
+  "name": "Baku-speed! BakuSHIIIIN!",
+  "description": "Surge ahead for a medium duration on a straight. (Sprint)"
+ },
+ {
+  "id": 104201111,
+  "name": "The World Is My Oyster",
+  "description": "Increase velocity and slightly surge ahead on a straight. (Sprint/Mile)"
+ },
+ {
+  "id": 104201211,
+  "name": "Pearlescent Danceoff",
+  "description": "Increase velocity for a medium duration when trying to pass another runner. (Sprint/Mile)"
+ },
+ {
+  "id": 104301111,
+  "name": "Just Run Like Crazy!",
+  "description": "Greatly increase velocity when positioned toward the front during the last spurt. (Dirt)"
+ },
+ {
+  "id": 104301211,
+  "name": "Mischevious Maestro",
+  "description": "Increase performance on soft and heavy ground, greatly increasing Speed and Power. (Dirt)"
+ },
+ {
+  "id": 104401111,
+  "name": "After-School Magical Girl",
+  "description": "Recover endurance and slightly increase velocity on a downhill. (End Closer)"
+ },
+ {
+  "id": 104401211,
+  "name": "Magic Charm",
+  "description": "Unnerve runners in focus and slightly surge ahead when positioned 2nd or later late-race. (End Closer)"
+ },
+ {
+  "id": 104501111,
+  "name": "Sweet Trance",
+  "description": "Increase velocity for a medium duration when positioned toward the front late-race. (Pace Chaser)"
+ },
+ {
+  "id": 104501211,
+  "name": "Motherly Maestro",
+  "description": "Greatly recover endurance with flawless cornering."
+ },
+ {
+  "id": 104502111,
+  "name": "Expert Caretaker",
+  "description": "Increase velocity and slightly recover endurance on a corner."
+ },
+ {
+  "id": 104502211,
+  "name": "Mummy's Sweet Whispers",
+  "description": "Reduce the endurance of runners ahead and slightly recover own endurance when the way ahead is jammed mid-race. (Medium)"
+ },
+ {
+  "id": 104601111,
+  "name": "Umadol★Onstage!",
+  "description": "Greatly increase navigation for a medium duration early-race."
+ },
+ {
+  "id": 104601211,
+  "name": "Umadol ♪ Chart Topper!",
+  "description": "Increase velocity and slightly recover endurance when engaging in a challenge mid-race. (Dirt)"
+ },
+ {
+  "id": 104602111,
+  "name": "Rising to Umadol Stardom!",
+  "description": "Increase velocity and slightly recover endurance when engaging in a challenge mid-race. (Dirt)"
+ },
+ {
+  "id": 104602211,
+  "name": "Always Center Stage!",
+  "description": "Greatly increase acceleration when positioned toward the front late-race. (Dirt)"
+ },
+ {
+  "id": 104701111,
+  "name": "Halfway to Heroism",
+  "description": "Greatly recover endurance when positioned toward the front mid-race. (Pace Chaser)"
+ },
+ {
+  "id": 104701211,
+  "name": "Shining Sword",
+  "description": "Greatly increase velocity on a corner. (Medium/Long)"
+ },
+ {
+  "id": 104801111,
+  "name": "Lezzgo!",
+  "description": "Increase acceleration and slightly recover endurance in the early part of late-race. (Pace/Late)"
+ },
+ {
+  "id": 104801211,
+  "name": "Trendsetter",
+  "description": "Recover endurance and slightly increase velocity mid-race. (Pace/Late)"
+ },
+ {
+  "id": 104802111,
+  "name": "I Can Totes Shake 'Em!",
+  "description": "Increase acceleration when positioned midpack or further back on the final corner. If it's at Tokyo Racecourse, also moderately increase velocity. (Medium)"
+ },
+ {
+  "id": 104802211,
+  "name": "I'm Literally the Best!",
+  "description": "Increase velocity when positioned midpack on the final corner. If it's a medium-distance race at Tokyo Racecourse, also slightly increase acceleration. (Late Surger)"
+ },
+ {
+  "id": 104901111,
+  "name": "It's All or Nothing",
+  "description": "Massively increase velocity in the second half of the race, but also massively increase fatigue sometimes."
+ },
+ {
+  "id": 104901211,
+  "name": "Takin' Each Gamble",
+  "description": "Occasionally tap into untold inner strength, massively increasing Speed, Power, and Guts. More likely to activate when skill user is unfavored."
+ },
+ {
+  "id": 105001111,
+  "name": "Cutting-Edge Senses",
+  "description": "Recover endurance and slightly increase velocity when positioned around the very back mid-race. (End Closer)"
+ },
+ {
+  "id": 105001211,
+  "name": "Heart of a Hunter",
+  "description": "Increase acceleration and slightly widen field of view on a straight during the last spurt. (End Closer)"
+ },
+ {
+  "id": 105002111,
+  "name": "I'll Show You!",
+  "description": "Increase velocity and navigation for a medium duration when positioned around the very back mid-race. (End Closer)"
+ },
+ {
+  "id": 105002211,
+  "name": "Bolt from the Brink",
+  "description": "Increase acceleration for a medium duration when positioned midpack or further back in the early part of late-race. (Medium)"
+ },
+ {
+  "id": 105101111,
+  "name": "Petals in the Breeze",
+  "description": "Increase velocity and slightly recover endurance on a straight."
+ },
+ {
+  "id": 105101211,
+  "name": "Blooming Resolve",
+  "description": "Increase acceleration on a downhill. (Pace Chaser)"
+ },
+ {
+  "id": 105102111,
+  "name": "Flower Girl's Blessing",
+  "description": "Greatly increase own velocity and slightly increase velocity of other team members on a corner. (Mile)"
+ },
+ {
+  "id": 105102211,
+  "name": "Veil in the Spring Breeze",
+  "description": "Increase velocity and slightly increase acceleration on a downhill. (Sprint/Mile)"
+ },
+ {
+  "id": 105201111,
+  "name": "I'll Keep Trying!",
+  "description": "Increase navigation and greatly recover endurance when the way ahead is jammed early or mid-race."
+ },
+ {
+  "id": 105201211,
+  "name": "I Won't Lose!",
+  "description": "Recover endurance and slightly increase velocity when passed mid-race."
+ },
+ {
+  "id": 105202111,
+  "name": "Look, Look!",
+  "description": "Greatly increase navigation and slightly increase velocity early-race."
+ },
+ {
+  "id": 105202211,
+  "name": "I'll Do My Very Best!",
+  "description": "Moderately increase acceleration and slightly increase velocity for a medium duration when trying to pass another runner. (Late Surger)"
+ },
+ {
+  "id": 105301111,
+  "name": "Peak Discipline",
+  "description": "Increase velocity and slightly increase acceleration after passing from the outside on the final corner. (Late Surger)"
+ },
+ {
+  "id": 105301211,
+  "name": "Ready for a Red-Hot Tech!",
+  "description": "Increase velocity and slightly increase acceleration when positioned toward the back on the final corner. (Mile)"
+ },
+ {
+  "id": 105302111,
+  "name": "Red-Hot Transforma-Runner!",
+  "description": "Increase acceleration when positioned midpack or further back in the early part of late-race. Then, slightly increase velocity when there's 200m remaining. (Late Surger)"
+ },
+ {
+  "id": 105302211,
+  "name": "Ultimate Ultra-Sprint!",
+  "description": "Increase acceleration late-race. Then, slightly increase velocity when there's 200m remaining. (Sprint)"
+ },
+ {
+  "id": 105501111,
+  "name": "Marvelous ☆ Thrill",
+  "description": "Greatly increase velocity when positioned toward the back mid-race. (Medium)"
+ },
+ {
+  "id": 105501211,
+  "name": "Make the World Marvelous ☆",
+  "description": "Increase maneuverability when the way ahead is blocked during the last spurt. If the skill user is far from the finish, also slightly surge ahead."
+ },
+ {
+  "id": 105601111,
+  "name": "Lucky Sign!",
+  "description": "Increase velocity for a medium duration late-race. (Long)"
+ },
+ {
+  "id": 105601211,
+  "name": "Lucky Number Seven",
+  "description": "Great things may happen when in bracket 7."
+ },
+ {
+  "id": 105602111,
+  "name": "Crazy Extra Mega Lucky!",
+  "description": "Increase velocity and very slightly increase acceleration for a medium duration after passing another runner late-race. (Long)"
+ },
+ {
+  "id": 105602211,
+  "name": "Bring On the Luck!",
+  "description": "Increase velocity for a medium duration when near the inner rail on the final corner. (Long)"
+ },
+ {
+  "id": 105701111,
+  "name": "Soaring Steps",
+  "description": "Greatly surge ahead when positioned toward the back on a third corner just before the final corner. (Medium/Long)"
+ },
+ {
+  "id": 105701211,
+  "name": "Spring from the Earth",
+  "description": "Increase acceleration and slightly widen field of view on a straight during the last spurt. (End Closer)"
+ },
+ {
+  "id": 105801111,
+  "name": "Right on the Dot",
+  "description": "Increase velocity for a medium duration when positioned toward the front on the final corner. (Pace Chaser)"
+ },
+ {
+  "id": 105801211,
+  "name": "I-I'm Doing My Best!",
+  "description": "Recover endurance and slightly increase velocity when passed mid-race."
+ },
+ {
+  "id": 105802111,
+  "name": "For My Rival!",
+  "description": "Increase acceleration and slightly recover endurance when positioned toward the front in the early part of late-race. (Pace Chaser)"
+ },
+ {
+  "id": 105802211,
+  "name": "Soul Guide",
+  "description": "Recover endurance and slightly increase velocity on a corner."
+ },
+ {
+  "id": 105901111,
+  "name": "Cold Look",
+  "description": "Reduce the endurance of runners ahead and slightly surge ahead when positioned toward the back late-race. (Late Surger)"
+ },
+ {
+  "id": 105901211,
+  "name": "Queen of Yodo",
+  "description": "Increase performance at Kyoto Racecourse, greatly increasing Speed, Stamina, and Wit."
+ },
+ {
+  "id": 105902111,
+  "name": "I Want to Explore More!",
+  "description": "Increase velocity and very slightly increase acceleration for a medium duration when positioned midpack in the second half of the race. (Late Surger)"
+ },
+ {
+  "id": 105902211,
+  "name": "First Step from the Brink",
+  "description": "Increase acceleration for a medium duration when positioned midpack or further back in the early part of late-race. (Medium)"
+ },
+ {
+  "id": 106001111,
+  "name": "Cynical Charm",
+  "description": "Increase acceleration for a medium duration when the way ahead is jammed late-race. (Medium)"
+ },
+ {
+  "id": 106001211,
+  "name": "Be the Lead!",
+  "description": "Increase velocity for a medium duration late-race. (Late Surger)"
+ },
+ {
+  "id": 106002111,
+  "name": "Just Gotta Do What I Can",
+  "description": "Increase velocity for a medium duration late-race. (Medium)"
+ },
+ {
+  "id": 106002211,
+  "name": "Keep the Cheers Comin'",
+  "description": "Increase acceleration, moderately increase navigation, and slightly recover endurance when the way ahead is blocked in the last spurt."
+ },
+ {
+  "id": 106101111,
+  "name": "Shocking Sweep",
+  "description": "Increase velocity and very slightly increase acceleration for a medium duration when positioned toward the back late-race. (Sprint)"
+ },
+ {
+  "id": 106101211,
+  "name": "Kingly View",
+  "description": "Widen field of view and slightly increase velocity mid-race. (Late Surger)"
+ },
+ {
+  "id": 106102111,
+  "name": "Ascend Glory",
+  "description": "Increase velocity for a medium duration after passing from the outside on the final corner. (Late Surger)"
+ },
+ {
+  "id": 106102211,
+  "name": "Sakura Blossoms in the Breeze",
+  "description": "Increase performance in spring, greatly increasing Speed and Power."
+ },
+ {
+  "id": 106201111,
+  "name": "Goin' My Way!",
+  "description": "Recover endurance and slightly increase velocity when surrounded mid-race."
+ },
+ {
+  "id": 106201211,
+  "name": "Ei, Ei, Mun!",
+  "description": "Increase velocity, very slightly increase acceleration, and slightly recover endurance after passing another runner late-race. (Long)"
+ },
+ {
+  "id": 106202111,
+  "name": "Positive Smile",
+  "description": "Greatly recover endurance in the early part of mid-race. (Late Surger)"
+ },
+ {
+  "id": 106202211,
+  "name": "Turning Things Right Around!",
+  "description": "Increase acceleration for a medium duration when positioned midpack or further back in the early part of late-race. (Medium)"
+ },
+ {
+  "id": 106401111,
+  "name": "WILD, Amirite?",
+  "description": "Increase velocity for a medium duration when another runner is right behind the skill user for a long time."
+ },
+ {
+  "id": 106401211,
+  "name": "Breakaway on Lock",
+  "description": "Increase velocity for a medium duration when leading by a fair margin mid-race. (Long)"
+ },
+ {
+  "id": 106501111,
+  "name": "LOL I'm on FIRE!",
+  "description": "Increase velocity for a medium duration when positioned toward the front mid-race. (Mile)"
+ },
+ {
+  "id": 106501211,
+  "name": "DW I'm on It!",
+  "description": "Increase velocity for a medium duration when positioned toward the front upon approaching late-race. (Mile)"
+ },
+ {
+  "id": 106601111,
+  "name": "1000% Output!",
+  "description": "Greatly expend endurance to massively increase velocity in the early part of mid-race. (Front Runner)"
+ },
+ {
+  "id": 106601211,
+  "name": "Turbo's Leadin' the Charge!",
+  "description": "Greatly increase acceleration in the start dash. (Front Runner)"
+ },
+ {
+  "id": 106701111,
+  "name": "Indestructable",
+  "description": "Recover endurance and slightly increase velocity when positioned midpack or further back upon approaching mid-race. (Late Surger)"
+ },
+ {
+  "id": 106701211,
+  "name": "Rondo to the Right",
+  "description": "Improve performance on right-handed tracks, greatly increasing Speed and Power."
+ },
+ {
+  "id": 106702111,
+  "name": "Beyond My Station",
+  "description": "Very slightly expend endurance to increase acceleration when positioned midpack or further back in the last spurt. (Late, Long)"
+ },
+ {
+  "id": 106702211,
+  "name": "The Dawn Always Comes!",
+  "description": "Slightly leech endurance from runners ahead and slightly increase velocity when positioned toward the back mid-race. (Long)"
+ },
+ {
+  "id": 106801111,
+  "name": "Get the Festival Going!",
+  "description": "Greatly increase acceleration in the start dash. (Front Runner)"
+ },
+ {
+  "id": 106801211,
+  "name": "Bright Blast",
+  "description": "Greatly increase velocity on a straight. (Long)"
+ },
+ {
+  "id": 106802111,
+  "name": "Leap Ahead to the Future",
+  "description": "Increase velocity for a medium duration when positioned toward the front mid-race. (Front Runner)"
+ },
+ {
+  "id": 106802211,
+  "name": "Introducing the Victor!",
+  "description": "Greatly increase acceleration in the start dash. (Front Runner)"
+ },
+ {
+  "id": 106901111,
+  "name": "Good Year for Sakura!",
+  "description": "Increase velocity for a medium duration when positioned toward the front on the final corner. (Pace Chaser)"
+ },
+ {
+  "id": 106901211,
+  "name": "The Sakura Bloom Regally Today",
+  "description": "Increase performance in spring, greatly increasing Speed and Power."
+ },
+ {
+  "id": 106902111,
+  "name": "Bloom Down the Branch",
+  "description": "Greatly increase velocity on a straight."
+ },
+ {
+  "id": 106902211,
+  "name": "I Don't Wanna Lose!",
+  "description": "Recover endurance and increase velocity when engaging in a challenge midpack mid-race. (Medium)"
+ },
+ {
+  "id": 107001111,
+  "name": "Unyielding Aster",
+  "description": "Greatly increase velocity when well-positioned on a straight in the last spurt. (Medium)"
+ },
+ {
+  "id": 107001211,
+  "name": "Arabesque of the Brightest Star",
+  "description": "Greatly increase velocity when positioned toward the front mid-race. (Medium)"
+ },
+ {
+  "id": 107101111,
+  "name": "Eternal Light",
+  "description": "Recover endurance and slightly increase velocity when positioned toward the front mid-race. (Pace Chaser)"
+ },
+ {
+  "id": 107101211,
+  "name": "Give This Moment Everything",
+  "description": "Greatly increase velocity when well-positioned on a straight in the last spurt. (Medium)"
+ },
+ {
+  "id": 107102111,
+  "name": "Elegant Phosphorescence",
+  "description": "Recover endurance and slightly increase velocity upon approaching late-race. (Pace Chaser)"
+ },
+ {
+  "id": 107102211,
+  "name": "Fleeting Afterglow",
+  "description": "Moderately expend endurance to massively increase velocity on a straight during the last spurt. (Pace, Medium)"
+ },
+ {
+  "id": 107201111,
+  "name": "Growing Flame",
+  "description": "Increase velocity for a medium duration after passing another runner mid-race."
+ },
+ {
+  "id": 107201211,
+  "name": "Yaeno's Fighting Spirit",
+  "description": "Greatly increase velocity and very slightly increase acceleration when pressured on the final corner or later. (Medium)"
+ },
+ {
+  "id": 107401111,
+  "name": "Ladylike Resolve",
+  "description": "Greatly recover endurance when passed mid-race."
+ },
+ {
+  "id": 107401211,
+  "name": "Immovable as a Mountain",
+  "description": "Slightly decrease velocity and massively recover endurance when positioned midpack in the early part of mid-race. (Long)"
+ },
+ {
+  "id": 107601111,
+  "name": "Open All the Buds",
+  "description": "Greatly increase velocity mid-race. (Late Surger)"
+ },
+ {
+  "id": 107601211,
+  "name": "Blossom for Us!",
+  "description": "Greatly surge ahead if still going strong in the early part of late-race. (Late, Long)"
+ },
+ {
+  "id": 107801111,
+  "name": "Shearing Gust",
+  "description": "Increase velocity for a medium duration when positioned toward the front mid-race. (Mile)"
+ },
+ {
+  "id": 107801211,
+  "name": "As Nature Wills",
+  "description": "Increase velocity for a medium duration when positioned 2nd or later within 2 lengths of the lead just before late-race. (Pace Chaser)"
+ },
+ {
+  "id": 108301111,
+  "name": "Simple and Sturdy",
+  "description": "Moderately expend endurance to increase acceleration when in midpack or further back in the last spurt. If at Nakayama Racecourse, slightly recover endurance instead of expending it. (Late, Long)"
+ },
+ {
+  "id": 108301211,
+  "name": "Imposing Innovation",
+  "description": "Increase velocity and slightly recover endurance when positioned toward the back upon approaching late-race. (Medium/Long)"
+ },
+ {
+  "id": 108401111,
+  "name": "The Stormcaller of Destruction",
+  "description": "Greatly increase velocity in the last spurt when positioned toward the back late-race. (End Closer)"
+ },
+ {
+  "id": 108401211,
+  "name": "Intoxicate the World",
+  "description": "Greatly increase Speed and Power when both attributes exceed a certain amount. (Mile/Medium)"
+ },
+ {
+  "id": 108501111,
+  "name": "Ever Graceful",
+  "description": "When positioned midpack or further back on the final corner, slightly decrease the velocity of 3 runners ahead and 3 behind. Greatly increase own velocity. (Late Surger)"
+ },
+ {
+  "id": 108501211,
+  "name": "Always the Most Brilliant",
+  "description": "Increase acceleration and slightly intimidate runners ahead when trying to pass from toward the back late-race. (Sprint/Mile)"
+ },
+ {
+  "id": 108701111,
+  "name": "Raise the Pitch",
+  "description": "Increase acceleration for a medium duration in the start dash. (Front Runner)"
+ },
+ {
+  "id": 108701211,
+  "name": "Leave a Footprint in Your Memory",
+  "description": "Increase velocity and slightly increase acceleration when positioned toward the front upon approaching late-race. (Sprint)"
+ },
+ {
+  "id": 109801111,
+  "name": "Lucky Rickey!",
+  "description": "Greatly increase velocity when positioned toward the front upon approaching late-race. (Dirt)"
+ },
+ {
+  "id": 109801211,
+  "name": "Longmai Pulse",
+  "description": "Greatly increase Speed when the Power attribute exceeds a certain amount. If Power greatly exceeds that amount, increase Speed massively instead."
+ },
+ {
+  "id": 109901111,
+  "name": "Thinkin' About Tomakomai Food",
+  "description": "Recover endurance and slightly increase velocity when positioned toward the front upon approaching mid-race. (Pace Chaser)"
+ },
+ {
+  "id": 109901211,
+  "name": "Be a Good Ambassador!",
+  "description": "Greatly increase velocity when engaging in a challenge mid-race. (Dirt)"
+ },
+ {
+  "id": 110001111,
+  "name": "A Dose of Ambition",
+  "description": "Increase velocity for a medium duration when trying to pass another runner. (Mile)"
+ },
+ {
+  "id": 110001211,
+  "name": "Divine on the Dirt",
+  "description": "Increase velocity for a medium duration when following directly behind another runner. (Dirt)"
+ },
+ {
+  "id": 110401111,
+  "name": "Aced It!",
+  "description": "Greatly increase acceleration in the start dash. (Front Runner)"
+ },
+ {
+  "id": 110401211,
+  "name": "Runnin' the Race Solo",
+  "description": "If the skill user led by a large margin mid-race, greatly increase velocity when leading on the final straight. Increase this skill's effectiveness in medium races at Tokyo Racecourse. (Front Runner)"
+ },
+ {
+  "id": 110501111,
+  "name": "Beyond the Stars with You",
+  "description": "Greatly increase velocity when well-positioned on a straight in the last spurt. (Medium)"
+ },
+ {
+  "id": 110501211,
+  "name": "Cross the Sea of Stars",
+  "description": "Surge ahead for a medium duration upon activating 13 skills this race. (Medium)"
+ },
+ {
+  "id": 110601111,
+  "name": "No Pressure, No Rush",
+  "description": "Greatly recover endurance when positioned midpack or further back mid-race. (Late Surger)"
+ },
+ {
+  "id": 110601211,
+  "name": "Collect All the Little Miracles",
+  "description": "Increase velocity for a medium duration when positioned midpack mid-race. (Late Surger)"
+ }
+]
