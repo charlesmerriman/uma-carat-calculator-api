@@ -591,7 +591,8 @@ users for the same reason.
 A plan is editable only by its owner. Anyone else sees it by taking a **copy** through its
 link, `/app/<public_id>`, and the copy is then theirs to change. There is no read-only view
 of somebody else's plan. Routes: `views/plan_public.py`, documented in
-`api-reference.md` ("Share links"). Decided 2026-10-12, replacing the read-only "shared
+`api-reference.md` ("Share links"). The link the owner copies is `/plan/<public_id>`, a
+link-preview page (`views/plan_share.py`, 2026-10-16) that sends people on to the card. Decided 2026-10-12, replacing the read-only "shared
 mode" first proposed in web #107.
 
 | Column | Default | Meaning |
