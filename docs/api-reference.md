@@ -414,9 +414,6 @@ exits it normally, so Django would otherwise commit the accepted half.
     "training_pass":          false,
     "misc_earnings":          true,
     "monthly_shop_tickets":   true,
-  "shop_uma_tickets_bought": null,
-  "shop_support_tickets_bought": null,
-  "spend_tickets_on_banners": true,
     "shop_uma_tickets_bought": null,
     "shop_support_tickets_bought": null,
     "spend_tickets_on_banners": true,
@@ -431,7 +428,8 @@ exits it normally, so Django would otherwise commit the accepted half.
     "club_rank":              1,
     "team_trials_rank":       1,
     "champions_meeting_rank": 1,
-    "league_of_heroes_rank":  1
+    "league_of_heroes_rank":  1,
+    "skipped_race_events":    { "champions_meeting": [14] }
   },
   "user_planned_banner_data": [
     { "id": 5, "number_of_pulls": 20, "reserved_copies": 0, "banner_uma": 3, "banner_support": null },
@@ -1000,11 +998,21 @@ Patreon quota.
   "club_rank":              1,
   "team_trials_rank":       1,
   "champions_meeting_rank": 1,
-  "league_of_heroes_rank":  1
+  "league_of_heroes_rank":  1,
+  "skipped_race_events":    {}
 }
 ```
 
 Rank fields are returned as integer IDs (primary keys).
+
+`skipped_race_events` lists the race events the player is not taking part in:
+`{"champions_meeting": [ids], "league_of_heroes": [ids]}`, keyed by the income ledger's
+race row kinds, each id an event pk. The client drops those events' ledger rows, so they
+pay nothing anywhere in the projection. `{}` (the default) means taking part in
+everything. Either key may be absent; lists come back de-duplicated and sorted, and an
+empty one is not stored. Ids are deliberately not checked against the event tables (an
+editor deleting an event must not 400 the owner's next save); an unknown kind, a non-list,
+a non-positive or boolean id, or more than 500 ids per kind is a `400`.
 
 `uma_selector_ticket` / `support_selector_ticket` are **not** gacha tickets. A gacha
 ticket is worth one pull and is spent by the pull strategy; a selector takes a specific

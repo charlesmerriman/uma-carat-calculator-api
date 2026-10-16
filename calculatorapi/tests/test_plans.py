@@ -581,6 +581,19 @@ class IncomeProfileTests(CalculatorTestCase):
         plans.attach_income_profile(self.plan)
         self.assertEqual(IncomeProfile.objects.count(), 1)
 
+    def test_attach_copies_skipped_race_events_and_they_diverge_after(self):
+        self.user.skipped_race_events = {"champions_meeting": [4]}
+        self.user.save()
+        plans.attach_income_profile(self.plan)
+        profile = self.plan.income_profile
+        self.assertEqual(profile.skipped_race_events, {"champions_meeting": [4]})
+
+        # The alt account changes its own skips; the account's are untouched.
+        profile.skipped_race_events = {"league_of_heroes": [2]}
+        profile.save()
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.skipped_race_events, {"champions_meeting": [4]})
+
     def test_attach_from_a_plan_that_shares_a_profile_seeds_from_that_profile(self):
         """Duplicate keeps the pointer; turning it "on" for the copy (a no-op)
         and for a fresh plan whose target is a profile both read the profile."""

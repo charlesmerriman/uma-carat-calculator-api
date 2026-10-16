@@ -57,6 +57,7 @@ Table calculatorapi_customuser as CustomUser {
   support_ticket integer [not null, note: 'Django default: 0.']
   uma_selector_ticket integer [not null, note: 'Django default: 0.']
   support_selector_ticket integer [not null, note: 'Django default: 0.']
+  skipped_race_events json [not null, note: 'Django default: {}. {"champions_meeting": [ids], "league_of_heroes": [ids]}: race events the player is not taking part in. No FK; shape checked by GameStatsSerializer.']
   display_name varchar(32) [not null, note: 'Django default: "". A name the person chose on their account page, shown to them alone. Not unique. Blanked by purge_user_pii.']
   avatar_uma_id bigint [null, note: 'Django on_delete: SET_NULL. The uma used as their picture instead of the provider avatar; null means the provider picture.']
 

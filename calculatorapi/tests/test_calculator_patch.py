@@ -123,6 +123,60 @@ class CalculatorPatchTests(CalculatorTestCase):
         # 0 is a real answer ("I buy none of these"), distinct from NULL.
         self.assertEqual(self.user.shop_support_tickets_bought, 0)
 
+    def test_patch_stats_saves_skipped_race_events_normalised(self):
+        # Default: taking part in everything.
+        self.assertEqual(self.user.skipped_race_events, {})
+        res = self.client.patch(
+            '/calculator-data',
+            {'user_stats_data': {'skipped_race_events': {
+                'champions_meeting': [12, 3, 12],
+                # An empty list means "skipping none" and is not stored.
+                'league_of_heroes': [],
+            }}},
+            format='json',
+        )
+        self.assertEqual(res.status_code, 200)
+        self.user.refresh_from_db()
+        # De-duplicated and sorted, so one choice has one stored spelling.
+        self.assertEqual(self.user.skipped_race_events, {'champions_meeting': [3, 12]})
+
+        res = self.client.get('/calculator-data')
+        self.assertEqual(
+            res.data['user_stats_data']['skipped_race_events'],
+            {'champions_meeting': [3, 12]},
+        )
+
+    def test_patch_skipped_race_events_accepts_ids_of_no_event(self):
+        # Ids are deliberately not checked against the event tables: an editor
+        # deleting an event must not turn the owner's next save into a 400.
+        res = self.client.patch(
+            '/calculator-data',
+            {'user_stats_data': {'skipped_race_events': {'league_of_heroes': [999999]}}},
+            format='json',
+        )
+        self.assertEqual(res.status_code, 200)
+
+    def test_patch_rejects_malformed_skipped_race_events(self):
+        bad_values = [
+            [1, 2],                                   # not an object
+            {'team_trials': [1]},                     # not a race kind
+            {'champions_meeting': 5},                 # not a list
+            {'champions_meeting': ['5']},             # not ints
+            {'champions_meeting': [0]},               # not a pk
+            {'champions_meeting': [True]},            # bool is an int in Python
+            {'champions_meeting': list(range(1, 502))},  # past the cap
+        ]
+        for value in bad_values:
+            with self.subTest(value=value):
+                res = self.client.patch(
+                    '/calculator-data',
+                    {'user_stats_data': {'skipped_race_events': value}},
+                    format='json',
+                )
+                self.assertEqual(res.status_code, 400)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.skipped_race_events, {})
+
     def test_patch_rejects_negative_shop_ticket_count(self):
         res = self.client.patch(
             '/calculator-data',
