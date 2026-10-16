@@ -32,6 +32,28 @@
 # module changed. Newest entry first is conventional here but not required — the
 # page sorts by date.
 
+- key: row-options
+  date: 2026-10-16
+  title: "Row options and skipping events"
+  version: "v2.1"
+  changes:
+    - added: "Planner rows have their own options now, behind the note button."
+    - added: "Give a banner a ticket limit. That number wins over the spend-tickets switch, and whatever it leaves goes to later rows."
+    - added: "Paid carats can be set per banner: none, the daily discount only, or discount and full price."
+    - added: "Already pulled on a banner that's running? Put those pulls in and they count toward its 200-pull exchange."
+    - added: "Turn off Count this banner to keep a row in the plan without spending on it."
+    - added: "Not playing a Champions Meeting or League of Heroes? Switch off Taking part on its Timeline card and its rewards come out of your income."
+    - added: "The calculator says how many upcoming events you're skipping."
+    - added: "Share a plan's link in Discord and it previews the plan: total pulls, the banners, and your notes if you chose to share them."
+    - added: "The card picker on My team can filter by rarity: SSR, SR or R."
+    - changed: "The shared plan page shows the total pulls too."
+    - changed: "The PvP page keeps your place, running style included. Copy link points at that style."
+    - changed: "Pick the gallery's uma filter from a grid of portraits."
+    - fixed: "Decks follow the game's rules: no two cards of the same uma, and no card of the uma you're building for. Group cards are exempt."
+    - fixed: "Every outfit of a favourite uma gets the rainbow frame."
+    - fixed: "Patreon sign-in and linking work on iPhone."
+    - fixed: "If the calculator is slow to load, you get a Try again button after 20 seconds."
+
 - key: pvp-early-access
   date: 2026-10-14
   title: "PvP guides, teams and a gallery"
