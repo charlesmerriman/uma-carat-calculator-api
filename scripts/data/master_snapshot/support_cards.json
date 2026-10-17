@@ -2007,7 +2007,12 @@
   "title": "[Esteemed and Adored]",
   "rarity": 3,
   "card_type": "group",
-  "skill_set_id": 9081017
+  "skill_set_id": 9081017,
+  "members": [
+   "Symboli Rudolf",
+   "Tokai Teio",
+   "Tsurumaru Tsuyoshi"
+  ]
  },
  {
   "id": 30068,
@@ -2147,7 +2152,15 @@
   "title": "[Passing the Dream On]",
   "rarity": 3,
   "card_type": "group",
-  "skill_set_id": 9081001
+  "skill_set_id": 9081001,
+  "members": [
+   "Mejiro McQueen",
+   "Rice Shower",
+   "Winning Ticket",
+   "Narita Brian",
+   "Silence Suzuka",
+   "Special Week"
+  ]
  },
  {
   "id": 30082,

@@ -66,6 +66,15 @@ class CatalogueTests(CalculatorTestCase):
         self.assertTrue(uma["image"].endswith("umas/100401.png"))
         self.assertEqual([card["name"] for card in body["support_cards"]], ["Kitasan Black"])
         self.assertEqual(body["support_cards"][0]["card_type"], "speed")
+        self.assertEqual(body["support_cards"][0]["group_members"], [])
+
+    def test_a_group_card_carries_its_umas(self):
+        SupportCard.objects.create(
+            name="Team Sirius", game_id=30081, image="support_cards/30081.png",
+            card_type="group", group_members=["Silence Suzuka", "Special Week"],
+        )
+        cards = {card["name"]: card for card in self.fetch()["support_cards"]}
+        self.assertEqual(cards["Team Sirius"]["group_members"], ["Silence Suzuka", "Special Week"])
 
     def test_on_global_is_having_any_skill_link(self):
         jp_only = SupportCard.objects.create(name="JP Card", game_id=30200, image="support_cards/30200.png")

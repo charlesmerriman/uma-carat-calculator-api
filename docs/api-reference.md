@@ -772,7 +772,7 @@ fetches it once, when a picker first opens.
                     "front": 8, "pace": 5, "late": 2, "end": 1},
             "skills": [{"skill": 210, "source": "unique", "level": 1}]}],
   "support_cards": [{"id": 302, "name": "Kitasan Black", "image": "url", "card_type": "speed",
-                     "rarity": 3, "title": "[Fire at My Heels]", "on_global": true,
+                     "rarity": 3, "title": "[Fire at My Heels]", "group_members": [], "on_global": true,
                      "skills": [{"skill": 88, "source": "hint"}]}],
   "skills": [{"id": 88, "name": "Groundwork", "description": "string", "image": "url | null",
               "rarity": 1, "tier": 1, "group_id": 2001, "cost": 120}] }
@@ -785,6 +785,8 @@ other skill is left out. Aptitudes are 1..8 = G..S, `null` when not imported. A 
 per source, `models/uma_skill.py`); a card's is `hint` / `event`. `on_global`: the card is in the
 global game today, i.e. it has any skill link (the import writes links only for cards in the global
 snapshot). The builder uses it for cards on no banner, which have no release date.
+`group_members` names the umas a group card stands for (`[]` on any other card); the
+builder's deck rules count it as a card of each of them.
 
 ### `/pvp-teams`
 
