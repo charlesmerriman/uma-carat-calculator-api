@@ -89,6 +89,16 @@ class SupportCard(models.Model):
         default="",
         help_text="The card's title from the game, e.g. \"[Get Lots of Hugs for Me]\".",
     )
+    # A group card's umas, by name, in the game's order. Each one counts as
+    # this card's uma in a deck, the way an ordinary card counts as its own
+    # (the team builder's rules, frontend utils/pvpTeams.ts). Names rather than
+    # character ids because the builder matches cards to umas by name: ~300
+    # cards not on global yet have no character id to match against.
+    group_members = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="The umas a group card stands for, e.g. Team Sirius's six. Empty for every other card.",
+    )
 
     def save(self, *args, **kwargs):
         # A card an editor adds by hand, e.g. one that is not on global yet,

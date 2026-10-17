@@ -673,7 +673,7 @@ class SupportCardAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
                 "Filled by the game-data import and overwritten by the next one, "
                 "so edits here do not stick. Fix the source instead."
             ),
-            "fields": ("title", "card_type", "rarity", "character_id"),
+            "fields": ("title", "card_type", "rarity", "character_id", "group_members"),
         }),
     )
 

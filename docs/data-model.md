@@ -151,6 +151,7 @@ erDiagram
         int rarity "1 R 2 SR 3 SSR; IMPORTED, else the first digit of game_id on save"
         int character_id "IMPORTED: the game's character id, a number not a FK"
         string title "IMPORTED: the card's [Title]"
+        json group_members "IMPORTED: a group card's umas by name (support_card_group); [] for every other card"
         string image
         string admin_comments
         string purpose "PUBLIC, max 100, never null; the Timeline tile's hover overlay"
@@ -1438,6 +1439,7 @@ The tables the extractor reads, and the two places the schema is not what it loo
 | innate and awakening skills | `available_skill_set` (721) | keyed by `card_data.available_skill_set_id`; `need_rank` 0 innate, 2..5 the awakening level |
 | outfit text | `text_data` cat 4 (full), 5 (title), 6 (character name by character id) | |
 | support cards | `support_card_data` | `rarity` 1 R, 2 SR, 3 SSR; `command_id` is the training command, named by `text_data` category 55 and read from there by the extractor (101 speed, 102 **power**, 103 **guts**, 105 **stamina**, 106 wit: not stat order), and 0 with `support_card_type` 2 friend / 3 group |
+| group card members | `support_card_group` | one row per (`support_card_id`, `chara_id`): every uma a group card stands for. `support_card_data.chara_id` files the card under just one of them (Team Sirius under Special Week). Written as names (`text_data` category 6), because the team builder's deck rules match cards to umas by name |
 | support card hints | `single_mode_hint_gain` (2063) | **keyed per card by `support_card_id`**, not by the card's `skill_set_id` (several cards of one character share that as `hint_id`, with different rows each). `hint_gain_type` 0 rows are skills (`hint_value_1`); type 1 are stat hints, skipped. 15 cards have none: friend, group and Haru Urara cards |
 | support card text | `text_data` cat 75 (full), 76 (title), 77 (character) | |
 

@@ -9,7 +9,8 @@ Fetched once by the builder the first time a picker opens, never on /app load.
                    ({turf, dirt, ..., end}, 1..8 = G..S, null when unknown)
                    and skills [{skill, source, level}]
     support_cards  every card with art: id, name, image, card_type, rarity,
-                   title, on_global and skills [{skill, source}]
+                   title, group_members (a group card's umas, by name; [] on
+                   any other card), on_global and skills [{skill, source}]
     skills         skills ON GLOBAL only: id, name, description, image,
                    rarity, tier, group_id, cost
 
@@ -118,7 +119,9 @@ def build_catalogue():
     for card in (
         SupportCard.objects.exclude(image="").exclude(image__isnull=True)
         .order_by("name", "id")
-        .values("id", "name", "image", "card_type", "rarity", "title")
+        # group_members: a group card's umas, by name, which the builder's
+        # deck rules treat as that many cards. [] on every other card.
+        .values("id", "name", "image", "card_type", "rarity", "title", "group_members")
     ):
         card["image"] = _url(card["image"])
         card["on_global"] = card["id"] in cards_on_global

@@ -630,12 +630,24 @@ class ImportGameDataSupportCardTests(CalculatorTestCase):
         directory = self._snapshot(
             id=30067, chara_id=1017, chara_name="Heirs to the Throne",
             name="[Esteemed and Adored] Heirs to the Throne", card_type="group",
+            members=["Symboli Rudolf", "Tokai Teio", "Tsurumaru Tsuyoshi"],
         )
 
         self._run(directory)
 
         group.refresh_from_db()
         self.assertEqual(group.card_type, "group")
+        # Every member, not just the one the game files the card under (1017).
+        self.assertEqual(group.group_members, ["Symboli Rudolf", "Tokai Teio", "Tsurumaru Tsuyoshi"])
+
+    def test_an_ordinary_card_has_no_group_members(self):
+        # A stale list is cleared too: the game's value wins on every run.
+        SupportCard.objects.filter(pk=self.card.pk).update(group_members=["Special Week"])
+
+        self._run(self._snapshot())
+
+        self.card.refresh_from_db()
+        self.assertEqual(self.card.group_members, [])
 
     def test_name_mismatch_is_left_alone(self):
         self._run(self._snapshot(chara_name="Special Week"))
