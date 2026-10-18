@@ -469,7 +469,7 @@ child are inline-only (`test_join_models_not_registered_top_level`).
   loader ticks both (41 of the loaded decks were refusing every save under the old per-row
   rule). Untouched rows are read off their saved instance, since they have no `cleaned_data`.
 - **Skill versions**: the autocomplete JSON and the `skill-names/` suggestions carry
-  `version` (`Skill.version_label`: `○ white`, `◎ gold`, `evolved`) and the picker draws it
+  `version` (`Skill.version_label`: `○ white`, `◎ white`, `◎ gold`, `evolved`) and the picker draws it
   as a tag, so an editor picks the version the guide means; the skills tables have a
   read-only "Other versions" column from `Skill.family()`. The family itself is derived
   (`data-model.md`, "`Skill` is imported"); nothing to pick or maintain.

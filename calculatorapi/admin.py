@@ -644,8 +644,10 @@ class SkillAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
         siblings = getattr(obj, "sibling_rows", None)
         if siblings is None:
             siblings = obj.siblings()
+        # version_label, not the tier's display: tier 2 is a white ◎ in some
+        # groups, and the gold above it (tier 3) has no display at all.
         parts = [
-            f"{sibling.get_tier_display()} {sibling.name} ({sibling.game_id})"
+            f"{sibling.version_label} {sibling.name} ({sibling.game_id})"
             for sibling in siblings
         ]
         if obj.evolves_from_id:

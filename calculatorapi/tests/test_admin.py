@@ -593,7 +593,7 @@ class AdminQueryCountTests(CalculatorTestCase):
         self._skills(4, 40)
         with CaptureQueriesContext(connection) as forty:
             res = self.client.get(url)
-        self.assertContains(res, "◎ gold Skill 1 (100001)")
+        self.assertContains(res, "◎ white Skill 1 (100001)")
         self.assertEqual(len(four), len(forty))
 
     def test_an_inline_with_a_picker_asks_nothing_per_row(self):

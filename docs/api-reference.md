@@ -706,11 +706,12 @@ and skills are embedded small objects, since the client's banner data only knows
 were on a banner. `skill_recommendations` only ever holds skills on global
 (`Skill.objects.on_global()`); `unique_of` names the outfit whose unique the skill is, or
 `null`. **A guide names one version of a skill per row; the other versions ride along.**
-`version` is the skill's own label (`"○ white"`, `"◎ gold"`, `"evolved"`) and `versions`
+`version` is the skill's own label (`"○ white"`, `"◎ white"`, `"◎ gold"`, `"evolved"`) and `versions`
 lists its other forms a player may be shown (same `group_id`, plus `evolves_from` both
 ways; never the × penalty row, never a skill not on global), each with `id`, `name`,
-`description`, `image`, `rarity`, `tier` (1 white, 2 gold), `version` and `is_evolved`,
-ordered white, gold, evolved; the skill itself carries `tier` and `is_evolved` too.
+`description`, `image`, `rarity`, `tier` (the game's `group_rate`: 1 a ○, 2 a ◎ white or a
+gold, 3 the gold above a ◎; read the colour from `rarity`), `version` and `is_evolved`,
+ordered ○ white, ◎ white, gold, evolved; the skill itself carries `tier` and `is_evolved` too.
 Derived from the game data by `models.skill.skill_families` in one query per guide, never
 stored. The team builder counts a source that teaches the pick or a HIGHER version: a card
 that teaches the gold teaches the white too, so a gold on the team covers a white pick and

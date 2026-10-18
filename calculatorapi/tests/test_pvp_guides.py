@@ -1161,6 +1161,20 @@ class SkillFamilyTests(CalculatorTestCase):
         self.assertNotIn(self.penalty, self.gold.family())
         self.assertEqual([row.version_label for row in self.gold.family()], ["○ white", "evolved"])
 
+    def test_a_circle_pair_is_two_whites_with_the_gold_above(self):
+        # Most green skills come as a ○ and a ◎, both white, and some have a
+        # gold above both at tier 3: the label reads the rarity, so the ◎ is
+        # not called a gold and the gold is not called "3".
+        # The game's ids are 20001x; setUp holds those, so these are made up.
+        single = make_skill("Right-Handed ○", 300012, group_id=3001, tier=1)
+        make_skill("Right-Handed ◎", 300011, group_id=3001, tier=2)
+        make_skill("Right-Handed Demon", 300014, group_id=3001, tier=3, rarity=2)
+        self.assertEqual(single.version_label, "○ white")
+        self.assertEqual(
+            [(row.name, row.version_label) for row in single.family()],
+            [("Right-Handed ◎", "◎ white"), ("Right-Handed Demon", "◎ gold")],
+        )
+
     def test_one_query_for_any_number_of_skills(self):
         with CaptureQueriesContext(connection) as one:
             skill_families([self.white])

@@ -348,12 +348,18 @@ class SkillAdminTests(CalculatorTestCase):
         Skill.objects.create(
             game_id=200011, name="Right-Handed ◎", rarity=1, group_id=20001, tier=2, icon_id=10011,
         )
+        Skill.objects.create(
+            game_id=200014, name="Right-Handed Demon", rarity=2, group_id=20001, tier=3,
+            icon_id=10012,
+        )
 
     def test_change_page_lists_the_other_versions(self):
         res = self.client.get(reverse("admin:calculatorapi_skill_change", args=[self.white.pk]))
 
         self.assertEqual(res.status_code, 200)
-        self.assertContains(res, "◎ gold Right-Handed ◎ (200011)")
+        # The ◎ is a second white; the gold sits above it at tier 3.
+        self.assertContains(res, "◎ white Right-Handed ◎ (200011)")
+        self.assertContains(res, "◎ gold Right-Handed Demon (200014)")
 
     def test_search_by_group_id_finds_the_family(self):
         res = self.client.get(reverse("admin:calculatorapi_skill_changelist"), {"q": "20001"})
