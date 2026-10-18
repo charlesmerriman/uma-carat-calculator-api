@@ -94,8 +94,9 @@ class _SupportCardSerializer(serializers.ModelSerializer):
 
 class _SkillVersionSerializer(serializers.ModelSerializer):
     """Another version of a recommended skill: its white, gold or evolved
-    form. `version` is the label a chip shows ("○ white", "◎ gold",
-    "evolved"); `tier` is the game's number behind it (1 white, 2 gold)."""
+    form. `version` is the label a chip shows ("○ white", "◎ white",
+    "◎ gold", "evolved"); `tier` is the game's group_rate behind it. The
+    colour is `rarity`'s: a ○/◎ pair's ◎ is tier 2 and its gold tier 3."""
 
     version = serializers.CharField(source="version_label")
     is_evolved = serializers.SerializerMethodField()
@@ -117,8 +118,9 @@ class _SkillSerializer(serializers.ModelSerializer):
     # versions (white, gold, evolved) from models.skill.skill_families, one
     # query for the guide (context["versions"]). A guide names ONE version per
     # row; the client shows the rest beside it. The team builder counts a
-    # source that teaches the pick or a HIGHER version: a card that teaches
-    # the gold teaches the white too (owner, 2026-10-14), never the reverse.
+    # source that teaches the pick or a version that covers it: a card that
+    # teaches the gold teaches the white too (owner, 2026-10-14), never the
+    # reverse, and the ○ and ◎ of one white count as one (owner, 2026-10-16).
     version = serializers.CharField(source="version_label")
     is_evolved = serializers.SerializerMethodField()
     versions = serializers.SerializerMethodField()

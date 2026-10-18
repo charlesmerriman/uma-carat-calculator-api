@@ -115,8 +115,8 @@ erDiagram
         string description "the game's text, shown by default"
         string description_detailed "fan translation with numbers; from gametora, optional"
         int rarity "1 white 2 gold 3/4 the two halves of a star-1/2 unique 5 unique 6 evolved (none yet)"
-        int group_id "white, gold and x versions of one effect share it"
-        int tier "-1 penalty 1 white 2 gold"
+        int group_id "white (o, and some groups a double-o), gold and x versions of one effect share it"
+        int tier "group_rate: -1 penalty, 1 first, 2 double-o white or gold, 3 gold above a double-o"
         int icon_id "one of 63 generic icons"
         int cost "skill points; null for uniques"
         string precondition "raw game string"
@@ -1359,9 +1359,14 @@ editor-owned columns are `image` and `admin_comments`. `image` is set in bulk by
 the Space under `skills/<icon_id>.png` by `scripts/fetch_skill_icons.py --upload`); a
 hand-picked image survives re-runs because the linker only fills empty ones.
 
-"Is this the gold version of something" is answered by `group_id` and `tier`, which the
-game itself uses: the white (○), gold (◎) and penalty (×) versions of one effect share a
-`group_id`, and `tier` says which this row is. The admin's read-only "Versions" column lists
+"Is this the gold version of something" is answered by `group_id`, `tier` and `rarity`,
+which the game itself uses: the white (○), gold and penalty (×) versions of one effect share
+a `group_id`, and `tier` says where in the group this row sits. **`tier` alone never says
+the colour.** The common group is a ○ at 1 and its gold at 2, but 58 groups (most green
+skills, and the Straightaways / Corners whites) hold a second WHITE at 2, the ◎, and twelve
+of those put their gold at 3 (Right-Handed ○ / ◎ / Demon). `rarity` is the colour. No card
+or uma teaches a ◎ in the game data, and a team treats a ○ and its ◎ as one skill (owner,
+2026-10-16): the team builder's search and its "on your team" count both do. The admin's read-only "Versions" column lists
 the siblings. `evolves_from` is the other relationship, for evolved skills, and stays empty
 until global has skill evolution (the model and the extractor are ready; the import will
 need the `skill_upgrade_*` tables then).
@@ -1370,8 +1375,8 @@ need the `skill_upgrade_*` tables then).
 (`models/skill.py`) answers "the other versions of these skills" for many skills in one
 query: the rows in the same group, plus the evolutions of that group (and an evolved
 skill's base group), minus the × penalty row, minus anything not on global.
-`Skill.version_label` is the label a picker or a chip shows (`○ white`, `◎ gold`,
-`evolved`). The PvP guide stores ONE row per effect, pointing at the version the author
+`Skill.version_label` is the label a picker or a chip shows (`○ white`, `◎ white`,
+`◎ gold`, `evolved`), its colour read from `rarity`. The PvP guide stores ONE row per effect, pointing at the version the author
 named (the sheet tiers the white and gold separately when their usefulness differs), and
 the API sends the rest as `versions` (`api-reference.md`, `GET /pvp-guides`). A stored link
 would be a second truth that goes stale the day the import adds a version; this one picks
@@ -1431,7 +1436,7 @@ The tables the extractor reads, and the two places the schema is not what it loo
 
 | Need | Table | Notes |
 |---|---|---|
-| skills | `skill_data` (718 rows) | `rarity` 1 white, 2 gold, 3/4 the pre- and post-★3 uniques of a ★1/★2 character, 5 unique. No 6 (evolved) on global yet. `group_id` groups white with gold; `group_rate` is the tier (1 white, 2 gold, -1 the × penalty version). `icon_id` is one of 63. `condition_1` is the activation condition, kept verbatim |
+| skills | `skill_data` (718 rows) | `rarity` 1 white, 2 gold, 3/4 the pre- and post-★3 uniques of a ★1/★2 character, 5 unique. No 6 (evolved) on global yet. `group_id` groups white with gold; `group_rate` is the tier (-1 the × penalty version, 1 the ○, 2 a ◎ white or the gold, 3 the gold above a ◎; `rarity` says which colour). `icon_id` is one of 63. `condition_1` is the activation condition, kept verbatim |
 | skill text | `text_data` cat 47 (name), 48 (description) | keyed by skill id; every skill has both. The text runs ahead of `skill_data`: names and descriptions of skills the client does not define yet go to `skill_text_ahead.json` (id, name, description; 388 on 2026-10-14) |
 | skill point cost | `single_mode_skill_need_point` | absent for every unique and 18 white/gold skills, so nullable |
 | uma outfits | `card_data` (105, of which 2 are tutorial variants above id 9,000,000, skipped) | `default_rarity` is the initial star count; `running_style` 1 front, 2 pace, 3 late, 4 end; `talent_*` are the growth bonuses in percent |
