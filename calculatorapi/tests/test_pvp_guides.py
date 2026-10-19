@@ -425,6 +425,7 @@ class SheetLoaderTests(CalculatorTestCase):
         SupportCard.objects.create(name="Narita Top Road", game_id=30086)
         make_skill("Groundwork", 100061)
         make_skill("Sunny Days ◎", 100071)
+        make_skill("Sunny Days ○", 100072)
         make_skill("Early Lead", 100081)
 
     def write(self, tab, rows):
@@ -499,7 +500,8 @@ class SheetLoaderTests(CalculatorTestCase):
         accel = guide.skill_recommendations.get(category="acceleration")
         self.assertEqual((accel.style, accel.skill.name), ("front", "Groundwork"))
         green = {r.skill.name: r for r in guide.skill_recommendations.filter(category="green")}
-        self.assertEqual(set(green), {"Sunny Days ◎", "Early Lead"})
+        # "Sunny Day ○/◎" is the ○, the version the track-greens button adds.
+        self.assertEqual(set(green), {"Sunny Days ○", "Early Lead"})
         self.assertEqual(green["Early Lead"].tier, 1)
         self.assertEqual(green["Early Lead"].note, "Taking The Lead")
         self.assertEqual(list(guide.team_comps.values_list("text", "note")),
@@ -1005,10 +1007,11 @@ class LoadFromSheetButtonTests(CalculatorTestCase):
 
 def make_family(name, group_id, condition, gold=None):
     """A general skill family as the game ships it: ○, ◎ and ×, plus an
-    optional gold skill, all sharing one condition. Returns the ◎."""
+    optional gold skill, all sharing one condition. Returns the ○, the
+    version the button adds."""
     base = group_id * 10
-    make_skill(f"{name} ○", base + 2, group_id=group_id, tier=1, condition=condition)
-    pick = make_skill(f"{name} ◎", base + 1, group_id=group_id, tier=2, condition=condition)
+    pick = make_skill(f"{name} ○", base + 2, group_id=group_id, tier=1, condition=condition)
+    make_skill(f"{name} ◎", base + 1, group_id=group_id, tier=2, condition=condition)
     make_skill(f"{name} ×", base + 3, group_id=group_id, tier=-1, condition=condition)
     if gold:
         make_skill(gold, base + 4, group_id=group_id, tier=3, rarity=2, condition=condition)
@@ -1053,7 +1056,7 @@ class TrackGreenSkillTests(CalculatorTestCase):  # pylint: disable=too-many-inst
     def suggested(self):
         return pvp_track_skills.suggest(self.guide)
 
-    def test_matches_each_track_field_and_adds_the_double_circle(self):
+    def test_matches_each_track_field_and_adds_the_single_circle(self):
         result = self.suggested()
         self.assertEqual(
             result["add"],
@@ -1093,9 +1096,11 @@ class TrackGreenSkillTests(CalculatorTestCase):  # pylint: disable=too-many-inst
         self.assertIn(self.tokyo, result["add"])
 
     def test_a_family_the_guide_names_in_any_version_is_left_alone(self):
-        tokyo_white = Skill.objects.get(name="Tokyo Racecourse ○")
+        # The guide holds the ◎ (as guides filled before 2026-10-18 do); the
+        # button offers the ○ and must not add it beside the ◎.
+        tokyo_double = Skill.objects.get(name="Tokyo Racecourse ◎")
         PvpSkillRecommendation.objects.create(
-            guide=self.guide, style="front", category="speed", skill=tokyo_white,
+            guide=self.guide, style="front", category="speed", skill=tokyo_double,
         )
         result = self.suggested()
         self.assertNotIn(self.tokyo, result["add"])
@@ -1113,8 +1118,8 @@ class TrackGreenSkillTests(CalculatorTestCase):  # pylint: disable=too-many-inst
             .order_by("order").values_list("skill__name", "order")
         )
         self.assertEqual(rows[0], ("Maverick ◎", 4))
-        self.assertEqual(rows[1], ("Right-Handed ◎", 5))
-        self.assertEqual(rows[-1], ("Sunny Days ◎", 10))
+        self.assertEqual(rows[1], ("Right-Handed ○", 5))
+        self.assertEqual(rows[-1], ("Sunny Days ○", 10))
         self.assertEqual(pvp_track_skills.fill(self.guide), [])
 
     def test_the_admin_page_previews_then_adds(self):
@@ -1126,7 +1131,7 @@ class TrackGreenSkillTests(CalculatorTestCase):  # pylint: disable=too-many-inst
         res = self.client.get(action_url)
         self.assertEqual(res.status_code, 200)
         self.assertContains(res, "Will add (6)")
-        self.assertContains(res, "Tokyo Racecourse ◎")
+        self.assertContains(res, "Tokyo Racecourse ○")
         self.assertEqual(self.guide.skill_recommendations.count(), 0)
         res = self.client.post(action_url)
         self.assertRedirects(
