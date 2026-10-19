@@ -57,7 +57,7 @@ class SharePageTests(GalleryFixture):
         self.assertIn(f'<link rel="canonical" href="{share}">', html)
         self.assertEqual(
             meta(html, "property", "og:image"),
-            f"{share}/preview.jpg?v={self.post_row.preview_version}",
+            f"{share}/preview.jpg?v={gallery_preview.image_version(self.post_row)}",
         )
         self.assertEqual(meta(html, "property", "og:image:width"), "1200")
         self.assertNotIn("SecretName", html)
@@ -85,7 +85,7 @@ class SharePageTests(GalleryFixture):
         return self.client.get(f"/post/{self.post_row.public_id}/preview.jpg{query}")
 
     def test_the_picture_is_a_large_card_jpeg(self):
-        response = self.image(f"?v={self.post_row.preview_version}")
+        response = self.image(f"?v={gallery_preview.image_version(self.post_row)}")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"], "image/jpeg")
         self.assertIn("immutable", response["Cache-Control"])
@@ -113,8 +113,26 @@ class SharePageTests(GalleryFixture):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(
             response["Location"],
-            f"/post/{self.post_row.public_id}/preview.jpg?v={self.post_row.preview_version}",
+            f"/post/{self.post_row.public_id}/preview.jpg?v={gallery_preview.image_version(self.post_row)}",
         )
+
+    def test_the_drawing_is_part_of_the_version(self):
+        """A new drawing gets a new address: the picture is served immutable,
+        so a crawler that cached the old one would never ask again."""
+        version = gallery_preview.image_version(self.post_row)
+        self.assertTrue(version.startswith(self.post_row.preview_version))
+        self.assertTrue(version.endswith(f".{gallery_preview.LAYOUT}"))
+        # The bare hash a pre-strip preview was cached under now redirects.
+        self.assertEqual(self.image(f"?v={self.post_row.preview_version}").status_code, 302)
+
+    def test_the_strip_names_the_event_and_nothing_a_person_wrote(self):
+        with mock.patch.object(gallery_preview.share_card, "brand_strip",
+                               wraps=gallery_preview.share_card.brand_strip) as strip:
+            self.image()
+        self.assertEqual(strip.call_args.kwargs["right"], self.cm.name)
+        for call in strip.call_args_list:
+            self.assertNotIn("secret caption", str(call))
+            self.assertNotIn("SecretName", str(call))
 
     def test_no_picture_for_a_hidden_post(self):
         GalleryPost.objects.filter(pk=self.post_row.pk).update(

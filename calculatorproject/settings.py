@@ -828,8 +828,8 @@ CACHES = {
         "LOCATION": "gallery",
         "OPTIONS": {"MAX_ENTRIES": 20000},
     },
-    # Rendered link-preview images (calculatorapi/gallery_preview.py), about
-    # 100 KB each. Rendered on request and kept here, never written to
+    # Rendered link-preview images (calculatorapi/gallery_preview.py for a
+    # post, plan_preview.py for a shared plan), about 100 KB each. Rendered on request and kept here, never written to
     # storage: default storage is the production Spaces bucket even on a
     # developer's machine. 64 entries caps it near 6 MB; a dropped image costs
     # one re-render the next time a crawler asks.

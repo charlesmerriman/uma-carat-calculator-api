@@ -47,6 +47,7 @@ from calculatorapi.views.gallery import (
 from calculatorapi.views.pvp_gallery import pvp_gallery_feed, pvp_team_publish
 from calculatorapi.views.gallery_share import share_page, share_preview
 from calculatorapi.views.plan_share import share_page as plan_share_page
+from calculatorapi.views.plan_share import share_preview as plan_share_preview
 from calculatorapi.views.social_auth import social_auth_start, social_auth_complete
 
 router = routers.SimpleRouter(trailing_slash=False)
@@ -162,6 +163,7 @@ urlpatterns = [
     # by its own ingress rule, then on to the landing card at /app/<id>.
     # → views/plan_share.py
     path("plan/<str:public_id>", plan_share_page, name="plan-share"),
+    path("plan/<str:public_id>/preview.jpg", plan_share_preview, name="plan-share-preview"),
     # Social sign-in (Google / Discord). The <provider> segment is validated by
     # the view against oauth.SUPPORTED_PROVIDERS rather than by a URL regex, so
     # an unknown provider gets a JSON 404 instead of Django's HTML one.

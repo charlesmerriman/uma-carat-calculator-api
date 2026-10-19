@@ -224,9 +224,12 @@ comments then read "Unnamed trainer"). Votes are stored per account and never sh
 Views store nothing about the viewer in the database.
 
 **A link preview carries no identity and no user text.** `/post/<id>` is built from the
-event and the uma names, and its picture is the three umas with their styles. Discord and X
-keep their own copies after a take-down, so the preview must not hold a name, a portrait of
-the poster or a caption.
+event and the uma names, and its picture is the site's brand strip with the event's name
+over the three umas with their styles (the strip since 2026-10-19). A shared plan's picture
+(`/plan/<id>/preview.jpg`, `plan_preview.py`) draws the totals and catalogue banner names
+over the first banner's art: the same facts as its tags, never the notes or the plan's name.
+Discord and X keep their own copies after a take-down, so the preview must not hold a name,
+a portrait of the poster or a caption.
 
 ### There is no password login on the API
 
