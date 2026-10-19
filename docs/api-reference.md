@@ -614,11 +614,21 @@ browser runs one line of script and lands on `/app/<public_id>`. Code:
 `views/plan_share.py`, template `share/link_preview.html` (shared with `/post`).
 
 The tags carry the pull and step totals, the banner count, the first three banner names,
-the plan's notes (only when `share_notes` is on, trimmed to 200 characters) and the first
-banner's art. Never the plan name, the plan id or anything about the owner. A plan that is
+the plan's notes (only when `share_notes` is on, trimmed to 200 characters) and the picture
+below. Never the plan name, the plan id or anything about the owner. A plan that is
 not shared and an unknown id get the same answer: the site's own tags, a **200**, still
 redirected to `/app/<public_id>`. Opening it creates and counts nothing. Throttled per
 address at `plan_share` (600/hour), counted in the `gallery` cache.
+
+### `GET /plan/<public_id>/preview.jpg?v=<version>` (not under `/api`)
+
+The picture the tags point at (since 2026-10-19): a 1200x630 JPEG drawn by
+`plan_preview.py`, the brand strip, "Shared pull plan", the totals and the first banner names
+over the first banner's art, blurred and shaded. The same facts as the tags; the notes never
+go on it. The version is a hash of everything drawn plus the drawing's `LAYOUT`, so an edited
+plan gets a new address; an old version redirects to the current one, and the picture is
+served `immutable`. Drawn on request and kept in the `gallery-previews` cache, never stored.
+**`404`** for a plan that is not shared and for an unknown id.
 
 An older `/app/<public_id>` link keeps working; it just unfurls as the plain site.
 
@@ -849,7 +859,7 @@ the post's own author.
 | `PATCH` / `DELETE /gallery/comments/<id>` `{body}` | its author | the comment / `204` |
 | `POST /gallery/reports` `{post: public_id}` or `{comment: id}`, `reason`, `note?` | signed in | `201`, no body; `409` on a repeat |
 | `GET /post/<public_id>` | anyone | HTML: link-preview tags, then on to the post in the app. **Not under `/api`** |
-| `GET /post/<public_id>/preview.jpg?v=<version>` | anyone | the 1200x630 preview JPEG |
+| `GET /post/<public_id>/preview.jpg?v=<version>` | anyone | the 1200x630 preview JPEG: the brand strip with the event's name, then the three umas (`gallery_preview.py`). The version is the team's hash plus the drawing's `LAYOUT`; an old one redirects |
 
 A feed row (the full post adds `strategy` (the long text, `""` when none; never on a row), `team`, `event` (`{kind, id, label}`, the label being the event's name), `hidden` and `stats.copies`):
 
