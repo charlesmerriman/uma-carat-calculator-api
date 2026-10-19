@@ -21,8 +21,10 @@ only race variables (below), and the family has both a ○ and a ◎ version. Th
 pair rule is what leaves out the one-off skills that happen to share a
 condition (scenario skills like "Medium Race Enthusiast", event rewards like
 "Unquenched Thirst", the penalty "♡ 3D Nail Art"); every general family has
-both versions. The ◎ is the one added, the version guide writers name. The
-gold version and the ○ come along on the site through `skill_families()`.
+both versions. The ○ is the one added (owner, 2026-10-17; it used to be the
+◎), and the sheet importer resolves "○/◎" to the ○ too, so every path that
+names a green skill names the same version. The ◎ and the gold come along on
+the site through `skill_families()`, and a team holding the ◎ still covers it.
 
 THE RACECOURSE IDS ARE READ OFF THE SKILL NAMES ("Tokyo Racecourse ◎" has
 `track_id==10006`), so there is no id table to keep in step with the game. A
@@ -202,7 +204,7 @@ def read_event(event, racecourse_ids):
 def suggest(guide):
     """What the button would add to this guide.
 
-    Returns {"add": [Skill], "already": [Skill], "problems": [str]}: the ◎ of
+    Returns {"add": [Skill], "already": [Skill], "problems": [str]}: the ○ of
     each matching family the guide doesn't name yet, the ones it already has
     (in any style or category, any version), and the report from read_event.
     """
@@ -225,7 +227,7 @@ def suggest(guide):
             continue
         pick, parsed = next(
             (skill, parsed) for skill, parsed in members
-            if skill.rarity == SkillRarity.WHITE and skill.tier == SkillTier.GOLD
+            if skill.rarity == SkillRarity.WHITE and skill.tier == SkillTier.WHITE
         )
         if not condition_variables(parsed) <= set(race):
             continue  # needs a field the event doesn't say; already reported

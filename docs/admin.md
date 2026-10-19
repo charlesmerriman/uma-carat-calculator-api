@@ -493,8 +493,11 @@ child are inline-only (`test_join_models_not_registered_top_level`).
   `pvp_sheet.load_guide_from_sheet`, preview first; see "Safety & data" in CLAUDE.md for
   why an editor's one-event import is an admin edit and not a seed path), and "Fill track
   green skills" (a page, `pvp_track_skills.suggest` then `.fill`: evaluates each skill's
-  raw game `condition` against the event's track fields and adds the ◎ of every matching
-  ○/◎ family to Everyone / Green; additive, skips a family the guide names in any version,
+  raw game `condition` against the event's track fields and adds the ○ of every matching
+  ○/◎ family to Everyone / Green (the ○ since 2026-10-18, owner's call; the sheet importer
+  resolves "○/◎" and bare names to the ○ too, so the two paths agree; guides filled
+  earlier keep their ◎ rows until an editor swaps them); additive, skips a family the
+  guide names in any version,
   reports event fields it can't read instead of guessing; racecourse ids come from the
   racecourse skills' own names, so there is no id table). Bulk
   publish / unpublish actions call `public_payload_cache.invalidate()` because
