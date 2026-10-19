@@ -32,6 +32,40 @@
 # module changed. Newest entry first is conventional here but not required — the
 # page sorts by date.
 
+- key: carat-forecast
+  date: 2026-10-19
+  title: "A carat forecast, and a fresh coat of paint"
+  version: "v2.2"
+  changes:
+    - added: "The calculator has a chart now. It follows your carats from today to past your last banner and shows the drop at each one."
+    - added: "Switch it to Pulls to see uma and support pulls day by day, with a line at 200 for the exchange."
+    - added: "Click a banner on the chart to jump to its row."
+    - added: "Skipped Champions Meetings and League of Heroes show up as red dots."
+    - added: "Tick Paid carats under the chart to stack them on top of your free ones. Step-ups finally show there too."
+    - added: "Two new switches in the settings menu, for anyone who takes the 50-carat daily pull on every uma or support banner, including ones outside their plan. Both start off."
+    - added: "With nothing planned yet, the calculator tells you how to get started, with a link to the Timeline."
+    - added: "PvP guides have a section under the Overview for the skills every position should take."
+    - changed: "The whole site got a design pass. New heading font, a proper header on the home page, and lighter cards on the dark themes."
+    - changed: "Long pages fold up on a phone. The changelog, Legend Races, Selectors and the planner's scenario bands open when you tap them."
+    - changed: "Timeline cards are titled by who's featured."
+    - changed: "Each theme looks more like itself. Gilded no longer passes for Dark, Pearl has an accent colour, and Light's buttons are easier to read."
+    - changed: "A banner you add to the plan flashes once, so you can see where it landed. Your device's reduced motion setting turns the animations off."
+    - changed: "Paste a shared plan in Discord and it gets its own picture: total pulls and the banner names over the first banner's art."
+    - changed: "Gallery posts pasted in Discord show the site's name and the event."
+    - changed: "The shared plan page shows when each banner ends."
+    - changed: "The PvP page works on a phone now. The event schedule runs down the screen, the tabs fit on one line, and teams in My team and the gallery show their cards in two rows of three."
+    - changed: "On a phone, the team window is only as tall as your team."
+    - changed: "The cookie prompt is a slim bar along the bottom of the screen."
+    - changed: "The Privacy Policy now covers the Patreon supporter list."
+    - fixed: "Scrolling no longer lags on themes other than Dark."
+    - fixed: "Themes with a background glow show it on the calculator, Timeline and PvP pages again."
+    - fixed: "The quick +10 and +100 buttons on a row stay clear of the numbers you're adjusting."
+    - fixed: "When you're signed in, the home page button opens your plan."
+    - fixed: "Group cards count as each of their umas in a deck, like in the game."
+    - fixed: "A card that teaches a skill's ○ covers the ◎ in the team builder."
+    - fixed: "Poster names in the gallery stay readable next to their badges."
+    - fixed: "Recommendations stays reachable after switching views on the PvP page, and skill names fit their line."
+
 - key: row-options
   date: 2026-10-16
   title: "Row options and skipping events"

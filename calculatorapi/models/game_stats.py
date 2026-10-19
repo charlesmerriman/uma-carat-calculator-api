@@ -82,6 +82,16 @@ class GameStats(models.Model):
     # pull) on banners. On by default so paid carats keep counting toward pulls,
     # matching the historical behavior of a single merged carat pool.
     full_price_paid_pulls = models.BooleanField(default=True)
+    # Daily pulls on the banners OUTSIDE the plan, for a player who takes the
+    # 50-carat daily pull on every banner whether or not they want its cards.
+    # Each banner the plan has no counted row on (an excluded row counts as
+    # none) spends 50 PAID carats a day from today to the end of the plan's
+    # farthest banner, while paid carats last. One switch per banner kind,
+    # because every banner has its own daily pull. They never touch the rows
+    # the plan does have: those follow discounted_paid_pulls above. Off by
+    # default, so nobody's projection moves until they opt in.
+    daily_pulls_other_uma_banners = models.BooleanField(default=False)
+    daily_pulls_other_support_banners = models.BooleanField(default=False)
     # Include campaign purchases in the projection: when off (the default), a
     # user's planned pack/selector purchases are budgeting-only and change no
     # estimate anywhere. Off by default so enabling the feature never silently

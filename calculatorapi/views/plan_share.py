@@ -18,7 +18,10 @@ WHAT THE PREVIEW SAYS (owner's call, 2026-10-16)
   taking a copy; what is new is that Discord and X keep their own copy of a
   preview after the owner turns notes off or resets the link. The share face
   says so beside the switch.
-- The first banner with art, as the picture.
+- The picture (plan_preview.py, owner 2026-10-19): the brand strip, the
+  totals and the first banner names drawn over the first banner's art, the
+  same facts as the tags. It was the raw art until then, a game promo that
+  said nothing about the plan. Notes never go on it.
 Never the plan name, the plan id, the owner's display name or anything else
 about the owner: the same list plan_public.py keeps out of the summary.
 
@@ -31,14 +34,14 @@ Opening this page creates and counts nothing: crawlers fetch it on every paste.
 """
 
 from django.conf import settings
-from django.core.files.storage import default_storage
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 
-from calculatorapi import plans
+from calculatorapi import plan_preview, plans
 from calculatorapi.models import Plan
+from calculatorapi.share_card import HEIGHT, WIDTH
 from calculatorapi.views.gallery import GalleryThrottle
-from calculatorapi.views.gallery_share import SITE_DESCRIPTION, SITE_NAME
+from calculatorapi.views.gallery_share import IMMUTABLE, SITE_DESCRIPTION, SITE_NAME
 from calculatorapi.views.plan_public import plan_totals, rows_in_order
 
 # How many banner names the description lists before "and N more".
@@ -82,20 +85,24 @@ def _default_context(public_id):
     }
 
 
-def _title(rows, pulls, steps):
-    """'Shared pull plan: 230 pulls on 4 banners', with the steps when there
-    are any. A step is not converted to pulls (plan_totals says why)."""
-    if not rows:
-        return "Shared pull plan"
+def _counts(rows, pulls, steps):
+    """'230 pulls on 4 banners', with the steps when there are any. A step is
+    not converted to pulls (plan_totals says why)."""
     counts = [_plural(pulls, "pull", "pulls")] if pulls or not steps else []
     if steps:
         counts.append(_plural(steps, "step-up step", "step-up steps"))
-    return f"Shared pull plan: {' and '.join(counts)} on {_plural(len(rows), 'banner', 'banners')}"
+    return f"{' and '.join(counts)} on {_plural(len(rows), 'banner', 'banners')}"
 
 
-def _banner_names(rows):
-    """'T.M. Opera, Oguri Cap (support), Mihono Bourbon and 2 more.' Support
-    banners are named after their card, which is often an uma's name too."""
+def _title(rows, pulls, steps):
+    """'Shared pull plan: 230 pulls on 4 banners'."""
+    return f"Shared pull plan: {_counts(rows, pulls, steps)}" if rows else "Shared pull plan"
+
+
+def _banner_list(rows):
+    """'T.M. Opera, Oguri Cap (support), Mihono Bourbon and 2 more' (no full
+    stop: the picture prints it as a line). Support banners are named after
+    their card, which is often an uma's name too."""
     names = []
     for row in rows:
         banner = row.banner_target
@@ -106,10 +113,16 @@ def _banner_names(rows):
         return ""
     shown, rest = names[:NAMES_SHOWN], len(names) - NAMES_SHOWN
     if rest > 0:
-        return f"{', '.join(shown)} and {rest} more."
+        return f"{', '.join(shown)} and {rest} more"
     if len(shown) == 1:
-        return f"{shown[0]}."
-    return f"{', '.join(shown[:-1])} and {shown[-1]}."
+        return shown[0]
+    return f"{', '.join(shown[:-1])} and {shown[-1]}"
+
+
+def _banner_names(rows):
+    """The description's sentence: _banner_list with its full stop."""
+    names = _banner_list(rows)
+    return f"{names}." if names else ""
 
 
 def _notes(rows):
@@ -125,18 +138,26 @@ def _notes(rows):
 
 
 def _art(rows):
-    """(url, alt) of the first banner in the plan with a picture, or None.
-    A step-up's own image wins over its campaign part's, as on the card."""
+    """The image of the first banner in the plan with a picture, or None. A
+    step-up's own image wins over its campaign part's, as on the card."""
     for row in rows:
         banner = row.banner_target
         if banner is None:
             continue
         image = getattr(banner, "image", None) or banner.banner_timeline.image
         if image:
-            url = default_storage.url(image.name)
-            # Spaces gives an absolute URL; local file storage gives /media/...
-            return (_site(url) if url.startswith("/") else url), banner.name
+            return image
     return None
+
+
+def card(rows, pulls, steps):
+    """What the plan's picture says (plan_preview.py): the tags' facts, never
+    the notes."""
+    return plan_preview.Card(
+        headline=_counts(rows, pulls, steps) if rows else "No banners in it yet",
+        names=_banner_list(rows),
+        art=_art(rows),
+    )
 
 
 def share_context(plan):
@@ -151,20 +172,17 @@ def share_context(plan):
         parts.append(f"Notes: {notes}")
     else:
         parts.append("Copy it to see how it works out with your own carats.")
+    title = _title(rows, pulls, steps)
     context.update(
-        title=_title(rows, pulls, steps),
+        title=title,
         description=" ".join(part for part in parts if part),
+        image_url=_site(f"/plan/{plan.public_id}/preview.jpg?v={card(rows, pulls, steps).version}"),
+        image_type="image/jpeg",
+        image_width=WIDTH,
+        image_height=HEIGHT,
+        image_alt=title,
+        twitter_card="summary_large_image",
     )
-
-    art = _art(rows)
-    if art is not None:
-        url, alt = art
-        # Uploaded art: its type and size are not known here, so those two
-        # tags are left out (the template skips them when blank).
-        context.update(
-            image_url=url, image_alt=alt, image_type="", image_width=None,
-            image_height=None, twitter_card="summary_large_image",
-        )
     return context
 
 
@@ -178,3 +196,26 @@ def share_page(request, public_id):
     else:
         context = share_context(plan)
     return render(request, "share/link_preview.html", context)
+
+
+def share_preview(request, public_id):
+    """The plan's picture. A plan that is not shared, or an unknown id, is a
+    404: there is no picture of the site to fall back to here, and the page's
+    own tags already point those at the site's card."""
+    if not PlanShareThrottle().allow_request(request, None):
+        return HttpResponse("Too many requests", status=429, content_type="text/plain")
+    try:
+        plan = plans.get_shared_plan(public_id)
+    except Plan.DoesNotExist:
+        return HttpResponse("Not found", status=404, content_type="text/plain")
+    rows = rows_in_order(plan)
+    pulls, steps = plan_totals(rows)
+    current = card(rows, pulls, steps)
+    asked = request.GET.get("v")
+    if asked and asked != current.version:
+        # A picture from before the plan changed. Send the crawler to the
+        # current one rather than caching it under the old address forever.
+        return HttpResponseRedirect(f"/plan/{plan.public_id}/preview.jpg?v={current.version}")
+    response = HttpResponse(plan_preview.preview_bytes(plan.public_id, current), content_type="image/jpeg")
+    response["Cache-Control"] = IMMUTABLE
+    return response

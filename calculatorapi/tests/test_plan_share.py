@@ -5,14 +5,19 @@ own copy of it: totals and catalogue names always, notes only under
 share_notes, and nothing about the owner ever.
 """
 
+import io
+import os
 import re
 import shutil
 import tempfile
 
+from unittest import mock
+
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import override_settings
+from PIL import Image
 
-from calculatorapi import plans
+from calculatorapi import plan_preview, plans
 from calculatorapi.models import DEFAULT_PLAN_NAME, UserPlannedBanner
 from calculatorapi.tests.base import PLAIN_TEST_STORAGES, CalculatorTestCase
 from calculatorapi.tests.factories import (
@@ -132,31 +137,28 @@ class PlanSharePageTests(CalculatorTestCase):
         self.assertNotIn("<script>alert", html)
         self.assertIn("&lt;script&gt;", html)
 
-    def test_the_first_banner_with_art_is_the_picture(self):
-        bare = make_uma_banner(name="No art")
-        timeline = make_timeline(name="Pictured")
-        timeline.image = SimpleUploadedFile("banner.png", b"png", content_type="image/png")
-        timeline.save()
-        self.row(bare)
-        self.row(make_uma_banner(timeline=timeline, name="Pictured banner"))
+    def test_the_picture_is_the_drawn_card(self):
+        self.row(make_uma_banner(name="T.M. Opera"), pulls=150)
 
         html = self.page()
 
         image = meta(html, "property", "og:image")
-        # Local storage gives a site-relative URL, made absolute for crawlers.
-        self.assertRegex(image, r"^https://site\.example/.*banner_timelines/banner")
-        self.assertEqual(meta(html, "property", "og:image:alt"), "Pictured banner")
+        self.assertRegex(
+            image, rf"^https://site\.example/plan/{self.plan.public_id}/preview\.jpg\?v=[0-9a-f]{{10}}$"
+        )
+        self.assertEqual(meta(html, "property", "og:image:type"), "image/jpeg")
+        self.assertEqual(meta(html, "property", "og:image:width"), "1200")
+        self.assertEqual(meta(html, "property", "og:image:height"), "630")
+        self.assertEqual(meta(html, "property", "og:image:alt"), "Shared pull plan: 150 pulls on 1 banner")
         self.assertEqual(meta(html, "name", "twitter:card"), "summary_large_image")
-        # Uploaded art's size is unknown, so no size tags.
-        self.assertIsNone(meta(html, "property", "og:image:width"))
 
-    def test_a_plan_with_no_art_keeps_the_site_picture(self):
+    def test_a_plan_with_no_art_still_gets_its_card(self):
         self.row()
 
         html = self.page()
 
-        self.assertEqual(meta(html, "property", "og:image"), "https://site.example/social-card.png")
-        self.assertEqual(meta(html, "name", "twitter:card"), "summary")
+        self.assertIn("/preview.jpg?v=", meta(html, "property", "og:image"))
+        self.assertEqual(meta(html, "name", "twitter:card"), "summary_large_image")
 
     def test_people_are_sent_on_to_the_landing_card(self):
         html = self.page()
@@ -184,3 +186,104 @@ class PlanSharePageTests(CalculatorTestCase):
 
         self.plan.refresh_from_db()
         self.assertEqual(self.plan.copy_count, 0)
+
+
+@override_settings(STORAGES=PLAIN_TEST_STORAGES, MEDIA_ROOT=MEDIA, FRONTEND_URL="https://site.example")
+class PlanSharePictureTests(CalculatorTestCase):
+    """The drawn card (plan_preview.py): what it says, where it lives, and that
+    it never says more than the tags."""
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(MEDIA, ignore_errors=True)
+        super().tearDownClass()
+
+    def setUp(self):
+        self.owner = make_user(username="sharer")
+        self.owner.display_name = "SecretName"
+        self.owner.save()
+        self.plan = plans.get_active_plan(self.owner)
+        self.plan.name = "My secret plan name"
+        self.plan.is_shared = True
+        self.plan.share_notes = True
+        self.plan.save()
+        UserPlannedBanner.objects.create(
+            user=self.owner, plan=self.plan, number_of_pulls=150, reserved_copies=0,
+            note="secret note", banner_uma=make_uma_banner(name="T.M. Opera"),
+        )
+
+    def picture(self, query=""):
+        return self.client.get(f"/plan/{self.plan.public_id}/preview.jpg{query}")
+
+    def current_version(self):
+        html = self.client.get(f"/plan/{self.plan.public_id}").content.decode()
+        return meta(html, "property", "og:image").split("?v=")[1]
+
+    def test_the_picture_is_a_large_card_jpeg(self):
+        response = self.picture(f"?v={self.current_version()}")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "image/jpeg")
+        self.assertIn("immutable", response["Cache-Control"])
+        picture = Image.open(io.BytesIO(response.content))
+        self.assertEqual((picture.format, picture.size), ("JPEG", (1200, 630)))
+
+    def test_it_says_the_totals_and_names_and_never_the_notes(self):
+        with mock.patch.object(plan_preview, "render", wraps=plan_preview.render) as render:
+            self.picture()
+        drawn = render.call_args.args[0]
+        self.assertEqual(drawn.headline, "150 pulls on 1 banner")
+        self.assertEqual(drawn.names, "T.M. Opera")
+        for private in ("secret note", "SecretName", "sharer", "My secret plan name"):
+            self.assertNotIn(private, f"{drawn.headline} {drawn.names}")
+
+    def test_an_edited_plan_gets_a_new_address(self):
+        before = self.current_version()
+        UserPlannedBanner.objects.filter(plan=self.plan).update(number_of_pulls=200)
+        after = self.current_version()
+        self.assertNotEqual(before, after)
+        response = self.picture(f"?v={before}")
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response["Location"], f"/plan/{self.plan.public_id}/preview.jpg?v={after}")
+
+    def test_rendered_once_then_served_from_the_cache(self):
+        with mock.patch.object(plan_preview, "render", wraps=plan_preview.render) as render:
+            self.picture()
+            self.picture()
+        self.assertEqual(render.call_count, 1)
+
+    def test_no_picture_for_a_private_or_unknown_plan(self):
+        self.plan.is_shared = False
+        self.plan.save()
+        self.assertEqual(self.picture().status_code, 404)
+        self.assertEqual(self.client.get("/plan/nothere1/preview.jpg").status_code, 404)
+
+    def test_the_art_is_drawn_behind_the_words(self):
+        os.makedirs(MEDIA, exist_ok=True)
+        timeline = make_timeline(name="Pictured")
+        art = io.BytesIO()
+        Image.new("RGB", (800, 400), (0, 200, 0)).save(art, format="PNG")
+        timeline.image = SimpleUploadedFile("green.png", art.getvalue(), content_type="image/png")
+        timeline.save()
+        UserPlannedBanner.objects.filter(plan=self.plan).delete()
+        UserPlannedBanner.objects.create(
+            user=self.owner, plan=self.plan, number_of_pulls=10, reserved_copies=0,
+            banner_uma=make_uma_banner(timeline=timeline, name="Pictured banner"),
+        )
+        picture = Image.open(io.BytesIO(self.picture().content)).convert("RGB")
+        # The right edge, under the lighter end of the shade: still green.
+        red, green, blue = picture.getpixel((1190, 600))
+        self.assertGreater(green, red + 20)
+        self.assertGreater(green, blue + 20)
+
+    def test_unreadable_art_leaves_the_plain_card(self):
+        timeline = make_timeline(name="Broken")
+        timeline.image = SimpleUploadedFile("broken.png", b"not a png", content_type="image/png")
+        timeline.save()
+        UserPlannedBanner.objects.filter(plan=self.plan).delete()
+        UserPlannedBanner.objects.create(
+            user=self.owner, plan=self.plan, number_of_pulls=10, reserved_copies=0,
+            banner_uma=make_uma_banner(timeline=timeline, name="Broken banner"),
+        )
+        response = self.picture()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Image.open(io.BytesIO(response.content)).size, (1200, 630))

@@ -467,17 +467,22 @@ class SkillMatcher:
             return None
         if key in self.by_name:
             return self.by_name[key]
+        # A name that doesn't say which version ("Sunny Day ○/◎", "Firm
+        # Conditions") is the ○ first, the version "Fill track green skills"
+        # adds (owner, 2026-10-17), so a guide loaded from the sheet and one
+        # filled by the button name the same skill. A cell that says ◎ still
+        # gets the ◎: an exact name returns above.
         if "○/◎" in key or "◎/○" in key:
             base = key.replace("○/◎", "").replace("◎/○", "").strip()
-            for suffix in (" ◎", " ○", ""):
+            for suffix in (" ○", " ◎", ""):
                 if base + suffix in self.by_name:
                     return self.by_name[base + suffix]
             key = base
-        for suffix in (" ◎", " ○"):
+        for suffix in (" ○", " ◎"):
             if key + suffix in self.by_name:
                 return self.by_name[key + suffix]
-        # Close spellings ("Sunny Day" for "Sunny Days ◎"), gold first.
-        for candidate in (key + " ◎", key + " ○", key):
+        # Close spellings ("Sunny Day" for "Sunny Days ○"), ○ first.
+        for candidate in (key + " ○", key + " ◎", key):
             close = difflib.get_close_matches(candidate, self.names, n=1, cutoff=0.88)
             if close:
                 return self.by_name[close[0]]

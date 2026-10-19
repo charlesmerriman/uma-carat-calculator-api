@@ -30,7 +30,8 @@ WHAT IT WRITES, and what it leaves alone:
                base_* stats at the initial star count, the five growth_*
                bonuses. `rarity` is what the selector pickers read, through
                `Uma.is_three_star`. Matched on `game_id`.
-  SupportCard  card_type, rarity, character_id, title. Matched on `game_id`.
+  SupportCard  card_type, rarity, character_id, title, and group_members (a
+               group card's umas, by name). Matched on `game_id`.
   UmaSkill     one row per (uma, skill, source) the game lists: unique, innate
                and awakening skills, with `level` (see the model). Rows are
                ADDED and never deleted, so a hand-added row survives. An
@@ -239,6 +240,9 @@ def support_values(card):
         "card_type": card["card_type"],
         "rarity": card["rarity"],
         "character_id": card["chara_id"],
+        # Only group cards carry `members` in the snapshot; every other card
+        # is written back to [] so a card that stops being one is cleared.
+        "group_members": card.get("members", []),
     }
 
 

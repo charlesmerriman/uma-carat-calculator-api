@@ -299,6 +299,13 @@ Constants: `PULL_COST_CARATS` (150) and `DISCOUNTED_PULL_COST_CARATS` (50) in
 `frontend/src/constants/gameConstants.ts`. Toggles live on `CustomUser`
 (both `default=True`, as are the other two projection toggles).
 
+**Daily pulls on banners outside the plan** (`daily_pulls_other_uma_banners`,
+`daily_pulls_other_support_banners`, both `default=False`) spend 50 paid carats a day on
+every banner of that kind the plan has no counted row on, from today to the plan's
+farthest banner, while paid carats last. They never touch a planned row's own pulls. The
+rules and a worked example: `frontend/docs/resource-projection-logic.md` ("Daily pulls on
+banners outside the plan").
+
 ---
 
 ## Step-Up Ladder Costs

@@ -112,7 +112,7 @@ def share_context(post):
         ),
         "share_url": _site(f"/post/{post.public_id}"),
         "app_url": _app_url(post.public_id, post),
-        "image_url": _site(f"/post/{post.public_id}/preview.jpg?v={post.preview_version}"),
+        "image_url": _site(f"/post/{post.public_id}/preview.jpg?v={gallery_preview.image_version(post)}"),
         "image_type": "image/jpeg",
         "image_width": gallery_preview.WIDTH,
         "image_height": gallery_preview.HEIGHT,
@@ -144,13 +144,12 @@ def share_preview(request, public_id):
     if post is None:
         return HttpResponse("Not found", status=404, content_type="text/plain")
     asked = request.GET.get("v")
-    if asked and asked != post.preview_version:
-        # An old version's URL, from a preview cached before a re-post. Send
-        # the crawler to the current picture rather than caching it under
-        # the old address forever.
-        return HttpResponseRedirect(
-            f"/post/{post.public_id}/preview.jpg?v={post.preview_version}"
-        )
+    current = gallery_preview.image_version(post)
+    if asked and asked != current:
+        # An old version's URL, from a preview cached before a re-post or a
+        # change of drawing. Send the crawler to the current picture rather
+        # than caching it under the old address forever.
+        return HttpResponseRedirect(f"/post/{post.public_id}/preview.jpg?v={current}")
     response = HttpResponse(gallery_preview.preview_bytes(post), content_type="image/jpeg")
     response["Cache-Control"] = IMMUTABLE
     return response

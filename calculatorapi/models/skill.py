@@ -18,7 +18,16 @@ class SkillRarity(models.IntegerChoices):
 
 
 class SkillTier(models.IntegerChoices):
-    """`skill_data.group_rate`: where a skill sits within its white/gold group."""
+    """
+    `skill_data.group_rate`: where a skill sits within its group.
+
+    The labels below fit the common group, a white ○ and its gold. 58 groups
+    (most green skills, the Straightaways / Corners whites) have a second
+    white instead: the ○ at 1 and the ◎ at 2, both rarity WHITE. Twelve of
+    those also have a gold above both, at 3, which has no member here. So the
+    number never says the colour on its own: `rarity` does, and
+    `Skill.version_label` is the label to show.
+    """
     PENALTY = -1, "× penalty"
     WHITE = 1, "○ white"
     GOLD = 2, "◎ gold"
@@ -68,8 +77,9 @@ class Skill(models.Model):
     `link_skill_images`, but a hand pick sticks) and `admin_comments`.
 
     "IS THIS THE GOLD VERSION OF SOMETHING?" is answered by `group_id`: the
-    white, gold and × versions of one effect share it, and `tier` says which
-    this one is. The admin shows the siblings in a read-only column rather than
+    white (○, and in some groups a ◎ too), gold and × versions of one effect
+    share it, `tier` says where in the group this one sits, and `rarity` says
+    its colour (SkillTier). The admin shows the siblings in a read-only column rather than
     through a second table. `evolves_from` is the other relationship, and it
     stays empty until global has skill evolution.
     """
@@ -153,16 +163,29 @@ class Skill(models.Model):
 
     @property
     def version_label(self):
-        """"○ white", "◎ gold" or "evolved": how a picker or a chip names
-        this version of the effect. The × penalty version keeps its own label
-        but is never offered as a recommendation."""
+        """"○ white", "◎ white", "◎ gold" or "evolved": how a picker or a
+        chip names this version of the effect. The × penalty version keeps its
+        own label but is never offered as a recommendation.
+
+        The colour is read from `rarity`, never from `tier` alone: in a ○/◎
+        group tier 2 is the white ◎ and the gold sits at tier 3 (SkillTier).
+        Reading the tier alone named Right-Handed ◎ a gold and Right-Handed
+        Demon "3"."""
         if self.evolves_from_id:
             return "evolved"
-        return self.get_tier_display()
+        if self.tier == SkillTier.PENALTY:
+            return SkillTier.PENALTY.label
+        if self.rarity == SkillRarity.GOLD:
+            return SkillTier.GOLD.label
+        # A white at tier 2 is the ◎ of a ○/◎ pair. A unique's inherited copy
+        # is a lone white at tier 2 as well, and reads "◎ white" too.
+        if self.tier == SkillTier.GOLD:
+            return "◎ white"
+        return SkillTier.WHITE.label
 
     def family(self):
         """The other versions of this skill a player can be shown, in order:
-        white, gold, then evolved. See skill_families()."""
+        ○ white, ◎ white, gold, then evolved. See skill_families()."""
         return skill_families([self]).get(self.pk, [])
 
 
@@ -174,7 +197,8 @@ def _root_group(skill):
 
 
 def _version_rank(skill):
-    # White (1), gold (2), then evolved; the game id breaks ties.
+    # The group's own order: ○ white (1), then a ◎ white or a gold (2), then
+    # the gold above a ◎ (3), then evolved; the game id breaks ties.
     if skill.evolves_from_id:
         return (3, skill.game_id)
     return (skill.tier, skill.game_id)
@@ -184,8 +208,8 @@ def skill_families(skills):
     """{skill id: [the other versions of that skill]} for many skills at once.
 
     A FAMILY IS DERIVED, NEVER STORED. The game data already ties the
-    versions of one effect together: the white (○), gold (◎) and × penalty
-    rows share a `group_id`, and an evolved skill points at its base through
+    versions of one effect together: the white (○, and a ◎ in some groups),
+    gold and × penalty rows share a `group_id`, and an evolved skill points at its base through
     `evolves_from`. So a guide stores one row per effect, pointing at the
     version its author named, and the other versions come from here: the
     rows in the same group plus the evolutions of that group (and, for an

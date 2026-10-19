@@ -17,7 +17,8 @@ What comes out, one file per concern (all sorted by id, so re-runs diff cleanly)
   cards.json          every uma outfit ("card"): names, initial stars, running
                       style, growth bonuses, and per-star stats + aptitudes
   card_skills.json    which skills each outfit has: unique / innate / awakening
-  support_cards.json  every support card: names, rarity, type, character
+  support_cards.json  every support card: names, rarity, type, character, and
+                      a group card's `members` (the umas it stands for)
   support_hints.json  which skills each support card can teach (hints)
 
 What the ids encode, because the import asserts on it:
@@ -250,10 +251,28 @@ def extract_support_cards(conn):
             f"commands (found {sorted(command_types.values())}); check the category id"
         )
 
+    # A group card stands for several umas, and each counts as that uma's card
+    # in a deck (no Team Sirius in Special Week's deck, nor beside her own
+    # card). support_card_data.chara_id files the card under ONE of them, so
+    # support_card_group is the only place the rest are named. Kept in the
+    # game's row order, as character names (category 6, by character id): the
+    # team builder matches cards to umas by name, see utils/pvpTeams.ts.
+    person_names = text_map(conn, TEXT_CHARA_NAME)
+    members = {}
+    for card_id, chara_id in conn.execute(
+        "SELECT support_card_id, chara_id FROM support_card_group ORDER BY support_card_id, id"
+    ):
+        if not person_names.get(chara_id):
+            raise SystemExit(
+                f"support_card_group lists character {chara_id} for card {card_id}, "
+                f"which text_data category {TEXT_CHARA_NAME} does not name"
+            )
+        members.setdefault(card_id, []).append(person_names[chara_id])
+
     cards = []
     for row in conn.execute("SELECT * FROM support_card_data ORDER BY id"):
         card_id = row["id"]
-        cards.append({
+        card = {
             "id": card_id,
             "chara_id": row["chara_id"],
             "chara_name": chara_names.get(card_id, ""),
@@ -265,7 +284,16 @@ def extract_support_cards(conn):
                 or SUPPORT_CARD_TYPES.get(row["support_card_type"], "?")
             ),
             "skill_set_id": row["skill_set_id"],
-        })
+        }
+        # Group cards only, so the other 260 rows diff the same as before.
+        if card["card_type"] == "group":
+            if card_id not in members:
+                raise SystemExit(
+                    f"group card {card_id} has no support_card_group rows; "
+                    "check the table, or the team builder loses its deck rule"
+                )
+            card["members"] = members[card_id]
+        cards.append(card)
 
     hints = [
         {"support_card_id": card_id, "skill_id": skill_id, "hint_group": group}

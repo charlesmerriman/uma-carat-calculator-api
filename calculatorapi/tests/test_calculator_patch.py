@@ -101,6 +101,28 @@ class CalculatorPatchTests(CalculatorTestCase):
         self.assertFalse(self.user.discounted_paid_pulls)
         self.assertFalse(self.user.full_price_paid_pulls)
 
+    def test_patch_stats_updates_daily_pulls_on_other_banners(self):
+        # Unlike the toggles above these start OFF, so turning one on is the
+        # change worth proving. Each is read back by GET too, which is how
+        # the client learns the setting.
+        self.assertFalse(self.user.daily_pulls_other_uma_banners)
+        self.assertFalse(self.user.daily_pulls_other_support_banners)
+        res = self.client.patch(
+            '/calculator-data',
+            {'user_stats_data': {
+                'daily_pulls_other_uma_banners': True,
+                'daily_pulls_other_support_banners': True,
+            }},
+            format='json',
+        )
+        self.assertEqual(res.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.daily_pulls_other_uma_banners)
+        self.assertTrue(self.user.daily_pulls_other_support_banners)
+        stats = self.client.get('/calculator-data').json()['user_stats_data']
+        self.assertTrue(stats['daily_pulls_other_uma_banners'])
+        self.assertTrue(stats['daily_pulls_other_support_banners'])
+
     def test_patch_stats_updates_ticket_settings(self):
         # Defaults first: tickets are spent, and NULL counts mean "the default
         # shop purchase" (see GameStats), so an untouched account changes nothing.

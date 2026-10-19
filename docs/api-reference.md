@@ -419,6 +419,8 @@ exits it normally, so Django would otherwise commit the accepted half.
     "spend_tickets_on_banners": true,
     "discounted_paid_pulls":  true,
     "full_price_paid_pulls":  true,
+    "daily_pulls_other_uma_banners": false,
+    "daily_pulls_other_support_banners": false,
     "include_purchases_in_projection": false,
     "webstore_bonus":         false,
     "sr_shards":              0,
@@ -614,11 +616,21 @@ browser runs one line of script and lands on `/app/<public_id>`. Code:
 `views/plan_share.py`, template `share/link_preview.html` (shared with `/post`).
 
 The tags carry the pull and step totals, the banner count, the first three banner names,
-the plan's notes (only when `share_notes` is on, trimmed to 200 characters) and the first
-banner's art. Never the plan name, the plan id or anything about the owner. A plan that is
+the plan's notes (only when `share_notes` is on, trimmed to 200 characters) and the picture
+below. Never the plan name, the plan id or anything about the owner. A plan that is
 not shared and an unknown id get the same answer: the site's own tags, a **200**, still
 redirected to `/app/<public_id>`. Opening it creates and counts nothing. Throttled per
 address at `plan_share` (600/hour), counted in the `gallery` cache.
+
+### `GET /plan/<public_id>/preview.jpg?v=<version>` (not under `/api`)
+
+The picture the tags point at (since 2026-10-19): a 1200x630 JPEG drawn by
+`plan_preview.py`, the brand strip, "Shared pull plan", the totals and the first banner names
+over the first banner's art, blurred and shaded. The same facts as the tags; the notes never
+go on it. The version is a hash of everything drawn plus the drawing's `LAYOUT`, so an edited
+plan gets a new address; an old version redirects to the current one, and the picture is
+served `immutable`. Drawn on request and kept in the `gallery-previews` cache, never stored.
+**`404`** for a plan that is not shared and for an unknown id.
 
 An older `/app/<public_id>` link keeps working; it just unfurls as the plain site.
 
@@ -706,11 +718,12 @@ and skills are embedded small objects, since the client's banner data only knows
 were on a banner. `skill_recommendations` only ever holds skills on global
 (`Skill.objects.on_global()`); `unique_of` names the outfit whose unique the skill is, or
 `null`. **A guide names one version of a skill per row; the other versions ride along.**
-`version` is the skill's own label (`"○ white"`, `"◎ gold"`, `"evolved"`) and `versions`
+`version` is the skill's own label (`"○ white"`, `"◎ white"`, `"◎ gold"`, `"evolved"`) and `versions`
 lists its other forms a player may be shown (same `group_id`, plus `evolves_from` both
 ways; never the × penalty row, never a skill not on global), each with `id`, `name`,
-`description`, `image`, `rarity`, `tier` (1 white, 2 gold), `version` and `is_evolved`,
-ordered white, gold, evolved; the skill itself carries `tier` and `is_evolved` too.
+`description`, `image`, `rarity`, `tier` (the game's `group_rate`: 1 a ○, 2 a ◎ white or a
+gold, 3 the gold above a ◎; read the colour from `rarity`), `version` and `is_evolved`,
+ordered ○ white, ◎ white, gold, evolved; the skill itself carries `tier` and `is_evolved` too.
 Derived from the game data by `models.skill.skill_families` in one query per guide, never
 stored. The team builder counts a source that teaches the pick or a HIGHER version: a card
 that teaches the gold teaches the white too, so a gold on the team covers a white pick and
@@ -772,7 +785,7 @@ fetches it once, when a picker first opens.
                     "front": 8, "pace": 5, "late": 2, "end": 1},
             "skills": [{"skill": 210, "source": "unique", "level": 1}]}],
   "support_cards": [{"id": 302, "name": "Kitasan Black", "image": "url", "card_type": "speed",
-                     "rarity": 3, "title": "[Fire at My Heels]", "on_global": true,
+                     "rarity": 3, "title": "[Fire at My Heels]", "group_members": [], "on_global": true,
                      "skills": [{"skill": 88, "source": "hint"}]}],
   "skills": [{"id": 88, "name": "Groundwork", "description": "string", "image": "url | null",
               "rarity": 1, "tier": 1, "group_id": 2001, "cost": 120}] }
@@ -785,6 +798,8 @@ other skill is left out. Aptitudes are 1..8 = G..S, `null` when not imported. A 
 per source, `models/uma_skill.py`); a card's is `hint` / `event`. `on_global`: the card is in the
 global game today, i.e. it has any skill link (the import writes links only for cards in the global
 snapshot). The builder uses it for cards on no banner, which have no release date.
+`group_members` names the umas a group card stands for (`[]` on any other card); the
+builder's deck rules count it as a card of each of them.
 
 ### `/pvp-teams`
 
@@ -846,7 +861,7 @@ the post's own author.
 | `PATCH` / `DELETE /gallery/comments/<id>` `{body}` | its author | the comment / `204` |
 | `POST /gallery/reports` `{post: public_id}` or `{comment: id}`, `reason`, `note?` | signed in | `201`, no body; `409` on a repeat |
 | `GET /post/<public_id>` | anyone | HTML: link-preview tags, then on to the post in the app. **Not under `/api`** |
-| `GET /post/<public_id>/preview.jpg?v=<version>` | anyone | the 1200x630 preview JPEG |
+| `GET /post/<public_id>/preview.jpg?v=<version>` | anyone | the 1200x630 preview JPEG: the brand strip with the event's name, then the three umas (`gallery_preview.py`). The version is the team's hash plus the drawing's `LAYOUT`; an old one redirects |
 
 A feed row (the full post adds `strategy` (the long text, `""` when none; never on a row), `team`, `event` (`{kind, id, label}`, the label being the event's name), `hidden` and `stats.copies`):
 
@@ -999,6 +1014,8 @@ Patreon quota.
   "spend_tickets_on_banners": true,
   "discounted_paid_pulls":  true,
   "full_price_paid_pulls":  true,
+  "daily_pulls_other_uma_banners": false,
+  "daily_pulls_other_support_banners": false,
   "include_purchases_in_projection": false,
   "webstore_bonus":         false,
   "sr_shards":              0,

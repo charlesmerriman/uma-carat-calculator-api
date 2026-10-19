@@ -49,6 +49,8 @@ Table calculatorapi_customuser as CustomUser {
   spend_tickets_on_banners boolean [not null, note: 'Django default: True.']
   discounted_paid_pulls boolean [not null, note: 'Django default: True.']
   full_price_paid_pulls boolean [not null, note: 'Django default: True.']
+  daily_pulls_other_uma_banners boolean [not null, note: 'Django default: False.']
+  daily_pulls_other_support_banners boolean [not null, note: 'Django default: False.']
   include_purchases_in_projection boolean [not null, note: 'Django default: False.']
   webstore_bonus boolean [not null, note: 'Django default: False.']
   current_carat integer [not null, note: 'Django default: 0.']

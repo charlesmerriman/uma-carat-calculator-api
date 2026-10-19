@@ -644,8 +644,10 @@ class SkillAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
         siblings = getattr(obj, "sibling_rows", None)
         if siblings is None:
             siblings = obj.siblings()
+        # version_label, not the tier's display: tier 2 is a white ◎ in some
+        # groups, and the gold above it (tier 3) has no display at all.
         parts = [
-            f"{sibling.get_tier_display()} {sibling.name} ({sibling.game_id})"
+            f"{sibling.version_label} {sibling.name} ({sibling.game_id})"
             for sibling in siblings
         ]
         if obj.evolves_from_id:
@@ -673,7 +675,7 @@ class SupportCardAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
                 "Filled by the game-data import and overwritten by the next one, "
                 "so edits here do not stick. Fix the source instead."
             ),
-            "fields": ("title", "card_type", "rarity", "character_id"),
+            "fields": ("title", "card_type", "rarity", "character_id", "group_members"),
         }),
     )
 
@@ -1049,6 +1051,7 @@ CALCULATOR_STATS_FIELDS = (
     "daily_carat", "training_pass", "misc_earnings",
     "monthly_shop_tickets", "shop_uma_tickets_bought", "shop_support_tickets_bought",
     "spend_tickets_on_banners", "discounted_paid_pulls", "full_price_paid_pulls",
+    "daily_pulls_other_uma_banners", "daily_pulls_other_support_banners",
     "include_purchases_in_projection", "webstore_bonus",
     "current_carat", "current_paid_carat",
     "uma_ticket", "support_ticket",

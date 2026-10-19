@@ -47,6 +47,8 @@ INCOME_TOGGLES = [
     ("spend_tickets_on_banners", "Spend tickets on banners"),
     ("discounted_paid_pulls", "Discounted paid pulls"),
     ("full_price_paid_pulls", "Full-price paid pulls"),
+    ("daily_pulls_other_uma_banners", "Daily pulls on every uma banner"),
+    ("daily_pulls_other_support_banners", "Daily pulls on every support banner"),
     ("include_purchases_in_projection", "Campaign purchases in the projection"),
     ("webstore_bonus", "Webstore bonus"),
 ]

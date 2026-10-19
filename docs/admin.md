@@ -415,6 +415,13 @@ child are inline-only (`test_join_models_not_registered_top_level`).
   `get_extra` and `DeckSlotFormSet.initial` (the missing slot numbers) per deck. The slot
   formset's `clean()` refuses two Borrow ticks. Deck order is a hidden input the drag
   handle writes (`DeckForm`); `PvpDeck.get_inline_title` keeps the stacked title short.
+  **The drag needs the page's own `sortRecords`** (`static/admin/pvp-guide-editor.js`,
+  installed on `alpine:init`). unfold's numbers every `.form-group.original` under the
+  formset, nested card rows included, and a card's Alternative field is also named
+  `order` but is a `<select>`, so its `input[name$=-order]` lookup throws after deck 0 and
+  the order was never saved (unfold 0.101.0; 0.110.0 is the same). The replacement numbers
+  the deck rows only, each through its own input, hands non-nested formsets to unfold's
+  function, and fires `input` so the unsaved-changes warning sees the drag.
 - **The add page has no tables** (`get_inlines` returns `()` without an object): the
   Event dropdown, scenario, published and the overview, then "Save and continue editing".
 - **One Event dropdown** (`PvpGuideForm.event`, grouped CM / LoH, events with a guide
@@ -469,7 +476,7 @@ child are inline-only (`test_join_models_not_registered_top_level`).
   loader ticks both (41 of the loaded decks were refusing every save under the old per-row
   rule). Untouched rows are read off their saved instance, since they have no `cleaned_data`.
 - **Skill versions**: the autocomplete JSON and the `skill-names/` suggestions carry
-  `version` (`Skill.version_label`: `○ white`, `◎ gold`, `evolved`) and the picker draws it
+  `version` (`Skill.version_label`: `○ white`, `◎ white`, `◎ gold`, `evolved`) and the picker draws it
   as a tag, so an editor picks the version the guide means; the skills tables have a
   read-only "Other versions" column from `Skill.family()`. The family itself is derived
   (`data-model.md`, "`Skill` is imported"); nothing to pick or maintain.
@@ -486,8 +493,11 @@ child are inline-only (`test_join_models_not_registered_top_level`).
   `pvp_sheet.load_guide_from_sheet`, preview first; see "Safety & data" in CLAUDE.md for
   why an editor's one-event import is an admin edit and not a seed path), and "Fill track
   green skills" (a page, `pvp_track_skills.suggest` then `.fill`: evaluates each skill's
-  raw game `condition` against the event's track fields and adds the ◎ of every matching
-  ○/◎ family to Everyone / Green; additive, skips a family the guide names in any version,
+  raw game `condition` against the event's track fields and adds the ○ of every matching
+  ○/◎ family to Everyone / Green (the ○ since 2026-10-18, owner's call; the sheet importer
+  resolves "○/◎" and bare names to the ○ too, so the two paths agree; guides filled
+  earlier keep their ◎ rows until an editor swaps them); additive, skips a family the
+  guide names in any version,
   reports event fields it can't read instead of guessing; racecourse ids come from the
   racecourse skills' own names, so there is no id table). Bulk
   publish / unpublish actions call `public_payload_cache.invalidate()` because
