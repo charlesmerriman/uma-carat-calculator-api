@@ -8,6 +8,8 @@
  *  - skill-name suggestions in every box that may mention a skill
  *    ([data-pvp-mentions]): typing "[[" opens a list from the guide admin's
  *    skill-names endpoint; Enter or a click completes "[[Name]]".
+ *  - a nested-aware replacement for unfold's drag-and-drop order callback
+ *    (sortRecords), so dragging a deck by its handle sticks. See "Drag order".
  *
  * Plain DOM code, no bundler, like spaces-image-picker.js. Rows added with
  * "Add another" are picked up through Django's formset:added event.
@@ -310,6 +312,80 @@
       }, 120);
     });
   }
+
+  // ── Drag order ────────────────────────────────────────────────────────
+  //
+  // unfold's drop callback (sortRecords in unfold/js/app.js, 0.101.0 and
+  // still in 0.110.0) numbers EVERY `.form-group.original` under the dragged
+  // formset, nested rows included, and finds each one's ordering input with
+  // `input[name$=-order]`. The decks are the one sortable inline that nests
+  // rows (their cards), and a card row's "Alternative" field is also named
+  // `order` but is a <select>. So the lookup comes back null on the first card
+  // and the callback throws, having written deck 0 only: the drag moves the
+  // rows on screen, the hidden inputs keep their old numbers, and Save keeps
+  // the old order. The tabular tables nest nothing, which is why their handles
+  // always worked.
+  //
+  // The replacement numbers the formset's DIRECT rows only, each through its
+  // OWN input (the one whose nearest row is that row, never a card's). A
+  // formset with nothing nested goes to unfold's own function unchanged.
+  // Either way it then fires `input` on each row's order input: the page warns
+  // before leaving with unsaved changes (warn_unsaved_form), that warning
+  // listens for `input`, and a drag is a change.
+  //
+  // Installed on `alpine:init`, the one moment that works. This script runs
+  // in the head ({{ media }}) BEFORE app.js declares sortRecords, so assigning
+  // it now would be overwritten. Alpine reads `x-sort:config="{onEnd:
+  // sortRecords}"` once, when it starts, so after that is too late.
+  // alpine:init fires after app.js has run and before Alpine reads the page.
+  // (The stacked list's other binding, `x-on:end="sortRecords"`, looks the
+  // name up on every event, so it gets the replacement too.)
+  // Not a fork of stacked_list.html: the wrapper templates stay one-line diffs
+  // of unfold's.
+
+  function ownInput(row, selector) {
+    // Only the row wrappers carry .form-group in unfold's inline templates,
+    // so an input's nearest one is the row it belongs to.
+    var inputs = row.querySelectorAll(selector);
+    for (var i = 0; i < inputs.length; i++) {
+      if (inputs[i].closest(".form-group") === row) {
+        return inputs[i];
+      }
+    }
+    return null;
+  }
+
+  function installSortRecords() {
+    var unfoldSortRecords = window.sortRecords;
+    if (typeof unfoldSortRecords !== "function") {
+      return; // unfold renamed it; its templates no longer call ours either.
+    }
+    window.sortRecords = function (event) {
+      var formset = event.from;
+      var field = formset && formset.dataset.orderingField;
+      if (!field) {
+        return;
+      }
+      var selector = "input[name$='-" + field + "']";
+      // A nested formset carries data-inline-formset, as every formset does.
+      var nested = formset.querySelector("[data-inline-formset]") !== null;
+      if (!nested) {
+        unfoldSortRecords(event);
+      }
+      formset.querySelectorAll(":scope > .form-group.original").forEach(function (row, index) {
+        var input = ownInput(row, selector);
+        if (!input) {
+          return;
+        }
+        if (nested) {
+          input.value = index;
+        }
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+    };
+  }
+
+  document.addEventListener("alpine:init", installSortRecords);
 
   // ── Wiring ────────────────────────────────────────────────────────────
 

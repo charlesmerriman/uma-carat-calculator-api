@@ -745,8 +745,8 @@ GUIDE_INLINES = (
         SkillInline, "everyone", tab=GUIDE_TAB,
         verbose_name_plural="General skills (every position)",
         hint=(
-            "Skills every position should take. The site shows them inside each "
-            "style's recommended skills, beside that style's own picks. The sheet's "
+            "Skills every position should take. The site shows them once, in their "
+            "own box under the Overview. The sheet's "
             "\"Green\" and \"Debuffs\" groups go here with that category."
         ),
     ),

@@ -350,6 +350,20 @@ class GuideAdminTests(CalculatorTestCase):
         self.assertContains(res, "Kitasan Black")
         self.assertContains(res, 'name="front-decks-0-slots-TOTAL_FORMS"')
 
+    def test_the_deck_drag_hazard_and_its_fix_are_on_the_page(self):
+        # unfold's sortRecords looks up every row's `input[name$=-order]`,
+        # nested card rows included, and a card's Alternative field is named
+        # `order` but is a <select>: the lookup fails and the deck order is
+        # never written. static/admin/pvp-guide-editor.js replaces the callback.
+        # No JS runner here, so this pins the markup the fix depends on; the
+        # drag itself is checked in a browser.
+        res = self.client.get(reverse("admin:calculatorapi_pvpguide_change", args=(self.guide.pk,)))
+        html = res.content.decode()
+        self.assertRegex(html, r'id="front-decks-data"[^>]*data-ordering-field="order"')
+        self.assertRegex(html, r'<input type="hidden" name="front-decks-0-order"')
+        self.assertRegex(html, r'<select[^>]*name="front-decks-0-slots-0-order"')
+        self.assertContains(res, "admin/pvp-guide-editor.js")
+
     def test_the_list_shows_what_is_filled(self):
         res = self.client.get(reverse("admin:calculatorapi_pvpguide_changelist"))
         self.assertContains(res, '<span class="pvp-chip">Front</span>')

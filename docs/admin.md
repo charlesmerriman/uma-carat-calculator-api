@@ -415,6 +415,13 @@ child are inline-only (`test_join_models_not_registered_top_level`).
   `get_extra` and `DeckSlotFormSet.initial` (the missing slot numbers) per deck. The slot
   formset's `clean()` refuses two Borrow ticks. Deck order is a hidden input the drag
   handle writes (`DeckForm`); `PvpDeck.get_inline_title` keeps the stacked title short.
+  **The drag needs the page's own `sortRecords`** (`static/admin/pvp-guide-editor.js`,
+  installed on `alpine:init`). unfold's numbers every `.form-group.original` under the
+  formset, nested card rows included, and a card's Alternative field is also named
+  `order` but is a `<select>`, so its `input[name$=-order]` lookup throws after deck 0 and
+  the order was never saved (unfold 0.101.0; 0.110.0 is the same). The replacement numbers
+  the deck rows only, each through its own input, hands non-nested formsets to unfold's
+  function, and fires `input` so the unsaved-changes warning sees the drag.
 - **The add page has no tables** (`get_inlines` returns `()` without an object): the
   Event dropdown, scenario, published and the overview, then "Save and continue editing".
 - **One Event dropdown** (`PvpGuideForm.event`, grouped CM / LoH, events with a guide
