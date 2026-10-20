@@ -236,6 +236,15 @@ services:
     scope: RUN_TIME
     type: SECRET
     value: ""
+  # The Discord bot (calculatorapi/discord_messages.py): patch notes post to
+  # #changelog on the deploy that ships them. Either blank: nothing is posted.
+  - key: DISCORD_BOT_TOKEN
+    scope: RUN_TIME
+    type: SECRET
+    value: ""
+  - key: DISCORD_CHANGELOG_CHANNEL_ID
+    scope: RUN_TIME
+    value: ""
   github:
     branch: master
     deploy_on_push: true

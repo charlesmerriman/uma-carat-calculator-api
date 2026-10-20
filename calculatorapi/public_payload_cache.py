@@ -141,6 +141,8 @@ _IRRELEVANT_MODELS = frozenset({
     "patreontier",
     "patreonsupporter",
     "patreoncredentials",
+    # Written by sync_changelog on deploy and, later, on every moderation card.
+    "discordmessage",
     "sitepage",
     "faqcategory",
     "faqitem",
