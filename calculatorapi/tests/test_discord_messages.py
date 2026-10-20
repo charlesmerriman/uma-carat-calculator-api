@@ -53,7 +53,7 @@ class SendTests(CalculatorTestCase):
         body = call.call_args.kwargs["json"]
         self.assertEqual(body["embeds"], [{"title": "Hi"}])
         # Nothing the site posts may ping anyone.
-        self.assertEqual(body["allowed_mentions"], {"parse": []})
+        self.assertEqual(body["allowed_mentions"], {"parse": [], "roles": []})
         row = DiscordMessage.objects.get(key="test:1")
         self.assertEqual((row.channel_id, row.message_id), (CHANNEL, "555"))
 

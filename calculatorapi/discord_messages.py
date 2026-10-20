@@ -51,9 +51,11 @@ MAX_RETRY_WAIT_SECONDS = 3
 EMBED_DESCRIPTION_LIMIT = 4096
 EMBED_TITLE_LIMIT = 256
 
-# Nothing the site posts should ping anyone, whatever text ends up in it: a
-# typed "@everyone" in a patch note stays plain text.
-NO_MENTIONS = {"parse": []}
+# Nothing the site posts pings anyone unless the caller names the role: a typed
+# "@everyone" in a patch note stays plain text. Explicit even though the bot may
+# hold Mention All in the server (owner's choice, 2026-10-20).
+def _allowed_mentions(ping_roles=()):
+    return {"parse": [], "roles": [str(role) for role in ping_roles]}
 
 
 def is_configured(channel_id=""):
@@ -101,8 +103,8 @@ def _call(method, path, body):
     return None
 
 
-def _payload(content, embed):
-    body = {"allowed_mentions": NO_MENTIONS}
+def _payload(content, embed, ping_roles=()):
+    body = {"allowed_mentions": _allowed_mentions(ping_roles)}
     if content is not None:
         body["content"] = content
     if embed is not None:
@@ -115,9 +117,12 @@ def has_message(key):
     return DiscordMessage.objects.filter(key=key).exists()
 
 
-def send(key, channel_id, *, content=None, embed=None):
+def send(key, channel_id, *, content=None, embed=None, ping_roles=()):
     """Post a message under `key`, once ever. Returns nothing: the post happens
     after the transaction commits.
+
+    `ping_roles` are the role ids the message may ping; any other mention in
+    `content` renders but notifies nobody.
 
     The claim (inserting the row) happens inside the deferred callback, not
     here, so a rolled-back transaction leaves no orphaned claim behind.
@@ -133,7 +138,7 @@ def send(key, channel_id, *, content=None, embed=None):
                 claim = DiscordMessage.objects.create(key=key, channel_id=str(channel_id))
         except IntegrityError:
             return
-        sent = _call("POST", f"/channels/{channel_id}/messages", _payload(content, embed))
+        sent = _call("POST", f"/channels/{channel_id}/messages", _payload(content, embed, ping_roles))
         if sent is None:
             # Give the key back, so the next run (the next deploy, for a
             # changelog entry) tries again rather than believing it was sent.

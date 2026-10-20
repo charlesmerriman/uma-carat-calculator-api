@@ -69,6 +69,15 @@ def build_embed(entry):
     }
 
 
+def _ping():
+    """The @Carat Calc Ping mention, when a role is set. Only on the first post:
+    an edit never pings again, and leaves this line as it was."""
+    role = settings.DISCORD_CHANGELOG_PING_ROLE_ID
+    if not role:
+        return {}
+    return {"content": f"<@&{role}>", "ping_roles": [role]}
+
+
 def announce(updated_keys=()):
     """Post the week's unposted entries and edit the posts of `updated_keys`
     (the changelog.yaml keys this sync rewrote). Returns (posted, edited): how
@@ -88,7 +97,7 @@ def announce(updated_keys=()):
     for entry in recent:
         if discord_messages.has_message(message_key(entry)):
             continue
-        discord_messages.send(message_key(entry), channel, embed=build_embed(entry))
+        discord_messages.send(message_key(entry), channel, embed=build_embed(entry), **_ping())
         posted += 1
 
     edited = 0
