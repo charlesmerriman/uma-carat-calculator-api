@@ -1326,7 +1326,9 @@ entry the sync rewrote edits its post. A week, not "created by this sync", so a 
 that failed or predates the token goes out on the next deploy, while the first
 deploy with a token never floods the channel with history. With
 `DISCORD_CHANGELOG_PING_ROLE_ID` set, a new post pings that role (and only it); an
-edit never pings again.
+edit never pings again. `DISCORD_CHANGELOG_START_DATE` (YYYY-MM-DD) keeps anything dated
+before it off Discord, so releases announced by hand before the bot went live don't repeat;
+an unreadable value posts nothing rather than risk history.
 
 ### `DiscordMessage` — what the site has sent to Discord
 

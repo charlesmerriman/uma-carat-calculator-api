@@ -249,6 +249,10 @@ services:
   - key: DISCORD_CHANGELOG_PING_ROLE_ID
     scope: RUN_TIME
     value: ""
+  # YYYY-MM-DD: patch notes dated before it never post (the bot's go-live day).
+  - key: DISCORD_CHANGELOG_START_DATE
+    scope: RUN_TIME
+    value: ""
   github:
     branch: master
     deploy_on_push: true
