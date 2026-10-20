@@ -1324,7 +1324,9 @@ when `DISCORD_BOT_TOKEN` and `DISCORD_CHANGELOG_CHANNEL_ID` are both set. Any en
 **dated in the last 7 days** with no post yet is posted, file or admin alike; an
 entry the sync rewrote edits its post. A week, not "created by this sync", so a post
 that failed or predates the token goes out on the next deploy, while the first
-deploy with a token never floods the channel with history.
+deploy with a token never floods the channel with history. With
+`DISCORD_CHANGELOG_PING_ROLE_ID` set, a new post pings that role (and only it); an
+edit never pings again.
 
 ### `DiscordMessage` — what the site has sent to Discord
 

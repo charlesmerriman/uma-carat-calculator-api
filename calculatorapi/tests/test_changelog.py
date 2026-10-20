@@ -272,6 +272,26 @@ class ChangelogDiscordTests(CalculatorTestCase):
         _, call = self._run()
         call.assert_not_called()
 
+    def test_pings_nobody_by_default(self):
+        self._write()
+        _, call = self._run()
+        body = call.call_args.kwargs['json']
+        self.assertNotIn('content', body)
+        self.assertEqual(body['allowed_mentions'], {'parse': [], 'roles': []})
+
+    def test_pings_the_role_on_the_first_post_only(self):
+        self._write()
+        with self.settings(DISCORD_CHANGELOG_PING_ROLE_ID='3000'):
+            _, call = self._run()
+            body = call.call_args.kwargs['json']
+            self.assertEqual(body['content'], '<@&3000>')
+            # That role and nothing else may notify.
+            self.assertEqual(body['allowed_mentions'], {'parse': [], 'roles': ['3000']})
+            self._write(title='Fresh release, fixed')
+            _, call = self._run()
+        # An edit leaves the ping line alone rather than pinging again.
+        self.assertNotIn('content', call.call_args.kwargs['json'])
+
     def test_silent_without_the_settings(self):
         self._write()
         for token, channel in (("", "2000"), ("test-token", "")):

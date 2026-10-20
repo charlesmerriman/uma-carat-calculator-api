@@ -568,6 +568,9 @@ MODERATION_WEBHOOK_URL = os.getenv("MODERATION_WEBHOOK_URL", "")
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN", "")
 # #changelog: each patch note posts there on the deploy that ships it.
 DISCORD_CHANGELOG_CHANNEL_ID = os.getenv("DISCORD_CHANGELOG_CHANNEL_ID", "")
+# A role each new patch note pings (the community server's @Carat Calc Ping).
+# Blank: patch notes ping nobody.
+DISCORD_CHANGELOG_PING_ROLE_ID = os.getenv("DISCORD_CHANGELOG_PING_ROLE_ID", "")
 
 # Where the SPA lives. In production the ingress serves it from the same host
 # as the API; in dev it is the Vite server on :5173.

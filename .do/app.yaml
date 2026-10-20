@@ -245,6 +245,10 @@ services:
   - key: DISCORD_CHANGELOG_CHANNEL_ID
     scope: RUN_TIME
     value: ""
+  # The role new patch notes ping (@Carat Calc Ping). Blank: no ping.
+  - key: DISCORD_CHANGELOG_PING_ROLE_ID
+    scope: RUN_TIME
+    value: ""
   github:
     branch: master
     deploy_on_push: true
