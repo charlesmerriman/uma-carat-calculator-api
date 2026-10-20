@@ -32,6 +32,15 @@
 # module changed. Newest entry first is conventional here but not required — the
 # page sorts by date.
 
+- key: phone-planner-cards
+  date: 2026-10-20
+  title: "Shorter planner cards on a phone"
+  version: "v2.3"
+  changes:
+    - changed: "On a phone, the odds under each planner card start folded. Tap Show odds on any card to bring them back on all of them, and your phone remembers."
+    - changed: "Planner cards on narrow phones show both featured cards' pictures again."
+    - changed: "The logo is back on two lines on a phone."
+
 - key: carat-forecast
   date: 2026-10-19
   title: "A carat forecast, and a fresh coat of paint"

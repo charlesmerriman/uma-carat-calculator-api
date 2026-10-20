@@ -46,6 +46,7 @@ from django.core.management.base import BaseCommand
 from django.core.validators import validate_slug
 from django.db import transaction
 
+from calculatorapi import changelog_discord, discord_messages
 from calculatorapi.models import ChangelogChange, ChangelogEntry
 
 # Default source file, resolved from the app directory so it does not depend on
@@ -271,6 +272,7 @@ class Command(BaseCommand):
             return
 
         created = updated = unchanged = 0
+        updated_keys = []
         for entry in entries:
             action = self._sync_entry(entry, dry_run=dry_run)
             if action == "created":
@@ -279,6 +281,7 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.SUCCESS(f"  {verb} {entry['key']} — {entry['title']}"))
             elif action == "updated":
                 updated += 1
+                updated_keys.append(entry["key"])
                 verb = "would update" if dry_run else "updated"
                 self.stdout.write(self.style.WARNING(f"  {verb} {entry['key']} — {entry['title']}"))
             else:
@@ -289,6 +292,19 @@ class Command(BaseCommand):
             f"{prefix}{len(entries)} managed entr{'y' if len(entries) == 1 else 'ies'}: "
             f"{created} created, {updated} updated, {unchanged} unchanged."
         )
+
+        # Discord's #changelog follows the table: new entries post, rewritten
+        # ones edit their post (changelog_discord). Silent while the bot token
+        # or channel id is unset; a Discord failure is logged, never raised,
+        # because this command sits on the path that boots the API.
+        if not dry_run:
+            self._announce(updated_keys)
+
+    def _announce(self, updated_keys):
+        if not discord_messages.is_configured(settings.DISCORD_CHANGELOG_CHANNEL_ID):
+            return
+        posted, edited = changelog_discord.announce(updated_keys)
+        self.stdout.write(f"Discord #changelog: {posted} to post, {edited} to edit.")
 
     @transaction.atomic
     def _sync_entry(self, entry, dry_run):

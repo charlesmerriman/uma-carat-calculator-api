@@ -5,14 +5,20 @@ import os
 import shutil
 import tempfile
 from io import StringIO
+from unittest import mock
+
+import requests
 
 from django.core.management import call_command
+from django.test import override_settings
+from django.utils import timezone
 from rest_framework.test import APIClient
 
 from calculatorapi.management.commands.sync_changelog import (
     load_entries as load_changelog_entries,
 )
-from calculatorapi.models import ChangelogEntry, ChangelogChange
+from calculatorapi import changelog_discord
+from calculatorapi.models import ChangelogEntry, ChangelogChange, DiscordMessage
 from calculatorapi.tests.base import CalculatorTestCase
 from calculatorapi.tests.factories import make_user, auth_client
 
@@ -216,3 +222,168 @@ class SyncChangelogCommandTests(CalculatorTestCase):
         output = self._run()
         self.assertIn("unknown category 'invented'", output)
         self.assertEqual(ChangelogEntry.objects.count(), 0)
+
+
+@override_settings(DISCORD_BOT_TOKEN="test-token", DISCORD_CHANGELOG_CHANNEL_ID="2000")
+class ChangelogDiscordTests(CalculatorTestCase):
+    """`sync_changelog` posts the week's new entries to #changelog, once each,
+    and edits a post when the file rewrites its entry."""
+
+    def setUp(self):
+        self.directory = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.directory)
+        self.path = os.path.join(self.directory, 'changelog.yaml')
+        self.today = timezone.now().date()
+
+    def _write(self, title='Fresh release', day=None, version='v3.0'):
+        day = day or self.today
+        with open(self.path, 'w', encoding='utf-8') as handle:
+            handle.write(
+                '- key: fresh\n'
+                f'  date: {day.isoformat()}\n'
+                f'  title: "{title}"\n'
+                f'  version: "{version}"\n'
+                '  changes:\n'
+                '    - added: "A new thing."\n'
+                '    - fixed: "An old bug."\n'
+            )
+
+    def _run(self):
+        """Run the sync with Discord faked. Returns (output, the fake)."""
+        answer = mock.Mock(status_code=200, ok=True)
+        answer.json.return_value = {"id": "777"}
+        out = StringIO()
+        with mock.patch("requests.request", return_value=answer) as call:
+            with self.captureOnCommitCallbacks(execute=True):
+                call_command('sync_changelog', file=self.path, stdout=out)
+        return out.getvalue(), call
+
+    def test_a_new_entry_posts_once(self):
+        self._write()
+        output, call = self._run()
+        self.assertIn('Discord #changelog: 1 to post, 0 to edit.', output)
+        call.assert_called_once()
+        self.assertEqual(call.call_args.args[0], "POST")
+        entry = ChangelogEntry.objects.get(key='fresh')
+        self.assertEqual(
+            DiscordMessage.objects.get(key=f'changelog:{entry.id}').message_id, '777',
+        )
+        # Every later deploy runs the sync again; none of them posts again.
+        _, call = self._run()
+        call.assert_not_called()
+
+    def test_pings_nobody_by_default(self):
+        self._write()
+        _, call = self._run()
+        body = call.call_args.kwargs['json']
+        self.assertNotIn('content', body)
+        self.assertEqual(body['allowed_mentions'], {'parse': [], 'roles': []})
+
+    def test_pings_the_role_on_the_first_post_only(self):
+        self._write()
+        with self.settings(DISCORD_CHANGELOG_PING_ROLE_ID='3000'):
+            _, call = self._run()
+            body = call.call_args.kwargs['json']
+            self.assertEqual(body['content'], '<@&3000>')
+            # That role and nothing else may notify.
+            self.assertEqual(body['allowed_mentions'], {'parse': [], 'roles': ['3000']})
+            self._write(title='Fresh release, fixed')
+            _, call = self._run()
+        # An edit leaves the ping line alone rather than pinging again.
+        self.assertNotIn('content', call.call_args.kwargs['json'])
+
+    def test_silent_without_the_settings(self):
+        self._write()
+        for token, channel in (("", "2000"), ("test-token", "")):
+            with self.settings(DISCORD_BOT_TOKEN=token, DISCORD_CHANGELOG_CHANNEL_ID=channel):
+                output, call = self._run()
+            call.assert_not_called()
+            self.assertNotIn('Discord', output)
+
+    def test_a_rewritten_entry_edits_its_post(self):
+        self._write()
+        self._run()
+        self._write(title='Fresh release, fixed')
+        output, call = self._run()
+        self.assertIn('0 to post, 1 to edit', output)
+        method, url = call.call_args.args
+        self.assertEqual(method, "PATCH")
+        self.assertTrue(url.endswith('/channels/2000/messages/777'))
+        self.assertEqual(call.call_args.kwargs['json']['embeds'][0]['title'], 'v3.0: Fresh release, fixed')
+
+    def test_history_never_posts(self):
+        # The first deploy with a token must not flood the channel.
+        self._write(day=self.today - datetime.timedelta(days=changelog_discord.POST_WINDOW_DAYS + 1))
+        ChangelogEntry.objects.create(title='Old, by hand', date=datetime.date(2026, 1, 1))
+        _, call = self._run()
+        call.assert_not_called()
+
+    def test_nothing_before_the_start_date(self):
+        # Released last week and announced by hand before the bot went live.
+        self._write(day=self.today - datetime.timedelta(days=2))
+        with self.settings(DISCORD_CHANGELOG_START_DATE=self.today.isoformat()):
+            _, call = self._run()
+            call.assert_not_called()
+            ChangelogEntry.objects.create(title='Released today', date=self.today)
+            _, call = self._run()
+        call.assert_called_once()
+        self.assertEqual(call.call_args.kwargs['json']['embeds'][0]['title'], 'Released today')
+
+    def test_an_unreadable_start_date_posts_nothing(self):
+        self._write()
+        with self.settings(DISCORD_CHANGELOG_START_DATE='20 October'), \
+                self.assertLogs('calculatorapi.changelog_discord', 'WARNING'):
+            _, call = self._run()
+        call.assert_not_called()
+
+    def test_a_recent_hand_written_entry_posts(self):
+        ChangelogEntry.objects.create(title='Written in the admin', date=self.today)
+        self._write(day=self.today - datetime.timedelta(days=30))
+        _, call = self._run()
+        call.assert_called_once()
+        self.assertEqual(call.call_args.kwargs['json']['embeds'][0]['title'], 'Written in the admin')
+
+    def test_a_failed_post_is_retried_by_the_next_deploy(self):
+        self._write()
+        with mock.patch("requests.request", side_effect=requests.ConnectionError), \
+                self.assertLogs("calculatorapi.discord_messages", "WARNING"):
+            with self.captureOnCommitCallbacks(execute=True):
+                call_command('sync_changelog', file=self.path, stdout=StringIO())
+        self.assertFalse(DiscordMessage.objects.exists())
+        _, call = self._run()
+        call.assert_called_once()
+
+    def test_dry_run_never_posts(self):
+        self._write()
+        with mock.patch("requests.request") as call:
+            with self.captureOnCommitCallbacks(execute=True):
+                call_command('sync_changelog', file=self.path, dry_run=True, stdout=StringIO())
+        call.assert_not_called()
+
+    def test_the_embed(self):
+        self._write()
+        self._run()
+        embed = changelog_discord.build_embed(ChangelogEntry.objects.get(key='fresh'))
+        self.assertEqual(embed['title'], 'v3.0: Fresh release')
+        self.assertEqual(embed['description'], '**Added:** A new thing.\n**Fixed:** An old bug.')
+        self.assertTrue(embed['url'].endswith('/changelog'))
+        day = self.today
+        self.assertEqual(embed['footer']['text'], f'{day.year}/{day.month}/{day.day}')
+
+    def test_no_version_no_prefix(self):
+        self._write(version='')
+        self._run()
+        embed = changelog_discord.build_embed(ChangelogEntry.objects.get(key='fresh'))
+        self.assertEqual(embed['title'], 'Fresh release')
+
+    def test_a_long_entry_is_cut_at_a_line(self):
+        entry = ChangelogEntry.objects.create(title='Huge', date=self.today)
+        ChangelogChange.objects.bulk_create([
+            ChangelogChange(entry=entry, category='added', text='x' * 490, order=i)
+            for i in range(12)
+        ])
+        description = changelog_discord.build_embed(entry)['description']
+        self.assertLessEqual(len(description), 4096)
+        self.assertTrue(description.endswith('more on the changelog'))
+        # Every kept line is whole.
+        self.assertTrue(all(line.endswith('x') for line in description.split('\n')[:-1]))

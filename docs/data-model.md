@@ -1319,6 +1319,34 @@ be able to keep the API from booting. `--strict` inverts that for local checks,
 and `ShippedChangelogFileTests` validates the committed file so a broken one
 never reaches a deploy in the first place.
 
+**After the sync, patch notes post to Discord's `#changelog`** (`changelog_discord.py`)
+when `DISCORD_BOT_TOKEN` and `DISCORD_CHANGELOG_CHANNEL_ID` are both set. Any entry
+**dated in the last 7 days** with no post yet is posted, file or admin alike; an
+entry the sync rewrote edits its post. A week, not "created by this sync", so a post
+that failed or predates the token goes out on the next deploy, while the first
+deploy with a token never floods the channel with history. With
+`DISCORD_CHANGELOG_PING_ROLE_ID` set, a new post pings that role (and only it); an
+edit never pings again. `DISCORD_CHANGELOG_START_DATE` (YYYY-MM-DD) keeps anything dated
+before it off Discord, so releases announced by hand before the bot went live don't repeat;
+an unreadable value posts nothing rather than risk history.
+
+### `DiscordMessage` — what the site has sent to Discord
+
+One row per message the site sent as the bot (`discord_messages.py`): a unique
+`key` such as `changelog:<entry id>`, the `channel_id`, and Discord's
+`message_id`. Two jobs:
+
+- **The site never posts twice for one key.** `send()` claims the key by inserting
+  the row before posting, so two runs racing each other (the deploy race runs
+  `sync_changelog` more than once) can't both post. A refused or failed post
+  deletes the claim, so the next run retries. A row with a blank `message_id` is a
+  claim in flight.
+- **Edits need the message id**, which only Discord's answer to the post carries.
+
+Routing only: no message text and nothing about a person. PRIVATE in
+`content_snapshot` (a local copy would believe it had already posted), in
+`public_payload_cache._IRRELEVANT_MODELS`, and not registered in the admin.
+
 ### `SitePage`, `FaqCategory`, `FaqItem` — the prose the team edits
 
 The About page, the carat income guide and the FAQ. They used to ship in the

@@ -103,6 +103,9 @@ PRIVATE_MODELS = (
     "ReferrerVisit",
     # Aggregates only, but production's usage figures are not local content.
     "AnalyticsSnapshot",
+    # Which Discord message the site sent for what. Routing for production's
+    # Discord; a local database copying it would believe it had already posted.
+    "DiscordMessage",
 )
 
 

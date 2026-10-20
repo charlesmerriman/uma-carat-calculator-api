@@ -236,6 +236,23 @@ services:
     scope: RUN_TIME
     type: SECRET
     value: ""
+  # The Discord bot (calculatorapi/discord_messages.py): patch notes post to
+  # #changelog on the deploy that ships them. Either blank: nothing is posted.
+  - key: DISCORD_BOT_TOKEN
+    scope: RUN_TIME
+    type: SECRET
+    value: ""
+  - key: DISCORD_CHANGELOG_CHANNEL_ID
+    scope: RUN_TIME
+    value: ""
+  # The role new patch notes ping (@Carat Calc Ping). Blank: no ping.
+  - key: DISCORD_CHANGELOG_PING_ROLE_ID
+    scope: RUN_TIME
+    value: ""
+  # YYYY-MM-DD: patch notes dated before it never post (the bot's go-live day).
+  - key: DISCORD_CHANGELOG_START_DATE
+    scope: RUN_TIME
+    value: ""
   github:
     branch: master
     deploy_on_push: true

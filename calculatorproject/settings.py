@@ -561,6 +561,20 @@ DO_APP_ID = os.getenv("DO_APP_ID", "")
 # means no alert, which is the default locally and in tests.
 MODERATION_WEBHOOK_URL = os.getenv("MODERATION_WEBHOOK_URL", "")
 
+# The site's Discord bot (calculatorapi/discord_messages.py). The token lets
+# Django post and edit messages as the bot; each feature has its own channel
+# id, and stays silent while either is blank (locally, in tests, and in
+# production until set). See discord-bot-plan.md for the bot as a whole.
+DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN", "")
+# #changelog: each patch note posts there on the deploy that ships it.
+DISCORD_CHANGELOG_CHANNEL_ID = os.getenv("DISCORD_CHANGELOG_CHANNEL_ID", "")
+# A role each new patch note pings (the community server's @Carat Calc Ping).
+# Blank: patch notes ping nobody.
+DISCORD_CHANGELOG_PING_ROLE_ID = os.getenv("DISCORD_CHANGELOG_PING_ROLE_ID", "")
+# Optional YYYY-MM-DD: patch notes dated before it never post. Set to the day
+# the bot went live, so releases already announced by hand don't repeat.
+DISCORD_CHANGELOG_START_DATE = os.getenv("DISCORD_CHANGELOG_START_DATE", "")
+
 # Where the SPA lives. In production the ingress serves it from the same host
 # as the API; in dev it is the Vite server on :5173.
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
