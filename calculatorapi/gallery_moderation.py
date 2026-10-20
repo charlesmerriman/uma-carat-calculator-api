@@ -7,10 +7,10 @@ and comments show it) a display name. check_text() runs on all three. A
 refusal is one plain sentence the client shows as is, and the text is never
 saved, so nothing refused can reach a page later by some other path.
 
-It also holds what happens after a report: the auto-hide, the moderator's
-three decisions (keep, remove, block the author) and the optional Discord
-alert. The admin's report queue calls those; gallery.report calls
-after_report.
+It also holds what happens after a report: the auto-hide and the moderator's
+three decisions (keep, remove, block the author). The admin's report queue
+calls those; gallery.report calls after_report. Each one ends by bringing the
+item's card in Discord's #calc-mod-queue up to date (moderation_cards).
 
 WHAT IS REFUSED, AND WHY EACH
 -----------------------------
@@ -25,15 +25,12 @@ WHAT IS REFUSED, AND WHY EACH
   the account serializer's own rules.
 """
 
-import logging
 import re
 
-import requests
-from django.conf import settings
 from django.db import transaction
-from django.urls import reverse
 from django.utils import timezone
 
+from calculatorapi import moderation_cards
 from calculatorapi.text_folding import normalise
 from calculatorapi.models import (
     BlockedTerm,
@@ -42,7 +39,6 @@ from calculatorapi.models import (
     GalleryReportResolution,
 )
 
-logger = logging.getLogger(__name__)
 
 TERMS_REFUSED = "That can't be posted. Please check the posting rules."
 LINKS_REFUSED = "Links can't be posted in the gallery."
@@ -111,18 +107,12 @@ def _hide(item, reason):
 
 def after_report(report):
     """What a new report sets off: the item hides once enough different
-    people have reported it, and a moderator is told about the first report
-    and about the hide."""
+    people have reported it, and its moderation card shows the new report."""
     item = report.post or report.comment
     open_count = _open_reports(item).exclude(reporter=None).values("reporter").distinct().count()
-    hid = False
     if not item.is_hidden and open_count >= AUTO_HIDE_REPORTS:
         _hide(item, GalleryHiddenReason.REPORTS)
-        hid = True
-    if open_count == 1 or hid:
-        kind = "post" if report.post_id else "comment"
-        what = "hidden after reports" if hid else "reported"
-        alert(f"A gallery {kind} was {what} ({report.get_reason_display()}, {open_count} open).")
+    moderation_cards.refresh(item)
 
 
 def _resolve(item, moderator, resolution):
@@ -140,14 +130,20 @@ def keep(item, moderator):
             item.hidden_at = None
             item.save(update_fields=["is_hidden", "hidden_reason", "hidden_at"])
         _resolve(item, moderator, GalleryReportResolution.KEPT)
+        moderation_cards.refresh(item)
 
 
 def remove(item, moderator):
     """The moderator took it down: hidden for good, its reports closed. Kept
     in the database (hidden, not deleted) so the decision can be reversed."""
     with transaction.atomic():
-        _hide(item, GalleryHiddenReason.MODERATOR)
-        _resolve(item, moderator, GalleryReportResolution.REMOVED)
+        _remove(item, moderator)
+        moderation_cards.refresh(item)
+
+
+def _remove(item, moderator):
+    _hide(item, GalleryHiddenReason.MODERATOR)
+    _resolve(item, moderator, GalleryReportResolution.REMOVED)
 
 
 def block_author(item, moderator):
@@ -155,36 +151,9 @@ def block_author(item, moderator):
     Everything else they posted disappears through the read filter, and comes
     back if the block is lifted."""
     with transaction.atomic():
-        remove(item, moderator)
+        _remove(item, moderator)
         if item.author is not None:
             item.author.publishing_blocked = True
             item.author.save(update_fields=["publishing_blocked"])
-
-
-# ── The moderator alert ─────────────────────────────────────────────────────
-
-ALERT_TIMEOUT_SECONDS = 3
-
-
-def alert(text):
-    """Post one line to the moderators' Discord webhook, after the transaction
-    commits. Off while MODERATION_WEBHOOK_URL is blank, which it is locally and
-    in tests.
-
-    The line says what happened and links the admin queue. Never the reported
-    text and never who reported it: a Discord channel is not the place for
-    either. A failure is logged and swallowed, so Discord being down can
-    never fail somebody's report.
-    """
-    url = settings.MODERATION_WEBHOOK_URL
-    if not url:
-        return
-    queue = settings.FRONTEND_URL.rstrip("/") + reverse("admin:calculatorapi_galleryreport_changelist")
-
-    def send():
-        try:
-            requests.post(url, json={"content": f"{text} {queue}"}, timeout=ALERT_TIMEOUT_SECONDS)
-        except requests.RequestException:
-            logger.warning("Moderation alert could not be sent", exc_info=True)
-
-    transaction.on_commit(send)
+        # After the block, so the card can say the author was blocked too.
+        moderation_cards.refresh(item)

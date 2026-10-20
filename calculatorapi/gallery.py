@@ -20,7 +20,7 @@ from django.db import IntegrityError, transaction
 from django.db.models import F
 from django.utils import timezone
 
-from calculatorapi import gallery_moderation, visits
+from calculatorapi import gallery_moderation, moderation_cards, visits
 from calculatorapi.models import (
     GalleryComment,
     GalleryPost,
@@ -226,6 +226,8 @@ def publish_team(user, team, *, caption="", strategy="", confirm_public_identity
         post.save(update_fields=list(fields))
         if not same_team:
             post.votes.all().delete()
+    # A reported post that is re-posted shows its new caption and strategy.
+    moderation_cards.refresh(post)
     return post, False
 
 
@@ -417,6 +419,9 @@ def delete_comment(comment):
         comment.author = None
         comment.is_deleted = True
         comment.save(update_fields=["body", "author", "is_deleted"])
+        # A hard delete strips its card through the post_delete hook; a
+        # "[deleted]" placeholder stays a row, so its card is stripped here.
+        moderation_cards.mark_deleted("comment", comment.pk)
     else:
         comment.delete()
 
@@ -499,6 +504,7 @@ def erase_users(users):
       * their comments: removed when nobody replied, otherwise "[deleted]"
         with the author and the text cleared, so replies keep their place;
       * their reports stay, with the reporter cleared: the moderation record.
+    Any moderation card in Discord drops their text and name to match.
 
     ONE function for both paths, so an account deletion and a purge cannot
     drift into erasing different things. Takes a queryset or list of users.
@@ -510,5 +516,16 @@ def erase_users(users):
     # Replies first: a reply has no replies of its own, so it always goes.
     comments.filter(parent__isnull=False).delete()
     comments.filter(replies__isnull=True).delete()
+    # update() sends no signal, so the "[deleted]" placeholders' cards and the
+    # cards showing these people as reporters are fixed by hand. Deleted rows
+    # strip their own cards (moderation_cards.connect_signals).
+    placeholders = list(comments.values_list("pk", flat=True))
     comments.update(body="", author=None, is_deleted=True, edited_at=None)
+    for comment_id in placeholders:
+        moderation_cards.mark_deleted("comment", comment_id)
+    reported = GalleryReport.objects.filter(reporter_id__in=ids, resolved_at__isnull=True)
+    items = {report.post or report.comment for report in reported.select_related("post", "comment__post")}
     GalleryReport.objects.filter(reporter_id__in=ids).update(reporter=None)
+    for item in items:
+        # Their name comes off the card; the report itself stays open.
+        moderation_cards.refresh(item)

@@ -309,9 +309,11 @@ class GalleryComment(models.Model):
 class GalleryReport(models.Model):
     """Somebody flagging a post or a comment for a moderator.
 
-    Exactly one of `post` / `comment` is set. The reporter is never shown to
-    anyone outside the admin, and is cleared rather than deleted with their
-    account, so the moderation record survives.
+    Exactly one of `post` / `comment` is set. The reporter is shown to staff in
+    the admin and, while the report is open, to moderators on the item's card in
+    Discord's private #calc-mod-queue (display name and handle only;
+    moderation_cards.py). Never to the person reported, never in public. Cleared
+    rather than deleted with their account, so the moderation record survives.
     """
 
     reporter = models.ForeignKey(

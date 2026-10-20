@@ -333,8 +333,14 @@ posts, comments, votes and reports come from people through the API.
   spotted without a report. All three go through `gallery_moderation`, the same code the
   auto-hide uses.
 - **Auto-hide**: three open reports from different accounts hide an item until someone
-  decides. If `MODERATION_WEBHOOK_URL` is set, a Discord channel hears about an item's first
-  report and its auto-hide, with a link to the queue (never the text, never the reporter).
+  decides.
+- **Discord cards** (`moderation_cards.py`, when `DISCORD_MOD_QUEUE_CHANNEL_ID` and the bot
+  token are set): each reported item gets ONE card in `#calc-mod-queue`, private to
+  moderators. Open, it shows the text, the author's display name, the status and each open
+  report with its reporter's display name and handle, plus links here. Every report, hide and
+  decision (here or, later, from Discord's buttons) edits it; once decided it shrinks to one
+  line with no text and no names, and a deletion or account erasure strips it. Decisions are
+  still made here until the buttons ship (discord-bot-plan.md, Step 3b).
 - A post's page lists its voters (admin only), for spotting a brigade of new accounts.
 - **Blocked terms** are refused in captions, comments and display names. "Whole word" is the
   safe default; "Anywhere" also matches inside longer words. A refusal tells the person to
