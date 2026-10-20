@@ -1,6 +1,10 @@
 alerts:
 - rule: DEPLOYMENT_FAILED
 - rule: DOMAIN_FAILED
+# Posts each live deploy to Discord's #calc-dev-log. Alert DESTINATIONS (that
+# channel's webhook with /slack appended, and the owner's email) are set with
+# `doctl apps update-alert-destinations`, not in this file.
+- rule: DEPLOYMENT_LIVE
 databases:
 - engine: PG
   name: dev-db-462490
@@ -253,6 +257,10 @@ services:
   - key: DISCORD_CHANGELOG_START_DATE
     scope: RUN_TIME
     value: ""
+  # #calc-mod-queue: a card per reported gallery post or comment. Blank: none.
+  - key: DISCORD_MOD_QUEUE_CHANNEL_ID
+    scope: RUN_TIME
+    value: ""
   github:
     branch: master
     deploy_on_push: true
@@ -261,6 +269,22 @@ services:
   instance_count: 1
   instance_size_slug: apps-s-1vcpu-0.5gb
   name: calculatorproject
+  # Resource trouble reaches #calc-dev-log before anyone notices it on the
+  # site (the 2026-10-14 outage was 512 MB running out). Any restart is a crash.
+  alerts:
+  - rule: CPU_UTILIZATION
+    operator: GREATER_THAN
+    value: 80
+    window: FIVE_MINUTES
+  - rule: MEM_UTILIZATION
+    operator: GREATER_THAN
+    value: 80
+    window: FIVE_MINUTES
+  - rule: RESTART_COUNT
+    operator: GREATER_THAN
+    # 0 is refused as "no value"; above 0.5 means at least one restart.
+    value: 0.5
+    window: FIVE_MINUTES
   # sync_changelog writes calculatorapi/data/changelog.yaml into the changelog
   # table. It sits here because a deploy is the only route to the production
   # database (see the POST_DEPLOY recipe above), and it is SAFE here because a

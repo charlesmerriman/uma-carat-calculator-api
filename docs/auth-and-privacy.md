@@ -231,6 +231,29 @@ over the first banner's art: the same facts as its tags, never the notes or the 
 Discord and X keep their own copies after a take-down, so the preview must not hold a name,
 a portrait of the poster or a caption.
 
+### Reports reach moderators in a private Discord channel, and leave it again
+
+Since 2026-10-20 a reported post or comment gets a card in `#calc-mod-queue`
+(`moderation_cards.py`), a Discord channel only moderators (and the `@Web Developer` team)
+can see. While a report is open the card shows the reported text, the author's display
+name, and each reporter's display name and generated handle (owner's decision: moderators
+see who reported, e.g. to spot mass-reporting). Never an email, a provider, a linked account
+or a user id; the person reported is never told.
+
+Discord is a third party that keeps what we send, so the card holds names and text only
+while a decision is pending:
+
+- **Decided** (here or, later, from the bot's buttons): edited down to one line with the
+  outcome, the moderator and the date. No text, no names.
+- **Deleted** (a take-down, a comment delete, account deletion, the purge, a staff delete):
+  edited to "reported, then deleted". Deleted rows strip their cards through `post_delete`;
+  the "[deleted]" comment placeholders and the reporter-clearing `update()` in
+  `gallery.erase_users` call `moderation_cards` by hand, because `update()` sends no signal.
+
+The privacy policy's "Reports" bullet says this in plain words; change the two together.
+A Discord-only moderator who decides through the bot (Step 3b) is recorded by Discord
+handle and never gets a site account.
+
 ### There is no password login on the API
 
 `POST /login` (staff-only, token-issuing) was removed on 2026-10-15: a password alone
