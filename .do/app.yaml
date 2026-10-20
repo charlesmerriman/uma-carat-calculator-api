@@ -278,7 +278,8 @@ services:
     window: FIVE_MINUTES
   - rule: RESTART_COUNT
     operator: GREATER_THAN
-    value: 0
+    # 0 is refused as "no value"; above 0.5 means at least one restart.
+    value: 0.5
     window: FIVE_MINUTES
   # sync_changelog writes calculatorapi/data/changelog.yaml into the changelog
   # table. It sits here because a deploy is the only route to the production
