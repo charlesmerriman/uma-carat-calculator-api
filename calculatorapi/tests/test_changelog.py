@@ -318,6 +318,24 @@ class ChangelogDiscordTests(CalculatorTestCase):
         _, call = self._run()
         call.assert_not_called()
 
+    def test_nothing_before_the_start_date(self):
+        # Released last week and announced by hand before the bot went live.
+        self._write(day=self.today - datetime.timedelta(days=2))
+        with self.settings(DISCORD_CHANGELOG_START_DATE=self.today.isoformat()):
+            _, call = self._run()
+            call.assert_not_called()
+            ChangelogEntry.objects.create(title='Released today', date=self.today)
+            _, call = self._run()
+        call.assert_called_once()
+        self.assertEqual(call.call_args.kwargs['json']['embeds'][0]['title'], 'Released today')
+
+    def test_an_unreadable_start_date_posts_nothing(self):
+        self._write()
+        with self.settings(DISCORD_CHANGELOG_START_DATE='20 October'), \
+                self.assertLogs('calculatorapi.changelog_discord', 'WARNING'):
+            _, call = self._run()
+        call.assert_not_called()
+
     def test_a_recent_hand_written_entry_posts(self):
         ChangelogEntry.objects.create(title='Written in the admin', date=self.today)
         self._write(day=self.today - datetime.timedelta(days=30))

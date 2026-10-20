@@ -19,6 +19,9 @@ Why "dated in the last week" rather than "just created by this sync":
 * The first deploy with a token does NOT flood the channel with the whole
   history: anything older than a week stays off Discord, on purpose. There is
   deliberately no backfill.
+* DISCORD_CHANGELOG_START_DATE (optional) moves that floor later. Set to the
+  day the bot went live, it keeps releases the team already announced by hand
+  from posting a second time.
 
 A managed entry the sync UPDATED (a typo fixed in the file) edits its existing
 post instead, whatever its date. Hand-written entries are never edited from
@@ -26,12 +29,15 @@ here: the admin is not hooked up, and they change rarely enough not to need it.
 """
 
 import datetime
+import logging
 
 from django.conf import settings
 from django.utils import timezone
 
 from calculatorapi import discord_messages
 from calculatorapi.models import ChangelogEntry
+
+logger = logging.getLogger(__name__)
 
 # How far back an unposted entry still posts. A week covers a release that
 # shipped while the token was unset, without ever reaching back into history.
@@ -78,6 +84,21 @@ def _ping():
     return {"content": f"<@&{role}>", "ping_roles": [role]}
 
 
+def _post_from():
+    """The earliest date that may still post: a week back, or the start date if
+    that is later. None when the start date is set but unreadable: posting
+    nothing is the safe failure, where ignoring it could repost history."""
+    since = timezone.now().date() - datetime.timedelta(days=POST_WINDOW_DAYS)
+    start = settings.DISCORD_CHANGELOG_START_DATE.strip()
+    if not start:
+        return since
+    try:
+        return max(since, datetime.date.fromisoformat(start))
+    except ValueError:
+        logger.warning("DISCORD_CHANGELOG_START_DATE %r is not a YYYY-MM-DD date; nothing posted", start)
+        return None
+
+
 def announce(updated_keys=()):
     """Post the week's unposted entries and edit the posts of `updated_keys`
     (the changelog.yaml keys this sync rewrote). Returns (posted, edited): how
@@ -86,7 +107,9 @@ def announce(updated_keys=()):
     if not discord_messages.is_configured(channel):
         return 0, 0
 
-    since = timezone.now().date() - datetime.timedelta(days=POST_WINDOW_DAYS)
+    since = _post_from()
+    if since is None:
+        return 0, 0
     recent = (
         ChangelogEntry.objects.filter(date__gte=since)
         .prefetch_related("changes")
