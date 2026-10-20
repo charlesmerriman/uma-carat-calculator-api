@@ -8,9 +8,7 @@ gallery_moderation.py), so a rule is pinned once however many routes use it.
 
 import datetime
 from io import StringIO
-from unittest import mock
 
-import requests
 from django.core.management import call_command
 from django.db import IntegrityError, transaction
 from django.test import override_settings, RequestFactory
@@ -704,29 +702,6 @@ class ReportTests(GalleryFixture):
         self.assertEqual(self.post_row.hidden_reason, "moderator")
         self.assertTrue(self.author.publishing_blocked)
         self.assertEqual(self.post_row.reports.get().resolved_by, moderator)
-
-    def test_the_alert_is_off_when_blank_and_quiet_about_people(self):
-        with self.settings(MODERATION_WEBHOOK_URL=""), mock.patch("requests.post") as post:
-            with self.captureOnCommitCallbacks(execute=True):
-                self.report()
-        post.assert_not_called()
-        with self.settings(MODERATION_WEBHOOK_URL="https://hook.example/x"), \
-                mock.patch("requests.post") as post:
-            with self.captureOnCommitCallbacks(execute=True):
-                comment = gallery.add_comment(self.person(display_name="Snitch"), self.post_row, "secret text")
-                self.report(comment=comment)
-        post.assert_called_once()
-        sent = post.call_args.kwargs["json"]["content"]
-        self.assertIn("reported", sent)
-        self.assertNotIn("secret text", sent)
-        self.assertNotIn("Snitch", sent)
-
-    def test_a_failing_webhook_never_fails_the_report(self):
-        with self.settings(MODERATION_WEBHOOK_URL="https://hook.example/x"), \
-                mock.patch("requests.post", side_effect=requests.ConnectionError):
-            with self.captureOnCommitCallbacks(execute=True):
-                self.report()
-        self.assertEqual(GalleryReport.objects.count(), 1)
 
 
 class EraseTests(GalleryFixture):

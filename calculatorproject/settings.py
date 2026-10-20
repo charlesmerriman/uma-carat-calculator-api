@@ -556,10 +556,6 @@ PATREON_SYNC_SECRET = os.getenv("PATREON_SYNC_SECRET", "")
 DO_API_TOKEN = os.getenv("DO_API_TOKEN", "")
 DO_APP_ID = os.getenv("DO_APP_ID", "")
 
-# A Discord webhook the gallery pings when a post or comment is first
-# reported, and again when reports hide it (gallery_moderation.alert). Blank
-# means no alert, which is the default locally and in tests.
-MODERATION_WEBHOOK_URL = os.getenv("MODERATION_WEBHOOK_URL", "")
 
 # The site's Discord bot (calculatorapi/discord_messages.py). The token lets
 # Django post and edit messages as the bot; each feature has its own channel
@@ -574,6 +570,9 @@ DISCORD_CHANGELOG_PING_ROLE_ID = os.getenv("DISCORD_CHANGELOG_PING_ROLE_ID", "")
 # Optional YYYY-MM-DD: patch notes dated before it never post. Set to the day
 # the bot went live, so releases already announced by hand don't repeat.
 DISCORD_CHANGELOG_START_DATE = os.getenv("DISCORD_CHANGELOG_START_DATE", "")
+# #calc-mod-queue: a card per reported gallery post or comment
+# (calculatorapi/moderation_cards.py). Private to moderators in Discord.
+DISCORD_MOD_QUEUE_CHANNEL_ID = os.getenv("DISCORD_MOD_QUEUE_CHANNEL_ID", "")
 
 # Where the SPA lives. In production the ingress serves it from the same host
 # as the API; in dev it is the Vite server on :5173.

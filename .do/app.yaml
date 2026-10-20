@@ -257,6 +257,10 @@ services:
   - key: DISCORD_CHANGELOG_START_DATE
     scope: RUN_TIME
     value: ""
+  # #calc-mod-queue: a card per reported gallery post or comment. Blank: none.
+  - key: DISCORD_MOD_QUEUE_CHANNEL_ID
+    scope: RUN_TIME
+    value: ""
   github:
     branch: master
     deploy_on_push: true
