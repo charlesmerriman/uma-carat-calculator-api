@@ -11,20 +11,24 @@ fetched when someone opens the PvP page or follows a Timeline link, never on
 copy. No throttle: editorial content, nothing about a person.
 
 DRAFTS. An unpublished guide is a 404 with the same body as an unknown event,
-so the response never says whether a draft exists. Signed-in staff get the
-draft, flagged `is_published: false`, so an editor can preview it on the site.
+so the response never says whether a draft exists. A signed-in editor (staff:
+pvp_guide_editing.can_edit) gets the draft,
+flagged `is_published: false`, so they can preview it on the site. The editor
+itself reads and writes guides through views/pvp_guide_editor.py.
 
 Umas, cards and skills are embedded as small objects rather than ids: the
 client's banner data only knows cards that were on a banner, and skills are not
 on the client at all yet.
 """
 
-from django.db.models import Exists, OuterRef, Prefetch
+from django.db.models import Exists, OuterRef
 from django.db.models.functions import Lower
 from rest_framework import permissions, serializers
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
+from calculatorapi import pvp_guide_editing
+from calculatorapi.pvp_guides import guide_queryset
 from calculatorapi.models import (
     ChampionsMeeting,
     PvpDeck,
@@ -223,41 +227,6 @@ def _ordered_key(row):
     return (_by_style(row), row.order, row.id)
 
 
-def guide_queryset():
-    """The guide with every section prefetched: a fixed number of queries
-    however many rows each section has."""
-    return PvpGuide.objects.select_related(
-        "champions_meeting", "league_of_heroes", "scenario",
-    ).prefetch_related(
-        "stat_configs",
-        Prefetch(
-            "uma_recommendations",
-            queryset=PvpUmaRecommendation.objects.select_related("uma"),
-        ),
-        # Layer three of the on_global rule (models/pvp_guide.py): a skill an
-        # editor picked that has since lost its description stays in the
-        # database but never reaches the site.
-        Prefetch(
-            "skill_recommendations",
-            queryset=PvpSkillRecommendation.objects.filter(
-                skill__description__regex=r"\S"
-            ).select_related("skill"),
-        ),
-        "style_notes",
-        Prefetch(
-            "decks",
-            queryset=PvpDeck.objects.prefetch_related(
-                Prefetch(
-                    "slots",
-                    queryset=PvpDeckSlot.objects.select_related("support_card")
-                    .order_by("slot", "order", "id"),
-                ),
-            ),
-        ),
-        "team_comps",
-    )
-
-
 def _unique_of(skill_ids):
     """{skill id: outfit name} for the skills that are some outfit's unique.
 
@@ -372,8 +341,9 @@ def pvp_guide_detail(request, kind, event_id):
         return Response(NOT_FOUND, status=404)
 
     guide = guide_queryset().filter(**{field: event_id}).first()
-    # A draft answers exactly like a missing guide unless the caller is staff.
-    if guide is None or (not guide.is_published and not request.user.is_staff):
+    # A draft answers exactly like a missing guide unless the caller may edit
+    # it (staff: pvp_guide_editing.can_edit).
+    if guide is None or (not guide.is_published and not pvp_guide_editing.can_edit(request.user, guide)):
         return Response(NOT_FOUND, status=404)
 
     return Response(serialize_guide(guide, request))

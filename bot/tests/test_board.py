@@ -1,6 +1,6 @@
-"""The board: the queue follows the tags, Up next renders and is edited in
-place, the Monday summary posts once, and the mirror echoes a team copy's
-status onto its public post once per change."""
+"""The board: the queue follows the tags (and posts nothing to #calc-ops), the
+/queue embed renders, the Monday summary posts once, and the mirror echoes a
+team copy's status onto its public post once per change."""
 
 import datetime
 import unittest
@@ -11,7 +11,7 @@ import discord
 from bot import board as board_module
 from bot import format as fmt
 from bot.api import Answer
-from bot.board import Board, queue_order, render_up_next, render_weekly, status_of
+from bot.board import Board, queue_order, render_queue, render_weekly, status_of
 from tests.fakes import CONFIG, FEEDBACK, TEAM_BOARD, TEAM_ROLE, FakeApi, FakeForum, FakeInteraction, FakeThread, tag
 
 OPS = 1562200271222866020
@@ -25,8 +25,8 @@ def snowflake(when):
     return discord.utils.time_snowflake(when)
 
 
-def post(thread_id, tags, name=None):
-    return FakeThread(thread_id, TEAM_BOARD, tags, name=name or f"Post {thread_id}")
+def post(thread_id, tags, name=None, pinned=False):
+    return FakeThread(thread_id, TEAM_BOARD, tags, name=name or f"Post {thread_id}", pinned=pinned)
 
 
 class FakeMessage:
@@ -94,20 +94,24 @@ class RenderTests(unittest.TestCase):
             post(14, ("Chore", "Normal"), "Lazy gallery"),
             post(15, ("General",), "How this board works"),
             post(16, ("Bug", "Done"), "Old bug"),
+            post(17, ("General",), "Priority list", pinned=True),
         ]
-        text = render_up_next(threads, ["12", "11", "10"]).description
-        self.assertIn("**Now**\n🔨 [Fix the logo]", text)
+        text = render_queue(threads, ["12", "11", "10"]).description
+        self.assertIn("🔨 **Now**\n- [Fix the logo]", text)
         self.assertIn("1. [Frames (beta)]", text)
         self.assertIn("2. [Local times]", text)
-        self.assertIn("**Backlog** (2)\n🟠 High\n- [Odds tooltips]", text)
-        self.assertIn("🟡 Normal\n- [Lazy gallery]", text)
+        # The backlog is one line: counts, then the pinned list for the order.
+        self.assertIn("*Backlog: 2 posts (1 high, 1 normal). Full order: [Priority list](", text)
+        self.assertNotIn("Odds tooltips", text)
         self.assertNotIn("How this board works", text)
         self.assertNotIn("Old bug", text)
 
     def test_an_empty_board(self):
-        text = render_up_next([], []).description
+        text = render_queue([], []).description
         self.assertIn("Nothing in progress.", text)
         self.assertIn(fmt.NOTHING_NEXT, text)
+        # No pinned post, no link; no priorities, no brackets.
+        self.assertIn("*Backlog: 0 posts.*", text)
 
     def test_queue_order_is_oldest_first_and_only_committed_posts(self):
         threads = [post(30, ("Bug", "Planned")), post(20, ("Bug", "In progress")), post(25, ("Bug",))]
@@ -128,21 +132,29 @@ class RenderTests(unittest.TestCase):
 class QueueFollowsTagsTests(BoardFixture):
 
     async def test_planned_joins_done_leaves(self):
-        board = self.board(
-            Answer(201, {}), Answer(404, {}), Answer(200, {"thread_ids": []}), Answer(409, {"message_id": "5"}),
-        )
+        board = self.board(Answer(201, {}), Answer(404, {}))
         before, after = post(10, ("Bug",)), post(10, ("Bug", "Planned"))
         self.assertEqual(await board.on_thread_update(before, after), "Planned")
         self.assertEqual(self.api.calls[0], ("queue_add", 10))
 
-        board = self.board(
-            Answer(200, {}), Answer(404, {}), Answer(200, {"thread_ids": []}), Answer(409, {"message_id": "5"}),
-        )
+        board = self.board(Answer(200, {}), Answer(404, {}))
         await board.on_thread_update(post(10, ("Bug", "Planned")), post(10, ("Bug", "Done")))
         self.assertEqual(self.api.calls[0], ("queue_remove", 10))
 
+    async def test_nothing_is_posted_to_ops(self):
+        """No pinned Up next any more: tag changes, new posts and the reconcile
+        only touch the queue, never #calc-ops."""
+        board = self.board(Answer(201, {}), Answer(404, {}))
+        await board.on_thread_update(post(10, ("Bug",)), post(10, ("Bug", "Planned")))
+        await board.on_thread_create(post(11, ("Bug", "Planned")))
+        self.threads = [post(10, ("Bug", "Planned"))]
+        await board.reconcile()
+        self.assertEqual(self.ops.sent, [])
+        self.assertEqual(self.ops.partials, {})
+        self.assertNotIn("claim", self.calls())
+
     async def test_planned_to_in_progress_keeps_its_place(self):
-        board = self.board(Answer(404, {}), Answer(200, {"thread_ids": ["10"]}), Answer(409, {"message_id": "5"}))
+        board = self.board(Answer(404, {}))
         await board.on_thread_update(post(10, ("Bug", "Planned")), post(10, ("Bug", "In progress")))
         self.assertNotIn("queue_add", self.calls())
         self.assertNotIn("queue_remove", self.calls())
@@ -156,33 +168,9 @@ class QueueFollowsTagsTests(BoardFixture):
 
     async def test_reconcile_sends_the_committed_posts(self):
         self.threads = [post(30, ("Bug", "Planned")), post(20, ("Bug", "In progress")), post(25, ("Bug",))]
-        board = self.board(Answer(200, {}), Answer(200, {"thread_ids": ["20", "30"]}), Answer(409, {"message_id": "5"}))
+        board = self.board(Answer(200, {}))
         await board.reconcile()
-        self.assertEqual(self.api.calls[0], ("queue_sync", [20, 30]))
-
-
-class UpNextTests(BoardFixture):
-
-    async def test_first_time_posts_pins_and_records(self):
-        board = self.board(Answer(200, {"thread_ids": []}), Answer(201, {}), Answer(200, {}))
-        await board.refresh()
-        (message,) = self.ops.sent
-        self.assertTrue(message.pinned)
-        self.assertEqual(self.api.calls[-1], ("record", f"upnext:{OPS}", message.id))
-
-    async def test_later_it_edits_the_same_message(self):
-        board = self.board(Answer(200, {"thread_ids": []}), Answer(409, {"message_id": "555"}))
-        await board.refresh()
-        self.assertEqual(self.ops.sent, [])
-        self.assertEqual(len(self.ops.partials[555].edits), 1)
-
-    async def test_a_deleted_message_is_posted_again(self):
-        self.ops.partials[555] = FakeMessage("gone")
-        self.ops.get_partial_message = lambda message_id: self.ops.partials[555]
-        board = self.board(Answer(200, {"thread_ids": []}), Answer(409, {"message_id": "555"}), Answer(200, {}))
-        await board.refresh()
-        self.assertEqual(len(self.ops.sent), 1)
-        self.assertEqual(self.calls()[-1], "record")
+        self.assertEqual(self.api.calls, [("queue_sync", [20, 30])])
 
 
 class WeeklyTests(BoardFixture):
@@ -238,17 +226,13 @@ class QueueCommandTests(BoardFixture):
         interaction = FakeInteraction(roles=(TEAM_ROLE,), channel_id=5)
         return interaction
 
-    async def test_move_reports_the_new_place_and_refreshes(self):
+    async def test_move_reports_the_new_place(self):
         interaction = self.teammate()
-        board = self.board(
-            Answer(200, {"thread_ids": ["11", "10"]}),
-            Answer(200, {"thread_ids": ["11", "10"]}),
-            Answer(409, {"message_id": "5"}),
-        )
+        board = self.board(Answer(200, {"thread_ids": ["11", "10"]}))
         await board.move(interaction, "10", 2)
-        self.assertEqual(self.api.calls[0], ("queue_move", "10", 2))
+        self.assertEqual(self.api.calls, [("queue_move", "10", 2)])
         self.assertEqual(interaction.calls[1][1], fmt.MOVED.format(position=2))
-        self.assertEqual(len(self.ops.partials[5].edits), 1)
+        self.assertEqual(self.ops.partials, {})
 
     async def test_move_an_unqueued_post(self):
         interaction = self.teammate()

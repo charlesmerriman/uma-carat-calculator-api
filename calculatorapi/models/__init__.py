@@ -36,6 +36,7 @@ from .pvp_guide import (
     PvpStyle,
     PvpSkillCategory,
 )
+from .pvp_guide_revision import PvpGuideRevision, PvpGuideRevisionSource
 from .changelog_entry import ChangelogEntry
 from .changelog_change import ChangelogChange
 from .social_account import SocialAccount

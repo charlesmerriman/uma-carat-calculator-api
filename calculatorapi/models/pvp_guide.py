@@ -91,6 +91,19 @@ def _suggest(name):
     return [by_key[key] for key in close]
 
 
+def mention_error(unknown):
+    """The sentence for a text that mentions skills nobody on global has, with
+    up to three close names per mention. One wording for the admin form and
+    the site's editor (pvp_guide_document.py), so a typo reads the same in
+    both."""
+    parts = []
+    for name in unknown:
+        suggestions = _suggest(name)
+        hint = f" (did you mean {', '.join(suggestions)}?)" if suggestions else ""
+        parts.append(f"[[{name}]]{hint}")
+    return "No skill on global has this name: " + "; ".join(parts)
+
+
 class SkillMentionsMixin:  # pylint: disable=too-few-public-methods
     """Refuses a save whose text mentions a skill that does not exist.
 
@@ -105,14 +118,8 @@ class SkillMentionsMixin:  # pylint: disable=too-few-public-methods
         errors = {}
         for field in self.MENTION_FIELDS:
             unknown = unknown_skill_mentions(find_skill_mentions(getattr(self, field, "")))
-            if not unknown:
-                continue
-            parts = []
-            for name in unknown:
-                suggestions = _suggest(name)
-                hint = f" (did you mean {', '.join(suggestions)}?)" if suggestions else ""
-                parts.append(f"[[{name}]]{hint}")
-            errors[field] = "No skill on global has this name: " + "; ".join(parts)
+            if unknown:
+                errors[field] = mention_error(unknown)
         if errors:
             raise ValidationError(errors)
         super().clean()
@@ -257,6 +264,14 @@ class PvpGuide(SkillMentionsMixin, models.Model):
         blank=True,
         help_text="Notes for editors. Never shown on the site.",
     )
+    # Bumped by every write that goes through pvp_guide_revisions.record (the
+    # site's editor, the admin page, the actions, publish). The site's editor
+    # sends the version its document started from with every save, and a save
+    # over a newer one is refused (409) instead of silently overwriting what
+    # another editor just wrote. Never the revision number: revisions coalesce
+    # (ten minutes of one person's autosaves are one row), so their number can
+    # stand still while the guide moves on.
+    version = models.PositiveIntegerField(default=0, editable=False)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

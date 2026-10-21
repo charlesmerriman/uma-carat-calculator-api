@@ -498,6 +498,13 @@ REST_FRAMEWORK = {
         # The /post/<id> share page and its preview picture. High: Discord and
         # X crawl from a few shared addresses, and every paste is a fetch.
         "gallery_share": "600/hour",
+        # The site's guide editor (views/pvp_guide_editor.py). A save is one
+        # PUT of the whole guide two seconds after the last keystroke, so an
+        # hour of typing is a few hundred at most; a stuck client is capped.
+        "guide_editor": "1200/hour",
+        # Copy from a guide, load from the sheet, fill track greens: a
+        # preview-then-apply loop, a handful per guide.
+        "guide_editor_action": "60/hour",
         # The /plan/<id> share page (views/plan_share.py), for the same reason.
         "plan_share": "600/hour",
     },

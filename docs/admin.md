@@ -519,8 +519,15 @@ child are inline-only (`test_join_models_not_registered_top_level`).
   confirmed, and "Filled" chips from five `.only("style")` prefetches rather than
   conditional counts across joins.
 - `pvp_guides.py` holds the tab list, the sections, `missing_summary` (the line under the
-  tabs) and `copy_guide`; nothing in it imports the admin, so the template tag and the
-  tests read one definition.
+  tabs), `copy_guide` and `guide_queryset`; nothing in it imports the admin, so the template
+  tag, the API and the tests read one definition.
+- **The site has an editor of its own since 2026-10-21** (`views/pvp_guide_editor.py`,
+  `data-model.md` "The site's guide editor"). Both write the same rows. This page's every
+  save, the list's Published checkbox and the bulk publish actions record a
+  `PvpGuideRevision` (`save_related`; the actions call `pvp_guide_editing.publish`), so the
+  history the site's editor shows includes what was done here, and a save here bumps
+  `PvpGuide.version`, so an editor with the guide open on the site is told before they
+  overwrite it.
 
 ## Calculation constants (Configuration)
 

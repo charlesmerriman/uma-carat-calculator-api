@@ -268,6 +268,27 @@ actions went with it; both viewsets are read-only by construction now. Staff sig
 `/admin` (→ [admin.md](admin.md), "Signing in"); nothing on the API takes a password.
 Covered by `test_password_login_endpoint_no_longer_exists`.
 
+### A content write route on the token (the guide editor)
+
+The site's PvP guide editor (2026-10-21, `views/pvp_guide_editor.py`) is the first route
+since then that writes content on the API's token. It is not an admin page and does not
+pass the admin's gate; what makes that acceptable, and what any later content write route
+must match, is three conditions:
+
+1. **One function decides from the account's own staff flag**
+   (`pvp_guide_editing.can_edit`: `is_staff`, nothing else; the content-editor
+   permission alone does not count). The token itself comes only from a Discord, Google
+   or Patreon sign-in, behind the provider's own second factor; nothing on the API takes
+   a password.
+2. **Every write leaves a revision with its author** (`PvpGuideRevision`), which is the
+   "admin history row" the old `POST /login` tokens lacked.
+3. **The route touches its own tables and nothing else**: the eight guide tables, no
+   account, no PII, no other content.
+
+Supporters writing guides of their own (planned, not built) is a separate gallery
+feature with its own rules; it does not widen this function. The revision list shows
+authors by handle, never by display name.
+
 ### Redirect URI must match byte-for-byte
 
 Derived once as `settings.OAUTH_REDIRECT_URI = f"{FRONTEND_URL}/auth/callback"`. It must

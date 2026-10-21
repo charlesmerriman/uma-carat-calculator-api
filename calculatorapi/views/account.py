@@ -122,7 +122,7 @@ from rest_framework import permissions, serializers, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
-from calculatorapi import benefits, gallery, gallery_moderation, public_identity
+from calculatorapi import benefits, gallery, gallery_moderation, public_identity, pvp_guide_editing
 from calculatorapi.models import (
     OSHI_SLOT_CAP,
     CustomUser,
@@ -424,6 +424,11 @@ def _account_summary(user):
         "early_access": benefits.early_access_for(
             supporter, is_staff=user.is_staff, granted=user.early_access
         ),
+        # Whether the PvP page offers this account the guide editor (staff
+        # only: pvp_guide_editing.can_edit). The client draws the tab on it;
+        # every write is checked again server side, so a spoofed flag opens
+        # nothing.
+        "guide_editor": pvp_guide_editing.can_edit(user),
         "linked_providers": LinkedProviderSerializer(linked, many=True).data,
         "supporter": _supporter_block(supporter),
     }

@@ -9,9 +9,15 @@ tabs and the sections.
 
 from django.conf import settings
 from django.db import transaction
-from django.db.models import Max
+from django.db.models import Max, Prefetch
 
-from .models import PvpGuide
+from .models import (
+    PvpDeck,
+    PvpDeckSlot,
+    PvpGuide,
+    PvpSkillRecommendation,
+    PvpUmaRecommendation,
+)
 from .models.pvp_guide import STYLE_ORDER, PvpStyle
 
 # The tabs of the guide page. "general" is unfold's own name for the tab that
@@ -48,6 +54,41 @@ STYLE_TABLES = (
     ("skills", "skill_recommendations"),
     ("decks", "decks"),
 )
+
+
+def guide_queryset():
+    """The guide with every section prefetched: a fixed number of queries
+    however many rows each section has."""
+    return PvpGuide.objects.select_related(
+        "champions_meeting", "league_of_heroes", "scenario",
+    ).prefetch_related(
+        "stat_configs",
+        Prefetch(
+            "uma_recommendations",
+            queryset=PvpUmaRecommendation.objects.select_related("uma"),
+        ),
+        # Layer three of the on_global rule (models/pvp_guide.py): a skill an
+        # editor picked that has since lost its description stays in the
+        # database but never reaches the site.
+        Prefetch(
+            "skill_recommendations",
+            queryset=PvpSkillRecommendation.objects.filter(
+                skill__description__regex=r"\S"
+            ).select_related("skill"),
+        ),
+        "style_notes",
+        Prefetch(
+            "decks",
+            queryset=PvpDeck.objects.prefetch_related(
+                Prefetch(
+                    "slots",
+                    queryset=PvpDeckSlot.objects.select_related("support_card")
+                    .order_by("slot", "order", "id"),
+                ),
+            ),
+        ),
+        "team_comps",
+    )
 
 
 def event_ref(guide):
@@ -217,6 +258,6 @@ def guide_for_copy_choices(exclude_pk=None):
 
 __all__ = [
     "GUIDE_TAB", "STYLE_TABS", "TABS", "TAB_KEYS", "SECTIONS", "SECTION_KEYS",
-    "event_ref", "site_url", "styles_present", "styles_with_content",
+    "guide_queryset", "event_ref", "site_url", "styles_present", "styles_with_content",
     "missing_summary", "copy_guide", "guide_for_copy_choices",
 ]

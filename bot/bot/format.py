@@ -56,10 +56,10 @@ ALREADY_ON_BOARD = "It's already on the team board: {link}"
 PROMOTE_IN_FLIGHT = "Someone is sending it right now. Check the team board in a moment."
 PUBLIC_UNDER_REVIEW = persona.PUBLIC_UNDER_REVIEW
 
-# The board's queue, Up next and the Monday summary.
+# The board's queue (/queue) and the Monday summary.
 NOT_QUEUED = "That post isn't in the queue. Tag it Planned on the team board first."
-MOVED = "Moved to number {position}. Up next is updated."
-UP_NEXT_FOOTER = "Tag a team post Planned to add it. Reorder with /queue move."
+MOVED = "Moved to number {position}."
+QUEUE_FOOTER = "Tag a team post Planned to add it. Reorder with /queue move."
 NOTHING_NEXT = "Nothing is planned yet."
 # What the public post that a team copy came from is told when the copy moves.
 # In the bot's voice (bot/persona.py).
