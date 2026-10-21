@@ -337,10 +337,16 @@ posts, comments, votes and reports come from people through the API.
 - **Discord cards** (`moderation_cards.py`, when `DISCORD_MOD_QUEUE_CHANNEL_ID` and the bot
   token are set): each reported item gets ONE card in `#calc-mod-queue`, private to
   moderators. Open, it shows the text, the author's display name, the status and each open
-  report with its reporter's display name and handle, plus links here. Every report, hide and
-  decision (here or, later, from Discord's buttons) edits it; once decided it shrinks to one
-  line with no text and no names, and a deletion or account erasure strips it. Decisions are
-  still made here until the buttons ship (discord-bot-plan.md, Step 3b).
+  report with its reporter's display name and handle, plus links here. While
+  `BOT_API_SECRET` is set the card also carries **Keep / Remove / Block author** buttons,
+  which the bot worker answers through the bot API (`views/bot_api.py`) and the same
+  `gallery_moderation` functions as here; without it there are no buttons and decisions are
+  made here. Every report, hide and decision (here or from the buttons) edits the card; once
+  decided it shrinks to one line with no text and no names but the moderator's, plus one
+  **Undo** button for a misclick (`gallery_moderation.undo_last_decision`: the reports that
+  decision closed open again, a block it set is lifted, and the card is open again), and a
+  deletion or account erasure strips it. A Discord decision shows in the queue's Status
+  column as "Kept by name (id) on Discord" (`resolved_by_discord`).
 - A post's page lists its voters (admin only), for spotting a brigade of new accounts.
 - **Blocked terms** are refused in captions, comments and display names. "Whole word" is the
   safe default; "Anywhere" also matches inside longer words. A refusal tells the person to

@@ -7,11 +7,16 @@ WHAT A CARD SHOWS, AND WHEN
 * **Open** (at least one report waiting): the reported text, the author's
   display name, whether it is hidden, and every open report with its reason,
   note, and who made it (display name and account handle). Links to the post and
-  to the admin's report queue, where the decision is made until the bot's
-  buttons arrive (discord-bot-plan.md, Step 3b).
+  to the admin's report queue. While BOT_API_SECRET is set, three buttons too:
+  Keep, Remove, Block author, which the bot worker answers through
+  views/bot_api.py. Without it the card has no buttons and the decision is made
+  in the admin: a button nothing listens to would answer "This interaction
+  failed", so the secret goes in with the worker (discord-bot-plan.md, Step 4).
 * **Decided** (every report resolved): ONE line, "Comment reported 2 times:
-  removed by Zac on 2026/10/20". No text, no names. The full record stays in the
-  admin; Discord keeps only the outcome (owner's call, 2026-10-20).
+  removed by Zac on 2026/10/20", or "by name (Discord)" for a click on the card.
+  No text, no names but the moderator's. While the buttons are on, one Undo
+  button (gallery_moderation.undo_last_decision), for a misclick. The full record stays in
+  the admin; Discord keeps only the outcome (owner's call, 2026-10-20).
 * **Deleted** (the author took it down, deleted their account, or staff deleted
   it): "Post reported, then deleted." Nothing else.
 
@@ -55,6 +60,61 @@ def _kind(item):
     return "post" if isinstance(item, GalleryPost) else "comment"
 
 
+def item_ref(item):
+    """(kind, ref) as the bot names an item: a post by its public id, the one
+    a moderator can read in its link, and a comment by its row id, since a
+    comment has no public id. Button ids and the bot API's routes both use it."""
+    if isinstance(item, GalleryPost):
+        return "post", item.public_id
+    return "comment", str(item.pk)
+
+
+def buttons_enabled():
+    """Cards carry buttons only while the bot API they lead to is switched on."""
+    return bool(settings.BOT_API_SECRET)
+
+
+def _buttons(item):
+    """Keep / Remove / Block author. The custom id is the whole instruction,
+    `mod:<action>:<kind>:<ref>` (at most 100 characters; ours stay under 40),
+    so the worker needs nothing but the click to act. Block asks again in the
+    worker before it calls the site (decision 5)."""
+    kind, ref = item_ref(item)
+    styles = (("keep", "Keep", 3), ("remove", "Remove", 4), ("block", "Block author", 4))
+    return [{
+        "type": 1,  # an action row
+        "components": [
+            {"type": 2, "style": style, "label": label, "custom_id": f"mod:{action}:{kind}:{ref}"}
+            for action, label, style in styles
+        ],
+    }]
+
+
+def _undo_button(item):
+    """A decided card's one button: undo the decision, for a misclick."""
+    kind, ref = item_ref(item)
+    return [{
+        "type": 1,
+        "components": [{"type": 2, "style": 2, "label": "Undo", "custom_id": f"mod:undo:{kind}:{ref}"}],
+    }]
+
+
+def decided_by(report, *, markdown=False):
+    """Who closed `report`: a staff member's display name, a Discord
+    moderator's name with "(Discord)", or "a moderator" when neither is known
+    (a staff account with no display name, or one since deleted). Never a
+    staff handle: those name admin logins. `markdown` escapes the name for a
+    card; the bot API sends it plain and the worker escapes its own."""
+    escape = _escape if markdown else (lambda text: text)
+    if report.resolved_by_discord:
+        # Stored "name (id)"; the id is for the record, the name for people.
+        return f"{escape(report.resolved_by_discord.rsplit(' (', 1)[0])} (Discord)"
+    moderator = report.resolved_by
+    if moderator and moderator.display_name:
+        return escape(moderator.display_name)
+    return "a moderator"
+
+
 def _channel():
     return settings.DISCORD_MOD_QUEUE_CHANNEL_ID
 
@@ -84,7 +144,8 @@ def _site_date(moment):
     return f"{moment.year}/{moment.month}/{moment.day}"
 
 
-def _content(item):
+def item_text(item):
+    """The reported text as written: caption and strategy, or the comment."""
     if isinstance(item, GalleryPost):
         parts = [
             f"Caption: {item.caption}" if item.caption else "",
@@ -96,7 +157,7 @@ def _content(item):
     return item.body
 
 
-def _status(item):
+def status_text(item):
     if not item.is_hidden:
         return "Visible"
     if item.hidden_reason == GalleryHiddenReason.REPORTS:
@@ -124,20 +185,19 @@ def _open_card(item, open_reports):
     return {
         "title": f"{kind.capitalize()} reported",
         "color": OPEN_COLOUR,
-        "description": _quoted(_content(item)),
+        "description": _quoted(item_text(item)),
         "fields": [
             {"name": "Author", "value": _person(item.author) if item.author else "deleted", "inline": True},
-            {"name": "Status", "value": _status(item), "inline": True},
+            {"name": "Status", "value": status_text(item), "inline": True},
             {"name": f"{count} open report{'' if count == 1 else 's'}", "value": reports, "inline": False},
-            {"name": "Decide", "value": _links(item), "inline": False},
+            {"name": "Links" if buttons_enabled() else "Decide", "value": _links(item), "inline": False},
         ],
     }
 
 
 def _decided_card(item, reports):
     last = max(reports, key=lambda report: report.resolved_at)
-    moderator = last.resolved_by
-    who = _escape(moderator.display_name) if moderator and moderator.display_name else "a moderator"
+    who = decided_by(last, markdown=True)
     if last.resolution == GalleryReportResolution.KEPT:
         outcome = "kept"
     elif item.author is not None and item.author.publishing_blocked:
@@ -162,14 +222,16 @@ def refresh(item):
     key = card_key(_kind(item), item.pk)
     if open_reports:
         embed = _open_card(item, open_reports)
+        components = _buttons(item) if buttons_enabled() else []
     elif reports:
         embed = _decided_card(item, reports)
+        components = _undo_button(item) if buttons_enabled() else []
     else:
         return
     if discord_messages.has_message(key):
-        discord_messages.edit(key, embed=embed)
+        discord_messages.edit(key, embed=embed, components=components)
     elif open_reports:
-        discord_messages.send(key, channel, embed=embed)
+        discord_messages.send(key, channel, embed=embed, components=components)
 
 
 def mark_deleted(kind, item_id):
@@ -179,7 +241,11 @@ def mark_deleted(kind, item_id):
         return
     key = card_key(kind, item_id)
     if discord_messages.has_message(key):
-        discord_messages.edit(key, embed={"title": f"{kind.capitalize()} reported, then deleted", "color": DONE_COLOUR})
+        discord_messages.edit(
+            key,
+            embed={"title": f"{kind.capitalize()} reported, then deleted", "color": DONE_COLOUR},
+            components=[],
+        )
 
 
 # Module-level receivers: Signal.connect() holds only a WEAK reference, so a

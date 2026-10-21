@@ -1,0 +1,110 @@
+"""
+The worker's client for the site's bot API (the api repo's views/bot_api.py).
+
+The worker never imports Django and never touches the database: it asks the
+site over HTTPS like any other client, at the public hostname, with the shared
+secret in X-Bot-Key. That keeps the site's one-process cache rule intact and
+means a bot crash can't take the site down with it.
+
+aiohttp, not requests: discord.py runs everything on one asyncio event loop,
+and a blocking requests call inside a handler would freeze every other event
+(Discord's heartbeat included) until it returned.
+
+WHAT A CALLER GETS BACK
+-----------------------
+An Answer (status code and JSON body) for anything the site meant to say:
+200, 201, 400, 404, 409. SiteUnavailable for everything else (no connection,
+a timeout, a 5xx, or a 403, which means our key and the site's disagree), so
+a handler has exactly one "try again later" case.
+"""
+
+import asyncio
+import logging
+from dataclasses import dataclass
+
+import aiohttp
+
+logger = logging.getLogger(__name__)
+
+HEADER = "X-Bot-Key"
+# Long enough for a slow site on a banner launch day; every caller has already
+# acknowledged Discord (which allows 15 minutes for the follow-up) before it
+# calls here.
+TIMEOUT_SECONDS = 10
+USER_AGENT = "UmaCaratCalculatorBot (https://umacaratcalculator.com, 1.0)"
+
+
+class SiteUnavailable(Exception):
+    """The site didn't give an answer we can use. Already logged."""
+
+
+@dataclass(frozen=True)
+class Answer:
+    status: int
+    data: dict
+
+    @property
+    def ok(self):
+        return 200 <= self.status < 300
+
+
+class SiteApi:
+
+    def __init__(self, base_url, secret):
+        self._base_url = base_url.rstrip("/")
+        self._secret = secret
+        self._session = None
+
+    async def start(self):
+        self._session = aiohttp.ClientSession(
+            timeout=aiohttp.ClientTimeout(total=TIMEOUT_SECONDS),
+            headers={HEADER: self._secret, "User-Agent": USER_AGENT},
+        )
+
+    async def close(self):
+        if self._session is not None:
+            await self._session.close()
+
+    async def _request(self, method, path, body=None):
+        url = f"{self._base_url}/{path}"
+        try:
+            async with self._session.request(method, url, json=body) as response:
+                try:
+                    data = await response.json(content_type=None)
+                except (ValueError, aiohttp.ContentTypeError):
+                    data = {}
+                status = response.status
+        except (aiohttp.ClientError, asyncio.TimeoutError) as exc:
+            logger.warning("Site %s %s failed: %r", method, path, exc)
+            raise SiteUnavailable from exc
+        if status == 403:
+            # Never a moderator's fault: the worker's BOT_API_SECRET doesn't
+            # match the site's. Loud, because nothing works until it's fixed.
+            logger.error("Site refused the bot key on %s %s: check BOT_API_SECRET on both sides", method, path)
+            raise SiteUnavailable
+        if status >= 500 or status in (401, 429):
+            logger.warning("Site %s %s answered %s", method, path, status)
+            raise SiteUnavailable
+        return Answer(status, data if isinstance(data, dict) else {})
+
+    async def reports(self):
+        return await self._request("GET", "bot/reports")
+
+    async def item(self, kind, ref):
+        return await self._request("GET", f"bot/items/{kind}/{ref}")
+
+    async def moderate(self, kind, ref, action, moderator):
+        return await self._request(
+            "POST", f"bot/items/{kind}/{ref}/moderate", {"action": action, "moderator": moderator}
+        )
+
+    async def undo(self, kind, ref, moderator):
+        return await self._request("POST", f"bot/items/{kind}/{ref}/undo", {"moderator": moderator})
+
+    async def unblock(self, kind, ref, moderator):
+        return await self._request("POST", f"bot/items/{kind}/{ref}/unblock", {"moderator": moderator})
+
+    async def add_term(self, term, match, moderator):
+        return await self._request(
+            "POST", "bot/blocked-terms", {"term": term, "match": match, "moderator": moderator}
+        )

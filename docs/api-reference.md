@@ -994,6 +994,56 @@ Patreon quota.
 
 ---
 
+### The bot API: `/bot/*`
+
+What the Discord bot worker calls when a moderator clicks a report card's button
+or runs a `/mod` command (`views/bot_api.py`, discord-bot-plan.md Steps 3b and 4).
+Same lock as `/patreon/sync`: `X-Bot-Key` against `BOT_API_SECRET`, compared with
+`compare_digest`; **every route 404s while the secret is unset**, and a missing or
+wrong key is a generic `403`. Throttled at 600/hour (`bot_api` scope). The secret
+is the third lock: `#calc-mod-queue` is `@Moderator`-only in Discord, and the
+worker checks that role on every click before calling.
+
+Items are named `<kind>/<ref>`: `post/<public_id>` (the id in its `/post/` link)
+or `comment/<row id>` (comments have no public id). Unknown kind or item: `404`.
+
+| Route | Body | Answers |
+|---|---|---|
+| `GET bot/reports` | | `{items: [{kind, ref, preview, open_reports, is_hidden, latest_report_at}], total}`, most recently reported first, at most 25. No names. |
+| `GET bot/items/<kind>/<ref>` | | The item as its open card shows it (below). |
+| `POST bot/items/<kind>/<ref>/moderate` | `{action: keep\|remove\|block, moderator}` | `200 {done, item}`; `409 {detail, handled_by, resolution}` when no report is open (someone got there first); `400` on a bad action or moderator. |
+| `POST bot/items/<kind>/<ref>/undo` | `{moderator}` | `200 {item}`: the last decision reversed (its reports open again, a block it set lifted, hidden again only if the auto-hide rule says so); `409` when there is nothing to undo (never decided, or already open). |
+| `POST bot/items/<kind>/<ref>/unblock` | `{moderator}` | `200 {item}`; `409` when the author isn't blocked. The item stays as decided. |
+| `POST bot/blocked-terms` | `{term, match: word\|anywhere, moderator}` | `201 {term, match}` (stored normalised); `409` when already blocked; `400` on a blank or over-60 term. |
+
+`moderator` is the clicker as the worker sends them, `"discord username (discord id)"`,
+required in that shape. A decision stores it in `GalleryReport.resolved_by_discord` and
+leaves `resolved_by` empty: **a Discord moderator is a name, never an account**, and
+nothing here creates, finds or signs in one. Unblocks and new terms log the moderator.
+
+The item payload, with nothing about a person but a display name and the site handle
+(never an email, provider, linked account or user id; names plain, the worker escapes):
+
+```json
+{
+  "kind": "post", "ref": "aB3dE5fG", "url": "https://umacaratcalculator.com/post/aB3dE5fG",
+  "text": "Caption: ...", "status": "Visible", "is_hidden": false,
+  "author": {"display_name": "SpeedySuzuka", "handle": "user_4f1c"},
+  "author_blocked": false, "report_count": 1,
+  "open_reports": [{"reason": "Spam", "note": "posted five times",
+                    "reporter": {"display_name": "MooncakeMile", "handle": "user_9a2b"},
+                    "created_at": "2026-10-21T09:00:00+00:00"}],
+  "decided": null
+}
+```
+
+`decided` is `{resolution, by, at}` once every report is closed (`resolution` is `kept`,
+`removed`, or `blocked` for Remove plus Block author); `by` is a display
+name, `"name (Discord)"`, or `"a moderator"`. A decision takes a row lock, so two
+moderators clicking at once get one `200` and one `409`.
+
+---
+
 ## Shape Reference
 
 ### `UserStats`
