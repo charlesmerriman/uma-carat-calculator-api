@@ -383,3 +383,29 @@ workers:
   - key: DISCORD_MOD_QUEUE_CHANNEL_ID
     scope: RUN_TIME
     value: "1562201700507586681"
+  # Steps 6-8 (2026-10-21): the team board (#calc-team-board, @Web Developer, the public
+  # #carat-calculator-feedback), #calc-ops (Up next, the Monday summary, the daily digest,
+  # health alerts), #calc-dev-log (deploy news) and the announcement trial in
+  # #carat-calculator-website. DO_API_TOKEN (SECRET, READ-ONLY: app read + monitoring
+  # read) turns on deploy news and the alerts' CPU/memory figures; DO_APP_ID is this app.
+  - key: DISCORD_TEAM_BOARD_ID
+    scope: RUN_TIME
+    value: "1562200270061043872"
+  - key: DISCORD_TEAM_ROLE_ID
+    scope: RUN_TIME
+    value: "1489347113153200268"
+  - key: DISCORD_WEBSITE_FEEDBACK_ID
+    scope: RUN_TIME
+    value: "1414359698383310949"
+  - key: DISCORD_OPS_CHANNEL_ID
+    scope: RUN_TIME
+    value: "1562200271222866020"
+  - key: DISCORD_DEVLOG_CHANNEL_ID
+    scope: RUN_TIME
+    value: "1562200272476831915"
+  - key: DISCORD_ANNOUNCE_CHANNEL_ID
+    scope: RUN_TIME
+    value: "1489347594197930077"
+  - key: DO_APP_ID
+    scope: RUN_TIME
+    value: 6c058011-003f-4a2a-bab7-8ff7491d1cd0
