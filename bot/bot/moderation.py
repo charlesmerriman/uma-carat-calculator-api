@@ -117,6 +117,13 @@ class Moderation:
         parsed = parse_custom_id((interaction.data or {}).get("custom_id"))
         if parsed is None:
             return False
+        # Another server's click is another worker's. One bot token runs in
+        # two places (a local test run in the practice server, production in
+        # the community one), and Discord hands every click to both; the
+        # first to answer wins. So a worker stays silent outside its own
+        # server rather than refusing, or a test run would steal real clicks.
+        if interaction.guild_id != self.config.guild_id:
+            return False
         action, kind, ref = parsed
         # The confirm button lives on a private reply, not in the channel's
         # feed, but it still arrives from the channel the card is in.

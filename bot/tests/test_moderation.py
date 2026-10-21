@@ -50,8 +50,14 @@ class ClickTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(interaction.calls[0][2]["ephemeral"])
         self.assertEqual(api.calls, [])
 
-    async def test_outside_the_server_or_channel_is_refused(self):
-        for who in ({"guild_id": 1}, {"channel_id": 2}, {"member": False}):
+    async def test_another_servers_click_is_left_to_its_own_worker(self):
+        handled, interaction, api = await self.click("mod:keep:post:aB3dE5fG", guild_id=1)
+        self.assertFalse(handled)
+        self.assertEqual(interaction.calls, [])
+        self.assertEqual(api.calls, [])
+
+    async def test_outside_the_channel_or_without_membership_is_refused(self):
+        for who in ({"channel_id": 2}, {"member": False}):
             with self.subTest(who=who):
                 _, interaction, api = await self.click("mod:keep:post:aB3dE5fG", **who)
                 self.assertIn(interaction.last_text(), (fmt.WRONG_PLACE, fmt.NEED_ROLE))
