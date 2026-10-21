@@ -1,7 +1,7 @@
 """
 The team board's order and its echoes (discord-bot-plan.md, Step 6b): the
-ordered queue, the pinned "Up next" message in #calc-ops, the Monday summary,
-and the status mirror back to the public post a team copy came from.
+ordered queue (read privately with /queue show), the Monday summary, and the
+status mirror back to the public post a team copy came from.
 
 THE QUEUE FOLLOWS THE TAGS
 --------------------------
@@ -15,16 +15,18 @@ The worker sees each tag change as it happens (on_thread_update). Because a
 restart or an outage can miss one, it also repairs the queue against the
 board on start and every hour (`reconcile`), keeping every post's place.
 
-UP NEXT
--------
-One bot message, pinned in #calc-ops: Now (In progress), Next (the numbered
-queue), then ONE line counting the rest and linking the board's own pinned
-post, the Priority list, which holds the considered order of everything (it is
-written by hand, not by this worker). The backlog used to be listed here too,
-sorted by priority tag alone: long, hard to skim, and at odds with the
-Priority list. Edited in place on every change. Its id is recorded on the site
-under `upnext:<channel>`, so a restart edits the same message, and a deleted
-one is simply posted again.
+NO PINNED "UP NEXT" (owner, 2026-10-21)
+--------------------------------------
+This worker used to keep an "Up next" message pinned in #calc-ops, rebuilt
+from the tags on every change. It was dropped: the board's own pinned post,
+the Priority list, already gives the order of everything with reasons (it is
+written by hand, not by this worker), and a second, tag-sorted copy in another
+channel only repeated it and drifted from it. `/queue show` still prints the
+queue privately to whoever asks: Now (In progress), Next (numbered), then one
+line counting the rest and linking the Priority list.
+
+The old message (site record `upnext:<channel>`) is no longer touched; delete
+it by hand once this is live.
 
 THE MIRROR
 ----------
@@ -35,7 +37,6 @@ progress show as Planned, Done as Done, Won't do as Won't do, with one short
 reply each time the public status actually changes.
 """
 
-import asyncio
 import datetime
 import logging
 import time
@@ -129,8 +130,8 @@ def backlog_line(threads):
     return f"*{text}*"
 
 
-def render_up_next(threads, queue_ids):
-    """The Up next embed: Now, Next (numbered by the site's queue), and one
+def render_queue(threads, queue_ids):
+    """The /queue show embed: Now, Next (numbered by the site's queue), and one
     backlog line. Lines carry the post title only: a priority emoji on each
     one was noise next to an order that already says what comes first."""
     by_id = {thread.id: thread for thread in threads}
@@ -143,8 +144,8 @@ def render_up_next(threads, queue_ids):
     lines += ["", "⏭️ **Next**"]
     lines += [f"{number}. {link(thread)}" for number, thread in enumerate(upcoming, start=1)] or [fmt.NOTHING_NEXT]
     lines += ["", backlog_line(threads)]
-    embed = discord.Embed(title="Up next", description=fit(lines), colour=0xE6D28A)
-    embed.set_footer(text=fmt.UP_NEXT_FOOTER)
+    embed = discord.Embed(title="The queue", description=fit(lines), colour=0xE6D28A)
+    embed.set_footer(text=fmt.QUEUE_FOOTER)
     embed.timestamp = discord.utils.utcnow()
     return embed
 
@@ -167,17 +168,16 @@ def render_weekly(threads, today):
 
 
 class Board:
-    """The queue, Up next, the Monday summary and the mirror. `get_channel`
-    returns a channel by id; `list_threads` returns every team-board post,
-    open and archived. Both are coroutines the client provides."""
+    """The queue, the Monday summary and the mirror. `get_channel` returns a
+    channel by id; `list_threads` returns every team-board post, open and
+    archived. Both are coroutines the client provides."""
 
     def __init__(self, api, config, get_channel, list_threads):
         self.api = api
         self.config = config
         self.get_channel = get_channel
         self.list_threads = list_threads
-        self._refresh_lock = asyncio.Lock()
-        # (when, titles). None, not 0.0: time.monotonic() counts from boot, so
+        # Titles for /queue autocomplete: (when, titles). None, not 0.0: time.monotonic() counts from boot, so
         # on a machine up for under a minute a 0.0 stamp would look fresh.
         self._titles = (None, {})
 
@@ -191,7 +191,6 @@ class Board:
             return
         if status_of(thread) in QUEUED:
             await self._queue_call(self.api.queue_add, thread.id)
-        await self.refresh()
 
     async def on_thread_update(self, before, after):
         """A post's tags or title changed. Returns the new status when it moved."""
@@ -205,14 +204,11 @@ class Board:
             elif old in QUEUED and new not in QUEUED:
                 await self._queue_call(self.api.queue_remove, after.id)
             await self.mirror(after, new)
-        if moved or before.name != after.name or priority_of(before) != priority_of(after):
-            await self.refresh()
         return new if moved else None
 
     async def on_thread_delete(self, thread):
         if self._on_board(thread):
             await self._queue_call(self.api.queue_remove, thread.id)
-            await self.refresh()
 
     async def _queue_call(self, call, *args):
         try:
@@ -222,49 +218,11 @@ class Board:
             return None
 
     async def reconcile(self):
-        """Rebuild the queue from the board's tags, keeping every place, then
-        refresh Up next. On start and every hour."""
+        """Rebuild the queue from the board's tags, keeping every place. On
+        start and every hour."""
         threads = await self.list_threads()
+        self._titles = (time.monotonic(), {thread.id: thread.name for thread in threads})
         await self._queue_call(self.api.queue_sync, queue_order(threads))
-        await self.refresh(threads)
-
-    # ── Up next ──
-
-    async def refresh(self, threads=None):
-        """Bring the pinned Up next message up to date (one at a time)."""
-        async with self._refresh_lock:
-            try:
-                threads = threads if threads is not None else await self.list_threads()
-                answer = await self.api.queue()
-            except SiteUnavailable:
-                return
-            self._titles = (time.monotonic(), {thread.id: thread.name for thread in threads})
-            embed = render_up_next(threads, answer.data.get("thread_ids", []))
-            await self._publish_up_next(embed)
-
-    async def _publish_up_next(self, embed):
-        ops = await self.get_channel(self.config.ops_channel_id)
-        key = f"upnext:{self.config.ops_channel_id}"
-        try:
-            claim = await self.api.claim(key, self.config.ops_channel_id)
-        except SiteUnavailable:
-            return
-        message_id = claim.data.get("message_id") if claim.status == 409 else None
-        if message_id:
-            try:
-                await ops.get_partial_message(int(message_id)).edit(embed=embed)
-                return
-            except discord.NotFound:
-                logger.info("Up next message %s is gone; posting a new one", message_id)
-        message = await ops.send(embed=embed, allowed_mentions=NO_MENTIONS)
-        try:
-            await message.pin(reason="The team board's Up next")
-        except discord.HTTPException:
-            logger.warning("Could not pin Up next in %s (needs Pin Messages)", self.config.ops_channel_id)
-        try:
-            await self.api.record(key, message.id)
-        except SiteUnavailable:
-            logger.error("Up next %s posted but not recorded", message.id)
 
     # ── The Monday summary ──
 
@@ -344,7 +302,7 @@ class Board:
         except SiteUnavailable:
             await interaction.followup.send(fmt.SITE_DOWN, ephemeral=True)
             return
-        embed = render_up_next(threads, answer.data.get("thread_ids", []))
+        embed = render_queue(threads, answer.data.get("thread_ids", []))
         await interaction.followup.send(embed=embed, ephemeral=True)
 
     async def move(self, interaction, post, position):
@@ -363,7 +321,6 @@ class Board:
             return
         ids = answer.data.get("thread_ids", [])
         await interaction.followup.send(fmt.MOVED.format(position=ids.index(str(post)) + 1), ephemeral=True)
-        await self.refresh()
 
     async def suggest(self, current):
         """Autocomplete: queued posts whose title contains what's typed."""
@@ -391,7 +348,7 @@ class Board:
         async def autocomplete(interaction: discord.Interaction, current: str):  # pylint: disable=unused-argument
             return await self.suggest(current)
 
-        @group.command(name="show", description="Show Up next: in progress, the numbered queue, the backlog")
+        @group.command(name="show", description="Show the queue: in progress, then the numbered queue")
         async def show(interaction: discord.Interaction):
             await self.show(interaction)
 

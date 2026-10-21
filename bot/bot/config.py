@@ -50,8 +50,8 @@ class Config:
     team_board_id: int | None = None
     team_role_id: int | None = None
     feedback_forum_id: int | None = None
-    # #calc-ops: the pinned "Up next" message and the Monday summary (Step 6b),
-    # the daily digest and the health alerts (Step 7).
+    # #calc-ops: the Monday summary (Step 6b), the daily digest and the health
+    # alerts (Step 7). It no longer holds a pinned "Up next" (see board.py).
     ops_channel_id: int | None = None
     # Step 7. #calc-dev-log for deploy news; a READ-ONLY DigitalOcean token
     # (never the admin's rebuild token) and the app it reads.
@@ -83,7 +83,7 @@ class Config:
 
     @property
     def board_enabled(self):
-        """The queue, Up next, the Monday summary and the status mirror."""
+        """The queue, the Monday summary and the status mirror."""
         return self.team_enabled and bool(self.ops_channel_id)
 
 

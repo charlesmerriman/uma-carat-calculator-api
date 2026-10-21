@@ -335,7 +335,8 @@ def bot_blocked_term(request):
 
 # Each prefix the worker may write, and the shape of what follows it:
 # promote:<public post>  "Send to team board" (the team copy's id is the message)
-# upnext:<channel>        the pinned "Up next" message in #calc-ops
+# upnext:<channel>        the pinned "Up next" message in #calc-ops (retired 2026-10-21;
+#                         the worker no longer writes it, the old record stays)
 # weekly:<yyyymmdd>       one Monday summary per week
 # digest:<yyyymmdd>       one daily digest per day
 # deploy:<uuid>           one #calc-dev-log line per DigitalOcean deployment

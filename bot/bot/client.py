@@ -118,7 +118,7 @@ class SiteBot(discord.Client):
 
     @tasks.loop(hours=1)
     async def hourly_reconcile(self):
-        """Repair the queue against the board's tags (and refresh Up next).
+        """Repair the queue against the board's tags.
         The first run is at start-up, which covers anything missed while down."""
         try:
             await self.board.reconcile()
