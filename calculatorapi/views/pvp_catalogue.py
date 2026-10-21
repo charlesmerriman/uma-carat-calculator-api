@@ -12,7 +12,8 @@ Fetched once by the builder the first time a picker opens, never on /app load.
                    title, group_members (a group card's umas, by name; [] on
                    any other card), on_global and skills [{skill, source}]
     skills         skills ON GLOBAL only: id, name, description, image,
-                   rarity, tier, group_id, cost
+                   rarity, tier, group_id, cost, game_id, version (the
+                   label "○ white" / "◎ gold" / ..., for the guide editor)
 
 Skills are a lookup table rather than embedded in each card: one skill is
 taught by dozens of cards, and the picker's "search by skill" walks from a
@@ -56,22 +57,35 @@ APTITUDE_FIELDS = (
 )
 
 
-def _url(name):
+def image_url(name):
     """An image field's stored name -> its URL, or None when unset. The same
     URL an ImageField serializer gives with no request in its context, which
     is how /calculator-data's cached payload builds them too."""
     return default_storage.url(name) if name else None
 
 
+_url = image_url
+
+
 def build_catalogue():
     """The catalogue as a plain dict. The view caches it rendered."""
-    skills = list(
-        Skill.objects.on_global()
-        .order_by("name", "id")
-        .values("id", "name", "description", "image", "rarity", "tier", "group_id", "cost")
-    )
-    for skill in skills:
-        skill["image"] = _url(skill["image"])
+    skills = []
+    # `version` ("○ white", "◎ gold", ...) and `game_id` are for the guide
+    # editor's skill picker and its paste-from-the-sheet matching; the team
+    # builder ignores both.
+    for skill in Skill.objects.on_global().order_by("name", "id"):
+        skills.append({
+            "id": skill.id,
+            "name": skill.name,
+            "description": skill.description,
+            "image": _url(skill.image.name if skill.image else ""),
+            "rarity": skill.rarity,
+            "tier": skill.tier,
+            "group_id": skill.group_id,
+            "cost": skill.cost,
+            "game_id": skill.game_id,
+            "version": skill.version_label,
+        })
     global_ids = {skill["id"] for skill in skills}
     # Cards with ANY skill link, global skill or not: the import writes links
     # only for cards in the global snapshot. See the module docstring.
@@ -99,6 +113,7 @@ def build_catalogue():
         umas.append({
             "id": uma.id,
             "name": uma.name,
+            "game_id": uma.game_id,
             "image": _url(uma.image.name),
             # The borderless cut when there is one (Uma.portrait). The builder
             # draws the bordered art; the portrait is there for the drawer's
@@ -121,7 +136,7 @@ def build_catalogue():
         .order_by("name", "id")
         # group_members: a group card's umas, by name, which the builder's
         # deck rules treat as that many cards. [] on every other card.
-        .values("id", "name", "image", "card_type", "rarity", "title", "group_members")
+        .values("id", "name", "game_id", "image", "card_type", "rarity", "title", "group_members")
     ):
         card["image"] = _url(card["image"])
         card["on_global"] = card["id"] in cards_on_global
