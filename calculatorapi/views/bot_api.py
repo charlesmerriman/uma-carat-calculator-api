@@ -50,10 +50,12 @@ from rest_framework.decorators import api_view, permission_classes, throttle_cla
 from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle
 
-from calculatorapi import gallery_moderation, moderation_cards
+from calculatorapi import announcements, gallery_moderation, moderation_cards, team_queue
+from calculatorapi.analytics.digest import digest
 from calculatorapi.models import (
     BlockedTerm,
     BlockedTermMatch,
+    DiscordMessage,
     GalleryComment,
     GalleryPost,
     GalleryReport,
@@ -320,3 +322,183 @@ def bot_blocked_term(request):
         return Response({"detail": "That term is already blocked."}, status=status.HTTP_409_CONFLICT)
     logger.info("Blocked term added from Discord by %s", moderator)
     return Response({"term": term, "match": match}, status=status.HTTP_201_CREATED)
+
+
+# ── The worker's own "never twice" records ─────────────────────────────────
+#
+# The worker posts things of its own (a team-board copy of a public feedback
+# post) that must happen once however often a moderator clicks. It keeps that
+# promise in the same table as the site's posts, DiscordMessage, under keys
+# only it may write: a prefix list, so a leaked bot key can't reach the
+# changelog's or the cards' rows. Claim before posting, record the message
+# after, release the claim if the post failed.
+
+# Each prefix the worker may write, and the shape of what follows it:
+# promote:<public post>  "Send to team board" (the team copy's id is the message)
+# upnext:<channel>        the pinned "Up next" message in #calc-ops
+# weekly:<yyyymmdd>       one Monday summary per week
+# digest:<yyyymmdd>       one daily digest per day
+# deploy:<uuid>           one #calc-dev-log line per DigitalOcean deployment
+# announce:<moment key>   one post per banner/event milestone (announcements.py)
+_DIGITS = r"[0-9]{5,25}"
+WORKER_KEYS = {
+    "promote": _DIGITS,
+    "upnext": _DIGITS,
+    "weekly": r"[0-9]{8}",
+    "digest": r"[0-9]{8}",
+    "deploy": r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+    "announce": r"(banner|cm|loh|campaign|legend_races)-[0-9]{1,12}-[a-z_]{4,40}",
+}
+WORKER_KEY_PREFIXES = tuple(f"{prefix}:" for prefix in WORKER_KEYS)
+_SNOWFLAKE = re.compile(f"^{_DIGITS}$")
+
+
+def _worker_key(key):
+    prefix, _, rest = (key or "").partition(":")
+    pattern = WORKER_KEYS.get(prefix)
+    if pattern is None or not re.fullmatch(pattern, rest):
+        raise Http404
+    return key
+
+
+def _message_payload(row):
+    return {"key": row.key, "channel_id": row.channel_id, "message_id": row.message_id}
+
+
+@bot_route(["GET", "POST"])
+def bot_message_claim(request):
+    """POST /bot/messages {key, channel_id}: claim `key` before posting. 201 when
+    it's yours; 409 with what was already recorded under it otherwise.
+
+    GET /bot/messages?message_id=<id>: the worker record that produced that
+    message, or 404. How the status mirror finds the public post a team copy
+    came from (its `promote:<public post>` key)."""
+    if request.method == "GET":
+        message_id = request.query_params.get("message_id", "")
+        rows = DiscordMessage.objects.filter(message_id=message_id) if _SNOWFLAKE.match(message_id) else []
+        row = next((row for row in rows if row.key.startswith(WORKER_KEY_PREFIXES)), None)
+        if row is None:
+            raise Http404
+        return Response(_message_payload(row))
+    key = _worker_key(str(request.data.get("key", "")))
+    channel_id = str(request.data.get("channel_id", ""))
+    if not _SNOWFLAKE.match(channel_id):
+        return _bad("channel_id must be a Discord id.")
+    row, created = DiscordMessage.objects.get_or_create(key=key, defaults={"channel_id": channel_id})
+    return Response(_message_payload(row), status=status.HTTP_201_CREATED if created else status.HTTP_409_CONFLICT)
+
+
+@bot_route(["GET", "PATCH", "DELETE"])
+def bot_message(request, key):
+    """GET /bot/messages/<key>: what was recorded, or 404.
+    PATCH {message_id}: record the message a claim produced.
+    DELETE: give a claim back after a failed post, so a later click can retry.
+    Only a claim still in flight (no message yet) can be deleted: a recorded
+    message is permanent, or a second click could post a second copy."""
+    row = DiscordMessage.objects.filter(key=_worker_key(key)).first()
+    if row is None:
+        raise Http404
+    if request.method == "PATCH":
+        message_id = str(request.data.get("message_id", ""))
+        if not _SNOWFLAKE.match(message_id):
+            return _bad("message_id must be a Discord id.")
+        row.message_id = message_id
+        row.save(update_fields=["message_id", "updated_at"])
+    elif request.method == "DELETE":
+        if row.message_id:
+            return Response({"detail": "Already posted; not released."}, status=status.HTTP_409_CONFLICT)
+        row.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    return Response(_message_payload(row))
+
+
+# ── The team board's queue (team_queue.py) ─────────────────────────────────
+
+def _thread_id(value):
+    value = str(value or "")
+    if not _SNOWFLAKE.match(value):
+        raise Http404
+    return value
+
+
+def _queue():
+    return Response({"thread_ids": team_queue.entries()})
+
+
+@bot_route(["GET", "POST"])
+def bot_queue(request):
+    """GET /bot/queue: post ids in order. POST {thread_id}: add one at the
+    bottom (201), or 200 when it was already queued (it keeps its place)."""
+    if request.method == "GET":
+        return _queue()
+    added = team_queue.add(_thread_id(request.data.get("thread_id")))
+    response = _queue()
+    response.status_code = status.HTTP_201_CREATED if added else status.HTTP_200_OK
+    return response
+
+
+@bot_route(["DELETE"])
+def bot_queue_entry(request, thread_id):  # pylint: disable=unused-argument
+    """DELETE /bot/queue/<thread_id>: take a post out; 404 if it wasn't in."""
+    if not team_queue.remove(_thread_id(thread_id)):
+        raise Http404
+    return _queue()
+
+
+@bot_route(["POST"])
+def bot_queue_move(request, thread_id):
+    """POST /bot/queue/<thread_id>/move {position}: 1 is the top; a position
+    past the end means the bottom. 404 if the post isn't queued."""
+    try:
+        position = int(request.data.get("position"))
+    except (TypeError, ValueError):
+        return _bad("position must be a whole number.")
+    if position < 1:
+        return _bad("position starts at 1.")
+    if not team_queue.move(_thread_id(thread_id), position):
+        raise Http404
+    return _queue()
+
+
+@bot_route(["POST"])
+def bot_queue_sync(request):
+    """POST /bot/queue/sync {thread_ids}: make the queue hold exactly these
+    posts, new ones at the bottom in the order sent, the rest in place. The
+    worker's repair after it missed a tag change (a restart, an outage)."""
+    thread_ids = request.data.get("thread_ids")
+    if not isinstance(thread_ids, list) or not all(_SNOWFLAKE.match(str(tid)) for tid in thread_ids):
+        return _bad("thread_ids must be a list of Discord ids.")
+    team_queue.sync([str(tid) for tid in thread_ids])
+    return _queue()
+
+
+# ── The daily digest (analytics/digest.py) ─────────────────────────────────
+
+@bot_route(["GET"])
+def bot_digest(request):  # pylint: disable=unused-argument
+    """GET /bot/digest: yesterday's numbers for #calc-ops. Aggregates only:
+    nothing in it names or points at a person. Reading it also keeps today's
+    analytics snapshot, as opening the admin dashboard does."""
+    return Response(digest())
+
+
+# ── Announcements (announcements.py) ───────────────────────────────────────
+
+@bot_route(["GET"])
+def bot_upcoming(request):
+    """GET /bot/upcoming?days=14: every banner and event moment due from a
+    few hours ago to `days` ahead (max 60), from the Timeline's own dates.
+    Predicted dates only ever carry a "tomorrow" moment. Catalogue data
+    only: names of banners, events, umas and cards, never a person."""
+    try:
+        days = int(request.query_params.get("days", 14))
+    except ValueError:
+        return _bad("days must be a whole number.")
+    moments = announcements.upcoming(request, days)
+    for moment in moments:
+        for field in ("at", "starts_at", "ends_at"):
+            if moment.get(field) is not None:
+                moment[field] = moment[field].isoformat()
+        if "schedule" in moment:
+            moment["schedule"] = {name: at.isoformat() for name, at in moment["schedule"].items()}
+    return Response({"moments": moments})

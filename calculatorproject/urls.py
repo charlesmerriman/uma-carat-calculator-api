@@ -31,11 +31,19 @@ from calculatorapi.views.account_linking import (
 from calculatorapi.views.visits import site_visit
 from calculatorapi.views.bot_api import (
     bot_blocked_term,
+    bot_digest,
     bot_item,
+    bot_message,
+    bot_message_claim,
     bot_moderate,
+    bot_queue,
+    bot_queue_entry,
+    bot_queue_move,
+    bot_queue_sync,
     bot_reports,
     bot_unblock,
     bot_undo,
+    bot_upcoming,
 )
 from calculatorapi.views.patreon_supporters import patreon_sync
 from calculatorapi.views.site_content import site_content
@@ -143,6 +151,14 @@ urlpatterns = [
     path("bot/items/<str:kind>/<str:ref>/moderate", bot_moderate, name="bot-moderate"),
     path("bot/items/<str:kind>/<str:ref>/unblock", bot_unblock, name="bot-unblock"),
     path("bot/items/<str:kind>/<str:ref>/undo", bot_undo, name="bot-undo"),
+    path("bot/messages", bot_message_claim, name="bot-message-claim"),
+    path("bot/messages/<str:key>", bot_message, name="bot-message"),
+    path("bot/queue", bot_queue, name="bot-queue"),
+    path("bot/digest", bot_digest, name="bot-digest"),
+    path("bot/upcoming", bot_upcoming, name="bot-upcoming"),
+    path("bot/queue/sync", bot_queue_sync, name="bot-queue-sync"),
+    path("bot/queue/<str:thread_id>", bot_queue_entry, name="bot-queue-entry"),
+    path("bot/queue/<str:thread_id>/move", bot_queue_move, name="bot-queue-move"),
     # The admin-editable pages and FAQ, in one public read-only response. The
     # frontend build bakes it into the prerendered HTML; a loaded page fetches
     # it once more to pick up edits made since. → views/site_content.py

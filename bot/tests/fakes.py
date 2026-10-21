@@ -9,6 +9,9 @@ from bot.config import Config
 GUILD = 1410431883912941619
 MOD_ROLE = 1413131483102707853
 MOD_QUEUE = 1562201700507586681
+TEAM_ROLE = 1489347113153200268
+TEAM_BOARD = 1562200270061043872
+FEEDBACK = 1414359698383310949
 
 CONFIG = Config(
     token="t",
@@ -17,6 +20,9 @@ CONFIG = Config(
     mod_queue_channel_id=MOD_QUEUE,
     api_base_url="https://example.test/api",
     api_secret="k",
+    team_board_id=TEAM_BOARD,
+    team_role_id=TEAM_ROLE,
+    feedback_forum_id=FEEDBACK,
 )
 
 
@@ -32,6 +38,9 @@ class FakeResponse:
 
     async def edit_message(self, **kwargs):
         self.calls.append(("edit_message", kwargs.get("content"), kwargs))
+
+    async def send_modal(self, modal):
+        self.calls.append(("send_modal", None, {"modal": modal}))
 
 
 class FakeFollowup:
@@ -98,3 +107,85 @@ class FakeApi:
 
     async def add_term(self, term, match, moderator):
         return self._next("add_term", term, match, moderator)
+
+    async def claim(self, key, channel_id):
+        return self._next("claim", key, channel_id)
+
+    async def record(self, key, message_id):
+        return self._next("record", key, message_id)
+
+    async def release(self, key):
+        return self._next("release", key)
+
+    async def upcoming(self, days=2):
+        return self._next("upcoming", days)
+
+    async def digest(self):
+        return self._next("digest")
+
+    async def find_record(self, message_id):
+        return self._next("find_record", message_id)
+
+    async def queue(self):
+        return self._next("queue")
+
+    async def queue_add(self, thread_id):
+        return self._next("queue_add", thread_id)
+
+    async def queue_remove(self, thread_id):
+        return self._next("queue_remove", thread_id)
+
+    async def queue_move(self, thread_id, position):
+        return self._next("queue_move", thread_id, position)
+
+    async def queue_sync(self, thread_ids):
+        return self._next("queue_sync", thread_ids)
+
+
+def tag(name):
+    return SimpleNamespace(name=name, id=hash(name) % 10**6)
+
+
+class FakeThread:
+    """A forum post: its tags, and what was done to it."""
+
+    def __init__(self, thread_id, parent_id, tags=(), name="A post"):
+        self.id = thread_id
+        self.parent_id = parent_id
+        self.name = name
+        self.applied_tags = [tag(name) for name in tags]
+        self.jump_url = f"https://discord.com/channels/{GUILD}/{thread_id}"
+        self.starter_message = None
+        self.content = None
+        self.edits = []
+        self.sent = []
+
+    async def edit(self, **kwargs):
+        self.edits.append([t.name for t in kwargs["applied_tags"]])
+        self.applied_tags = list(kwargs["applied_tags"])
+
+    async def send(self, content, **_kwargs):
+        self.sent.append(content)
+
+    async def fetch_message(self, message_id):
+        return SimpleNamespace(id=message_id, content="(fetched starter)")
+
+
+class FakeForum:
+    """A forum with `tags`; create_thread records the new post."""
+
+    def __init__(self, forum_id, tags, *, fail=False):
+        self.id = forum_id
+        self.available_tags = [tag(name) for name in tags]
+        self.created = []
+        self.fail = fail
+
+    async def create_thread(self, **kwargs):
+        if self.fail:
+            import discord  # pylint: disable=import-outside-toplevel
+            raise discord.HTTPException(SimpleNamespace(status=500, reason="boom"), "boom")
+        thread = FakeThread(900000 + len(self.created), self.id, name=kwargs["name"])
+        thread.content = kwargs["content"]
+        thread.applied_tags = list(kwargs["applied_tags"])
+        self.created.append(thread)
+        return SimpleNamespace(thread=thread)

@@ -21,6 +21,13 @@ class FormatTests(unittest.TestCase):
     def test_long_text_is_cut(self):
         self.assertLessEqual(len(fmt.quoted("x" * 5000)), fmt.TEXT_LIMIT + 10)
 
+    def test_moderation_and_errors_stay_out_of_the_voice(self):
+        from bot import persona  # pylint: disable=import-outside-toplevel
+        voiced = {value for name, value in vars(persona).items() if name.isupper() and isinstance(value, str)}
+        voiced |= set(persona.FLOURISHES.values())
+        for plain in (fmt.NEED_ROLE, fmt.SITE_DOWN, fmt.GONE, fmt.CONFIRM_BLOCK, *fmt.DONE.values()):
+            self.assertNotIn(plain, voiced)
+
     def test_no_em_or_en_dashes_anywhere_the_bot_speaks(self):
         root = pathlib.Path(fmt.__file__).parent
         for path in root.glob("*.py"):

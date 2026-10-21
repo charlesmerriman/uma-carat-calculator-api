@@ -88,3 +88,4 @@ from .gallery import (
     GALLERY_REPORT_NOTE_MAX_LENGTH,
 )
 from .discord_message import DiscordMessage
+from .team_queue import TeamQueueEntry

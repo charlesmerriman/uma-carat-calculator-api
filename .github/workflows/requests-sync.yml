@@ -1,0 +1,39 @@
+name: Team board sync
+
+# A pull request merged into develop moves the #calc-team-board posts its
+# description links to "In progress", with a reply saying where it merged
+# (bot/actions/requests_sync.py). Discord-bot-plan.md, Step 6.
+#
+# Reusable: the web repo's own requests-sync.yml calls this file, so the logic
+# lives in one place. Inside a call, `github.event` is still the CALLER's
+# pull_request event, which is what the script reads.
+on:
+  pull_request:
+    types: [closed]
+    branches: [develop]
+  workflow_call:
+    secrets:
+      DISCORD_BOT_TOKEN:
+        required: true
+
+jobs:
+  sync:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      # The script is in THIS repo, even when the web repo is the caller (whose
+      # checkout would be the web repo's), so name it explicitly.
+      - uses: actions/checkout@v7
+        with:
+          repository: charlesmerriman/uma-carat-calculator-api
+          ref: develop
+          sparse-checkout: bot/actions
+
+      # Standard library only: the runner's own Python is enough.
+      - name: Move linked team-board posts to In progress
+        run: python3 bot/actions/requests_sync.py
+        env:
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          # Henry Handsome Derby and its #calc-team-board: plain routing ids.
+          DISCORD_GUILD_ID: "1410431883912941619"
+          DISCORD_TEAM_BOARD_ID: "1562200270061043872"

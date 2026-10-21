@@ -1016,6 +1016,54 @@ or `comment/<row id>` (comments have no public id). Unknown kind or item: `404`.
 | `POST bot/items/<kind>/<ref>/unblock` | `{moderator}` | `200 {item}`; `409` when the author isn't blocked. The item stays as decided. |
 | `POST bot/blocked-terms` | `{term, match: word\|anywhere, moderator}` | `201 {term, match}` (stored normalised); `409` when already blocked; `400` on a blank or over-60 term. |
 
+**The worker's never-twice records** (`bot/messages`): the worker claims a key before it
+posts something that must happen once (today `promote:<public post id>`, "Send to team
+board"), in the same `DiscordMessage` table the site's own posts use. Only keys under
+`WORKER_KEY_PREFIXES` are reachable (`promote:<public post>`, `upnext:<channel>` for the
+pinned Up next message, `weekly:<yyyymmdd>` for the Monday summary); the changelog's and
+the cards' rows 404. `GET bot/messages?message_id=<id>` finds the worker record whose
+message is that id (the status mirror: team copy → its `promote:` key).
+
+| Route | Body | Answers |
+|---|---|---|
+| `POST bot/messages` | `{key, channel_id}` | `201` claimed; `409` with the existing `{key, channel_id, message_id}` |
+| `GET bot/messages/<key>` | | `200 {key, channel_id, message_id}` or `404` |
+| `PATCH bot/messages/<key>` | `{message_id}` | `200`: the message the claim produced |
+| `DELETE bot/messages/<key>` | | `204`: a claim given back after a failed post; `409` once a message is recorded |
+
+**The daily digest**: `GET bot/digest` returns yesterday's (UTC) numbers for `#calc-ops`,
+**aggregates only** (a test holds it to numbers plus the date): visits yesterday / the day
+before / the 7-day average, accounts (total, new yesterday, the day before, last 7 days),
+saved in the last 7 days, active supporters, gallery posts / comments / reports in the last
+24 hours, and items with an open report. It reads the admin dashboard's cached report
+(`analytics/digest.py`), so reading it also keeps the day's analytics snapshot.
+
+**Announcements**: `GET bot/upcoming?days=14` (max 60) returns every banner and event
+moment due from 6 hours ago to `days` ahead (`announcements.py`), from the same
+`build_effective_date_maps` the Timeline uses: `{moments: [{key, kind, milestone, at,
+predicted, name, starts_at, ends_at?, image?, url, umas?, cards?, schedule?}]}`. Kinds:
+`banner`, `cm`, `loh`, `campaign` (its main part), `legend_races` (dated batches only).
+Milestones: `tomorrow` (24 h before the start, or before CM/LoH registration opens) for any
+date, and for CONFIRMED dates only `live`, or for CM/LoH `registration_opens`, `round_one`,
+`finals_registration_closing` (12 h before) and `finals` (LoH milestones only once their
+constants are set). Catalogue names only.
+
+Worker key prefixes, each with its own shape: `promote:`/`upnext:` a Discord id,
+`weekly:`/`digest:` a `yyyymmdd`, `deploy:` a DigitalOcean deployment uuid, `announce:` a
+moment key (`<kind>-<id>-<milestone>`).
+
+**The team board's queue** (`team_queue.py`, `TeamQueueEntry`): post ids in order, always
+1..N. Which posts are in it follows the board's status tags (the worker adds on Planned,
+removes on Done / Won't do); the order is the team's, set with `/queue`.
+
+| Route | Body | Answers |
+|---|---|---|
+| `GET bot/queue` | | `{thread_ids: [...]}` in order |
+| `POST bot/queue` | `{thread_id}` | `201` added at the bottom; `200` already queued (keeps its place) |
+| `DELETE bot/queue/<thread_id>` | | `200` with the queue; `404` if it wasn't in |
+| `POST bot/queue/<thread_id>/move` | `{position}` | `200`; 1 is the top, past the end is the bottom; `404` if not queued |
+| `POST bot/queue/sync` | `{thread_ids}` | `200`: exactly these, places kept, new ones appended in the order sent |
+
 `moderator` is the clicker as the worker sends them, `"discord username (discord id)"`,
 required in that shape. A decision stores it in `GalleryReport.resolved_by_discord` and
 leaves `resolved_by` empty: **a Discord moderator is a name, never an account**, and

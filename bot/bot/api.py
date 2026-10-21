@@ -104,6 +104,46 @@ class SiteApi:
     async def unblock(self, kind, ref, moderator):
         return await self._request("POST", f"bot/items/{kind}/{ref}/unblock", {"moderator": moderator})
 
+    # The worker's own never-twice records (views/bot_api.py, "promote:<thread>").
+
+    async def claim(self, key, channel_id):
+        return await self._request("POST", "bot/messages", {"key": key, "channel_id": str(channel_id)})
+
+    async def record(self, key, message_id):
+        return await self._request("PATCH", f"bot/messages/{key}", {"message_id": str(message_id)})
+
+    async def release(self, key):
+        return await self._request("DELETE", f"bot/messages/{key}")
+
+    async def find_record(self, message_id):
+        """The worker record whose message is `message_id` (a team copy's id)."""
+        return await self._request("GET", f"bot/messages?message_id={message_id}")
+
+    async def upcoming(self, days=2):
+        """Banner and event moments due soon, from the Timeline's own dates."""
+        return await self._request("GET", f"bot/upcoming?days={days}")
+
+    async def digest(self):
+        """Yesterday's numbers for the daily digest (aggregates only)."""
+        return await self._request("GET", "bot/digest")
+
+    # The team board's ordered queue (the site's team_queue.py).
+
+    async def queue(self):
+        return await self._request("GET", "bot/queue")
+
+    async def queue_add(self, thread_id):
+        return await self._request("POST", "bot/queue", {"thread_id": str(thread_id)})
+
+    async def queue_remove(self, thread_id):
+        return await self._request("DELETE", f"bot/queue/{thread_id}")
+
+    async def queue_move(self, thread_id, position):
+        return await self._request("POST", f"bot/queue/{thread_id}/move", {"position": position})
+
+    async def queue_sync(self, thread_ids):
+        return await self._request("POST", "bot/queue/sync", {"thread_ids": [str(tid) for tid in thread_ids]})
+
     async def add_term(self, term, match, moderator):
         return await self._request(
             "POST", "bot/blocked-terms", {"term": term, "match": match, "moderator": moderator}
