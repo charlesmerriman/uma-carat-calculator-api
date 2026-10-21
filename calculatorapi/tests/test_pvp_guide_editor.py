@@ -783,7 +783,11 @@ class QueryCountTests(CalculatorTestCase):
         self.assertEqual(len(small), len(large), "a save costs a query per row")
 
 
+@override_settings(STORAGES=PLAIN_TEST_STORAGES)
 class CatalogueFieldsTests(CalculatorTestCase):
+    """Plain file storage: CI's default storage is the Spaces bucket, which
+    cannot build a URL for the pictures these rows name."""
+
     def test_the_catalogue_carries_game_ids_and_skill_versions(self):
         Uma.objects.create(name="Maruzensky", game_id=100101, image="umas/m.png")
         SupportCard.objects.create(name="Kitasan Black", game_id=30086, image="cards/k.png")
