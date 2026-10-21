@@ -54,6 +54,7 @@ from calculatorapi import gallery_moderation, moderation_cards
 from calculatorapi.models import (
     BlockedTerm,
     BlockedTermMatch,
+    DiscordMessage,
     GalleryComment,
     GalleryPost,
     GalleryReport,
@@ -320,3 +321,63 @@ def bot_blocked_term(request):
         return Response({"detail": "That term is already blocked."}, status=status.HTTP_409_CONFLICT)
     logger.info("Blocked term added from Discord by %s", moderator)
     return Response({"term": term, "match": match}, status=status.HTTP_201_CREATED)
+
+
+# ── The worker's own "never twice" records ─────────────────────────────────
+#
+# The worker posts things of its own (a team-board copy of a public feedback
+# post) that must happen once however often a moderator clicks. It keeps that
+# promise in the same table as the site's posts, DiscordMessage, under keys
+# only it may write: a prefix list, so a leaked bot key can't reach the
+# changelog's or the cards' rows. Claim before posting, record the message
+# after, release the claim if the post failed.
+
+WORKER_KEY_PREFIXES = ("promote:",)
+_WORKER_KEY = re.compile(r"^[a-z-]+:[0-9]{5,25}$")
+_SNOWFLAKE = re.compile(r"^[0-9]{5,25}$")
+
+
+def _worker_key(key):
+    if not _WORKER_KEY.match(key or "") or not key.startswith(WORKER_KEY_PREFIXES):
+        raise Http404
+    return key
+
+
+def _message_payload(row):
+    return {"key": row.key, "channel_id": row.channel_id, "message_id": row.message_id}
+
+
+@bot_route(["POST"])
+def bot_message_claim(request):
+    """POST /bot/messages {key, channel_id}: claim `key` before posting. 201 when
+    it's yours; 409 with what was already recorded under it otherwise."""
+    key = _worker_key(str(request.data.get("key", "")))
+    channel_id = str(request.data.get("channel_id", ""))
+    if not _SNOWFLAKE.match(channel_id):
+        return _bad("channel_id must be a Discord id.")
+    row, created = DiscordMessage.objects.get_or_create(key=key, defaults={"channel_id": channel_id})
+    return Response(_message_payload(row), status=status.HTTP_201_CREATED if created else status.HTTP_409_CONFLICT)
+
+
+@bot_route(["GET", "PATCH", "DELETE"])
+def bot_message(request, key):
+    """GET /bot/messages/<key>: what was recorded, or 404.
+    PATCH {message_id}: record the message a claim produced.
+    DELETE: give a claim back after a failed post, so a later click can retry.
+    Only a claim still in flight (no message yet) can be deleted: a recorded
+    message is permanent, or a second click could post a second copy."""
+    row = DiscordMessage.objects.filter(key=_worker_key(key)).first()
+    if row is None:
+        raise Http404
+    if request.method == "PATCH":
+        message_id = str(request.data.get("message_id", ""))
+        if not _SNOWFLAKE.match(message_id):
+            return _bad("message_id must be a Discord id.")
+        row.message_id = message_id
+        row.save(update_fields=["message_id", "updated_at"])
+    elif request.method == "DELETE":
+        if row.message_id:
+            return Response({"detail": "Already posted; not released."}, status=status.HTTP_409_CONFLICT)
+        row.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    return Response(_message_payload(row))

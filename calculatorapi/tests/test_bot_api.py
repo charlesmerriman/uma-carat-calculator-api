@@ -13,6 +13,7 @@ from calculatorapi import gallery, gallery_moderation
 from calculatorapi.models import (
     BlockedTerm,
     CustomUser,
+    DiscordMessage,
     GalleryHiddenReason,
     GalleryReportReason,
     GalleryReportResolution,
@@ -21,6 +22,7 @@ from calculatorapi.models import (
 from calculatorapi.tests.test_gallery import GalleryFixture
 
 KEY = "bot-test-key"
+KEY_HEADER = KEY
 MODERATOR = "oguri_fan (123456789012345678)"
 
 
@@ -267,3 +269,66 @@ class BotApiTests(GalleryFixture):  # pylint: disable=too-many-public-methods
                 response = self.call("post", "bot-blocked-term", {**body, "moderator": MODERATOR})
                 self.assertEqual(response.status_code, 400)
         self.assertFalse(BlockedTerm.objects.exists())
+
+
+@override_settings(BOT_API_SECRET=KEY)
+class BotMessageTests(GalleryFixture):
+    """The worker's never-twice records: claim, record, release."""
+
+    KEY = "promote:1562205622429155540"
+
+    def claim(self, key=KEY, channel_id="1562200270061043872"):
+        return self.client.post(
+            reverse("bot-message-claim"), json.dumps({"key": key, "channel_id": channel_id}),
+            content_type="application/json", HTTP_X_BOT_KEY=KEY_HEADER,
+        )
+
+    def on(self, method, key=KEY, body=None):
+        url = reverse("bot-message", kwargs={"key": key})
+        if method == "get":
+            return self.client.get(url, HTTP_X_BOT_KEY=KEY_HEADER)
+        return getattr(self.client, method)(
+            url, json.dumps(body or {}), content_type="application/json", HTTP_X_BOT_KEY=KEY_HEADER,
+        )
+
+    def test_a_claim_is_won_once(self):
+        self.assertEqual(self.claim().status_code, 201)
+        second = self.claim()
+        self.assertEqual(second.status_code, 409)
+        self.assertEqual(second.json()["message_id"], "")
+        self.assertEqual(DiscordMessage.objects.count(), 1)
+
+    def test_record_then_read(self):
+        self.claim()
+        self.assertEqual(self.on("patch", body={"message_id": "1562519911803388028"}).status_code, 200)
+        self.assertEqual(self.on("get").json()["message_id"], "1562519911803388028")
+        self.assertEqual(self.claim().json()["message_id"], "1562519911803388028")
+
+    def test_release_only_while_in_flight(self):
+        self.claim()
+        self.assertEqual(self.on("delete").status_code, 204)
+        self.assertEqual(self.claim().status_code, 201)
+        self.on("patch", body={"message_id": "1562519911803388028"})
+        self.assertEqual(self.on("delete").status_code, 409)
+        self.assertTrue(DiscordMessage.objects.filter(key=self.KEY).exists())
+
+    def test_the_site_keys_are_out_of_reach(self):
+        DiscordMessage.objects.create(key="changelog:42", channel_id="1", message_id="2")
+        DiscordMessage.objects.create(key="card:post:7", channel_id="1", message_id="3")
+        for key in ("changelog:42", "card:post:7", "promote:abc", "promote:", "anything"):
+            with self.subTest(key=key):
+                self.assertEqual(self.on("get", key=key).status_code, 404)
+                self.assertEqual(self.on("delete", key=key).status_code, 404)
+        self.assertEqual(self.claim(key="changelog:43").status_code, 404)
+        self.assertEqual(DiscordMessage.objects.count(), 2)
+
+    def test_bad_ids_are_refused(self):
+        self.assertEqual(self.claim(channel_id="general").status_code, 400)
+        self.claim()
+        self.assertEqual(self.on("patch", body={"message_id": "x"}).status_code, 400)
+
+    def test_locked_like_every_bot_route(self):
+        with self.settings(BOT_API_SECRET=""):
+            self.assertEqual(self.claim().status_code, 404)
+        response = self.client.post(reverse("bot-message-claim"), "{}", content_type="application/json")
+        self.assertEqual(response.status_code, 403)

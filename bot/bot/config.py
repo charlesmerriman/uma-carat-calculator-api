@@ -23,8 +23,12 @@ REQUIRED = (
     "API_BASE_URL",
     "BOT_API_SECRET",
 )
+# The team board (discord-bot-plan.md, Step 6). Optional: while any of the three
+# is unset the worker registers no team commands, so a deploy that adds the code
+# before the settings changes nothing.
+OPTIONAL = ("DISCORD_TEAM_BOARD_ID", "DISCORD_TEAM_ROLE_ID", "DISCORD_WEBSITE_FEEDBACK_ID")
 # Discord ids ("snowflakes") are all digits.
-ID_SETTINGS = ("DISCORD_GUILD_ID", "DISCORD_MODERATOR_ROLE_ID", "DISCORD_MOD_QUEUE_CHANNEL_ID")
+ID_SETTINGS = ("DISCORD_GUILD_ID", "DISCORD_MODERATOR_ROLE_ID", "DISCORD_MOD_QUEUE_CHANNEL_ID", *OPTIONAL)
 
 
 class ConfigError(Exception):
@@ -40,6 +44,13 @@ class Config:
     mod_queue_channel_id: int
     api_base_url: str
     api_secret: str = field(repr=False)
+    team_board_id: int | None = None
+    team_role_id: int | None = None
+    feedback_forum_id: int | None = None
+
+    @property
+    def team_enabled(self):
+        return bool(self.team_board_id and self.team_role_id and self.feedback_forum_id)
 
 
 def read_env_file(path):
@@ -75,7 +86,7 @@ def load(environ=None):
     missing = [key for key in REQUIRED if not values.get(key)]
     if missing:
         raise ConfigError(f"Missing setting(s): {', '.join(missing)}")
-    malformed = [key for key in ID_SETTINGS if not values[key].isdigit()]
+    malformed = [key for key in ID_SETTINGS if values.get(key) and not values[key].isdigit()]
     if malformed:
         raise ConfigError(f"Not a Discord id (digits only): {', '.join(malformed)}")
 
@@ -86,4 +97,11 @@ def load(environ=None):
         mod_queue_channel_id=int(values["DISCORD_MOD_QUEUE_CHANNEL_ID"]),
         api_base_url=values["API_BASE_URL"].rstrip("/"),
         api_secret=values["BOT_API_SECRET"],
+        team_board_id=_optional_id(values, "DISCORD_TEAM_BOARD_ID"),
+        team_role_id=_optional_id(values, "DISCORD_TEAM_ROLE_ID"),
+        feedback_forum_id=_optional_id(values, "DISCORD_WEBSITE_FEEDBACK_ID"),
     )
+
+
+def _optional_id(values, key):
+    return int(values[key]) if values.get(key) else None

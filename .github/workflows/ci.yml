@@ -93,4 +93,4 @@ jobs:
         run: python -m unittest discover -s tests -t .
 
       - name: Lint
-        run: pylint bot tests
+        run: pylint bot actions tests

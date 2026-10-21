@@ -104,6 +104,17 @@ class SiteApi:
     async def unblock(self, kind, ref, moderator):
         return await self._request("POST", f"bot/items/{kind}/{ref}/unblock", {"moderator": moderator})
 
+    # The worker's own never-twice records (views/bot_api.py, "promote:<thread>").
+
+    async def claim(self, key, channel_id):
+        return await self._request("POST", "bot/messages", {"key": key, "channel_id": str(channel_id)})
+
+    async def record(self, key, message_id):
+        return await self._request("PATCH", f"bot/messages/{key}", {"message_id": str(message_id)})
+
+    async def release(self, key):
+        return await self._request("DELETE", f"bot/messages/{key}")
+
     async def add_term(self, term, match, moderator):
         return await self._request(
             "POST", "bot/blocked-terms", {"term": term, "match": match, "moderator": moderator}

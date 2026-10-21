@@ -1016,6 +1016,18 @@ or `comment/<row id>` (comments have no public id). Unknown kind or item: `404`.
 | `POST bot/items/<kind>/<ref>/unblock` | `{moderator}` | `200 {item}`; `409` when the author isn't blocked. The item stays as decided. |
 | `POST bot/blocked-terms` | `{term, match: word\|anywhere, moderator}` | `201 {term, match}` (stored normalised); `409` when already blocked; `400` on a blank or over-60 term. |
 
+**The worker's never-twice records** (`bot/messages`): the worker claims a key before it
+posts something that must happen once (today `promote:<public post id>`, "Send to team
+board"), in the same `DiscordMessage` table the site's own posts use. Only keys under
+`WORKER_KEY_PREFIXES` (`promote:`) are reachable; the changelog's and the cards' rows 404.
+
+| Route | Body | Answers |
+|---|---|---|
+| `POST bot/messages` | `{key, channel_id}` | `201` claimed; `409` with the existing `{key, channel_id, message_id}` |
+| `GET bot/messages/<key>` | | `200 {key, channel_id, message_id}` or `404` |
+| `PATCH bot/messages/<key>` | `{message_id}` | `200`: the message the claim produced |
+| `DELETE bot/messages/<key>` | | `204`: a claim given back after a failed post; `409` once a message is recorded |
+
 `moderator` is the clicker as the worker sends them, `"discord username (discord id)"`,
 required in that shape. A decision stores it in `GalleryReport.resolved_by_discord` and
 leaves `resolved_by` empty: **a Discord moderator is a name, never an account**, and
