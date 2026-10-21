@@ -43,6 +43,7 @@ from calculatorapi.views.bot_api import (
     bot_reports,
     bot_unblock,
     bot_undo,
+    bot_upcoming,
 )
 from calculatorapi.views.patreon_supporters import patreon_sync
 from calculatorapi.views.site_content import site_content
@@ -154,6 +155,7 @@ urlpatterns = [
     path("bot/messages/<str:key>", bot_message, name="bot-message"),
     path("bot/queue", bot_queue, name="bot-queue"),
     path("bot/digest", bot_digest, name="bot-digest"),
+    path("bot/upcoming", bot_upcoming, name="bot-upcoming"),
     path("bot/queue/sync", bot_queue_sync, name="bot-queue-sync"),
     path("bot/queue/<str:thread_id>", bot_queue_entry, name="bot-queue-entry"),
     path("bot/queue/<str:thread_id>/move", bot_queue_move, name="bot-queue-move"),

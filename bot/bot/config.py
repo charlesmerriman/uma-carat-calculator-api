@@ -28,7 +28,7 @@ REQUIRED = (
 # before the settings changes nothing.
 OPTIONAL = (
     "DISCORD_TEAM_BOARD_ID", "DISCORD_TEAM_ROLE_ID", "DISCORD_WEBSITE_FEEDBACK_ID", "DISCORD_OPS_CHANNEL_ID",
-    "DISCORD_DEVLOG_CHANNEL_ID",
+    "DISCORD_DEVLOG_CHANNEL_ID", "DISCORD_ANNOUNCE_CHANNEL_ID", "DISCORD_ANNOUNCE_PING_ROLE_ID",
 )
 # Discord ids ("snowflakes") are all digits.
 ID_SETTINGS = ("DISCORD_GUILD_ID", "DISCORD_MODERATOR_ROLE_ID", "DISCORD_MOD_QUEUE_CHANNEL_ID", *OPTIONAL)
@@ -62,6 +62,11 @@ class Config:
     site_url: str = ""
     probe_slow_seconds: float = 3.0
     digest_hour_utc: int = 8
+    # Step 8: banner and event announcements. On trial in #carat-calculator-website
+    # (user, 2026-10-21). The ping role is blank until the owner decides; when
+    # set, only "live now" moments ping it, never a reminder.
+    announce_channel_id: int | None = None
+    announce_ping_role_id: int | None = None
 
     @property
     def team_enabled(self):
@@ -137,6 +142,8 @@ def load(environ=None):
         site_url=values.get("SITE_URL") or values["API_BASE_URL"].rstrip("/").removesuffix("/api"),
         probe_slow_seconds=_number(values, "PROBE_SLOW_SECONDS", 3.0),
         digest_hour_utc=int(_number(values, "DIGEST_HOUR_UTC", 8)),
+        announce_channel_id=_optional_id(values, "DISCORD_ANNOUNCE_CHANNEL_ID"),
+        announce_ping_role_id=_optional_id(values, "DISCORD_ANNOUNCE_PING_ROLE_ID"),
     )
 
 

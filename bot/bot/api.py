@@ -119,6 +119,10 @@ class SiteApi:
         """The worker record whose message is `message_id` (a team copy's id)."""
         return await self._request("GET", f"bot/messages?message_id={message_id}")
 
+    async def upcoming(self, days=2):
+        """Banner and event moments due soon, from the Timeline's own dates."""
+        return await self._request("GET", f"bot/upcoming?days={days}")
+
     async def digest(self):
         """Yesterday's numbers for the daily digest (aggregates only)."""
         return await self._request("GET", "bot/digest")

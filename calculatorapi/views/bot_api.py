@@ -50,7 +50,7 @@ from rest_framework.decorators import api_view, permission_classes, throttle_cla
 from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle
 
-from calculatorapi import gallery_moderation, moderation_cards, team_queue
+from calculatorapi import announcements, gallery_moderation, moderation_cards, team_queue
 from calculatorapi.analytics.digest import digest
 from calculatorapi.models import (
     BlockedTerm,
@@ -339,6 +339,7 @@ def bot_blocked_term(request):
 # weekly:<yyyymmdd>       one Monday summary per week
 # digest:<yyyymmdd>       one daily digest per day
 # deploy:<uuid>           one #calc-dev-log line per DigitalOcean deployment
+# announce:<moment key>   one post per banner/event milestone (announcements.py)
 _DIGITS = r"[0-9]{5,25}"
 WORKER_KEYS = {
     "promote": _DIGITS,
@@ -346,6 +347,7 @@ WORKER_KEYS = {
     "weekly": r"[0-9]{8}",
     "digest": r"[0-9]{8}",
     "deploy": r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+    "announce": r"(banner|cm|loh|campaign|legend_races)-[0-9]{1,12}-[a-z_]{4,40}",
 }
 WORKER_KEY_PREFIXES = tuple(f"{prefix}:" for prefix in WORKER_KEYS)
 _SNOWFLAKE = re.compile(f"^{_DIGITS}$")
@@ -478,3 +480,25 @@ def bot_digest(request):  # pylint: disable=unused-argument
     nothing in it names or points at a person. Reading it also keeps today's
     analytics snapshot, as opening the admin dashboard does."""
     return Response(digest())
+
+
+# ── Announcements (announcements.py) ───────────────────────────────────────
+
+@bot_route(["GET"])
+def bot_upcoming(request):
+    """GET /bot/upcoming?days=14: every banner and event moment due from a
+    few hours ago to `days` ahead (max 60), from the Timeline's own dates.
+    Predicted dates only ever carry a "tomorrow" moment. Catalogue data
+    only: names of banners, events, umas and cards, never a person."""
+    try:
+        days = int(request.query_params.get("days", 14))
+    except ValueError:
+        return _bad("days must be a whole number.")
+    moments = announcements.upcoming(request, days)
+    for moment in moments:
+        for field in ("at", "starts_at", "ends_at"):
+            if moment.get(field) is not None:
+                moment[field] = moment[field].isoformat()
+        if "schedule" in moment:
+            moment["schedule"] = {name: at.isoformat() for name, at in moment["schedule"].items()}
+    return Response({"moments": moments})

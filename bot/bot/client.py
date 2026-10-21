@@ -19,6 +19,7 @@ from discord.ext import tasks
 
 from bot.api import SiteApi
 from bot import health
+from bot.announce import Announcer
 from bot.board import Board
 from bot.digitalocean import DigitalOcean
 from bot.moderation import Moderation
@@ -42,6 +43,7 @@ class SiteBot(discord.Client):
         self.ops = Ops(self.api, config, self._channel, self.do) if config.ops_enabled else None
         self.deploy_news = config.deploys_enabled and self.ops is not None
         self.probe_session = None
+        self.announcer = Announcer(self.api, config, self._channel) if config.announce_channel_id else None
         # Built here rather than with @tasks.loop because the hour is a setting.
         self.daily_digest = tasks.loop(
             time=datetime.time(hour=config.digest_hour_utc, tzinfo=datetime.timezone.utc)
@@ -81,6 +83,16 @@ class SiteBot(discord.Client):
             self.daily_digest.start()
         if self.deploy_news:
             self.deploy_watch.start()
+        if self.announcer is not None:
+            self.announce_watch.start()
+
+    @tasks.loop(minutes=10)
+    async def announce_watch(self):
+        """Banner and event moments that just came due (bot/announce.py)."""
+        try:
+            await self.announcer.tick(discord.utils.utcnow())
+        except discord.HTTPException:
+            logger.warning("Announcements failed", exc_info=True)
 
     @tasks.loop(seconds=60)
     async def health_probe(self):
