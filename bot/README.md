@@ -41,11 +41,13 @@ the PR's description links to "In progress". Standard library only; `--dry-run` 
 ## The board (Step 6b)
 
 `bot/board.py`: the ordered queue (stored on the site, `TeamQueueEntry`; membership follows
-the Planned / In progress tags, repaired hourly), the pinned **Up next** message in
-`#calc-ops`, `/queue show | move | top`, the Monday 09:00 UTC summary, and the status
-mirror onto the public post a team copy came from. On only while the team settings AND
-`DISCORD_OPS_CHANNEL_ID` are set. Pinning needs the bot's Pin Messages (or Manage
-Messages) in `#calc-ops`; without it Up next is posted unpinned.
+the Planned / In progress tags, repaired hourly), `/queue show | move | top` (answered
+privately), the Monday 09:00 UTC summary, and the status mirror onto the public post a team
+copy came from. On only while the team settings AND `DISCORD_OPS_CHANNEL_ID` are set.
+
+There is no pinned "Up next" any more (owner, 2026-10-21): the board's own pinned post,
+the hand-written Priority list, is the order, and a tag-sorted copy in `#calc-ops` only
+repeated it.
 
 ## Ops (Step 7)
 
