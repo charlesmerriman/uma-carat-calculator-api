@@ -455,6 +455,10 @@ REST_FRAMEWORK = {
         # workflow_dispatch runs and retries while still capping what a leaked
         # key could do -- each accepted request spends Patreon API quota.
         "patreon_sync": "12/hour",
+        # The bot worker (views/bot_api.py): every moderator click and /mod
+        # command is one call, all from the worker's one address. 600/hour is
+        # far past a busy moderation hour and still caps what a leaked key does.
+        "bot_api": "600/hour",
         # Starting a link is authenticated, so this is not abuse protection so
         # much as a cap on outbound work: every accepted call mints a signed
         # state and sends the user to a provider. 20/hour is far above any
@@ -573,6 +577,10 @@ DISCORD_CHANGELOG_START_DATE = os.getenv("DISCORD_CHANGELOG_START_DATE", "")
 # #calc-mod-queue: a card per reported gallery post or comment
 # (calculatorapi/moderation_cards.py). Private to moderators in Discord.
 DISCORD_MOD_QUEUE_CHANNEL_ID = os.getenv("DISCORD_MOD_QUEUE_CHANNEL_ID", "")
+# The bot worker's key to the bot API (views/bot_api.py), sent as X-Bot-Key.
+# Blank: every bot route 404s AND the cards carry no buttons, so a card never
+# offers a click nothing is listening for. Set it together with the worker.
+BOT_API_SECRET = os.getenv("BOT_API_SECRET", "")
 
 # Where the SPA lives. In production the ingress serves it from the same host
 # as the API; in dev it is the Vite server on :5173.

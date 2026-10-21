@@ -141,7 +141,7 @@ class GalleryReportAdmin(ModelAdmin):
     search_fields = ("note", "post__public_id", "comment__body")
     readonly_fields = (
         "reporter", "post", "comment", "reason", "note", "created_at", "resolved_at",
-        "resolved_by", "resolution",
+        "resolved_by", "resolved_by_discord", "resolution",
     )
     fields = readonly_fields
     actions = ("keep_items", "remove_items", "block_authors")
@@ -194,7 +194,10 @@ class GalleryReportAdmin(ModelAdmin):
     def status(self, obj):
         if obj.resolved_at is None:
             return "Open"
-        who = obj.resolved_by.username if obj.resolved_by else "someone"
+        if obj.resolved_by_discord:
+            who = f"{obj.resolved_by_discord} on Discord"
+        else:
+            who = obj.resolved_by.username if obj.resolved_by else "someone"
         return f"{obj.get_resolution_display()} by {who}"
 
     @admin.action(description="Keep the reported items: show again, close reports")

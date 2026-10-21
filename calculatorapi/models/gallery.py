@@ -350,6 +350,12 @@ class GalleryReport(models.Model):
         blank=True,
         related_name="+",
     )
+    # Who decided, when it was a moderator clicking a card's button in Discord:
+    # their Discord username and user id, "name (id)". A Discord moderator has
+    # no account here and never gets one (linking is not sign-in), so
+    # `resolved_by` stays empty for those decisions and this says who it was.
+    # Blank for every decision made in the admin.
+    resolved_by_discord = models.CharField(max_length=100, blank=True, default="")
     resolution = models.CharField(
         max_length=10, choices=GalleryReportResolution.choices, blank=True, default=""
     )
