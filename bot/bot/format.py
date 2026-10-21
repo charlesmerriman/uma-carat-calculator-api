@@ -52,6 +52,16 @@ ALREADY_ON_BOARD = "It's already on the team board: {link}"
 PROMOTE_IN_FLIGHT = "Someone is sending it right now. Check the team board in a moment."
 PUBLIC_UNDER_REVIEW = "Thanks for posting this. It's on the team's list now, and we'll update this post when it moves."
 
+# The board's queue, Up next and the Monday summary.
+NOT_QUEUED = "That post isn't in the queue. Tag it Planned on the team board first."
+MOVED = "Moved to number {position}. Up next is updated."
+UP_NEXT_FOOTER = "Tag a team post Planned to add it. Reorder with /queue move."
+NOTHING_NEXT = "Nothing is planned yet."
+# What the public post that a team copy came from is told when the copy moves.
+PUBLIC_PLANNED = "Good news: the team has planned this."
+PUBLIC_DONE = "This is done now. Thanks for suggesting it!"
+PUBLIC_WONT = "The team has decided not to do this one, at least for now. Thanks for suggesting it."
+
 RESOLUTIONS = {"kept": "kept", "removed": "removed", "blocked": "removed (author blocked)"}
 
 

@@ -35,6 +35,10 @@ from calculatorapi.views.bot_api import (
     bot_message,
     bot_message_claim,
     bot_moderate,
+    bot_queue,
+    bot_queue_entry,
+    bot_queue_move,
+    bot_queue_sync,
     bot_reports,
     bot_unblock,
     bot_undo,
@@ -147,6 +151,10 @@ urlpatterns = [
     path("bot/items/<str:kind>/<str:ref>/undo", bot_undo, name="bot-undo"),
     path("bot/messages", bot_message_claim, name="bot-message-claim"),
     path("bot/messages/<str:key>", bot_message, name="bot-message"),
+    path("bot/queue", bot_queue, name="bot-queue"),
+    path("bot/queue/sync", bot_queue_sync, name="bot-queue-sync"),
+    path("bot/queue/<str:thread_id>", bot_queue_entry, name="bot-queue-entry"),
+    path("bot/queue/<str:thread_id>/move", bot_queue_move, name="bot-queue-move"),
     # The admin-editable pages and FAQ, in one public read-only response. The
     # frontend build bakes it into the prerendered HTML; a loaded page fetches
     # it once more to pick up edits made since. → views/site_content.py

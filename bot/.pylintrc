@@ -4,4 +4,4 @@
   max-line-length=120
 
 [MESSAGES CONTROL]
-  disable=broad-except,missing-class-docstring,missing-module-docstring,C0116,too-few-public-methods,too-many-instance-attributes,unbalanced-tuple-unpacking
+  disable=broad-except,missing-class-docstring,missing-module-docstring,C0116,too-few-public-methods,too-many-instance-attributes,unbalanced-tuple-unpacking,R0801

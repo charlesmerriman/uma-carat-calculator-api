@@ -26,7 +26,7 @@ REQUIRED = (
 # The team board (discord-bot-plan.md, Step 6). Optional: while any of the three
 # is unset the worker registers no team commands, so a deploy that adds the code
 # before the settings changes nothing.
-OPTIONAL = ("DISCORD_TEAM_BOARD_ID", "DISCORD_TEAM_ROLE_ID", "DISCORD_WEBSITE_FEEDBACK_ID")
+OPTIONAL = ("DISCORD_TEAM_BOARD_ID", "DISCORD_TEAM_ROLE_ID", "DISCORD_WEBSITE_FEEDBACK_ID", "DISCORD_OPS_CHANNEL_ID")
 # Discord ids ("snowflakes") are all digits.
 ID_SETTINGS = ("DISCORD_GUILD_ID", "DISCORD_MODERATOR_ROLE_ID", "DISCORD_MOD_QUEUE_CHANNEL_ID", *OPTIONAL)
 
@@ -47,10 +47,17 @@ class Config:
     team_board_id: int | None = None
     team_role_id: int | None = None
     feedback_forum_id: int | None = None
+    # #calc-ops: the pinned "Up next" message and the Monday summary (Step 6b).
+    ops_channel_id: int | None = None
 
     @property
     def team_enabled(self):
         return bool(self.team_board_id and self.team_role_id and self.feedback_forum_id)
+
+    @property
+    def board_enabled(self):
+        """The queue, Up next, the Monday summary and the status mirror."""
+        return self.team_enabled and bool(self.ops_channel_id)
 
 
 def read_env_file(path):
@@ -100,6 +107,7 @@ def load(environ=None):
         team_board_id=_optional_id(values, "DISCORD_TEAM_BOARD_ID"),
         team_role_id=_optional_id(values, "DISCORD_TEAM_ROLE_ID"),
         feedback_forum_id=_optional_id(values, "DISCORD_WEBSITE_FEEDBACK_ID"),
+        ops_channel_id=_optional_id(values, "DISCORD_OPS_CHANNEL_ID"),
     )
 
 

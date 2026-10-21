@@ -38,6 +38,15 @@ only while `DISCORD_TEAM_BOARD_ID`, `DISCORD_TEAM_ROLE_ID` and
 also called from the web repo) when a PR into develop merges, to move the team-board posts
 the PR's description links to "In progress". Standard library only; `--dry-run` writes nothing.
 
+## The board (Step 6b)
+
+`bot/board.py`: the ordered queue (stored on the site, `TeamQueueEntry`; membership follows
+the Planned / In progress tags, repaired hourly), the pinned **Up next** message in
+`#calc-ops`, `/queue show | move | top`, the Monday 09:00 UTC summary, and the status
+mirror onto the public post a team copy came from. On only while the team settings AND
+`DISCORD_OPS_CHANNEL_ID` are set. Pinning needs the bot's Pin Messages (or Manage
+Messages) in `#calc-ops`; without it Up next is posted unpinned.
+
 ## Tests and lint
 
 ```bash

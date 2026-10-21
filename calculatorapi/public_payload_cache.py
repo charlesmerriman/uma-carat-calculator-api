@@ -143,6 +143,8 @@ _IRRELEVANT_MODELS = frozenset({
     "patreoncredentials",
     # Written by sync_changelog on deploy and, later, on every moderation card.
     "discordmessage",
+    # The team board's queue, read only by the bot API.
+    "teamqueueentry",
     "sitepage",
     "faqcategory",
     "faqitem",
