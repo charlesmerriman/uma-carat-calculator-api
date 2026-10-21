@@ -1071,7 +1071,8 @@ lose FK integrity and cascades; tables per gallery would write this twice.
   `author` is SET_NULL for the same reason.
 - **`GalleryReport`**: exactly one of `post` / `comment` (`gallery_report_one_target`), a
   reason, an optional note, and `resolved_at` / `resolved_by` / `resolution` (`kept` /
-  `removed`). A decision made from Discord's card buttons (the bot API) leaves
+  `removed` / `blocked`; `blocked` since migration `0101`, so an undo knows to lift the
+  block, and older blocks read `removed`). A decision made from Discord's card buttons (the bot API) leaves
   `resolved_by` empty and fills `resolved_by_discord` with the moderator's
   "discord username (id)" instead (migration `0100`): a Discord moderator has no account
   and never gets one. One per person per item. Three open reports from different accounts hide the

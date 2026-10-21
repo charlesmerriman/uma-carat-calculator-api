@@ -14,7 +14,8 @@ WHAT A CARD SHOWS, AND WHEN
   failed", so the secret goes in with the worker (discord-bot-plan.md, Step 4).
 * **Decided** (every report resolved): ONE line, "Comment reported 2 times:
   removed by Zac on 2026/10/20", or "by name (Discord)" for a click on the card.
-  No text, no names but the moderator's, no buttons. The full record stays in
+  No text, no names but the moderator's. While the buttons are on, one Undo
+  button (gallery_moderation.undo_last_decision), for a misclick. The full record stays in
   the admin; Discord keeps only the outcome (owner's call, 2026-10-20).
 * **Deleted** (the author took it down, deleted their account, or staff deleted
   it): "Post reported, then deleted." Nothing else.
@@ -86,6 +87,15 @@ def _buttons(item):
             {"type": 2, "style": style, "label": label, "custom_id": f"mod:{action}:{kind}:{ref}"}
             for action, label, style in styles
         ],
+    }]
+
+
+def _undo_button(item):
+    """A decided card's one button: undo the decision, for a misclick."""
+    kind, ref = item_ref(item)
+    return [{
+        "type": 1,
+        "components": [{"type": 2, "style": 2, "label": "Undo", "custom_id": f"mod:undo:{kind}:{ref}"}],
     }]
 
 
@@ -215,7 +225,7 @@ def refresh(item):
         components = _buttons(item) if buttons_enabled() else []
     elif reports:
         embed = _decided_card(item, reports)
-        components = []
+        components = _undo_button(item) if buttons_enabled() else []
     else:
         return
     if discord_messages.has_message(key):

@@ -84,6 +84,9 @@ class GalleryReportReason(models.TextChoices):
 class GalleryReportResolution(models.TextChoices):
     KEPT = "kept", "Kept"
     REMOVED = "removed", "Removed"
+    # Removed AND its author blocked. Its own value (since 2026-10-21) so an
+    # undo knows to lift the block too; older blocks are recorded as REMOVED.
+    BLOCKED = "blocked", "Removed, author blocked"
 
 
 class BlockedTermMatch(models.TextChoices):

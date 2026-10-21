@@ -263,6 +263,24 @@ def bot_moderate(request, kind, ref):
 
 
 @bot_route(["POST"])
+def bot_undo(request, kind, ref):
+    """POST /bot/items/<kind>/<ref>/undo {moderator}: reverse the item's last
+    decision, for a misclick (gallery_moderation.undo_last_decision): its
+    reports open again, a block it set is lifted, and the card goes back to
+    open with its buttons. 409 when there is nothing to undo."""
+    moderator = _moderator(request)
+    if moderator is None:
+        return _bad('moderator must be "discord username (discord id)".')
+    with transaction.atomic():
+        item = _item(kind, ref, lock=True)
+        if not gallery_moderation.undo_last_decision(item):
+            return Response({"detail": "Nothing to undo: it's open."}, status=status.HTTP_409_CONFLICT)
+    logger.info("Moderation decision undone from Discord by %s (%s %s)", moderator, kind, ref)
+    item.refresh_from_db()
+    return Response({"item": _item_payload(item)})
+
+
+@bot_route(["POST"])
 def bot_unblock(request, kind, ref):
     """POST /bot/items/<kind>/<ref>/unblock {moderator}: let the item's author
     post again. The item itself stays as decided. 409 when they aren't

@@ -16,6 +16,7 @@ class ParsingTests(unittest.TestCase):
     def test_our_button_ids(self):
         self.assertEqual(parse_custom_id("mod:keep:post:aB3dE5fG"), ("keep", "post", "aB3dE5fG"))
         self.assertEqual(parse_custom_id("mod:block-confirm:comment:61"), ("block-confirm", "comment", "61"))
+        self.assertEqual(parse_custom_id("mod:undo:post:aB3dE5fG"), ("undo", "post", "aB3dE5fG"))
 
     def test_anything_else_is_not_ours(self):
         for custom_id in (None, "", "mod:delete:post:x", "mod:keep:team:1", "mod:keep:post:a/b", "other:keep"):
@@ -99,6 +100,22 @@ class ClickTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(interaction.last_text(), fmt.DONE["block"])
 
 
+    async def test_undo_asks_the_site_without_a_question(self):
+        _, interaction, api = await self.click("mod:undo:post:aB3dE5fG", Answer(200, {}))
+        self.assertEqual(interaction.kinds(), ["defer", "followup"])
+        self.assertEqual(api.calls, [("undo", "post", "aB3dE5fG", MODERATOR)])
+        self.assertEqual(interaction.last_text(), fmt.UNDONE)
+
+    async def test_undo_when_already_open(self):
+        _, interaction, _ = await self.click("mod:undo:comment:61", Answer(409, {}))
+        self.assertEqual(interaction.last_text(), fmt.NOTHING_TO_UNDO)
+
+    async def test_undo_needs_the_role_too(self):
+        _, interaction, api = await self.click("mod:undo:post:aB3dE5fG", roles=())
+        self.assertEqual(interaction.last_text(), fmt.NEED_ROLE)
+        self.assertEqual(api.calls, [])
+
+
 class CommandTests(unittest.IsolatedAsyncioTestCase):
     """Commands work anywhere in the server (their replies are private), but
     still need the role."""
@@ -133,6 +150,14 @@ class CommandTests(unittest.IsolatedAsyncioTestCase):
             [button.custom_id for button in sent["view"].children],
             ["mod:keep:post:aB3dE5fG", "mod:remove:post:aB3dE5fG", "mod:block:post:aB3dE5fG"],
         )
+
+    async def test_post_offers_undo_once_decided(self):
+        item = {"kind": "post", "ref": "aB3dE5fG", "text": "Caption: hi", "status": "Hidden by a moderator",
+                "author": None, "open_reports": [], "decided": {"resolution": "removed", "by": "Zac"}}
+        interaction = FakeInteraction()
+        await Moderation(FakeApi(Answer(200, item)), CONFIG).post(interaction, "aB3dE5fG")
+        (button,) = interaction.calls[-1][2]["view"].children
+        self.assertEqual(button.custom_id, "mod:undo:post:aB3dE5fG")
 
     async def test_unblock_and_its_answers(self):
         for status, reply in ((200, fmt.UNBLOCKED), (409, fmt.NOT_BLOCKED), (404, fmt.GONE)):

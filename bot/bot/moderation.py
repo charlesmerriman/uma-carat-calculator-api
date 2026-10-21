@@ -21,6 +21,10 @@ click to us (only the application that sent a message gets its clicks), and:
 Block asks first (decision 5): the click answers privately with a "Yes,
 block" button, and only that second click calls the site.
 
+A decided card keeps one button, Undo, for a misclick: the site reopens the
+item's reports (lifting a block that decision set) and the card is open again
+with all three buttons, so the moderator can choose again.
+
 Every reply is ephemeral: only the moderator who clicked sees it, so the
 channel holds the cards and nothing else.
 """
@@ -37,7 +41,7 @@ from bot.api import SiteUnavailable
 logger = logging.getLogger(__name__)
 
 # A post's ref is its public id (8 letters and digits), a comment's its row id.
-CUSTOM_ID = re.compile(r"^mod:(keep|remove|block|block-confirm):(post|comment):([A-Za-z0-9]{1,40})$")
+CUSTOM_ID = re.compile(r"^mod:(keep|remove|block|block-confirm|undo):(post|comment):([A-Za-z0-9]{1,40})$")
 # A pasted /post/ link or a bare public id, for the commands.
 POST_REF = re.compile(r"(?:/post/)?([A-Za-z0-9]{4,40})/?$")
 
@@ -94,6 +98,15 @@ def decision_buttons(kind, ref):
     return view
 
 
+def undo_button(kind, ref):
+    """A decided item's one button, for /mod post's private copy of a card."""
+    view = discord.ui.View(timeout=PRIVATE_VIEW_SECONDS)
+    view.add_item(discord.ui.Button(
+        label="Undo", style=discord.ButtonStyle.secondary, custom_id=f"mod:undo:{kind}:{ref}",
+    ))
+    return view
+
+
 def confirm_block_button(kind, ref):
     view = discord.ui.View(timeout=PRIVATE_VIEW_SECONDS)
     view.add_item(discord.ui.Button(
@@ -146,7 +159,10 @@ class Moderation:
         else:
             await interaction.response.defer(ephemeral=True, thinking=True)
 
-        reply = await self.decide(action, kind, ref, interaction.user)
+        if action == "undo":
+            reply = await self.undo(kind, ref, interaction.user)
+        else:
+            reply = await self.decide(action, kind, ref, interaction.user)
         await interaction.followup.send(reply, ephemeral=True)
         return True
 
@@ -164,6 +180,22 @@ class Moderation:
         if answer.status == 404:
             return fmt.GONE
         logger.error("Site refused a %s on %s %s: %s %s", action, kind, ref, answer.status, answer.data)
+        return fmt.SITE_DOWN
+
+    async def undo(self, kind, ref, user):
+        """Ask the site to reverse the last decision; the reply for the moderator."""
+        try:
+            answer = await self.api.undo(kind, ref, moderator_name(user))
+        except SiteUnavailable:
+            return fmt.SITE_DOWN
+        if answer.ok:
+            logger.info("undo %s %s by %s", kind, ref, moderator_name(user))
+            return fmt.UNDONE
+        if answer.status == 409:
+            return fmt.NOTHING_TO_UNDO
+        if answer.status == 404:
+            return fmt.GONE
+        logger.error("Site refused an undo on %s %s: %s %s", kind, ref, answer.status, answer.data)
         return fmt.SITE_DOWN
 
     # ── /mod commands ──
@@ -209,6 +241,8 @@ class Moderation:
         if answer.data.get("open_reports"):
             # The same buttons as the card; a click on them runs on_click.
             kwargs["view"] = decision_buttons("post", ref)
+        elif answer.data.get("decided"):
+            kwargs["view"] = undo_button("post", ref)
         await interaction.followup.send(**kwargs)
 
     async def unblock(self, interaction, link):

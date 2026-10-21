@@ -39,8 +39,10 @@ NOT_BLOCKED = "Its author isn't blocked."
 TERM_ADDED = "Added. Captions, comments and display names with \"{term}\" are refused from now on."
 TERM_EXISTS = "That term is already blocked."
 NO_REPORTS = "Nothing is waiting. No open reports."
+UNDONE = "Undone. Its reports are open again, so pick again on the card."
+NOTHING_TO_UNDO = "Nothing to undo: it's already open."
 
-RESOLUTIONS = {"kept": "kept", "removed": "removed"}
+RESOLUTIONS = {"kept": "kept", "removed": "removed", "blocked": "removed (author blocked)"}
 
 
 def escape(text):

@@ -209,11 +209,25 @@ class ModerationCardTests(GalleryFixture):  # pylint: disable=too-many-public-me
         self.assertEqual(row["components"][0]["custom_id"], f"mod:keep:comment:{comment.pk}")
 
     @override_settings(BOT_API_SECRET="bot-key")
-    def test_a_decision_or_deletion_takes_the_buttons_off(self):
+    def test_a_decision_leaves_only_undo_and_a_deletion_nothing(self):
         self.act(self.report)
-        self.assertEqual(self.components(self.act(gallery_moderation.keep, self.post_row, self.moderator)), [])
+        (row,) = self.components(self.act(gallery_moderation.keep, self.post_row, self.moderator))
+        self.assertEqual(
+            [(button["label"], button["custom_id"]) for button in row["components"]],
+            [("Undo", f"mod:undo:post:{self.post_row.public_id}")],
+        )
         self.act(self.report)
         self.assertEqual(self.components(self.act(gallery.take_down, self.post_row)), [])
+
+    @override_settings(BOT_API_SECRET="bot-key")
+    def test_an_undo_opens_the_card_again(self):
+        self.act(self.report, self.person(display_name="MooncakeMile"))
+        self.act(gallery_moderation.remove, self.post_row, self.moderator)
+        call = self.act(gallery_moderation.undo_last_decision, self.post_row)
+        _, card = self.sent(call)
+        self.assertEqual(card["title"], "Post reported")
+        self.assertIn("MooncakeMile", json.dumps(card))
+        self.assertEqual(len(self.components(call)[0]["components"]), 3)
 
     def test_a_discord_decision_names_the_discord_moderator(self):
         self.act(self.report)

@@ -35,6 +35,7 @@ from calculatorapi.views.bot_api import (
     bot_moderate,
     bot_reports,
     bot_unblock,
+    bot_undo,
 )
 from calculatorapi.views.patreon_supporters import patreon_sync
 from calculatorapi.views.site_content import site_content
@@ -141,6 +142,7 @@ urlpatterns = [
     path("bot/items/<str:kind>/<str:ref>", bot_item, name="bot-item"),
     path("bot/items/<str:kind>/<str:ref>/moderate", bot_moderate, name="bot-moderate"),
     path("bot/items/<str:kind>/<str:ref>/unblock", bot_unblock, name="bot-unblock"),
+    path("bot/items/<str:kind>/<str:ref>/undo", bot_undo, name="bot-undo"),
     # The admin-editable pages and FAQ, in one public read-only response. The
     # frontend build bakes it into the prerendered HTML; a loaded page fetches
     # it once more to pick up edits made since. → views/site_content.py

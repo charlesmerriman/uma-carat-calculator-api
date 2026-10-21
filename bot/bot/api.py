@@ -98,6 +98,9 @@ class SiteApi:
             "POST", f"bot/items/{kind}/{ref}/moderate", {"action": action, "moderator": moderator}
         )
 
+    async def undo(self, kind, ref, moderator):
+        return await self._request("POST", f"bot/items/{kind}/{ref}/undo", {"moderator": moderator})
+
     async def unblock(self, kind, ref, moderator):
         return await self._request("POST", f"bot/items/{kind}/{ref}/unblock", {"moderator": moderator})
 

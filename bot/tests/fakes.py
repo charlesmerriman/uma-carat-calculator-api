@@ -90,6 +90,9 @@ class FakeApi:
     async def moderate(self, kind, ref, action, moderator):
         return self._next("moderate", kind, ref, action, moderator)
 
+    async def undo(self, kind, ref, moderator):
+        return self._next("undo", kind, ref, moderator)
+
     async def unblock(self, kind, ref, moderator):
         return self._next("unblock", kind, ref, moderator)
 
