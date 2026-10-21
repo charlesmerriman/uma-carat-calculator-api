@@ -97,7 +97,7 @@ from unfold.widgets import (
     UnfoldAdminSelectWidget,
 )
 
-from . import public_payload_cache, pvp_sheet, pvp_track_skills
+from . import public_payload_cache, pvp_guide_editing, pvp_guide_revisions, pvp_sheet, pvp_track_skills
 from .models import (
     ChampionsMeeting,
     LeagueOfHeroes,
@@ -110,6 +110,7 @@ from .models import (
     PvpTeamComp,
     PvpUmaRecommendation,
     Skill,
+    PvpGuideRevisionSource,
 )
 from .models.pvp_guide import HIGHLIGHT_HELP, MARKDOWN_HELP, PvpSkillCategory, PvpStyle
 from .models.skill import skill_families
@@ -1030,6 +1031,22 @@ class PvpGuideAdmin(ModelAdmin):
             response["Location"] += f"#{tab}"
         return response
 
+    def save_related(self, request, form, formsets, change):
+        """Every admin save (the page, and the list's Published checkbox,
+        which Django routes here too with no formsets) records a revision,
+        so the site's editor and this page share one history
+        (pvp_guide_revisions.py). A flip of Published is recorded as such."""
+        super().save_related(request, form, formsets, change)
+        guide = form.instance
+        if "is_published" in form.changed_data:
+            source = (
+                PvpGuideRevisionSource.PUBLISH if guide.is_published
+                else PvpGuideRevisionSource.UNPUBLISH
+            )
+        else:
+            source = PvpGuideRevisionSource.ADMIN
+        pvp_guide_revisions.record(guide, request.user, source)
+
     def response_add(self, request, obj, post_url_continue=None):
         return self._keep_tab(request, super().response_add(request, obj, post_url_continue))
 
@@ -1040,16 +1057,18 @@ class PvpGuideAdmin(ModelAdmin):
 
     @admin.action(description="Publish selected guides")
     def publish_selected(self, request, queryset):
-        count = queryset.update(is_published=True)
-        # update() raises no signals; the Timeline's "PvP guide" link reads a
-        # cached has_guide, so the cache is dropped by hand.
-        public_payload_cache.invalidate()
+        count = 0
+        for guide in queryset:
+            pvp_guide_editing.publish(guide, request.user, True)
+            count += 1
         self.message_user(request, f"Published {count} guide(s).", messages.SUCCESS)
 
     @admin.action(description="Unpublish selected guides (back to draft)")
     def unpublish_selected(self, request, queryset):
-        count = queryset.update(is_published=False)
-        public_payload_cache.invalidate()
+        count = 0
+        for guide in queryset:
+            pvp_guide_editing.publish(guide, request.user, False)
+            count += 1
         self.message_user(request, f"Unpublished {count} guide(s).", messages.SUCCESS)
 
     # ── Detail actions (the buttons at the top of the page) ──
@@ -1084,6 +1103,7 @@ class PvpGuideAdmin(ModelAdmin):
         target = get_object_or_404(PvpGuide, pk=object_id)
         source = get_object_or_404(PvpGuide, pk=form.cleaned_data["source"])
         copied = copy_guide(source, target, form.cleaned_data["sections"])
+        pvp_guide_revisions.record(target, request.user, PvpGuideRevisionSource.COPY)
         public_payload_cache.invalidate()
         total = sum(copied.values())
         self.message_user(
@@ -1122,6 +1142,7 @@ class PvpGuideAdmin(ModelAdmin):
                     form.add_error(None, str(exc))
                 else:
                     if not was_preview:
+                        pvp_guide_revisions.record(guide, request.user, PvpGuideRevisionSource.SHEET)
                         public_payload_cache.invalidate()
                         self.message_user(
                             request,
@@ -1164,6 +1185,7 @@ class PvpGuideAdmin(ModelAdmin):
         if request.method == "POST":
             added = pvp_track_skills.fill(guide)
             if added:
+                pvp_guide_revisions.record(guide, request.user, PvpGuideRevisionSource.TRACK_GREENS)
                 # bulk_create raises no signals.
                 public_payload_cache.invalidate()
                 self.message_user(

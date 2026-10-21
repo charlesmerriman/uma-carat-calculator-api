@@ -393,7 +393,8 @@ attribute, and [api-reference.md](api-reference.md) for the route.
 A plain boolean (`0093`, 2026-10-15), ticked in the admin and nowhere else:
 `PATCH /account`'s serializer field list is the whitelist and does not carry it.
 It is the **third way into `benefits.early_access_for`**, beside a live pledge
-and `is_staff`, and it opens ONLY that: not the oshi ladder, not the gallery
+and `is_staff` (a guide editor, `pvp_guide_editing.can_edit`, became the fourth on
+2026-10-21, so an editor can always open the PvP page), and it opens ONLY that: not the oshi ladder, not the gallery
 look, not the vote weight, not `ad_free`. It exists so a tester or a friend can
 try features still in early access without being made staff, which used to be
 the habit: staff can sign in to the admin, bypass every supporter ladder, and
@@ -999,7 +1000,40 @@ erDiagram
   wraps whole skill names found in the sheet's prose as `[[...]]` (one-word names only in
   their exact capitals, minus a stoplist of ordinary words like "Runaway" and
   "Acceleration") and turns each "Rec. Accel" line into ordered acceleration picks.
-  `--dry-run`, `--replace`, `--from-dir`. In production, editors write guides in the admin.
+  `--dry-run`, `--replace`, `--from-dir`. In production, editors write guides in the admin
+  or in the site's editor (below).
+
+### The site's guide editor: one document, revisions, a version (2026-10-21)
+
+The PvP page's editor (`views/pvp_guide_editor.py`, `api-reference.md` "PvP guide editor")
+reads and writes a guide as **one document**, `pvp_guide_document.py`: the nine tables'
+content with catalogue ids, validated as a whole (one query per catalogue table, every
+`[[mention]]` in one query, uniqueness in sets, `errors()` naming a `path` per problem) and
+written as a whole in one transaction (`write()`: leaf rows replaced, a deck kept by id,
+`order` from the array position). The tables stay the truth; the admin page edits the same
+rows. Two things ride on it:
+
+- **`PvpGuide.version`** (`0103`), bumped by every write through
+  `pvp_guide_revisions.record`. The editor sends the version its document started from and a
+  save over a newer one is a `409` with the current document, so two editors never silently
+  overwrite each other. The guide row is written with `update()`, never `save()`: `PvpGuide`
+  is not in `public_payload_cache._IRRELEVANT_MODELS` (its `is_published` feeds `has_guide`),
+  and a `save()` on every autosave would drop the whole payload, the 2026-09-23 shape.
+  Publishing (`pvp_guide_editing.publish`) invalidates by hand.
+- **`PvpGuideRevision`** (`models/pvp_guide_revision.py`): one row per save, `document`
+  (the same JSON), `author` (SET_NULL; the handle is all the editor shows), `source`
+  (`site`, `admin`, `sheet`, `copy`, `track_greens`, `restore`, `publish`, `unpublish`),
+  `counts`, `saved_at`; unique `(guide, number)`. Written by EVERY path that writes a guide
+  (the site, `PvpGuideAdmin.save_related`, the actions, publish), so both editors share one
+  history. Site saves by one author within ten minutes **coalesce** into one row; the last
+  40 per guide are kept plus every `publish` row (`pvp_guide_revisions.KEEP`). PRIVATE
+  (`content_snapshot.PRIVATE_MODELS`) and in `_IRRELEVANT_MODELS`. A restore is a `PUT` of an
+  old revision's document.
+
+**Who may edit** is `pvp_guide_editing.can_edit`: an active account that `is_staff`, or that
+holds `calculatorapi.change_pvpguide` (superusers, the "Content editors" group). `GET
+/account` sends it as `guide_editor`. Never a column of its own, and never `is_staff` for a
+non-staff editor (`auth-and-privacy.md`, "A content write route on the token").
 
 ### `PvpTeam`: a player's own team for one event
 

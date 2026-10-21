@@ -48,6 +48,17 @@ from calculatorapi.views.bot_api import (
 from calculatorapi.views.patreon_supporters import patreon_sync
 from calculatorapi.views.site_content import site_content
 from calculatorapi.views.pvp_guide import pvp_guide_detail
+from calculatorapi.views.pvp_guide_editor import (
+    pvp_guide_copy_from,
+    pvp_guide_create,
+    pvp_guide_document_view,
+    pvp_guide_editable,
+    pvp_guide_editor_detail,
+    pvp_guide_load_sheet,
+    pvp_guide_revision_detail,
+    pvp_guide_revision_list,
+    pvp_guide_track_greens,
+)
 from calculatorapi.views.pvp_catalogue import pvp_catalogue
 from calculatorapi.views.pvp_team import pvp_team_detail, pvp_team_list
 from calculatorapi.views.gallery import (
@@ -167,6 +178,24 @@ urlpatterns = [
     # unknown kind gets the same JSON 404 as an unknown event. Drafts 404 for
     # everyone but staff. → views/pvp_guide.py
     path("pvp-guides/<str:kind>/<int:event_id>", pvp_guide_detail, name="pvp-guide"),
+    # The site's guide editor: a guide as one document, by guide id. Editors
+    # only (pvp_guide_editing.can_edit); every write leaves a revision.
+    # → views/pvp_guide_editor.py
+    path("pvp-guides", pvp_guide_create, name="pvp-guide-create"),
+    path("pvp-guides/editable", pvp_guide_editable, name="pvp-guide-editable"),
+    path("pvp-guides/<int:guide_id>", pvp_guide_editor_detail, name="pvp-guide-editor-detail"),
+    path("pvp-guides/<int:guide_id>/document", pvp_guide_document_view, name="pvp-guide-document"),
+    path("pvp-guides/<int:guide_id>/revisions", pvp_guide_revision_list, name="pvp-guide-revisions"),
+    path(
+        "pvp-guides/<int:guide_id>/revisions/<int:number>",
+        pvp_guide_revision_detail, name="pvp-guide-revision",
+    ),
+    path("pvp-guides/<int:guide_id>/actions/copy-from", pvp_guide_copy_from, name="pvp-guide-copy-from"),
+    path("pvp-guides/<int:guide_id>/actions/sheet", pvp_guide_load_sheet, name="pvp-guide-load-sheet"),
+    path(
+        "pvp-guides/<int:guide_id>/actions/track-greens",
+        pvp_guide_track_greens, name="pvp-guide-track-greens",
+    ),
     # The team builder's catalogue: umas, cards and skills with aptitudes and
     # skill links. Public, cached, fetched lazily. → views/pvp_catalogue.py
     path("pvp-catalogue", pvp_catalogue, name="pvp-catalogue"),

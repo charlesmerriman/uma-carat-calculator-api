@@ -102,6 +102,7 @@ meaning anything instead of rendering a signed-in shell around nothing.
   "oshi_uma_ids": [42, 57],
   "oshi_variants": true,
   "early_access": true,
+  "guide_editor": false,
   "linked_providers": [
     { "provider": "google", "linked_at": "2026-07-02" },
     { "provider": "patreon", "linked_at": "2026-09-08" }
@@ -145,7 +146,13 @@ meaning anything instead of rendering a signed-in shell around nothing.
   WHO; the client knows WHICH features are
   still early access (the PvP page from 2026-10-14, `PVP_EARLY_ACCESS` in
   `frontend/src/hooks/usePvpAccess.ts`). A client gate only: the PvP API itself
-  stays open.
+  stays open. Since 2026-10-21 a guide editor (below) is a fourth way in, so an
+  editor can always open the PvP page.
+- **`guide_editor`** is whether the PvP page offers this account the guide
+  editor: `true` for staff and for an account holding the `change_pvpguide`
+  permission (the "Content editors" group), through `pvp_guide_editing.can_edit`.
+  The client draws the Edit tab on it; every write under "PvP guide editor" is
+  checked again server side.
 - **`avatar_url`** (top level) is the picture to show in the navbar: the first
   oshi's `image` **while `oshi_slots >= 1`** (skipping any whose picture was
   cleared), else **`null`** — null rather than `""`, so a client draws its
@@ -708,8 +715,9 @@ throttle. `kind` is `cm` or `loh`; `event_id` is the event's database id, the `i
 
 **`404`** `{"error": "Guide not found"}` for an unknown kind, an unknown event, an event
 with no guide, **and an unpublished guide** — the same body for all four, so the response
-never reveals that a draft exists. **Staff** (`is_staff`, by token) get a draft with
-`is_published: false`, so an editor can preview it on the site.
+never reveals that a draft exists. **An editor** (staff, or the `change_pvpguide`
+permission: `pvp_guide_editing.can_edit`, by token) gets a draft with
+`is_published: false`, so they can preview it on the site.
 
 Every section is optional and may be an empty array. Rows come sorted: by style in the
 order everyone, runaway, front, pace, late, end; then stat rows and decks by the editor's
@@ -770,25 +778,84 @@ A deck slot's `order` 0 is the card and 1+ are alternatives for the same slot; a
 always has a card, a note, or both. Whether an event HAS a published guide is `has_guide`
 on the event itself (below), so the client never probes this route to find out.
 
+### PvP guide editor
+
+The site's guide editor (`views/pvp_guide_editor.py`, 2026-10-21): a guide read and
+written as **one document**, the tables' content with catalogue ids where the public
+route embeds objects. All `IsAuthenticated`, then `pvp_guide_editing.can_edit` (staff, or
+the `change_pvpguide` permission); a guide the caller may not edit answers the public
+route's `404 {"error": "Guide not found"}`, and the list and create routes answer
+`403 {"error": "Only guide editors can do that."}` to a signed-in non-editor. Every write
+leaves a `PvpGuideRevision` with its author (`pvp_guide_revisions.record`). Throttles:
+`guide_editor` (1200/hour) on the document PUT, `guide_editor_action` (60/hour) on create
+and the actions.
+
+| Route | Body | Answer |
+|---|---|---|
+| `GET /pvp-guides/editable` | | `{guides: [{id, kind, event, name, is_published, version, updated_at, filled: [styles]}], events: [{kind, event, name}]}`: every guide, newest edit first, and the events with no guide yet |
+| `POST /pvp-guides` | `{kind, event, scenario?, copy_from?}` | `201` the document of a new draft; with `copy_from` every section of that guide is copied in. `400` for an event with a guide, an unknown event or source |
+| `GET /pvp-guides/<id>/document` | | the document |
+| `PUT /pvp-guides/<id>/document` | `{version, ...document}` | `{document, guide}`: the saved document and the public route's shape, so the client primes the page's cache. `400 {error, errors: [{path, message}]}`; `409 {error, current}` when `version` is behind the guide's (someone else saved) |
+| `PATCH /pvp-guides/<id>` | `{is_published}` | the document; drops the public payload (`has_guide`) |
+| `DELETE /pvp-guides/<id>` | | `204`; `400` for a published guide (unpublish first) |
+| `GET /pvp-guides/<id>/revisions` | | `[{number, saved_at, by, is_you, source, counts}]`, newest first; `by` is the author's handle (never a display name) or `null` |
+| `GET /pvp-guides/<id>/revisions/<n>` | | `{number, source, saved_at, document}` |
+| `POST /pvp-guides/<id>/actions/copy-from` | `{source, sections?, preview?}` | `{counts}` on a preview (nothing written); `{counts, document, guide}` applied |
+| `POST /pvp-guides/<id>/actions/sheet` | `{preview?}` | `{summary}` (the loader's report) on a preview; `{summary, document, guide}` applied; `400` when the sheet has no block for the event |
+| `POST /pvp-guides/<id>/actions/track-greens` | `{preview?}` | `{add, already, problems}` on a preview, each skill `{id, name, version, image}`; `{added, document, guide}` applied |
+
+`preview` defaults to `true` on every action. The actions apply to the SAVED guide: the
+client flushes its autosave first and replaces its copy with the answer.
+
+**The document** (`pvp_guide_document.py`), both ways:
+
+```json
+{ "id": 7, "version": 12, "event_type": "champions_meeting", "event": 20,
+  "is_published": false, "updated_at": "…", "scenario": 3,
+  "style_ranking": "Front >> End", "short_description": "markdown", "meta_analysis": "markdown",
+  "admin_comments": "never public",
+  "stat_configs": [{"style": "everyone", "label": "", "speed": "1100+", "stamina": "578*",
+                    "power": "", "guts": "", "wit": "", "footnote": ""}],
+  "team_comps": [{"text": "2 Front + 1 Pace", "note": ""}],
+  "uma_recommendations": [{"style": "front", "uma": 41, "stars": 5, "role": "RA", "note": ""}],
+  "skill_recommendations": [{"style": "front", "category": "acceleration", "tier": 0, "skill": 88, "note": ""}],
+  "style_notes": [{"style": "front", "body": "markdown"}],
+  "decks": [{"id": 90, "style": "front", "label": "Standard", "note": "",
+             "slots": [{"slot": 1, "order": 0, "is_borrow": false, "support_card": 302, "note": "2SP"},
+                       {"slot": 1, "order": 1, "is_borrow": false, "support_card": null, "note": "or any speed"}]}] }
+```
+
+On a `PUT`, `id`, `event_type`, `event`, `is_published` and `updated_at` are ignored;
+every section key is required (a missing one is a `400`, never a wiped section); **order is
+the array position** (the client never sends `order`, except a slot's, which says card or
+alternative); leaf rows are replaced and a deck keeps its `id` when the body names one of
+this guide's. The checks and their messages are `pvp_guide_document.errors`: a catalogue id
+that is not there, an uma twice in a style, a skill twice in a style and category, two advice
+boxes for a style, a slot with neither card nor note, two rows in one slot, two borrowed
+slots, a `[[mention]]` of a skill not on global (with "did you mean"), and the column
+lengths. A `path` reads like `decks[2].slots[5].note` or `uma_recommendations[3].uma`; a
+refusal with no field has `""`.
+
 ### `GET /pvp-catalogue`
 
 The team builder's catalogue (`views/pvp_catalogue.py`). Public, the same for everyone, and
-**cached** in `pvp_catalogue_cache.py` (key `pvp_catalogue:v1`, TTL 300, dropped by any
+**cached** in `pvp_catalogue_cache.py` (key `pvp_catalogue:v3`, TTL 300, dropped by any
 save or delete of an Uma, SupportCard, Skill, UmaSkill or SupportCardSkill; the same
 one-process caveat as `/calculator-data`). About 540 KB raw, 50 KB gzipped; the client
 fetches it once, when a picker first opens.
 
 ```json
-{ "umas": [{"id": 41, "name": "Maruzensky", "image": "url", "portrait": "url",
+{ "umas": [{"id": 41, "name": "Maruzensky", "game_id": 100101, "image": "url", "portrait": "url",
             "rarity": 3, "running_style": 1, "character_id": 1004, "is_variant": false, "on_global": true,
             "apt": {"turf": 8, "dirt": 1, "short": 6, "mile": 8, "medium": 7, "long": 4,
                     "front": 8, "pace": 5, "late": 2, "end": 1},
             "skills": [{"skill": 210, "source": "unique", "level": 1}]}],
-  "support_cards": [{"id": 302, "name": "Kitasan Black", "image": "url", "card_type": "speed",
+  "support_cards": [{"id": 302, "name": "Kitasan Black", "game_id": 30086, "image": "url", "card_type": "speed",
                      "rarity": 3, "title": "[Fire at My Heels]", "group_members": [], "on_global": true,
                      "skills": [{"skill": 88, "source": "hint"}]}],
   "skills": [{"id": 88, "name": "Groundwork", "description": "string", "image": "url | null",
-              "rarity": 1, "tier": 1, "group_id": 2001, "cost": 120}] }
+              "rarity": 1, "tier": 1, "group_id": 2001, "cost": 120,
+              "game_id": 200061, "version": "○ white"}] }
 ```
 
 `umas` is `Uma.pickable()` (with a picture, no `(All)`); `support_cards` is every card
@@ -799,7 +866,9 @@ per source, `models/uma_skill.py`); a card's is `hint` / `event`. `on_global`: t
 global game today, i.e. it has any skill link (the import writes links only for cards in the global
 snapshot). The builder uses it for cards on no banner, which have no release date.
 `group_members` names the umas a group card stands for (`[]` on any other card); the
-builder's deck rules count it as a card of each of them.
+builder's deck rules count it as a card of each of them. `game_id` (all three) and a
+skill's `version` label (`○ white`, `◎ white`, `◎ gold`, `evolved`: `Skill.version_label`)
+are for the guide editor's pickers and its paste-from-the-sheet matching (2026-10-21).
 
 ### `/pvp-teams`
 

@@ -86,6 +86,8 @@ PRIVATE_MODELS = (
     "PvpTeam",
     "PvpTeamMember",
     "PvpTeamCard",
+    # A guide's saves name who saved them. The guide itself is content.
+    "PvpGuideRevision",
     # The gallery: posts, votes, comments and reports are people's own
     # activity. Blocked terms are moderation config, not content: a local
     # database starts with an empty list rather than a copy of prod's.

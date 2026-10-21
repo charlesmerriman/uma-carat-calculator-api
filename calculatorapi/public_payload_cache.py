@@ -159,6 +159,8 @@ _IRRELEVANT_MODELS = frozenset({
     "pvpdeck",
     "pvpdeckslot",
     "pvpteamcomp",
+    # A revision is written on every autosave of the site's guide editor.
+    "pvpguiderevision",
     # Analytics counters. These are written on EVERY visit -- leaving them out
     # of the denylist would invalidate the cache continuously and make the whole
     # thing a no-op.
