@@ -17,9 +17,12 @@ board on start and every hour (`reconcile`), keeping every post's place.
 
 UP NEXT
 -------
-One bot message, pinned in #calc-ops (the board's own pin is "How this board
-works"): Now (In progress), Next (the numbered queue), then the backlog by
-priority. Edited in place on every change. Its id is recorded on the site
+One bot message, pinned in #calc-ops: Now (In progress), Next (the numbered
+queue), then ONE line counting the rest and linking the board's own pinned
+post, the Priority list, which holds the considered order of everything (it is
+written by hand, not by this worker). The backlog used to be listed here too,
+sorted by priority tag alone: long, hard to skim, and at odds with the
+Priority list. Edited in place on every change. Its id is recorded on the site
 under `upnext:<channel>`, so a restart edits the same message, and a deleted
 one is simply posted again.
 
@@ -48,7 +51,6 @@ logger = logging.getLogger(__name__)
 
 QUEUED = ("Planned", "In progress")
 FINISHED = ("Done", "Won't do")
-PRIORITY_EMOJI = {"High": "🟠", "Normal": "🟡", "Low": "⚪"}
 PUBLIC_STATUS = {"Planned": "Planned", "In progress": "Planned", "Done": "Done", "Won't do": "Won't do"}
 PUBLIC_REPLY = {"Planned": fmt.PUBLIC_PLANNED, "Done": fmt.PUBLIC_DONE, "Won't do": fmt.PUBLIC_WONT}
 DESCRIPTION_LIMIT = 4096
@@ -103,33 +105,44 @@ def fit(lines, limit=DESCRIPTION_LIMIT):
     return text[:limit]
 
 
+def pinned_post(threads):
+    """The board's pinned post (the Priority list), or None. A forum pins at
+    most one post; a thread without flags (an old cache entry) counts as not
+    pinned."""
+    return next((t for t in threads if getattr(getattr(t, "flags", None), "pinned", False)), None)
+
+
+def backlog_line(threads):
+    """One line for everything not yet queued: a count per priority, and a link
+    to the Priority list for the actual order. e.g.
+    "Backlog: 27 posts (2 high, 14 normal, 11 low). Full order: [📌 Priority list](...)" """
+    backlog = [thread for thread in threads if status_of(thread) is None and is_task(thread)]
+    counts = {priority: 0 for priority in PRIORITY_TAGS}
+    for thread in backlog:
+        if priority_of(thread):
+            counts[priority_of(thread)] += 1
+    split = ", ".join(f"{count} {priority.lower()}" for priority, count in counts.items() if count)
+    text = f"Backlog: {len(backlog)} posts" + (f" ({split})" if split else "") + "."
+    pinned = pinned_post(threads)
+    if pinned:
+        text += f" Full order: {link(pinned)}"
+    return f"*{text}*"
+
+
 def render_up_next(threads, queue_ids):
-    """The Up next embed: Now, Next (numbered by the site's queue), Backlog."""
+    """The Up next embed: Now, Next (numbered by the site's queue), and one
+    backlog line. Lines carry the post title only: a priority emoji on each
+    one was noise next to an order that already says what comes first."""
     by_id = {thread.id: thread for thread in threads}
     queued = [by_id[int(tid)] for tid in queue_ids if int(tid) in by_id]
 
-    def line(thread):
-        emoji = PRIORITY_EMOJI.get(priority_of(thread), "")
-        return f"{link(thread)} {emoji}".rstrip()
-
     now = [thread for thread in queued if status_of(thread) == "In progress"]
     upcoming = [thread for thread in queued if status_of(thread) == "Planned"]
-    backlog = sorted(
-        (thread for thread in threads if status_of(thread) is None and is_task(thread)),
-        key=lambda t: (PRIORITY_TAGS.index(priority_of(t)) if priority_of(t) else len(PRIORITY_TAGS), t.id),
-    )
-    lines = ["**Now**"]
-    lines += [f"🔨 {line(thread)}" for thread in now] or ["Nothing in progress."]
-    lines += ["", "**Next**"]
-    lines += [f"{number}. {line(thread)}" for number, thread in enumerate(upcoming, start=1)] or [fmt.NOTHING_NEXT]
-    lines += ["", f"**Backlog** ({len(backlog)})"]
-    last_priority = object()
-    for thread in backlog:
-        priority = priority_of(thread)
-        if priority != last_priority:
-            lines.append(f"{PRIORITY_EMOJI.get(priority, '')} {priority or 'No priority'}".strip())
-            last_priority = priority
-        lines.append(f"- {link(thread)}")
+    lines = ["🔨 **Now**"]
+    lines += [f"- {link(thread)}" for thread in now] or ["Nothing in progress."]
+    lines += ["", "⏭️ **Next**"]
+    lines += [f"{number}. {link(thread)}" for number, thread in enumerate(upcoming, start=1)] or [fmt.NOTHING_NEXT]
+    lines += ["", backlog_line(threads)]
     embed = discord.Embed(title="Up next", description=fit(lines), colour=0xE6D28A)
     embed.set_footer(text=fmt.UP_NEXT_FOOTER)
     embed.timestamp = discord.utils.utcnow()

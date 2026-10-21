@@ -149,10 +149,11 @@ def tag(name):
 class FakeThread:
     """A forum post: its tags, and what was done to it."""
 
-    def __init__(self, thread_id, parent_id, tags=(), name="A post"):
+    def __init__(self, thread_id, parent_id, tags=(), name="A post", *, pinned=False):
         self.id = thread_id
         self.parent_id = parent_id
         self.name = name
+        self.flags = SimpleNamespace(pinned=pinned)
         self.applied_tags = [tag(name) for name in tags]
         self.jump_url = f"https://discord.com/channels/{GUILD}/{thread_id}"
         self.starter_message = None

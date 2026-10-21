@@ -25,8 +25,8 @@ def snowflake(when):
     return discord.utils.time_snowflake(when)
 
 
-def post(thread_id, tags, name=None):
-    return FakeThread(thread_id, TEAM_BOARD, tags, name=name or f"Post {thread_id}")
+def post(thread_id, tags, name=None, pinned=False):
+    return FakeThread(thread_id, TEAM_BOARD, tags, name=name or f"Post {thread_id}", pinned=pinned)
 
 
 class FakeMessage:
@@ -94,13 +94,15 @@ class RenderTests(unittest.TestCase):
             post(14, ("Chore", "Normal"), "Lazy gallery"),
             post(15, ("General",), "How this board works"),
             post(16, ("Bug", "Done"), "Old bug"),
+            post(17, ("General",), "Priority list", pinned=True),
         ]
         text = render_up_next(threads, ["12", "11", "10"]).description
-        self.assertIn("**Now**\n🔨 [Fix the logo]", text)
+        self.assertIn("🔨 **Now**\n- [Fix the logo]", text)
         self.assertIn("1. [Frames (beta)]", text)
         self.assertIn("2. [Local times]", text)
-        self.assertIn("**Backlog** (2)\n🟠 High\n- [Odds tooltips]", text)
-        self.assertIn("🟡 Normal\n- [Lazy gallery]", text)
+        # The backlog is one line: counts, then the pinned list for the order.
+        self.assertIn("*Backlog: 2 posts (1 high, 1 normal). Full order: [Priority list](", text)
+        self.assertNotIn("Odds tooltips", text)
         self.assertNotIn("How this board works", text)
         self.assertNotIn("Old bug", text)
 
@@ -108,6 +110,8 @@ class RenderTests(unittest.TestCase):
         text = render_up_next([], []).description
         self.assertIn("Nothing in progress.", text)
         self.assertIn(fmt.NOTHING_NEXT, text)
+        # No pinned post, no link; no priorities, no brackets.
+        self.assertIn("*Backlog: 0 posts.*", text)
 
     def test_queue_order_is_oldest_first_and_only_committed_posts(self):
         threads = [post(30, ("Bug", "Planned")), post(20, ("Bug", "In progress")), post(25, ("Bug",))]
