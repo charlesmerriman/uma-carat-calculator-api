@@ -343,3 +343,43 @@ static_sites:
   name: calculatorcapstoneclient
   output_dir: dist
   source_dir: /
+# The Discord bot worker (bot/, discord-bot-plan.md Step 4): the always-on process
+# that answers moderators' clicks on report cards and the /mod commands. No URL and
+# no ingress; it only calls out, to Discord and to the API's /bot/* routes. Added
+# 2026-10-21 through the live spec, like every change here.
+workers:
+- name: discord-bot
+  environment_slug: python
+  source_dir: /bot
+  github:
+    branch: master
+    deploy_on_push: true
+    repo: charlesmerriman/uma-carat-calculator-api
+  build_command: pip install -r requirements.txt
+  run_command: python -m bot
+  instance_count: 1
+  instance_size_slug: apps-s-1vcpu-0.5gb
+  envs:
+  # The real bot's token (the same application Django posts cards with).
+  - key: DISCORD_BOT_TOKEN
+    scope: RUN_TIME
+    type: SECRET
+    value: ""
+  # Must equal the API component's BOT_API_SECRET.
+  - key: BOT_API_SECRET
+    scope: RUN_TIME
+    type: SECRET
+    value: ""
+  - key: API_BASE_URL
+    scope: RUN_TIME
+    value: https://umacaratcalculator.com/api
+  # Henry Handsome Derby, its @Moderator role and #calc-mod-queue.
+  - key: DISCORD_GUILD_ID
+    scope: RUN_TIME
+    value: "1410431883912941619"
+  - key: DISCORD_MODERATOR_ROLE_ID
+    scope: RUN_TIME
+    value: "1413131483102707853"
+  - key: DISCORD_MOD_QUEUE_CHANNEL_ID
+    scope: RUN_TIME
+    value: "1562201700507586681"
