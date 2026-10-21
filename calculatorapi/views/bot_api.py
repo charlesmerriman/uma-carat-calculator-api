@@ -51,6 +51,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle
 
 from calculatorapi import gallery_moderation, moderation_cards, team_queue
+from calculatorapi.analytics.digest import digest
 from calculatorapi.models import (
     BlockedTerm,
     BlockedTermMatch,
@@ -332,16 +333,28 @@ def bot_blocked_term(request):
 # changelog's or the cards' rows. Claim before posting, record the message
 # after, release the claim if the post failed.
 
+# Each prefix the worker may write, and the shape of what follows it:
 # promote:<public post>  "Send to team board" (the team copy's id is the message)
 # upnext:<channel>        the pinned "Up next" message in #calc-ops
 # weekly:<yyyymmdd>       one Monday summary per week
-WORKER_KEY_PREFIXES = ("promote:", "upnext:", "weekly:")
-_WORKER_KEY = re.compile(r"^[a-z-]+:[0-9]{5,25}$")
-_SNOWFLAKE = re.compile(r"^[0-9]{5,25}$")
+# digest:<yyyymmdd>       one daily digest per day
+# deploy:<uuid>           one #calc-dev-log line per DigitalOcean deployment
+_DIGITS = r"[0-9]{5,25}"
+WORKER_KEYS = {
+    "promote": _DIGITS,
+    "upnext": _DIGITS,
+    "weekly": r"[0-9]{8}",
+    "digest": r"[0-9]{8}",
+    "deploy": r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+}
+WORKER_KEY_PREFIXES = tuple(f"{prefix}:" for prefix in WORKER_KEYS)
+_SNOWFLAKE = re.compile(f"^{_DIGITS}$")
 
 
 def _worker_key(key):
-    if not _WORKER_KEY.match(key or "") or not key.startswith(WORKER_KEY_PREFIXES):
+    prefix, _, rest = (key or "").partition(":")
+    pattern = WORKER_KEYS.get(prefix)
+    if pattern is None or not re.fullmatch(pattern, rest):
         raise Http404
     return key
 
@@ -455,3 +468,13 @@ def bot_queue_sync(request):
         return _bad("thread_ids must be a list of Discord ids.")
     team_queue.sync([str(tid) for tid in thread_ids])
     return _queue()
+
+
+# ── The daily digest (analytics/digest.py) ─────────────────────────────────
+
+@bot_route(["GET"])
+def bot_digest(request):  # pylint: disable=unused-argument
+    """GET /bot/digest: yesterday's numbers for #calc-ops. Aggregates only:
+    nothing in it names or points at a person. Reading it also keeps today's
+    analytics snapshot, as opening the admin dashboard does."""
+    return Response(digest())

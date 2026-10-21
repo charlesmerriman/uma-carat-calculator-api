@@ -18,8 +18,11 @@ from discord import app_commands
 from discord.ext import tasks
 
 from bot.api import SiteApi
+from bot import health
 from bot.board import Board
+from bot.digitalocean import DigitalOcean
 from bot.moderation import Moderation
+from bot.ops import Ops
 from bot.team import Team
 
 logger = logging.getLogger(__name__)
@@ -35,11 +38,23 @@ class SiteBot(discord.Client):
         self.moderation = Moderation(self.api, config)
         self.team = Team(self.api, config, self._channel) if config.team_enabled else None
         self.board = Board(self.api, config, self._channel, self._board_threads) if config.board_enabled else None
+        self.do = DigitalOcean(config.do_token, config.do_app_id) if config.do_token and config.do_app_id else None
+        self.ops = Ops(self.api, config, self._channel, self.do) if config.ops_enabled else None
+        self.deploy_news = config.deploys_enabled and self.ops is not None
+        self.probe_session = None
+        # Built here rather than with @tasks.loop because the hour is a setting.
+        self.daily_digest = tasks.loop(
+            time=datetime.time(hour=config.digest_hour_utc, tzinfo=datetime.timezone.utc)
+        )(self._daily_digest)
         self._loops_started = False
 
     async def setup_hook(self):
         """Runs once, before the Gateway connects."""
         await self.api.start()
+        if self.do is not None:
+            await self.do.start()
+        if self.ops is not None:
+            self.probe_session = health.new_session()
         guild = discord.Object(id=self.config.guild_id)
         self.tree.add_command(self.moderation.commands(), guild=guild)
         if self.team is not None:
@@ -55,10 +70,39 @@ class SiteBot(discord.Client):
     async def on_ready(self):
         logger.info("Connected as %s (%s)", self.user, getattr(self.user, "id", "?"))
         # on_ready fires again after every reconnect; the loops start once.
-        if self.board is not None and not self._loops_started:
-            self._loops_started = True
+        if self._loops_started:
+            return
+        self._loops_started = True
+        if self.board is not None:
             self.hourly_reconcile.start()
             self.monday_summary.start()
+        if self.ops is not None:
+            self.health_probe.start()
+            self.daily_digest.start()
+        if self.deploy_news:
+            self.deploy_watch.start()
+
+    @tasks.loop(seconds=60)
+    async def health_probe(self):
+        """The site from outside, every minute (bot/health.py)."""
+        try:
+            await self.ops.check(self.probe_session, discord.utils.utcnow())
+        except discord.HTTPException:
+            logger.warning("Could not post a health change", exc_info=True)
+
+    async def _daily_digest(self):
+        try:
+            await self.ops.digest(discord.utils.utcnow().date())
+        except discord.HTTPException:
+            logger.warning("Daily digest failed", exc_info=True)
+
+    @tasks.loop(minutes=2)
+    async def deploy_watch(self):
+        """A line in #calc-dev-log per finished DigitalOcean deploy."""
+        try:
+            await self.ops.deploys()
+        except discord.HTTPException:
+            logger.warning("Deploy news failed", exc_info=True)
 
     @tasks.loop(hours=1)
     async def hourly_reconcile(self):
@@ -117,4 +161,8 @@ class SiteBot(discord.Client):
 
     async def close(self):
         await self.api.close()
+        if self.do is not None:
+            await self.do.close()
+        if self.probe_session is not None:
+            await self.probe_session.close()
         await super().close()

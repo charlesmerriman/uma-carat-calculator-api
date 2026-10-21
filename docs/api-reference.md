@@ -1031,6 +1031,16 @@ message is that id (the status mirror: team copy → its `promote:` key).
 | `PATCH bot/messages/<key>` | `{message_id}` | `200`: the message the claim produced |
 | `DELETE bot/messages/<key>` | | `204`: a claim given back after a failed post; `409` once a message is recorded |
 
+**The daily digest**: `GET bot/digest` returns yesterday's (UTC) numbers for `#calc-ops`,
+**aggregates only** (a test holds it to numbers plus the date): visits yesterday / the day
+before / the 7-day average, accounts (total, new yesterday, the day before, last 7 days),
+saved in the last 7 days, active supporters, gallery posts / comments / reports in the last
+24 hours, and items with an open report. It reads the admin dashboard's cached report
+(`analytics/digest.py`), so reading it also keeps the day's analytics snapshot.
+
+Worker key prefixes, each with its own shape: `promote:`/`upnext:` a Discord id,
+`weekly:`/`digest:` a `yyyymmdd`, `deploy:` a DigitalOcean deployment uuid.
+
 **The team board's queue** (`team_queue.py`, `TeamQueueEntry`): post ids in order, always
 1..N. Which posts are in it follows the board's status tags (the worker adds on Planned,
 removes on Done / Won't do); the order is the team's, set with `/queue`.
