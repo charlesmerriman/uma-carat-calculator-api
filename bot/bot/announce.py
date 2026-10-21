@@ -10,7 +10,8 @@ hours, after claiming `announce:<key>` on the site. A moment missed by more
 than that (the bot was down) is skipped, not posted late.
 
 Times are Discord timestamp tags (<t:...:F>), which every reader sees in
-their own time zone. Plain voice: the bot's persona isn't chosen yet.
+their own time zone. Titles stay plain; the bot's light voice (bot/persona.py)
+adds at most one short sentence after the facts.
 """
 
 import datetime
@@ -18,6 +19,7 @@ import logging
 
 import discord
 
+from bot import persona
 from bot.api import SiteUnavailable
 
 logger = logging.getLogger(__name__)
@@ -25,7 +27,7 @@ logger = logging.getLogger(__name__)
 POST_WITHIN = datetime.timedelta(hours=2)
 COLOUR = 0xE6D28A
 FOOTER = "From the Uma Carat Calculator timeline"
-PREDICTED_NOTE = "This date is the site's prediction. The Timeline updates when it's confirmed."
+PREDICTED_NOTE = persona.PREDICTED_NOTE
 SCHEDULE_LABELS = (
     ("registration_opens", "Registration opens"),
     ("round_one", "Round 1"),
@@ -77,6 +79,9 @@ def describe(moment):
         if moment.get(key):
             names = ", ".join(discord.utils.escape_markdown(name) for name in moment[key])
             lines.append(f"{'Umas' if moment['kind'] == 'legend_races' else label}: {names}")
+    extra = persona.flourish(moment["kind"], milestone, moment["predicted"])
+    if extra:
+        lines += ["", extra]
     if moment["predicted"]:
         lines += ["", PREDICTED_NOTE]
     return "\n".join(lines)

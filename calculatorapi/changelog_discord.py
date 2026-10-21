@@ -45,6 +45,11 @@ POST_WINDOW_DAYS = 7
 
 _CATEGORY_LABELS = {"added": "Added", "fixed": "Fixed", "changed": "Changed"}
 
+# The bot's voice, the one line of it the site sends: after the date, in the
+# footer, so the change list itself stays plain. Its other lines live in the
+# worker's bot/persona.py; change the two together.
+VOICE_THANKS = "Thanks for the feedback that shaped it."
+
 
 def message_key(entry):
     return f"changelog:{entry.id}"
@@ -71,7 +76,7 @@ def build_embed(entry):
             discord_messages.EMBED_DESCRIPTION_LIMIT,
             lambda hidden: f"…and {hidden} more on the changelog",
         ),
-        "footer": {"text": _site_date(entry.date)},
+        "footer": {"text": f"{_site_date(entry.date)} · {VOICE_THANKS}"},
     }
 
 

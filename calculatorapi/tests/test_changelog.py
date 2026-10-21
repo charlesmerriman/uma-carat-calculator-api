@@ -368,7 +368,9 @@ class ChangelogDiscordTests(CalculatorTestCase):
         self.assertEqual(embed['description'], '**Added:** A new thing.\n**Fixed:** An old bug.')
         self.assertTrue(embed['url'].endswith('/changelog'))
         day = self.today
-        self.assertEqual(embed['footer']['text'], f'{day.year}/{day.month}/{day.day}')
+        self.assertEqual(
+            embed['footer']['text'], f'{day.year}/{day.month}/{day.day} · {changelog_discord.VOICE_THANKS}',
+        )
 
     def test_no_version_no_prefix(self):
         self._write(version='')

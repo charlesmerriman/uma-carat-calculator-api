@@ -49,6 +49,15 @@ class WordingTests(unittest.TestCase):
         self.assertIn(announce.PREDICTED_NOTE, text)
         self.assertNotIn(announce.PREDICTED_NOTE, announce.describe(moment()))
 
+    def test_the_light_voice_adds_one_line_and_never_to_titles(self):
+        live = announce.describe(moment())
+        self.assertTrue(live.endswith("Good luck with your pulls."))
+        self.assertEqual(announce.title_for(moment()), "Live now: Agnes Tachyon + Tokai Teio")
+        reminder = announce.describe(moment("banner", "tomorrow", predicted=True))
+        self.assertNotIn("Time to check your carats.", reminder)
+        self.assertIn("Time to check your carats.", announce.describe(moment("banner", "tomorrow")))
+        self.assertNotIn("Good luck", announce.describe(moment("cm", "round_one", umas=[])))
+
     def test_a_cm_lists_its_schedule(self):
         schedule = {"registration_opens": "2026-10-28T22:00:00+00:00", "finals": "2026-11-05T22:00:00+00:00"}
         text = announce.describe(moment("cm", "registration_opens", umas=[], schedule=schedule))
