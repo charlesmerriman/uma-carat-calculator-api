@@ -16,10 +16,10 @@ POST   /pvp-guides/<id>/actions/copy-from     {source, sections?, preview?}
 POST   /pvp-guides/<id>/actions/sheet         {preview?}
 POST   /pvp-guides/<id>/actions/track-greens  {preview?}
 
-All IsAuthenticated and then pvp_guide_editing.can_edit. A guide the caller
-may not edit, and one that does not exist, are the same 404 as the public
-route's (nobody learns which ids are guides). The list and create routes
-answer 403 to a signed-in account that is not an editor.
+All IsAuthenticated and then pvp_guide_editing.can_edit (staff only). A
+guide the caller may not edit, and one that does not exist, are the same 404
+as the public route's (nobody learns which ids are guides). The list and
+create routes answer 403 to a signed-in account that is not staff.
 
 The document is pvp_guide_document.py's; the reader's shape that rides
 along with every write (`guide`) is views.pvp_guide.serialize_guide, so the

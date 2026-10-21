@@ -103,8 +103,10 @@ def put_body(document, **changes):
 # ── Who may edit ─────────────────────────────────────────────────────────────
 
 class EditorPermissionTests(CalculatorTestCase):
-    """Staff and the content-editor permission edit; everyone else gets the
-    public 404, and never learns which ids are guides."""
+    """Staff accounts edit; everyone else gets the public 404, and never
+    learns which ids are guides. The content-editor permission alone does
+    not count (owner, 2026-10-21): the feature is staff only until
+    supporters' own guides arrive as a feature of their own."""
 
     def setUp(self):
         self.fixture = build_guide()
@@ -132,25 +134,32 @@ class EditorPermissionTests(CalculatorTestCase):
         self.assertEqual(client.get(doc_url(self.guide)).status_code, 404)
         self.assertIs(client.get("/account").json()["guide_editor"], False)
 
-    def test_staff_a_superuser_and_a_content_editor_may_edit(self):
-        staff, _ = editor_client("staff")
-        content, _ = content_editor_client("henry")
-        superuser_client, superuser = editor_client("root", is_staff=False)
+    def test_every_staff_account_may_edit(self):
+        plain_staff, _ = editor_client("staff")
+        superuser_client, superuser = editor_client("root")
         superuser.is_superuser = True
         superuser.save()
-        for name, client in (("staff", staff), ("content editor", content), ("superuser", superuser_client)):
+        for name, client in (("staff", plain_staff), ("superuser", superuser_client)):
             with self.subTest(who=name):
                 self.assertEqual(client.get(doc_url(self.guide)).status_code, 200)
                 account = client.get("/account").json()
                 self.assertIs(account["guide_editor"], True)
-                # An editor can always open the PvP page, pledge or not.
                 self.assertIs(account["early_access"], True)
 
-    def test_a_content_editor_sees_a_draft_on_the_public_route(self):
-        client, _ = content_editor_client("henry")
-        res = client.get(f"/pvp-guides/cm/{self.fixture.cm.id}")
-        self.assertEqual(res.status_code, 200)
-        self.assertIs(res.json()["is_published"], False)
+    def test_the_permission_alone_does_not_edit(self):
+        """A non-staff account in the Content editors group, and a non-staff
+        superuser, are plain accounts to the editor."""
+        content, _ = content_editor_client("henry")
+        superuser_client, superuser = editor_client("root", is_staff=False)
+        superuser.is_superuser = True
+        superuser.save()
+        for name, client in (("content editor", content), ("non-staff superuser", superuser_client)):
+            with self.subTest(who=name):
+                self.assertEqual(client.get(doc_url(self.guide)).status_code, 404)
+                self.assertEqual(client.get("/pvp-guides/editable").status_code, 403)
+                self.assertIs(client.get("/account").json()["guide_editor"], False)
+                # The public route's draft rule is the same function.
+                self.assertEqual(client.get(f"/pvp-guides/cm/{self.fixture.cm.id}").status_code, 404)
 
     def test_the_flag_cannot_be_set_through_patch_account(self):
         client, user = editor_client("plain", is_staff=False)

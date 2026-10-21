@@ -11,8 +11,8 @@ fetched when someone opens the PvP page or follows a Timeline link, never on
 copy. No throttle: editorial content, nothing about a person.
 
 DRAFTS. An unpublished guide is a 404 with the same body as an unknown event,
-so the response never says whether a draft exists. A signed-in editor (staff,
-or the content-editor permission: pvp_guide_editing.can_edit) gets the draft,
+so the response never says whether a draft exists. A signed-in editor (staff:
+pvp_guide_editing.can_edit) gets the draft,
 flagged `is_published: false`, so they can preview it on the site. The editor
 itself reads and writes guides through views/pvp_guide_editor.py.
 
@@ -342,7 +342,7 @@ def pvp_guide_detail(request, kind, event_id):
 
     guide = guide_queryset().filter(**{field: event_id}).first()
     # A draft answers exactly like a missing guide unless the caller may edit
-    # it (staff, or the content-editor permission: pvp_guide_editing).
+    # it (staff: pvp_guide_editing.can_edit).
     if guide is None or (not guide.is_published and not pvp_guide_editing.can_edit(request.user, guide)):
         return Response(NOT_FOUND, status=404)
 

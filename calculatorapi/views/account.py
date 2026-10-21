@@ -389,7 +389,6 @@ def _account_summary(user):
     supporter = benefits.entitled_supporter(user)
     slots = benefits.oshi_slots_for(supporter, is_staff=user.is_staff)
     oshis = public_identity.oshi_rows(user)
-    editor = pvp_guide_editing.can_edit(user)
 
     return {
         # The generated handle ("user_a3f9c1"), never a real name — social
@@ -423,13 +422,13 @@ def _account_summary(user):
         # staff, or granted in the admin); the client knows which features
         # those are.
         "early_access": benefits.early_access_for(
-            supporter, is_staff=user.is_staff, granted=user.early_access, editor=editor,
+            supporter, is_staff=user.is_staff, granted=user.early_access
         ),
-        # Whether the PvP page offers this account the guide editor (staff,
-        # or the content-editor permission: pvp_guide_editing.can_edit). The
-        # client draws the tab on it; every write is checked again server
-        # side, so a spoofed flag opens nothing.
-        "guide_editor": editor,
+        # Whether the PvP page offers this account the guide editor (staff
+        # only: pvp_guide_editing.can_edit). The client draws the tab on it;
+        # every write is checked again server side, so a spoofed flag opens
+        # nothing.
+        "guide_editor": pvp_guide_editing.can_edit(user),
         "linked_providers": LinkedProviderSerializer(linked, many=True).data,
         "supporter": _supporter_block(supporter),
     }

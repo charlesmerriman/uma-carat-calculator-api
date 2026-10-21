@@ -393,8 +393,7 @@ attribute, and [api-reference.md](api-reference.md) for the route.
 A plain boolean (`0093`, 2026-10-15), ticked in the admin and nowhere else:
 `PATCH /account`'s serializer field list is the whitelist and does not carry it.
 It is the **third way into `benefits.early_access_for`**, beside a live pledge
-and `is_staff` (a guide editor, `pvp_guide_editing.can_edit`, became the fourth on
-2026-10-21, so an editor can always open the PvP page), and it opens ONLY that: not the oshi ladder, not the gallery
+and `is_staff`, and it opens ONLY that: not the oshi ladder, not the gallery
 look, not the vote weight, not `ad_free`. It exists so a tester or a friend can
 try features still in early access without being made staff, which used to be
 the habit: staff can sign in to the admin, bypass every supporter ladder, and
@@ -1030,10 +1029,11 @@ rows. Two things ride on it:
   (`content_snapshot.PRIVATE_MODELS`) and in `_IRRELEVANT_MODELS`. A restore is a `PUT` of an
   old revision's document.
 
-**Who may edit** is `pvp_guide_editing.can_edit`: an active account that `is_staff`, or that
-holds `calculatorapi.change_pvpguide` (superusers, the "Content editors" group). `GET
-/account` sends it as `guide_editor`. Never a column of its own, and never `is_staff` for a
-non-staff editor (`auth-and-privacy.md`, "A content write route on the token").
+**Who may edit** is `pvp_guide_editing.can_edit`: an active STAFF account, nobody else
+(owner, 2026-10-21; the content-editor permission alone does not count). `GET /account`
+sends it as `guide_editor`. Never a column of its own. Supporters writing guides of their
+own is a later, separate gallery feature (`pvp-guide-builder-plan.md`, release D), with
+its own tables, not a second branch of this function.
 
 ### `PvpTeam`: a player's own team for one event
 
