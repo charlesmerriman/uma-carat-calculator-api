@@ -8,6 +8,7 @@ from types import SimpleNamespace
 
 import discord
 
+from bot import board as board_module
 from bot import format as fmt
 from bot.api import Answer
 from bot.board import Board, queue_order, render_up_next, render_weekly, status_of
@@ -266,6 +267,18 @@ class QueueCommandTests(BoardFixture):
         board = self.board(Answer(200, {"thread_ids": ["11", "10"]}))
         choices = await board.suggest("logo")
         self.assertEqual([(c.name, c.value) for c in choices], [("2. Fix the logo", "10")])
+
+    async def test_autocomplete_right_after_boot(self):
+        """A cold cache is read even when the clock is young (a fresh container)."""
+        self.threads = [post(10, ("Bug", "Planned"), "Fix the logo")]
+        board = self.board(Answer(200, {"thread_ids": ["10"]}))
+        original = board_module.time.monotonic
+        board_module.time.monotonic = lambda: 5.0
+        try:
+            choices = await board.suggest("")
+        finally:
+            board_module.time.monotonic = original
+        self.assertEqual([c.value for c in choices], ["10"])
 
     def test_status_helper(self):
         self.assertEqual(status_of(SimpleNamespace(applied_tags=[tag("Bug"), tag("Won't do")])), "Won't do")

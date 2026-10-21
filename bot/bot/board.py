@@ -164,7 +164,9 @@ class Board:
         self.get_channel = get_channel
         self.list_threads = list_threads
         self._refresh_lock = asyncio.Lock()
-        self._titles = (0.0, {})
+        # (when, titles). None, not 0.0: time.monotonic() counts from boot, so
+        # on a machine up for under a minute a 0.0 stamp would look fresh.
+        self._titles = (None, {})
 
     def _on_board(self, thread):
         return getattr(thread, "parent_id", None) == self.config.team_board_id
@@ -353,7 +355,7 @@ class Board:
     async def suggest(self, current):
         """Autocomplete: queued posts whose title contains what's typed."""
         stamp, titles = self._titles
-        if time.monotonic() - stamp > TITLES_CACHE_SECONDS:
+        if stamp is None or time.monotonic() - stamp > TITLES_CACHE_SECONDS:
             try:
                 titles = {thread.id: thread.name for thread in await self.list_threads()}
             except discord.HTTPException:
