@@ -1012,6 +1012,7 @@ or `comment/<row id>` (comments have no public id). Unknown kind or item: `404`.
 | `GET bot/reports` | | `{items: [{kind, ref, preview, open_reports, is_hidden, latest_report_at}], total}`, most recently reported first, at most 25. No names. |
 | `GET bot/items/<kind>/<ref>` | | The item as its open card shows it (below). |
 | `POST bot/items/<kind>/<ref>/moderate` | `{action: keep\|remove\|block, moderator}` | `200 {done, item}`; `409 {detail, handled_by, resolution}` when no report is open (someone got there first); `400` on a bad action or moderator. |
+| `POST bot/items/<kind>/<ref>/undo` | `{moderator}` | `200 {item}`: the last decision reversed (its reports open again, a block it set lifted, hidden again only if the auto-hide rule says so); `409` when there is nothing to undo (never decided, or already open). |
 | `POST bot/items/<kind>/<ref>/unblock` | `{moderator}` | `200 {item}`; `409` when the author isn't blocked. The item stays as decided. |
 | `POST bot/blocked-terms` | `{term, match: word\|anywhere, moderator}` | `201 {term, match}` (stored normalised); `409` when already blocked; `400` on a blank or over-60 term. |
 
@@ -1036,7 +1037,8 @@ The item payload, with nothing about a person but a display name and the site ha
 }
 ```
 
-`decided` is `{resolution, by, at}` once every report is closed; `by` is a display
+`decided` is `{resolution, by, at}` once every report is closed (`resolution` is `kept`,
+`removed`, or `blocked` for Remove plus Block author); `by` is a display
 name, `"name (Discord)"`, or `"a moderator"`. A decision takes a row lock, so two
 moderators clicking at once get one `200` and one `409`.
 

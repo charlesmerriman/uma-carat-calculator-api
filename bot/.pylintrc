@@ -1,0 +1,7 @@
+# The worker's own lint settings: the api repo's .pylintrc loads pylint_django,
+# which this package doesn't use and can't load.
+[FORMAT]
+  max-line-length=120
+
+[MESSAGES CONTROL]
+  disable=broad-except,missing-class-docstring,missing-module-docstring,C0116,too-few-public-methods

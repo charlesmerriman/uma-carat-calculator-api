@@ -342,7 +342,9 @@ posts, comments, votes and reports come from people through the API.
   which the bot worker answers through the bot API (`views/bot_api.py`) and the same
   `gallery_moderation` functions as here; without it there are no buttons and decisions are
   made here. Every report, hide and decision (here or from the buttons) edits the card; once
-  decided it shrinks to one line with no text and no names but the moderator's, and a
+  decided it shrinks to one line with no text and no names but the moderator's, plus one
+  **Undo** button for a misclick (`gallery_moderation.undo_last_decision`: the reports that
+  decision closed open again, a block it set is lifted, and the card is open again), and a
   deletion or account erasure strips it. A Discord decision shows in the queue's Status
   column as "Kept by name (id) on Discord" (`resolved_by_discord`).
 - A post's page lists its voters (admin only), for spotting a brigade of new accounts.

@@ -1,0 +1,3 @@
+# The Discord bot worker's own dependencies; it never imports Django, so none
+# of ../requirements.txt belongs here. aiohttp comes with discord.py.
+discord.py==2.7.1

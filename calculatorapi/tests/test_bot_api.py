@@ -167,6 +167,69 @@ class BotApiTests(GalleryFixture):  # pylint: disable=too-many-public-methods
                 self.moderate("keep")
         refresh.assert_called_once()
 
+    # ── Undo, for a misclick ──
+
+    def undo(self, kind="post", ref=None):
+        return self.call(
+            "post", "bot-undo", {"moderator": MODERATOR}, kind=kind, ref=ref or self.post_row.public_id
+        )
+
+    def test_undo_a_remove_shows_it_and_reopens_its_reports(self):
+        self.report()
+        self.moderate("remove")
+        response = self.undo()
+        self.assertEqual(response.status_code, 200)
+        self.post_row.refresh_from_db()
+        self.assertFalse(self.post_row.is_hidden)
+        report = self.post_row.reports.get()
+        self.assertTrue(report.is_open)
+        self.assertEqual((report.resolution, report.resolved_by_discord), ("", ""))
+        self.assertEqual(len(response.json()["item"]["open_reports"]), 1)
+
+    def test_undo_a_block_lifts_the_block_too(self):
+        self.report()
+        self.moderate("block")
+        self.assertEqual(self.post_row.reports.get().resolution, GalleryReportResolution.BLOCKED)
+        self.assertEqual(self.undo().status_code, 200)
+        self.author.refresh_from_db()
+        self.assertFalse(self.author.publishing_blocked)
+
+    def test_undo_a_remove_leaves_an_unrelated_block_alone(self):
+        self.report()
+        self.moderate("remove")
+        self.author.publishing_blocked = True
+        self.author.save()
+        self.undo()
+        self.author.refresh_from_db()
+        self.assertTrue(self.author.publishing_blocked)
+
+    def test_undo_a_keep_hides_it_again_if_enough_people_reported(self):
+        for _ in range(gallery_moderation.AUTO_HIDE_REPORTS):
+            self.report(self.person())
+        self.moderate("keep")
+        self.undo()
+        self.post_row.refresh_from_db()
+        self.assertTrue(self.post_row.is_hidden)
+        self.assertEqual(self.post_row.hidden_reason, GalleryHiddenReason.REPORTS)
+
+    def test_undo_reaches_back_one_decision_only(self):
+        self.report()
+        self.moderate("keep")
+        self.report(self.person())
+        self.moderate("remove")
+        self.undo()
+        reports = self.post_row.reports.order_by("created_at")
+        self.assertEqual([report.is_open for report in reports], [False, True])
+        self.assertEqual(reports[0].resolution, GalleryReportResolution.KEPT)
+
+    def test_nothing_to_undo_is_a_409(self):
+        self.assertEqual(self.undo().status_code, 409)
+        self.report()
+        self.assertEqual(self.undo().status_code, 409)
+        self.moderate("keep")
+        self.assertEqual(self.undo().status_code, 200)
+        self.assertEqual(self.undo().status_code, 409)
+
     # ── Unblock and blocked terms ──
 
     def test_unblock_lifts_the_block(self):
