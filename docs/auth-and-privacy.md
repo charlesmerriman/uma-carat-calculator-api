@@ -243,16 +243,21 @@ or a user id; the person reported is never told.
 Discord is a third party that keeps what we send, so the card holds names and text only
 while a decision is pending:
 
-- **Decided** (here or, later, from the bot's buttons): edited down to one line with the
-  outcome, the moderator and the date. No text, no names.
+- **Decided** (here or from the bot's buttons): edited down to one line with the
+  outcome, the moderator and the date. No text, no names but the moderator's.
 - **Deleted** (a take-down, a comment delete, account deletion, the purge, a staff delete):
   edited to "reported, then deleted". Deleted rows strip their cards through `post_delete`;
   the "[deleted]" comment placeholders and the reporter-clearing `update()` in
   `gallery.erase_users` call `moderation_cards` by hand, because `update()` sends no signal.
 
 The privacy policy's "Reports" bullet says this in plain words; change the two together.
-A Discord-only moderator who decides through the bot (Step 3b) is recorded by Discord
-handle and never gets a site account.
+A Discord-only moderator decides through the card's buttons: the bot worker checks the
+`@Moderator` role and calls the bot API (`views/bot_api.py`, shared secret). The decision is
+recorded as their Discord "username (id)" in `GalleryReport.resolved_by_discord`, with
+`resolved_by` left empty; **nothing on that path creates, finds or signs in an account**,
+the same rule as "linking is not sign-in". The bot API serves the worker exactly what the
+open card shows (display names and handles, never an email, provider, linked account or
+user id).
 
 ### There is no password login on the API
 

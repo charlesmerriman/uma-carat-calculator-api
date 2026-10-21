@@ -23,7 +23,7 @@ def ok(message_id="900"):
 
 
 @override_settings(DISCORD_BOT_TOKEN="test-token", DISCORD_MOD_QUEUE_CHANNEL_ID=CHANNEL)
-class ModerationCardTests(GalleryFixture):
+class ModerationCardTests(GalleryFixture):  # pylint: disable=too-many-public-methods
 
     def setUp(self):
         super().setUp()
@@ -176,3 +176,51 @@ class ModerationCardTests(GalleryFixture):
                 self.report()
         self.assertEqual(self.post_row.reports.count(), 1)
         self.assertFalse(DiscordMessage.objects.exists())
+
+    # ── Buttons (only while the bot API is on) ──
+
+    @staticmethod
+    def components(call):
+        return call.call_args.kwargs["json"].get("components")
+
+    def test_no_buttons_without_the_bot_api(self):
+        with self.settings(BOT_API_SECRET=""):
+            call = self.act(self.report)
+        self.assertEqual(self.components(call), [])
+        self.assertEqual(self.sent(call)[1]["fields"][3]["name"], "Decide")
+
+    @override_settings(BOT_API_SECRET="bot-key")
+    def test_an_open_card_carries_the_three_buttons(self):
+        call = self.act(self.report)
+        (row,) = self.components(call)
+        ref = self.post_row.public_id
+        self.assertEqual(
+            [button["custom_id"] for button in row["components"]],
+            [f"mod:keep:post:{ref}", f"mod:remove:post:{ref}", f"mod:block:post:{ref}"],
+        )
+        self.assertTrue(all(len(button["custom_id"]) <= 100 for button in row["components"]))
+        self.assertEqual(self.sent(call)[1]["fields"][3]["name"], "Links")
+
+    @override_settings(BOT_API_SECRET="bot-key")
+    def test_a_comment_button_names_the_comment_row(self):
+        comment = gallery.add_comment(self.person(), self.post_row, "Nice team")
+        call = self.act(self.report, comment=comment)
+        (row,) = self.components(call)
+        self.assertEqual(row["components"][0]["custom_id"], f"mod:keep:comment:{comment.pk}")
+
+    @override_settings(BOT_API_SECRET="bot-key")
+    def test_a_decision_or_deletion_takes_the_buttons_off(self):
+        self.act(self.report)
+        self.assertEqual(self.components(self.act(gallery_moderation.keep, self.post_row, self.moderator)), [])
+        self.act(self.report)
+        self.assertEqual(self.components(self.act(gallery.take_down, self.post_row)), [])
+
+    def test_a_discord_decision_names_the_discord_moderator(self):
+        self.act(self.report)
+        call = self.act(
+            gallery_moderation.remove, self.post_row, None,
+            discord_moderator="oguri_fan (123456789012345678)",
+        )
+        title = self.sent(call)[1]["title"]
+        self.assertIn("removed by oguri\\_fan (Discord) on", title)
+        self.assertNotIn("123456789012345678", title)

@@ -29,6 +29,13 @@ from calculatorapi.views.account_linking import (
     account_link_start,
 )
 from calculatorapi.views.visits import site_visit
+from calculatorapi.views.bot_api import (
+    bot_blocked_term,
+    bot_item,
+    bot_moderate,
+    bot_reports,
+    bot_unblock,
+)
 from calculatorapi.views.patreon_supporters import patreon_sync
 from calculatorapi.views.site_content import site_content
 from calculatorapi.views.pvp_guide import pvp_guide_detail
@@ -125,6 +132,15 @@ urlpatterns = [
     # Authorised by a shared secret header, and 404s entirely while
     # PATREON_SYNC_SECRET is unset. Cannot publish a name — see the view.
     path("patreon/sync", patreon_sync, name="patreon-sync"),
+    # The Discord bot worker's routes: moderators' clicks on report cards and
+    # their /mod commands. Shared secret header (X-Bot-Key), 404 while
+    # BOT_API_SECRET is unset. A Discord moderator is recorded by name and
+    # never gets an account. → views/bot_api.py
+    path("bot/reports", bot_reports, name="bot-reports"),
+    path("bot/blocked-terms", bot_blocked_term, name="bot-blocked-term"),
+    path("bot/items/<str:kind>/<str:ref>", bot_item, name="bot-item"),
+    path("bot/items/<str:kind>/<str:ref>/moderate", bot_moderate, name="bot-moderate"),
+    path("bot/items/<str:kind>/<str:ref>/unblock", bot_unblock, name="bot-unblock"),
     # The admin-editable pages and FAQ, in one public read-only response. The
     # frontend build bakes it into the prerendered HTML; a loaded page fetches
     # it once more to pick up edits made since. → views/site_content.py

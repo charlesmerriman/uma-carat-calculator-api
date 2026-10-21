@@ -13,8 +13,9 @@ calls, and the always-on Gateway connection belongs to the bot worker, never
 to Django (discord-bot-plan.md, decision 2).
 
 The bot token is used rather than a webhook because Discord only lets the
-application that SENT a message receive clicks on its buttons, and later steps
-put buttons on moderation cards. A webhook message can never have them.
+application that SENT a message receive clicks on its buttons, and the
+moderation cards carry buttons the bot worker answers. A webhook message can
+never have them.
 
 THE CONTRACT, SAME AS gallery_moderation.alert
 ----------------------------------------------
@@ -103,12 +104,16 @@ def _call(method, path, body):
     return None
 
 
-def _payload(content, embed, ping_roles=()):
+def _payload(content, embed, ping_roles=(), components=None):
     body = {"allowed_mentions": _allowed_mentions(ping_roles)}
     if content is not None:
         body["content"] = content
     if embed is not None:
         body["embeds"] = [embed]
+    # Button rows. None leaves a message's buttons as they are on an edit;
+    # an empty list takes them all off.
+    if components is not None:
+        body["components"] = components
     return body
 
 
@@ -117,7 +122,7 @@ def has_message(key):
     return DiscordMessage.objects.filter(key=key).exists()
 
 
-def send(key, channel_id, *, content=None, embed=None, ping_roles=()):
+def send(key, channel_id, *, content=None, embed=None, ping_roles=(), components=None):  # pylint: disable=too-many-arguments
     """Post a message under `key`, once ever. Returns nothing: the post happens
     after the transaction commits.
 
@@ -138,7 +143,10 @@ def send(key, channel_id, *, content=None, embed=None, ping_roles=()):
                 claim = DiscordMessage.objects.create(key=key, channel_id=str(channel_id))
         except IntegrityError:
             return
-        sent = _call("POST", f"/channels/{channel_id}/messages", _payload(content, embed, ping_roles))
+        sent = _call(
+            "POST", f"/channels/{channel_id}/messages",
+            _payload(content, embed, ping_roles, components),
+        )
         if sent is None:
             # Give the key back, so the next run (the next deploy, for a
             # changelog entry) tries again rather than believing it was sent.
@@ -150,7 +158,7 @@ def send(key, channel_id, *, content=None, embed=None, ping_roles=()):
     transaction.on_commit(post)
 
 
-def edit(key, *, content=None, embed=None):
+def edit(key, *, content=None, embed=None, components=None):
     """Replace the text of the message sent under `key`. A key never sent, or
     still in flight, is left alone: there is nothing to edit yet."""
     if not settings.DISCORD_BOT_TOKEN:
@@ -163,7 +171,7 @@ def edit(key, *, content=None, embed=None):
         if _call(
             "PATCH",
             f"/channels/{row.channel_id}/messages/{row.message_id}",
-            _payload(content, embed),
+            _payload(content, embed, components=components),
         ) is not None:
             row.save(update_fields=["updated_at"])
 
