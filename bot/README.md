@@ -63,6 +63,15 @@ Messages) in `#calc-ops`; without it Up next is posted unpinned.
   READ-ONLY token: custom scopes app read + monitoring read, never the admin's) and
   `DO_APP_ID`.
 
+## Announcements (Step 8)
+
+`bot/announce.py`, on while `DISCORD_ANNOUNCE_CHANNEL_ID` is set: every 10 minutes the
+moments from `GET bot/upcoming` that came due in the last 2 hours are posted once each
+(claimed as `announce:<key>`). Predicted dates only ever get a "tomorrow" reminder, which
+says so. Times are Discord timestamp tags (each reader's own time zone).
+`DISCORD_ANNOUNCE_PING_ROLE_ID` is blank until the owner decides; when set, only the
+"live" and race-milestone posts ping it, never a reminder.
+
 ## Tests and lint
 
 ```bash

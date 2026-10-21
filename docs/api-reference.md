@@ -1038,8 +1038,19 @@ saved in the last 7 days, active supporters, gallery posts / comments / reports 
 24 hours, and items with an open report. It reads the admin dashboard's cached report
 (`analytics/digest.py`), so reading it also keeps the day's analytics snapshot.
 
+**Announcements**: `GET bot/upcoming?days=14` (max 60) returns every banner and event
+moment due from 6 hours ago to `days` ahead (`announcements.py`), from the same
+`build_effective_date_maps` the Timeline uses: `{moments: [{key, kind, milestone, at,
+predicted, name, starts_at, ends_at?, image?, url, umas?, cards?, schedule?}]}`. Kinds:
+`banner`, `cm`, `loh`, `campaign` (its main part), `legend_races` (dated batches only).
+Milestones: `tomorrow` (24 h before the start, or before CM/LoH registration opens) for any
+date, and for CONFIRMED dates only `live`, or for CM/LoH `registration_opens`, `round_one`,
+`finals_registration_closing` (12 h before) and `finals` (LoH milestones only once their
+constants are set). Catalogue names only.
+
 Worker key prefixes, each with its own shape: `promote:`/`upnext:` a Discord id,
-`weekly:`/`digest:` a `yyyymmdd`, `deploy:` a DigitalOcean deployment uuid.
+`weekly:`/`digest:` a `yyyymmdd`, `deploy:` a DigitalOcean deployment uuid, `announce:` a
+moment key (`<kind>-<id>-<milestone>`).
 
 **The team board's queue** (`team_queue.py`, `TeamQueueEntry`): post ids in order, always
 1..N. Which posts are in it follows the board's status tags (the worker adds on Planned,

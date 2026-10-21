@@ -117,6 +117,9 @@ class FakeApi:
     async def release(self, key):
         return self._next("release", key)
 
+    async def upcoming(self, days=2):
+        return self._next("upcoming", days)
+
     async def digest(self):
         return self._next("digest")
 
