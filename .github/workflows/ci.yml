@@ -68,3 +68,29 @@ jobs:
 
       - name: Lint
         run: pylint calculatorapi/ calculatorproject/
+
+  # The Discord bot worker (bot/): its own dependencies, tests and lint, beside
+  # the API's. It never imports Django, so none of the jobs above cover it.
+  bot:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: bot
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          # The worker's own pin, which DigitalOcean's buildpack reads from its
+          # source_dir; a copy of the API's.
+          python-version-file: bot/.python-version
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt pylint==3.3.9
+
+      - name: Tests
+        run: python -m unittest discover -s tests -t .
+
+      - name: Lint
+        run: pylint bot tests
