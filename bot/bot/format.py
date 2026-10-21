@@ -2,6 +2,8 @@
 Everything the worker says, in one place: the replies a moderator sees and
 the embeds for /mod. Plain voice on purpose: moderation, errors and anything
 touching privacy stay out of the bot's persona (discord-bot-plan.md, "Persona").
+The few friendly lines that DO carry it are defined in bot/persona.py and
+re-exported here, so callers keep reading fmt.<NAME>.
 
 The site's copy rules apply here too (.claude/rules/copy.md): no em dashes,
 and it should read as a person wrote it. A test scans this file for dashes.
@@ -12,6 +14,8 @@ text sits in a code block the way it does on the site's own cards.
 """
 
 import discord
+
+from bot import persona
 
 COLOUR_OPEN = 0xE5484D
 COLOUR_DONE = 0x6B7280
@@ -46,11 +50,11 @@ NOTHING_TO_UNDO = "Nothing to undo: it's already open."
 NEED_TEAM_ROLE = "That's for the Web Developer team."
 ONLY_FEEDBACK = "That only works on a post in the carat calculator feedback forum."
 BOARD_FAILED = "Discord didn't take the post. Try again in a minute."
-REQUEST_POSTED = "Posted to the team board: {link}"
+REQUEST_POSTED = persona.REQUEST_POSTED
 SENT_TO_BOARD = "On the team board now: {link}. The public post is marked Under review."
 ALREADY_ON_BOARD = "It's already on the team board: {link}"
 PROMOTE_IN_FLIGHT = "Someone is sending it right now. Check the team board in a moment."
-PUBLIC_UNDER_REVIEW = "Thanks for posting this. It's on the team's list now, and we'll update this post when it moves."
+PUBLIC_UNDER_REVIEW = persona.PUBLIC_UNDER_REVIEW
 
 # The board's queue, Up next and the Monday summary.
 NOT_QUEUED = "That post isn't in the queue. Tag it Planned on the team board first."
@@ -58,9 +62,10 @@ MOVED = "Moved to number {position}. Up next is updated."
 UP_NEXT_FOOTER = "Tag a team post Planned to add it. Reorder with /queue move."
 NOTHING_NEXT = "Nothing is planned yet."
 # What the public post that a team copy came from is told when the copy moves.
-PUBLIC_PLANNED = "Good news: the team has planned this."
-PUBLIC_DONE = "This is done now. Thanks for suggesting it!"
-PUBLIC_WONT = "The team has decided not to do this one, at least for now. Thanks for suggesting it."
+# In the bot's voice (bot/persona.py).
+PUBLIC_PLANNED = persona.PUBLIC_PLANNED
+PUBLIC_DONE = persona.PUBLIC_DONE
+PUBLIC_WONT = persona.PUBLIC_WONT
 
 RESOLUTIONS = {"kept": "kept", "removed": "removed", "blocked": "removed (author blocked)"}
 
