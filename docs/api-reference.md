@@ -1019,7 +1019,10 @@ or `comment/<row id>` (comments have no public id). Unknown kind or item: `404`.
 **The worker's never-twice records** (`bot/messages`): the worker claims a key before it
 posts something that must happen once (today `promote:<public post id>`, "Send to team
 board"), in the same `DiscordMessage` table the site's own posts use. Only keys under
-`WORKER_KEY_PREFIXES` (`promote:`) are reachable; the changelog's and the cards' rows 404.
+`WORKER_KEY_PREFIXES` are reachable (`promote:<public post>`, `upnext:<channel>` for the
+pinned Up next message, `weekly:<yyyymmdd>` for the Monday summary); the changelog's and
+the cards' rows 404. `GET bot/messages?message_id=<id>` finds the worker record whose
+message is that id (the status mirror: team copy → its `promote:` key).
 
 | Route | Body | Answers |
 |---|---|---|
@@ -1027,6 +1030,18 @@ board"), in the same `DiscordMessage` table the site's own posts use. Only keys 
 | `GET bot/messages/<key>` | | `200 {key, channel_id, message_id}` or `404` |
 | `PATCH bot/messages/<key>` | `{message_id}` | `200`: the message the claim produced |
 | `DELETE bot/messages/<key>` | | `204`: a claim given back after a failed post; `409` once a message is recorded |
+
+**The team board's queue** (`team_queue.py`, `TeamQueueEntry`): post ids in order, always
+1..N. Which posts are in it follows the board's status tags (the worker adds on Planned,
+removes on Done / Won't do); the order is the team's, set with `/queue`.
+
+| Route | Body | Answers |
+|---|---|---|
+| `GET bot/queue` | | `{thread_ids: [...]}` in order |
+| `POST bot/queue` | `{thread_id}` | `201` added at the bottom; `200` already queued (keeps its place) |
+| `DELETE bot/queue/<thread_id>` | | `200` with the queue; `404` if it wasn't in |
+| `POST bot/queue/<thread_id>/move` | `{position}` | `200`; 1 is the top, past the end is the bottom; `404` if not queued |
+| `POST bot/queue/sync` | `{thread_ids}` | `200`: exactly these, places kept, new ones appended in the order sent |
 
 `moderator` is the clicker as the worker sends them, `"discord username (discord id)"`,
 required in that shape. A decision stores it in `GalleryReport.resolved_by_discord` and

@@ -117,6 +117,24 @@ class FakeApi:
     async def release(self, key):
         return self._next("release", key)
 
+    async def find_record(self, message_id):
+        return self._next("find_record", message_id)
+
+    async def queue(self):
+        return self._next("queue")
+
+    async def queue_add(self, thread_id):
+        return self._next("queue_add", thread_id)
+
+    async def queue_remove(self, thread_id):
+        return self._next("queue_remove", thread_id)
+
+    async def queue_move(self, thread_id, position):
+        return self._next("queue_move", thread_id, position)
+
+    async def queue_sync(self, thread_ids):
+        return self._next("queue_sync", thread_ids)
+
 
 def tag(name):
     return SimpleNamespace(name=name, id=hash(name) % 10**6)

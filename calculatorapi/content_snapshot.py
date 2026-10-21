@@ -106,6 +106,8 @@ PRIVATE_MODELS = (
     # Which Discord message the site sent for what. Routing for production's
     # Discord; a local database copying it would believe it had already posted.
     "DiscordMessage",
+    # The team board's order (Discord thread ids): production's board only.
+    "TeamQueueEntry",
 )
 
 

@@ -1078,6 +1078,10 @@ lose FK integrity and cascades; tables per gallery would write this twice.
   and never gets one. One per person per item. Three open reports from different accounts hide the
   item (`gallery_moderation.AUTO_HIDE_REPORTS`). `reporter` is SET_NULL so the record
   survives the account.
+- **`TeamQueueEntry`** (migration `0102`, not a gallery table): the Discord team board's
+  committed posts in order, `thread_id` (unique) and a gap-free `position`. Written only
+  through `team_queue.py` by the bot API; which posts are in it follows the board's status
+  tags, the order is the team's. PRIVATE, and in `_IRRELEVANT_MODELS`.
 - **`BlockedTerm`**: words refused in captions, comments and display names, stored
   normalised (NFKC, invisible characters removed, casefolded), matched as a whole word or
   anywhere. Staff edit it in the admin; PRIVATE, so a local database starts empty.

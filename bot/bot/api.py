@@ -115,6 +115,27 @@ class SiteApi:
     async def release(self, key):
         return await self._request("DELETE", f"bot/messages/{key}")
 
+    async def find_record(self, message_id):
+        """The worker record whose message is `message_id` (a team copy's id)."""
+        return await self._request("GET", f"bot/messages?message_id={message_id}")
+
+    # The team board's ordered queue (the site's team_queue.py).
+
+    async def queue(self):
+        return await self._request("GET", "bot/queue")
+
+    async def queue_add(self, thread_id):
+        return await self._request("POST", "bot/queue", {"thread_id": str(thread_id)})
+
+    async def queue_remove(self, thread_id):
+        return await self._request("DELETE", f"bot/queue/{thread_id}")
+
+    async def queue_move(self, thread_id, position):
+        return await self._request("POST", f"bot/queue/{thread_id}/move", {"position": position})
+
+    async def queue_sync(self, thread_ids):
+        return await self._request("POST", "bot/queue/sync", {"thread_ids": [str(tid) for tid in thread_ids]})
+
     async def add_term(self, term, match, moderator):
         return await self._request(
             "POST", "bot/blocked-terms", {"term": term, "match": match, "moderator": moderator}

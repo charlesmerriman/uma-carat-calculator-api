@@ -18,6 +18,7 @@ from calculatorapi.models import (
     GalleryReportReason,
     GalleryReportResolution,
     SocialAccount,
+    TeamQueueEntry,
 )
 from calculatorapi.tests.test_gallery import GalleryFixture
 
@@ -332,3 +333,99 @@ class BotMessageTests(GalleryFixture):
             self.assertEqual(self.claim().status_code, 404)
         response = self.client.post(reverse("bot-message-claim"), "{}", content_type="application/json")
         self.assertEqual(response.status_code, 403)
+
+
+@override_settings(BOT_API_SECRET=KEY)
+class BotQueueTests(GalleryFixture):
+    """The team board's ordered queue: always 1..N, changed only through these."""
+
+    A, B, C, D = "1562205603294875771", "1562205611196686466", "1562205622429155540", "1562205629244899419"
+
+    def send(self, name, body=None, **kwargs):
+        return self.client.post(
+            reverse(name, kwargs=kwargs), json.dumps(body or {}),
+            content_type="application/json", HTTP_X_BOT_KEY=KEY_HEADER,
+        )
+
+    def queue(self):
+        return self.client.get(reverse("bot-queue"), HTTP_X_BOT_KEY=KEY_HEADER).json()["thread_ids"]
+
+    def fill(self, *ids):
+        for thread_id in ids:
+            self.send("bot-queue", {"thread_id": thread_id})
+
+    def test_add_joins_the_bottom_once(self):
+        self.assertEqual(self.send("bot-queue", {"thread_id": self.A}).status_code, 201)
+        self.fill(self.B)
+        self.assertEqual(self.send("bot-queue", {"thread_id": self.A}).status_code, 200)
+        self.assertEqual(self.queue(), [self.A, self.B])
+        self.assertEqual(list(TeamQueueEntry.objects.values_list("position", flat=True)), [1, 2])
+
+    def test_remove_closes_the_gap(self):
+        self.fill(self.A, self.B, self.C)
+        url = reverse("bot-queue-entry", kwargs={"thread_id": self.B})
+        response = self.client.delete(url, HTTP_X_BOT_KEY=KEY_HEADER)
+        self.assertEqual(response.json()["thread_ids"], [self.A, self.C])
+        self.assertEqual(list(TeamQueueEntry.objects.values_list("position", flat=True)), [1, 2])
+        again = self.client.delete(url, HTTP_X_BOT_KEY=KEY_HEADER)
+        self.assertEqual(again.status_code, 404)
+
+    def test_move_to_top_middle_and_past_the_end(self):
+        self.fill(self.A, self.B, self.C, self.D)
+        self.send("bot-queue-move", {"position": 1}, thread_id=self.C)
+        self.assertEqual(self.queue(), [self.C, self.A, self.B, self.D])
+        self.send("bot-queue-move", {"position": 3}, thread_id=self.C)
+        self.assertEqual(self.queue(), [self.A, self.B, self.C, self.D])
+        self.send("bot-queue-move", {"position": 99}, thread_id=self.A)
+        self.assertEqual(self.queue(), [self.B, self.C, self.D, self.A])
+
+    def test_move_refuses_bad_positions_and_unqueued_posts(self):
+        self.fill(self.A)
+        self.assertEqual(self.send("bot-queue-move", {"position": 0}, thread_id=self.A).status_code, 400)
+        self.assertEqual(self.send("bot-queue-move", {"position": "x"}, thread_id=self.A).status_code, 400)
+        self.assertEqual(self.send("bot-queue-move", {"position": 1}, thread_id=self.B).status_code, 404)
+
+    def test_sync_keeps_places_drops_the_gone_and_appends_the_new(self):
+        self.fill(self.A, self.B, self.C)
+        self.send("bot-queue-move", {"position": 1}, thread_id=self.C)
+        response = self.send("bot-queue-sync", {"thread_ids": [self.A, self.D, self.C]})
+        self.assertEqual(response.json()["thread_ids"], [self.C, self.A, self.D])
+
+    def test_ids_must_be_discord_ids(self):
+        self.assertEqual(self.send("bot-queue", {"thread_id": "abc"}).status_code, 404)
+        self.assertEqual(self.send("bot-queue-sync", {"thread_ids": ["abc"]}).status_code, 400)
+        self.assertEqual(self.send("bot-queue-sync", {"thread_ids": "x"}).status_code, 400)
+
+    def test_locked(self):
+        with self.settings(BOT_API_SECRET=""):
+            self.assertEqual(self.client.get(reverse("bot-queue")).status_code, 404)
+        self.assertEqual(self.client.get(reverse("bot-queue")).status_code, 403)
+
+
+@override_settings(BOT_API_SECRET=KEY)
+class BotMessageLookupTests(GalleryFixture):
+    """Finding the public post a team copy came from, by the copy's id."""
+
+    def find(self, message_id):
+        return self.client.get(reverse("bot-message-claim"), {"message_id": message_id}, HTTP_X_BOT_KEY=KEY_HEADER)
+
+    def test_finds_a_worker_record_by_its_message(self):
+        DiscordMessage.objects.create(
+            key="promote:1552020789509755194", channel_id="1", message_id="1562519911803388028",
+        )
+        body = self.find("1562519911803388028").json()
+        self.assertEqual(body["key"], "promote:1552020789509755194")
+
+    def test_never_a_site_record(self):
+        DiscordMessage.objects.create(key="card:post:7", channel_id="1", message_id="1562519911803388028")
+        self.assertEqual(self.find("1562519911803388028").status_code, 404)
+        self.assertEqual(self.find("x").status_code, 404)
+
+    def test_the_new_prefixes_can_be_claimed(self):
+        for key in ("upnext:1562200271222866020", "weekly:20261026"):
+            with self.subTest(key=key):
+                response = self.client.post(
+                    reverse("bot-message-claim"), json.dumps({"key": key, "channel_id": "1562200271222866020"}),
+                    content_type="application/json", HTTP_X_BOT_KEY=KEY_HEADER,
+                )
+                self.assertEqual(response.status_code, 201)

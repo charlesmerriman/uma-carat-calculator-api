@@ -50,7 +50,7 @@ from rest_framework.decorators import api_view, permission_classes, throttle_cla
 from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle
 
-from calculatorapi import gallery_moderation, moderation_cards
+from calculatorapi import gallery_moderation, moderation_cards, team_queue
 from calculatorapi.models import (
     BlockedTerm,
     BlockedTermMatch,
@@ -332,7 +332,10 @@ def bot_blocked_term(request):
 # changelog's or the cards' rows. Claim before posting, record the message
 # after, release the claim if the post failed.
 
-WORKER_KEY_PREFIXES = ("promote:",)
+# promote:<public post>  "Send to team board" (the team copy's id is the message)
+# upnext:<channel>        the pinned "Up next" message in #calc-ops
+# weekly:<yyyymmdd>       one Monday summary per week
+WORKER_KEY_PREFIXES = ("promote:", "upnext:", "weekly:")
 _WORKER_KEY = re.compile(r"^[a-z-]+:[0-9]{5,25}$")
 _SNOWFLAKE = re.compile(r"^[0-9]{5,25}$")
 
@@ -347,10 +350,21 @@ def _message_payload(row):
     return {"key": row.key, "channel_id": row.channel_id, "message_id": row.message_id}
 
 
-@bot_route(["POST"])
+@bot_route(["GET", "POST"])
 def bot_message_claim(request):
     """POST /bot/messages {key, channel_id}: claim `key` before posting. 201 when
-    it's yours; 409 with what was already recorded under it otherwise."""
+    it's yours; 409 with what was already recorded under it otherwise.
+
+    GET /bot/messages?message_id=<id>: the worker record that produced that
+    message, or 404. How the status mirror finds the public post a team copy
+    came from (its `promote:<public post>` key)."""
+    if request.method == "GET":
+        message_id = request.query_params.get("message_id", "")
+        rows = DiscordMessage.objects.filter(message_id=message_id) if _SNOWFLAKE.match(message_id) else []
+        row = next((row for row in rows if row.key.startswith(WORKER_KEY_PREFIXES)), None)
+        if row is None:
+            raise Http404
+        return Response(_message_payload(row))
     key = _worker_key(str(request.data.get("key", "")))
     channel_id = str(request.data.get("channel_id", ""))
     if not _SNOWFLAKE.match(channel_id):
@@ -381,3 +395,63 @@ def bot_message(request, key):
         row.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
     return Response(_message_payload(row))
+
+
+# ── The team board's queue (team_queue.py) ─────────────────────────────────
+
+def _thread_id(value):
+    value = str(value or "")
+    if not _SNOWFLAKE.match(value):
+        raise Http404
+    return value
+
+
+def _queue():
+    return Response({"thread_ids": team_queue.entries()})
+
+
+@bot_route(["GET", "POST"])
+def bot_queue(request):
+    """GET /bot/queue: post ids in order. POST {thread_id}: add one at the
+    bottom (201), or 200 when it was already queued (it keeps its place)."""
+    if request.method == "GET":
+        return _queue()
+    added = team_queue.add(_thread_id(request.data.get("thread_id")))
+    response = _queue()
+    response.status_code = status.HTTP_201_CREATED if added else status.HTTP_200_OK
+    return response
+
+
+@bot_route(["DELETE"])
+def bot_queue_entry(request, thread_id):  # pylint: disable=unused-argument
+    """DELETE /bot/queue/<thread_id>: take a post out; 404 if it wasn't in."""
+    if not team_queue.remove(_thread_id(thread_id)):
+        raise Http404
+    return _queue()
+
+
+@bot_route(["POST"])
+def bot_queue_move(request, thread_id):
+    """POST /bot/queue/<thread_id>/move {position}: 1 is the top; a position
+    past the end means the bottom. 404 if the post isn't queued."""
+    try:
+        position = int(request.data.get("position"))
+    except (TypeError, ValueError):
+        return _bad("position must be a whole number.")
+    if position < 1:
+        return _bad("position starts at 1.")
+    if not team_queue.move(_thread_id(thread_id), position):
+        raise Http404
+    return _queue()
+
+
+@bot_route(["POST"])
+def bot_queue_sync(request):
+    """POST /bot/queue/sync {thread_ids}: make the queue hold exactly these
+    posts, new ones at the bottom in the order sent, the rest in place. The
+    worker's repair after it missed a tag change (a restart, an outage)."""
+    thread_ids = request.data.get("thread_ids")
+    if not isinstance(thread_ids, list) or not all(_SNOWFLAKE.match(str(tid)) for tid in thread_ids):
+        return _bad("thread_ids must be a list of Discord ids.")
+    team_queue.sync([str(tid) for tid in thread_ids])
+    return _queue()
