@@ -41,7 +41,6 @@ import logging
 from django.db import IntegrityError, transaction
 from rest_framework import permissions
 
-from calculatorapi import pvp_guide_editing
 from calculatorapi.models import OSHI_SLOT_CAP, PatreonSupporter, SocialAccount
 
 logger = logging.getLogger(__name__)
@@ -206,7 +205,7 @@ def oshi_variants(user):
     return oshi_variants_for(entitled_supporter(user), is_staff=user.is_staff)
 
 
-def early_access_for(supporter, *, is_staff=False, granted=False, editor=False):
+def early_access_for(supporter, *, is_staff=False, granted=False):
     """Whether an already-resolved supporter row, staff, or an account the
     owner granted it gets the features that open to supporters first: any
     paid tier, staff (the same bypass as oshi_variants_for), or
@@ -225,12 +224,8 @@ def early_access_for(supporter, *, is_staff=False, granted=False, editor=False):
     to everyone is one flag there, and the next early-access feature needs no
     change here. A client gate, and so spoofable: nothing that must be
     enforced rests on it.
-
-    `editor` is the fourth way in (2026-10-21): an account that may edit PvP
-    guides on the site (pvp_guide_editing.can_edit) can always open the PvP
-    page to edit them, pledge or not.
     """
-    return granted or is_staff or editor or supporter is not None
+    return granted or is_staff or supporter is not None
 
 
 def early_access(user):
@@ -238,8 +233,7 @@ def early_access(user):
     if user is None or not user.is_authenticated:
         return False
     return early_access_for(
-        entitled_supporter(user), is_staff=user.is_staff, granted=user.early_access,
-        editor=pvp_guide_editing.can_edit(user),
+        entitled_supporter(user), is_staff=user.is_staff, granted=user.early_access
     )
 
 

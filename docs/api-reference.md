@@ -146,13 +146,11 @@ meaning anything instead of rendering a signed-in shell around nothing.
   WHO; the client knows WHICH features are
   still early access (the PvP page from 2026-10-14, `PVP_EARLY_ACCESS` in
   `frontend/src/hooks/usePvpAccess.ts`). A client gate only: the PvP API itself
-  stays open. Since 2026-10-21 a guide editor (below) is a fourth way in, so an
-  editor can always open the PvP page.
+  stays open.
 - **`guide_editor`** is whether the PvP page offers this account the guide
-  editor: `true` for staff and for an account holding the `change_pvpguide`
-  permission (the "Content editors" group), through `pvp_guide_editing.can_edit`.
-  The client draws the Edit tab on it; every write under "PvP guide editor" is
-  checked again server side.
+  editor: `true` for a staff account and nobody else (`pvp_guide_editing.can_edit`;
+  the content-editor permission alone does not count). The client draws the Edit
+  tab on it; every write under "PvP guide editor" is checked again server side.
 - **`avatar_url`** (top level) is the picture to show in the navbar: the first
   oshi's `image` **while `oshi_slots >= 1`** (skipping any whose picture was
   cleared), else **`null`** — null rather than `""`, so a client draws its
@@ -715,9 +713,8 @@ throttle. `kind` is `cm` or `loh`; `event_id` is the event's database id, the `i
 
 **`404`** `{"error": "Guide not found"}` for an unknown kind, an unknown event, an event
 with no guide, **and an unpublished guide** — the same body for all four, so the response
-never reveals that a draft exists. **An editor** (staff, or the `change_pvpguide`
-permission: `pvp_guide_editing.can_edit`, by token) gets a draft with
-`is_published: false`, so they can preview it on the site.
+never reveals that a draft exists. **Staff** (`pvp_guide_editing.can_edit`, by token)
+get a draft with `is_published: false`, so an editor can preview it on the site.
 
 Every section is optional and may be an empty array. Rows come sorted: by style in the
 order everyone, runaway, front, pace, late, end; then stat rows and decks by the editor's
@@ -782,10 +779,11 @@ on the event itself (below), so the client never probes this route to find out.
 
 The site's guide editor (`views/pvp_guide_editor.py`, 2026-10-21): a guide read and
 written as **one document**, the tables' content with catalogue ids where the public
-route embeds objects. All `IsAuthenticated`, then `pvp_guide_editing.can_edit` (staff, or
-the `change_pvpguide` permission); a guide the caller may not edit answers the public
-route's `404 {"error": "Guide not found"}`, and the list and create routes answer
-`403 {"error": "Only guide editors can do that."}` to a signed-in non-editor. Every write
+route embeds objects. All `IsAuthenticated`, then `pvp_guide_editing.can_edit` (staff
+accounts only; supporters' own guides are a later, separate gallery feature); a guide
+the caller may not edit answers the public route's `404 {"error": "Guide not found"}`,
+and the list and create routes answer `403 {"error": "Only guide editors can do that."}`
+to a signed-in non-staff account. Every write
 leaves a `PvpGuideRevision` with its author (`pvp_guide_revisions.record`). Throttles:
 `guide_editor` (1200/hour) on the document PUT, `guide_editor_action` (60/hour) on create
 and the actions.

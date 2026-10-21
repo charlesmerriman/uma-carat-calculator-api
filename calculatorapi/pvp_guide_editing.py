@@ -1,32 +1,29 @@
 """
 Who may edit a PvP guide on the site, and the writes the site's editor makes.
 
-WHO (owner, 2026-10-21): every staff account, and any active account holding
-Django's `calculatorapi.change_pvpguide` permission (superusers, the "Content
-editors" group). Through ONE function, `can_edit`, which GET /account reads
-for the `guide_editor` flag and every editor route checks before writing.
-Never a separate column: staff-ness is what the owner wants "may edit" to
-mean, and the permission already exists on every content model, so a
-non-staff editor needs no new switch (and never `is_staff`, which opens the
-admin login: .claude/rules/auth-privacy.md). A later release adds "the
-guide's own author" here for community guides, and nothing else changes.
+WHO (owner, 2026-10-21): every STAFF account, and nobody else. Through ONE
+function, `can_edit`, which GET /account reads for the `guide_editor` flag
+and every editor route checks before writing. Never a separate column, and
+no permission path: a non-staff account holding `change_pvpguide` (the
+"Content editors" group) does NOT edit on the site (the owner's call the
+same day, replacing an earlier "or the permission"). Supporters writing
+guides of their own is a later, separate gallery feature with its own
+tables and its own rules, not a second branch here.
 
 WHY THIS IS NOT THE ADMIN'S GATE. The admin's pages sit behind a password and
 a second factor (admin_site.py). This is a content write route on the API's
 token, and a token comes only from a Discord, Google or Patreon sign-in (the
 provider's own second factor; nothing on the API takes a password). It is
 held to three conditions, which the next content write route must meet too:
-a model permission decides, every write leaves a revision with its author
-(pvp_guide_revisions.py), and the route touches the eight guide tables and
-nothing else.
+one function decides from the account's own staff flag, every write leaves a
+revision with its author (pvp_guide_revisions.py), and the route touches the
+eight guide tables and nothing else.
 """
 
 from django.db import IntegrityError, transaction
 
 from . import public_payload_cache, pvp_guide_document, pvp_guide_revisions, pvp_guides
 from .models import ChampionsMeeting, LeagueOfHeroes, PvpGuide, PvpGuideRevisionSource
-
-EDIT_PERMISSION = "calculatorapi.change_pvpguide"
 
 # The URL's / body's kind -> the guide's FK to that event (pvp_teams' idiom).
 EVENT_FOR_KIND = {
@@ -40,11 +37,13 @@ class GuideRefused(Exception):
 
 
 def can_edit(user, guide=None):  # pylint: disable=unused-argument
-    """Whether `user` may edit guides on the site. `guide` is unused until
-    community guides add ownership as a way in."""
+    """Whether `user` may edit guides on the site: an active staff account.
+    `guide` is unused; it is the seam a later feature (supporters' own guides)
+    would read ownership from, and the public route's draft rule passes it
+    already."""
     if user is None or not user.is_authenticated or not user.is_active:
         return False
-    return user.is_staff or user.has_perm(EDIT_PERMISSION)
+    return bool(user.is_staff)
 
 
 def resolve_event(kind, event_id):
@@ -116,6 +115,6 @@ def delete_guide(guide):
 
 
 __all__ = [
-    "EDIT_PERMISSION", "EVENT_FOR_KIND", "GuideRefused", "can_edit", "resolve_event",
+    "EVENT_FOR_KIND", "GuideRefused", "can_edit", "resolve_event",
     "create_guide", "save_document", "publish", "delete_guide",
 ]

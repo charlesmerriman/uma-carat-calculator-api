@@ -275,17 +275,19 @@ since then that writes content on the API's token. It is not an admin page and d
 pass the admin's gate; what makes that acceptable, and what any later content write route
 must match, is three conditions:
 
-1. **A model permission decides**, through one function
-   (`pvp_guide_editing.can_edit`: `is_staff`, or `calculatorapi.change_pvpguide`). The
-   token itself comes only from a Discord, Google or Patreon sign-in, behind the provider's
-   own second factor; nothing on the API takes a password.
+1. **One function decides from the account's own staff flag**
+   (`pvp_guide_editing.can_edit`: `is_staff`, nothing else; the content-editor
+   permission alone does not count). The token itself comes only from a Discord, Google
+   or Patreon sign-in, behind the provider's own second factor; nothing on the API takes
+   a password.
 2. **Every write leaves a revision with its author** (`PvpGuideRevision`), which is the
    "admin history row" the old `POST /login` tokens lacked.
 3. **The route touches its own tables and nothing else**: the eight guide tables, no
    account, no PII, no other content.
 
-A non-staff editor gets the permission (the "Content editors" group on their site account),
-never `is_staff`. The revision list shows authors by handle, never by display name.
+Supporters writing guides of their own (planned, not built) is a separate gallery
+feature with its own rules; it does not widen this function. The revision list shows
+authors by handle, never by display name.
 
 ### Redirect URI must match byte-for-byte
 

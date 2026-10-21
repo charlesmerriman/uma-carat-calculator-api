@@ -416,6 +416,82 @@ first if you really mean to.
 **The PvP tab's intro text** is under **Site content → Pages → PvP guides**,
 edited like the other pages below.
 
+## Writing a guide on the site
+
+Since 2026-10-21 a guide can be written on the site itself, on the PvP page, instead of
+in the admin. Both edit the same guide: a change made in one shows in the other. The
+site's editor is the quicker of the two, and it is the one to reach for.
+
+**Who sees it.** Sign in on the site with the account you use there (Discord, Google or
+Patreon). Staff accounts get a fourth tab on the PvP page: **Edit guide**. Nobody else
+sees the tab. If you sign in and it is not there, the account you signed in with is not
+a staff account; ask the owner.
+
+**Opening a guide.** Pick the event the way you would to read its guide (the dropdown,
+Previous, Next), then press **Edit guide**. An event with no guide yet shows **Start
+empty** or **Copy it in** from another guide (every section copied, then edited). The
+guide starts as a draft that only editors see.
+
+**The tabs.** The same as the admin's: **Guide** for what applies to the whole team
+(scenario, style ranking, the short description and meta analysis, the stats table,
+team comps, the general skills every position takes, and private notes for editors),
+then **Runaway, Front, Pace, Late, End**, each with that style's recommended umas, the
+advice paragraph, its skills and its example decks. Every tab shows how many rows it
+holds; a red number is how many problems the last check found there.
+
+**Editing.** The page you edit is the page visitors see, with controls on it:
+
+- **Umas.** Press **Add uma** and pick from the list (it shows each uma's aptitude
+  letters for this cup's course and this style). Under every tile: the drag grip, a star
+  stepper, and a pencil for the role, the note, moving it with the keyboard, or removing
+  it. Umas sit in star groups, most stars first, the way the site shows them; drag
+  within a group to reorder.
+- **Skills.** Under each category, **Add skill** opens the skill list: search by name or
+  description, pick the version the guide means (the tag says ○ white, ◎ white, ◎ gold or
+  evolved), set the tier. The pencil on a chip changes its tier, category or note.
+- **Decks.** **Add a deck**, give it a label, then fill the six slots: **Card** opens the
+  card list (a card already in the deck is greyed; a card not out by the cup is marked),
+  **Note** adds the small text under a card ("2SP", "Gold + Link"), **Borrow** marks the
+  borrowed slot, and **+ or card** / **+ or note** adds an alternative under a slot. A
+  slot with only a note ("or any speed") is fine. Duplicate or delete a deck from its
+  top-right corner; drag the grip to reorder decks.
+- **Text.** In any note or text box, `==words==` shows red and `[[Skill name]]` becomes a
+  skill chip. Typing `[[` offers the matching skill names. The long boxes have a toolbar
+  (bold, italic, red, skill, link) and an eye button that previews the text as the site
+  will show it.
+
+**Saving.** There is no Save button to remember. Two seconds after your last change the
+guide saves itself; the line at the top says **Saving…** then **Saved**. Undo and redo
+are the arrows at the top (or Ctrl+Z / Ctrl+Shift+Z outside a text box). If something in
+the guide is wrong (an uma twice in one style, a deck with two borrowed slots, a
+`[[mention]]` of a skill that does not exist), the line says **Not saved: N problems to
+fix**, the problem is written under the field it is about, and the tab carries a red
+count; fix it and the next change saves. The chips under the top line list what the
+guide still lacks ("Front: no decks"); press one to go there.
+
+**Two people on one guide.** If someone else saved the guide after you opened it, your
+next save is held and a box asks whether to **Load theirs** (start from their version)
+or **Keep mine** (save yours over it). Either way both versions are in the history.
+
+**Revision history.** **Actions → Revision history** lists every save: who, when, from
+where (the site, the admin, the sheet). **Restore** puts an earlier version back as a
+new save, so nothing is ever lost.
+
+**The three tools.** Under **Actions**: **Copy from another guide** (tick the sections;
+rows are added, nothing overwritten), **Load from the sheet** (the community sheet's
+guide for this event; preview first, then it replaces every section) and **Fill track
+green skills** (the green skills this cup's track calls for, added to the general
+skills). Each shows what it would do before it does it.
+
+**Seeing it as a visitor.** **View as visitor** switches to the Recommendations tab with
+your latest save. Come back with **Edit guide**.
+
+**Publishing.** Press **Publish**; the box lists what the guide still lacks and asks
+once. From then on visitors see the guide and the event's Timeline card links to it, and
+every save goes live as it lands. **Unpublish** takes it back to a draft. A published
+guide cannot be deleted; unpublish it first. **Delete this guide** is under Actions for a
+draft.
+
 **The key dates** (registration, round 2, finals) come from the site owner's
 settings, the same for every event, so there is nothing to fill in for them.
 
