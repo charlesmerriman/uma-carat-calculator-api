@@ -162,7 +162,7 @@ def growth(users):
     return {"growth_by_month": months, "growth_by_week": weeks}
 
 
-def _saved_since(moment):
+def saved_since(moment):
     """A user whose plan or income profile was saved at or after `moment`."""
     return (Q(Exists(Plan.objects.filter(user=OuterRef("pk"), updated_at__gte=moment)))
             | Q(Exists(IncomeProfile.objects.filter(user=OuterRef("pk"),
@@ -202,10 +202,10 @@ def activity(users, total_users):
     older_count = older.count()
     rows = [
         ("Saved in the last 7 days",
-         users.filter(_saved_since(now - datetime.timedelta(days=7))).count(),
+         users.filter(saved_since(now - datetime.timedelta(days=7))).count(),
          total_users),
         ("Saved in the last 30 days",
-         users.filter(_saved_since(now - datetime.timedelta(days=30))).count(),
+         users.filter(saved_since(now - datetime.timedelta(days=30))).count(),
          total_users),
         ("Signed in in the last 30 days", users.filter(signed_in).count(), total_users),
         ("Came back after their first week", older.filter(came_back).count(),

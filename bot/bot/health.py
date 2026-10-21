@@ -1,0 +1,185 @@
+"""
+The health probe: the site checked from outside every minute, like a visitor,
+with ONE alert when it goes bad and ONE line when it comes back
+(discord-bot-plan.md, Step 7).
+
+WHAT A CHECK IS
+---------------
+Two requests, one after the other, each with a 10-second limit:
+
+* `/api/calculator-data` as a guest: the API's busiest route, the one that
+  struggled on banner launch days. Expect 200 and JSON.
+* `/`: the prerendered home page. Expect 200 and the app's root element.
+
+A request is BAD on an error, a timeout, a non-200, the wrong kind of page,
+or a time to first byte over PROBE_SLOW_SECONDS (3 s by default). A check is
+bad when either request is.
+
+WHY THREE IN A ROW (hysteresis)
+-------------------------------
+One slow reading is noise: a deploy restarting, a cold cache. So the state
+only flips after three bad checks in a row (healthy -> trouble, one alert),
+and back after three good ones (trouble -> healthy, one recovery line).
+Nothing repeats while it stays bad, and the probe never speeds up or retries:
+a slow site on launch day is exactly the case it watches, not one to add load
+to.
+
+The day's tallies (checks, how many were good, first-byte times) are kept in
+memory for the digest's "site health" line. A restart starts them over,
+which the digest says.
+"""
+
+import asyncio
+import collections
+import datetime
+import logging
+import math
+from dataclasses import dataclass
+
+import aiohttp
+import discord
+
+logger = logging.getLogger(__name__)
+
+TRIP_AFTER = 3
+REQUEST_TIMEOUT_SECONDS = 10
+USER_AGENT = "UmaCaratCalculatorHealth (https://umacaratcalculator.com, 1.0)"
+KEEP_DAYS = 2
+
+
+@dataclass(frozen=True)
+class Reading:
+    what: str
+    ok: bool
+    status: int | None = None
+    seconds: float | None = None
+    problem: str = ""
+
+    def describe(self):
+        if self.ok:
+            return f"{self.what} ok {self.seconds:.1f}s"
+        return f"{self.what} {self.problem}"
+
+
+def _looks_right(what, body):
+    if what == "api":
+        return body.lstrip()[:1] == b"{"
+    return b'id="root"' in body
+
+
+async def probe(session, site_url, slow_seconds):
+    """One check: a Reading for the API and one for the home page."""
+    readings = []
+    loop = asyncio.get_running_loop()
+    for what, path in (("api", "/api/calculator-data"), ("home", "/")):
+        started = loop.time()
+        try:
+            async with session.get(f"{site_url}{path}") as response:
+                # The request returns once the headers are in: first byte.
+                first_byte = loop.time() - started
+                body = await response.read()
+                status = response.status
+        except (aiohttp.ClientError, asyncio.TimeoutError) as exc:
+            name = "timed out" if isinstance(exc, asyncio.TimeoutError) else type(exc).__name__
+            readings.append(Reading(what, False, problem=name))
+            continue
+        if status != 200:
+            problem = f"HTTP {status}"
+        elif first_byte > slow_seconds:
+            problem = f"slow {first_byte:.1f}s"
+        elif not _looks_right(what, body):
+            problem = "unexpected page"
+        else:
+            problem = ""
+        readings.append(Reading(what, not problem, status, first_byte, problem))
+    return readings
+
+
+def new_session():
+    return aiohttp.ClientSession(
+        timeout=aiohttp.ClientTimeout(total=REQUEST_TIMEOUT_SECONDS),
+        headers={"User-Agent": USER_AGENT},
+    )
+
+
+class Tracker:
+    """The hysteresis state machine, and the day's tallies for the digest."""
+
+    def __init__(self):
+        self.healthy = True
+        self.bad_streak = 0
+        self.good_streak = 0
+        self.recent = collections.deque(maxlen=TRIP_AFTER)
+        self.trouble_since = None
+        self.days = {}
+
+    def feed(self, readings, when):
+        """Record one check. Returns "down" when the state flips to trouble,
+        "up" when it flips back, else None."""
+        ok = all(reading.ok for reading in readings)
+        self.recent.append((when, readings))
+        day = self.days.setdefault(when.date(), {"checks": 0, "good": 0, "seconds": []})
+        day["checks"] += 1
+        day["good"] += ok
+        day["seconds"] += [reading.seconds for reading in readings if reading.seconds is not None]
+        for old in [d for d in self.days if d < when.date() - datetime.timedelta(days=KEEP_DAYS)]:
+            del self.days[old]
+
+        if ok:
+            self.good_streak, self.bad_streak = self.good_streak + 1, 0
+        else:
+            self.bad_streak, self.good_streak = self.bad_streak + 1, 0
+        if self.healthy and self.bad_streak >= TRIP_AFTER:
+            self.healthy = False
+            self.trouble_since = self.recent[0][0]
+            return "down"
+        if not self.healthy and self.good_streak >= TRIP_AFTER:
+            self.healthy = True
+            return "up"
+        return None
+
+    def summary(self, day):
+        """{checks, uptime_pct, p95_seconds} for `day`, or None without data."""
+        tally = self.days.get(day)
+        if not tally or not tally["checks"]:
+            return None
+        seconds = sorted(tally["seconds"])
+        p95 = seconds[max(0, math.ceil(0.95 * len(seconds)) - 1)] if seconds else None
+        return {
+            "checks": tally["checks"],
+            "uptime_pct": round(100 * tally["good"] / tally["checks"], 2),
+            "p95_seconds": round(p95, 2) if p95 is not None else None,
+        }
+
+
+def _clock(when):
+    return when.strftime("%H:%M UTC")
+
+
+def render_alert(tracker, peaks):
+    """The one alert: what went wrong in the last three checks, and the API's
+    resources over the last five minutes when DigitalOcean is reachable."""
+    lines = [f"{_clock(when)}: " + ", ".join(r.describe() for r in readings) for when, readings in tracker.recent]
+    slow_only = all(
+        reading.ok or reading.problem.startswith("slow") for _, readings in tracker.recent for reading in readings
+    )
+    if peaks:
+        parts = []
+        if "cpu_percentage" in peaks:
+            parts.append(f"CPU up to {peaks['cpu_percentage']:.0f}%")
+        if "memory_percentage" in peaks:
+            parts.append(f"memory up to {peaks['memory_percentage']:.0f}%")
+        if "restart_count" in peaks:
+            parts.append(f"restarts {peaks['restart_count']:.0f}")
+        lines += ["", "API, last 5 minutes: " + ", ".join(parts)]
+    return discord.Embed(
+        title="The site is slow" if slow_only else "The site looks down",
+        description="\n".join(lines),
+        colour=0xF59E0B if slow_only else 0xE5484D,
+    )
+
+
+def render_recovery(tracker, now):
+    minutes = round((now - tracker.trouble_since).total_seconds() / 60) if tracker.trouble_since else None
+    took = f" after about {minutes} minute{'' if minutes == 1 else 's'}" if minutes else ""
+    return f"The site is back to normal{took}."

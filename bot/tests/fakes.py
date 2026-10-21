@@ -117,6 +117,9 @@ class FakeApi:
     async def release(self, key):
         return self._next("release", key)
 
+    async def digest(self):
+        return self._next("digest")
+
     async def find_record(self, message_id):
         return self._next("find_record", message_id)
 

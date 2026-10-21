@@ -119,6 +119,10 @@ class SiteApi:
         """The worker record whose message is `message_id` (a team copy's id)."""
         return await self._request("GET", f"bot/messages?message_id={message_id}")
 
+    async def digest(self):
+        """Yesterday's numbers for the daily digest (aggregates only)."""
+        return await self._request("GET", "bot/digest")
+
     # The team board's ordered queue (the site's team_queue.py).
 
     async def queue(self):

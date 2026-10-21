@@ -3,16 +3,20 @@ shared secret, decides through the same functions as the admin, records a
 Discord moderator by name without ever making an account, and tells a
 moderator nothing about a person beyond a display name and a handle."""
 
+import datetime
 import json
 from unittest import mock
 
 from django.test import override_settings
 from django.urls import reverse
+from django.utils import timezone
 
 from calculatorapi import gallery, gallery_moderation
 from calculatorapi.models import (
+    AnalyticsSnapshot,
     BlockedTerm,
     CustomUser,
+    DailyVisit,
     DiscordMessage,
     GalleryHiddenReason,
     GalleryReportReason,
@@ -429,3 +433,78 @@ class BotMessageLookupTests(GalleryFixture):
                     content_type="application/json", HTTP_X_BOT_KEY=KEY_HEADER,
                 )
                 self.assertEqual(response.status_code, 201)
+
+
+@override_settings(BOT_API_SECRET=KEY)
+class BotDigestTests(GalleryFixture):
+    """Yesterday's numbers for #calc-ops: right, and nothing about a person."""
+
+    def digest(self):
+        response = self.client.get(reverse("bot-digest"), HTTP_X_BOT_KEY=KEY_HEADER)
+        self.assertEqual(response.status_code, 200)
+        return response.json()
+
+    def test_counts_yesterday_and_the_gallery(self):
+        yesterday = timezone.now() - datetime.timedelta(days=1)
+        joined = self.person(display_name="NewcomerNana")
+        joined.date_joined = yesterday
+        joined.save()
+        DailyVisit.objects.create(date=yesterday.date(), page_views=30, unique_visitors=12)
+        author = self.person(display_name="SpeedySuzuka")
+        post_row = self.post(author)
+        gallery.report(self.person(), reason=GalleryReportReason.SPAM, post=post_row)
+        body = self.digest()
+        self.assertEqual(body["date"], yesterday.date().isoformat())
+        self.assertEqual(body["visits"]["yesterday"], {"visitors": 12, "page_views": 30})
+        self.assertEqual(body["visits"]["average_7_days"], round(12 / 7, 1))
+        self.assertEqual(body["accounts"]["new_yesterday"], 1)
+        self.assertEqual(body["gallery_last_24_hours"], {"posts": 1, "comments": 0, "reports": 1})
+        self.assertEqual(body["open_report_items"], 1)
+
+    def test_nothing_names_or_points_at_a_person(self):
+        author = self.person(display_name="SpeedySuzuka")
+        reporter = self.person(display_name="MooncakeMile")
+        gallery.report(reporter, reason=GalleryReportReason.SPAM, post=self.post(author))
+        text = json.dumps(self.digest())
+        for private in ("SpeedySuzuka", "MooncakeMile", author.username, "_id", "handle", "email"):
+            self.assertNotIn(private, text)
+
+        def numbers_only(value):
+            if isinstance(value, dict):
+                return all(numbers_only(v) for v in value.values())
+            return isinstance(value, (int, float))
+
+        body = self.digest()
+        body.pop("date")
+        self.assertTrue(numbers_only(body))
+
+    def test_reading_it_keeps_todays_snapshot(self):
+        self.digest()
+        self.assertTrue(AnalyticsSnapshot.objects.filter(date=timezone.localdate()).exists())
+
+    def test_locked(self):
+        with self.settings(BOT_API_SECRET=""):
+            self.assertEqual(self.client.get(reverse("bot-digest")).status_code, 404)
+
+
+@override_settings(BOT_API_SECRET=KEY)
+class WorkerKeyShapeTests(GalleryFixture):
+    """Each worker prefix takes exactly its own shape of key."""
+
+    def claim(self, key):
+        return self.client.post(
+            reverse("bot-message-claim"), json.dumps({"key": key, "channel_id": "1562200271222866020"}),
+            content_type="application/json", HTTP_X_BOT_KEY=KEY_HEADER,
+        ).status_code
+
+    def test_shapes(self):
+        for key, expected in (
+            ("digest:20261021", 201),
+            ("deploy:3b4871e4-29bb-4067-86b0-7c3ef2d986f9", 201),
+            ("deploy:3554696", 404),
+            ("weekly:2026102", 404),
+            ("promote:abcdef", 404),
+            ("upnext:", 404),
+        ):
+            with self.subTest(key=key):
+                self.assertEqual(self.claim(key), expected)
