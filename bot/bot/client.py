@@ -4,9 +4,10 @@ The bot's connection to Discord: one discord.py Client holding the Gateway
 discord.py owns the heartbeats, reconnects and rate limits; this file only
 says what to do with what arrives.
 
-Intents are the defaults: buttons and slash commands need no privileged
-intent, so the bot asks for no member list, no presences and no message
-content.
+Intents are the defaults: buttons, slash commands, message menus and new
+forum posts need no privileged intent, so the bot asks for no member list, no
+presences and no message content. (A message menu hands over the message it
+was used on, text included, without Message Content.)
 """
 
 import logging
@@ -16,6 +17,7 @@ from discord import app_commands
 
 from bot.api import SiteApi
 from bot.moderation import Moderation
+from bot.team import Team
 
 logger = logging.getLogger(__name__)
 
@@ -28,12 +30,16 @@ class SiteBot(discord.Client):
         self.api = SiteApi(config.api_base_url, config.api_secret)
         self.tree = app_commands.CommandTree(self)
         self.moderation = Moderation(self.api, config)
+        self.team = Team(self.api, config, self._channel) if config.team_enabled else None
 
     async def setup_hook(self):
         """Runs once, before the Gateway connects."""
         await self.api.start()
         guild = discord.Object(id=self.config.guild_id)
         self.tree.add_command(self.moderation.commands(), guild=guild)
+        if self.team is not None:
+            for command in self.team.commands():
+                self.tree.add_command(command, guild=guild)
         # Sent on every start: cheap, and a renamed or new command shows up
         # without a separate step. Guild-scoped, so it applies in seconds.
         synced = await self.tree.sync(guild=guild)
@@ -41,6 +47,14 @@ class SiteBot(discord.Client):
 
     async def on_ready(self):
         logger.info("Connected as %s (%s)", self.user, getattr(self.user, "id", "?"))
+
+    async def _channel(self, channel_id):
+        """A channel from the cache, else from Discord."""
+        return self.get_channel(channel_id) or await self.fetch_channel(channel_id)
+
+    async def on_thread_create(self, thread):
+        if self.team is not None:
+            await self.team.on_thread_create(thread)
 
     async def on_interaction(self, interaction):
         # Slash commands are answered by the CommandTree; component clicks

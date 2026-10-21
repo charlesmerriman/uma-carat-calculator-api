@@ -42,6 +42,16 @@ NO_REPORTS = "Nothing is waiting. No open reports."
 UNDONE = "Undone. Its reports are open again, so pick again on the card."
 NOTHING_TO_UNDO = "Nothing to undo: it's already open."
 
+# The team board.
+NEED_TEAM_ROLE = "That's for the Web Developer team."
+ONLY_FEEDBACK = "That only works on a post in the carat calculator feedback forum."
+BOARD_FAILED = "Discord didn't take the post. Try again in a minute."
+REQUEST_POSTED = "Posted to the team board: {link}"
+SENT_TO_BOARD = "On the team board now: {link}. The public post is marked Under review."
+ALREADY_ON_BOARD = "It's already on the team board: {link}"
+PROMOTE_IN_FLIGHT = "Someone is sending it right now. Check the team board in a moment."
+PUBLIC_UNDER_REVIEW = "Thanks for posting this. It's on the team's list now, and we'll update this post when it moves."
+
 RESOLUTIONS = {"kept": "kept", "removed": "removed", "blocked": "removed (author blocked)"}
 
 

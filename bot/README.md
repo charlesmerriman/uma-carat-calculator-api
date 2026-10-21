@@ -27,11 +27,22 @@ BOT_ENV_FILE=~/.config/uma-discord/bot.env .venv/bin/python -m bot
 Run it from this directory: `python -m bot` from the api root finds the outer folder,
 not the package.
 
+## The team board (Step 6a)
+
+`/request`, the message menus **Make this a request** and **Send to team board**, and
+filling a missing priority and area on new `#calc-team-board` posts (`bot/team.py`). On
+only while `DISCORD_TEAM_BOARD_ID`, `DISCORD_TEAM_ROLE_ID` and
+`DISCORD_WEBSITE_FEEDBACK_ID` are all set. Tags are matched by NAME.
+
+`actions/requests_sync.py` is not the worker: GitHub runs it (`.github/workflows/requests-sync.yml`,
+also called from the web repo) when a PR into develop merges, to move the team-board posts
+the PR's description links to "In progress". Standard library only; `--dry-run` writes nothing.
+
 ## Tests and lint
 
 ```bash
 .venv/bin/python -m unittest discover -s tests -t .
-.venv/bin/pip install pylint==3.3.9 && .venv/bin/pylint bot tests
+.venv/bin/pip install pylint==3.3.9 && .venv/bin/pylint bot actions tests
 ```
 
 Fakes stand in for Discord and the site (`tests/fakes.py`); the client's tests use a
