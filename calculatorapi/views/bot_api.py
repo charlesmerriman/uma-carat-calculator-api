@@ -157,7 +157,8 @@ def _bad(detail):
 
 def _item_payload(item):
     kind, ref = moderation_cards.item_ref(item)
-    post = item if kind == "post" else item.post
+    # A comment knows its own page: a post's link, or its guide's section.
+    path = f"/post/{item.public_id}" if kind == "post" else item.link_path()
     reports = list(item.reports.select_related("reporter", "resolved_by").order_by("created_at"))
     open_reports = [report for report in reports if report.resolved_at is None]
     decided = None
@@ -171,7 +172,7 @@ def _item_payload(item):
     return {
         "kind": kind,
         "ref": ref,
-        "url": f"{settings.FRONTEND_URL}/post/{post.public_id}",
+        "url": f"{settings.FRONTEND_URL}{path}",
         "text": moderation_cards.item_text(item),
         "author": _person(item.author),
         "author_blocked": bool(item.author and item.author.publishing_blocked),

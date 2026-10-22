@@ -95,6 +95,7 @@ PRIVATE_MODELS = (
     # database starts with an empty list rather than a copy of prod's.
     "GalleryPost",
     "GalleryVote",
+    "GalleryCommentVote",
     "GalleryComment",
     "GalleryReport",
     "BlockedTerm",

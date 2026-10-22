@@ -21,7 +21,7 @@ client's banner data only knows cards that were on a banner, and skills are not
 on the client at all yet.
 """
 
-from django.db.models import Exists, OuterRef
+from django.db.models import Count, Exists, OuterRef
 from django.db.models.functions import Lower
 from rest_framework import permissions, serializers
 from rest_framework.decorators import api_view, permission_classes
@@ -30,6 +30,7 @@ from rest_framework.response import Response
 from calculatorapi import pvp_guide_editing
 from calculatorapi.pvp_guides import guide_queryset
 from calculatorapi.models import (
+    GalleryComment,
     ChampionsMeeting,
     PvpDeck,
     PvpDeckSlot,
@@ -330,7 +331,21 @@ def serialize_guide(guide, request=None):
         "decks": many(_DeckSerializer, sorted(guide.decks.all(), key=_ordered_key)),
         # {lower-case name: skill} for every [[name]] in the guide's text.
         "skill_mentions": mentions,
+        # {section: visible comments}, "" for the whole guide, so the tabs can
+        # show counts without fetching every thread (views/gallery.py).
+        "comment_counts": _comment_counts(guide),
     }
+
+
+def _comment_counts(guide):
+    """Visible comments per section: not hidden, not "[deleted]", not by a
+    blocked account, the rule a post's comment count keeps."""
+    rows = (
+        GalleryComment.objects.filter(guide=guide, is_hidden=False, is_deleted=False)
+        .exclude(author__publishing_blocked=True)
+        .values("section").annotate(n=Count("id")).values_list("section", "n")
+    )
+    return dict(rows)
 
 
 @api_view(["GET"])

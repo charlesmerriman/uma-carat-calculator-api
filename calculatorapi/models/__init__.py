@@ -77,6 +77,7 @@ from .gallery import (
     BlockedTerm,
     BlockedTermMatch,
     GalleryComment,
+    GalleryCommentVote,
     GalleryHiddenReason,
     GalleryPost,
     GalleryPostKind,

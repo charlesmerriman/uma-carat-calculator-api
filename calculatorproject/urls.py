@@ -63,6 +63,8 @@ from calculatorapi.views.pvp_catalogue import pvp_catalogue
 from calculatorapi.views.pvp_team import pvp_team_detail, pvp_team_list
 from calculatorapi.views.gallery import (
     gallery_comment_detail,
+    gallery_comment_vote,
+    guide_comments,
     gallery_my_posts,
     gallery_post_comments,
     gallery_post_copy,
@@ -178,6 +180,8 @@ urlpatterns = [
     # unknown kind gets the same JSON 404 as an unknown event. Drafts 404 for
     # everyone but staff. → views/pvp_guide.py
     path("pvp-guides/<str:kind>/<int:event_id>", pvp_guide_detail, name="pvp-guide"),
+    # A guide's comments, one thread per section (guide-comments-plan.md). → views/gallery.py
+    path("pvp-guides/<str:kind>/<int:event_id>/comments", guide_comments, name="pvp-guide-comments"),
     # The site's guide editor: a guide as one document, by guide id. Editors
     # only (pvp_guide_editing.can_edit); every write leaves a revision.
     # → views/pvp_guide_editor.py
@@ -216,6 +220,7 @@ urlpatterns = [
     path("gallery/posts/<str:public_id>/copy", gallery_post_copy, name="gallery-post-copy"),
     path("gallery/posts/<str:public_id>/comments", gallery_post_comments, name="gallery-post-comments"),
     path("gallery/comments/<int:comment_id>", gallery_comment_detail, name="gallery-comment-detail"),
+    path("gallery/comments/<int:comment_id>/vote", gallery_comment_vote, name="gallery-comment-vote"),
     path("gallery/reports", gallery_report, name="gallery-report"),
     # A gallery post's permanent link and its link-preview picture. Served
     # at /post on the SITE's host, not under /api: an ingress rule in

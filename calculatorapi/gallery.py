@@ -17,12 +17,13 @@ import hashlib
 from django.conf import settings
 from django.core.cache import caches
 from django.db import IntegrityError, transaction
-from django.db.models import F
+from django.db.models import Count, F
 from django.utils import timezone
 
 from calculatorapi import gallery_moderation, moderation_cards, visits
 from calculatorapi.models import (
     GalleryComment,
+    GalleryCommentVote,
     GalleryPost,
     GalleryPostKind,
     GalleryReport,
@@ -288,6 +289,38 @@ def unvote(user, post):
     GalleryVote.objects.filter(post=post, user=user).delete()
 
 
+def vote_comment(user, comment):
+    """A thumbs-up on `comment` as `user`. Idempotent. Never on your own, and
+    never from a blocked account, the same rules as a post's upvote."""
+    if comment.author_id == user.pk:
+        raise GalleryRefused("You can't thumbs-up your own comment.", status=403)
+    if user.publishing_blocked:
+        raise GalleryRefused("Your account can't vote in the gallery.", status=403)
+    GalleryCommentVote.objects.get_or_create(comment=comment, user=user)
+
+
+def unvote_comment(user, comment):
+    """Take `user`'s thumbs-up off `comment`. Idempotent."""
+    GalleryCommentVote.objects.filter(comment=comment, user=user).delete()
+
+
+def comment_votes(comment_ids, viewer=None):
+    """({comment id: thumbs-up count}, {ids the viewer thumbed up}) for a page
+    of comments, in two queries however long the page. Blocked accounts'
+    votes don't count, as on posts."""
+    counts = dict(
+        GalleryCommentVote.objects.filter(comment_id__in=comment_ids, user__publishing_blocked=False)
+        .values("comment_id").annotate(n=Count("id")).values_list("comment_id", "n")
+    )
+    mine = set()
+    if viewer is not None and viewer.is_authenticated:
+        mine = set(
+            GalleryCommentVote.objects.filter(comment_id__in=comment_ids, user=viewer)
+            .values_list("comment_id", flat=True)
+        )
+    return counts, mine
+
+
 # ── Views and copies ────────────────────────────────────────────────────────
 
 
@@ -368,27 +401,32 @@ def _clean_comment(body):
     return body
 
 
-def add_comment(user, post, body, parent_id=None):
-    """A new comment on `post`, or a reply. Returns the comment.
+def add_comment(user, post, body, parent_id=None, *, guide=None, section=""):  # pylint: disable=too-many-arguments
+    """A new comment on `post`, or on a section of `guide` (pass `post=None`),
+    or a reply. Returns the comment.
 
     One level of replies: a reply to a reply is attached to the top comment it
-    sits under, so the thread never nests deeper than the page draws it.
-    Commenting needs what posting needs (a display name, not blocked): the
-    comment shows the same public block.
+    sits under, so the thread never nests deeper than the page draws it. A
+    reply must be in the same thread (the same post, or the same guide
+    section). Commenting needs what posting needs (a display name, not
+    blocked): the comment shows the same public block.
     """
     check_may_publish(user)
     body = _clean_comment(body)
+    siblings = post.comments.all() if post is not None else guide.comments.filter(section=section)
     parent = None
     if parent_id is not None:
         try:
-            parent = post.comments.get(pk=int(parent_id), is_hidden=False)
+            parent = siblings.get(pk=int(parent_id), is_hidden=False)
         except (TypeError, ValueError, GalleryComment.DoesNotExist) as error:
             raise GalleryRefused("That comment isn't there any more.") from error
         parent = parent.parent or parent
     since = timezone.now() - REPEAT_WINDOW
     if GalleryComment.objects.filter(author=user, body=body, created_at__gte=since).exists():
         raise GalleryRefused("You've already posted that comment.")
-    return GalleryComment.objects.create(post=post, author=user, parent=parent, body=body)
+    if post is not None:
+        return GalleryComment.objects.create(post=post, author=user, parent=parent, body=body)
+    return GalleryComment.objects.create(guide=guide, section=section, author=user, parent=parent, body=body)
 
 
 def get_own_comment(user, comment_id):
@@ -427,7 +465,17 @@ def delete_comment(comment):
 
 
 def thread(post, viewer=None):
-    """The post's comments a viewer may see: top comments oldest first, each
+    """A post's thread: see _thread."""
+    return _thread(post.comments.select_related("author"), viewer)
+
+
+def guide_thread(guide, section, viewer=None):
+    """One section of a guide's comments (blank = the whole guide): see _thread."""
+    return _thread(guide.comments.filter(section=section).select_related("author"), viewer)
+
+
+def _thread(queryset, viewer=None):
+    """The comments of one thread a viewer may see: top comments oldest first, each
     with its replies. A list of (comment, state, [(reply, state), ...]).
 
     state is "visible", "deleted" ("[deleted]"), "removed" ("[removed]", hidden
@@ -437,7 +485,7 @@ def thread(post, viewer=None):
     to keep a conversation's shape.
     """
     viewer_id = viewer.pk if viewer is not None and viewer.is_authenticated else None
-    comments = list(post.comments.select_related("author"))
+    comments = list(queryset)
 
     def state(comment):
         if comment.is_deleted:
@@ -512,6 +560,7 @@ def erase_users(users):
     ids = [user.pk for user in users]
     GalleryPost.objects.filter(author_id__in=ids).delete()
     GalleryVote.objects.filter(user_id__in=ids).delete()
+    GalleryCommentVote.objects.filter(user_id__in=ids).delete()
     comments = GalleryComment.objects.filter(author_id__in=ids)
     # Replies first: a reply has no replies of its own, so it always goes.
     comments.filter(parent__isnull=False).delete()
