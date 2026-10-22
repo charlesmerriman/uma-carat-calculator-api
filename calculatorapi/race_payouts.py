@@ -27,6 +27,17 @@ still arrives exactly when it did and only the earlier days move forward.
 
 An earlier day is clamped to the last instant, so a short or odd window can
 never date a day after its own final payout.
+
+TICKETS AND SHARDS (Daptrius, 2026-10-22)
+-----------------------------------------
+A rank's gacha tickets and shards are not paid with the last day either:
+
+  Champions Meeting  tickets and shards at the end of day 4
+  League of Heroes   shards at the end of day 3, tickets at the end of day 4
+
+Each is dated the same way as a carat day (start + N days, clamped to the
+last instant), so it falls on one of `payouts`. The ledger row carries them
+as `tickets_at` / `shards_at`.
 """
 
 from datetime import timedelta
@@ -42,6 +53,13 @@ EARLY_PAYOUT_DAYS = {
 }
 
 
+# The day a rank's tickets and shards arrive, keyed like EARLY_PAYOUT_DAYS.
+ITEM_PAYOUT_DAYS = {
+    "champions_meeting": {"tickets": 4, "shards": 4},
+    "league_of_heroes": {"tickets": 4, "shards": 3},
+}
+
+
 def payout_count(kind):
     """How many payouts an event of this kind makes: its early days plus the last."""
     return len(EARLY_PAYOUT_DAYS[kind]) + 1
@@ -54,6 +72,15 @@ def payout_instants(kind, start, last):
     if start is None:
         return [last] * payout_count(kind)
     return [min(start + timedelta(days=day), last) for day in EARLY_PAYOUT_DAYS[kind]] + [last]
+
+
+def item_payout_instant(kind, item, start, last):
+    """When an event of this kind pays a rank's `item` ("tickets" or
+    "shards"). Dated like a carat day, so it is one of payout_instants(); with
+    no start, at `last`."""
+    if start is None:
+        return last
+    return min(start + timedelta(days=ITEM_PAYOUT_DAYS[kind][item]), last)
 
 
 def day_amounts_error(kind, day_amounts, total):

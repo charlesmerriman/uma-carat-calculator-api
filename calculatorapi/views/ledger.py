@@ -33,6 +33,10 @@ class IncomeLedgerRowSerializer(serializers.Serializer):
     # The instants a race event pays, one per payout day, the last equal to
     # `date` (race_payouts.py). Empty on event rows.
     payouts = serializers.ListField(child=serializers.DateTimeField())
+    # When a race event pays the rank's tickets and its shards, each one of
+    # `payouts` (race_payouts.ITEM_PAYOUT_DAYS). Null on event rows.
+    tickets_at = serializers.DateTimeField(allow_null=True)
+    shards_at = serializers.DateTimeField(allow_null=True)
 
     carats = serializers.IntegerField()
     carats_throughout = serializers.IntegerField()
