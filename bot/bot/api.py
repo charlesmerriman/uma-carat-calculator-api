@@ -31,6 +31,11 @@ HEADER = "X-Bot-Key"
 # acknowledged Discord (which allows 15 minutes for the follow-up) before it
 # calls here.
 TIMEOUT_SECONDS = 10
+# GET bot/digest is the exception: once a day, with nobody waiting on it, and
+# on a cold cache it rebuilds the whole analytics report, which took longer
+# than 10 s on 2026-10-22 and lost that day's digest. Just under gunicorn's
+# own 30 s (gunicorn.conf.py), past which waiting longer can't help.
+DIGEST_TIMEOUT_SECONDS = 28
 USER_AGENT = "UmaCaratCalculatorBot (https://umacaratcalculator.com, 1.0)"
 
 
@@ -65,10 +70,12 @@ class SiteApi:
         if self._session is not None:
             await self._session.close()
 
-    async def _request(self, method, path, body=None):
+    async def _request(self, method, path, body=None, timeout=None):
         url = f"{self._base_url}/{path}"
+        # None keeps the session's TIMEOUT_SECONDS.
+        extra = {"timeout": aiohttp.ClientTimeout(total=timeout)} if timeout else {}
         try:
-            async with self._session.request(method, url, json=body) as response:
+            async with self._session.request(method, url, json=body, **extra) as response:
                 try:
                     data = await response.json(content_type=None)
                 except (ValueError, aiohttp.ContentTypeError):
@@ -125,7 +132,7 @@ class SiteApi:
 
     async def digest(self):
         """Yesterday's numbers for the daily digest (aggregates only)."""
-        return await self._request("GET", "bot/digest")
+        return await self._request("GET", "bot/digest", timeout=DIGEST_TIMEOUT_SECONDS)
 
     # The team board's ordered queue (the site's team_queue.py).
 
