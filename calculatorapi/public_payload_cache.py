@@ -130,6 +130,7 @@ _IRRELEVANT_MODELS = frozenset({
     "gallerypost",
     "galleryvote",
     "gallerycomment",
+    "gallerycommentvote",
     "galleryreport",
     "blockedterm",
     # Accounts and auth.

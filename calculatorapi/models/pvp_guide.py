@@ -496,6 +496,15 @@ class PvpDeck(SkillMentionsMixin, models.Model):
         help_text="\"Beginner\", \"Standard\", \"Whale\" or anything else.",
     )
     note = models.CharField(max_length=300, blank=True, help_text=HIGHLIGHT_HELP)
+    # A gold box round the deck, to set it apart from the others: the sheet's
+    # "Honorable Mentions" row (Henry, 2026-10-22). An editor's choice per
+    # deck rather than a rule keyed to the label (owner, 2026-10-22), so any
+    # deck can carry it and a label can change without losing it.
+    is_highlighted = models.BooleanField(
+        default=False,
+        verbose_name="Gold box",
+        help_text="Draw this deck in a gold box, to set it apart from the others.",
+    )
     order = _order_field()
 
     class Meta:

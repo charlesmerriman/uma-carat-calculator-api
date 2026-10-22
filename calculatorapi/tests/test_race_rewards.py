@@ -3,6 +3,7 @@
 The server only stores and serves the rows; which row an event pays is the
 client's job (frontend `raceRewardAmount`), like the rest of the projection.
 """
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError, connection, transaction
 from django.test import override_settings
 from django.test.utils import CaptureQueriesContext
@@ -45,12 +46,12 @@ class RaceRankRewardApiTests(CalculatorTestCase):
         self.assertEqual(
             loh["rewards"],
             [
-                {"from_event_number": 1, "income_amount": 2450},
-                {"from_event_number": 2, "income_amount": 3450},
-                {"from_event_number": 6, "income_amount": 3900},
+                {"from_event_number": 1, "income_amount": 2450, "day_amounts": []},
+                {"from_event_number": 2, "income_amount": 3450, "day_amounts": []},
+                {"from_event_number": 6, "income_amount": 3900, "day_amounts": []},
             ],
         )
-        self.assertEqual(cm["rewards"], [{"from_event_number": 30, "income_amount": 3800}])
+        self.assertEqual(cm["rewards"], [{"from_event_number": 30, "income_amount": 3800, "day_amounts": []}])
         # The rank's own amount is still sent: it pays every event before the first row.
         self.assertEqual(cm["income_amount"], 3300)
 
@@ -82,7 +83,7 @@ class RaceRankRewardApiTests(CalculatorTestCase):
         ChampionsMeetingRankReward.objects.create(rank=self.champion, from_event_number=30, income_amount=3800)
         res = self.client.get("/championsmeetingranks")
         champion = next(r for r in res.json() if r["name"] == "Champion")
-        self.assertEqual(champion["rewards"], [{"from_event_number": 30, "income_amount": 3800}])
+        self.assertEqual(champion["rewards"], [{"from_event_number": 30, "income_amount": 3800, "day_amounts": []}])
 
     def test_one_row_per_rank_and_event_number(self):
         ChampionsMeetingRankReward.objects.create(rank=self.champion, from_event_number=30, income_amount=3800)
@@ -90,6 +91,43 @@ class RaceRankRewardApiTests(CalculatorTestCase):
             ChampionsMeetingRankReward.objects.create(
                 rank=self.champion, from_event_number=30, income_amount=4000
             )
+
+    def test_day_amounts_are_served_on_the_rank_and_on_each_row(self):
+        # Daptrius's LoH #2-5 Platinum 4 split (race-rewards-daily-plan.md).
+        self.plat4.day_amounts = [390, 300, 600, 1000, 500, 500, 100, 60]
+        self.plat4.full_clean()
+        self.plat4.save()
+        LeagueOfHeroesRankReward.objects.create(
+            rank=self.plat4, from_event_number=6, income_amount=3900,
+            day_amounts=[550, 600, 600, 1000, 500, 500, 100, 50],
+        )
+        loh = next(r for r in _calculator_data(self.client)["league_of_heroes_rank_data"] if r["name"] == "Platinum 4")
+        self.assertEqual(loh["day_amounts"], [390, 300, 600, 1000, 500, 500, 100, 60])
+        self.assertEqual(loh["rewards"][0]["day_amounts"], [550, 600, 600, 1000, 500, 500, 100, 50])
+
+    def test_a_day_split_must_have_one_amount_per_payout_and_add_up(self):
+        cases = (
+            (self.champion, [130, 130, 270, 270, 2500], None),  # CM: 5 payouts, sums to 3300
+            (self.champion, [], None),  # blank: all at the finals
+            (self.champion, [130, 130, 270, 2770], "Enter 5 amounts"),
+            (self.champion, [130, 130, 270, 270, 2400], "add up to 3200, not the 3300"),
+            (self.plat4, [390, 300, 600, 1000, 500, 500, 160], "Enter 8 amounts"),
+            (self.plat4, [390, 300, 600, 1000, 500, 500, 100, -40], "whole numbers"),
+        )
+        for rank, days, message in cases:
+            with self.subTest(rank=rank.name, days=days):
+                rank.day_amounts = days
+                if message is None:
+                    rank.full_clean()
+                    continue
+                with self.assertRaises(ValidationError) as caught:
+                    rank.full_clean()
+                self.assertIn(message, str(caught.exception.message_dict["day_amounts"]))
+        # An era row is checked against its own total, not the rank's.
+        row = ChampionsMeetingRankReward(rank=self.champion, from_event_number=30, income_amount=3800,
+                                         day_amounts=[130, 130, 270, 270, 2500])
+        with self.assertRaises(ValidationError):
+            row.full_clean()
 
     def test_rows_go_with_their_rank(self):
         LeagueOfHeroesRankReward.objects.create(rank=self.plat4, from_event_number=6, income_amount=3900)

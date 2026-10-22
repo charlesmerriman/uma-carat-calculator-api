@@ -232,6 +232,20 @@ class DocumentRoundTripTests(CalculatorTestCase):
         rows = list(self.guide.uma_recommendations.order_by("order").values_list("uma__name", "order"))
         self.assertEqual(rows, [("Seiun Sky", 0), ("Maruzensky", 1)])
 
+    def test_a_deck_gold_box_saves_and_reaches_the_reader(self):
+        document = self.client.get(doc_url(self.guide)).json()
+        self.assertIs(document["decks"][0]["is_highlighted"], False)
+        boxed = {**document["decks"][0], "is_highlighted": True}
+        # A deck sent without the key (a revision saved before the field
+        # existed) saves unboxed.
+        plain = {"id": None, "style": "pace", "label": "Honorable Mentions", "note": "", "slots": []}
+        res = self.client.put(doc_url(self.guide), put_body(document, decks=[boxed, plain]), format="json")
+        self.assertEqual(res.status_code, 200, res.content)
+        boxes = self.guide.decks.order_by("order").values_list("is_highlighted", flat=True)
+        self.assertEqual(list(boxes), [True, False])
+        reader = self.client.get(f"/pvp-guides/cm/{self.fixture.cm.id}").json()
+        self.assertEqual([deck["is_highlighted"] for deck in reader["decks"]], [True, False])
+
     def test_decks_keep_their_id_when_named_and_are_replaced_otherwise(self):
         document = self.client.get(doc_url(self.guide)).json()
         kept = document["decks"][0]

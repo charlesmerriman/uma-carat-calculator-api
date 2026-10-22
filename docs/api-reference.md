@@ -418,6 +418,7 @@ exits it normally, so Django would otherwise commit the accepted half.
     "daily_carat":            false,
     "training_pass":          false,
     "misc_earnings":          true,
+    "custom_misc_earnings_monthly": null,
     "monthly_shop_tickets":   true,
     "shop_uma_tickets_bought": null,
     "shop_support_tickets_bought": null,
@@ -755,7 +756,7 @@ may hold `==highlight==` spans the client renders red.
                 "versions": [{"id": 211, "name": "Lead the Pack ◎", "description": "string", "image": "url | null",
                               "rarity": 2, "tier": 2, "version": "◎ gold", "is_evolved": false}]}}],
   "style_notes": [{"style": "front", "body": "markdown"}],
-  "decks": [{"id": 7, "style": "front", "label": "Standard", "note": "",
+  "decks": [{"id": 7, "style": "front", "label": "Standard", "note": "", "is_highlighted": false,
       "slots": [{"slot": 1, "order": 0, "is_borrow": false, "note": "Gold + Link",
                  "support_card": {"id": 302, "name": "Kitasan Black", "image": "url | null",
                                   "card_type": "speed", "rarity": 3}},
@@ -818,7 +819,7 @@ client flushes its autosave first and replaces its copy with the answer.
   "uma_recommendations": [{"style": "front", "uma": 41, "stars": 5, "role": "RA", "note": ""}],
   "skill_recommendations": [{"style": "front", "category": "acceleration", "tier": 0, "skill": 88, "note": ""}],
   "style_notes": [{"style": "front", "body": "markdown"}],
-  "decks": [{"id": 90, "style": "front", "label": "Standard", "note": "",
+  "decks": [{"id": 90, "style": "front", "label": "Standard", "note": "", "is_highlighted": false,
              "slots": [{"slot": 1, "order": 0, "is_borrow": false, "support_card": 302, "note": "2SP"},
                        {"slot": 1, "order": 1, "is_borrow": false, "support_card": null, "note": "or any speed"}]}] }
 ```
@@ -926,6 +927,9 @@ the post's own author.
 | `GET /gallery/posts/<public_id>/comments?page=N` | anyone | `{count, page, has_more, results: [comment]}`, 50 top comments per page |
 | `POST /gallery/posts/<public_id>/comments` `{body, parent?}` | signed in, display name | `201` the comment |
 | `PATCH` / `DELETE /gallery/comments/<id>` `{body}` | its author | the comment / `204` |
+| `PUT` / `DELETE /gallery/comments/<id>/vote` | signed in | `{upvotes, my_vote}`; `403` on your own comment, `404` on one you can't see |
+| `GET /pvp-guides/<kind>/<event_id>/comments?section=<style>&page=N` | anyone who can read the guide | a guide section's thread, the same shape as a post's; no `section` = the whole guide |
+| `POST /pvp-guides/<kind>/<event_id>/comments` `{body, parent?, section}` | signed in, display name | `201` the comment; `400` for a section that isn't `""` or a running style |
 | `POST /gallery/reports` `{post: public_id}` or `{comment: id}`, `reason`, `note?` | signed in | `201`, no body; `409` on a repeat |
 | `GET /post/<public_id>` | anyone | HTML: link-preview tags, then on to the post in the app. **Not under `/api`** |
 | `GET /post/<public_id>/preview.jpg?v=<version>` | anyone | the 1200x630 preview JPEG: the brand strip with the event's name, then the three umas (`gallery_preview.py`). The version is the team's hash plus the drawing's `LAYOUT`; an old one redirects |
@@ -961,7 +965,11 @@ Never in any gallery payload: a username, a user id, the team's name, notes or p
 weight, a tier order, who voted, viewed or reported.
 
 A comment: `{id, state, body, created_at, edited, earlier_version, is_author, is_mine,
-poster, replies: [comment]}`. `state` is `visible`, `deleted` ("[deleted]"), `removed`
+poster, upvotes, my_vote, replies: [comment]}`. `upvotes` is its thumbs-up count (blocked
+accounts not counted) and `my_vote` the viewer's; who voted is never sent. On a guide's
+comment `earlier_version` and `is_author` are always false. The guide payload
+(`GET /pvp-guides/<kind>/<event_id>`) carries `comment_counts`, `{section: visible
+comments}` with `""` for the whole guide. `state` is `visible`, `deleted` ("[deleted]"), `removed`
 ("[removed]") or `under_review` (your own hidden comment); only `visible` and
 `under_review` carry `body` and `poster`. `reason` is `spam`, `harassment`,
 `sexual_or_violent`, `personal_info` or `other`.
@@ -1173,6 +1181,7 @@ moderators clicking at once get one `200` and one `409`.
   "daily_carat":            false,
   "training_pass":          false,
   "misc_earnings":          true,
+  "custom_misc_earnings_monthly": null,
   "monthly_shop_tickets":   true,
   "shop_uma_tickets_bought": null,
   "shop_support_tickets_bought": null,
@@ -1638,6 +1647,7 @@ The flat, date-sorted timeline the projection queries for cumulative income tota
 Five things to know:
 
 - **`date` is the instant the reward lands** — an event's resolved start; for a race event, its resolved **end less that kind's `RACE_REWARD_LEAD_TIME`**. A Champions Meeting settles its placements at the daily reset **a day before** its window closes, so its row sits a day ahead of the end date the timeline shows; League of Heroes has no lead time and is dated at its end. The offset is a `timedelta` of 23:59:59, so it preserves time of day — a CM closing 21:59:59 pays at 22:00:00 the day before. The client credits a row to a banner when `date <= banner end`, so a CM ending the day after a banner is never credited to that banner: its rewards arrive a minute after the banner closes.
+- **`payouts` lists the instants a race event pays, one per payout day** (5 for a CM, 8 for an LoH; `calculatorapi/race_payouts.py`), the last always equal to `date`. Empty on `event` rows. Each CM / LoH rank, and each of its `rewards` rows, carries `day_amounts`, the carats paid at each of those instants (`[]` = the rank pays everything at `date`; on a `rewards` row, the rank's own split scaled to the row's total).
 - **Race rows carry no amounts.** `champions_meeting` / `league_of_heroes` rows are indicators; what a placement pays depends on the user's rank row, which only the client knows. Every amount field is still present (as `0`), so the client never guards on shape.
 - **`event_number` says which race event a row is**: `cm_number` / `loh_number` on race rows, `null` on `event` rows. It exists because what a rank pays depends on the event's number: each CM / LoH rank in `/calculator-data` carries `rewards`, `[{"from_event_number": 30, "income_amount": 3800}, ...]` ascending, and the client pays the largest `from_event_number` at or below the row's number, else the rank's own `income_amount` (`raceRewardAmount` in `frontend/src/utils/incomeLedger.ts`). The public `/championsmeetingranks` and `/leagueofheroesranks` carry the same list. The number rather than `source_id`, because it is the identity the game and the sheet use, and it is stable across databases.
 - **`throughout_end` is the linked banner's end, with `GAME_EVENT_END_DATE_BUFFER` already removed.** The `carats_throughout` pool decays over the banner, not over the event, whose own `end_date` trails it by 4 days. Emitting it pre-stripped is what stops the client keeping its own copy of that constant.

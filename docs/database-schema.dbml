@@ -43,6 +43,7 @@ Table calculatorapi_customuser as CustomUser {
   daily_carat boolean [not null, note: 'Django default: False.']
   training_pass boolean [not null, note: 'Django default: False.']
   misc_earnings boolean [not null, note: 'Django default: True.']
+  custom_misc_earnings_monthly integer [null, note: 'NULL = the site\'s misc_earnings_monthly (CalculationConstants). Application validator: MaxValueValidator(100000).']
   monthly_shop_tickets boolean [not null, note: 'Django default: True.']
   shop_uma_tickets_bought smallint [null, note: 'NULL = the default purchase (CalculationConstants).']
   shop_support_tickets_bought smallint [null, note: 'NULL = the default purchase (CalculationConstants).']

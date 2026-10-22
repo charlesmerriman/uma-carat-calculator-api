@@ -14,7 +14,7 @@ _COMPETITIVE_RANK_FIELDS = (
     "id", "name", "income_amount",
     "uma_ticket_amount", "support_ticket_amount",
     "ssr_shard_amount", "sr_shard_amount",
-    "rewards",
+    "day_amounts", "rewards",
 )
 
 
@@ -23,6 +23,8 @@ class RaceRankRewardSerializer(serializers.Serializer):  # pylint: disable=abstr
     and shared by both kinds, which have the same two fields."""
     from_event_number = serializers.IntegerField()
     income_amount = serializers.IntegerField()
+    # Per payout day (race_payouts.py); empty = the rank's own split, scaled.
+    day_amounts = serializers.ListField(child=serializers.IntegerField())
 
 
 def _make_rank_serializer(model, fields=_RANK_FIELDS, declared=None):

@@ -37,6 +37,7 @@ already-resolved rows and date maps, so it unit-tests directly without fixtures.
 
 from datetime import timedelta
 
+from . import race_payouts
 from .predictions import GAME_EVENT_END_DATE_BUFFER
 
 # Row kinds. `event` rows carry amounts; the two race kinds are indicator rows
@@ -112,6 +113,8 @@ def _row(*, date, kind, source_id, name, is_predicted, **amounts):
         "is_predicted": is_predicted,
         "throughout_end": None,
         "event_number": None,
+        # Race rows fill this (race_payouts.py); empty everywhere else.
+        "payouts": [],
     }
     for field in AMOUNT_FIELDS:
         row[field] = 0
@@ -206,6 +209,9 @@ def _race_rows(events, emap, kind):
         # The number, not the pk: it is the identity the game and the sheet use
         # ("League of Heroes 1"), and it is the same in every database.
         row["event_number"] = getattr(event, number_field) if number_field else None
+        # The instants its days pay, the last being `date` itself, so the
+        # whole reward still lands when it did before day-by-day payouts.
+        row["payouts"] = race_payouts.payout_instants(kind, entry["start_date"], row["date"])
         rows.append(row)
     return rows
 

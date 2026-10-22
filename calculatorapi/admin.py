@@ -49,6 +49,7 @@ from django.contrib import admin, messages
 from django.contrib.auth.admin import GroupAdmin as BaseGroupAdmin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import Group
+from django.db import models
 from django.db.models import Count, F, Min, Q
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
@@ -63,6 +64,8 @@ from django_otp.plugins.otp_static.models import StaticDevice
 from django_otp.plugins.otp_totp.models import TOTPDevice
 from unfold.admin import ModelAdmin, StackedInline, TabularInline
 from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
+from unfold.overrides import FORMFIELD_OVERRIDES_INLINE
+from unfold.widgets import UnfoldAdminExpandableTextareaWidget
 
 from .admin_image_picker import SpacesImagePickerMixin
 # Importing admin_pvp registers the PvP guide admin; the mixin and fieldset
@@ -155,10 +158,23 @@ class BannerSupportInline(TabularInline):
     extra = 0
 
 
+# The recommendation box on a featured card starts at Django's default ten rows,
+# which made every card on a banner page a tall block an editor had to scroll
+# past. Unfold's expandable textarea starts at two rows and grows with what is
+# typed (CSS field-sizing), so short notes stay short and long ones still fit.
+# Spread over unfold's inline defaults: setting formfield_overrides replaces
+# them outright, which would unstyle every other field on these inlines.
+COMPACT_TEXT_OVERRIDES = {
+    **FORMFIELD_OVERRIDES_INLINE,
+    models.TextField: {"widget": UnfoldAdminExpandableTextareaWidget},
+}
+
+
 class UmaOnBannerInline(PicturePickersMixin, TabularInline):
     """The umas featured on an uma banner, edited on the banner page."""
     model = UmasOnUmaBanner
     autocomplete_fields = ("uma",)  # searchable picker instead of a 200-item dropdown
+    formfield_overrides = COMPACT_TEXT_OVERRIDES
     extra = 1
 
 
@@ -166,6 +182,7 @@ class SupportOnBannerInline(PicturePickersMixin, TabularInline):
     """The support cards featured on a support banner."""
     model = SupportsOnSupportBanner
     autocomplete_fields = ("support_card",)
+    formfield_overrides = COMPACT_TEXT_OVERRIDES
     extra = 1
 
 
@@ -1013,13 +1030,13 @@ class TeamTrialsRankAdmin(ModelAdmin):
 
 class ChampionsMeetingRankRewardInline(TabularInline):
     model = ChampionsMeetingRankReward
-    fields = ("from_event_number", "income_amount")
+    fields = ("from_event_number", "income_amount", "day_amounts")
     extra = 1
 
 
 class LeagueOfHeroesRankRewardInline(TabularInline):
     model = LeagueOfHeroesRankReward
-    fields = ("from_event_number", "income_amount")
+    fields = ("from_event_number", "income_amount", "day_amounts")
     extra = 1
 
 
@@ -1067,7 +1084,7 @@ class UserOshiInline(TabularInline):
 CALCULATOR_STATS_FIELDS = (
     "club_rank", "team_trials_rank",
     "champions_meeting_rank", "league_of_heroes_rank",
-    "daily_carat", "training_pass", "misc_earnings",
+    "daily_carat", "training_pass", "misc_earnings", "custom_misc_earnings_monthly",
     "monthly_shop_tickets", "shop_uma_tickets_bought", "shop_support_tickets_bought",
     "spend_tickets_on_banners", "discounted_paid_pulls", "full_price_paid_pulls",
     "daily_pulls_other_uma_banners", "daily_pulls_other_support_banners",

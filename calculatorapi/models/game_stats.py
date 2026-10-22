@@ -1,3 +1,4 @@
+from django.core.validators import MaxValueValidator
 from django.db import models
 
 from .club_rank import ClubRank
@@ -50,6 +51,16 @@ class GameStats(models.Model):
     # a flat monthly carat estimate. On by default to match the source sheet,
     # which is the reference the projection is calibrated against.
     misc_earnings = models.BooleanField(default=True)
+    # The player's own monthly figure for misc earnings, for someone who earns
+    # more or less than the site's estimate. NULL means "the site's number"
+    # (CalculationConstants.misc_earnings_monthly), nullable for the same reason
+    # as the shop counts below: a stored copy of today's default would stop
+    # following it the day an editor changes it. Only applies while
+    # misc_earnings is on, and the ramp-in (misc_earnings_delay_days) still
+    # applies to it. The ceiling only stops a typo from reaching the projection.
+    custom_misc_earnings_monthly = models.PositiveIntegerField(
+        null=True, blank=True, validators=[MaxValueValidator(100_000)]
+    )
     # Monthly shop tickets: the game lets you buy 4 uma + 4 support gacha
     # tickets every month with a currency not tracked here, so when enabled the
     # projection simply credits those tickets monthly at no carat cost. On by

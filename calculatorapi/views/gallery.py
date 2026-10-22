@@ -39,8 +39,10 @@ from rest_framework.decorators import api_view, permission_classes, throttle_cla
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 
-from calculatorapi import gallery, gallery_ranking, public_identity
-from calculatorapi.models import GalleryComment, GalleryPost, GalleryVote, SupportCard, Uma
+from calculatorapi import gallery, gallery_ranking, public_identity, pvp_guide_editing
+from calculatorapi.models import GalleryComment, GalleryPost, GalleryVote, PvpGuide, SupportCard, Uma
+from calculatorapi.models.pvp_guide import PvpStyle
+from calculatorapi.views.pvp_guide import EVENT_FIELD_FOR_KIND
 
 NOT_FOUND = {"error": "This team isn't available any more."}
 
@@ -309,10 +311,13 @@ class GalleryReportThrottle(GalleryThrottle):
     scope = "gallery_report"
 
 
-def _serialize_comment(comment, state, post, viewer, blocks):  # pylint: disable=too-many-arguments,too-many-positional-arguments
+def _serialize_comment(comment, state, post, viewer, blocks, votes=None):  # pylint: disable=too-many-arguments,too-many-positional-arguments
     """One comment. A deleted or removed one keeps its place and its id (so
-    replies stay under it) but carries no text and no person."""
+    replies stay under it) but carries no text and no person. `post` is None
+    for a guide's comment, which has no author to mark and no re-post to be
+    "earlier" than. `votes` is gallery.comment_votes() for the page."""
     shown = state in ("visible", "under_review")
+    counts, mine = votes or ({}, set())
     return {
         "id": comment.pk,
         "state": state,
@@ -320,25 +325,33 @@ def _serialize_comment(comment, state, post, viewer, blocks):  # pylint: disable
         "created_at": comment.created_at,
         "edited": shown and comment.edited_at is not None,
         # Written about the team before its author last re-posted it.
-        "earlier_version": comment.created_at < post.content_updated_at,
-        "is_author": shown and comment.author_id == post.author_id,
+        "earlier_version": post is not None and comment.created_at < post.content_updated_at,
+        "is_author": shown and post is not None and comment.author_id == post.author_id,
         "is_mine": viewer is not None and viewer.is_authenticated and comment.author_id == viewer.pk,
         "poster": blocks.get(comment.author_id) if shown else None,
+        # Thumbs-up: the count, and whether the viewer gave one. Never who.
+        "upvotes": counts.get(comment.pk, 0) if shown else 0,
+        "my_vote": shown and comment.pk in mine,
     }
 
 
 def serialize_thread(post, viewer, entries):
-    """gallery.thread() entries on the wire, each with its replies."""
+    """gallery.thread() / guide_thread() entries on the wire, each with its
+    replies. `post` is None for a guide's thread."""
     people = []
+    ids = []
     for comment, _, replies in entries:
         people.append(comment.author)
         people.extend(reply.author for reply, _ in replies)
+        ids.append(comment.pk)
+        ids.extend(reply.pk for reply, _ in replies)
     blocks = public_identity.poster_blocks(people)
+    votes = gallery.comment_votes(ids, viewer)
     return [
         {
-            **_serialize_comment(comment, state, post, viewer, blocks),
+            **_serialize_comment(comment, state, post, viewer, blocks, votes),
             "replies": [
-                _serialize_comment(reply, reply_state, post, viewer, blocks)
+                _serialize_comment(reply, reply_state, post, viewer, blocks, votes)
                 for reply, reply_state in replies
             ],
         }
@@ -346,31 +359,8 @@ def serialize_thread(post, viewer, entries):
     ]
 
 
-@api_view(["GET", "POST"])
-@permission_classes([permissions.AllowAny])
-@throttle_classes([GalleryCommentThrottle])
-def gallery_post_comments(request, public_id):
-    """GET: the thread, a page of top comments at a time, oldest first.
-    POST {"body", "parent"?}: comment, signed in."""
-    post = _post_or_404(public_id, request.user)
-    if post is None:
-        return Response(NOT_FOUND, status=status.HTTP_404_NOT_FOUND)
-    if request.method == "POST":
-        if not request.user.is_authenticated:
-            return Response({"error": "Sign in to comment."}, status=status.HTTP_401_UNAUTHORIZED)
-        body = request.data.get("body", "")
-        if not isinstance(body, str):
-            return Response({"error": "Write something first."}, status=status.HTTP_400_BAD_REQUEST)
-        try:
-            comment = gallery.add_comment(request.user, post, body, request.data.get("parent"))
-        except gallery.GalleryRefused as refusal:
-            return refused(refusal)
-        blocks = public_identity.poster_blocks([comment.author])
-        return Response(
-            {**_serialize_comment(comment, "visible", post, request.user, blocks), "replies": []},
-            status=status.HTTP_201_CREATED,
-        )
-    entries = gallery.thread(post, request.user)
+def _thread_page(request, post, entries):
+    """One page of a thread, the shape both kinds of thread answer with."""
     try:
         page = max(int(request.query_params.get("page", 1)), 1)
     except ValueError:
@@ -383,6 +373,96 @@ def gallery_post_comments(request, public_id):
         "has_more": start + COMMENT_PAGE_SIZE < len(entries),
         "results": serialize_thread(post, request.user, window),
     })
+
+
+def _new_comment(request, *, post=None, guide=None, section=""):
+    """POST {"body", "parent"?}: the shared half of commenting on a post or a guide."""
+    if not request.user.is_authenticated:
+        return Response({"error": "Sign in to comment."}, status=status.HTTP_401_UNAUTHORIZED)
+    body = request.data.get("body", "")
+    if not isinstance(body, str):
+        return Response({"error": "Write something first."}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        comment = gallery.add_comment(
+            request.user, post, body, request.data.get("parent"), guide=guide, section=section
+        )
+    except gallery.GalleryRefused as refusal:
+        return refused(refusal)
+    blocks = public_identity.poster_blocks([comment.author])
+    return Response(
+        {**_serialize_comment(comment, "visible", post, request.user, blocks), "replies": []},
+        status=status.HTTP_201_CREATED,
+    )
+
+
+@api_view(["GET", "POST"])
+@permission_classes([permissions.AllowAny])
+@throttle_classes([GalleryCommentThrottle])
+def gallery_post_comments(request, public_id):
+    """GET: the thread, a page of top comments at a time, oldest first.
+    POST {"body", "parent"?}: comment, signed in."""
+    post = _post_or_404(public_id, request.user)
+    if post is None:
+        return Response(NOT_FOUND, status=status.HTTP_404_NOT_FOUND)
+    if request.method == "POST":
+        return _new_comment(request, post=post)
+    return _thread_page(request, post, gallery.thread(post, request.user))
+
+
+# A guide's comment sections: the whole guide ("", the side column), or a
+# running style. Never "everyone", which is not a tab.
+GUIDE_SECTIONS = frozenset({""} | {style.value for style in PvpStyle if style != PvpStyle.EVERYONE})
+
+
+def _visible_guide(kind, event_id, viewer):
+    """The event's guide if the viewer may read it (published, or a draft its
+    editors preview), else None: the rule the guide's own route keeps."""
+    field = EVENT_FIELD_FOR_KIND.get(kind)
+    if field is None:
+        return None
+    guide = PvpGuide.objects.filter(**{field: event_id}).first()
+    if guide is None or not (guide.is_published or pvp_guide_editing.can_edit(viewer, guide)):
+        return None
+    return guide
+
+
+@api_view(["GET", "POST"])
+@permission_classes([permissions.AllowAny])
+@throttle_classes([GalleryCommentThrottle])
+def guide_comments(request, kind, event_id):
+    """GET ?section=<style or blank>&page=N: one section of a PvP guide's
+    comments, the same shape as a post's thread. POST {"body", "parent"?,
+    "section"}: comment there, signed in (guide-comments-plan.md)."""
+    guide = _visible_guide(kind, event_id, request.user)
+    if guide is None:
+        return Response(NOT_FOUND, status=status.HTTP_404_NOT_FOUND)
+    source = request.data if request.method == "POST" else request.query_params
+    section = source.get("section", "") or ""
+    if section not in GUIDE_SECTIONS:
+        return Response({"error": "No such section."}, status=status.HTTP_400_BAD_REQUEST)
+    if request.method == "POST":
+        return _new_comment(request, guide=guide, section=section)
+    return _thread_page(request, None, gallery.guide_thread(guide, section, request.user))
+
+
+@api_view(["PUT", "DELETE"])
+@permission_classes([permissions.IsAuthenticated])
+@throttle_classes([GalleryVoteThrottle])
+def gallery_comment_vote(request, comment_id):
+    """PUT: thumbs-up a comment you can see. DELETE: take it back. Answers
+    the new count and your vote, like a post's upvote."""
+    comment = _visible_comment(comment_id, request.user)
+    if comment is None:
+        return Response({"error": "Comment not found"}, status=status.HTTP_404_NOT_FOUND)
+    try:
+        if request.method == "PUT":
+            gallery.vote_comment(request.user, comment)
+        else:
+            gallery.unvote_comment(request.user, comment)
+    except gallery.GalleryRefused as refusal:
+        return refused(refusal)
+    counts, _ = gallery.comment_votes([comment.pk])
+    return Response({"upvotes": counts.get(comment.pk, 0), "my_vote": request.method == "PUT"})
 
 
 @api_view(["PATCH", "DELETE"])
@@ -407,8 +487,9 @@ def gallery_comment_detail(request, comment_id):
         return refused(refusal)
     blocks = public_identity.poster_blocks([comment.author])
     state = "under_review" if comment.is_hidden else "visible"
+    votes = gallery.comment_votes([comment.pk], request.user)
     return Response(
-        {**_serialize_comment(comment, state, comment.post, request.user, blocks), "replies": []}
+        {**_serialize_comment(comment, state, comment.post, request.user, blocks, votes), "replies": []}
     )
 
 
@@ -446,11 +527,15 @@ def gallery_report(request):
 def _visible_comment(comment_id, viewer):
     """A comment the viewer can see (and so can report), or None."""
     try:
-        comment = GalleryComment.objects.select_related("post", "author").get(
+        comment = GalleryComment.objects.select_related("post", "author", "guide").get(
             pk=int(comment_id), is_hidden=False, is_deleted=False
         )
     except (TypeError, ValueError, GalleryComment.DoesNotExist):
         return None
     if comment.author is not None and comment.author.publishing_blocked:
         return None
+    if comment.guide_id:
+        guide = comment.guide
+        visible = guide.is_published or pvp_guide_editing.can_edit(viewer, guide)
+        return comment if visible else None
     return comment if _post_or_404(comment.post.public_id, viewer) else None

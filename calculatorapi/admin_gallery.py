@@ -103,13 +103,14 @@ class GalleryPostAdmin(_ModerationActions, ModelAdmin):  # pylint: disable=too-m
 
 @admin.register(GalleryComment)
 class GalleryCommentAdmin(_ModerationActions, ModelAdmin):  # pylint: disable=too-many-ancestors
-    list_display = ("short_body", "author_name", "post", "is_hidden", "is_deleted", "created_at")
+    list_display = ("short_body", "author_name", "on", "is_hidden", "is_deleted", "created_at")
     list_filter = ("is_hidden", "hidden_reason", "is_deleted")
-    list_select_related = ("author", "post__author")
+    # A comment is on a post or on a guide's section (GalleryComment.where).
+    list_select_related = ("author", "post__author", "guide__champions_meeting", "guide__league_of_heroes")
     search_fields = ("body", "author__display_name", "author__username", "post__public_id")
     ordering = ("-created_at",)
     readonly_fields = (
-        "post", "author", "parent", "body", "created_at", "edited_at", "is_hidden",
+        "post", "guide", "section", "author", "parent", "body", "created_at", "edited_at", "is_hidden",
         "hidden_reason", "hidden_at", "is_deleted",
     )
     fields = readonly_fields
@@ -126,6 +127,10 @@ class GalleryCommentAdmin(_ModerationActions, ModelAdmin):  # pylint: disable=to
         if obj.author is None:
             return "[deleted]"
         return obj.author.display_name or obj.author.username
+
+    @admin.display(description="On")
+    def on(self, obj):
+        return obj.where()
 
 
 @admin.register(GalleryReport)

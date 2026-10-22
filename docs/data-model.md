@@ -912,6 +912,9 @@ migration `0104`) hang off the rank (`related_name="rewards"`, CASCADE), one row
 content (`CONTENT_MODELS`, the editor group), edited inline on the rank's page, and served
 as each rank's `rewards` list. → `docs/income-calculation.md` ("Rewards that change with
 the event number")
+Both the rank and each row carry **`day_amounts`** (`0106`): carats per payout day, 5 for a
+CM and 8 for an LoH, checked in `clean()` to have that length and to add up to the row's
+carats; blank is allowed. → `docs/income-calculation.md` ("Rewards paid day by day")
 
 ### `ChampionsMeeting` and `LeagueOfHeroes` are the same shape
 
@@ -983,6 +986,9 @@ erDiagram
     nullable but `slot_has_card_or_note` requires a card or a note.
   - There is no honorable-mentions table (dropped in `0092`): a guide that wants that row
     adds a deck labelled "Honorable mentions", and the sheet import skips the block.
+    `PvpDeck.is_highlighted` ("Gold box", `0105`) draws any deck in a gold box to set it
+    apart, the way the sheet sets that row apart. An editor's switch per deck, never keyed
+    to the label (owner, 2026-10-22).
   - `PvpTeamComp`: free text ("2 Front + 1 Pace") and a note.
 - **`[[Skill name]]` mentions** may appear in any guide text field. `SkillMentionsMixin`
   (`MENTION_FIELDS` per model) refuses a save whose mention matches no skill on global,
@@ -1112,7 +1118,14 @@ lose FK integrity and cascades; tables per gallery would write this twice.
 - **`GalleryComment`**: one level of replies (`parent`; a reply to a reply attaches to its top
   comment), `body` (500), `edited_at`, the hidden trio, and `is_deleted`: a comment deleted
   while it has replies keeps its place as "[deleted]" with no text and no author.
-  `author` is SET_NULL for the same reason.
+  `author` is SET_NULL for the same reason. **Two kinds of parent** (`0107`, owner
+  2026-10-22, `guide-comments-plan.md` option A): a post OR a PvP `guide`, never both
+  (`gallery_comment_one_parent`), and a guide comment's `section` (`""` for the whole guide,
+  else a running style; always `""` on a post's). Anything that shows where a comment is asks
+  the comment: `where()` for staff, `link_path()` for the site's link, so reports, moderation
+  cards and `erase_users` need no branch of their own.
+- **`GalleryCommentVote`**: a thumbs-up, `(comment, user)` unique, no weight. Never on your
+  own comment; blocked accounts' votes don't count; who voted never leaves the server.
 - **`GalleryReport`**: exactly one of `post` / `comment` (`gallery_report_one_target`), a
   reason, an optional note, and `resolved_at` / `resolved_by` / `resolution` (`kept` /
   `removed` / `blocked`; `blocked` since migration `0101`, so an undo knows to lift the

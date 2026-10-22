@@ -44,10 +44,6 @@ class SiteBot(discord.Client):
         self.deploy_news = config.deploys_enabled and self.ops is not None
         self.probe_session = None
         self.announcer = Announcer(self.api, config, self._channel) if config.announce_channel_id else None
-        # Built here rather than with @tasks.loop because the hour is a setting.
-        self.daily_digest = tasks.loop(
-            time=datetime.time(hour=config.digest_hour_utc, tzinfo=datetime.timezone.utc)
-        )(self._daily_digest)
         self._loops_started = False
 
     async def setup_hook(self):
@@ -102,11 +98,21 @@ class SiteBot(discord.Client):
         except discord.HTTPException:
             logger.warning("Could not post a health change", exc_info=True)
 
-    async def _daily_digest(self):
+    @tasks.loop(minutes=5)
+    async def daily_digest(self):
+        """Yesterday's numbers in #calc-ops, from the digest hour on.
+        Not a once-a-day timer: one failed try at 08:00 cost the whole day's
+        digest on 2026-10-22. Every 5 minutes it tries again until the day is
+        settled (Ops.digest_due), and 5 minutes is also the site's report cache
+        (analytics/cache.py), so a retry reads a build the site finished after
+        we gave up. A restart past the hour still posts, once, thanks to the claim."""
+        now = discord.utils.utcnow()
+        if not self.ops.digest_due(now):
+            return
         try:
-            await self.ops.digest(discord.utils.utcnow().date())
+            await self.ops.digest(now.date())
         except discord.HTTPException:
-            logger.warning("Daily digest failed", exc_info=True)
+            logger.warning("Daily digest failed; retrying in 5 minutes", exc_info=True)
 
     @tasks.loop(minutes=2)
     async def deploy_watch(self):
