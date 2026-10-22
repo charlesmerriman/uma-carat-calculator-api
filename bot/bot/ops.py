@@ -96,20 +96,39 @@ class Ops:
         self.do = do
         self.tracker = health.Tracker()
         self.started = started or discord.utils.utcnow()
+        # The UTC date whose digest is settled, so the retry loop stops asking.
+        # In memory only: after a restart the site's claim answers instead.
+        self.digest_done_for = None
 
     # ── The daily digest ──
+
+    def digest_due(self, now):
+        """Whether the client's loop should try the digest: from the digest
+        hour on, until today's is posted or found already posted. The loop
+        runs every few minutes so a failed try is retried the same day."""
+        return now.hour >= self.config.digest_hour_utc and self.digest_done_for != now.date()
 
     async def digest(self, today):
         """Post yesterday's digest once. Returns whether it posted."""
         key = f"digest:{today:%Y%m%d}"
         try:
             claim = await self.api.claim(key, self.config.ops_channel_id)
-            if claim.status != 201:
-                return False
-            answer = await self.api.digest()
         except SiteUnavailable:
             return False
+        if claim.status != 201:
+            # Already posted (by us before a restart, or by hand): done for today.
+            self.digest_done_for = today
+            return False
+        try:
+            answer = await self.api.digest()
+        except SiteUnavailable:
+            # Give the day back, or the next try finds it claimed and gives up
+            # (what happened on 2026-10-22, when the read timed out).
+            logger.warning("Digest for %s not posted: the site's numbers didn't arrive; will retry", today)
+            await self._release(key)
+            return False
         if not answer.ok:
+            logger.warning("Digest for %s not posted: the site answered %s; will retry", today, answer.status)
             await self._release(key)
             return False
         probe = self.tracker.summary(today - datetime.timedelta(days=1))
@@ -120,6 +139,7 @@ class Ops:
             await self._release(key)
             raise
         await self._record(key, message.id)
+        self.digest_done_for = today
         return True
 
     # ── The health probe ──

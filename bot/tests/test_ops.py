@@ -184,6 +184,32 @@ class DigestTests(OpsFixture):
         self.assertFalse(await ops.digest(datetime.date(2026, 10, 21)))
         self.assertEqual(self.api.calls[-1], ("release", "digest:20261021"))
 
+    async def test_a_timed_out_read_gives_the_day_back(self):
+        # 2026-10-22: the read timed out after the claim, the claim was kept,
+        # and no later try could post the day.
+        ops = self.ops(Answer(201, {}), "down", Answer(204, {}))
+        self.assertFalse(await ops.digest(datetime.date(2026, 10, 22)))
+        self.assertEqual(self.api.calls[-1], ("release", "digest:20261022"))
+        self.assertTrue(ops.digest_due(datetime.datetime(2026, 10, 22, 8, 5, tzinfo=datetime.timezone.utc)))
+
+    async def test_due_from_the_hour_until_settled(self):
+        ops = self.ops(Answer(201, {}), Answer(200, DIGEST), Answer(200, {}))
+        day = datetime.date(2026, 10, 22)
+
+        def at(hour):
+            return datetime.datetime(2026, 10, 22, hour, tzinfo=datetime.timezone.utc)
+
+        self.assertFalse(ops.digest_due(at(OPS_CONFIG.digest_hour_utc - 1)))
+        self.assertTrue(ops.digest_due(at(OPS_CONFIG.digest_hour_utc)))
+        self.assertTrue(await ops.digest(day))
+        self.assertFalse(ops.digest_due(at(23)))
+        self.assertTrue(ops.digest_due(datetime.datetime(2026, 10, 23, 23, tzinfo=datetime.timezone.utc)))
+
+    async def test_already_claimed_settles_the_day(self):
+        ops = self.ops(Answer(409, {"message_id": "1"}))
+        self.assertFalse(await ops.digest(datetime.date(2026, 10, 22)))
+        self.assertFalse(ops.digest_due(datetime.datetime(2026, 10, 22, 12, tzinfo=datetime.timezone.utc)))
+
 
 class AlertTests(OpsFixture):
 
