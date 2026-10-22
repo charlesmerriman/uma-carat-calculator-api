@@ -6,8 +6,9 @@ set -e
 # This is a ONE-WAY tool. There is deliberately no loading counterpart: the
 # seeding script was deleted because `loaddata` upserts by primary key, and
 # production content lives in admin-panel edits that a stale snapshot would
-# silently overwrite. Treat these files as a diffable backup and as input for
-# the generators in scripts/ — never load them into a database you care about.
+# silently overwrite. Treat these files as a diffable backup only — never load
+# them into a database you care about. (`manage.py pull_prod_content` is how a
+# local database gets real content.)
 #
 # Usage: bash dump_fixtures.sh   (run from the backend/ directory)
 #

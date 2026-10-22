@@ -62,7 +62,7 @@ class Uma(models.Model):
     # join key for everything imported from the game data (skills, aptitudes,
     # base stats); nullable because placeholder rows like "(All)" have none.
     # Backfilled by 0059 from the image filename, which has always started
-    # with it, and written by scripts/add_missing_umas.py for new rows.
+    # with it, and entered in the admin for new rows.
     game_id = models.PositiveIntegerField(
         unique=True,
         null=True,
