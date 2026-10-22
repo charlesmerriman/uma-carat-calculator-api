@@ -32,6 +32,17 @@
 # module changed. Newest entry first is conventional here but not required — the
 # page sorts by date.
 
+- key: pvp-free-guide
+  date: 2026-10-22
+  title: "A free PvP guide, and Champions Meeting 21 for everyone"
+  version: "v2.6"
+  changes:
+    - added: "The PvP guide for the current or next event is free for everyone. The other guides stay with our Patreon supporters for now."
+    - added: "All of Champions Meeting 21 is open: the guide, My team and the Gallery."
+    - changed: "Without early access, the event list and the Team window only show what you can open."
+    - changed: "Tickets and shards from Champions Meeting and League of Heroes now count on the day you get them, not on the last day."
+    - fixed: "Fixed the planner lagging when you change a row."
+
 - key: guide-comments
   date: 2026-10-22
   title: "Comments on guides, your own misc earnings, and Timeline links"
