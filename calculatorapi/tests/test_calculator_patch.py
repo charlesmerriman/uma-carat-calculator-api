@@ -145,6 +145,41 @@ class CalculatorPatchTests(CalculatorTestCase):
         # 0 is a real answer ("I buy none of these"), distinct from NULL.
         self.assertEqual(self.user.shop_support_tickets_bought, 0)
 
+    def test_patch_stats_sets_and_clears_custom_misc_earnings(self):
+        # NULL is "the site's number", so an untouched account follows the
+        # admin constant (see GameStats).
+        self.assertIsNone(self.user.custom_misc_earnings_monthly)
+        res = self.client.patch(
+            '/calculator-data',
+            {'user_stats_data': {'custom_misc_earnings_monthly': 1500}},
+            format='json',
+        )
+        self.assertEqual(res.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.custom_misc_earnings_monthly, 1500)
+        stats = self.client.get('/calculator-data').json()['user_stats_data']
+        self.assertEqual(stats['custom_misc_earnings_monthly'], 1500)
+
+        # Emptying the box goes back to following the constant.
+        res = self.client.patch(
+            '/calculator-data',
+            {'user_stats_data': {'custom_misc_earnings_monthly': None}},
+            format='json',
+        )
+        self.assertEqual(res.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertIsNone(self.user.custom_misc_earnings_monthly)
+
+    def test_patch_rejects_out_of_range_custom_misc_earnings(self):
+        for value in (-1, 100_001):
+            with self.subTest(value=value):
+                res = self.client.patch(
+                    '/calculator-data',
+                    {'user_stats_data': {'custom_misc_earnings_monthly': value}},
+                    format='json',
+                )
+                self.assertEqual(res.status_code, 400)
+
     def test_patch_stats_saves_skipped_race_events_normalised(self):
         # Default: taking part in everything.
         self.assertEqual(self.user.skipped_race_events, {})

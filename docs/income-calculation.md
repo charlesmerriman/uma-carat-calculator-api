@@ -75,7 +75,9 @@ source sheet's "Misc Earnings" figure, which the projection is calibrated agains
 sheet accrues it per-day in exactly this way.
 
 Gated behind the user's `misc_earnings` boolean (`CustomUser.misc_earnings`,
-`default=True`). Unlike the other flat incomes here, it is **not** credited on
+`default=True`). A player who earns more or less than the estimate can type their own
+monthly figure, `custom_misc_earnings_monthly` (on `GameStats`, NULL = the constant); it
+replaces `misc_earnings_monthly` in the same `/ 30` formula and waits out the same ramp-in. Unlike the other flat incomes here, it is **not** credited on
 1st-of-month boundaries, and unlike the rolling-cycle incomes it doesn't arrive in lumps:
 after a **30-day ramp-in anchored to the day the user opens the calculator**, every single
 day earns that amount. Days 1–30 earn nothing (so a banner ending inside the ramp-in gets none of
