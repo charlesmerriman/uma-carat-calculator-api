@@ -903,6 +903,16 @@ covers that anniversary's featured unit.
 
 `LeagueOfHeroesRank` data is returned by the API and used by the resource projection — each `LeagueOfHeroes` event whose `end_date` falls within a banner window contributes the user's rank `income_amount` to the carat total.
 
+**A CM or LoH rank's payout can change from a later event on.**
+`ChampionsMeetingRankReward` / `LeagueOfHeroesRankReward` (`models/race_rank_reward.py`,
+migration `0104`) hang off the rank (`related_name="rewards"`, CASCADE), one row per
+`(rank, from_event_number)`: "from event #N on, pays `income_amount` carats". The largest
+`from_event_number` at or below an event's number wins; below the first row the rank's own
+`income_amount` pays, so a rank with no rows behaves as it always did. Carats only. They are
+content (`CONTENT_MODELS`, the editor group), edited inline on the rank's page, and served
+as each rank's `rewards` list. → `docs/income-calculation.md` ("Rewards that change with
+the event number")
+
 ### `ChampionsMeeting` and `LeagueOfHeroes` are the same shape
 
 The two hold identical data — course details (`track` … `direction`) — differing only in

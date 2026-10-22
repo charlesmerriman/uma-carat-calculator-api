@@ -235,6 +235,9 @@ Paid once per Champions Meeting event. The projection adds this payout for each 
 | Group B 3rd | 1,000 | 1 | 1 |
 | Open League 3rd | 1,000 | 1 | 1 |
 
+These are each rank's OWN amounts (prod, 2026-10-21). From CM 30 on they rise: see "Rewards
+that change with the event number" below.
+
 ---
 
 ## League of Heroes Rank (per event)
@@ -243,15 +246,59 @@ Paid once per League of Heroes event. The projection adds this payout for each `
 
 | Rank | Carats | Uma tickets | Support tickets |
 |---|---|---|---|
-| Silver 4 | 400 | 0 | 0 |
-| Gold 1 | 550 | 0 | 0 |
-| Gold 2 | 700 | 1 | 1 |
-| Gold 3 | 1,000 | 1 | 1 |
-| Gold 4 | 1,300 | 2 | 2 |
-| Platinum 1 | 1,800 | 2 | 2 |
-| Platinum 2 | 2,300 | 2 | 2 |
-| Platinum 3 | 2,800 | 2 | 2 |
-| Platinum 4 | 3,300 | 2 | 2 |
+| Silver 4 | 550 | 0 | 0 |
+| Gold 1 | 700 | 0 | 1 |
+| Gold 2 | 850 | 1 | 1 |
+| Gold 3 | 1,150 | 1 | 2 |
+| Gold 4 | 1,450 | 2 | 2 |
+| Platinum 1 | 1,950 | 2 | 2 |
+| Platinum 2 | 2,450 | 2 | 2 |
+| Platinum 3 | 2,950 | 2 | 2 |
+| Platinum 4 | 3,450 | 2 | 2 |
+
+These are each rank's OWN amounts (prod, 2026-10-21), which LoH 2-5 pay. LoH 1 paid
+Platinum 2-4 less, and LoH 6 on pays more: see the next section.
+
+---
+
+## Rewards that change with the event number
+
+The game has raised CM and LoH payouts twice, keyed to the event's number. A rank's
+`rewards` (`ChampionsMeetingRankReward` / `LeagueOfHeroesRankReward`, edited inline on the
+rank's admin page) say "from event #N on, this rank pays X carats". An event pays the row
+with the largest `from_event_number` at or below its own number, and the rank's own
+`income_amount` when no row reaches that low. Carats only: tickets and shards stay per rank,
+as in the sheet. The client does the lookup (`raceRewardAmount` in
+`frontend/src/utils/incomeLedger.ts`); the server only stores and serves the rows.
+
+Daptrius's tables (JP history; the source sheet's ranges agree), entered in the admin after
+the release that added the tables:
+
+| LoH | #1 | #2-5 (own) | #6+ |
+|---|---|---|---|
+| Platinum 4 | 2,450 | 3,450 | 3,900 |
+| Platinum 3 | 2,250 | 2,950 | 3,400 |
+| Platinum 2 | 2,050 | 2,450 | 2,900 |
+| Platinum 1 | 1,950 | 1,950 | 2,400 |
+| Gold 4 | 1,450 | 1,450 | 1,900 |
+| Gold 3 | 1,150 | 1,150 | 1,600 |
+| Gold 2 | 850 | 850 | 1,300 |
+| Gold 1 | 700 | 700 | 1,000 |
+| Silver 4 | 550 | 550 | 700 |
+
+| CM | #5-29 (own) | #30+ |
+|---|---|---|
+| Champion | 3,300 | 3,800 |
+| Second | 2,400 | 3,000 |
+| Third | 1,600 | 2,200 |
+| Group B 1st / 2nd / 3rd | 1,800 / 1,250 / 1,000 | 2,400 / 1,850 / 1,500 |
+| Open League 1st / 2nd / 3rd | 1,500 / 1,250 / 1,000 | 2,000 / 1,750 / 1,500 |
+
+So the rows to enter are `from 30` for every CM placement, `from 6` for every LoH rank, and
+for Platinum 2-4 also `from 1` (the lower LoH 1 amount) and `from 2` (their own amount
+again). CM 1-4 paid less too, but they are in the past on global and need no rows. This
+replaced `RACE_RANK_CAPS`, the client's old "LoH 1 only ran to Platinum 1" cap: the sheet
+itself later raised LoH 1 for ranks above Platinum 1.
 
 ---
 

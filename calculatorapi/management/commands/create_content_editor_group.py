@@ -33,6 +33,7 @@ from calculatorapi.models import (
     PvpStyleNote, PvpDeck, PvpDeckSlot, PvpTeamComp,
     ChangelogEntry, ChangelogChange,
     ClubRank, TeamTrialsRank, ChampionsMeetingRank, LeagueOfHeroesRank,
+    ChampionsMeetingRankReward, LeagueOfHeroesRankReward,
     AnniversaryEvent, AnniversaryEventBanner, AnniversaryEventProduct,
     Scenario,
     DailyLegendRaceRelease, DailyLegendRaceUma,
@@ -56,6 +57,9 @@ CONTENT_MODELS = [
     PvpStyleNote, PvpDeck, PvpDeckSlot, PvpTeamComp,
     ChangelogEntry, ChangelogChange,
     ClubRank, TeamTrialsRank, ChampionsMeetingRank, LeagueOfHeroesRank,
+    # What a CM / LoH rank pays from a later event on, edited through an
+    # inline on the rank's page (which needs permissions on the row to save).
+    ChampionsMeetingRankReward, LeagueOfHeroesRankReward,
     # Campaigns are content: an editor sets up an anniversary's packs and
     # selectors. UserPlannedPurchase is deliberately absent — it's user data.
     AnniversaryEvent, AnniversaryEventBanner, AnniversaryEventProduct,
