@@ -113,8 +113,10 @@ def _row(*, date, kind, source_id, name, is_predicted, **amounts):
         "is_predicted": is_predicted,
         "throughout_end": None,
         "event_number": None,
-        # Race rows fill this (race_payouts.py); empty everywhere else.
+        # Race rows fill these (race_payouts.py); empty / null everywhere else.
         "payouts": [],
+        "tickets_at": None,
+        "shards_at": None,
     }
     for field in AMOUNT_FIELDS:
         row[field] = 0
@@ -212,6 +214,9 @@ def _race_rows(events, emap, kind):
         # The instants its days pay, the last being `date` itself, so the
         # whole reward still lands when it did before day-by-day payouts.
         row["payouts"] = race_payouts.payout_instants(kind, entry["start_date"], row["date"])
+        # A rank's tickets and shards come mid-event too, each on one of those days.
+        for item in ("tickets", "shards"):
+            row[f"{item}_at"] = race_payouts.item_payout_instant(kind, item, entry["start_date"], row["date"])
         rows.append(row)
     return rows
 

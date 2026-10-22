@@ -10,6 +10,7 @@ from django.test import override_settings
 from django.urls import reverse
 from rest_framework.test import APIClient
 
+from calculatorapi import race_payouts
 from calculatorapi.ledger import AMOUNT_FIELDS, build_income_ledger
 from calculatorapi.views.ledger import IncomeLedgerRowSerializer
 from calculatorapi.views.calculation_constants import CalculationConstantsSerializer
@@ -364,6 +365,19 @@ class LedgerTests(CalculatorTestCase):
         ])
         self.assertEqual(loh['payouts'][-1], loh['date'])
         self.assertEqual(rows['event']['payouts'], [])
+        # Tickets and shards (Daptrius, 2026-10-22): a CM's both on day 4, an
+        # LoH's shards on day 3 and tickets on day 4, each one of the payouts.
+        self.assertEqual((cm['tickets_at'], cm['shards_at']), (cm['payouts'][3], cm['payouts'][3]))
+        self.assertEqual((loh['tickets_at'], loh['shards_at']), (loh['payouts'][3], loh['payouts'][2]))
+        self.assertEqual((rows['event']['tickets_at'], rows['event']['shards_at']), (None, None))
+
+    def test_tickets_and_shards_fall_back_to_the_last_instant(self):
+        # No start: everything at the row's date, as before. A window shorter
+        # than the item's day: clamped to the last payout, never after it.
+        last = _dt(2025, 7, 10, 21, 59, 59)
+        self.assertEqual(race_payouts.item_payout_instant('league_of_heroes', 'shards', None, last), last)
+        start = _dt(2025, 7, 8, 22)
+        self.assertEqual(race_payouts.item_payout_instant('league_of_heroes', 'tickets', start, last), last)
 
     def test_race_rows_carry_their_event_number(self):
         # The client caps the rank a few specific events pay at (League of

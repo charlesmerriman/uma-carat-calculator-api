@@ -324,7 +324,12 @@ How much each day pays is data: `day_amounts`, a list with one amount per payout
 (its own amount) and on each "from event #N" row. The admin refuses a list of the wrong
 length or one that does not add up to that row's carats. Blank on a rank means everything on
 the last day (the behaviour before this existed); blank on a row means the rank's own split,
-scaled to the row's total by the client. Tickets and shards stay on the last day.
+scaled to the row's total by the client.
+
+A rank's tickets and shards come mid-event too (Daptrius, 2026-10-22): a CM's at the end of
+day 4, an LoH's shards at the end of day 3 and its tickets at the end of day 4. Each race row
+carries them as `tickets_at` / `shards_at` (`race_payouts.ITEM_PAYOUT_DAYS`), dated like a
+carat day, so each is one of `payouts`. With no start date they fall at `date`.
 
 The client (`raceDayAmounts` / `cumulativeRaceRewards` in `frontend/src/utils/incomeLedger.ts`)
 sums the days whose instant falls inside a banner's window, so a banner ending mid-LoH
