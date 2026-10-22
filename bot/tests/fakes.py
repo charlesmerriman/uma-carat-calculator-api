@@ -149,7 +149,7 @@ def tag(name):
 class FakeThread:
     """A forum post: its tags, and what was done to it."""
 
-    def __init__(self, thread_id, parent_id, tags=(), name="A post", *, pinned=False):
+    def __init__(self, thread_id, parent_id, tags=(), name="A post", *, pinned=False):  # pylint: disable=too-many-arguments
         self.id = thread_id
         self.parent_id = parent_id
         self.name = name
