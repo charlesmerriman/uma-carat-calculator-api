@@ -40,7 +40,7 @@ class GameStatsSerializer(serializers.ModelSerializer):
         fields = [
             "current_carat", "current_paid_carat", "uma_ticket", "support_ticket",
             "uma_selector_ticket", "support_selector_ticket",
-            "daily_carat", "training_pass", "misc_earnings",
+            "daily_carat", "training_pass", "misc_earnings", "custom_misc_earnings_monthly",
             "monthly_shop_tickets", "shop_uma_tickets_bought", "shop_support_tickets_bought",
             "spend_tickets_on_banners", "discounted_paid_pulls", "full_price_paid_pulls",
             "daily_pulls_other_uma_banners", "daily_pulls_other_support_banners",

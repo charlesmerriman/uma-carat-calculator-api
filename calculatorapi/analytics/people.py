@@ -295,6 +295,8 @@ FEATURES = [
     ("Shop ticket counts set",
      lambda: (Q(shop_uma_tickets_bought__isnull=False)
               | Q(shop_support_tickets_bought__isnull=False))),
+    ("Own misc earnings amount set",
+     lambda: Q(custom_misc_earnings_monthly__isnull=False)),
     ("Tickets kept off planned banners", lambda: Q(spend_tickets_on_banners=False)),
     ("A display name",
      lambda: Q(display_name__isnull=False) & ~Q(display_name="")),
