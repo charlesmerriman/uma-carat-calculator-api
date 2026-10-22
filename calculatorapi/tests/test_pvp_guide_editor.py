@@ -241,7 +241,8 @@ class DocumentRoundTripTests(CalculatorTestCase):
         plain = {"id": None, "style": "pace", "label": "Honorable Mentions", "note": "", "slots": []}
         res = self.client.put(doc_url(self.guide), put_body(document, decks=[boxed, plain]), format="json")
         self.assertEqual(res.status_code, 200, res.content)
-        self.assertEqual(list(self.guide.decks.order_by("order").values_list("is_highlighted", flat=True)), [True, False])
+        boxes = self.guide.decks.order_by("order").values_list("is_highlighted", flat=True)
+        self.assertEqual(list(boxes), [True, False])
         reader = self.client.get(f"/pvp-guides/cm/{self.fixture.cm.id}").json()
         self.assertEqual([deck["is_highlighted"] for deck in reader["decks"]], [True, False])
 
