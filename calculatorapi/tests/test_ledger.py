@@ -333,6 +333,38 @@ class LedgerTests(CalculatorTestCase):
             self.assertEqual(row['carats'], 0)
             self.assertEqual(row['uma_tickets'], 0)
 
+    def test_race_rows_pay_day_by_day_and_last_at_their_date(self):
+        # race_payouts.py: CM days 1-4 at the end of each day, the finals at
+        # the row's date; LoH days 1-6, second stage 1 on day 8, stage 2 at
+        # the row's date. The last payout is always the date, so the total
+        # lands when it always did. Game event rows carry none.
+        make_champions_meeting(
+            name='CM', global_start_date=_dt(2025, 6, 1, 22, 0, 0),
+            global_end_date=_dt(2025, 6, 7, 21, 59, 59),
+        )
+        make_league_of_heroes(
+            name='LoH', global_start_date=_dt(2025, 7, 1, 22, 0, 0),
+            global_end_date=_dt(2025, 7, 10, 21, 59, 59),
+        )
+        timeline = make_timeline(
+            name='Confirmed',
+            global_start_date=_dt(2025, 5, 1), global_end_date=_dt(2025, 5, 8),
+        )
+        make_game_event(banner_timeline=timeline, carat_amount=100)
+        rows = {row['kind']: row for row in self._ledger()}
+        cm, loh = rows['champions_meeting'], rows['league_of_heroes']
+        self.assertEqual(cm['payouts'], [
+            _dt(2025, 6, 2, 22), _dt(2025, 6, 3, 22), _dt(2025, 6, 4, 22), _dt(2025, 6, 5, 22),
+            _dt(2025, 6, 6, 22),
+        ])
+        self.assertEqual(cm['payouts'][-1], cm['date'])
+        self.assertEqual(loh['payouts'], [
+            _dt(2025, 7, 2, 22), _dt(2025, 7, 3, 22), _dt(2025, 7, 4, 22), _dt(2025, 7, 5, 22),
+            _dt(2025, 7, 6, 22), _dt(2025, 7, 7, 22), _dt(2025, 7, 9, 22), _dt(2025, 7, 10, 21, 59, 59),
+        ])
+        self.assertEqual(loh['payouts'][-1], loh['date'])
+        self.assertEqual(rows['event']['payouts'], [])
+
     def test_race_rows_carry_their_event_number(self):
         # The client caps the rank a few specific events pay at (League of
         # Heroes #1 only ran to Platinum 1), so a race row has to say WHICH

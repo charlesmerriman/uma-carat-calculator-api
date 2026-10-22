@@ -302,6 +302,34 @@ itself later raised LoH 1 for ranks above Platinum 1.
 
 ---
 
+## Rewards paid day by day
+
+A CM or LoH does not pay its placement reward in one go: an LoH has paid most of it by day 4
+of 9, a CM about 20% before its finals (Daptrius, 2026-10-05; plan
+`race-rewards-daily-plan.md` in the notes repo). So each race ledger row carries `payouts`,
+the instants its days pay (`calculatorapi/race_payouts.py`, the one place that knows them):
+
+| Kind | Payouts | When |
+|---|---|---|
+| CM | 5 | days 1 to 4 at the end of each day (start + N days), the finals at the row's `date` |
+| LoH | 8 | main-stage days 1 to 6 at start + N days, second stage 1 at start + 8 days, second stage 2 at the row's `date` (the end) |
+
+The last payout is always the row's `date`, so an event's total still lands exactly when it
+did before; only the earlier days move forward. An event with no start date pays everything
+at `date`.
+
+How much each day pays is data: `day_amounts`, a list with one amount per payout, on a rank
+(its own amount) and on each "from event #N" row. The admin refuses a list of the wrong
+length or one that does not add up to that row's carats. Blank on a rank means everything on
+the last day (the behaviour before this existed); blank on a row means the rank's own split,
+scaled to the row's total by the client. Tickets and shards stay on the last day.
+
+The client (`raceDayAmounts` / `cumulativeRaceRewards` in `frontend/src/utils/incomeLedger.ts`)
+sums the days whose instant falls inside a banner's window, so a banner ending mid-LoH
+counts the days already paid. Worked example, LoH #2-5 at Platinum 4 (390, 300, 600, 1000,
+500, 500, 100, 60): a banner ending after day 4 gets 390 + 300 + 600 + 1000 = 2,290 of the
+3,450, and the other 1,160 go to the next banner.
+
 ## Event Rewards
 
 Each `GameEvent` carries its own reward amounts directly (no separate reward model): `carat_amount`, `carats_throughout`, `uma_ticket_amount`, `support_ticket_amount`, `sr_shard_amount` / `sr_crystal_amount`, `ssr_shard_amount` / `ssr_crystal_amount`. These fall into two categories:

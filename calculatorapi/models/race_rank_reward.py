@@ -1,11 +1,13 @@
 from django.core.validators import MinValueValidator
 from django.db import models
 
+from calculatorapi.race_payouts import DayAmountsChecks, day_amounts_field
+
 from .champions_meeting_rank import ChampionsMeetingRank
 from .league_of_heroes_rank import LeagueOfHeroesRank
 
 
-class RaceRankReward(models.Model):
+class RaceRankReward(DayAmountsChecks, models.Model):
     """What a CM or LoH rank pays from one event number on.
 
     The game has raised these payouts over time, keyed to the event's number
@@ -34,6 +36,9 @@ class RaceRankReward(models.Model):
         validators=[MinValueValidator(0)],
         verbose_name="carats",
     )
+    # How this era's carats arrive over the event (race_payouts.py). Blank:
+    # the rank's own split, scaled to this total by the client.
+    day_amounts = day_amounts_field()
 
     class Meta:
         abstract = True
@@ -48,6 +53,8 @@ class RaceRankReward(models.Model):
 
 
 class ChampionsMeetingRankReward(RaceRankReward):
+    RACE_KIND = "champions_meeting"
+
     rank = models.ForeignKey(
         ChampionsMeetingRank, on_delete=models.CASCADE, related_name="rewards"
     )
@@ -64,6 +71,8 @@ class ChampionsMeetingRankReward(RaceRankReward):
 
 
 class LeagueOfHeroesRankReward(RaceRankReward):
+    RACE_KIND = "league_of_heroes"
+
     rank = models.ForeignKey(
         LeagueOfHeroesRank, on_delete=models.CASCADE, related_name="rewards"
     )

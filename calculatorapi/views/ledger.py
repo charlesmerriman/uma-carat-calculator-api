@@ -27,10 +27,12 @@ class IncomeLedgerRowSerializer(serializers.Serializer):
     name = serializers.CharField()
     is_predicted = serializers.BooleanField()
     throughout_end = serializers.DateTimeField(allow_null=True)
-    # cm_number / loh_number on race rows, null on event rows. Lets the client
-    # recognise the event that pays at a capped rank (League of Heroes #1 only
-    # ran to Platinum 1); see RACE_RANK_CAPS in frontend/src/utils/incomeLedger.ts.
+    # cm_number / loh_number on race rows, null on event rows. Picks which
+    # "from event #N" row a rank pays (frontend raceRewardAmount).
     event_number = serializers.IntegerField(allow_null=True)
+    # The instants a race event pays, one per payout day, the last equal to
+    # `date` (race_payouts.py). Empty on event rows.
+    payouts = serializers.ListField(child=serializers.DateTimeField())
 
     carats = serializers.IntegerField()
     carats_throughout = serializers.IntegerField()
