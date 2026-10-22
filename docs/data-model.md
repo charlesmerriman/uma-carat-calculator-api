@@ -510,7 +510,7 @@ An account holds up to `PLAN_CAP` (5) plans and the calculator opens on the acti
 | Carats, tickets, selector tickets, shards, crystals, ranks | `CustomUser`, or an `IncomeProfile` the account owns | facts about the person (or about their other game account) |
 | The income toggles | same row as the balances | income side |
 | `UserPlannedPurchase` | the same stats block as the balances (`income_profile`, nullable) | money the person spends; it feeds income, so it follows the income it feeds |
-| `UserStepUpSelection` | the account | already keyed to the banner, and changes no number |
+| `UserStepUpSelection` | the account | already keyed to the banner, and changes no rate (its pick only dates a step-up row's reserved copies) |
 
 So the same plan projected for two people gives two different answers, which is the point.
 Worked example: Alice (80,000 carats, top ranks) and Bob (12,000 carats, middling ranks)

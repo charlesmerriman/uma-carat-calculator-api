@@ -1446,9 +1446,12 @@ handed at random. At most one per (user, banner).
 Exactly one of `uma` / `support` is set, and it must match the step-up's `card_type`. An
 empty slot is an **absent row**, never a row with no card.
 
-**Nothing in the projection reads this.** The step-up target rate is 3% ÷ 10 and holds
-whichever ten are chosen, so a partial or empty selection changes no number — matching the
-source sheet, whose Selection 1–10 columns feed no formula either.
+**No rate reads this.** The step-up target rate is 3% ÷ 10 and holds whichever ten are
+chosen, so a partial or empty selection changes no carat or odds figure, matching the
+source sheet, whose Selection 1–10 columns feed no formula either. The one thing the
+client takes from it is the `is_target` card's release date, when the row reserves a copy:
+a reserved copy on a step-up is a copy of that card, and its date decides which selector
+tickets can pay.
 
 ```json
 {
