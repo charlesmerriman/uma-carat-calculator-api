@@ -983,6 +983,9 @@ erDiagram
     nullable but `slot_has_card_or_note` requires a card or a note.
   - There is no honorable-mentions table (dropped in `0092`): a guide that wants that row
     adds a deck labelled "Honorable mentions", and the sheet import skips the block.
+    `PvpDeck.is_highlighted` ("Gold box", `0105`) draws any deck in a gold box to set it
+    apart, the way the sheet sets that row apart. An editor's switch per deck, never keyed
+    to the label (owner, 2026-10-22).
   - `PvpTeamComp`: free text ("2 Front + 1 Pace") and a note.
 - **`[[Skill name]]` mentions** may appear in any guide text field. `SkillMentionsMixin`
   (`MENTION_FIELDS` per model) refuses a save whose mention matches no skill on global,

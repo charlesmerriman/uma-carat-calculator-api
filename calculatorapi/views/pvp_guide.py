@@ -191,7 +191,7 @@ class _DeckSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PvpDeck
-        fields = ("id", "style", "label", "note", "slots")
+        fields = ("id", "style", "label", "note", "is_highlighted", "slots")
 
 
 class _TeamCompSerializer(serializers.ModelSerializer):
