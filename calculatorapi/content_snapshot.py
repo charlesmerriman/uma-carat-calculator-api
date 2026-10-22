@@ -29,6 +29,8 @@ CONTENT_MODELS = (
     "TeamTrialsRank",
     "ChampionsMeetingRank",
     "LeagueOfHeroesRank",
+    "ChampionsMeetingRankReward",
+    "LeagueOfHeroesRankReward",
     "CalculationConstants",
     # Characters, cards and skills
     "Uma",

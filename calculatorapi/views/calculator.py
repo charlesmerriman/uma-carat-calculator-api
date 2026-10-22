@@ -427,8 +427,9 @@ class CalculatorViewSet(ViewSet):
         # behavioural gain.
         club_rank_data = ClubRank.objects.all()
         team_trials_rank_data = TeamTrialsRank.objects.all()
-        champions_meeting_rank_data = ChampionsMeetingRank.objects.all()
-        league_of_heroes_rank_data = LeagueOfHeroesRank.objects.all()
+        # Each rank's payouts from a later event on, one query per kind.
+        champions_meeting_rank_data = ChampionsMeetingRank.objects.prefetch_related("rewards")
+        league_of_heroes_rank_data = LeagueOfHeroesRank.objects.prefetch_related("rewards")
 
         # Resolve every timeline's effective (confirmed-or-predicted) global
         # dates once. Banner ordering now keys off these resolved dates rather

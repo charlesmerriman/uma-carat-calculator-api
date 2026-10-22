@@ -119,7 +119,7 @@ meaning anything instead of rendering a signed-in shell around nothing.
   on `/supporters` or any other public route today. **Unique**, ignoring case.
 - **`oshis`** is the ordered list of favourite umas the person picked
   (`position` is 0-based; `image` is the storage URL, or `""` if an editor has
-  since cleared the picture). The UI calls them "your favourite uma musume";
+  since cleared the picture). The UI calls them "your favorite uma musume";
   the wire keeps the name it shipped with. **Every stored row is listed,
   covered by the current tier or not**, so a page can grey out what a lapse or
   downgrade stopped covering. Empty until they pick one. Set through `PATCH`;
@@ -211,8 +211,8 @@ reflecting the write.
   `400` *unless every id in it is already stored* — so a supporter whose tier
   dropped may still reorder, trim or keep what they hold, and a lapsed one may
   clear the list, but nobody can *add* past their count. Messages:
-  "Free accounts get one favourite. Patreon supporters get more." /
-  "Your tier covers 3 favourites."
+  "Free accounts get one favorite. Patreon supporters get more." /
+  "Your tier covers 3 favorites."
 - **The field list is the whitelist.** Any other key in the body — `username`,
   `is_staff`, a calculator stat — is ignored, not applied. Calculator stats
   have their own route (`PATCH /calculator-data`).
@@ -1446,9 +1446,12 @@ handed at random. At most one per (user, banner).
 Exactly one of `uma` / `support` is set, and it must match the step-up's `card_type`. An
 empty slot is an **absent row**, never a row with no card.
 
-**Nothing in the projection reads this.** The step-up target rate is 3% ÷ 10 and holds
-whichever ten are chosen, so a partial or empty selection changes no number — matching the
-source sheet, whose Selection 1–10 columns feed no formula either.
+**No rate reads this.** The step-up target rate is 3% ÷ 10 and holds whichever ten are
+chosen, so a partial or empty selection changes no carat or odds figure, matching the
+source sheet, whose Selection 1–10 columns feed no formula either. The one thing the
+client takes from it is the `is_target` card's release date, when the row reserves a copy:
+a reserved copy on a step-up is a copy of that card, and its date decides which selector
+tickets can pay.
 
 ```json
 {
@@ -1636,7 +1639,7 @@ Five things to know:
 
 - **`date` is the instant the reward lands** — an event's resolved start; for a race event, its resolved **end less that kind's `RACE_REWARD_LEAD_TIME`**. A Champions Meeting settles its placements at the daily reset **a day before** its window closes, so its row sits a day ahead of the end date the timeline shows; League of Heroes has no lead time and is dated at its end. The offset is a `timedelta` of 23:59:59, so it preserves time of day — a CM closing 21:59:59 pays at 22:00:00 the day before. The client credits a row to a banner when `date <= banner end`, so a CM ending the day after a banner is never credited to that banner: its rewards arrive a minute after the banner closes.
 - **Race rows carry no amounts.** `champions_meeting` / `league_of_heroes` rows are indicators; what a placement pays depends on the user's rank row, which only the client knows. Every amount field is still present (as `0`), so the client never guards on shape.
-- **`event_number` says which race event a row is**: `cm_number` / `loh_number` on race rows, `null` on `event` rows. It exists because a few specific events pay *below* the user's rank. League of Heroes #1 only ran to Platinum 1, so the client caps it there (`RACE_RANK_CAPS` in `frontend/src/utils/incomeLedger.ts`). The number rather than `source_id`, because it is the identity the game and the sheet use, and it is stable across databases.
+- **`event_number` says which race event a row is**: `cm_number` / `loh_number` on race rows, `null` on `event` rows. It exists because what a rank pays depends on the event's number: each CM / LoH rank in `/calculator-data` carries `rewards`, `[{"from_event_number": 30, "income_amount": 3800}, ...]` ascending, and the client pays the largest `from_event_number` at or below the row's number, else the rank's own `income_amount` (`raceRewardAmount` in `frontend/src/utils/incomeLedger.ts`). The public `/championsmeetingranks` and `/leagueofheroesranks` carry the same list. The number rather than `source_id`, because it is the identity the game and the sheet use, and it is stable across databases.
 - **`throughout_end` is the linked banner's end, with `GAME_EVENT_END_DATE_BUFFER` already removed.** The `carats_throughout` pool decays over the banner, not over the event, whose own `end_date` trails it by 4 days. Emitting it pre-stripped is what stops the client keeping its own copy of that constant.
 - **No rows are filtered by "today".** The ledger is a set of dated facts, past ones included; the projection applies `today < date <= end` client-side so the whole calculation shares one anchor. Rows with no *resolvable* date are dropped, since a ledger row's only purpose is its position on the calendar.
 

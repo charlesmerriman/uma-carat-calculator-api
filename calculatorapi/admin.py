@@ -82,6 +82,7 @@ from .models import (
     CustomUser, Uma, Skill, UmaSkill, SupportCardSkill, SupportCard, UserPlannedBanner,
     Plan, IncomeProfile,
     TeamTrialsRank, ClubRank, ChampionsMeetingRank, LeagueOfHeroesRank,
+    ChampionsMeetingRankReward, LeagueOfHeroesRankReward,
     BannerTimeline, BannerUma, BannerSupport, BannerStepUp,
     ChampionsMeeting,
     SupportsOnSupportBanner, UmasOnUmaBanner,
@@ -1006,6 +1007,22 @@ class TeamTrialsRankAdmin(ModelAdmin):
     ordering = ("income_amount",)
 
 
+# What a rank pays from a later event on (models/race_rank_reward.py), edited
+# on the rank's own page. Only the changes need a row: before the first one,
+# the rank pays its own amount.
+
+class ChampionsMeetingRankRewardInline(TabularInline):
+    model = ChampionsMeetingRankReward
+    fields = ("from_event_number", "income_amount")
+    extra = 1
+
+
+class LeagueOfHeroesRankRewardInline(TabularInline):
+    model = LeagueOfHeroesRankReward
+    fields = ("from_event_number", "income_amount")
+    extra = 1
+
+
 @admin.register(ChampionsMeetingRank)
 class ChampionsMeetingRankAdmin(ModelAdmin):
     # sort_order is editable here so content editors control the dropdown order
@@ -1015,6 +1032,7 @@ class ChampionsMeetingRankAdmin(ModelAdmin):
     list_editable = ("sort_order", "income_amount", "uma_ticket_amount",
                      "support_ticket_amount", "ssr_shard_amount", "sr_shard_amount")
     ordering = ("sort_order",)
+    inlines = [ChampionsMeetingRankRewardInline]
 
 
 @admin.register(LeagueOfHeroesRank)
@@ -1024,6 +1042,7 @@ class LeagueOfHeroesRankAdmin(ModelAdmin):
     list_editable = ("income_amount", "uma_ticket_amount",
                      "support_ticket_amount", "ssr_shard_amount", "sr_shard_amount")
     ordering = ("income_amount",)
+    inlines = [LeagueOfHeroesRankRewardInline]
 
 
 class UserOshiInline(TabularInline):

@@ -405,7 +405,7 @@ changelist log through `log_change` for the same reason). Not personal data, so
 ### `UserOshi` — favourite umas, the first of which is the picture
 
 The umas a person picked as favourites ("oshis" in the code and on the wire,
-"your favourite uma musume" on screen), one row each:
+"your favorite uma musume" on screen), one row each:
 `user` (FK, CASCADE, `related_name="oshis"`), `uma` (FK, **CASCADE**), `position`
 (0-based). Unique on `(user, position)` and on `(user, uma)`. **The first one is
 their picture** in the navbar and on the account page. Every account holds one
@@ -510,7 +510,7 @@ An account holds up to `PLAN_CAP` (5) plans and the calculator opens on the acti
 | Carats, tickets, selector tickets, shards, crystals, ranks | `CustomUser`, or an `IncomeProfile` the account owns | facts about the person (or about their other game account) |
 | The income toggles | same row as the balances | income side |
 | `UserPlannedPurchase` | the same stats block as the balances (`income_profile`, nullable) | money the person spends; it feeds income, so it follows the income it feeds |
-| `UserStepUpSelection` | the account | already keyed to the banner, and changes no number |
+| `UserStepUpSelection` | the account | already keyed to the banner, and changes no rate (its pick only dates a step-up row's reserved copies) |
 
 So the same plan projected for two people gives two different answers, which is the point.
 Worked example: Alice (80,000 carats, top ranks) and Bob (12,000 carats, middling ranks)
@@ -902,6 +902,16 @@ covers that anniversary's featured unit.
 `ClubRank`, `TeamTrialsRank`, `ChampionsMeetingRank`, and `LeagueOfHeroesRank` are static reference tables seeded from fixtures. They are never written to by user-facing endpoints. `CustomUser` holds a nullable FK to the user's current tier in each.
 
 `LeagueOfHeroesRank` data is returned by the API and used by the resource projection — each `LeagueOfHeroes` event whose `end_date` falls within a banner window contributes the user's rank `income_amount` to the carat total.
+
+**A CM or LoH rank's payout can change from a later event on.**
+`ChampionsMeetingRankReward` / `LeagueOfHeroesRankReward` (`models/race_rank_reward.py`,
+migration `0104`) hang off the rank (`related_name="rewards"`, CASCADE), one row per
+`(rank, from_event_number)`: "from event #N on, pays `income_amount` carats". The largest
+`from_event_number` at or below an event's number wins; below the first row the rank's own
+`income_amount` pays, so a rank with no rows behaves as it always did. Carats only. They are
+content (`CONTENT_MODELS`, the editor group), edited inline on the rank's page, and served
+as each rank's `rewards` list. → `docs/income-calculation.md` ("Rewards that change with
+the event number")
 
 ### `ChampionsMeeting` and `LeagueOfHeroes` are the same shape
 

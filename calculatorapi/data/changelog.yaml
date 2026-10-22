@@ -32,6 +32,22 @@
 # module changed. Newest entry first is conventional here but not required — the
 # page sorts by date.
 
+- key: oguri-bot
+  date: 2026-10-21
+  title: "Meet Oguri Bot, and bigger CM and LoH rewards"
+  version: "v2.4"
+  changes:
+    - added: "Meet Oguri Bot, the calculator's new helper on our Discord."
+    - added: "It posts every patch note in #calc-site-changelog, this one included."
+    - added: "Post a bug or an idea in #carat-calculator-feedback. Once the team picks it up, Oguri Bot replies on your post, and again when it's planned and when it's done."
+    - added: "It talks a little like Oguri Cap. Only a little."
+    - changed: "Champions Meeting and League of Heroes rewards now follow the event number. The game raises them at set points (Champions Meeting 30, League of Heroes 6), and the events in your plan pay what they really will."
+    - changed: "When upcoming events pay different amounts, the reward next to your rank shows the range."
+    - fixed: "On a step-up, copies from selectors or SSR crystals now count toward the odds."
+    - fixed: "Hovering the carat forecast shows the right date."
+    - fixed: "The forecast no longer dips and jumps back up when one banner runs inside another. The longer banner's pulls come off when the shorter one ends, and its dot sits above the line."
+    - fixed: "The logo stays visible on hover in the light themes."
+
 - key: phone-planner-cards
   date: 2026-10-20
   title: "Shorter planner cards on a phone"
