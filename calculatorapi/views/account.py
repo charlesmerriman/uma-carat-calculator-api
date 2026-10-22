@@ -76,7 +76,7 @@ Patreon-side name with Patreon-side consent.
 OSHIS: ONE FOR EVERYONE, MORE FOR SUPPORTERS (AND STAFF)
 ---------------------------------------------------------
 `oshis` is the ordered list of favourite umas a person picked; the FIRST is
-their picture. The UI calls them "your favourite uma musume"; the wire keeps
+their picture. The UI calls them "your favorite uma musume"; the wire keeps
 the name it shipped with. How many they may hold is `benefits.oshi_slots(user)`
 — 1 for any signed-in account, 3 / 5 / 7 by tier (the free slot plus 2, 4 or
 6), and OSHI_SLOT_CAP for staff regardless of tier — and GET reports it as
@@ -238,9 +238,9 @@ class AccountPreferencesSerializer(serializers.ModelSerializer):
             # The free count is the one no pledge (and no staff flag) can
             # produce, so it alone identifies a free account here.
             if slots == benefits.FREE_OSHI_SLOTS:
-                message = "Free accounts get one favourite. Patreon supporters get more."
+                message = "Free accounts get one favorite. Patreon supporters get more."
             else:
-                message = f"Your tier covers {slots} favourites."
+                message = f"Your tier covers {slots} favorites."
             raise serializers.ValidationError(message)
         return umas
 

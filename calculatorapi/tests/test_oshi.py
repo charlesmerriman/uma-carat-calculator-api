@@ -346,7 +346,7 @@ class OshiWriteTests(OshiTestCase):  # pylint: disable=too-many-public-methods
         self.assertEqual(response.status_code, 400)
         self.assertEqual(
             response.json()["oshis"][0],
-            "Free accounts get one favourite. Patreon supporters get more.",
+            "Free accounts get one favorite. Patreon supporters get more.",
         )
         self.assertEqual(self._stored_ids(), [])
 
@@ -366,13 +366,13 @@ class OshiWriteTests(OshiTestCase):  # pylint: disable=too-many-public-methods
         self._pledge(self.junior)
         response = self._patch({"oshis": self._ids(0, 1, 2, 3)})
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json()["oshis"][0], "Your tier covers 3 favourites.")
+        self.assertEqual(response.json()["oshis"][0], "Your tier covers 3 favorites.")
         self.assertEqual(self._stored_ids(), [])
 
     def test_the_message_names_the_tier_s_count(self):
         self._pledge(self.classic)
         response = self._patch({"oshis": self._ids(0, 1, 2, 3, 4, 5)})
-        self.assertEqual(response.json()["oshis"][0], "Your tier covers 5 favourites.")
+        self.assertEqual(response.json()["oshis"][0], "Your tier covers 5 favorites.")
 
     def test_more_than_the_cap_is_refused_even_for_the_top_tier(self):
         self._pledge(self.senior)
@@ -540,7 +540,7 @@ class OshiWriteTests(OshiTestCase):  # pylint: disable=too-many-public-methods
         response = self._patch({"oshis": self._ids(0, 1)})
 
         self.assertEqual(response.json()["oshis"][0],
-                         "Free accounts get one favourite. Patreon supporters get more.")
+                         "Free accounts get one favorite. Patreon supporters get more.")
 
     def test_oshis_are_per_account(self):
         other = make_user("user_b7e2d0")
