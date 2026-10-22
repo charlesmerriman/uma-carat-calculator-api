@@ -1013,13 +1013,13 @@ class TeamTrialsRankAdmin(ModelAdmin):
 
 class ChampionsMeetingRankRewardInline(TabularInline):
     model = ChampionsMeetingRankReward
-    fields = ("from_event_number", "income_amount")
+    fields = ("from_event_number", "income_amount", "day_amounts")
     extra = 1
 
 
 class LeagueOfHeroesRankRewardInline(TabularInline):
     model = LeagueOfHeroesRankReward
-    fields = ("from_event_number", "income_amount")
+    fields = ("from_event_number", "income_amount", "day_amounts")
     extra = 1
 
 

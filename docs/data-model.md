@@ -912,6 +912,9 @@ migration `0104`) hang off the rank (`related_name="rewards"`, CASCADE), one row
 content (`CONTENT_MODELS`, the editor group), edited inline on the rank's page, and served
 as each rank's `rewards` list. → `docs/income-calculation.md` ("Rewards that change with
 the event number")
+Both the rank and each row carry **`day_amounts`** (`0106`): carats per payout day, 5 for a
+CM and 8 for an LoH, checked in `clean()` to have that length and to add up to the row's
+carats; blank is allowed. → `docs/income-calculation.md` ("Rewards paid day by day")
 
 ### `ChampionsMeeting` and `LeagueOfHeroes` are the same shape
 
