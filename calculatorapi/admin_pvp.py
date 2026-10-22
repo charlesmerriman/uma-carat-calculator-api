@@ -680,7 +680,7 @@ class DeckInline(GuideInline, StackedInline):
     # A stacked row's title is where its drag handle and delete live, so it
     # stays; PvpDeck.get_inline_title keeps it to the label and style.
     hide_title = False
-    fields = ("label", "note", "order", "style")
+    fields = ("label", "note", "is_highlighted", "order", "style")
     ordering = ("order", "id")
     ordering_field = "order"
     hide_ordering_field = True

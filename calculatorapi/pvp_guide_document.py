@@ -154,6 +154,8 @@ class _DeckInput(serializers.Serializer):
     style = serializers.ChoiceField(choices=STYLES)
     label = _text(PvpDeck, "label", allow_blank=False, required=True, default=serializers.empty)
     note = _text(PvpDeck, "note")
+    # Optional, so a revision saved before the field existed restores unboxed.
+    is_highlighted = serializers.BooleanField(required=False, default=False)
     slots = _SlotInput(many=True)
 
 
@@ -377,6 +379,7 @@ def serialize(guide):
                 "style": deck.style,
                 "label": deck.label,
                 "note": deck.note,
+                "is_highlighted": deck.is_highlighted,
                 "slots": [
                     {
                         "slot": slot.slot, "order": slot.order, "is_borrow": slot.is_borrow,
@@ -468,11 +471,15 @@ def _write_decks(guide, decks):
         if deck["id"] in existing:
             row = existing[deck["id"]]
             row.style, row.label, row.note, row.order = deck["style"], deck["label"], deck["note"], order
+            row.is_highlighted = deck["is_highlighted"]
             kept.append(row)
         else:
-            new.append(PvpDeck(guide=guide, order=order, style=deck["style"], label=deck["label"], note=deck["note"]))
+            new.append(PvpDeck(
+                guide=guide, order=order, style=deck["style"], label=deck["label"], note=deck["note"],
+                is_highlighted=deck["is_highlighted"],
+            ))
     if kept:
-        PvpDeck.objects.bulk_update(kept, ["style", "label", "note", "order"])
+        PvpDeck.objects.bulk_update(kept, ["style", "label", "note", "is_highlighted", "order"])
     # bulk_create fills the new rows' ids (SQLite and PostgreSQL both
     # return them), so the slots below can point at them.
     created = iter(PvpDeck.objects.bulk_create(new))

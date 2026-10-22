@@ -755,7 +755,7 @@ may hold `==highlight==` spans the client renders red.
                 "versions": [{"id": 211, "name": "Lead the Pack ◎", "description": "string", "image": "url | null",
                               "rarity": 2, "tier": 2, "version": "◎ gold", "is_evolved": false}]}}],
   "style_notes": [{"style": "front", "body": "markdown"}],
-  "decks": [{"id": 7, "style": "front", "label": "Standard", "note": "",
+  "decks": [{"id": 7, "style": "front", "label": "Standard", "note": "", "is_highlighted": false,
       "slots": [{"slot": 1, "order": 0, "is_borrow": false, "note": "Gold + Link",
                  "support_card": {"id": 302, "name": "Kitasan Black", "image": "url | null",
                                   "card_type": "speed", "rarity": 3}},
@@ -818,7 +818,7 @@ client flushes its autosave first and replaces its copy with the answer.
   "uma_recommendations": [{"style": "front", "uma": 41, "stars": 5, "role": "RA", "note": ""}],
   "skill_recommendations": [{"style": "front", "category": "acceleration", "tier": 0, "skill": 88, "note": ""}],
   "style_notes": [{"style": "front", "body": "markdown"}],
-  "decks": [{"id": 90, "style": "front", "label": "Standard", "note": "",
+  "decks": [{"id": 90, "style": "front", "label": "Standard", "note": "", "is_highlighted": false,
              "slots": [{"slot": 1, "order": 0, "is_borrow": false, "support_card": 302, "note": "2SP"},
                        {"slot": 1, "order": 1, "is_borrow": false, "support_card": null, "note": "or any speed"}]}] }
 ```
