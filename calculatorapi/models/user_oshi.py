@@ -22,7 +22,7 @@ class UserOshi(models.Model):
     picture itself (it was, until 2026-10-07). Written only by PATCH /account,
     which replaces the whole list and renumbers positions from 0, so "the first
     one" is always position 0 among the rows that exist. The UI calls these
-    "your favourite uma musume"; the wire and the code keep "oshi".
+    "your favorite uma musume"; the wire and the code keep "oshi".
 
     WHY A TABLE AND NOT A COLUMN. The list is up to OSHI_SLOT_CAP long and ordered, and
     a future feature will show a supporter's oshis publicly (decided

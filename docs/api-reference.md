@@ -119,7 +119,7 @@ meaning anything instead of rendering a signed-in shell around nothing.
   on `/supporters` or any other public route today. **Unique**, ignoring case.
 - **`oshis`** is the ordered list of favourite umas the person picked
   (`position` is 0-based; `image` is the storage URL, or `""` if an editor has
-  since cleared the picture). The UI calls them "your favourite uma musume";
+  since cleared the picture). The UI calls them "your favorite uma musume";
   the wire keeps the name it shipped with. **Every stored row is listed,
   covered by the current tier or not**, so a page can grey out what a lapse or
   downgrade stopped covering. Empty until they pick one. Set through `PATCH`;
@@ -211,8 +211,8 @@ reflecting the write.
   `400` *unless every id in it is already stored* — so a supporter whose tier
   dropped may still reorder, trim or keep what they hold, and a lapsed one may
   clear the list, but nobody can *add* past their count. Messages:
-  "Free accounts get one favourite. Patreon supporters get more." /
-  "Your tier covers 3 favourites."
+  "Free accounts get one favorite. Patreon supporters get more." /
+  "Your tier covers 3 favorites."
 - **The field list is the whitelist.** Any other key in the body — `username`,
   `is_staff`, a calculator stat — is ignored, not applied. Calculator stats
   have their own route (`PATCH /calculator-data`).

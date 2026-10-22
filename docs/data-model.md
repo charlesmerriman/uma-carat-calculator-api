@@ -405,7 +405,7 @@ changelist log through `log_change` for the same reason). Not personal data, so
 ### `UserOshi` — favourite umas, the first of which is the picture
 
 The umas a person picked as favourites ("oshis" in the code and on the wire,
-"your favourite uma musume" on screen), one row each:
+"your favorite uma musume" on screen), one row each:
 `user` (FK, CASCADE, `related_name="oshis"`), `uma` (FK, **CASCADE**), `position`
 (0-based). Unique on `(user, position)` and on `(user, uma)`. **The first one is
 their picture** in the navbar and on the account page. Every account holds one
