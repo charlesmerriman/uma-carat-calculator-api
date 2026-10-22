@@ -1118,7 +1118,14 @@ lose FK integrity and cascades; tables per gallery would write this twice.
 - **`GalleryComment`**: one level of replies (`parent`; a reply to a reply attaches to its top
   comment), `body` (500), `edited_at`, the hidden trio, and `is_deleted`: a comment deleted
   while it has replies keeps its place as "[deleted]" with no text and no author.
-  `author` is SET_NULL for the same reason.
+  `author` is SET_NULL for the same reason. **Two kinds of parent** (`0107`, owner
+  2026-10-22, `guide-comments-plan.md` option A): a post OR a PvP `guide`, never both
+  (`gallery_comment_one_parent`), and a guide comment's `section` (`""` for the whole guide,
+  else a running style; always `""` on a post's). Anything that shows where a comment is asks
+  the comment: `where()` for staff, `link_path()` for the site's link, so reports, moderation
+  cards and `erase_users` need no branch of their own.
+- **`GalleryCommentVote`**: a thumbs-up, `(comment, user)` unique, no weight. Never on your
+  own comment; blocked accounts' votes don't count; who voted never leaves the server.
 - **`GalleryReport`**: exactly one of `post` / `comment` (`gallery_report_one_target`), a
   reason, an optional note, and `resolved_at` / `resolved_by` / `resolution` (`kept` /
   `removed` / `blocked`; `blocked` since migration `0101`, so an undo knows to lift the

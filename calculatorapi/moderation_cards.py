@@ -166,10 +166,13 @@ def status_text(item):
 
 
 def _links(item):
-    post = item if isinstance(item, GalleryPost) else item.post
     site = settings.FRONTEND_URL.rstrip("/")
     admin = site + reverse("admin:calculatorapi_galleryreport_changelist")
-    return f"[View the post]({site}/post/{post.public_id}) · [Open in admin]({admin})"
+    if isinstance(item, GalleryPost):
+        return f"[View the post]({site}/post/{item.public_id}) · [Open in admin]({admin})"
+    # A comment is on a post or on a PvP guide's section (GalleryComment.link_path).
+    label = "View the post" if item.post_id else "View the guide"
+    return f"[{label}]({site}{item.link_path()}) · [Open in admin]({admin})"
 
 
 def _open_card(item, open_reports):

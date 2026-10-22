@@ -926,6 +926,9 @@ the post's own author.
 | `GET /gallery/posts/<public_id>/comments?page=N` | anyone | `{count, page, has_more, results: [comment]}`, 50 top comments per page |
 | `POST /gallery/posts/<public_id>/comments` `{body, parent?}` | signed in, display name | `201` the comment |
 | `PATCH` / `DELETE /gallery/comments/<id>` `{body}` | its author | the comment / `204` |
+| `PUT` / `DELETE /gallery/comments/<id>/vote` | signed in | `{upvotes, my_vote}`; `403` on your own comment, `404` on one you can't see |
+| `GET /pvp-guides/<kind>/<event_id>/comments?section=<style>&page=N` | anyone who can read the guide | a guide section's thread, the same shape as a post's; no `section` = the whole guide |
+| `POST /pvp-guides/<kind>/<event_id>/comments` `{body, parent?, section}` | signed in, display name | `201` the comment; `400` for a section that isn't `""` or a running style |
 | `POST /gallery/reports` `{post: public_id}` or `{comment: id}`, `reason`, `note?` | signed in | `201`, no body; `409` on a repeat |
 | `GET /post/<public_id>` | anyone | HTML: link-preview tags, then on to the post in the app. **Not under `/api`** |
 | `GET /post/<public_id>/preview.jpg?v=<version>` | anyone | the 1200x630 preview JPEG: the brand strip with the event's name, then the three umas (`gallery_preview.py`). The version is the team's hash plus the drawing's `LAYOUT`; an old one redirects |
@@ -961,7 +964,11 @@ Never in any gallery payload: a username, a user id, the team's name, notes or p
 weight, a tier order, who voted, viewed or reported.
 
 A comment: `{id, state, body, created_at, edited, earlier_version, is_author, is_mine,
-poster, replies: [comment]}`. `state` is `visible`, `deleted` ("[deleted]"), `removed`
+poster, upvotes, my_vote, replies: [comment]}`. `upvotes` is its thumbs-up count (blocked
+accounts not counted) and `my_vote` the viewer's; who voted is never sent. On a guide's
+comment `earlier_version` and `is_author` are always false. The guide payload
+(`GET /pvp-guides/<kind>/<event_id>`) carries `comment_counts`, `{section: visible
+comments}` with `""` for the whole guide. `state` is `visible`, `deleted` ("[deleted]"), `removed`
 ("[removed]") or `under_review` (your own hidden comment); only `visible` and
 `under_review` carry `body` and `poster`. `reason` is `spam`, `harassment`,
 `sexual_or_violent`, `personal_info` or `other`.

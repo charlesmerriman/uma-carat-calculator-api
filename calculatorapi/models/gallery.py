@@ -260,9 +260,27 @@ class GalleryVote(models.Model):
 class GalleryComment(models.Model):
     """A comment on a post, or a reply to one. One level of replies: a reply
     to a reply is attached to its top comment by gallery.add_comment, so
-    `parent.parent` is always None."""
+    `parent.parent` is always None.
 
-    post = models.ForeignKey(GalleryPost, on_delete=models.CASCADE, related_name="comments")
+    TWO KINDS OF PARENT (owner, 2026-10-22: guide-comments-plan.md, option A).
+    A comment hangs off a gallery post OR off a PvP guide, never both (a check
+    constraint), and a guide comment names the guide's SECTION it was left in:
+    blank for the whole guide (the side column), else a running style. The
+    official guide is not a player's post, so it gets no host post of its own;
+    instead every path that reads a comment's parent asks the comment
+    (`link_path`, `where`), and reports, moderation cards, blocked terms,
+    throttles and erase_users work unchanged.
+    """
+
+    post = models.ForeignKey(
+        GalleryPost, on_delete=models.CASCADE, related_name="comments", null=True, blank=True
+    )
+    guide = models.ForeignKey(
+        "calculatorapi.PvpGuide", on_delete=models.CASCADE, related_name="comments", null=True, blank=True
+    )
+    # A guide comment's section: "" for the whole guide, else a running style
+    # ("front", "pace"...). Always "" on a post's comment.
+    section = models.CharField(max_length=20, blank=True, default="")
     # SET_NULL, not CASCADE: when an account goes, a comment others replied
     # to stays as "[deleted]" so the thread keeps its shape (gallery.erase_user).
     author = models.ForeignKey(
@@ -302,11 +320,61 @@ class GalleryComment(models.Model):
                 condition=_hidden_is_explained(),
                 name="gallery_comment_hidden_has_reason",
             ),
+            models.CheckConstraint(
+                condition=(
+                    Q(post__isnull=False, guide__isnull=True, section="")
+                    | Q(post__isnull=True, guide__isnull=False)
+                ),
+                name="gallery_comment_one_parent",
+            ),
         ]
+        indexes = [models.Index(fields=["guide", "section", "created_at"], name="guide_comment_thread")]
 
     def __str__(self):
         who = self.author.username if self.author else "[deleted]"
-        return f"{who} on {self.post.public_id}"
+        return f"{who} on {self.where()}"
+
+    def where(self):
+        """What the comment is on, for staff: "post abc123" or "the CM 21
+        guide, Front"."""
+        if self.post_id:
+            return f"post {self.post.public_id}"
+        guide = self.guide
+        event = guide.champions_meeting or guide.league_of_heroes
+        section = self.section.capitalize() if self.section else "Overview"
+        return f"the {event} guide, {section}"
+
+    def link_path(self):
+        """The site path that shows the comment's thread: a post's share link,
+        or the guide's page at its section."""
+        if self.post_id:
+            return f"/post/{self.post.public_id}"
+        guide = self.guide
+        kind = "cm" if guide.champions_meeting_id else "loh"
+        event_id = guide.champions_meeting_id or guide.league_of_heroes_id
+        style = f"&style={self.section}" if self.section else ""
+        return f"/app/pvp?event={kind}-{event_id}{style}"
+
+
+class GalleryCommentVote(models.Model):
+    """One account's thumbs-up on one comment (Henry, board 2026-10-20).
+
+    A count, nothing more: no weight, no thumbs-down, never on your own
+    comment (gallery.vote_comment). The count is public; who voted is never
+    sent anywhere, not even to the comment's author.
+    """
+
+    comment = models.ForeignKey(GalleryComment, on_delete=models.CASCADE, related_name="votes")
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="gallery_comment_votes")
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["comment", "user"], name="one_comment_vote_per_user"),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} on comment {self.comment_id}"
 
 
 class GalleryReport(models.Model):

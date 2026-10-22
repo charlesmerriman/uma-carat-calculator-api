@@ -349,7 +349,7 @@ class CommentRouteTests(RouteFixture):
     def test_thread_shape(self):
         top = self.comment(self.commenter, "Nice").data
         self.assertEqual(set(top), {"id", "state", "body", "created_at", "edited", "earlier_version",
-                                    "is_author", "is_mine", "poster", "replies"})
+                                    "is_author", "is_mine", "poster", "upvotes", "my_vote", "replies"})
         reply = self.comment(self.author, "Thanks", top["id"]).data
         self.assertTrue(reply["is_author"])
         thread = APIClient().get(self.url).data
