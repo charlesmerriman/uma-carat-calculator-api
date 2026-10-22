@@ -25,7 +25,7 @@ Two deliberate choices:
 Support cards were originally skipped here, on the grounds that the source
 Google Sheet's Timeline tab does not reach back to 2021-02-24 so the launch
 banner's support side was unknowable. That was the wrong place to look:
-timeline_master.csv — the file the backfill pipeline already reads, tracked in
+timeline_master.csv — the file support_backfill.py already reads, tracked in
 git and deployed alongside the app — carries all twenty of them for this row.
 They are linked here now.
 

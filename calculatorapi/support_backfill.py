@@ -5,17 +5,12 @@ Two commands need the same three things — read the pipeline's master CSV, turn
 a " + "-joined name list into SupportCard rows, and refuse rather than guess
 when a name doesn't resolve. They live here so the two cannot drift apart.
 
-MATCHING MIRRORS THE FIXTURE PIPELINE. `scripts/build_missing_banners.py`
-already solves this problem when it generates fixtures, and if the two
-disagreed the same CSV row would produce different links depending on which
-path built it. So `normalize` and `ALIASES` are deliberate copies of that
-script's. **Change them together.** They are copied rather than imported
-because `scripts/` is a standalone tool tree, not an importable package inside
-the deployed app.
-
-The COLLISION RULE has deliberately diverged — see the next paragraph. The
-script now prefers SSR the same way, but the date tiers live only here, because
-only this side is the one that writes to a real database.
+MATCHING CAME FROM THE OLD FIXTURE PIPELINE. `normalize`, `ALIASES` and the
+date tiers below were first written in the scripts that generated fixtures from
+the same CSV (`build_missing_banners.py`, `fix_banner_support_links.py`). Those
+scripts were deleted on 2026-10-22, since their fixtures reached no database
+once seeding was removed, so this module is now the only copy: there is nothing
+left to keep in step with.
 
 WHY NAMES ALONE ARE AMBIGUOUS: SupportCard.name is not unique, by design — see
 the model's own note that "many characters have 2-3 support cards sharing the
@@ -31,7 +26,7 @@ launch banner in production (see the `fix_support_card_variants` command, which
 repairs the damage this rule caused).
 
 THE RULE NOW: among same-named SSR rows, pick by date against the banner's own
-JP start, in two tiers borrowed from `scripts/fix_banner_support_links.py`:
+JP start, in two tiers:
 
   Tier 1 (debut) — exactly one variant whose source release_ja IS the banner's
   JP start date. The card launched on this banner.
@@ -73,7 +68,7 @@ from django.conf import settings
 
 from calculatorapi.models import SupportCard
 
-# The pipeline's master timeline, the same file build_missing_banners.py reads.
+# The master timeline: one row per global banner, with its featured cards by name.
 # Tracked in git and present on the deployed container, so a command may read it
 # at runtime in production.
 TIMELINE_MASTER = os.path.join(
@@ -93,7 +88,6 @@ SUPPORT_CARDS_SOURCE = os.path.join(
 SSR_MIN_GAME_ID = 30000
 
 # How far the best rerun candidate must lead the runner-up to be believed.
-# Copied from scripts/fix_banner_support_links.py — keep in step.
 MIN_RERUN_MARGIN_DAYS = 14
 
 # Parsed source data, keyed by the path it came from so a test that patches
@@ -105,7 +99,6 @@ _source_cache = {}
 RACE_PREP_BANNER_TYPE = "2"
 
 # Sheet spellings that differ from the card names, keyed by NORMALIZED name.
-# Copied from build_missing_banners.py — keep in step.
 #
 # "K.S. Miracle" needs no entry: normalize() drops the periods, so it and the
 # card's own "K.S.Miracle" both collapse to "k s miracle".
@@ -121,7 +114,7 @@ def split_names(joined):
 
 
 def normalize(value):
-    """Copied from build_missing_banners.py's `norm` — keep in step."""
+    """Lowercase, drop punctuation and embedded support game ids, squash spaces."""
     value = value.lower()
     value = re.sub(r"[.'’♡♥❤♪&]", " ", value)
     value = re.sub(r"[-_]", " ", value)
@@ -130,7 +123,7 @@ def normalize(value):
 
 
 def strip_rerun(value):
-    """Copied from build_missing_banners.py — keep in step."""
+    """The name without its "(Rerun)" suffix."""
     return re.sub(r"\s*\(rerun\)\s*", " ", value, flags=re.I).strip()
 
 

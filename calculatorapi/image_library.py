@@ -8,8 +8,7 @@ Why this can be so simple — an ``ImageField`` never stores an image. It stores
 the **bucket key** as a plain string (``"umas/Special Week.png"``), and
 ``S3Boto3Storage`` turns that key into a CDN URL on read. So "use an existing
 image" is just writing a different string into the column: no upload, no copy,
-no new model, no migration. ``scripts/link_missing_banner_images.py`` already
-does exactly this in bulk; the picker is the interactive version.
+no new model, no migration.
 
 This module is deliberately pure-ish logic (storage + cache only, no forms, no
 views, no ORM queries), mirroring the predictions.py / analytics/ / oauth.py
