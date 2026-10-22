@@ -24,6 +24,7 @@ from .scenario import Scenario
 from .daily_legend_race import DailyLegendRaceRelease, DailyLegendRaceUma
 from .league_of_heroes_rank import LeagueOfHeroesRank
 from .league_of_heroes import LeagueOfHeroes
+from .race_rank_reward import ChampionsMeetingRankReward, LeagueOfHeroesRankReward
 from .pvp_guide import (
     PvpGuide,
     PvpStatConfig,
