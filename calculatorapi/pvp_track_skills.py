@@ -40,6 +40,11 @@ import re
 from typing import NamedTuple
 
 from .models import PvpSkillRecommendation, Skill
+# The parser is shared with the readable skill text; re-exported here for
+# the callers that have always found it in this module.
+from .skill_conditions import (  # pylint: disable=unused-import
+    RACECOURSE_NAME, condition_holds, condition_variables, parse_condition,
+)
 from .models.pvp_guide import PvpSkillCategory, PvpStyle
 from .models.skill import SkillRarity, SkillTier
 
@@ -79,46 +84,7 @@ RACE_VARIABLES = frozenset(
 # 2400, ...). The JRA's own definition, and the one Standard Distance uses.
 BASIS_DISTANCE_STEP = 400
 
-CLAUSE = re.compile(r"\s*([a-z_]+)\s*(==|!=|>=|<=|>|<)\s*(-?\d+)\s*")
-RACECOURSE_NAME = re.compile(r"^(?P<track>.+?) Racecourse [○◎×]$")
-OPERATORS = {
-    "==": lambda a, b: a == b,
-    "!=": lambda a, b: a != b,
-    ">=": lambda a, b: a >= b,
-    "<=": lambda a, b: a <= b,
-    ">": lambda a, b: a > b,
-    "<": lambda a, b: a < b,
-}
 UNFILLED = {"", "tbd", "tba", "?"}
-
-
-def parse_condition(condition):
-    """`a==1&b==2@c==3` -> [[("a", "==", 1), ("b", "==", 2)], [("c", "==", 3)]],
-    or None when any clause is not a plain comparison (so it isn't ours to read)."""
-    alternatives = []
-    for alternative in condition.split("@"):
-        clauses = []
-        for clause in alternative.split("&"):
-            match = CLAUSE.fullmatch(clause)
-            if match is None:
-                return None
-            var, op, value = match.groups()
-            clauses.append((var, op, int(value)))
-        alternatives.append(clauses)
-    return alternatives
-
-
-def condition_variables(parsed):
-    return {var for alternative in parsed for var, _, _ in alternative}
-
-
-def condition_holds(parsed, values):
-    """True when any alternative has every clause true. The caller makes sure
-    every variable is in `values`."""
-    return any(
-        all(OPERATORS[op](values[var], value) for var, op, value in alternative)
-        for alternative in parsed
-    )
 
 
 def _track_skills():

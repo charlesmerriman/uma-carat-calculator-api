@@ -55,7 +55,7 @@ from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
 from django.utils import timezone
-from django.utils.html import format_html
+from django.utils.html import format_html, format_html_join
 # django-unfold themes the admin, but only for admins that inherit its base
 # classes — a plain admin.ModelAdmin would render unstyled under unfold's
 # templates. Hence every ModelAdmin/TabularInline below extends unfold's.
@@ -73,7 +73,7 @@ from .admin_image_picker import SpacesImagePickerMixin
 from .admin_pvp import PVP_GUIDE_FIELDSET, PicturePickersMixin, PvpGuideLinkMixin
 # Importing admin_gallery registers the gallery's moderation pages.
 from . import admin_gallery  # noqa: F401  pylint: disable=unused-import
-from . import digitalocean_api, patreon_api
+from . import digitalocean_api, patreon_api, skill_text
 from .admin_patreon_import import (
     PatreonCsvImportForm,
     PatreonSyncForm,
@@ -597,6 +597,25 @@ class UmaAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
         return "—"
 
 
+def _phrases_html(phrases, joiner):
+    """Readable phrases, with a raw one (the game's own code) in a code box."""
+    return format_html_join(
+        joiner, "{}",
+        ((format_html("<code>{}</code>", item["text"]) if item["raw"] else item["text"],)
+         for item in phrases),
+    )
+
+
+def _condition_html(condition):
+    """skill_text's {"all", "any"} as one line: all of these, and one of those."""
+    parts = [_phrases_html(condition["all"], ", ")] if condition["all"] else []
+    if condition["any"]:
+        parts.append(format_html("and one of: {}", format_html_join(
+            " <b>or</b> ", "({})", ((_phrases_html(alt, ", "),) for alt in condition["any"]),
+        )))
+    return format_html_join(", ", "{}", ((part,) for part in parts))
+
+
 class OnGlobalFilter(admin.SimpleListFilter):
     """Skills by whether a player may be shown them. The rule is SkillQuerySet's;
     the `availability` filter beside it says where the game has each one."""
@@ -636,7 +655,7 @@ class SkillAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
     readonly_fields = (
         "image_preview", "versions", "on_global", "availability",
         "translated_name", "translated_description", "jp_name", "jp_description",
-        "effects", "evolution_scenario",
+        "effects", "evolution_scenario", "readable", "sources",
     )
     autocomplete_fields = ("evolves_from",)
     list_select_related = ("evolves_from",)
@@ -652,6 +671,13 @@ class SkillAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
                 "shown to players."
             ),
             "fields": ("description", "description_detailed", "availability", "on_global"),
+        }),
+        ("In plain English", {
+            "description": (
+                "Built from the game data below, the way the site will show it. A grey "
+                "code box is a part nobody has confirmed the meaning of yet."
+            ),
+            "fields": ("readable", "sources"),
         }),
         ("Translation and Japanese", {
             "classes": ("collapse",),
@@ -679,6 +705,55 @@ class SkillAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
     @admin.display(description="Shown", boolean=True)
     def on_global(self, obj):
         return obj.is_on_global
+
+    @admin.display(description="When it activates, and what it does")
+    def readable(self, obj):
+        if obj.pk is None:
+            return "–"
+        described = skill_text.describe(obj, skill_text.context_from_database())
+        rows = []
+        if described["wit_check"]:
+            rows.append(format_html("<p>{}</p>", "Rolls against Wit before it fires."))
+        for number, slot in enumerate(described["slots"], start=1):
+            label = f"Part {number}: " if len(described["slots"]) > 1 else ""
+            if slot["after"]["all"] or slot["after"]["any"]:
+                rows.append(format_html("<p><b>{}Only after</b> {}</p>", label,
+                                        _condition_html(slot["after"])))
+            rows.append(format_html("<p><b>{}When</b> {}</p>", label,
+                                    _condition_html(slot["when"]) or "any time"))
+            timing = [text for text in (slot["duration"], slot["cooldown"]) if text]
+            rows.append(format_html(
+                "<p><b>{}Does</b> {}{}</p>", label,
+                _phrases_html(slot["effects"], "; "),
+                f" ({', '.join(timing)})" if timing else "",
+            ))
+        return format_html_join("", "{}", ((row,) for row in rows))
+
+    @admin.display(description="Where it comes from")
+    def sources(self, obj):
+        if obj.pk is None:
+            return "–"
+        lines = []
+        for row in obj.umas.select_related("uma").order_by("source", "uma__name"):
+            level = f", level {row.level}" if row.level is not None else ""
+            lines.append(format_html(
+                '<a href="{}">{}</a> ({}{})',
+                reverse("admin:calculatorapi_uma_change", args=[row.uma_id]),
+                row.uma.name, row.get_source_display().lower(), level,
+            ))
+        for row in obj.support_cards.select_related("support_card").order_by("source"):
+            lines.append(format_html(
+                '<a href="{}">{}</a> ({})',
+                reverse("admin:calculatorapi_supportcard_change", args=[row.support_card_id]),
+                row.support_card.name, row.get_source_display().lower(),
+            ))
+        if obj.evolves_from_id:
+            lines.append(format_html("Evolves from {}", obj.evolves_from.admin_label))
+        for evolution in obj.evolutions.all():
+            lines.append(format_html("Evolves into {}", evolution.admin_label))
+        if not lines:
+            return "–"
+        return format_html_join("", "<div>{}</div>", ((line,) for line in lines))
 
     @admin.display(description="Name", ordering="name")
     def label(self, obj):
