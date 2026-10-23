@@ -82,7 +82,8 @@ from .admin_patreon_import import (
 )
 from .predictions import GAME_EVENT_END_DATE_BUFFER
 from .models import (
-    CustomUser, Uma, Skill, UmaSkill, SupportCardSkill, SupportCard, UserPlannedBanner,
+    CustomUser, Uma, Skill, SkillAlias, SkillEvolutionCondition, UmaSkill, SupportCardSkill,
+    SupportCard, UserPlannedBanner,
     Plan, IncomeProfile,
     TeamTrialsRank, ClubRank, ChampionsMeetingRank, LeagueOfHeroesRank,
     ChampionsMeetingRankReward, LeagueOfHeroesRankReward,
@@ -200,6 +201,28 @@ class SupportCardSkillInline(PicturePickersMixin, TabularInline):
     autocomplete_fields = ("skill",)
     fields = ("skill", "source", "notes")
     extra = 0
+
+
+class SkillAliasInline(TabularInline):
+    """Older names of a skill, so a guide that wrote one still links. Added by
+    the import whenever it replaces a name; an editor may add one too."""
+    model = SkillAlias
+    fields = ("name",)
+    extra = 0
+
+
+class SkillEvolutionConditionInline(TabularInline):
+    """What unlocks an evolved skill. Game data, replaced by every import, so
+    read-only here."""
+    model = SkillEvolutionCondition
+    fields = ("game_id", "text", "translated_text", "jp_text", "num", "sub_num",
+              "timing_type", "count_type")
+    readonly_fields = fields
+    extra = 0
+    can_delete = False
+
+    def has_add_permission(self, request, obj=None):
+        return False
 
 
 class ChangelogChangeInline(TabularInline):
@@ -575,8 +598,9 @@ class UmaAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
 
 
 class OnGlobalFilter(admin.SimpleListFilter):
-    """Skills by whether they have released on global. The rule is SkillQuerySet's."""
-    title = "on global"
+    """Skills by whether a player may be shown them. The rule is SkillQuerySet's;
+    the `availability` filter beside it says where the game has each one."""
+    title = "shown to players"
     parameter_name = "on_global"
 
     def lookups(self, request, model_admin):
@@ -597,27 +621,45 @@ class SkillAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
     the two editor-owned columns (image, admin comments). "Versions" answers
     "is this the gold version of something" from group_id without a second table.
     """
+    inlines = (SkillAliasInline, SkillEvolutionConditionInline)
     list_display = (
-        "image_preview", "name", "game_id", "rarity", "tier", "cost", "versions", "on_global",
+        "image_preview", "label", "game_id", "rarity", "tier", "cost", "versions",
+        "availability", "on_global",
     )
-    list_display_links = ("name",)
-    list_filter = ("rarity", "tier", OnGlobalFilter)
+    list_display_links = ("label",)
+    list_filter = ("availability", "rarity", "tier", OnGlobalFilter)
     ordering = ("name",)
-    search_fields = ("name", "=game_id", "=group_id")
-    readonly_fields = ("image_preview", "versions", "on_global")
+    # Every name a skill has had, so an editor can find it by any of them.
+    search_fields = (
+        "name", "translated_name", "jp_name", "aliases__name", "=game_id", "=group_id",
+    )
+    readonly_fields = (
+        "image_preview", "versions", "on_global", "availability",
+        "translated_name", "translated_description", "jp_name", "jp_description",
+        "effects", "evolution_scenario",
+    )
     autocomplete_fields = ("evolves_from",)
     list_select_related = ("evolves_from",)
     fieldsets = (
         (None, {"fields": ("name", "game_id", "image", "image_preview", "admin_comments")}),
         ("Text", {
             "description": (
-                "A skill with no description has not released on global yet. It "
-                "stays here in the admin and is never shown to players. A skill "
-                "with a description but no icon id is one the game has announced "
-                "but not released: guides may use it already, and its rarity and "
-                "tier below are guesses you may correct until it releases."
+                "Global's English comes first. Where the game has this skill is "
+                "\"availability\", set by the import: a skill only announced for "
+                "global (no icon id yet) may be used by guides already, and its "
+                "rarity and tier below are guesses you may correct until it "
+                "releases. A JP-only skill stays here in the admin and is never "
+                "shown to players."
             ),
-            "fields": ("description", "description_detailed", "on_global"),
+            "fields": ("description", "description_detailed", "availability", "on_global"),
+        }),
+        ("Translation and Japanese", {
+            "classes": ("collapse",),
+            "description": (
+                "UmaTL's English and the JP client's text, from the import. A player "
+                "sees the translation only while global has no text."
+            ),
+            "fields": ("translated_name", "translated_description", "jp_name", "jp_description"),
         }),
         ("Versions", {
             "description": (
@@ -629,13 +671,19 @@ class SkillAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
         ("Game data", {
             "classes": ("collapse",),
             "description": "Filled by the game-data import and overwritten by the next one.",
-            "fields": ("icon_id", "cost", "precondition", "condition"),
+            "fields": ("icon_id", "cost", "precondition", "condition", "effects",
+                       "evolution_scenario"),
         }),
     )
 
-    @admin.display(description="On global", boolean=True)
+    @admin.display(description="Shown", boolean=True)
     def on_global(self, obj):
         return obj.is_on_global
+
+    @admin.display(description="Name", ordering="name")
+    def label(self, obj):
+        # A JP-only row has no global name; it is listed by its Japanese one.
+        return obj.admin_label
 
     def get_changelist_instance(self, request):
         # "Versions" names each row's siblings. One query for the page's rows

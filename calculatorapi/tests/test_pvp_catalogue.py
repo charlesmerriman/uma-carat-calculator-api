@@ -18,9 +18,9 @@ from calculatorapi.tests.base import CalculatorTestCase, PLAIN_TEST_STORAGES
 from calculatorapi.tests.factories import make_user
 
 
-def make_skill(name, game_id, description="Does a thing."):
+def make_skill(name, game_id, description="Does a thing.", availability="global"):
     return Skill.objects.create(
-        name=name, game_id=game_id, description=description,
+        name=name, game_id=game_id, description=description, availability=availability,
         rarity=1, group_id=game_id // 10, tier=1, icon_id=10011,
     )
 
@@ -32,7 +32,7 @@ class CatalogueTests(CalculatorTestCase):
 
     def setUp(self):
         self.on_global = make_skill("Groundwork", 200011)
-        self.jp_only = make_skill("Not Yet", 200021, description="")
+        self.jp_only = make_skill("Not Yet", 200021, availability="jp")
         self.uma = Uma.objects.create(
             name="Maruzensky", game_id=100401, image="umas/100401.png",
             apt_front=8, apt_long=4,

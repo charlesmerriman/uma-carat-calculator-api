@@ -10,7 +10,9 @@ from .plan import Plan, PLAN_CAP, DEFAULT_PLAN_NAME
 from .user_planned_banner import UserPlannedBanner
 from .support_card import SupportCard, SupportCardRarity, SupportCardType
 from .uma import Uma, Rarity, RunningStyle, Aptitude
-from .skill import Skill, SkillRarity, SkillTier
+from .skill import Skill, SkillAvailability, SkillRarity, SkillTier
+from .skill_alias import SkillAlias
+from .skill_evolution_condition import SkillEvolutionCondition
 from .uma_skill import UmaSkill, UmaSkillSource
 from .support_card_skill import SupportCardSkill, SupportCardSkillSource
 from .champions_meeting import ChampionsMeeting

@@ -410,7 +410,7 @@ class ValidationTests(CalculatorTestCase):
         self.assertIn(("uma_recommendations[0].uma", pvp_guide_document.NOT_IN_CATALOGUE), errors)
 
     def test_skill_rows(self):
-        jp_only = make_skill("JP Only", 900001, description="")
+        jp_only = make_skill("JP Only", 900001, availability="jp")
         row = {"style": "front", "category": "speed", "tier": None, "skill": jp_only.id, "note": ""}
         errors = self.refuse(skill_recommendations=[row])
         self.assertIn(("skill_recommendations[0].skill", pvp_guide_document.SKILL_NOT_ON_GLOBAL), errors)

@@ -46,7 +46,7 @@ from django.db import models
 from .champions_meeting import ChampionsMeeting
 from .league_of_heroes import LeagueOfHeroes
 from .scenario import Scenario
-from .skill import Skill
+from .skill import Skill, on_global_q
 from .support_card import SupportCard
 from .uma import Uma
 
@@ -427,12 +427,13 @@ class PvpSkillRecommendation(SkillMentionsMixin, models.Model):
         help_text="0 (take first) to 4. Leave blank if the guide has no tiers.",
     )
     # Layer one of the on_global rule: the admin's autocomplete and form only
-    # offer skills with an English description. Same regex as on_global().
+    # offer skills a player may be shown. The rule itself, not a copy: Django
+    # calls on_global_q() when it builds the choices.
     skill = models.ForeignKey(
         Skill,
         on_delete=models.CASCADE,
         related_name="pvp_recommendations",
-        limit_choices_to=models.Q(description__regex=r"\S"),
+        limit_choices_to=on_global_q,
         help_text="Only skills already on global can be picked.",
     )
     note = models.CharField(max_length=200, blank=True, help_text=HIGHLIGHT_HELP)

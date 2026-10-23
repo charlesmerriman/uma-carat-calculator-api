@@ -8,6 +8,7 @@ from pathlib import Path
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.management import call_command
+from django.db import IntegrityError
 from django.test import override_settings
 from django.urls import reverse
 
@@ -209,6 +210,8 @@ class SkillTextAheadImportTests(CalculatorTestCase):
         self.assertIsNone(announced.cost)
         # The point of it all: a guide may pick it already.
         self.assertTrue(announced.is_on_global)
+        self.assertEqual(announced.availability, "announced")
+        self.assertEqual(Skill.objects.get(game_id=200012).availability, "global")
         self.assertIn("creating 9", out)
         self.assertIn("8 of them are text the client shipped ahead of release", out)
 
@@ -234,6 +237,24 @@ class SkillTextAheadImportTests(CalculatorTestCase):
         skill.refresh_from_db()
         self.assertEqual((skill.rarity, skill.tier, skill.icon_id, skill.cost), (1, 1, 20011, 120))
         self.assertEqual(Skill.objects.filter(game_id=202492).count(), 1)
+        # And it is on global now, not merely announced.
+        self.assertEqual(skill.availability, "global")
+
+    def test_effects_are_stored_verbatim(self):
+        effects = [{"duration": 24000, "duration_usage": 1, "cooldown": 5000000,
+                    "abilities": [{"type": 27, "value": 3500, "target_type": 1}]}]
+        write_snapshot(self.tmp.name, [snapshot_skill(effects=effects)])
+        import_game_data(self.tmp.name)
+        self.assertEqual(Skill.objects.get(game_id=200012).effects, effects)
+
+    def test_only_one_outfit_holds_an_evolved_skill(self):
+        evolved = Skill.objects.create(game_id=100101111, name="", rarity=6, group_id=10010111,
+                                       tier=1, availability="jp")
+        UmaSkill.objects.create(uma=Uma.objects.create(name="Special Week", game_id=100101),
+                                skill=evolved, source="evolved", level=3)
+        with self.assertRaises(IntegrityError):
+            UmaSkill.objects.create(uma=Uma.objects.create(name="Other", game_id=100102),
+                                    skill=evolved, source="evolved", level=3)
 
     def test_a_snapshot_without_the_file_imports_as_before(self):
         write_snapshot(self.tmp.name, self.defined)
@@ -375,35 +396,58 @@ class SkillAdminTests(CalculatorTestCase):
 
 @override_settings(STORAGES=PLAIN_TEST_STORAGES)
 class SkillOnGlobalTests(CalculatorTestCase):
-    """A skill is on global when the game gives it a description. Derived, never stored."""
+    """
+    Who may be shown a skill: the stored `availability`, set by the import.
+    Released and announced skills, but never a JP-only one, and an announced
+    evolved skill not yet.
+    """
 
     def setUp(self):
         # A group each: the admin's "Versions" column prints a skill's siblings,
         # which would put the released id on the unreleased skill's row.
-        common = {"rarity": 1, "tier": 1, "icon_id": 10011}
-        self.released = Skill.objects.create(
-            game_id=200012, name="Right-Handed ○", description="Moderately increases...",
-            group_id=20001, **common,
-        )
-        self.unreleased = Skill.objects.create(game_id=200992, name="", group_id=20099, **common)
-        # Whitespace is not a description.
-        self.blank = Skill.objects.create(
-            game_id=200993, name="", description="  \n", group_id=20098, **common,
-        )
+        def make(game_id, availability, **fields):
+            # The game id as the group: unique per row, unlike game_id // 10.
+            values = {"name": f"Skill {game_id}", "description": "Does a thing.",
+                      "rarity": 1, "tier": 1, "icon_id": 10011, "group_id": game_id}
+            values.update(fields)
+            return Skill.objects.create(game_id=game_id, availability=availability, **values)
+
+        self.released = make(200012, "global", name="Right-Handed ○")
+        self.announced = make(200992, "announced", icon_id=None)
+        self.unreleased = make(200993, "jp", name="", description="")
+        self.evolved = make(100101111, "global", rarity=6)
+        self.announced_evolved = make(100101211, "announced", rarity=6, icon_id=None)
 
     def test_the_property_and_the_queryset_agree(self):
-        self.assertTrue(self.released.is_on_global)
-        self.assertFalse(self.unreleased.is_on_global)
-        self.assertFalse(self.blank.is_on_global)
-        self.assertEqual(list(Skill.objects.on_global()), [self.released])
-        self.assertCountEqual(Skill.objects.not_on_global(), [self.unreleased, self.blank])
+        shown = [self.released, self.announced, self.evolved]
+        hidden = [self.unreleased, self.announced_evolved]
+        for skill in shown:
+            self.assertTrue(skill.is_on_global, skill)
+        for skill in hidden:
+            self.assertFalse(skill.is_on_global, skill)
+        self.assertCountEqual(Skill.objects.on_global(), shown)
+        self.assertCountEqual(Skill.objects.not_on_global(), hidden)
 
-    def test_a_description_arriving_puts_the_skill_on_global(self):
-        # Nothing to flip and nothing to forget: the next import's text is enough.
+    def test_text_alone_no_longer_puts_a_skill_on_global(self):
+        # A JP-only row can carry English (a translation, or a name an editor
+        # filled in early). Only the import moves `availability`.
+        self.unreleased.name = "Slightly Faster"
         self.unreleased.description = "Slightly increases..."
         self.unreleased.save()
 
-        self.assertEqual(Skill.objects.on_global().count(), 2)
+        self.assertNotIn(self.unreleased, Skill.objects.on_global())
+
+    def test_the_shown_name_is_global_first(self):
+        skill = Skill(name="", translated_name="Fan Name", jp_name="日本語",
+                      description="", translated_description="Fan text.", game_id=1)
+        self.assertEqual((skill.shown_name, skill.shown_description), ("Fan Name", "Fan text."))
+        self.assertEqual(skill.admin_label, "Fan Name")
+        skill.name = "Official Name"
+        self.assertEqual(skill.shown_name, "Official Name")
+        # Each field on its own: global's name beside the translated description.
+        self.assertEqual(skill.shown_description, "Fan text.")
+        untranslated = Skill(name="", translated_name="", jp_name="日本語", game_id=2)
+        self.assertEqual((untranslated.shown_name, untranslated.admin_label), ("", "日本語"))
 
     def test_admin_filter_lists_the_unreleased(self):
         self.client.force_login(CustomUser.objects.create_superuser(username="boss", password="x"))
@@ -412,10 +456,12 @@ class SkillOnGlobalTests(CalculatorTestCase):
         not_yet = self.client.get(url, {"on_global": "no"})
         released = self.client.get(url, {"on_global": "yes"})
 
-        self.assertContains(not_yet, "200992")
+        self.assertContains(not_yet, "200993")
         self.assertNotContains(not_yet, "200012")
         self.assertContains(released, "200012")
-        self.assertNotContains(released, "200992")
+        self.assertNotContains(released, "200993")
+        # Listed by its Japanese-less fallback label, still reachable.
+        self.assertContains(not_yet, "skill 200993")
 
 
 class UmaSkillImportTests(CalculatorTestCase):

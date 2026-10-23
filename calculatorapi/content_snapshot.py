@@ -36,6 +36,8 @@ CONTENT_MODELS = (
     "Uma",
     "SupportCard",
     "Skill",
+    "SkillAlias",
+    "SkillEvolutionCondition",
     "UmaSkill",
     "SupportCardSkill",
     # The timeline and everything hanging off it

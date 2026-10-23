@@ -107,7 +107,7 @@ class GuideModelTests(CalculatorTestCase):
 
     def test_a_skill_not_on_global_is_refused(self):
         guide = PvpGuide.objects.create(champions_meeting=self.cm)
-        jp_only = make_skill("JP Only", 900001, description="")
+        jp_only = make_skill("JP Only", 900001, availability="jp")
         with self.assertRaises(ValidationError):
             PvpSkillRecommendation(
                 guide=guide, style="front", category="speed", skill=jp_only
@@ -237,7 +237,7 @@ class GuideEndpointTests(CalculatorTestCase):
         skill = make_skill("Gone", 100051)
         PvpSkillRecommendation.objects.create(guide=self.guide, style="front",
                                               category="speed", skill=skill)
-        Skill.objects.filter(pk=skill.pk).update(description="  ")
+        Skill.objects.filter(pk=skill.pk).update(availability="jp")
         body = self.client.get(url("cm", self.cm.id)).json()
         self.assertEqual(body["skill_recommendations"], [])
 
@@ -396,7 +396,7 @@ class GuideAdminTests(CalculatorTestCase):
 
     def test_skill_autocomplete_offers_global_skills_only(self):
         make_skill("Global Skill", 100099)
-        make_skill("JP Only Skill", 900001, description="")
+        make_skill("JP Only Skill", 900001, availability="jp")
         res = self.client.get(reverse("admin:autocomplete"), {
             "term": "Skill", "app_label": "calculatorapi",
             "model_name": "pvpskillrecommendation", "field_name": "skill",
@@ -528,7 +528,7 @@ class SkillMentionTests(CalculatorTestCase):
         self.cm = make_champions_meeting()
         make_skill("Groundwork", 100061)
         make_skill("Final Push", 100062)
-        make_skill("Not Yet", 900002, description="")
+        make_skill("Not Yet", 900002, availability="jp")
 
     def test_an_unknown_mention_is_refused_with_a_suggestion(self):
         guide = PvpGuide(champions_meeting=self.cm, short_description="Take [[Grondwork]] first.")
@@ -1163,7 +1163,7 @@ class SkillFamilyTests(CalculatorTestCase):
                                   evolves_from=self.gold)
         # Another group's gold, not on global yet: never shown.
         self.other_white = make_skill("Straightaway Adept ○", 200021, group_id=2002, tier=1)
-        make_skill("Straightaway Adept ◎", 200022, group_id=2002, tier=2, rarity=2, description="")
+        make_skill("Straightaway Adept ◎", 200022, group_id=2002, tier=2, rarity=2, availability="jp")
         self.lone = make_skill("Groundwork", 200031, group_id=2003, tier=1)
 
     def test_white_sees_gold_and_evolved_in_order(self):

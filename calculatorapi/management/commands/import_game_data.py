@@ -9,7 +9,8 @@ never matched and never touched.
 WHAT IT WRITES, and what it leaves alone:
 
   Skill        every column the game owns: name, description, rarity, group,
-               tier, icon, cost, conditions. Matched on `game_id`, and CREATED
+               tier, icon, cost, conditions, effects, and `availability`
+               ("global" here, "announced" below). Matched on `game_id`, and CREATED
                when missing: a skill needs no art of its own (63 generic icons
                are linked afterwards by `link_skill_images`), so there is no
                reason to make an editor add 718 rows by hand. Never touches
@@ -81,7 +82,7 @@ from django.db import transaction
 
 from calculatorapi import public_payload_cache, pvp_catalogue_cache
 from calculatorapi.models import Skill, SupportCard, SupportCardSkill, Uma, UmaSkill
-from calculatorapi.models.skill import SkillRarity, SkillTier
+from calculatorapi.models.skill import SkillAvailability, SkillRarity, SkillTier
 
 CONFIRM_PHRASE = "import"
 
@@ -227,6 +228,10 @@ def skill_values(skill, detailed):
         "cost": skill["cost"],
         "precondition": skill["precondition_1"],
         "condition": skill["condition_1"],
+        # In the global client's skill table, so on global, every run.
+        "availability": SkillAvailability.GLOBAL,
+        # A snapshot from before 2026-10-23 has no effects.
+        "effects": skill.get("effects", []),
     }
     if skill["id"] in detailed:
         values["description_detailed"] = detailed[skill["id"]]
@@ -437,7 +442,8 @@ class Command(BaseCommand):
         for skill in taken:
             plan_row(
                 skill["id"],
-                {"name": skill["name"], "description": skill["description"]},
+                {"name": skill["name"], "description": skill["description"],
+                 "availability": SkillAvailability.ANNOUNCED},
                 guessed_structure(skill["id"], skill["name"], known_ids),
             )
         return {
