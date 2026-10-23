@@ -28,7 +28,7 @@ from calculatorapi.tests.factories import (
 )
 
 
-class CalculatorPatchTests(CalculatorTestCase):
+class CalculatorPatchTests(CalculatorTestCase):  # pylint: disable=too-many-public-methods
     def setUp(self):
         self.user = make_user()
         self.client, _ = auth_client(self.user)
