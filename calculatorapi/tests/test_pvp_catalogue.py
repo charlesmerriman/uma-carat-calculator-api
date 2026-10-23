@@ -35,13 +35,13 @@ class CatalogueTests(CalculatorTestCase):
         self.jp_only = make_skill("Not Yet", 200021, availability="jp")
         self.uma = Uma.objects.create(
             name="Maruzensky", game_id=100401, image="umas/100401.png",
-            apt_front=8, apt_long=4,
+            apt_front=8, apt_long=4, is_on_global=True,
         )
         Uma.objects.create(name="No Picture", game_id=100501)
         Uma.objects.create(name="(All)", image="umas/all.png")
         self.card = SupportCard.objects.create(
             name="Kitasan Black", game_id=30028, image="support_cards/30028.png",
-            card_type="speed",
+            card_type="speed", is_on_global=True,
         )
         SupportCard.objects.create(name="Blank Card", game_id=30029)
         UmaSkill.objects.create(uma=self.uma, skill=self.on_global, source="unique", level=1)
@@ -76,13 +76,19 @@ class CatalogueTests(CalculatorTestCase):
         cards = {card["name"]: card for card in self.fetch()["support_cards"]}
         self.assertEqual(cards["Team Sirius"]["group_members"], ["Silence Suzuka", "Special Week"])
 
-    def test_on_global_is_having_any_skill_link(self):
-        jp_only = SupportCard.objects.create(name="JP Card", game_id=30200, image="support_cards/30200.png")
+    def test_on_global_is_the_imported_flag_not_having_links(self):
+        # A JP card has skill links now (from the JP snapshot), and is still
+        # not on global; its links never reach the builder.
+        jp_only = SupportCard.objects.create(
+            name="JP Card", game_id=30200, image="support_cards/30200.png",
+        )
+        SupportCardSkill.objects.create(support_card=jp_only, skill=self.on_global, source="hint")
         body = self.fetch()
         flags = {card["name"]: card["on_global"] for card in body["support_cards"]}
         self.assertEqual(flags, {"Kitasan Black": True, "JP Card": False})
         self.assertTrue(body["umas"][0]["on_global"])
-        self.assertEqual(jp_only.skills.count(), 0)
+        jp_card = next(card for card in body["support_cards"] if card["name"] == "JP Card")
+        self.assertEqual(jp_card["skills"], [])
 
     def test_skills_not_on_global_are_left_out_with_their_links(self):
         body = self.fetch()

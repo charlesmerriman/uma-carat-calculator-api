@@ -163,7 +163,7 @@ class GuideEndpointTests(CalculatorTestCase):
         self.assertEqual(body["event"], loh.id)
 
     def test_full_shape(self):
-        uma = Uma.objects.create(name="Maruzensky")
+        uma = Uma.objects.create(name="Maruzensky", is_on_global=True)
         card = SupportCard.objects.create(name="Kitasan Black", card_type="speed", rarity=3)
         skill = make_skill("Lead the Pack", 100011, rarity=5)
         UmaSkill.objects.create(uma=uma, skill=skill, source="unique")

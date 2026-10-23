@@ -206,7 +206,7 @@ result depends on which tests ran before it.
 | `prune_visitor_hashes` | Deletes visitor de-duplication hashes older than the retention window (90 days, never below 45). Runs on every deploy |
 | `snapshot_analytics` | Keeps today's copy of the admin analytics report unless one exists (the admin also keeps one on its first rebuild each day). Runs on every deploy; never fails it |
 | `purge_user_pii` | Blanks email, name and password on every non-staff account. **Irreversible**, so run it with `--dry-run` first |
-| `import_game_data` | Fills the game-data columns on Uma and SupportCard and creates or updates every Skill from `scripts/data/master_snapshot/`. `--dry-run` first; `--gametora skills.json` adds the detailed descriptions |
+| `import_game_data` | Fills the game-data columns on Uma and SupportCard and creates or updates every Skill from `scripts/data/master_snapshot/`, then the JP-only skills, evolutions and JP outfits' links from `jp_snapshot/` and UmaTL's English from `umatl/` (global always wins; `--global-only` skips both). `--dry-run` first; `--gametora skills.json` adds the detailed descriptions |
 | `import_game_data` also reads `support_events.json`, written by `scripts/fetch_support_events.py` from gametora (the game has no clean table for support card event skills) |
 | `link_skill_images` | Points every Skill without an image at `skills/<icon_id>.png` in the Space, after `scripts/fetch_skill_icons.py --upload` put the files there |
 | `link_borderless_umas` | Points every Uma without a borderless image at the file in `umas_borderless/` whose name starts with its `game_id`, after `scripts/upload_borderless_umas.py <export.zip> --upload` put the files there. Reports files with no uma and umas with no file; `--dry-run` first |

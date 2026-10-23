@@ -1537,7 +1537,14 @@ outfit's evolution is an `evolved` `UmaSkill` row (`level` = the awakening rank,
 `Skill.evolution_scenario` instead. What unlocks it is `SkillEvolutionCondition`, one row
 per requirement, hung off the evolved skill (the one place all three kinds share), with
 the raw numbers and the text in the same three slots. JP data and UmaTL text reach these
-columns through the import in the workspace-root `skills-plan-3.md`, step 2b.
+columns through the import (`import_game_data`, whose docstring has the per-skill
+precedence). An outfit evolution's base comes from the rank rule (the outfit's one gold
+skill at that awakening rank, owner-approved 2026-10-23), written only while empty.
+
+**`Uma.is_on_global` / `SupportCard.is_on_global`** are import-owned: true exactly for the
+ids in the global snapshot. The PvP catalogue's `on_global` reads them (it used to mean
+"has skill links", which JP-only outfits now have too), and ships skill links for on-global
+outfits and cards only, so the team builder never counts a JP card's skills.
 
 ## The game's master database (`master.mdb`) and the committed snapshot
 

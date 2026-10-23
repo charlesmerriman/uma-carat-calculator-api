@@ -145,8 +145,9 @@ class SkillImportTests(CalculatorTestCase):
     def test_the_committed_snapshot_imports_every_skill(self):
         # The real files: 718+ defined skills plus the announced ones, every
         # one with a name, and the two halves of every ★1/★2 unique both
-        # present (Twin Turbo's announced pair included).
-        import_game_data(SNAPSHOT_DIR)
+        # present (Twin Turbo's announced pair included). Global alone: the
+        # JP snapshot's own test is below.
+        import_game_data(SNAPSHOT_DIR, "--global-only")
 
         self.assertGreaterEqual(Skill.objects.count(), 718)
         self.assertFalse(Skill.objects.filter(name="").exists())
@@ -245,7 +246,11 @@ class SkillTextAheadImportTests(CalculatorTestCase):
                     "abilities": [{"type": 27, "value": 3500, "target_type": 1}]}]
         write_snapshot(self.tmp.name, [snapshot_skill(effects=effects)])
         import_game_data(self.tmp.name)
-        self.assertEqual(Skill.objects.get(game_id=200012).effects, effects)
+        # Each slot also carries its own (pre)condition, the game's strings.
+        self.assertEqual(
+            Skill.objects.get(game_id=200012).effects,
+            [{"precondition": "", "condition": "rotation==1", **effects[0]}],
+        )
 
     def test_only_one_outfit_holds_an_evolved_skill(self):
         evolved = Skill.objects.create(game_id=100101111, name="", rarity=6, group_id=10010111,
@@ -564,7 +569,7 @@ class UmaSkillImportTests(CalculatorTestCase):
             for card in cards if card["id"] != self.ryan.game_id
         ])
 
-        import_game_data(SNAPSHOT_DIR)
+        import_game_data(SNAPSHOT_DIR, "--global-only")
 
         # Expected counts come from the snapshot itself, never a literal: the
         # file grows with every game update, and a pinned number fails the
