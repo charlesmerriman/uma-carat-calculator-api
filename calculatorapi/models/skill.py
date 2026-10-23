@@ -33,23 +33,59 @@ class SkillTier(models.IntegerChoices):
     GOLD = 2, "◎ gold"
 
 
+class SkillAvailability(models.TextChoices):
+    """
+    Where a skill is in the game, as the import last saw it. Import-owned and
+    read-only in the admin: `global` exactly when the skill is in the global
+    client's skill table, `announced` when the global client only has its
+    official English text, `jp` for everything else (a JP-only skill, from
+    the JP snapshot). A skill moves global-ward by itself on the import after
+    the client that has it.
+    """
+    GLOBAL = "global", "On global"
+    ANNOUNCED = "announced", "Announced for global"
+    JP = "jp", "JP only"
+
+
+def on_global_q(prefix=""):
+    """
+    THE RULE, as a Q object, for every query that filters skills a player may
+    see, directly or through a relation (`prefix="skill__"`). The queryset's
+    on_global(), the guide's prefetch and the recommendation FK's
+    limit_choices_to all read it, so there is one rule, not copies of it.
+    Callable with no arguments, which is how limit_choices_to calls it.
+
+    Today that is: on global; or announced for it, unless evolved. Announced
+    rows count because guides for upcoming CMs already name them
+    (2026-10-16). An announced EVOLVED skill doesn't: global ships the names
+    of every outfit's evolutions long before evolution itself, and a gold
+    skill's "other versions" would list them as if they were in the game. They
+    wait for the site to label JP-only content (skills-plan-3.md, steps 4-5).
+    A JP-only skill is never shown, yet.
+    """
+    return (
+        models.Q(**{f"{prefix}availability": SkillAvailability.GLOBAL})
+        | (
+            models.Q(**{f"{prefix}availability": SkillAvailability.ANNOUNCED})
+            & ~models.Q(**{f"{prefix}rarity": SkillRarity.EVOLVED})
+        )
+    )
+
+
 class SkillQuerySet(models.QuerySet):
     """
-    "Is this skill on global yet?", asked of the database.
+    "May a player be shown this skill?", asked of the database.
 
-    THE RULE: a skill is on global when the game gives it an English
-    description. It is derived from the text and never stored, so it cannot
-    disagree with the data, and a skill that releases fixes itself on the next
-    import. `Skill.is_on_global` is the same rule for one row; keep the two in
-    step. `\\S` rather than `!= ""` so whitespace alone does not count as text.
+    THE RULE is `on_global_q()`: the skill is on global, or announced for it
+    and not evolved (the stored `availability`). The name is older than the
+    rule and reads "Global has published it", released or not; `availability`
+    says which.
 
-    "ON GLOBAL" INCLUDES ANNOUNCED (2026-10-16). The global client ships the
-    official text of upcoming skills before it defines them, and the import
-    makes rows of those (import_game_data, "text ahead of release") so a guide
-    can name them early. They have a description, so this rule counts them:
-    in practice it reads "Global has published its English text", released or
-    not. Such a row is the one with no `icon_id`. A stored released flag is
-    the later fix, in workspace-root skills-plan-3.md.
+    Until 2026-10-23 the rule was derived from the text (an English
+    description meant on global). It became a stored column when the JP
+    snapshot came in: a JP-only skill can carry English text too (a
+    translation, or a name an editor filled in early), so text no longer says
+    where a skill is. The import is the only writer.
 
     Anything that shows skills to a player (the CM planner, a skill page) must
     go through `on_global()`. A skill that is not there yet may sit in the
@@ -57,15 +93,15 @@ class SkillQuerySet(models.QuerySet):
     """
 
     def on_global(self):
-        return self.filter(description__regex=r"\S")
+        return self.filter(on_global_q())
 
     def not_on_global(self):
-        return self.exclude(description__regex=r"\S")
+        return self.exclude(on_global_q())
 
 
 class Skill(models.Model):
     """
-    One skill as the global game defines it, imported from the game's data.
+    One skill as the game defines it, imported from the game's data.
 
     Every row here comes from `manage.py import_game_data` reading the committed
     snapshot, and the import overwrites the game-owned columns on every run.
@@ -75,6 +111,14 @@ class Skill(models.Model):
     the client defines it.
     The editor-owned columns are `image` (usually set in bulk by
     `link_skill_images`, but a hand pick sticks) and `admin_comments`.
+
+    THREE TEXT SLOTS, GLOBAL FIRST (owner, 2026-10-16). `name` and
+    `description` hold global's official English; `translated_*` UmaTL's
+    fan translation of the JP text; `jp_*` the JP client's own. What a player
+    reads is `shown_name` / `shown_description`: the global text when there
+    is any, else the translation, each field on its own. Read those, never a
+    slot directly, wherever a skill reaches a player. A skill with neither is
+    admin-only and labelled by its Japanese name (`admin_label`).
 
     "IS THIS THE GOLD VERSION OF SOMETHING?" is answered by `group_id`: the
     white (○, and in some groups a ◎ too), gold and × versions of one effect
@@ -88,11 +132,44 @@ class Skill(models.Model):
         unique=True,
         help_text="The game's skill id. Evolved ids reach nine digits.",
     )
-    name = models.CharField(max_length=255, help_text="The global English name.")
+    name = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        help_text="The global English name. Blank while global has none.",
+    )
     description = models.TextField(
         blank=True,
         default="",
-        help_text="The game's own description text. Shown by default.",
+        help_text="Global's own description text. Shown first.",
+    )
+    translated_name = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        help_text="UmaTL's English name, shown only while global has none. Import-owned.",
+    )
+    translated_description = models.TextField(
+        blank=True,
+        default="",
+        help_text="UmaTL's English description, shown only while global has none. Import-owned.",
+    )
+    jp_name = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        help_text="The JP client's name. Admin only: search, and a label when nothing else exists.",
+    )
+    jp_description = models.TextField(
+        blank=True,
+        default="",
+        help_text="The JP client's description. Admin only.",
+    )
+    availability = models.CharField(
+        max_length=10,
+        choices=SkillAvailability.choices,
+        default=SkillAvailability.GLOBAL,
+        help_text="Where the game has this skill. Set by the import only.",
     )
     description_detailed = models.TextField(
         blank=True,
@@ -133,6 +210,23 @@ class Skill(models.Model):
         default="",
         help_text="The game's raw activation condition string, kept verbatim.",
     )
+    effects = models.JSONField(
+        blank=True,
+        default=list,
+        help_text=(
+            "The game's raw effects, verbatim: per condition slot, the duration, "
+            "cooldown and abilities (scripts/extract_master_snapshot.py, effect_slots). "
+            "The readable text is built from these in code."
+        ),
+    )
+    evolution_scenario = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        help_text=(
+            "For a training scenario's evolution, the game's scenario id. An outfit's "
+            "evolution is an 'evolved' uma skill row instead."
+        ),
+    )
     evolves_from = models.ForeignKey(
         "self",
         on_delete=models.SET_NULL,
@@ -150,12 +244,29 @@ class Skill(models.Model):
         ordering = ("name", "game_id")
 
     def __str__(self):
-        return f"{self.name} ({self.game_id})"
+        return f"{self.admin_label} ({self.game_id})"
 
     @property
     def is_on_global(self):
-        """Has this skill released on global? See SkillQuerySet for the rule."""
-        return bool(self.description.strip())
+        """May a player be shown this skill? The same rule as on_global_q()."""
+        if self.availability == SkillAvailability.GLOBAL:
+            return True
+        return self.availability == SkillAvailability.ANNOUNCED and self.rarity != SkillRarity.EVOLVED
+
+    @property
+    def shown_name(self):
+        """What a player reads: global's name, else the translation, else ""."""
+        return self.name or self.translated_name
+
+    @property
+    def shown_description(self):
+        """As shown_name, for the description, decided on its own."""
+        return self.description or self.translated_description
+
+    @property
+    def admin_label(self):
+        """The admin's name for a row: the shown name, else the Japanese one."""
+        return self.shown_name or self.jp_name or f"skill {self.game_id}"
 
     def siblings(self):
         """The other versions of this effect: same group, different tier."""

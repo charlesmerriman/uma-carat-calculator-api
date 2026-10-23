@@ -1496,26 +1496,48 @@ listed under two hint groups is one row. Edited as an inline on the support card
 only when `--gametora skills.json` is passed, for a future "detailed" toggle. It has never
 been imported, and stays that way until the user confirms gametora's text may be used.
 
-**"On global" is derived, never stored.** A skill is on global when the game gives it an
-English description: `Skill.objects.on_global()` / `.not_on_global()` and the
-`Skill.is_on_global` property (`SkillQuerySet` in `models/skill.py`), with a read-only
-admin column and an "On global" filter. A skill that is not there yet may sit in the
-backend, but anything that shows skills to a player (the CM planner, a skill page) must go
-through `on_global()`. Every skill in the global client has a description today, so the
-filter's "Not yet" side is empty; the rule exists so it holds when that changes.
+**Where a skill is: `availability`, stored (since 2026-10-23).** `global` exactly when
+the skill is in the global client's skill table, `announced` when the global client has
+only its official English text, `jp` for a JP-only skill. Import-owned and read-only in the
+admin (column and filter). It used to be derived from the text (an English description
+meant on global); it became a column when the JP snapshot came in, because a JP-only skill
+can carry English too (a translation, or a name an editor filled in early).
 
-**"On global" includes announced skills (2026-10-16).** The global client ships the
-official English name and description of upcoming skills before it defines them (388 on
-2026-10-14: the next months of uniques and their inherited copies, new general skills, two
-evolved skills per outfit, event bonus skills). The import makes rows of the uniques,
-inherited copies and general skills, so the PvP guide writers can name skills for CMs that
-are not out yet. Those rows have a description, so the rule counts them: in practice
-"on global" now reads "Global has published its English text", released or not. An
+**What a player may be shown is ONE rule, `on_global_q()`** in `models/skill.py`: on
+global; or announced and not evolved. `Skill.objects.on_global()` / `.not_on_global()`, the
+`Skill.is_on_global` property, the guide's skill prefetch and the recommendation FK's
+`limit_choices_to` all read it (the FK by reference, so the migration holds no copy).
+Anything that shows skills to a player (the CM planner, a skill page) goes through it; a
+skill outside it may sit in the backend, never on the site. The admin filter is titled
+"shown to players".
+
+**Announced skills count (2026-10-16).** The global client ships the official English
+name and description of upcoming skills before it defines them (388 on 2026-10-14: the
+next months of uniques and their inherited copies, new general skills, two evolved skills
+per outfit, event bonus skills). The import makes rows of the uniques, inherited copies and
+general skills, so the PvP guide writers can name skills for CMs that are not out yet. An
 announced row has no `icon_id` and no `cost`; its `rarity`, `group_id` and `tier` are
 guessed from the id and name (`import_game_data.guessed_structure`) and written once, so an
 editor's correction sticks; the day the client defines the skill, every column becomes the
-game's. Evolved and event bonus skills are skipped. A stored "released" flag, JP data and
-the evolution model are the later pass in the workspace-root `skills-plan-3.md`.
+game's and `availability` turns `global`. An announced EVOLVED skill is not shown: global
+names every outfit's evolutions long before it has evolution, and a gold skill's "other
+versions" would list them as if they were in the game.
+
+**Three text slots, global first** (owner, 2026-10-16): `name` / `description` hold
+global's English, `translated_name` / `translated_description` UmaTL's, `jp_name` /
+`jp_description` the JP client's (admin only). A player reads `shown_name` /
+`shown_description` (global's text if any, else the translation, each field on its own);
+the admin labels a row `admin_label` (the shown name, else the Japanese). `SkillAlias`
+keeps a skill's older names so a `[[mention]]` that used one still resolves.
+`effects` holds the game's raw effect numbers (see the snapshot section).
+
+**Evolutions.** An evolved skill (rarity 6) points at its base through `evolves_from`. An
+outfit's evolution is an `evolved` `UmaSkill` row (`level` = the awakening rank, 3, 5 or
+7), at most one per skill (`one_outfit_per_evolved_skill`); a training scenario's has
+`Skill.evolution_scenario` instead. What unlocks it is `SkillEvolutionCondition`, one row
+per requirement, hung off the evolved skill (the one place all three kinds share), with
+the raw numbers and the text in the same three slots. JP data and UmaTL text reach these
+columns through the import in the workspace-root `skills-plan-3.md`, step 2b.
 
 ## The game's master database (`master.mdb`) and the committed snapshot
 
