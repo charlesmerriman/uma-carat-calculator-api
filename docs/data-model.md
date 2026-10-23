@@ -1541,6 +1541,17 @@ columns through the import (`import_game_data`, whose docstring has the per-skil
 precedence). An outfit evolution's base comes from the rank rule (the outfit's one gold
 skill at that awakening rank, owner-approved 2026-10-23), written only while empty.
 
+**Readable conditions and effects are built in code, never stored**
+(`calculatorapi/skill_text.py`, since 2026-10-23). `describe(skill)` turns `effects` (each
+slot with its own precondition and condition) into phrases: "When" as `{"all", "any"}`
+(clauses every alternative shares, then the alternatives), "Only after" for a
+precondition, the effects with units, duration and cooldown, and `wit_check` from
+`Skill.activate_lot`. Its phrase tables hold only meanings verified against global's own
+English descriptions; anything else is returned as the game's code, flagged `raw`. 79% of
+the skills players can see read in full (2026-10-23). The parser is
+`skill_conditions.py`, shared with "Fill track green skills". The Skill admin shows the
+result ("In plain English") with "Where it comes from".
+
 **`Uma.is_on_global` / `SupportCard.is_on_global`** are import-owned: true exactly for the
 ids in the global snapshot. The PvP catalogue's `on_global` reads them (it used to mean
 "has skill links", which JP-only outfits now have too), and ships skill links for on-global

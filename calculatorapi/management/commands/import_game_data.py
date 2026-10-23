@@ -300,6 +300,8 @@ def structure_values(skill):
         "precondition": skill["precondition_1"],
         "condition": skill["condition_1"],
         "effects": effects_with_conditions(skill),
+        # A snapshot from before 2026-10-23 has no activate_lot.
+        "activate_lot": skill.get("activate_lot"),
     }
 
 

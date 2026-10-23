@@ -219,6 +219,14 @@ class Skill(models.Model):
             "The readable text is built from these in code."
         ),
     )
+    activate_lot = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        help_text=(
+            "1: the skill rolls against Wit before it fires; 0: it fires whenever its "
+            "condition holds (the game's activate_lot). Empty until the import fills it."
+        ),
+    )
     evolution_scenario = models.PositiveSmallIntegerField(
         null=True,
         blank=True,
