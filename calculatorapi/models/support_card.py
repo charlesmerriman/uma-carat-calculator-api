@@ -44,6 +44,13 @@ class SupportCard(models.Model):
             "Anchors this card's image filename in the DO Space."
         ),
     )
+    is_on_global = models.BooleanField(
+        default=False,
+        help_text=(
+            "In the global client's data today. Set by the game-data import only: "
+            "the team builder reads it for a card on no banner."
+        ),
+    )
     image = models.ImageField(upload_to="support_cards/", blank=True, null=True)
     admin_comments = models.TextField(blank=True, null=True, help_text="Notes for editors.")
     # Public, rendered as the Timeline tile's hover overlay -- the support-card

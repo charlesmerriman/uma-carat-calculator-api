@@ -67,9 +67,7 @@ from calculatorapi.models import (
     PvpGuide,
     PvpStyle,
     SupportCard,
-    SupportCardSkill,
     Uma,
-    UmaSkill,
     UserOshi,
 )
 from calculatorapi.predictions import build_effective_date_maps
@@ -248,13 +246,13 @@ class TeamPool:  # pylint: disable=too-few-public-methods
 def _on_global_umas():
     """Pictured umas, the ones on global (they have skills) when there are any."""
     umas = Uma.pickable()
-    on_global = umas.filter(id__in=UmaSkill.objects.values("uma_id"))
+    on_global = umas.filter(is_on_global=True)
     return list(on_global if on_global.exists() else umas)
 
 
 def _on_global_cards():
     cards = SupportCard.objects.all()
-    on_global = cards.filter(id__in=SupportCardSkill.objects.values("support_card_id"))
+    on_global = cards.filter(is_on_global=True)
     return list((on_global if on_global.exists() else cards).values_list("id", flat=True))
 
 

@@ -235,7 +235,11 @@ def _unique_of(skill_ids):
     lower uma id wins, so the answer is stable between requests.
     """
     rows = (
-        UmaSkill.objects.filter(skill_id__in=skill_ids, source=UmaSkillSource.UNIQUE)
+        # Outfits on global only: a JP outfit's unique stays unnamed on the
+        # site until the site labels JP content (skills-plan-3.md, step 4).
+        UmaSkill.objects.filter(
+            skill_id__in=skill_ids, source=UmaSkillSource.UNIQUE, uma__is_on_global=True,
+        )
         .select_related("uma")
         .order_by("uma_id")
     )

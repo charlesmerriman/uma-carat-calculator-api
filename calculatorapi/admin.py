@@ -550,7 +550,7 @@ class UmaAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
     # required: autocomplete source for banner inlines. `=game_id` is an exact
     # match, so typing an id finds one row rather than every name containing it.
     search_fields = ("name", "=game_id")
-    readonly_fields = ("image_preview", "borderless_preview")
+    readonly_fields = ("image_preview", "borderless_preview", "is_on_global")
     fieldsets = (
         (None, {"fields": (
             "name", "game_id", "image", "image_preview",
@@ -576,7 +576,7 @@ class UmaAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
                 "so edits here do not stick. Fix the source instead."
             ),
             "fields": (
-                "title", "running_style",
+                "is_on_global", "title", "running_style",
                 ("apt_turf", "apt_dirt"),
                 ("apt_short", "apt_mile", "apt_medium", "apt_long"),
                 ("apt_front", "apt_pace", "apt_late", "apt_end"),
@@ -729,7 +729,7 @@ class SupportCardAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
     list_filter = ("card_type", "rarity", PURPOSE_FILTER)
     ordering = ("name",)
     search_fields = ("name", "=game_id")  # required: autocomplete source for banner inlines
-    readonly_fields = ("image_preview",)
+    readonly_fields = ("image_preview", "is_on_global")
     # Explicit since purpose arrived: Django's every-field default form had
     # nowhere to say that one of these boxes is public.
     fieldsets = (
@@ -741,7 +741,8 @@ class SupportCardAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
                 "Filled by the game-data import and overwritten by the next one, "
                 "so edits here do not stick. Fix the source instead."
             ),
-            "fields": ("title", "card_type", "rarity", "character_id", "group_members"),
+            "fields": ("is_on_global", "title", "card_type", "rarity", "character_id",
+                       "group_members"),
         }),
     )
 

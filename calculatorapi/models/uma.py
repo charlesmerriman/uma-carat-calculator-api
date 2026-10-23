@@ -72,6 +72,13 @@ class Uma(models.Model):
             "digits of the image filename. Editors rarely need to touch this."
         ),
     )
+    is_on_global = models.BooleanField(
+        default=False,
+        help_text=(
+            "In the global client's data today. Set by the game-data import only: "
+            "the team builder reads it for a outfit on no banner."
+        ),
+    )
     image = models.ImageField(upload_to="umas/", blank=True, null=True)
     # A second art asset, not a replacement: the same card art without the
     # rarity border. Rendered by the oshi picker and the account picture, via
