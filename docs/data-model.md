@@ -1532,7 +1532,7 @@ The tables the extractor reads, and the two places the schema is not what it loo
 
 | Need | Table | Notes |
 |---|---|---|
-| skills | `skill_data` (718 rows) | `rarity` 1 white, 2 gold, 3/4 the pre- and post-★3 uniques of a ★1/★2 character, 5 unique. No 6 (evolved) on global yet. `group_id` groups white with gold; `group_rate` is the tier (-1 the × penalty version, 1 the ○, 2 a ◎ white or the gold, 3 the gold above a ◎; `rarity` says which colour). `icon_id` is one of 63. `condition_1` is the activation condition, kept verbatim |
+| skills | `skill_data` (718 rows) | `rarity` 1 white, 2 gold, 3/4 the pre- and post-★3 uniques of a ★1/★2 character, 5 unique. No 6 (evolved) on global yet. `group_id` groups white with gold; `group_rate` is the tier (-1 the × penalty version, 1 the ○, 2 a ◎ white or the gold, 3 the gold above a ◎; `rarity` says which colour). `icon_id` is one of 63. `condition_1` is the activation condition, kept verbatim, and so are the effects (`effects`: per condition slot, the duration, cooldown and up to three `ability_type` / value / target rows, in the game's raw units; durations ÷ 10,000 = seconds). `activate_lot` 1 = a wit check before it fires |
 | skill text | `text_data` cat 47 (name), 48 (description) | keyed by skill id; every skill has both. The text runs ahead of `skill_data`: names and descriptions of skills the client does not define yet go to `skill_text_ahead.json` (id, name, description; 388 on 2026-10-14) |
 | skill point cost | `single_mode_skill_need_point` | absent for every unique and 18 white/gold skills, so nullable |
 | uma outfits | `card_data` (105, of which 2 are tutorial variants above id 9,000,000, skipped) | `default_rarity` is the initial star count; `running_style` 1 front, 2 pace, 3 late, 4 end; `talent_*` are the growth bonuses in percent |
@@ -1564,6 +1564,42 @@ type with their pages, and `--stale` lists cards whose global release date has p
 which the snapshot lacks (so: launch the game, re-extract). Its first run, 2026-09-17,
 found the extractor's hand-typed `command_id` table had stamina, power and guts rotated;
 the extractor now reads the command names from the game (`text_data` category 55).
+
+### The JP snapshot and the UmaTL slice (2026-10-23)
+
+JP is about three and a half years ahead of global, so its database holds the skills,
+outfits, cards and skill evolutions global hasn't released. Nobody on the team runs the JP
+client: its data arrives as a teammate's **CSV export** of a JP `master.mdb` (626 tables;
+the first, received 2026-10-23, holds JP game data of 2026-10-02). Three steps, all from
+`backend/`:
+
+```bash
+python scripts/jp_export_to_mdb.py <export folder> /tmp/jp/master.mdb   # rebuild the SQLite file
+python scripts/extract_master_snapshot.py --region jp --mdb /tmp/jp/master.mdb
+python scripts/fetch_umatl.py                                           # after the JP snapshot
+```
+
+- `jp_export_to_mdb.py` recreates every table with its declared column types (from the
+  export's `masterdata_schema_and_previews.json`), so ids come back as integers, and
+  checks each table's row count against the export's catalogue.
+- `--region jp` writes the same files as global to `scripts/data/jp_snapshot/`, in
+  Japanese, plus `evolutions.json` (global writes it too, empty so far). **Ids are shared
+  between the clients**: every global skill exists in JP under the same id, and that is
+  how the import matches them. JP's numbers are not always global's (92 shared skills have
+  different conditions), so for anything on global, global's values win.
+- `evolutions.json` has three kinds. `outfit` (`skill_upgrade_description`): one outfit's
+  evolution at awakening `rank` 3, 5 or 7. The game stores **no base skill** for these.
+  `scenario` (`skill_upgrade_speciality`) and `succession` (`skill_upgrade_succession_skill`)
+  name theirs (`base_skill_id`). Every evolution carries its unlock conditions
+  (`skill_upgrade_condition`, joined on the evolution row's own `id`, which for a
+  succession row is not the skill id), each with its text from `text_data` category 290.
+  The global client already ships the official English for many of those conditions, ahead
+  of the evolutions themselves: `master_snapshot/evolution_condition_text.json`.
+- `fetch_umatl.py` saves the slice of **UmaTL**'s English translation (`UmaTL/hachimi-tl-en`,
+  `localized_data/text_data_dict.json`) the JP snapshot needs: categories 47, 48 and 290,
+  to `scripts/data/umatl/` with the pinned commit (`meta.json`) and `ATTRIBUTION.md`. UmaTL
+  is not openly licensed: attributed use only, credited wherever its text shows. Its text
+  ranks below global's official English, always.
 
 ## `PatreonTier` / `PatreonSupporter`
 

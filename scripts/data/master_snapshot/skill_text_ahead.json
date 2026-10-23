@@ -120,16 +120,6 @@
   "description": "Moderately increase velocity for a duration based on remaining endurance when in midpack on a second-half corner. If the race is medium, also very slightly increase acceleration."
  },
  {
-  "id": 110671,
-  "name": "Rain Cloud Bolt",
-  "description": "Shine brilliantly, increasing velocity and moderately recovering endurance when positioned midpack around halfway through the race."
- },
- {
-  "id": 110681,
-  "name": "Bring on the Banquet!",
-  "description": "Surge ahead for a moderate duration and very slightly increase acceleration when positioned toward the front on a late-race corner far from the finish."
- },
- {
   "id": 110691,
   "name": "Watch! Me! BLOOM!",
   "description": "If the skill user engaged in a challenge mid-race, her determination to realize her dreams increases acceleration continuously when well-positioned with 650m remaining."
@@ -168,16 +158,6 @@
   "id": 202171,
   "name": "Master of Declines",
   "description": "Increase velocity on a downhill."
- },
- {
-  "id": 202491,
-  "name": "Razor-Sharp Steps",
-  "description": "Increase acceleration in the early part of late-race if the skill user stayed toward the back without rushing until the start of late-race. (End Closer)"
- },
- {
-  "id": 202492,
-  "name": "Sharp Steps",
-  "description": "Slightly increase acceleration in the early part of late-race if the skill user stayed toward the back without rushing until the start of late-race. (End Closer)"
  },
  {
   "id": 202511,
@@ -435,11 +415,6 @@
   "description": "If the skill user ran calmly, very slightly surge ahead and very minimally intimidate the first 4 runners when positioned toward the back at the start of late-race."
  },
  {
-  "id": 900991,
-  "name": "Shine On, Tomakomai! ☆",
-  "description": "Minimally increase acceleration when well-positioned in the last spurt after engaging in a challenge on a mid-race corner in a dirt race."
- },
- {
   "id": 901041,
   "name": "Sunrise Banner—Katsuragi Ace!",
   "description": "Very slightly increase velocity and very slightly recover endurance when leading on the third corner. If it's a medium-distance race at Tokyo Racecourse, increase this skill's duration."
@@ -503,16 +478,6 @@
   "id": 910621,
   "name": "Tumbly Power Drive!",
   "description": "Very slightly increase velocity for a duration based on remaining endurance when in midpack on a second-half corner. If the race is medium, also very minimally increase acceleration."
- },
- {
-  "id": 910671,
-  "name": "Rain Cloud Bolt",
-  "description": "Slightly increase velocity and very slightly recover endurance when positioned midpack around halfway through the race."
- },
- {
-  "id": 910681,
-  "name": "Bring on the Banquet!",
-  "description": "Slightly surge ahead for a moderate duration and very minimally increase acceleration when positioned toward the front on a late-race corner far from the finish."
  },
  {
   "id": 910691,

@@ -1,0 +1,12 @@
+{
+ "repo": "UmaTL/hachimi-tl-en",
+ "path": "localized_data/text_data_dict.json",
+ "commit": "0dc0cdc680891e4411b3cfb9964500fa1b008598",
+ "committed_at": "2026-10-23T18:08:11Z",
+ "fetched_at": "2026-10-23T18:27:58+00:00",
+ "counts": {
+  "skill_names": 1755,
+  "skill_descriptions": 1856,
+  "evolution_conditions": 1842
+ }
+}

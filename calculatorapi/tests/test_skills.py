@@ -11,6 +11,7 @@ from django.core.management import call_command
 from django.test import override_settings
 from django.urls import reverse
 
+from calculatorapi.management.commands.import_game_data import takes_ahead
 from calculatorapi.models import CustomUser, Skill, SupportCard, SupportCardSkill, Uma, UmaSkill
 from calculatorapi.tests.base import CalculatorTestCase, PLAIN_TEST_STORAGES
 
@@ -152,7 +153,11 @@ class SkillImportTests(CalculatorTestCase):
         defined = Skill.objects.exclude(icon_id__isnull=True)
         self.assertEqual(defined.values("icon_id").distinct().count(), 63)
         announced = Skill.objects.filter(icon_id__isnull=True)
-        self.assertGreaterEqual(announced.count(), 100)
+        # Every text-ahead skill the import takes, counted off the file itself:
+        # each refresh moves some to defined (105 on 2026-10-16, 98 on 10-23).
+        ahead = json.loads((SNAPSHOT_DIR / "skill_text_ahead.json").read_text(encoding="utf-8"))
+        self.assertEqual(announced.count(), sum(1 for skill in ahead if takes_ahead(skill)))
+        self.assertGreater(announced.count(), 0)
         self.assertEqual(announced.on_global().count(), announced.count())
         self.assertFalse(announced.filter(game_id__gte=1_000_000).exists())
 
