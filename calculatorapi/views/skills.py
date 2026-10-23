@@ -14,7 +14,10 @@ one skill in full: its text, when it fires and what it does
 (skill_text.describe), every outfit and card that gives it, what it evolves
 from and into, and what unlocks an evolution.
 
-Both are public and cached as rendered bytes in their own cache alias
+SHELVED (2026-10-23): both answer 404 to anyone but a guide editor
+(pvp_guide_editing.sees_skills_preview) until the work is picked up again.
+
+Both are cached as rendered bytes in their own cache alias
 (skills_cache.py). Keyed by the game's skill id, which is the same in every
 database and in both game clients, so a page's URL never changes.
 """
@@ -25,7 +28,7 @@ from django.http import Http404, HttpResponse
 from rest_framework import permissions
 from rest_framework.decorators import api_view, permission_classes
 
-from calculatorapi import skill_text, skills_cache
+from calculatorapi import pvp_guide_editing, skill_text, skills_cache
 from calculatorapi.models import Skill
 from calculatorapi.models.skill import skill_families
 from calculatorapi.views.pvp_catalogue import image_url
@@ -137,7 +140,10 @@ def _json(body):
 
 @api_view(["GET"])
 @permission_classes([permissions.AllowAny])
-def skill_list(request):  # pylint: disable=unused-argument
+def skill_list(request):
+    # Shelved: the guide editors only (pvp_guide_editing.sees_skills_preview).
+    if not pvp_guide_editing.sees_skills_preview(request.user):
+        raise Http404("No such page.")
     body = skills_cache.read_list()
     if body is None:
         body = _bytes(build_list())
@@ -147,7 +153,9 @@ def skill_list(request):  # pylint: disable=unused-argument
 
 @api_view(["GET"])
 @permission_classes([permissions.AllowAny])
-def skill_detail(request, game_id):  # pylint: disable=unused-argument
+def skill_detail(request, game_id):
+    if not pvp_guide_editing.sees_skills_preview(request.user):
+        raise Http404("No such page.")
     body = skills_cache.read_detail(game_id)
     if body is None:
         skill = _shown().prefetch_related("aliases").filter(game_id=game_id).first()

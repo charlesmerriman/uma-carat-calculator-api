@@ -9,6 +9,7 @@ from calculatorapi.models import (
     SupportCardSkill, Uma, UmaSkill,
 )
 from calculatorapi.tests.base import CalculatorTestCase
+from calculatorapi.tests.factories import make_user
 from calculatorapi.tests.test_pvp_guides import make_champions_meeting, url
 
 SPEED = [{"precondition": "", "condition": "phase_random==1", "duration": 30000,
@@ -23,9 +24,44 @@ def make(game_id, **fields):
     return Skill.objects.create(game_id=game_id, **values)
 
 
+def editor_client():
+    """The skills work is shelved to guide editors (staff) for now."""
+    client = APIClient()
+    client.force_authenticate(make_user("editor", is_staff=True))
+    return client
+
+
+class SkillsShelvedTests(CalculatorTestCase):
+    """Shelved (owner, 2026-10-23): nobody but a guide editor knows it exists."""
+
+    def test_the_routes_are_a_404_to_everyone_else(self):
+        make(201351, name="Gourmand")
+        for client in (APIClient(), APIClient()):
+            self.assertEqual(client.get("/skills").status_code, 404)
+            self.assertEqual(client.get("/skills/201351").status_code, 404)
+            client.force_authenticate(make_user(f"player{id(client)}"))
+            self.assertEqual(client.get("/skills").status_code, 404)
+
+    def test_a_guide_shows_a_player_global_skills_only(self):
+        cm = make_champions_meeting()
+        guide = PvpGuide.objects.create(champions_meeting=cm, is_published=True,
+                                        short_description="[[Fan Skill]] and [[Gourmand]]")
+        fan = make(200999, name="", translated_name="Fan Skill", availability="jp")
+        gourmand = make(201351, name="Gourmand")
+        for skill in (fan, gourmand):
+            PvpSkillRecommendation.objects.create(guide=guide, style="front", category="speed", skill=skill)
+        body = APIClient().get(url("cm", cm.id)).json()
+        self.assertEqual([row["skill"]["name"] for row in body["skill_recommendations"]], ["Gourmand"])
+        self.assertEqual(set(body["skill_mentions"]), {"gourmand"})
+        # A guide editor sees both, as the site's preview of the shelved work.
+        body = editor_client().get(url("cm", cm.id)).json()
+        self.assertEqual(len(body["skill_recommendations"]), 2)
+        self.assertEqual(set(body["skill_mentions"]), {"fan skill", "gourmand"})
+
+
 class SkillListTests(CalculatorTestCase):
     def setUp(self):
-        self.client = APIClient()
+        self.client = editor_client()
         self.gourmand = make(201351, name="Gourmand", rarity=2, tier=2, translated_name="Glutton",
                              jp_name="食いしん坊")
         self.announced = make(110681, name="Bring on the Banquet!", availability="announced")
@@ -59,7 +95,7 @@ class SkillListTests(CalculatorTestCase):
 
 class SkillDetailTests(CalculatorTestCase):
     def setUp(self):
-        self.client = APIClient()
+        self.client = editor_client()
         self.gourmand = make(201351, name="Gourmand", rarity=2, tier=2)
         self.ruler = make(100101111, name="Gluttonous Ruler", rarity=6, group_id=10010111,
                           availability="announced", evolves_from=self.gourmand,
@@ -129,7 +165,7 @@ class GuideSkillFieldsTests(CalculatorTestCase):
         UmaSkill.objects.create(uma=week, skill=fan, source="unique", level=3)
         PvpSkillRecommendation.objects.create(guide=guide, style="front", category="speed", skill=fan)
 
-        [row] = APIClient().get(url("cm", cm.id)).json()["skill_recommendations"]
+        [row] = editor_client().get(url("cm", cm.id)).json()["skill_recommendations"]
         skill = row["skill"]
         self.assertEqual((skill["name"], skill["description"]), ("Fan Skill", "Fan text."))
         self.assertEqual((skill["availability"], skill["uses_translation"]), ("jp", True))
