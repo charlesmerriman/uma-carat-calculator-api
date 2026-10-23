@@ -25,6 +25,7 @@ from calculatorapi import public_payload_cache, pvp_guides, pvp_sheet, pvp_track
 from calculatorapi.management.commands import load_sheet_pvp_guides as loader
 from calculatorapi.models.skill import skill_families
 from calculatorapi.models import (
+    SkillAlias,
     CalculationConstants,
     PvpDeck,
     PvpDeckSlot,
@@ -105,13 +106,16 @@ class GuideModelTests(CalculatorTestCase):
         with self.assertRaises(IntegrityError), transaction.atomic():
             PvpUmaRecommendation.objects.create(guide=guide, style="everyone", uma=uma)
 
-    def test_a_skill_not_on_global_is_refused(self):
+    def test_a_skill_with_no_english_name_is_refused(self):
         guide = PvpGuide.objects.create(champions_meeting=self.cm)
-        jp_only = make_skill("JP Only", 900001, availability="jp")
+        untranslated = make_skill("", 900001, availability="jp", jp_name="日本語")
         with self.assertRaises(ValidationError):
             PvpSkillRecommendation(
-                guide=guide, style="front", category="speed", skill=jp_only
+                guide=guide, style="front", category="speed", skill=untranslated
             ).clean()
+        # A JP-only skill with a translation is fine: the site tags it.
+        translated = make_skill("", 900002, availability="jp", translated_name="Fan Name")
+        PvpSkillRecommendation(guide=guide, style="front", category="speed", skill=translated).clean()
 
 
 class GuideEndpointTests(CalculatorTestCase):
@@ -233,11 +237,11 @@ class GuideEndpointTests(CalculatorTestCase):
         self.assertEqual([r["skill"]["name"] for r in body["skill_recommendations"]],
                          ["Tier zero", "Tier two", "Untiered"])
 
-    def test_a_skill_that_left_global_is_not_shown(self):
+    def test_a_skill_that_lost_its_english_name_is_not_shown(self):
         skill = make_skill("Gone", 100051)
         PvpSkillRecommendation.objects.create(guide=self.guide, style="front",
                                               category="speed", skill=skill)
-        Skill.objects.filter(pk=skill.pk).update(availability="jp")
+        Skill.objects.filter(pk=skill.pk).update(name="", translated_name="")
         body = self.client.get(url("cm", self.cm.id)).json()
         self.assertEqual(body["skill_recommendations"], [])
 
@@ -394,9 +398,10 @@ class GuideAdminTests(CalculatorTestCase):
         self.assertEqual(row["text"], "Kitasan Black")
         self.assertNotIn("picture", row)  # no image on this card
 
-    def test_skill_autocomplete_offers_global_skills_only(self):
+    def test_skill_autocomplete_offers_every_skill_with_an_english_name(self):
         make_skill("Global Skill", 100099)
         make_skill("JP Only Skill", 900001, availability="jp")
+        make_skill("", 900002, availability="jp", jp_name="Skill 日本語")
         res = self.client.get(reverse("admin:autocomplete"), {
             "term": "Skill", "app_label": "calculatorapi",
             "model_name": "pvpskillrecommendation", "field_name": "skill",
@@ -404,7 +409,10 @@ class GuideAdminTests(CalculatorTestCase):
         self.assertEqual(res.status_code, 200)
         names = [row["text"] for row in res.json()["results"]]
         self.assertIn("Global Skill (100099)", names)
-        self.assertNotIn("JP Only Skill (900001)", names)
+        # JP-only skills may be picked now (the site tags them)...
+        self.assertIn("JP Only Skill (900001)", names)
+        # ...but not one with only its Japanese name.
+        self.assertNotIn("Skill 日本語 (900002)", names)
 
     def test_the_event_pages_no_longer_offer_the_five_boxes(self):
         cm = self.guide.champions_meeting
@@ -538,9 +546,28 @@ class SkillMentionTests(CalculatorTestCase):
         self.assertIn("[[Grondwork]]", message)
         self.assertIn("Groundwork", message)
 
-    def test_a_skill_not_on_global_cannot_be_mentioned(self):
+    def test_a_jp_only_skill_can_be_mentioned_by_any_of_its_names(self):
+        # "Not Yet" is JP only (setUp). Its translation and an old name work too.
+        Skill.objects.filter(game_id=900002).update(translated_name="Fan Name")
+        SkillAlias.objects.create(skill=Skill.objects.get(game_id=900002), name="Older Name")
+        PvpTeamComp(text="2 Front", note="with [[Not Yet]], [[fan name]], [[Older Name]]").clean()
+
+    def test_a_skill_with_only_a_japanese_name_cannot_be_mentioned(self):
+        make_skill("", 900003, availability="jp", jp_name="日本語")
         with self.assertRaises(ValidationError):
-            PvpTeamComp(text="2 Front", note="with [[Not Yet]]").clean()
+            PvpTeamComp(text="2 Front", note="with [[日本語]]").clean()
+
+    def test_the_api_resolves_an_old_name_to_the_skill(self):
+        skill = Skill.objects.get(game_id=900002)
+        SkillAlias.objects.create(skill=skill, name="Older Name")
+        guide = PvpGuide.objects.create(
+            champions_meeting=self.cm, is_published=True, short_description="Try [[older name]].",
+        )
+        body = APIClient().get(url("cm", self.cm.id)).json()
+        mention = body["skill_mentions"]["older name"]
+        self.assertEqual((mention["id"], mention["name"], mention["availability"]),
+                         (skill.id, "Not Yet", "jp"))
+        self.assertTrue(guide.is_published)
 
     def test_known_mentions_pass_ignoring_case(self):
         PvpGuide(champions_meeting=self.cm, short_description="[[groundwork]] then [[Final Push]]").clean()
@@ -802,7 +829,7 @@ class GuideTabsTests(CalculatorTestCase):
         data["team_comps-0-note"] = "[[Nope]] still"
         res = self.client.post(self.change_url(), data)
         self.assertEqual(res.status_code, 200)
-        self.assertContains(res, "No skill on global has this name")
+        self.assertContains(res, "No skill has this name")
 
     def test_a_filled_guide_posts_past_django_s_default_field_limit_and_still_saves(self):
         # One Save posts every table of the guide. A filled guide runs past the

@@ -721,9 +721,19 @@ Every section is optional and may be an empty array. Rows come sorted: by style 
 order everyone, runaway, front, pace, late, end; then stat rows and decks by the editor's
 `order`, umas by most stars first, skills by tier (0 first, untiered last). Umas, cards
 and skills are embedded small objects, since the client's banner data only knows cards that
-were on a banner. `skill_recommendations` only ever holds skills on global
-(`Skill.objects.on_global()`); `unique_of` names the outfit whose unique the skill is, or
-`null`. **A guide names one version of a skill per row; the other versions ride along.**
+were on a banner. `skill_recommendations` and `skill_mentions` hold any skill with an English
+name (`Skill.objects.shown()`, since 2026-10-23), JP-only ones included; `unique_of` names
+the outfit whose unique the skill is, or `null`. Every skill object also carries:
+`name` / `description` as a player reads them (global's, else UmaTL's);
+`availability` (`"global"`, `"announced"`, `"jp"`: the site tags `"jp"` as "JP only");
+`uses_translation` (true when the name or description shown is UmaTL's: the site credits
+UmaTL); `readable` (when it fires and what it does, `skill_text.describe`: `{"wit_check",
+"complete", "slots": [{"after", "when", "effects", "duration", "cooldown"}]}`, each
+condition `{"all": [phrase], "any": [[phrase]]}`, each phrase `{"text", "raw"}` where `raw`
+is the game's own code, not yet translated); and `sources` (`{"umas": [{"name", "source",
+"level", "on_global"}], "uma_count", "cards": [{"name", "source", "on_global"}],
+"card_count"}`, at most 4 of each, on-global first). A `[[mention]]` resolves by global's
+name, the translation, or an old name kept as an alias, keyed by the name as written. **A guide names one version of a skill per row; the other versions ride along.**
 `version` is the skill's own label (`"○ white"`, `"◎ white"`, `"◎ gold"`, `"evolved"`) and `versions`
 lists its other forms a player may be shown (same `group_id`, plus `evolves_from` both
 ways; never the × penalty row, never a skill not on global), each with `id`, `name`,
@@ -834,6 +844,25 @@ boxes for a style, a slot with neither card nor note, two rows in one slot, two 
 slots, a `[[mention]]` of a skill not on global (with "did you mean"), and the column
 lengths. A `path` reads like `decks[2].slots[5].note` or `uma_recommendations[3].uma`; a
 refusal with no field has `""`.
+
+### `GET /skills` and `GET /skills/<game_id>`
+
+Every skill a player may read about (`views/skills.py`): the Skills page and the guide
+editor's picker. Public, cached as rendered bytes in the `skills` cache alias
+(`skills_cache.py`, a new generation on any write to the skill, alias, condition, junction,
+uma or card tables). Keyed by the game's skill id, the same in every database.
+
+`GET /skills` is a list, ordered by shown name, of every `Skill.objects.shown()` row:
+`id`, `game_id`, `name`, `image`, `rarity`, `tier`, `group_id`, `version`, `is_evolved`,
+`availability`, `uses_translation`, and `other_names` (the translation when global's name is
+shown, old names kept as aliases, the Japanese name), for search.
+
+`GET /skills/<game_id>` is one skill in full: the list fields plus `description`, `readable`
+(as on a guide), `sources` (every outfit and card: `id`, `name`, `game_id`, `image`,
+`source`, `level` for an outfit, `on_global`; on-global first), `evolution` (`from` and
+`into` as list rows, `conditions` as `[{"text", "uses_translation", "is_japanese"}]`,
+`scenario`), and `versions` (its forms on global, as on a guide). 404 for a skill with no
+English name, or no such id.
 
 ### `GET /pvp-catalogue`
 

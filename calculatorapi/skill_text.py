@@ -573,8 +573,37 @@ def describe(skill, context=None):
     }
 
 
+class LazySkillNames:
+    """
+    {skill game id: shown name}, loaded on the first look-up only. Only a
+    handful of JP skills name another skill (`is_used_skill_id`), and the guide
+    page builds a context on every request, so the 2,000-row query runs only
+    when a page holds one of them.
+    """
+
+    def __init__(self):
+        self._names = None
+
+    def get(self, game_id, default=None):
+        if self._names is None:
+            from .models import Skill  # pylint: disable=import-outside-toplevel
+            self._names = {
+                row.game_id: row.shown_name
+                for row in Skill.objects.only("game_id", "name", "translated_name")
+                if row.shown_name
+            }
+        return self._names.get(game_id, default)
+
+    def __getitem__(self, game_id):
+        name = self.get(game_id)
+        if name is None:
+            raise KeyError(game_id)
+        return name
+
+
 def context_from_database():
-    """A TextContext from the database: three queries, for a page of skills."""
+    """A TextContext from the database: two queries, plus a third only if a
+    skill names another (LazySkillNames)."""
     # Imported here: models import nothing from this module, and a module-level
     # import would make the readable text depend on Django being set up.
     from .models import Skill, Uma  # pylint: disable=import-outside-toplevel
@@ -583,11 +612,7 @@ def context_from_database():
     racecourses = racecourse_names(
         Skill.objects.filter(name__contains="Racecourse").only("name", "condition")
     )
-    skill_names = {
-        row.game_id: row.shown_name
-        for row in Skill.objects.only("game_id", "name", "translated_name")
-        if row.shown_name
-    }
+    skill_names = LazySkillNames()
     characters = {}
     for game_id, name in Uma.objects.exclude(game_id__isnull=True).values_list(
         "game_id", "name",

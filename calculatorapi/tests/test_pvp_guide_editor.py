@@ -410,10 +410,10 @@ class ValidationTests(CalculatorTestCase):
         self.assertIn(("uma_recommendations[0].uma", pvp_guide_document.NOT_IN_CATALOGUE), errors)
 
     def test_skill_rows(self):
-        jp_only = make_skill("JP Only", 900001, availability="jp")
-        row = {"style": "front", "category": "speed", "tier": None, "skill": jp_only.id, "note": ""}
+        untranslated = make_skill("", 900001, availability="jp", jp_name="日本語")
+        row = {"style": "front", "category": "speed", "tier": None, "skill": untranslated.id, "note": ""}
         errors = self.refuse(skill_recommendations=[row])
-        self.assertIn(("skill_recommendations[0].skill", pvp_guide_document.SKILL_NOT_ON_GLOBAL), errors)
+        self.assertIn(("skill_recommendations[0].skill", pvp_guide_document.SKILL_NOT_SHOWN), errors)
         twice = dict(row, skill=self.fixture.skill.id)
         errors = self.refuse(skill_recommendations=[twice, dict(twice, tier=2)])
         self.assertIn(
@@ -461,7 +461,7 @@ class ValidationTests(CalculatorTestCase):
         errors = self.refuse(short_description="Take [[Groundwrk]] first")
         path, message = next(iter(errors))
         self.assertEqual(path, "short_description")
-        self.assertIn("No skill on global has this name: [[Groundwrk]]", message)
+        self.assertIn("No skill has this name: [[Groundwrk]]", message)
         self.assertIn("did you mean Groundwork", message)
         decks = copy.deepcopy(self.document["decks"])
         decks[0]["slots"][0]["note"] = "[[Nothing Here]]"
