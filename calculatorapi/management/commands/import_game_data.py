@@ -1,15 +1,49 @@
 """
 Fills the game-data columns on Uma and SupportCard from the committed snapshot.
 
-THE SOURCE is scripts/data/master_snapshot/*.json, written by
-scripts/extract_master_snapshot.py from the global game client's own database.
-It is global-only by construction, so a JP-only row in our database is simply
-never matched and never touched.
+THE SOURCES, in order of authority (since 2026-10-23):
+
+  1. scripts/data/master_snapshot/*.json, written by
+     scripts/extract_master_snapshot.py from the global game client's own
+     database. Global always wins.
+  2. scripts/data/jp_snapshot/*.json, the same extractor run on a JP mdb:
+     the structure of skills global doesn't define, evolutions, and the
+     skill links of outfits and cards global doesn't have.
+  3. scripts/data/umatl/text.json, UmaTL's English, only ever into the
+     `translated_*` columns, which a player reads only while global's are blank.
+
+  The two extra sources are read from beside master_snapshot/ (or from
+  --jp-snapshot / --umatl); either may be missing, and --global-only ignores
+  both. The JP pass's helpers live in calculatorapi/game_data_sources.py.
+
+PER SKILL (matched on game_id), the first path that applies:
+
+  in global's skill table   availability "global"; every game column from
+                            global, name and description included
+  announced (text ahead)    availability "announced"; global's name and text,
+                            JP's exact structure every run (a guess only when
+                            the JP snapshot lacks the id, written once)
+  JP only                   availability "jp"; JP's structure; global's name
+                            and text if the client shipped them (a bonus
+                            skill), otherwise the editor's are left alone
+  every path                `jp_*` from JP and `translated_*` from UmaTL when
+                            loaded; a name this run replaces becomes a SkillAlias
+
+EVOLUTIONS (JP): an outfit's evolution is an `evolved` UmaSkill row; its base
+(`evolves_from`) comes from the rank rule (game_data_sources.evolution_base),
+written only while empty so an editor's correction sticks; a scenario's or a
+succession's base is the game's own. Unlock conditions are replaced as a set
+whenever they differ: global's English, UmaTL's, and the Japanese.
+
+`is_on_global` on Uma and SupportCard is set here: true exactly for the ids in
+the global snapshot. Global outfits and cards get global's skill links only;
+JP's links go to the others, after a name check in English (jp_owner_links).
 
 WHAT IT WRITES, and what it leaves alone:
 
   Skill        every column the game owns: name, description, rarity, group,
-               tier, icon, cost, conditions. Matched on `game_id`, and CREATED
+               tier, icon, cost, conditions, effects, and `availability`
+               ("global" here, "announced" below). Matched on `game_id`, and CREATED
                when missing: a skill needs no art of its own (63 generic icons
                are linked afterwards by `link_skill_images`), so there is no
                reason to make an editor add 718 rows by hand. Never touches
@@ -79,9 +113,14 @@ from pathlib import Path
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
-from calculatorapi import public_payload_cache, pvp_catalogue_cache
-from calculatorapi.models import Skill, SupportCard, SupportCardSkill, Uma, UmaSkill
-from calculatorapi.models.skill import SkillRarity, SkillTier
+from calculatorapi import public_payload_cache, pvp_catalogue_cache, skills_cache
+from calculatorapi.models import (
+    Skill, SkillAlias, SkillEvolutionCondition, SupportCard, SupportCardSkill, Uma, UmaSkill,
+)
+from calculatorapi.game_data_sources import (
+    SecondarySources, jp_owner_links, name_matches, plan_evolutions,
+)
+from calculatorapi.models.skill import SkillAvailability, SkillRarity, SkillTier
 
 CONFIRM_PHRASE = "import"
 
@@ -113,19 +152,34 @@ def load_snapshot(directory):
     for name in ("support_events", "skill_text_ahead"):
         path = directory / f"{name}.json"
         files[name] = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else []
+    # Global's English for evolution conditions, keyed by condition id; a
+    # snapshot from before 2026-10-23 has none.
+    path = directory / "evolution_condition_text.json"
+    files["evolution_condition_text"] = (
+        json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
+    )
     return files
 
 
 # Which text-ahead skills become rows, by the length of the id. Evolved skills
-# (nine digits) wait for the evolution work: nothing in the global client says
+# (nine digits) only with the JP snapshot: the global client says nothing about
 # which gold skill each one evolves from. Seven-digit ids are event and League
 # of Heroes bonus skills, not skills a trainee learns.
 AHEAD_ID_LENGTHS = (5, 6)
+EVOLVED_ID_LENGTH = 9
 
 
-def takes_ahead(skill):
-    """Should this text-ahead skill become a row? See AHEAD_ID_LENGTHS."""
-    return len(str(skill["id"])) in AHEAD_ID_LENGTHS and bool(skill["description"].strip())
+def takes_ahead(skill, jp_ids=frozenset()):
+    """
+    Should this text-ahead skill become an ANNOUNCED row? See AHEAD_ID_LENGTHS.
+    An evolved one too once the JP snapshot defines it (`jp_ids`), since that
+    gives it its base. A seven-digit bonus skill never: it becomes a JP row
+    with global's name, out of the guide picker.
+    """
+    if not skill["description"].strip():
+        return False
+    length = len(str(skill["id"]))
+    return length in AHEAD_ID_LENGTHS or (length == EVOLVED_ID_LENGTH and skill["id"] in jp_ids)
 
 
 def guessed_structure(skill_id, name, known_ids):
@@ -215,11 +269,29 @@ def load_gametora(path):
     return detailed
 
 
-def skill_values(skill, detailed):
-    """The Skill column values one snapshot skill implies."""
-    values = {
-        "name": skill["name"],
-        "description": skill["description"],
+def effects_with_conditions(skill):
+    """
+    The snapshot's effect slots, each with its own (pre)condition string.
+
+    The snapshot keeps the slots' conditions at the top level
+    (`condition_1`, `condition_2`); `Skill.condition` holds slot 1's only, as
+    it always has. Copying each slot's pair into its slot makes `effects`
+    whole: "when slot 2 fires, it does this". The strings are the game's,
+    verbatim. A snapshot from before 2026-10-23 has no effects.
+    """
+    slots = []
+    for n, slot in enumerate(skill.get("effects", []), start=1):
+        slots.append({
+            "precondition": skill.get(f"precondition_{n}", ""),
+            "condition": skill.get(f"condition_{n}", ""),
+            **slot,
+        })
+    return slots
+
+
+def structure_values(skill):
+    """The game-owned structure columns of one snapshot skill, either client's."""
+    return {
         "rarity": skill["rarity"],
         "group_id": skill["group_id"],
         "tier": skill["group_rate"],
@@ -227,6 +299,20 @@ def skill_values(skill, detailed):
         "cost": skill["cost"],
         "precondition": skill["precondition_1"],
         "condition": skill["condition_1"],
+        "effects": effects_with_conditions(skill),
+        # A snapshot from before 2026-10-23 has no activate_lot.
+        "activate_lot": skill.get("activate_lot"),
+    }
+
+
+def skill_values(skill, detailed):
+    """The Skill column values one global snapshot skill implies."""
+    values = {
+        "name": skill["name"],
+        "description": skill["description"],
+        **structure_values(skill),
+        # In the global client's skill table, so on global, every run.
+        "availability": SkillAvailability.GLOBAL,
     }
     if skill["id"] in detailed:
         values["description_detailed"] = detailed[skill["id"]]
@@ -244,6 +330,19 @@ def support_values(card):
         # is written back to [] so a card that stops being one is cleared.
         "group_members": card.get("members", []),
     }
+
+
+def no_longer_on_global(by_game_id, cards):
+    """
+    (row, diff) pairs for the rows the global snapshot doesn't hold but which
+    say they are on global: not on global, whatever they said before.
+    """
+    in_snapshot = {card["id"] for card in cards}
+    return [
+        (row, {"is_on_global": False})
+        for game_id, row in by_game_id.items()
+        if game_id not in in_snapshot and row.is_on_global
+    ]
 
 
 class JunctionSpec:
@@ -278,16 +377,6 @@ UMA_SKILLS = JunctionSpec("uma skill", Uma, UmaSkill, "uma")
 SUPPORT_CARD_SKILLS = JunctionSpec("support card skill", SupportCard, SupportCardSkill, "support_card")
 
 
-def _letters(text):
-    """Lowercase letters and digits only, so "TM Opera O" and "T.M. Opera O" agree."""
-    return "".join(ch for ch in text.lower() if ch.isalnum())
-
-
-def name_matches(row_name, chara_name):
-    """Our row names always contain the character's name; a miss is a wrong game_id."""
-    return _letters(chara_name) in _letters(row_name)
-
-
 class Command(BaseCommand):
     help = "Fill Uma and SupportCard game-data columns from the committed master snapshot."
 
@@ -301,6 +390,18 @@ class Command(BaseCommand):
             help="gametora's skills.json, for description_detailed. Optional.",
         )
         parser.add_argument(
+            "--jp-snapshot", default=None,
+            help="The JP snapshot directory (default: jp_snapshot/ beside --snapshot, if there).",
+        )
+        parser.add_argument(
+            "--umatl", default=None,
+            help="The UmaTL slice directory (default: umatl/ beside --snapshot, if there).",
+        )
+        parser.add_argument(
+            "--global-only", action="store_true",
+            help="Ignore the JP snapshot and UmaTL: the import as it was before 2026-10-23.",
+        )
+        parser.add_argument(
             "--dry-run", action="store_true",
             help="Report what would change without writing anything.",
         )
@@ -312,14 +413,26 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         snapshot = load_snapshot(options["snapshot"])
         detailed = load_gametora(options["gametora"])
+        sources = (
+            SecondarySources.empty() if options["global_only"]
+            else SecondarySources(options["snapshot"], options["jp_snapshot"], options["umatl"])
+        )
+        evolutions = plan_evolutions(sources, snapshot["evolution_condition_text"])
+        jp_links = jp_owner_links(sources, snapshot)
 
         uma_plan = self._plan("uma", Uma, snapshot["cards"], uma_values)
         support_plan = self._plan(
             "support card", SupportCard, snapshot["support_cards"], support_values,
         )
-        known_skills = {skill["id"] for skill in snapshot["skills"]}
+        known_skills = (
+            {skill["id"] for skill in snapshot["skills"]}
+            | {skill["id"] for skill in snapshot["skill_text_ahead"]}
+            | set(sources.jp_skills)
+        )
         plans = [
-            self._plan_skills(snapshot["skills"], detailed, snapshot["skill_text_ahead"]),
+            self._plan_skills(
+                snapshot["skills"], detailed, snapshot["skill_text_ahead"], sources, evolutions,
+            ),
             uma_plan,
             support_plan,
             self._plan_junction(
@@ -327,8 +440,8 @@ class Command(BaseCommand):
                 [
                     (row["card_id"], row["skill_id"], row["source"], row["level"])
                     for row in snapshot["card_skills"]
-                ],
-                known_skills, distrusted=uma_plan["distrusted"],
+                ] + evolutions["junction"] + jp_links["uma_rows"],
+                known_skills, distrusted=uma_plan["distrusted"] | jp_links["uma_distrusted"],
             ),
             self._plan_junction(
                 SUPPORT_CARD_SKILLS,
@@ -338,13 +451,19 @@ class Command(BaseCommand):
                 ] + [
                     (row["support_card_id"], row["skill_id"], "event", None)
                     for row in snapshot["support_events"]
-                ],
-                known_skills, distrusted=support_plan["distrusted"],
+                ] + jp_links["card_rows"],
+                known_skills, distrusted=support_plan["distrusted"] | jp_links["card_distrusted"],
             ),
+            self._plan_evolution_links(evolutions, known_skills),
         ]
+        if sources.jp is not None:
+            plans.append(self._jp_notice(jp_links, evolutions))
         self._report(plans, options["dry_run"])
 
-        if not any(plan["changed"] or plan.get("created") for plan in plans):
+        if not any(
+            plan["changed"] or plan.get("created") or plan.get("conditions") or plan.get("aliases")
+            for plan in plans
+        ):
             self.stdout.write(self.style.SUCCESS("\nNothing to write."))
             return
 
@@ -353,13 +472,11 @@ class Command(BaseCommand):
             return
 
         if not options["no_input"]:
-            typed = input(f'\nType "{CONFIRM_PHRASE}" to apply: ')
-            if typed.strip() != CONFIRM_PHRASE:
+            if input(f'\nType "{CONFIRM_PHRASE}" to apply: ').strip() != CONFIRM_PHRASE:
                 self.stdout.write(self.style.ERROR("Aborted."))
                 return
 
-        written = self._write(plans)
-        self.stdout.write(self.style.SUCCESS(f"\nUpdated {written} row(s)."))
+        self.stdout.write(self.style.SUCCESS(f"\nUpdated {self._write(plans)} row(s)."))
 
     @staticmethod
     def _plan(label, model, cards, values_for):
@@ -385,7 +502,9 @@ class Command(BaseCommand):
                 )
                 distrusted.add(card["id"])
                 continue
-            values = values_for(card)
+            # In the global snapshot, so in the game on global (the team
+            # builder reads it for cards on no banner; see pvp_catalogue.py).
+            values = {**values_for(card), "is_on_global": True}
             diff = {
                 column: value for column, value in values.items()
                 if getattr(row, column) != value
@@ -395,26 +514,40 @@ class Command(BaseCommand):
             else:
                 unchanged += 1
 
+        changed += no_longer_on_global(by_game_id, cards)
+
         return {
             "label": label, "changed": changed, "unchanged": unchanged,
             "missing": missing, "mismatched": mismatched, "distrusted": distrusted,
         }
 
     @staticmethod
-    def _plan_skills(skills, detailed, ahead=()):
+    def _plan_skills(skills, detailed, ahead=(), sources=None, evolutions=None):  # pylint: disable=too-many-locals
         """
         Like _plan, but a skill with no row is CREATED rather than reported:
         `created` holds unsaved Skill instances, `changed` (row, diff) pairs.
 
-        `ahead` is the text-ahead file. Its skills are created with a guessed
-        structure, and after that only their name and description follow the
-        game (see the module docstring).
+        Three paths, in order of authority (the module docstring has the
+        full table):
+          1. in global's skill table: every game column from global;
+          2. announced (`ahead`, the text-ahead file): global's name and
+             text, and JP's exact structure when the JP snapshot defines it,
+             else a guessed one written once;
+          3. JP only: JP's structure; global's name and text if the client
+             shipped them, else the editor's are left alone.
+        Every path also takes the JP and UmaTL text slots, and a name the
+        import replaces is kept as an alias (`aliases`).
         """
+        sources = sources or SecondarySources.empty()
+        evolutions = evolutions or plan_evolutions(sources, {})
         by_game_id = {row.game_id: row for row in Skill.objects.all()}
-        changed, created, unchanged = [], [], 0
+        changed, created, aliases, unchanged = [], [], [], 0
 
         def plan_row(game_id, values, create_values):
             nonlocal unchanged
+            values = {**values, **sources.text_slots(game_id)}
+            if game_id in evolutions["scenarios"] or game_id in evolutions["bases"]:
+                values["evolution_scenario"] = evolutions["scenarios"].get(game_id)
             row = by_game_id.get(game_id)
             if row is None:
                 created.append(Skill(game_id=game_id, **values, **create_values))
@@ -423,6 +556,9 @@ class Command(BaseCommand):
                 column: value for column, value in values.items()
                 if getattr(row, column) != value
             }
+            for column in ("name", "translated_name"):
+                if column in diff and getattr(row, column):
+                    aliases.append((game_id, getattr(row, column)))
             if diff:
                 changed.append((row, diff))
             else:
@@ -432,17 +568,38 @@ class Command(BaseCommand):
             plan_row(skill["id"], skill_values(skill, detailed), {})
 
         defined = {skill["id"] for skill in skills}
-        known_ids = defined | {skill["id"] for skill in ahead}
-        taken = [skill for skill in ahead if skill["id"] not in defined and takes_ahead(skill)]
+        ahead_by_id = {skill["id"]: skill for skill in ahead}
+        known_ids = defined | set(ahead_by_id)
+        taken = [
+            skill for skill in ahead
+            if skill["id"] not in defined and takes_ahead(skill, sources.jp_skills)
+        ]
         for skill in taken:
-            plan_row(
-                skill["id"],
-                {"name": skill["name"], "description": skill["description"]},
-                guessed_structure(skill["id"], skill["name"], known_ids),
-            )
+            values = {"name": skill["name"], "description": skill["description"],
+                      "availability": SkillAvailability.ANNOUNCED}
+            jp = sources.jp_skills.get(skill["id"])
+            if jp is not None:
+                # The game's own values, every run: no guessing (owner, 2026-10-16).
+                plan_row(skill["id"], {**values, **structure_values(jp)}, {})
+            else:
+                plan_row(skill["id"], values,
+                         guessed_structure(skill["id"], skill["name"], known_ids))
+
+        handled = defined | {skill["id"] for skill in taken}
+        jp_only = 0
+        for game_id, jp in sources.jp_skills.items():
+            if game_id in handled:
+                continue
+            jp_only += 1
+            values = {**structure_values(jp), "availability": SkillAvailability.JP}
+            text = ahead_by_id.get(game_id)
+            if text is not None:  # global shipped its English (a bonus skill, say)
+                values.update(name=text["name"], description=text["description"])
+            plan_row(game_id, values, {})
         return {
-            "label": "skill", "changed": changed, "created": created,
+            "label": "skill", "changed": changed, "created": created, "aliases": aliases,
             "unchanged": unchanged, "missing": [], "mismatched": [], "ahead": len(taken),
+            "jp_only": jp_only,
         }
 
     @staticmethod
@@ -488,6 +645,82 @@ class Command(BaseCommand):
         return plan
 
     @staticmethod
+    def _jp_notice(jp_links, evolutions):
+        """The report's "JP data" section: what the JP pass skipped or trusted."""
+        return {
+            "label": "JP data", "notice": True, "changed": [],
+            "lines": jp_links["lines"] + evolutions["unruled"] + [
+                f"{jp_links['unchecked']} JP outfit(s) or card(s) with no English name to "
+                "check against (a character global doesn't have, or a group card): links trusted",
+            ],
+        }
+
+    @staticmethod
+    def _plan_evolution_links(evolutions, known_skills):
+        """
+        `evolves_from` links and unlock conditions, written after this run's
+        skill rows exist (a base is often created in the same run).
+
+        A base from the game (scenario, succession) follows it every run. A
+        base from the rank rule is written only while the link is empty, so
+        an editor's correction in the Skill admin sticks. Conditions are game
+        data: an evolved skill's set is replaced whenever it differs.
+        """
+        existing_ids = set(Skill.objects.values_list("game_id", flat=True))
+        evolved_ids = set(evolutions["bases"]) | set(evolutions["conditions"])
+        current = dict(
+            Skill.objects.filter(game_id__in=evolved_ids)
+            .values_list("game_id", "evolves_from__game_id")
+        )
+        plan = {"label": "evolution", "evolution": True, "changed": [], "conditions": [],
+                "unchanged": 0, "missing": [], "mismatched": []}
+        for evolved, base in sorted(evolutions["bases"].items()):
+            if base not in known_skills and base not in existing_ids:
+                plan["missing"].append(f"evolved skill {evolved}: its base {base} is in no snapshot")
+                continue
+            now = current.get(evolved)
+            if evolved in evolutions["ruled"] and now is not None:
+                continue  # the rule's pick, or an editor's correction of it
+            if now != base:
+                plan["changed"].append((evolved, base))
+
+        fields = ("game_id", "num", "sub_num", "timing_type", "count_type",
+                  "text", "translated_text", "jp_text")
+        have = {}
+        for row in SkillEvolutionCondition.objects.filter(
+            skill__game_id__in=evolved_ids,
+        ).values("skill__game_id", *fields).order_by("game_id"):
+            have.setdefault(row.pop("skill__game_id"), []).append(row)
+        for evolved, conditions in sorted(evolutions["conditions"].items()):
+            wanted = sorted(conditions, key=lambda condition: condition["game_id"])
+            if have.get(evolved, []) != wanted:
+                plan["conditions"].append((evolved, wanted))
+            else:
+                plan["unchanged"] += 1
+        return plan
+
+    @staticmethod
+    def _write_evolutions(plan):
+        """Links in one bulk update, conditions replaced per skill in bulk."""
+        ids = {evolved for evolved, _ in plan["changed"]} | {base for _, base in plan["changed"]}
+        ids |= {evolved for evolved, _ in plan["conditions"]}
+        pks = dict(Skill.objects.filter(game_id__in=ids).values_list("game_id", "pk"))
+        linked = list(Skill.objects.filter(game_id__in=[evolved for evolved, _ in plan["changed"]]))
+        bases = dict(plan["changed"])
+        for skill in linked:
+            skill.evolves_from_id = pks[bases[skill.game_id]]
+        Skill.objects.bulk_update(linked, ["evolves_from"])
+
+        replaced = [pks[evolved] for evolved, _ in plan["conditions"]]
+        SkillEvolutionCondition.objects.filter(skill_id__in=replaced).delete()
+        SkillEvolutionCondition.objects.bulk_create([
+            SkillEvolutionCondition(skill_id=pks[evolved], **condition)
+            for evolved, conditions in plan["conditions"]
+            for condition in conditions
+        ])
+        return len(linked) + len(replaced)
+
+    @staticmethod
     def _write_junction(plan):
         """Resolve the game ids to rows now that every skill exists, then add."""
         spec = plan["junction"]
@@ -514,8 +747,13 @@ class Command(BaseCommand):
         written = 0
         with transaction.atomic():
             for plan in plans:
+                if plan.get("notice"):
+                    continue
                 if plan.get("junction"):
                     written += Command._write_junction(plan)
+                    continue
+                if plan.get("evolution"):
+                    written += Command._write_evolutions(plan)
                     continue
                 for row, diff in plan["changed"]:
                     for column, value in diff.items():
@@ -525,17 +763,56 @@ class Command(BaseCommand):
                 new_rows = plan.get("created", [])
                 Skill.objects.bulk_create(new_rows)
                 written += len(new_rows)
+                # Old names, now that every skill row exists. A name already
+                # kept is skipped by the unique constraint.
+                aliases = plan.get("aliases", [])
+                if aliases:
+                    pks = dict(Skill.objects.filter(
+                        game_id__in={game_id for game_id, _ in aliases},
+                    ).values_list("game_id", "pk"))
+                    SkillAlias.objects.bulk_create(
+                        [SkillAlias(skill_id=pks[game_id], name=name) for game_id, name in aliases],
+                        ignore_conflicts=True,
+                    )
         # Per-row saves already fire the invalidation signal, but the invariant
         # is that a bulk writer drops the cache itself, so this does too.
         public_payload_cache.invalidate()
         pvp_catalogue_cache.invalidate()
+        skills_cache.invalidate()
         return written
+
+    def _report_skill_notes(self, plan):
+        """The skill plan's JP-only count and new aliases, when there are any."""
+        if plan.get("jp_only"):
+            self.stdout.write(f"    {plan['jp_only']} are JP-only skills, hidden from players")
+        if plan.get("aliases"):
+            self.stdout.write(f"    {len(plan['aliases'])} replaced name(s) kept as aliases")
+
+    def _report_jp_plan(self, plan, verb, dry_run):
+        """Report the JP pass's two plan kinds; False for any other plan."""
+        if plan.get("notice"):
+            self.stdout.write(f"\n{plan['label']}:")
+            for line in plan["lines"]:
+                self.stdout.write(self.style.WARNING(f"    {line}"))
+            return True
+        if plan.get("evolution"):
+            self.stdout.write(
+                f"\nevolutions: {verb.lower()} {len(plan['changed'])} base link(s), "
+                f"{'would replace' if dry_run else 'replacing'} the conditions of "
+                f"{len(plan['conditions'])}, already current {plan['unchanged']}"
+            )
+            for line in plan["missing"]:
+                self.stdout.write(self.style.WARNING(f"    {line}"))
+            return True
+        return False
 
     def _report(self, plans, dry_run):
         verb = "Would update" if dry_run else "Updating"
         for plan in plans:
             label = plan["label"]
             created = plan.get("created")
+            if self._report_jp_plan(plan, verb, dry_run):
+                continue
             if plan.get("junction"):
                 self.stdout.write(
                     f"\n{label}s: {'would add' if dry_run else 'adding'} {len(created)}, "
@@ -554,8 +831,10 @@ class Command(BaseCommand):
                 if plan.get("ahead"):
                     self.stdout.write(
                         f"    {plan['ahead']} of them are text the client shipped ahead of "
-                        f"release; their rarity and tier are guesses until it defines them"
+                        f"release: the JP client's structure when the JP snapshot has it, "
+                        f"else rarity and tier are guesses until global defines them"
                     )
+                self._report_skill_notes(plan)
             else:
                 self.stdout.write(
                     f"\n{label}s: {verb.lower()} {len(plan['changed'])}, "

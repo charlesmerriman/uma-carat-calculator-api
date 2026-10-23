@@ -26,7 +26,13 @@ class UmaSkill(models.Model):
     unlocks the skill; for `unique` it is the star count at which that unique
     first applies (1 for the weaker one a ★1/★2 character starts with, 3 for
     the one that replaces it); for `innate` it is null. A ★1/★2 outfit therefore
-    has two `unique` rows, and that is correct.
+    has two `unique` rows, and that is correct. For `evolved` it is the
+    awakening rank that unlocks the evolution (3, 5 or 7), or null for an
+    inherited unique's evolution (the game's succession kind).
+
+    AN EVOLVED SKILL BELONGS TO ONE OUTFIT (the game keys it by card id, and
+    two outfits of one character evolve differently), so a skill has at most
+    one `evolved` row: the `one_outfit_per_evolved_skill` constraint.
     """
 
     uma = models.ForeignKey(Uma, on_delete=models.CASCADE, related_name="skills")
@@ -44,6 +50,11 @@ class UmaSkill(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=["uma", "skill", "source"], name="unique_uma_skill_source",
+            ),
+            models.UniqueConstraint(
+                fields=["skill"],
+                condition=models.Q(source="evolved"),
+                name="one_outfit_per_evolved_skill",
             ),
         ]
         verbose_name = "uma skill"

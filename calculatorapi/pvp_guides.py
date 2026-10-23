@@ -19,6 +19,7 @@ from .models import (
     PvpUmaRecommendation,
 )
 from .models.pvp_guide import STYLE_ORDER, PvpStyle
+from .models.skill import shown_q
 
 # The tabs of the guide page. "general" is unfold's own name for the tab that
 # holds a change form's fieldsets, so the Guide tab borrows it and the five
@@ -67,13 +68,13 @@ def guide_queryset():
             "uma_recommendations",
             queryset=PvpUmaRecommendation.objects.select_related("uma"),
         ),
-        # Layer three of the on_global rule (models/pvp_guide.py): a skill an
-        # editor picked that has since lost its description stays in the
-        # database but never reaches the site.
+        # Layer three of the shown rule (models/pvp_guide.py): a skill an
+        # editor picked that a guide may no longer show stays in the database
+        # but never reaches the site.
         Prefetch(
             "skill_recommendations",
             queryset=PvpSkillRecommendation.objects.filter(
-                skill__description__regex=r"\S"
+                shown_q("skill__")
             ).select_related("skill"),
         ),
         "style_notes",

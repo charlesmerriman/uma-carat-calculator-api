@@ -11550,6 +11550,114 @@
   ]
  },
  {
+  "id": 106702,
+  "chara_id": 1067,
+  "chara_name": "Satono Diamond",
+  "name": "[Jade's Prosperity] Satono Diamond",
+  "title": "[Jade's Prosperity]",
+  "default_rarity": 3,
+  "running_style": "late",
+  "growth": {
+   "speed": 15,
+   "stamina": 15,
+   "power": 0,
+   "guts": 0,
+   "wit": 0
+  },
+  "stars": [
+   {
+    "star": 3,
+    "unique_skill_id": 110671,
+    "stats": {
+     "speed": 88,
+     "stamina": 95,
+     "power": 82,
+     "guts": 92,
+     "wit": 93
+    },
+    "max_stats": {
+     "speed": 1200,
+     "stamina": 1200,
+     "power": 1200,
+     "guts": 1200,
+     "wit": 1200
+    },
+    "aptitude": {
+     "turf": 7,
+     "dirt": 1,
+     "short": 1,
+     "mile": 5,
+     "medium": 7,
+     "long": 7,
+     "front": 1,
+     "pace": 6,
+     "late": 7,
+     "end": 4
+    }
+   },
+   {
+    "star": 4,
+    "unique_skill_id": 110671,
+    "stats": {
+     "speed": 98,
+     "stamina": 106,
+     "power": 91,
+     "guts": 102,
+     "wit": 103
+    },
+    "max_stats": {
+     "speed": 1200,
+     "stamina": 1200,
+     "power": 1200,
+     "guts": 1200,
+     "wit": 1200
+    },
+    "aptitude": {
+     "turf": 7,
+     "dirt": 1,
+     "short": 1,
+     "mile": 5,
+     "medium": 7,
+     "long": 7,
+     "front": 1,
+     "pace": 6,
+     "late": 7,
+     "end": 4
+    }
+   },
+   {
+    "star": 5,
+    "unique_skill_id": 110671,
+    "stats": {
+     "speed": 102,
+     "stamina": 118,
+     "power": 102,
+     "guts": 113,
+     "wit": 115
+    },
+    "max_stats": {
+     "speed": 1200,
+     "stamina": 1200,
+     "power": 1200,
+     "guts": 1200,
+     "wit": 1200
+    },
+    "aptitude": {
+     "turf": 7,
+     "dirt": 1,
+     "short": 1,
+     "mile": 5,
+     "medium": 7,
+     "long": 7,
+     "front": 1,
+     "pace": 6,
+     "late": 7,
+     "end": 4
+    }
+   }
+  ]
+ },
+ {
   "id": 106801,
   "chara_id": 1068,
   "chara_name": "Kitasan Black",
@@ -11634,6 +11742,114 @@
      "power": 97,
      "guts": 105,
      "wit": 107
+    },
+    "max_stats": {
+     "speed": 1200,
+     "stamina": 1200,
+     "power": 1200,
+     "guts": 1200,
+     "wit": 1200
+    },
+    "aptitude": {
+     "turf": 7,
+     "dirt": 1,
+     "short": 3,
+     "mile": 5,
+     "medium": 7,
+     "long": 7,
+     "front": 7,
+     "pace": 6,
+     "late": 5,
+     "end": 1
+    }
+   }
+  ]
+ },
+ {
+  "id": 106802,
+  "chara_id": 1068,
+  "chara_name": "Kitasan Black",
+  "name": "[Crane's Ambition] Kitasan Black",
+  "title": "[Crane's Ambition]",
+  "default_rarity": 3,
+  "running_style": "front",
+  "growth": {
+   "speed": 10,
+   "stamina": 0,
+   "power": 10,
+   "guts": 0,
+   "wit": 10
+  },
+  "stars": [
+   {
+    "star": 3,
+    "unique_skill_id": 110681,
+    "stats": {
+     "speed": 99,
+     "stamina": 85,
+     "power": 88,
+     "guts": 82,
+     "wit": 96
+    },
+    "max_stats": {
+     "speed": 1200,
+     "stamina": 1200,
+     "power": 1200,
+     "guts": 1200,
+     "wit": 1200
+    },
+    "aptitude": {
+     "turf": 7,
+     "dirt": 1,
+     "short": 3,
+     "mile": 5,
+     "medium": 7,
+     "long": 7,
+     "front": 7,
+     "pace": 6,
+     "late": 5,
+     "end": 1
+    }
+   },
+   {
+    "star": 4,
+    "unique_skill_id": 110681,
+    "stats": {
+     "speed": 111,
+     "stamina": 94,
+     "power": 98,
+     "guts": 91,
+     "wit": 106
+    },
+    "max_stats": {
+     "speed": 1200,
+     "stamina": 1200,
+     "power": 1200,
+     "guts": 1200,
+     "wit": 1200
+    },
+    "aptitude": {
+     "turf": 7,
+     "dirt": 1,
+     "short": 3,
+     "mile": 5,
+     "medium": 7,
+     "long": 7,
+     "front": 7,
+     "pace": 6,
+     "late": 5,
+     "end": 1
+    }
+   },
+   {
+    "star": 5,
+    "unique_skill_id": 110681,
+    "stats": {
+     "speed": 122,
+     "stamina": 104,
+     "power": 108,
+     "guts": 100,
+     "wit": 116
     },
     "max_stats": {
      "speed": 1200,
@@ -12408,6 +12624,114 @@
      "front": 7,
      "pace": 7,
      "late": 5,
+     "end": 1
+    }
+   }
+  ]
+ },
+ {
+  "id": 109901,
+  "chara_id": 1099,
+  "chara_name": "Hokko Tarumae",
+  "name": "[Starry Lightship] Hokko Tarumae",
+  "title": "[Starry Lightship]",
+  "default_rarity": 3,
+  "running_style": "pace",
+  "growth": {
+   "speed": 10,
+   "stamina": 10,
+   "power": 0,
+   "guts": 0,
+   "wit": 10
+  },
+  "stars": [
+   {
+    "star": 3,
+    "unique_skill_id": 100991,
+    "stats": {
+     "speed": 95,
+     "stamina": 95,
+     "power": 78,
+     "guts": 85,
+     "wit": 97
+    },
+    "max_stats": {
+     "speed": 1200,
+     "stamina": 1200,
+     "power": 1200,
+     "guts": 1200,
+     "wit": 1200
+    },
+    "aptitude": {
+     "turf": 1,
+     "dirt": 7,
+     "short": 2,
+     "mile": 7,
+     "medium": 7,
+     "long": 3,
+     "front": 6,
+     "pace": 7,
+     "late": 1,
+     "end": 1
+    }
+   },
+   {
+    "star": 4,
+    "unique_skill_id": 100991,
+    "stats": {
+     "speed": 105,
+     "stamina": 106,
+     "power": 87,
+     "guts": 94,
+     "wit": 108
+    },
+    "max_stats": {
+     "speed": 1200,
+     "stamina": 1200,
+     "power": 1200,
+     "guts": 1200,
+     "wit": 1200
+    },
+    "aptitude": {
+     "turf": 1,
+     "dirt": 7,
+     "short": 2,
+     "mile": 7,
+     "medium": 7,
+     "long": 3,
+     "front": 6,
+     "pace": 7,
+     "late": 1,
+     "end": 1
+    }
+   },
+   {
+    "star": 5,
+    "unique_skill_id": 100991,
+    "stats": {
+     "speed": 111,
+     "stamina": 118,
+     "power": 97,
+     "guts": 105,
+     "wit": 119
+    },
+    "max_stats": {
+     "speed": 1200,
+     "stamina": 1200,
+     "power": 1200,
+     "guts": 1200,
+     "wit": 1200
+    },
+    "aptitude": {
+     "turf": 1,
+     "dirt": 7,
+     "short": 2,
+     "mile": 7,
+     "medium": 7,
+     "long": 3,
+     "front": 6,
+     "pace": 7,
+     "late": 1,
      "end": 1
     }
    }

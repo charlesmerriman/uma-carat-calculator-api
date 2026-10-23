@@ -55,7 +55,7 @@ from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
 from django.utils import timezone
-from django.utils.html import format_html
+from django.utils.html import format_html, format_html_join
 # django-unfold themes the admin, but only for admins that inherit its base
 # classes — a plain admin.ModelAdmin would render unstyled under unfold's
 # templates. Hence every ModelAdmin/TabularInline below extends unfold's.
@@ -73,7 +73,7 @@ from .admin_image_picker import SpacesImagePickerMixin
 from .admin_pvp import PVP_GUIDE_FIELDSET, PicturePickersMixin, PvpGuideLinkMixin
 # Importing admin_gallery registers the gallery's moderation pages.
 from . import admin_gallery  # noqa: F401  pylint: disable=unused-import
-from . import digitalocean_api, patreon_api
+from . import digitalocean_api, patreon_api, skill_text
 from .admin_patreon_import import (
     PatreonCsvImportForm,
     PatreonSyncForm,
@@ -82,7 +82,8 @@ from .admin_patreon_import import (
 )
 from .predictions import GAME_EVENT_END_DATE_BUFFER
 from .models import (
-    CustomUser, Uma, Skill, UmaSkill, SupportCardSkill, SupportCard, UserPlannedBanner,
+    CustomUser, Uma, Skill, SkillAlias, SkillEvolutionCondition, UmaSkill, SupportCardSkill,
+    SupportCard, UserPlannedBanner,
     Plan, IncomeProfile,
     TeamTrialsRank, ClubRank, ChampionsMeetingRank, LeagueOfHeroesRank,
     ChampionsMeetingRankReward, LeagueOfHeroesRankReward,
@@ -200,6 +201,28 @@ class SupportCardSkillInline(PicturePickersMixin, TabularInline):
     autocomplete_fields = ("skill",)
     fields = ("skill", "source", "notes")
     extra = 0
+
+
+class SkillAliasInline(TabularInline):
+    """Older names of a skill, so a guide that wrote one still links. Added by
+    the import whenever it replaces a name; an editor may add one too."""
+    model = SkillAlias
+    fields = ("name",)
+    extra = 0
+
+
+class SkillEvolutionConditionInline(TabularInline):
+    """What unlocks an evolved skill. Game data, replaced by every import, so
+    read-only here."""
+    model = SkillEvolutionCondition
+    fields = ("game_id", "text", "translated_text", "jp_text", "num", "sub_num",
+              "timing_type", "count_type")
+    readonly_fields = fields
+    extra = 0
+    can_delete = False
+
+    def has_add_permission(self, request, obj=None):
+        return False
 
 
 class ChangelogChangeInline(TabularInline):
@@ -527,7 +550,7 @@ class UmaAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
     # required: autocomplete source for banner inlines. `=game_id` is an exact
     # match, so typing an id finds one row rather than every name containing it.
     search_fields = ("name", "=game_id")
-    readonly_fields = ("image_preview", "borderless_preview")
+    readonly_fields = ("image_preview", "borderless_preview", "is_on_global")
     fieldsets = (
         (None, {"fields": (
             "name", "game_id", "image", "image_preview",
@@ -553,7 +576,7 @@ class UmaAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
                 "so edits here do not stick. Fix the source instead."
             ),
             "fields": (
-                "title", "running_style",
+                "is_on_global", "title", "running_style",
                 ("apt_turf", "apt_dirt"),
                 ("apt_short", "apt_mile", "apt_medium", "apt_long"),
                 ("apt_front", "apt_pace", "apt_late", "apt_end"),
@@ -574,9 +597,29 @@ class UmaAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
         return "—"
 
 
+def _phrases_html(phrases, joiner):
+    """Readable phrases, with a raw one (the game's own code) in a code box."""
+    return format_html_join(
+        joiner, "{}",
+        ((format_html("<code>{}</code>", item["text"]) if item["raw"] else item["text"],)
+         for item in phrases),
+    )
+
+
+def _condition_html(condition):
+    """skill_text's {"all", "any"} as one line: all of these, and one of those."""
+    parts = [_phrases_html(condition["all"], ", ")] if condition["all"] else []
+    if condition["any"]:
+        parts.append(format_html("and one of: {}", format_html_join(
+            " <b>or</b> ", "({})", ((_phrases_html(alt, ", "),) for alt in condition["any"]),
+        )))
+    return format_html_join(", ", "{}", ((part,) for part in parts))
+
+
 class OnGlobalFilter(admin.SimpleListFilter):
-    """Skills by whether they have released on global. The rule is SkillQuerySet's."""
-    title = "on global"
+    """Skills by whether a player may be shown them. The rule is SkillQuerySet's;
+    the `availability` filter beside it says where the game has each one."""
+    title = "shown to players"
     parameter_name = "on_global"
 
     def lookups(self, request, model_admin):
@@ -597,27 +640,52 @@ class SkillAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
     the two editor-owned columns (image, admin comments). "Versions" answers
     "is this the gold version of something" from group_id without a second table.
     """
+    inlines = (SkillAliasInline, SkillEvolutionConditionInline)
     list_display = (
-        "image_preview", "name", "game_id", "rarity", "tier", "cost", "versions", "on_global",
+        "image_preview", "label", "game_id", "rarity", "tier", "cost", "versions",
+        "availability", "on_global",
     )
-    list_display_links = ("name",)
-    list_filter = ("rarity", "tier", OnGlobalFilter)
+    list_display_links = ("label",)
+    list_filter = ("availability", "rarity", "tier", OnGlobalFilter)
     ordering = ("name",)
-    search_fields = ("name", "=game_id", "=group_id")
-    readonly_fields = ("image_preview", "versions", "on_global")
+    # Every name a skill has had, so an editor can find it by any of them.
+    search_fields = (
+        "name", "translated_name", "jp_name", "aliases__name", "=game_id", "=group_id",
+    )
+    readonly_fields = (
+        "image_preview", "versions", "on_global", "availability",
+        "translated_name", "translated_description", "jp_name", "jp_description",
+        "effects", "evolution_scenario", "readable", "sources",
+    )
     autocomplete_fields = ("evolves_from",)
     list_select_related = ("evolves_from",)
     fieldsets = (
         (None, {"fields": ("name", "game_id", "image", "image_preview", "admin_comments")}),
         ("Text", {
             "description": (
-                "A skill with no description has not released on global yet. It "
-                "stays here in the admin and is never shown to players. A skill "
-                "with a description but no icon id is one the game has announced "
-                "but not released: guides may use it already, and its rarity and "
-                "tier below are guesses you may correct until it releases."
+                "Global's English comes first. Where the game has this skill is "
+                "\"availability\", set by the import: a skill only announced for "
+                "global (no icon id yet) may be used by guides already, and its "
+                "rarity and tier below are guesses you may correct until it "
+                "releases. A JP-only skill stays here in the admin and is never "
+                "shown to players."
             ),
-            "fields": ("description", "description_detailed", "on_global"),
+            "fields": ("description", "description_detailed", "availability", "on_global"),
+        }),
+        ("In plain English", {
+            "description": (
+                "Built from the game data below, the way the site will show it. A grey "
+                "code box is a part nobody has confirmed the meaning of yet."
+            ),
+            "fields": ("readable", "sources"),
+        }),
+        ("Translation and Japanese", {
+            "classes": ("collapse",),
+            "description": (
+                "UmaTL's English and the JP client's text, from the import. A player "
+                "sees the translation only while global has no text."
+            ),
+            "fields": ("translated_name", "translated_description", "jp_name", "jp_description"),
         }),
         ("Versions", {
             "description": (
@@ -629,13 +697,68 @@ class SkillAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
         ("Game data", {
             "classes": ("collapse",),
             "description": "Filled by the game-data import and overwritten by the next one.",
-            "fields": ("icon_id", "cost", "precondition", "condition"),
+            "fields": ("icon_id", "cost", "precondition", "condition", "effects",
+                       "evolution_scenario"),
         }),
     )
 
-    @admin.display(description="On global", boolean=True)
+    @admin.display(description="Shown", boolean=True)
     def on_global(self, obj):
         return obj.is_on_global
+
+    @admin.display(description="When it activates, and what it does")
+    def readable(self, obj):
+        if obj.pk is None:
+            return "–"
+        described = skill_text.describe(obj, skill_text.context_from_database())
+        rows = []
+        if described["wit_check"]:
+            rows.append(format_html("<p>{}</p>", "Rolls against Wit before it fires."))
+        for number, slot in enumerate(described["slots"], start=1):
+            label = f"Part {number}: " if len(described["slots"]) > 1 else ""
+            if slot["after"]["all"] or slot["after"]["any"]:
+                rows.append(format_html("<p><b>{}Only after</b> {}</p>", label,
+                                        _condition_html(slot["after"])))
+            rows.append(format_html("<p><b>{}When</b> {}</p>", label,
+                                    _condition_html(slot["when"]) or "any time"))
+            timing = [text for text in (slot["duration"], slot["cooldown"]) if text]
+            rows.append(format_html(
+                "<p><b>{}Does</b> {}{}</p>", label,
+                _phrases_html(slot["effects"], "; "),
+                f" ({', '.join(timing)})" if timing else "",
+            ))
+        return format_html_join("", "{}", ((row,) for row in rows))
+
+    @admin.display(description="Where it comes from")
+    def sources(self, obj):
+        if obj.pk is None:
+            return "–"
+        lines = []
+        for row in obj.umas.select_related("uma").order_by("source", "uma__name"):
+            level = f", level {row.level}" if row.level is not None else ""
+            lines.append(format_html(
+                '<a href="{}">{}</a> ({}{})',
+                reverse("admin:calculatorapi_uma_change", args=[row.uma_id]),
+                row.uma.name, row.get_source_display().lower(), level,
+            ))
+        for row in obj.support_cards.select_related("support_card").order_by("source"):
+            lines.append(format_html(
+                '<a href="{}">{}</a> ({})',
+                reverse("admin:calculatorapi_supportcard_change", args=[row.support_card_id]),
+                row.support_card.name, row.get_source_display().lower(),
+            ))
+        if obj.evolves_from_id:
+            lines.append(format_html("Evolves from {}", obj.evolves_from.admin_label))
+        for evolution in obj.evolutions.all():
+            lines.append(format_html("Evolves into {}", evolution.admin_label))
+        if not lines:
+            return "–"
+        return format_html_join("", "<div>{}</div>", ((line,) for line in lines))
+
+    @admin.display(description="Name", ordering="name")
+    def label(self, obj):
+        # A JP-only row has no global name; it is listed by its Japanese one.
+        return obj.admin_label
 
     def get_changelist_instance(self, request):
         # "Versions" names each row's siblings. One query for the page's rows
@@ -681,7 +804,7 @@ class SupportCardAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
     list_filter = ("card_type", "rarity", PURPOSE_FILTER)
     ordering = ("name",)
     search_fields = ("name", "=game_id")  # required: autocomplete source for banner inlines
-    readonly_fields = ("image_preview",)
+    readonly_fields = ("image_preview", "is_on_global")
     # Explicit since purpose arrived: Django's every-field default form had
     # nowhere to say that one of these boxes is public.
     fieldsets = (
@@ -693,7 +816,8 @@ class SupportCardAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
                 "Filled by the game-data import and overwritten by the next one, "
                 "so edits here do not stick. Fix the source instead."
             ),
-            "fields": ("title", "card_type", "rarity", "character_id", "group_members"),
+            "fields": ("is_on_global", "title", "card_type", "rarity", "character_id",
+                       "group_members"),
         }),
     )
 

@@ -340,7 +340,7 @@ def pvp_guide_load_sheet(request, guide_id):
 def _skill_row(skill):
     return {
         "id": skill.id,
-        "name": skill.name,
+        "name": skill.shown_name,
         "version": skill.version_label,
         "image": image_url(skill.image.name if skill.image else ""),
     }

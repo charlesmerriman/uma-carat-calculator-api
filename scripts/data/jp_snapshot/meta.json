@@ -1,0 +1,16 @@
+{
+ "region": "jp",
+ "extracted_at": "2026-10-23T18:27:56+00:00",
+ "mdb_size_bytes": 34856960,
+ "mdb_modified_at": "2026-10-23T18:27:49+00:00",
+ "counts": {
+  "skills": 2194,
+  "cards": 270,
+  "card_skills": 2194,
+  "support_cards": 563,
+  "support_hints": 4015,
+  "evolutions_outfit": 631,
+  "evolutions_scenario": 47,
+  "evolutions_succession": 3
+ }
+}

@@ -1,7 +1,7 @@
 """
 fetch_skill_icons.py
 
-Downloads the 63 generic skill icons and, on request, uploads them to the
+Downloads the generic skill icons (63 global, 125 with JP's) and, on request, uploads them to the
 DigitalOcean Space under `skills/<icon_id>.png`, which is where
 `manage.py link_skill_images` expects them.
 
@@ -25,10 +25,14 @@ import argparse
 import json
 import os
 import time
+import urllib.error
 import urllib.request
 from pathlib import Path
 
 SNAPSHOT_SKILLS = Path(__file__).parent / "data" / "master_snapshot" / "skills.json"
+# JP's skills use icons global has none of yet (evolved skills' pink icons,
+# 2026-10-23), so its snapshot's ids are fetched too when it is there.
+JP_SNAPSHOT_SKILLS = Path(__file__).parent / "data" / "jp_snapshot" / "skills.json"
 DEFAULT_OUT = Path(__file__).parent / "data" / "skill_icons"
 SOURCE_URL = "https://gametora.com/images/umamusume/skill_icons/utx_ico_skill_{icon_id}.png"
 SPACE_PREFIX = "skills/"
@@ -36,13 +40,17 @@ USER_AGENT = "Mozilla/5.0 (umacaratcalculator.com asset fetch)"
 
 
 def icon_ids():
-    skills = json.loads(SNAPSHOT_SKILLS.read_text(encoding="utf-8"))
-    return sorted({skill["icon_id"] for skill in skills})
+    """Every icon id a global or JP skill uses. 0 is no icon at all."""
+    ids = set()
+    for path in (SNAPSHOT_SKILLS, JP_SNAPSHOT_SKILLS):
+        if path.is_file():
+            ids |= {skill["icon_id"] for skill in json.loads(path.read_text(encoding="utf-8"))}
+    return sorted(ids - {0, None})
 
 
 def download(ids, out_dir):
     out_dir.mkdir(parents=True, exist_ok=True)
-    fetched, kept = 0, 0
+    fetched, kept, missing = 0, 0, []
     for icon_id in ids:
         target = out_dir / f"{icon_id}.png"
         if target.is_file() and target.stat().st_size > 0:
@@ -51,11 +59,21 @@ def download(ids, out_dir):
         request = urllib.request.Request(
             SOURCE_URL.format(icon_id=icon_id), headers={"User-Agent": USER_AGENT},
         )
-        with urllib.request.urlopen(request, timeout=30) as response:
-            target.write_bytes(response.read())
+        try:
+            with urllib.request.urlopen(request, timeout=30) as response:
+                target.write_bytes(response.read())
+        except urllib.error.HTTPError as exc:
+            # The source lacks a few new icons; report them and go on, so one
+            # gap doesn't stop the rest.
+            if exc.code != 404:
+                raise
+            missing.append(icon_id)
+            continue
         fetched += 1
-        time.sleep(0.2)  # be polite; 63 files at most
+        time.sleep(0.2)  # be polite; ~125 files at most
     print(f"icons: {fetched} downloaded, {kept} already present, in {out_dir}")
+    if missing:
+        print(f"not at the source ({len(missing)}): {', '.join(map(str, missing))}")
 
 
 def upload(ids, out_dir):
@@ -82,6 +100,9 @@ def upload(ids, out_dir):
         key = f"{SPACE_PREFIX}{icon_id}.png"
         if key in existing:
             kept += 1
+            continue
+        # An icon the source lacked was never downloaded (download() names them).
+        if not (out_dir / f"{icon_id}.png").is_file():
             continue
         s3.upload_file(
             str(out_dir / f"{icon_id}.png"), bucket, key,

@@ -455,10 +455,21 @@ class SkillMatcher:
 
     def __init__(self):
         self.by_name = {}
-        # On-global first, then the lowest game id, so a duplicate name picks a
-        # stable, showable row.
-        for skill in Skill.objects.on_global().order_by("game_id"):
-            self.by_name.setdefault(normalise(skill.name), skill)
+        # Every skill a guide may show, JP-only ones included: global's name
+        # first, then the translation, then old names kept as aliases, and the
+        # lowest game id within each, so a duplicate name picks a stable row.
+        # The sheet writes upcoming JP skills by their fan names, which is how
+        # a re-run of "Load from the sheet" recovers what the first load dropped.
+        shown = list(Skill.objects.shown().order_by("game_id").prefetch_related("aliases"))
+        for names in (
+            lambda skill: [skill.name],
+            lambda skill: [skill.translated_name],
+            lambda skill: [alias.name for alias in skill.aliases.all()],
+        ):
+            for skill in shown:
+                for name in names(skill):
+                    if name:
+                        self.by_name.setdefault(normalise(name), skill)
         self.names = list(self.by_name)
 
     def _one(self, name):
@@ -536,8 +547,8 @@ class ProseLinker:
 
     def __init__(self):
         names = {}
-        for skill in Skill.objects.on_global().order_by("game_id"):
-            name = skill.name.strip()
+        for skill in Skill.objects.shown().order_by("game_id").only("name", "translated_name"):
+            name = skill.shown_name.strip()
             if re.search(r"[○◎×]", name) or len(name) < 5 or name.casefold() in LINK_STOPLIST:
                 continue
             names.setdefault(name.casefold(), name)

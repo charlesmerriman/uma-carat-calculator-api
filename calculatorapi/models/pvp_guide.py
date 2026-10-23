@@ -46,7 +46,7 @@ from django.db import models
 from .champions_meeting import ChampionsMeeting
 from .league_of_heroes import LeagueOfHeroes
 from .scenario import Scenario
-from .skill import Skill
+from .skill import Skill, shown_q
 from .support_card import SupportCard
 from .uma import Uma
 
@@ -61,8 +61,9 @@ HIGHLIGHT_HELP = (
 
 # [[Skill name]]: a mention of a skill, linked on the site to the Skill row of
 # that name (its icon and the game's description). Matched ignoring case
-# against skills on global only; saving refuses a name that matches none
-# (SkillMentionsMixin), so every mention a visitor sees resolves.
+# against every skill a guide may show (Skill.objects.shown(): global's name,
+# a translation, or an old name kept as an alias); saving refuses a name that
+# matches none (SkillMentionsMixin), so every mention a visitor sees resolves.
 SKILL_MENTION = re.compile(r"\[\[([^\[\]\n]+)\]\]")
 
 
@@ -72,20 +73,17 @@ def find_skill_mentions(text):
 
 
 def unknown_skill_mentions(names):
-    """The names that match no skill on global, ignoring case."""
-    wanted = {name.casefold(): name for name in names if name}
+    """The names that match no skill a guide may show, ignoring case."""
+    wanted = {name.lower(): name for name in names if name}
     if not wanted:
         return []
-    known = {
-        name.casefold()
-        for name in Skill.objects.on_global().values_list("name", flat=True)
-    }
+    known = Skill.objects.shown().all_names()
     return [name for key, name in wanted.items() if key not in known]
 
 
 def _suggest(name):
-    """Up to three global skill names close to a mistyped one."""
-    names = list(Skill.objects.on_global().values_list("name", flat=True))
+    """Up to three skill names close to a mistyped one: names a player reads."""
+    names = [skill.shown_name for skill in Skill.objects.shown().only("name", "translated_name")]
     by_key = {candidate.casefold(): candidate for candidate in names}
     close = difflib.get_close_matches(name.casefold(), list(by_key), n=3, cutoff=0.6)
     return [by_key[key] for key in close]
@@ -101,7 +99,7 @@ def mention_error(unknown):
         suggestions = _suggest(name)
         hint = f" (did you mean {', '.join(suggestions)}?)" if suggestions else ""
         parts.append(f"[[{name}]]{hint}")
-    return "No skill on global has this name: " + "; ".join(parts)
+    return "No skill has this name: " + "; ".join(parts)
 
 
 class SkillMentionsMixin:  # pylint: disable=too-few-public-methods
@@ -426,14 +424,16 @@ class PvpSkillRecommendation(SkillMentionsMixin, models.Model):
         validators=[MaxValueValidator(4)],
         help_text="0 (take first) to 4. Leave blank if the guide has no tiers.",
     )
-    # Layer one of the on_global rule: the admin's autocomplete and form only
-    # offer skills with an English description. Same regex as on_global().
+    # Layer one of the shown rule: the admin's autocomplete and form only
+    # offer skills a guide may show, JP-only ones included (they are tagged
+    # on the site). The rule itself, not a copy: Django calls shown_q() when
+    # it builds the choices.
     skill = models.ForeignKey(
         Skill,
         on_delete=models.CASCADE,
         related_name="pvp_recommendations",
-        limit_choices_to=models.Q(description__regex=r"\S"),
-        help_text="Only skills already on global can be picked.",
+        limit_choices_to=shown_q,
+        help_text="Any skill with an English name. A JP-only one is tagged on the site.",
     )
     note = models.CharField(max_length=200, blank=True, help_text=HIGHLIGHT_HELP)
     order = _order_field()
@@ -451,8 +451,8 @@ class PvpSkillRecommendation(SkillMentionsMixin, models.Model):
 
     def clean(self):
         # Layer two, for a save that reached past the form's choices.
-        if self.skill_id is not None and not self.skill.is_on_global:
-            raise ValidationError({"skill": "That skill is not on global yet."})
+        if self.skill_id is not None and not self.skill.is_shown:
+            raise ValidationError({"skill": "That skill has no English name yet."})
         super().clean()
 
     def __str__(self):

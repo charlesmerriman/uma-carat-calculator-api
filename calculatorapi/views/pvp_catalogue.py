@@ -28,11 +28,13 @@ only cards that were on a banner, with no skills or aptitudes at all. This is
 the one route that has both, and it is big (~500 KB raw, ~100 KB gzipped),
 which is why it is its own lazily-fetched, cached route.
 
-`on_global` says the card is in the game on global today: it has skill links,
-which import_game_data creates only for cards in the global client's
-snapshot (that import is global-only by construction). The team builder uses
-it for cards on no banner, the launch roster and event rewards, which have no
-release date: on global means out, otherwise "Not on global yet".
+`on_global` says the card is in the game on global today: the stored
+`is_on_global`, which import_game_data sets exactly for cards in the global
+client's snapshot. (Until 2026-10-23 it was "has skill links"; the JP snapshot
+now gives JP-only outfits and cards links too.) The team builder uses it for
+cards on no banner, the launch roster and event rewards, which have no release
+date: on global means out, otherwise "Not on global yet". Links are shipped
+for on-global cards only, so the builder never counts a JP card's skills.
 
 Built from plain values() queries rather than serializers: five queries for
 the whole catalogue, and a few thousand junction rows that a nested
@@ -87,13 +89,9 @@ def build_catalogue():
             "version": skill.version_label,
         })
     global_ids = {skill["id"] for skill in skills}
-    # Cards with ANY skill link, global skill or not: the import writes links
-    # only for cards in the global snapshot. See the module docstring.
-    umas_on_global = set(UmaSkill.objects.values_list("uma_id", flat=True).distinct())
-    cards_on_global = set(SupportCardSkill.objects.values_list("support_card_id", flat=True).distinct())
 
     uma_skills = defaultdict(list)
-    for row in UmaSkill.objects.filter(skill_id__in=global_ids).values(
+    for row in UmaSkill.objects.filter(skill_id__in=global_ids, uma__is_on_global=True).values(
         "uma_id", "skill_id", "source", "level"
     ).order_by("uma_id", "source", "level", "skill_id"):
         uma_skills[row["uma_id"]].append(
@@ -101,7 +99,9 @@ def build_catalogue():
         )
 
     card_skills = defaultdict(list)
-    for row in SupportCardSkill.objects.filter(skill_id__in=global_ids).values(
+    for row in SupportCardSkill.objects.filter(
+        skill_id__in=global_ids, support_card__is_on_global=True,
+    ).values(
         "support_card_id", "skill_id", "source"
     ).order_by("support_card_id", "source", "skill_id"):
         card_skills[row["support_card_id"]].append(
@@ -125,7 +125,7 @@ def build_catalogue():
             # CM rule). The client checks with this; pvp_teams.py re-checks.
             "character_id": uma.character_id,
             "is_variant": uma.is_costume_variant,
-            "on_global": uma.id in umas_on_global,
+            "on_global": uma.is_on_global,
             "apt": {key: getattr(uma, f"apt_{key}") for key in APTITUDE_FIELDS},
             "skills": uma_skills.get(uma.id, []),
         })
@@ -136,10 +136,11 @@ def build_catalogue():
         .order_by("name", "id")
         # group_members: a group card's umas, by name, which the builder's
         # deck rules treat as that many cards. [] on every other card.
-        .values("id", "name", "game_id", "image", "card_type", "rarity", "title", "group_members")
+        .values("id", "name", "game_id", "image", "card_type", "rarity", "title", "group_members",
+                "is_on_global")
     ):
         card["image"] = _url(card["image"])
-        card["on_global"] = card["id"] in cards_on_global
+        card["on_global"] = card.pop("is_on_global")
         card["skills"] = card_skills.get(card["id"], [])
         support_cards.append(card)
 

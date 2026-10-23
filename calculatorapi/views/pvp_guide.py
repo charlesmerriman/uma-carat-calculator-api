@@ -22,12 +22,11 @@ on the client at all yet.
 """
 
 from django.db.models import Count, Exists, OuterRef
-from django.db.models.functions import Lower
 from rest_framework import permissions, serializers
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
-from calculatorapi import pvp_guide_editing
+from calculatorapi import pvp_guide_editing, skill_text
 from calculatorapi.pvp_guides import guide_queryset
 from calculatorapi.models import (
     GalleryComment,
@@ -43,6 +42,7 @@ from calculatorapi.models import (
     Scenario,
     Skill,
     SupportCard,
+    SupportCardSkill,
     Uma,
     UmaSkill,
     UmaSkillSource,
@@ -103,6 +103,9 @@ class _SkillVersionSerializer(serializers.ModelSerializer):
     "◎ gold", "evolved"); `tier` is the game's group_rate behind it. The
     colour is `rarity`'s: a ○/◎ pair's ◎ is tier 2 and its gold tier 3."""
 
+    # The name and text a player reads: global's, else UmaTL's.
+    name = serializers.CharField(source="shown_name")
+    description = serializers.CharField(source="shown_description")
     version = serializers.CharField(source="version_label")
     is_evolved = serializers.SerializerMethodField()
 
@@ -129,13 +132,31 @@ class _SkillSerializer(serializers.ModelSerializer):
     version = serializers.CharField(source="version_label")
     is_evolved = serializers.SerializerMethodField()
     versions = serializers.SerializerMethodField()
+    # Global's name and text, else UmaTL's (Skill.shown_name). Where the
+    # translation shows, `uses_translation` is true and the site credits UmaTL.
+    # `availability` (global / announced / jp) is what the "JP only" tag reads.
+    name = serializers.CharField(source="shown_name")
+    description = serializers.CharField(source="shown_description")
+    uses_translation = serializers.BooleanField()
+    # When it fires and what it does, in plain English (skill_text.describe),
+    # and where a player gets it (outfits and cards, a few of each with counts),
+    # both built for the whole guide at once (context["text"], ["sources"]).
+    readable = serializers.SerializerMethodField()
+    sources = serializers.SerializerMethodField()
 
     class Meta:
         model = Skill
         fields = (
             "id", "name", "description", "image", "rarity", "unique_of",
             "version", "tier", "is_evolved", "versions",
+            "availability", "uses_translation", "readable", "sources",
         )
+
+    def get_readable(self, obj):
+        return skill_text.describe(obj, self.context["text"])
+
+    def get_sources(self, obj):
+        return self.context["sources"].get(obj.id, EMPTY_SOURCES)
 
     def get_unique_of(self, obj):
         return self.context["unique_of"].get(obj.id)
@@ -266,39 +287,82 @@ def _guide_texts(guide):
         yield row.note
 
 
-def _mentioned_skills(guide):
-    """The skills the guide's text mentions as [[name]], keyed by lower-case name.
+def _mentioned_skills(guide, skills=None):
+    """{lower-case name as written: skill} for every [[name]] in the guide.
 
-    One query, matched ignoring case against skills on global only (the same
-    rule the admin's save check uses), so a mention that has since gone stale
-    simply drops out and the client renders its name as plain text.
+    Matched the way the save check matches (Skill.objects.shown().resolve_names:
+    global's name, the translation, or an old name kept as an alias), so a guide
+    that wrote a fan name keeps linking after global names the skill, and a
+    mention that has since gone stale drops out and renders as plain text.
     """
-    names = {name.lower() for text in _guide_texts(guide) for name in find_skill_mentions(text)}
-    if not names:
-        return []
-    return list(
-        Skill.objects.on_global()
-        .annotate(lower_name=Lower("name"))
-        .filter(lower_name__in=names)
-        .order_by("game_id")
-    )
+    names = {name for text in _guide_texts(guide) for name in find_skill_mentions(text)}
+    skills = Skill.objects.shown() if skills is None else skills
+    return skills.select_related("evolves_from").resolve_names(names)
+
+
+# A skill with no outfit or card: what `sources` holds for it.
+EMPTY_SOURCES = {"umas": [], "uma_count": 0, "cards": [], "card_count": 0}
+# A hover card names a few of each and counts the rest; the Skills page lists all.
+SOURCES_SHOWN = 4
+
+
+def _sources(skill_ids):
+    """
+    {skill id: where a player gets it}, two queries for the whole guide:
+    {"umas": [{"name", "source", "level", "on_global"}], "uma_count",
+     "cards": [{"name", "source", "on_global"}], "card_count"}.
+    Outfits and cards on global come first, so a player sees what they can get.
+    """
+    found = {}
+
+    def entry(skill_id):
+        return found.setdefault(skill_id, {"umas": [], "uma_count": 0, "cards": [], "card_count": 0})
+
+    for row in UmaSkill.objects.filter(skill_id__in=skill_ids).select_related("uma").order_by(
+        "-uma__is_on_global", "source", "uma__name",
+    ):
+        item = entry(row.skill_id)
+        item["uma_count"] += 1
+        if len(item["umas"]) < SOURCES_SHOWN:
+            item["umas"].append({"name": row.uma.name, "source": row.source, "level": row.level,
+                                 "on_global": row.uma.is_on_global})
+    for row in SupportCardSkill.objects.filter(skill_id__in=skill_ids).select_related(
+        "support_card",
+    ).order_by("-support_card__is_on_global", "source", "support_card__name"):
+        item = entry(row.skill_id)
+        item["card_count"] += 1
+        if len(item["cards"]) < SOURCES_SHOWN:
+            item["cards"].append({"name": row.support_card.name, "source": row.source,
+                                  "on_global": row.support_card.is_on_global})
+    return found
 
 
 def serialize_guide(guide, request=None):
     """The response body for one guide. `request` makes image URLs absolute."""
-    skill_rows = sorted(guide.skill_recommendations.all(), key=_skill_key)
-    mentioned = _mentioned_skills(guide)
-    skills = [row.skill for row in skill_rows] + mentioned
+    # The shelved skills work (pvp_guide_editing.sees_skills_preview): anyone
+    # but a guide editor gets the guide as before it, global skills only, so a
+    # JP-only skill an editor has added never reaches a player yet.
+    preview = pvp_guide_editing.sees_skills_preview(getattr(request, "user", None))
+    skill_rows = sorted(
+        (row for row in guide.skill_recommendations.all() if preview or row.skill.is_on_global),
+        key=_skill_key,
+    )
+    mentioned = _mentioned_skills(guide, None if preview else Skill.objects.on_global())
+    skills = [row.skill for row in skill_rows] + list(mentioned.values())
+    skill_ids = [skill.id for skill in skills]
     context = {
         "request": request,
-        "unique_of": _unique_of([skill.id for skill in skills]),
+        "unique_of": _unique_of(skill_ids),
         "versions": skill_families(skills),
+        "text": skill_text.context_from_database(),
+        "sources": _sources(skill_ids),
     }
-    # The first skill of a name wins (lowest game id), so a duplicate name in
-    # the game data resolves the same way on every request.
-    mentions = {}
-    for skill in mentioned:
-        mentions.setdefault(skill.lower_name, _SkillSerializer(skill, context=context).data)
+    # resolve_names already picked one skill per written name (global's name,
+    # then the translation, then an alias; lowest game id), so a duplicate
+    # name resolves the same way on every request.
+    mentions = {
+        name: _SkillSerializer(skill, context=context).data for name, skill in mentioned.items()
+    }
 
     def many(serializer, rows):
         return serializer(rows, many=True, context=context).data

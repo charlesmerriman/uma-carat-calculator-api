@@ -1,0 +1,5660 @@
+[
+ {
+  "id": 10001,
+  "chara_id": 1001,
+  "chara_name": "スペシャルウィーク",
+  "name": "[トレセン学園]スペシャルウィーク",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "guts",
+  "skill_set_id": 9081001
+ },
+ {
+  "id": 10002,
+  "chara_id": 1002,
+  "chara_name": "サイレンススズカ",
+  "name": "[トレセン学園]サイレンススズカ",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "speed",
+  "skill_set_id": 9081002
+ },
+ {
+  "id": 10003,
+  "chara_id": 1003,
+  "chara_name": "トウカイテイオー",
+  "name": "[トレセン学園]トウカイテイオー",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "speed",
+  "skill_set_id": 9081003
+ },
+ {
+  "id": 10004,
+  "chara_id": 1004,
+  "chara_name": "マルゼンスキー",
+  "name": "[トレセン学園]マルゼンスキー",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "speed",
+  "skill_set_id": 9081004
+ },
+ {
+  "id": 10005,
+  "chara_id": 1006,
+  "chara_name": "オグリキャップ",
+  "name": "[トレセン学園]オグリキャップ",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "power",
+  "skill_set_id": 9081006
+ },
+ {
+  "id": 10006,
+  "chara_id": 1007,
+  "chara_name": "ゴールドシップ",
+  "name": "[トレセン学園]ゴールドシップ",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "stamina",
+  "skill_set_id": 9081007
+ },
+ {
+  "id": 10007,
+  "chara_id": 1008,
+  "chara_name": "ウオッカ",
+  "name": "[トレセン学園]ウオッカ",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "power",
+  "skill_set_id": 9081008
+ },
+ {
+  "id": 10008,
+  "chara_id": 1010,
+  "chara_name": "タイキシャトル",
+  "name": "[トレセン学園]タイキシャトル",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "speed",
+  "skill_set_id": 9081010
+ },
+ {
+  "id": 10009,
+  "chara_id": 1011,
+  "chara_name": "グラスワンダー",
+  "name": "[トレセン学園]グラスワンダー",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "guts",
+  "skill_set_id": 9081011
+ },
+ {
+  "id": 10010,
+  "chara_id": 1013,
+  "chara_name": "メジロマックイーン",
+  "name": "[トレセン学園]メジロマックイーン",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "stamina",
+  "skill_set_id": 9081013
+ },
+ {
+  "id": 10011,
+  "chara_id": 1014,
+  "chara_name": "エルコンドルパサー",
+  "name": "[トレセン学園]エルコンドルパサー",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "power",
+  "skill_set_id": 9081014
+ },
+ {
+  "id": 10012,
+  "chara_id": 1015,
+  "chara_name": "テイエムオペラオー",
+  "name": "[トレセン学園]テイエムオペラオー",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "stamina",
+  "skill_set_id": 9081015
+ },
+ {
+  "id": 10013,
+  "chara_id": 1017,
+  "chara_name": "シンボリルドルフ",
+  "name": "[トレセン学園]シンボリルドルフ",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "wit",
+  "skill_set_id": 9081017
+ },
+ {
+  "id": 10014,
+  "chara_id": 1020,
+  "chara_name": "セイウンスカイ",
+  "name": "[トレセン学園]セイウンスカイ",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "stamina",
+  "skill_set_id": 9081020
+ },
+ {
+  "id": 10015,
+  "chara_id": 1030,
+  "chara_name": "ライスシャワー",
+  "name": "[トレセン学園]ライスシャワー",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "stamina",
+  "skill_set_id": 9081030
+ },
+ {
+  "id": 10016,
+  "chara_id": 1035,
+  "chara_name": "ウイニングチケット",
+  "name": "[トレセン学園]ウイニングチケット",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "guts",
+  "skill_set_id": 9081035
+ },
+ {
+  "id": 10017,
+  "chara_id": 1040,
+  "chara_name": "ゴールドシチー",
+  "name": "[トレセン学園]ゴールドシチー",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "speed",
+  "skill_set_id": 9081040
+ },
+ {
+  "id": 10018,
+  "chara_id": 1041,
+  "chara_name": "サクラバクシンオー",
+  "name": "[トレセン学園]サクラバクシンオー",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "speed",
+  "skill_set_id": 9081041
+ },
+ {
+  "id": 10019,
+  "chara_id": 1045,
+  "chara_name": "スーパークリーク",
+  "name": "[トレセン学園]スーパークリーク",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "stamina",
+  "skill_set_id": 9081045
+ },
+ {
+  "id": 10020,
+  "chara_id": 1052,
+  "chara_name": "ハルウララ",
+  "name": "[トレセン学園]ハルウララ",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "guts",
+  "skill_set_id": 9081052
+ },
+ {
+  "id": 10021,
+  "chara_id": 9001,
+  "chara_name": "駿川たづな",
+  "name": "[トレセン学園]駿川たづな",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "friend",
+  "skill_set_id": 9089001
+ },
+ {
+  "id": 10022,
+  "chara_id": 9004,
+  "chara_name": "桐生院葵",
+  "name": "[トレセン学園]桐生院葵",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "friend",
+  "skill_set_id": 9089004
+ },
+ {
+  "id": 10023,
+  "chara_id": 1009,
+  "chara_name": "ダイワスカーレット",
+  "name": "[トレセン学園]ダイワスカーレット",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "wit",
+  "skill_set_id": 9081009
+ },
+ {
+  "id": 10024,
+  "chara_id": 1012,
+  "chara_name": "ヒシアマゾン",
+  "name": "[トレセン学園]ヒシアマゾン",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "power",
+  "skill_set_id": 9081012
+ },
+ {
+  "id": 10025,
+  "chara_id": 1018,
+  "chara_name": "エアグルーヴ",
+  "name": "[トレセン学園]エアグルーヴ",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "guts",
+  "skill_set_id": 9081018
+ },
+ {
+  "id": 10026,
+  "chara_id": 1019,
+  "chara_name": "アグネスデジタル",
+  "name": "[トレセン学園]アグネスデジタル",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "power",
+  "skill_set_id": 9081019
+ },
+ {
+  "id": 10027,
+  "chara_id": 1021,
+  "chara_name": "タマモクロス",
+  "name": "[トレセン学園]タマモクロス",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "stamina",
+  "skill_set_id": 9081021
+ },
+ {
+  "id": 10028,
+  "chara_id": 1022,
+  "chara_name": "ファインモーション",
+  "name": "[トレセン学園]ファインモーション",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "wit",
+  "skill_set_id": 9081022
+ },
+ {
+  "id": 10029,
+  "chara_id": 1023,
+  "chara_name": "ビワハヤヒデ",
+  "name": "[トレセン学園]ビワハヤヒデ",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "power",
+  "skill_set_id": 9081023
+ },
+ {
+  "id": 10030,
+  "chara_id": 1024,
+  "chara_name": "マヤノトップガン",
+  "name": "[トレセン学園]マヤノトップガン",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "stamina",
+  "skill_set_id": 9081024
+ },
+ {
+  "id": 10031,
+  "chara_id": 1025,
+  "chara_name": "マンハッタンカフェ",
+  "name": "[トレセン学園]マンハッタンカフェ",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "stamina",
+  "skill_set_id": 9081025
+ },
+ {
+  "id": 10032,
+  "chara_id": 1026,
+  "chara_name": "ミホノブルボン",
+  "name": "[トレセン学園]ミホノブルボン",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "power",
+  "skill_set_id": 9081026
+ },
+ {
+  "id": 10033,
+  "chara_id": 1027,
+  "chara_name": "メジロライアン",
+  "name": "[トレセン学園]メジロライアン",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "power",
+  "skill_set_id": 9081027
+ },
+ {
+  "id": 10034,
+  "chara_id": 1029,
+  "chara_name": "ユキノビジン",
+  "name": "[トレセン学園]ユキノビジン",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "guts",
+  "skill_set_id": 9081029
+ },
+ {
+  "id": 10035,
+  "chara_id": 1031,
+  "chara_name": "アイネスフウジン",
+  "name": "[トレセン学園]アイネスフウジン",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "guts",
+  "skill_set_id": 9081031
+ },
+ {
+  "id": 10036,
+  "chara_id": 1032,
+  "chara_name": "アグネスタキオン",
+  "name": "[トレセン学園]アグネスタキオン",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "wit",
+  "skill_set_id": 9081032
+ },
+ {
+  "id": 10037,
+  "chara_id": 1036,
+  "chara_name": "エアシャカール",
+  "name": "[トレセン学園]エアシャカール",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "wit",
+  "skill_set_id": 9081036
+ },
+ {
+  "id": 10038,
+  "chara_id": 1037,
+  "chara_name": "エイシンフラッシュ",
+  "name": "[トレセン学園]エイシンフラッシュ",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "speed",
+  "skill_set_id": 9081037
+ },
+ {
+  "id": 10039,
+  "chara_id": 1046,
+  "chara_name": "スマートファルコン",
+  "name": "[トレセン学園]スマートファルコン",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "power",
+  "skill_set_id": 9081046
+ },
+ {
+  "id": 10040,
+  "chara_id": 1050,
+  "chara_name": "ナリタタイシン",
+  "name": "[トレセン学園]ナリタタイシン",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "speed",
+  "skill_set_id": 9081050
+ },
+ {
+  "id": 10041,
+  "chara_id": 1051,
+  "chara_name": "ニシノフラワー",
+  "name": "[トレセン学園]ニシノフラワー",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "speed",
+  "skill_set_id": 9081051
+ },
+ {
+  "id": 10042,
+  "chara_id": 1054,
+  "chara_name": "ビコーペガサス",
+  "name": "[トレセン学園]ビコーペガサス",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "speed",
+  "skill_set_id": 9081054
+ },
+ {
+  "id": 10043,
+  "chara_id": 1055,
+  "chara_name": "マーベラスサンデー",
+  "name": "[トレセン学園]マーベラスサンデー",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "wit",
+  "skill_set_id": 9081055
+ },
+ {
+  "id": 10044,
+  "chara_id": 1056,
+  "chara_name": "マチカネフクキタル",
+  "name": "[トレセン学園]マチカネフクキタル",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "wit",
+  "skill_set_id": 9081056
+ },
+ {
+  "id": 10045,
+  "chara_id": 1058,
+  "chara_name": "メイショウドトウ",
+  "name": "[トレセン学園]メイショウドトウ",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "guts",
+  "skill_set_id": 9081058
+ },
+ {
+  "id": 10046,
+  "chara_id": 1059,
+  "chara_name": "メジロドーベル",
+  "name": "[トレセン学園]メジロドーベル",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "wit",
+  "skill_set_id": 9081059
+ },
+ {
+  "id": 10047,
+  "chara_id": 1060,
+  "chara_name": "ナイスネイチャ",
+  "name": "[トレセン学園]ナイスネイチャ",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "guts",
+  "skill_set_id": 9081060
+ },
+ {
+  "id": 10048,
+  "chara_id": 1061,
+  "chara_name": "キングヘイロー",
+  "name": "[トレセン学園]キングヘイロー",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "speed",
+  "skill_set_id": 9081061
+ },
+ {
+  "id": 10049,
+  "chara_id": 1005,
+  "chara_name": "フジキセキ",
+  "name": "[トレセン学園]フジキセキ",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "wit",
+  "skill_set_id": 9081005
+ },
+ {
+  "id": 10050,
+  "chara_id": 1044,
+  "chara_name": "スイープトウショウ",
+  "name": "[トレセン学園]スイープトウショウ",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "speed",
+  "skill_set_id": 9081044
+ },
+ {
+  "id": 10051,
+  "chara_id": 1066,
+  "chara_name": "ツインターボ",
+  "name": "[トレセン学園]ツインターボ",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "speed",
+  "skill_set_id": 9081066
+ },
+ {
+  "id": 10052,
+  "chara_id": 1065,
+  "chara_name": "ダイタクヘリオス",
+  "name": "[トレセン学園]ダイタクヘリオス",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "power",
+  "skill_set_id": 9081065
+ },
+ {
+  "id": 10053,
+  "chara_id": 1063,
+  "chara_name": "イクノディクタス",
+  "name": "[トレセン学園]イクノディクタス",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "wit",
+  "skill_set_id": 9081063
+ },
+ {
+  "id": 10054,
+  "chara_id": 1064,
+  "chara_name": "メジロパーマー",
+  "name": "[トレセン学園]メジロパーマー",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "guts",
+  "skill_set_id": 9081064
+ },
+ {
+  "id": 10055,
+  "chara_id": 1068,
+  "chara_name": "キタサンブラック",
+  "name": "[トレセン学園]キタサンブラック",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "speed",
+  "skill_set_id": 9081068
+ },
+ {
+  "id": 10056,
+  "chara_id": 1067,
+  "chara_name": "サトノダイヤモンド",
+  "name": "[トレセン学園]サトノダイヤモンド",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "stamina",
+  "skill_set_id": 9081067
+ },
+ {
+  "id": 10057,
+  "chara_id": 1062,
+  "chara_name": "マチカネタンホイザ",
+  "name": "[トレセン学園]マチカネタンホイザ",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "guts",
+  "skill_set_id": 9081062
+ },
+ {
+  "id": 10058,
+  "chara_id": 1072,
+  "chara_name": "ヤエノムテキ",
+  "name": "[トレセン学園]ヤエノムテキ",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "power",
+  "skill_set_id": 9081072
+ },
+ {
+  "id": 10059,
+  "chara_id": 1047,
+  "chara_name": "ゼンノロブロイ",
+  "name": "[トレセン学園]ゼンノロブロイ",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "stamina",
+  "skill_set_id": 9081047
+ },
+ {
+  "id": 10060,
+  "chara_id": 9006,
+  "chara_name": "樫本理子",
+  "name": "[トレセン学園]樫本理子",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "friend",
+  "skill_set_id": 9089006
+ },
+ {
+  "id": 10061,
+  "chara_id": 1042,
+  "chara_name": "シーキングザパール",
+  "name": "[トレセン学園]シーキングザパール",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "guts",
+  "skill_set_id": 9081042
+ },
+ {
+  "id": 10062,
+  "chara_id": 1069,
+  "chara_name": "サクラチヨノオー",
+  "name": "[トレセン学園]サクラチヨノオー",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "stamina",
+  "skill_set_id": 9081069
+ },
+ {
+  "id": 10063,
+  "chara_id": 1039,
+  "chara_name": "カワカミプリンセス",
+  "name": "[トレセン学園]カワカミプリンセス",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "speed",
+  "skill_set_id": 9081039
+ },
+ {
+  "id": 10064,
+  "chara_id": 1028,
+  "chara_name": "ヒシアケボノ",
+  "name": "[トレセン学園]ヒシアケボノ",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "guts",
+  "skill_set_id": 9081028
+ },
+ {
+  "id": 10065,
+  "chara_id": 1053,
+  "chara_name": "バンブーメモリー",
+  "name": "[トレセン学園]バンブーメモリー",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "power",
+  "skill_set_id": 9081053
+ },
+ {
+  "id": 10066,
+  "chara_id": 1043,
+  "chara_name": "シンコウウインディ",
+  "name": "[トレセン学園]シンコウウインディ",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "speed",
+  "skill_set_id": 9081043
+ },
+ {
+  "id": 10067,
+  "chara_id": 1049,
+  "chara_name": "ナカヤマフェスタ",
+  "name": "[トレセン学園]ナカヤマフェスタ",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "stamina",
+  "skill_set_id": 9081049
+ },
+ {
+  "id": 10068,
+  "chara_id": 1034,
+  "chara_name": "イナリワン",
+  "name": "[トレセン学園]イナリワン",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "power",
+  "skill_set_id": 9081034
+ },
+ {
+  "id": 10069,
+  "chara_id": 1071,
+  "chara_name": "メジロアルダン",
+  "name": "[トレセン学園]メジロアルダン",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "wit",
+  "skill_set_id": 9081071
+ },
+ {
+  "id": 10070,
+  "chara_id": 1048,
+  "chara_name": "トーセンジョーダン",
+  "name": "[トレセン学園]トーセンジョーダン",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "stamina",
+  "skill_set_id": 9081048
+ },
+ {
+  "id": 10071,
+  "chara_id": 1070,
+  "chara_name": "シリウスシンボリ",
+  "name": "[トレセン学園]シリウスシンボリ",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "guts",
+  "skill_set_id": 9081070
+ },
+ {
+  "id": 10072,
+  "chara_id": 1016,
+  "chara_name": "ナリタブライアン",
+  "name": "[トレセン学園]ナリタブライアン",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "speed",
+  "skill_set_id": 9081016
+ },
+ {
+  "id": 10073,
+  "chara_id": 1038,
+  "chara_name": "カレンチャン",
+  "name": "[トレセン学園]カレンチャン",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "wit",
+  "skill_set_id": 9081038
+ },
+ {
+  "id": 10074,
+  "chara_id": 9005,
+  "chara_name": "安心沢刺々美",
+  "name": "[笹針師]安心沢刺々美",
+  "title": "[笹針師]",
+  "rarity": 1,
+  "card_type": "friend",
+  "skill_set_id": 9089005
+ },
+ {
+  "id": 10075,
+  "chara_id": 1033,
+  "chara_name": "アドマイヤベガ",
+  "name": "[トレセン学園]アドマイヤベガ",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "power",
+  "skill_set_id": 9081033
+ },
+ {
+  "id": 10076,
+  "chara_id": 1074,
+  "chara_name": "メジロブライト",
+  "name": "[トレセン学園]メジロブライト",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "stamina",
+  "skill_set_id": 9081074
+ },
+ {
+  "id": 10077,
+  "chara_id": 1077,
+  "chara_name": "ナリタトップロード",
+  "name": "[トレセン学園]ナリタトップロード",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "speed",
+  "skill_set_id": 9081077
+ },
+ {
+  "id": 10078,
+  "chara_id": 1057,
+  "chara_name": "ミスターシービー",
+  "name": "[トレセン学園]ミスターシービー",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "wit",
+  "skill_set_id": 9081057
+ },
+ {
+  "id": 10079,
+  "chara_id": 1085,
+  "chara_name": "ダイイチルビー",
+  "name": "[トレセン学園]ダイイチルビー",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "power",
+  "skill_set_id": 9081085
+ },
+ {
+  "id": 10080,
+  "chara_id": 1093,
+  "chara_name": "ケイエスミラクル",
+  "name": "[トレセン学園]ケイエスミラクル",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "guts",
+  "skill_set_id": 9081093
+ },
+ {
+  "id": 10081,
+  "chara_id": 1073,
+  "chara_name": "ツルマルツヨシ",
+  "name": "[トレセン学園]ツルマルツヨシ",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "guts",
+  "skill_set_id": 9081073
+ },
+ {
+  "id": 10082,
+  "chara_id": 1083,
+  "chara_name": "シンボリクリスエス",
+  "name": "[トレセン学園]シンボリクリスエス",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "stamina",
+  "skill_set_id": 9081083
+ },
+ {
+  "id": 10083,
+  "chara_id": 9008,
+  "chara_name": "ライトハロー",
+  "name": "[イベントプロデューサー]ライトハロー",
+  "title": "[イベントプロデューサー]",
+  "rarity": 1,
+  "card_type": "friend",
+  "skill_set_id": 9089008
+ },
+ {
+  "id": 10084,
+  "chara_id": 1084,
+  "chara_name": "タニノギムレット",
+  "name": "[トレセン学園]タニノギムレット",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "power",
+  "skill_set_id": 9081084
+ },
+ {
+  "id": 10085,
+  "chara_id": 1076,
+  "chara_name": "サクラローレル",
+  "name": "[トレセン学園]サクラローレル",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "stamina",
+  "skill_set_id": 9081076
+ },
+ {
+  "id": 10086,
+  "chara_id": 1078,
+  "chara_name": "ヤマニンゼファー",
+  "name": "[トレセン学園]ヤマニンゼファー",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "guts",
+  "skill_set_id": 9081078
+ },
+ {
+  "id": 10087,
+  "chara_id": 1087,
+  "chara_name": "アストンマーチャン",
+  "name": "[トレセン学園]アストンマーチャン",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "speed",
+  "skill_set_id": 9081087
+ },
+ {
+  "id": 10088,
+  "chara_id": 1086,
+  "chara_name": "メジロラモーヌ",
+  "name": "[トレセン学園]メジロラモーヌ",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "wit",
+  "skill_set_id": 9081086
+ },
+ {
+  "id": 10089,
+  "chara_id": 1094,
+  "chara_name": "ジャングルポケット",
+  "name": "[トレセン学園]ジャングルポケット",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "speed",
+  "skill_set_id": 9081094
+ },
+ {
+  "id": 10090,
+  "chara_id": 1099,
+  "chara_name": "ホッコータルマエ",
+  "name": "[トレセン学園]ホッコータルマエ",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "stamina",
+  "skill_set_id": 9081099
+ },
+ {
+  "id": 10091,
+  "chara_id": 1104,
+  "chara_name": "カツラギエース",
+  "name": "[トレセン学園]カツラギエース",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "speed",
+  "skill_set_id": 9081104
+ },
+ {
+  "id": 10092,
+  "chara_id": 1098,
+  "chara_name": "コパノリッキー",
+  "name": "[トレセン学園]コパノリッキー",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "guts",
+  "skill_set_id": 9081098
+ },
+ {
+  "id": 10093,
+  "chara_id": 1100,
+  "chara_name": "ワンダーアキュート",
+  "name": "[トレセン学園]ワンダーアキュート",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "power",
+  "skill_set_id": 9081100
+ },
+ {
+  "id": 10094,
+  "chara_id": 9043,
+  "chara_name": "佐岳メイ",
+  "name": "[URA職員]佐岳メイ",
+  "title": "[URA職員]",
+  "rarity": 1,
+  "card_type": "friend",
+  "skill_set_id": 9089043
+ },
+ {
+  "id": 10095,
+  "chara_id": 1107,
+  "chara_name": "タップダンスシチー",
+  "name": "[トレセン学園]タップダンスシチー",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "guts",
+  "skill_set_id": 9081107
+ },
+ {
+  "id": 10096,
+  "chara_id": 1097,
+  "chara_name": "スティルインラブ",
+  "name": "[トレセン学園]スティルインラブ",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "speed",
+  "skill_set_id": 9081097
+ },
+ {
+  "id": 10097,
+  "chara_id": 1090,
+  "chara_name": "ヴィルシーナ",
+  "name": "[トレセン学園]ヴィルシーナ",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "guts",
+  "skill_set_id": 9081090
+ },
+ {
+  "id": 10098,
+  "chara_id": 1102,
+  "chara_name": "サウンズオブアース",
+  "name": "[トレセン学園]サウンズオブアース",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "stamina",
+  "skill_set_id": 9081102
+ },
+ {
+  "id": 10099,
+  "chara_id": 1091,
+  "chara_name": "ヴィブロス",
+  "name": "[トレセン学園]ヴィブロス",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "guts",
+  "skill_set_id": 9081091
+ },
+ {
+  "id": 10100,
+  "chara_id": 1103,
+  "chara_name": "ロイスアンドロイス",
+  "name": "[トレセン学園]ロイスアンドロイス",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "power",
+  "skill_set_id": 9081103
+ },
+ {
+  "id": 10101,
+  "chara_id": 1108,
+  "chara_name": "ドゥラメンテ",
+  "name": "[トレセン学園]ドゥラメンテ",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "speed",
+  "skill_set_id": 9081108
+ },
+ {
+  "id": 10102,
+  "chara_id": 1082,
+  "chara_name": "ノースフライト",
+  "name": "[トレセン学園]ノースフライト",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "wit",
+  "skill_set_id": 9081082
+ },
+ {
+  "id": 10103,
+  "chara_id": 1115,
+  "chara_name": "オルフェーヴル",
+  "name": "[トレセン学園]オルフェーヴル",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "guts",
+  "skill_set_id": 9081115
+ },
+ {
+  "id": 10104,
+  "chara_id": 9044,
+  "chara_name": "都留岐涼花",
+  "name": "[プロデューサー]都留岐涼花",
+  "title": "[プロデューサー]",
+  "rarity": 1,
+  "card_type": "friend",
+  "skill_set_id": 9089044
+ },
+ {
+  "id": 10105,
+  "chara_id": 1089,
+  "chara_name": "シュヴァルグラン",
+  "name": "[トレセン学園]シュヴァルグラン",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "stamina",
+  "skill_set_id": 9081089
+ },
+ {
+  "id": 10106,
+  "chara_id": 1105,
+  "chara_name": "ネオユニヴァース",
+  "name": "[トレセン学園]ネオユニヴァース",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "wit",
+  "skill_set_id": 9081105
+ },
+ {
+  "id": 10107,
+  "chara_id": 1106,
+  "chara_name": "ヒシミラクル",
+  "name": "[トレセン学園]ヒシミラクル",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "stamina",
+  "skill_set_id": 9081106
+ },
+ {
+  "id": 10108,
+  "chara_id": 1092,
+  "chara_name": "ダンツフレーム",
+  "name": "[トレセン学園]ダンツフレーム",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "wit",
+  "skill_set_id": 9081092
+ },
+ {
+  "id": 10109,
+  "chara_id": 9002,
+  "chara_name": "秋川理事長",
+  "name": "[トレセン学園]秋川理事長",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "friend",
+  "skill_set_id": 9089002
+ },
+ {
+  "id": 10110,
+  "chara_id": 1081,
+  "chara_name": "エスポワールシチー",
+  "name": "[トレセン学園]エスポワールシチー",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "power",
+  "skill_set_id": 9081081
+ },
+ {
+  "id": 10111,
+  "chara_id": 1124,
+  "chara_name": "バブルガムフェロー",
+  "name": "[トレセン学園]バブルガムフェロー",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "speed",
+  "skill_set_id": 9081124
+ },
+ {
+  "id": 10113,
+  "chara_id": 1116,
+  "chara_name": "ジェンティルドンナ",
+  "name": "[トレセン学園]ジェンティルドンナ",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "speed",
+  "skill_set_id": 9081116
+ },
+ {
+  "id": 10114,
+  "chara_id": 1109,
+  "chara_name": "ラインクラフト",
+  "name": "[トレセン学園]ラインクラフト",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "guts",
+  "skill_set_id": 9081109
+ },
+ {
+  "id": 10115,
+  "chara_id": 1110,
+  "chara_name": "シーザリオ",
+  "name": "[トレセン学園]シーザリオ",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "wit",
+  "skill_set_id": 9081110
+ },
+ {
+  "id": 10116,
+  "chara_id": 1128,
+  "chara_name": "ブラストワンピース",
+  "name": "[トレセン学園]ブラストワンピース",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "guts",
+  "skill_set_id": 9081128
+ },
+ {
+  "id": 10117,
+  "chara_id": 1096,
+  "chara_name": "ノーリーズン",
+  "name": "[トレセン学園]ノーリーズン",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "guts",
+  "skill_set_id": 9081096
+ },
+ {
+  "id": 10118,
+  "chara_id": 1114,
+  "chara_name": "ブエナビスタ",
+  "name": "[トレセン学園]ブエナビスタ",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "guts",
+  "skill_set_id": 9081114
+ },
+ {
+  "id": 10119,
+  "chara_id": 1119,
+  "chara_name": "ドリームジャーニー",
+  "name": "[トレセン学園]ドリームジャーニー",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "speed",
+  "skill_set_id": 9081119
+ },
+ {
+  "id": 10120,
+  "chara_id": 1075,
+  "chara_name": "デアリングタクト",
+  "name": "[トレセン学園]デアリングタクト",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "wit",
+  "skill_set_id": 9081075
+ },
+ {
+  "id": 10121,
+  "chara_id": 1112,
+  "chara_name": "デアリングハート",
+  "name": "[トレセン学園]デアリングハート",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "power",
+  "skill_set_id": 9081112
+ },
+ {
+  "id": 10122,
+  "chara_id": 1129,
+  "chara_name": "アーモンドアイ",
+  "name": "[トレセン学園]アーモンドアイ",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "speed",
+  "skill_set_id": 9081129
+ },
+ {
+  "id": 10123,
+  "chara_id": 1130,
+  "chara_name": "ラッキーライラック",
+  "name": "[トレセン学園]ラッキーライラック",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "wit",
+  "skill_set_id": 9081130
+ },
+ {
+  "id": 10124,
+  "chara_id": 1131,
+  "chara_name": "グランアレグリア",
+  "name": "[トレセン学園]グランアレグリア",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "power",
+  "skill_set_id": 9081131
+ },
+ {
+  "id": 10125,
+  "chara_id": 1080,
+  "chara_name": "トランセンド",
+  "name": "[トレセン学園]トランセンド",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "guts",
+  "skill_set_id": 9081080
+ },
+ {
+  "id": 10126,
+  "chara_id": 1134,
+  "chara_name": "カレンブーケドール",
+  "name": "[トレセン学園]カレンブーケドール",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "stamina",
+  "skill_set_id": 9081134
+ },
+ {
+  "id": 10127,
+  "chara_id": 1111,
+  "chara_name": "エアメサイア",
+  "name": "[トレセン学園]エアメサイア",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "wit",
+  "skill_set_id": 9081111
+ },
+ {
+  "id": 10128,
+  "chara_id": 9049,
+  "chara_name": "タッカーブライン",
+  "name": "[無人島PJ責任者]タッカーブライン",
+  "title": "[無人島PJ責任者]",
+  "rarity": 1,
+  "card_type": "friend",
+  "skill_set_id": 9089049
+ },
+ {
+  "id": 10129,
+  "chara_id": 1113,
+  "chara_name": "フサイチパンドラ",
+  "name": "[トレセン学園]フサイチパンドラ",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "speed",
+  "skill_set_id": 9081113
+ },
+ {
+  "id": 10131,
+  "chara_id": 1117,
+  "chara_name": "ウインバリアシオン",
+  "name": "[トレセン学園]ウインバリアシオン",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "wit",
+  "skill_set_id": 9081117
+ },
+ {
+  "id": 10132,
+  "chara_id": 1135,
+  "chara_name": "ステイゴールド",
+  "name": "[トレセン学園]ステイゴールド",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "guts",
+  "skill_set_id": 9081135
+ },
+ {
+  "id": 10133,
+  "chara_id": 1118,
+  "chara_name": "アドマイヤグルーヴ",
+  "name": "[トレセン学園]アドマイヤグルーヴ",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "speed",
+  "skill_set_id": 9081118
+ },
+ {
+  "id": 10134,
+  "chara_id": 1133,
+  "chara_name": "クロノジェネシス",
+  "name": "[トレセン学園]クロノジェネシス",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "wit",
+  "skill_set_id": 9081133
+ },
+ {
+  "id": 10135,
+  "chara_id": 1120,
+  "chara_name": "カルストンライトオ",
+  "name": "[トレセン学園]カルストンライトオ",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "speed",
+  "skill_set_id": 9081120
+ },
+ {
+  "id": 10136,
+  "chara_id": 1121,
+  "chara_name": "デュランダル",
+  "name": "[トレセン学園]デュランダル",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "wit",
+  "skill_set_id": 9081121
+ },
+ {
+  "id": 10137,
+  "chara_id": 1126,
+  "chara_name": "サクラチトセオー",
+  "name": "[トレセン学園]サクラチトセオー",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "speed",
+  "skill_set_id": 9081126
+ },
+ {
+  "id": 10138,
+  "chara_id": 9050,
+  "chara_name": "保科健子",
+  "name": "[ゆこま旅館女将]保科健子",
+  "title": "[ゆこま旅館女将]",
+  "rarity": 1,
+  "card_type": "friend",
+  "skill_set_id": 9089050
+ },
+ {
+  "id": 10139,
+  "chara_id": 1127,
+  "chara_name": "フェノーメノ",
+  "name": "[トレセン学園]フェノーメノ",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "stamina",
+  "skill_set_id": 9081127
+ },
+ {
+  "id": 10140,
+  "chara_id": 1138,
+  "chara_name": "フォーエバーヤング",
+  "name": "[トレセン学園]フォーエバーヤング",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "wit",
+  "skill_set_id": 9081138
+ },
+ {
+  "id": 10141,
+  "chara_id": 1139,
+  "chara_name": "カジノドライヴ",
+  "name": "[『DREAMS』責任者]カジノドライヴ",
+  "title": "[『DREAMS』責任者]",
+  "rarity": 1,
+  "card_type": "friend",
+  "skill_set_id": 9081139
+ },
+ {
+  "id": 10142,
+  "chara_id": 1136,
+  "chara_name": "レッドディザイア",
+  "name": "[トレセン学園]レッドディザイア",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "guts",
+  "skill_set_id": 9081136
+ },
+ {
+  "id": 10143,
+  "chara_id": 1143,
+  "chara_name": "ヴィクトワールピサ",
+  "name": "[トレセン学園]ヴィクトワールピサ",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "speed",
+  "skill_set_id": 9081143
+ },
+ {
+  "id": 10144,
+  "chara_id": 1140,
+  "chara_name": "マルシュロレーヌ",
+  "name": "[トレセン学園]マルシュロレーヌ",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "speed",
+  "skill_set_id": 9081140
+ },
+ {
+  "id": 10145,
+  "chara_id": 1137,
+  "chara_name": "キセキ",
+  "name": "[トレセン学園]キセキ",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "stamina",
+  "skill_set_id": 9081137
+ },
+ {
+  "id": 10146,
+  "chara_id": 1146,
+  "chara_name": "エフフォーリア",
+  "name": "[トレセン学園]エフフォーリア",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "speed",
+  "skill_set_id": 9081146
+ },
+ {
+  "id": 10147,
+  "chara_id": 1145,
+  "chara_name": "ルーラーシップ",
+  "name": "[トレセン学園]ルーラーシップ",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "stamina",
+  "skill_set_id": 9081145
+ },
+ {
+  "id": 10148,
+  "chara_id": 1101,
+  "chara_name": "サムソンビッグ",
+  "name": "[トレセン学園]サムソンビッグ",
+  "title": "[トレセン学園]",
+  "rarity": 1,
+  "card_type": "guts",
+  "skill_set_id": 9081101
+ },
+ {
+  "id": 20001,
+  "chara_id": 1005,
+  "chara_name": "フジキセキ",
+  "name": "[やれやれ、お帰り]フジキセキ",
+  "title": "[やれやれ、お帰り]",
+  "rarity": 2,
+  "card_type": "wit",
+  "skill_set_id": 9081005
+ },
+ {
+  "id": 20002,
+  "chara_id": 1009,
+  "chara_name": "ダイワスカーレット",
+  "name": "[努力は裏切らない！]ダイワスカーレット",
+  "title": "[努力は裏切らない！]",
+  "rarity": 2,
+  "card_type": "wit",
+  "skill_set_id": 9081009
+ },
+ {
+  "id": 20003,
+  "chara_id": 1012,
+  "chara_name": "ヒシアマゾン",
+  "name": "[テッペンに立て！]ヒシアマゾン",
+  "title": "[テッペンに立て！]",
+  "rarity": 2,
+  "card_type": "power",
+  "skill_set_id": 9081012
+ },
+ {
+  "id": 20004,
+  "chara_id": 1018,
+  "chara_name": "エアグルーヴ",
+  "name": "[副会長の一刺し]エアグルーヴ",
+  "title": "[副会長の一刺し]",
+  "rarity": 2,
+  "card_type": "guts",
+  "skill_set_id": 9081018
+ },
+ {
+  "id": 20005,
+  "chara_id": 1019,
+  "chara_name": "アグネスデジタル",
+  "name": "[デジタル充電中+]アグネスデジタル",
+  "title": "[デジタル充電中+]",
+  "rarity": 2,
+  "card_type": "power",
+  "skill_set_id": 9081019
+ },
+ {
+  "id": 20006,
+  "chara_id": 1023,
+  "chara_name": "ビワハヤヒデ",
+  "name": "[検証、開始]ビワハヤヒデ",
+  "title": "[検証、開始]",
+  "rarity": 2,
+  "card_type": "power",
+  "skill_set_id": 9081023
+ },
+ {
+  "id": 20007,
+  "chara_id": 1024,
+  "chara_name": "マヤノトップガン",
+  "name": "[カワイイ＋カワイイは～？]マヤノトップガン",
+  "title": "[カワイイ＋カワイイは～？]",
+  "rarity": 2,
+  "card_type": "stamina",
+  "skill_set_id": 9081024
+ },
+ {
+  "id": 20008,
+  "chara_id": 1025,
+  "chara_name": "マンハッタンカフェ",
+  "name": "[雨の独奏、私の独創]マンハッタンカフェ",
+  "title": "[雨の独奏、私の独創]",
+  "rarity": 2,
+  "card_type": "stamina",
+  "skill_set_id": 9081025
+ },
+ {
+  "id": 20009,
+  "chara_id": 1026,
+  "chara_name": "ミホノブルボン",
+  "name": "[鍛えぬくトモ]ミホノブルボン",
+  "title": "[鍛えぬくトモ]",
+  "rarity": 2,
+  "card_type": "power",
+  "skill_set_id": 9081026
+ },
+ {
+  "id": 20010,
+  "chara_id": 1027,
+  "chara_name": "メジロライアン",
+  "name": "[鍛えて、応えて！]メジロライアン",
+  "title": "[鍛えて、応えて！]",
+  "rarity": 2,
+  "card_type": "power",
+  "skill_set_id": 9081027
+ },
+ {
+  "id": 20011,
+  "chara_id": 1029,
+  "chara_name": "ユキノビジン",
+  "name": "[シチーガール入門♯]ユキノビジン",
+  "title": "[シチーガール入門♯]",
+  "rarity": 2,
+  "card_type": "guts",
+  "skill_set_id": 9081029
+ },
+ {
+  "id": 20012,
+  "chara_id": 1032,
+  "chara_name": "アグネスタキオン",
+  "name": "[生体Aに関する実験的研究]アグネスタキオン",
+  "title": "[生体Aに関する実験的研究]",
+  "rarity": 2,
+  "card_type": "wit",
+  "skill_set_id": 9081032
+ },
+ {
+  "id": 20013,
+  "chara_id": 1037,
+  "chara_name": "エイシンフラッシュ",
+  "name": "[0500・定刻通り]エイシンフラッシュ",
+  "title": "[0500・定刻通り]",
+  "rarity": 2,
+  "card_type": "speed",
+  "skill_set_id": 9081037
+ },
+ {
+  "id": 20014,
+  "chara_id": 1050,
+  "chara_name": "ナリタタイシン",
+  "name": "[波立つキモチ]ナリタタイシン",
+  "title": "[波立つキモチ]",
+  "rarity": 2,
+  "card_type": "speed",
+  "skill_set_id": 9081050
+ },
+ {
+  "id": 20015,
+  "chara_id": 1055,
+  "chara_name": "マーベラスサンデー",
+  "name": "[マーベラス☆大作戦]マーベラスサンデー",
+  "title": "[マーベラス☆大作戦]",
+  "rarity": 2,
+  "card_type": "wit",
+  "skill_set_id": 9081055
+ },
+ {
+  "id": 20016,
+  "chara_id": 1056,
+  "chara_name": "マチカネフクキタル",
+  "name": "[運の行方]マチカネフクキタル",
+  "title": "[運の行方]",
+  "rarity": 2,
+  "card_type": "wit",
+  "skill_set_id": 9081056
+ },
+ {
+  "id": 20017,
+  "chara_id": 1058,
+  "chara_name": "メイショウドトウ",
+  "name": "[幸せと背中合わせ]メイショウドトウ",
+  "title": "[幸せと背中合わせ]",
+  "rarity": 2,
+  "card_type": "guts",
+  "skill_set_id": 9081058
+ },
+ {
+  "id": 20018,
+  "chara_id": 1059,
+  "chara_name": "メジロドーベル",
+  "name": "[目線は気にせず]メジロドーベル",
+  "title": "[目線は気にせず]",
+  "rarity": 2,
+  "card_type": "wit",
+  "skill_set_id": 9081059
+ },
+ {
+  "id": 20019,
+  "chara_id": 1060,
+  "chara_name": "ナイスネイチャ",
+  "name": "[…ただの水滴ですって]ナイスネイチャ",
+  "title": "[…ただの水滴ですって]",
+  "rarity": 2,
+  "card_type": "guts",
+  "skill_set_id": 9081060
+ },
+ {
+  "id": 20020,
+  "chara_id": 1061,
+  "chara_name": "キングヘイロー",
+  "name": "[一流プランニング]キングヘイロー",
+  "title": "[一流プランニング]",
+  "rarity": 2,
+  "card_type": "speed",
+  "skill_set_id": 9081061
+ },
+ {
+  "id": 20021,
+  "chara_id": 9004,
+  "chara_name": "桐生院葵",
+  "name": "[共に同じ道を！]桐生院葵",
+  "title": "[共に同じ道を！]",
+  "rarity": 2,
+  "card_type": "friend",
+  "skill_set_id": 9089004
+ },
+ {
+  "id": 20022,
+  "chara_id": 1021,
+  "chara_name": "タマモクロス",
+  "name": "[これがウチらのいか焼きや！]タマモクロス",
+  "title": "[これがウチらのいか焼きや！]",
+  "rarity": 2,
+  "card_type": "guts",
+  "skill_set_id": 9081021
+ },
+ {
+  "id": 20023,
+  "chara_id": 1044,
+  "chara_name": "スイープトウショウ",
+  "name": "[見習い魔女と長い夜]スイープトウショウ",
+  "title": "[見習い魔女と長い夜]",
+  "rarity": 2,
+  "card_type": "speed",
+  "skill_set_id": 9081044
+ },
+ {
+  "id": 20024,
+  "chara_id": 1065,
+  "chara_name": "ダイタクヘリオス",
+  "name": "[パリピ・ぱーりないと！]ダイタクヘリオス",
+  "title": "[パリピ・ぱーりないと！]",
+  "rarity": 2,
+  "card_type": "power",
+  "skill_set_id": 9081065
+ },
+ {
+  "id": 20025,
+  "chara_id": 1063,
+  "chara_name": "イクノディクタス",
+  "name": "[準備運動は怠るべからず]イクノディクタス",
+  "title": "[準備運動は怠るべからず]",
+  "rarity": 2,
+  "card_type": "wit",
+  "skill_set_id": 9081063
+ },
+ {
+  "id": 20026,
+  "chara_id": 1060,
+  "chara_name": "ナイスネイチャ",
+  "name": "[むじゃむじゃむじゃき]ナイスネイチャ",
+  "title": "[むじゃむじゃむじゃき]",
+  "rarity": 2,
+  "card_type": "wit",
+  "skill_set_id": 9081060
+ },
+ {
+  "id": 20027,
+  "chara_id": 1051,
+  "chara_name": "ニシノフラワー",
+  "name": "[あなたにささげる]ニシノフラワー",
+  "title": "[あなたにささげる]",
+  "rarity": 2,
+  "card_type": "power",
+  "skill_set_id": 9081051
+ },
+ {
+  "id": 20028,
+  "chara_id": 1047,
+  "chara_name": "ゼンノロブロイ",
+  "name": "[おすすめ本、あります！]ゼンノロブロイ",
+  "title": "[おすすめ本、あります！]",
+  "rarity": 2,
+  "card_type": "stamina",
+  "skill_set_id": 9081047
+ },
+ {
+  "id": 20029,
+  "chara_id": 1042,
+  "chara_name": "シーキングザパール",
+  "name": "[世界の真珠、その名は]シーキングザパール",
+  "title": "[世界の真珠、その名は]",
+  "rarity": 2,
+  "card_type": "guts",
+  "skill_set_id": 9081042
+ },
+ {
+  "id": 20030,
+  "chara_id": 1031,
+  "chara_name": "アイネスフウジン",
+  "name": "[頑張るキミに！]アイネスフウジン",
+  "title": "[頑張るキミに！]",
+  "rarity": 2,
+  "card_type": "wit",
+  "skill_set_id": 9081031
+ },
+ {
+  "id": 20031,
+  "chara_id": 1043,
+  "chara_name": "シンコウウインディ",
+  "name": "[///WARNING GATE///]シンコウウインディ",
+  "title": "[///WARNING GATE///]",
+  "rarity": 2,
+  "card_type": "speed",
+  "skill_set_id": 9081043
+ },
+ {
+  "id": 20032,
+  "chara_id": 1034,
+  "chara_name": "イナリワン",
+  "name": "[泥濘一笑、真っつぐに]イナリワン",
+  "title": "[泥濘一笑、真っつぐに]",
+  "rarity": 2,
+  "card_type": "power",
+  "skill_set_id": 9081034
+ },
+ {
+  "id": 20033,
+  "chara_id": 1014,
+  "chara_name": "エルコンドルパサー",
+  "name": "[泥まみれのコンパネーロ]エルコンドルパサー",
+  "title": "[泥まみれのコンパネーロ]",
+  "rarity": 2,
+  "card_type": "speed",
+  "skill_set_id": 9081014
+ },
+ {
+  "id": 20034,
+  "chara_id": 1071,
+  "chara_name": "メジロアルダン",
+  "name": "[その心に吹きすさぶ]メジロアルダン",
+  "title": "[その心に吹きすさぶ]",
+  "rarity": 2,
+  "card_type": "wit",
+  "skill_set_id": 9081071
+ },
+ {
+  "id": 20035,
+  "chara_id": 1048,
+  "chara_name": "トーセンジョーダン",
+  "name": "[nail on Turf]トーセンジョーダン",
+  "title": "[nail on Turf]",
+  "rarity": 2,
+  "card_type": "stamina",
+  "skill_set_id": 9081048
+ },
+ {
+  "id": 20036,
+  "chara_id": 1064,
+  "chara_name": "メジロパーマー",
+  "name": "[救いはあるよっ♪]メジロパーマー",
+  "title": "[救いはあるよっ♪]",
+  "rarity": 2,
+  "card_type": "stamina",
+  "skill_set_id": 9081064
+ },
+ {
+  "id": 20037,
+  "chara_id": 1022,
+  "chara_name": "ファインモーション",
+  "name": "[GRMAラーメン♪]ファインモーション",
+  "title": "[GRMAラーメン♪]",
+  "rarity": 2,
+  "card_type": "power",
+  "skill_set_id": 9081022
+ },
+ {
+  "id": 20038,
+  "chara_id": 1070,
+  "chara_name": "シリウスシンボリ",
+  "name": "[一等星は揺らがない]シリウスシンボリ",
+  "title": "[一等星は揺らがない]",
+  "rarity": 2,
+  "card_type": "guts",
+  "skill_set_id": 9081070
+ },
+ {
+  "id": 20039,
+  "chara_id": 1008,
+  "chara_name": "ウオッカ",
+  "name": "[うるさい監視役]ウオッカ",
+  "title": "[うるさい監視役]",
+  "rarity": 2,
+  "card_type": "speed",
+  "skill_set_id": 9081008
+ },
+ {
+  "id": 20040,
+  "chara_id": 1027,
+  "chara_name": "メジロライアン",
+  "name": "[鼓動が速まるクールダウン]メジロライアン",
+  "title": "[鼓動が速まるクールダウン]",
+  "rarity": 2,
+  "card_type": "stamina",
+  "skill_set_id": 9081027
+ },
+ {
+  "id": 20041,
+  "chara_id": 1033,
+  "chara_name": "アドマイヤベガ",
+  "name": "[一等星を目指して]アドマイヤベガ",
+  "title": "[一等星を目指して]",
+  "rarity": 2,
+  "card_type": "guts",
+  "skill_set_id": 9081033
+ },
+ {
+  "id": 20042,
+  "chara_id": 1041,
+  "chara_name": "サクラバクシンオー",
+  "name": "[響け！模範的あいさつ！]サクラバクシンオー",
+  "title": "[響け！模範的あいさつ！]",
+  "rarity": 2,
+  "card_type": "power",
+  "skill_set_id": 9081041
+ },
+ {
+  "id": 20043,
+  "chara_id": 1001,
+  "chara_name": "スペシャルウィーク",
+  "name": "[1日の終わりに]スペシャルウィーク",
+  "title": "[1日の終わりに]",
+  "rarity": 2,
+  "card_type": "power",
+  "skill_set_id": 9081001
+ },
+ {
+  "id": 20044,
+  "chara_id": 1038,
+  "chara_name": "カレンチャン",
+  "name": "[ほっと♪きゅーとメモリー]カレンチャン",
+  "title": "[ほっと♪きゅーとメモリー]",
+  "rarity": 2,
+  "card_type": "speed",
+  "skill_set_id": 9081038
+ },
+ {
+  "id": 20045,
+  "chara_id": 1046,
+  "chara_name": "スマートファルコン",
+  "name": "[ギリギリ!?UMA♡DOL]スマートファルコン",
+  "title": "[ギリギリ!?UMA♡DOL]",
+  "rarity": 2,
+  "card_type": "guts",
+  "skill_set_id": 9081046
+ },
+ {
+  "id": 20046,
+  "chara_id": 1044,
+  "chara_name": "スイープトウショウ",
+  "name": "[おてんば魔女、修行中。]スイープトウショウ",
+  "title": "[おてんば魔女、修行中。]",
+  "rarity": 2,
+  "card_type": "wit",
+  "skill_set_id": 9081044
+ },
+ {
+  "id": 20047,
+  "chara_id": 1003,
+  "chara_name": "トウカイテイオー",
+  "name": "[Step! Smile! Wink!]トウカイテイオー",
+  "title": "[Step! Smile! Wink!]",
+  "rarity": 2,
+  "card_type": "stamina",
+  "skill_set_id": 9081003
+ },
+ {
+  "id": 20048,
+  "chara_id": 1006,
+  "chara_name": "オグリキャップ",
+  "name": "[好きなんだ、ご飯が]オグリキャップ",
+  "title": "[好きなんだ、ご飯が]",
+  "rarity": 2,
+  "card_type": "guts",
+  "skill_set_id": 9081006
+ },
+ {
+  "id": 20049,
+  "chara_id": 1040,
+  "chara_name": "ゴールドシチー",
+  "name": "[金色を目指して]ゴールドシチー",
+  "title": "[金色を目指して]",
+  "rarity": 2,
+  "card_type": "wit",
+  "skill_set_id": 9081040
+ },
+ {
+  "id": 20050,
+  "chara_id": 1020,
+  "chara_name": "セイウンスカイ",
+  "name": "[ゆるっと、まにまに]セイウンスカイ",
+  "title": "[ゆるっと、まにまに]",
+  "rarity": 2,
+  "card_type": "wit",
+  "skill_set_id": 9081020
+ },
+ {
+  "id": 20051,
+  "chara_id": 1093,
+  "chara_name": "ケイエスミラクル",
+  "name": "[The 3rd MIRACLE]ケイエスミラクル",
+  "title": "[The 3rd MIRACLE]",
+  "rarity": 2,
+  "card_type": "guts",
+  "skill_set_id": 9081093
+ },
+ {
+  "id": 20052,
+  "chara_id": 1073,
+  "chara_name": "ツルマルツヨシ",
+  "name": "[『フレフレ、ツヨシ！』]ツルマルツヨシ",
+  "title": "[『フレフレ、ツヨシ！』]",
+  "rarity": 2,
+  "card_type": "guts",
+  "skill_set_id": 9081073
+ },
+ {
+  "id": 20053,
+  "chara_id": 1077,
+  "chara_name": "ナリタトップロード",
+  "name": "[ストップ、委員長！]ナリタトップロード",
+  "title": "[ストップ、委員長！]",
+  "rarity": 2,
+  "card_type": "power",
+  "skill_set_id": 9081077
+ },
+ {
+  "id": 20054,
+  "chara_id": 1015,
+  "chara_name": "テイエムオペラオー",
+  "name": "[偉大なるフォトグラフィーア]テイエムオペラオー",
+  "title": "[偉大なるフォトグラフィーア]",
+  "rarity": 2,
+  "card_type": "stamina",
+  "skill_set_id": 9081015
+ },
+ {
+  "id": 20055,
+  "chara_id": 1087,
+  "chara_name": "アストンマーチャン",
+  "name": "[添付ファイル、温めますか？]アストンマーチャン",
+  "title": "[添付ファイル、温めますか？]",
+  "rarity": 2,
+  "card_type": "speed",
+  "skill_set_id": 9081087
+ },
+ {
+  "id": 20056,
+  "chara_id": 1094,
+  "chara_name": "ジャングルポケット",
+  "name": "[デッド・エンド【通せん坊】]ジャングルポケット",
+  "title": "[デッド・エンド【通せん坊】]",
+  "rarity": 2,
+  "card_type": "speed",
+  "skill_set_id": 9081094
+ },
+ {
+  "id": 20057,
+  "chara_id": 1059,
+  "chara_name": "メジロドーベル",
+  "name": "[ふわり、さらり]メジロドーベル",
+  "title": "[ふわり、さらり]",
+  "rarity": 2,
+  "card_type": "guts",
+  "skill_set_id": 9081059
+ },
+ {
+  "id": 20058,
+  "chara_id": 1017,
+  "chara_name": "シンボリルドルフ",
+  "name": "[放課後、君が笑った]シンボリルドルフ",
+  "title": "[放課後、君が笑った]",
+  "rarity": 2,
+  "card_type": "stamina",
+  "skill_set_id": 9081017
+ },
+ {
+  "id": 20059,
+  "chara_id": 1032,
+  "chara_name": "アグネスタキオン",
+  "name": "[嗚呼素晴らしき甘味哉]アグネスタキオン",
+  "title": "[嗚呼素晴らしき甘味哉]",
+  "rarity": 2,
+  "card_type": "power",
+  "skill_set_id": 9081032
+ },
+ {
+  "id": 20060,
+  "chara_id": 1028,
+  "chara_name": "ヒシアケボノ",
+  "name": "[甘～い浮き輪を召し上がれ]ヒシアケボノ",
+  "title": "[甘～い浮き輪を召し上がれ]",
+  "rarity": 2,
+  "card_type": "power",
+  "skill_set_id": 9081028
+ },
+ {
+  "id": 20061,
+  "chara_id": 1007,
+  "chara_name": "ゴールドシップ",
+  "name": "[ゴルシ印のスペシャリテ]ゴールドシップ",
+  "title": "[ゴルシ印のスペシャリテ]",
+  "rarity": 2,
+  "card_type": "stamina",
+  "skill_set_id": 9081007
+ },
+ {
+  "id": 20062,
+  "chara_id": 1004,
+  "chara_name": "マルゼンスキー",
+  "name": "[激マブ！ドライブ♪]マルゼンスキー",
+  "title": "[激マブ！ドライブ♪]",
+  "rarity": 2,
+  "card_type": "wit",
+  "skill_set_id": 9081004
+ },
+ {
+  "id": 20063,
+  "chara_id": 1002,
+  "chara_name": "サイレンススズカ",
+  "name": "[夕立の向こうからのぞく]サイレンススズカ",
+  "title": "[夕立の向こうからのぞく]",
+  "rarity": 2,
+  "card_type": "speed",
+  "skill_set_id": 9081002
+ },
+ {
+  "id": 20064,
+  "chara_id": 1098,
+  "chara_name": "コパノリッキー",
+  "name": "[ラッキーの神様は早起き]コパノリッキー",
+  "title": "[ラッキーの神様は早起き]",
+  "rarity": 2,
+  "card_type": "guts",
+  "skill_set_id": 9081098
+ },
+ {
+  "id": 20065,
+  "chara_id": 1011,
+  "chara_name": "グラスワンダー",
+  "name": "[よい茶の飲み置き]グラスワンダー",
+  "title": "[よい茶の飲み置き]",
+  "rarity": 2,
+  "card_type": "power",
+  "skill_set_id": 9081011
+ },
+ {
+  "id": 20066,
+  "chara_id": 1068,
+  "chara_name": "キタサンブラック",
+  "name": "[お助け大将と小さな魔女]キタサンブラック",
+  "title": "[お助け大将と小さな魔女]",
+  "rarity": 2,
+  "card_type": "stamina",
+  "skill_set_id": 9081068
+ },
+ {
+  "id": 20067,
+  "chara_id": 1010,
+  "chara_name": "タイキシャトル",
+  "name": "[あまえんぼNight]タイキシャトル",
+  "title": "[あまえんぼNight]",
+  "rarity": 2,
+  "card_type": "wit",
+  "skill_set_id": 9081010
+ },
+ {
+  "id": 20068,
+  "chara_id": 1060,
+  "chara_name": "ナイスネイチャ",
+  "name": "[とびっきりの金メダル]ナイスネイチャ",
+  "title": "[とびっきりの金メダル]",
+  "rarity": 2,
+  "card_type": "stamina",
+  "skill_set_id": 9081060
+ },
+ {
+  "id": 20069,
+  "chara_id": 1062,
+  "chara_name": "マチカネタンホイザ",
+  "name": "[あくもー退散！？]マチカネタンホイザ",
+  "title": "[あくもー退散！？]",
+  "rarity": 2,
+  "card_type": "speed",
+  "skill_set_id": 9081062
+ },
+ {
+  "id": 20070,
+  "chara_id": 1090,
+  "chara_name": "ヴィルシーナ",
+  "name": "[長姉は大変？]ヴィルシーナ",
+  "title": "[長姉は大変？]",
+  "rarity": 2,
+  "card_type": "guts",
+  "skill_set_id": 9081090
+ },
+ {
+  "id": 20071,
+  "chara_id": 1103,
+  "chara_name": "ロイスアンドロイス",
+  "name": "[『最強』は作れる！]ロイスアンドロイス",
+  "title": "[『最強』は作れる！]",
+  "rarity": 2,
+  "card_type": "power",
+  "skill_set_id": 9081103
+ },
+ {
+  "id": 20072,
+  "chara_id": 1084,
+  "chara_name": "タニノギムレット",
+  "name": "[ギャラルホルンを磨き上げよ]タニノギムレット",
+  "title": "[ギャラルホルンを磨き上げよ]",
+  "rarity": 2,
+  "card_type": "wit",
+  "skill_set_id": 9081084
+ },
+ {
+  "id": 20073,
+  "chara_id": 1048,
+  "chara_name": "トーセンジョーダン",
+  "name": "[Time flies]トーセンジョーダン",
+  "title": "[Time flies]",
+  "rarity": 2,
+  "card_type": "speed",
+  "skill_set_id": 9081048
+ },
+ {
+  "id": 20074,
+  "chara_id": 1072,
+  "chara_name": "ヤエノムテキ",
+  "name": "[護るべきは無垢の瞳]ヤエノムテキ",
+  "title": "[護るべきは無垢の瞳]",
+  "rarity": 2,
+  "card_type": "stamina",
+  "skill_set_id": 9081072
+ },
+ {
+  "id": 20075,
+  "chara_id": 1107,
+  "chara_name": "タップダンスシチー",
+  "name": "[Cheers!]タップダンスシチー",
+  "title": "[Cheers!]",
+  "rarity": 2,
+  "card_type": "guts",
+  "skill_set_id": 9081107
+ },
+ {
+  "id": 20076,
+  "chara_id": 1036,
+  "chara_name": "エアシャカール",
+  "name": "[道端フィードバック]エアシャカール",
+  "title": "[道端フィードバック]",
+  "rarity": 2,
+  "card_type": "power",
+  "skill_set_id": 9081036
+ },
+ {
+  "id": 20077,
+  "chara_id": 1092,
+  "chara_name": "ダンツフレーム",
+  "name": "[ぬりぬりシェイプアップ！]ダンツフレーム",
+  "title": "[ぬりぬりシェイプアップ！]",
+  "rarity": 2,
+  "card_type": "wit",
+  "skill_set_id": 9081092
+ },
+ {
+  "id": 20078,
+  "chara_id": 1056,
+  "chara_name": "マチカネフクキタル",
+  "name": "[お守りパワーで福徳円満！]マチカネフクキタル",
+  "title": "[お守りパワーで福徳円満！]",
+  "rarity": 2,
+  "card_type": "speed",
+  "skill_set_id": 9081056
+ },
+ {
+  "id": 20079,
+  "chara_id": 1055,
+  "chara_name": "マーベラスサンデー",
+  "name": "[みんなにグッドマーベラス☆]マーベラスサンデー",
+  "title": "[みんなにグッドマーベラス☆]",
+  "rarity": 2,
+  "card_type": "guts",
+  "skill_set_id": 9081055
+ },
+ {
+  "id": 20080,
+  "chara_id": 1076,
+  "chara_name": "サクラローレル",
+  "name": "[君の花衣]サクラローレル",
+  "title": "[君の花衣]",
+  "rarity": 2,
+  "card_type": "wit",
+  "skill_set_id": 9081076
+ },
+ {
+  "id": 20081,
+  "chara_id": 1082,
+  "chara_name": "ノースフライト",
+  "name": "[お任せ！オートクチュール]ノースフライト",
+  "title": "[お任せ！オートクチュール]",
+  "rarity": 2,
+  "card_type": "power",
+  "skill_set_id": 9081082
+ },
+ {
+  "id": 20082,
+  "chara_id": 1124,
+  "chara_name": "バブルガムフェロー",
+  "name": "[先陣スプラッシュ！]バブルガムフェロー",
+  "title": "[先陣スプラッシュ！]",
+  "rarity": 2,
+  "card_type": "speed",
+  "skill_set_id": 9081124
+ },
+ {
+  "id": 20083,
+  "chara_id": 1086,
+  "chara_name": "メジロラモーヌ",
+  "name": "[月下麗人]メジロラモーヌ",
+  "title": "[月下麗人]",
+  "rarity": 2,
+  "card_type": "stamina",
+  "skill_set_id": 9081086
+ },
+ {
+  "id": 20084,
+  "chara_id": 1130,
+  "chara_name": "ラッキーライラック",
+  "name": "[喜びの咲く刻]ラッキーライラック",
+  "title": "[喜びの咲く刻]",
+  "rarity": 2,
+  "card_type": "wit",
+  "skill_set_id": 9081130
+ },
+ {
+  "id": 20085,
+  "chara_id": 1013,
+  "chara_name": "メジロマックイーン",
+  "name": "[メロンなささやき]メジロマックイーン",
+  "title": "[メロンなささやき]",
+  "rarity": 2,
+  "card_type": "guts",
+  "skill_set_id": 9081013
+ },
+ {
+  "id": 20086,
+  "chara_id": 1030,
+  "chara_name": "ライスシャワー",
+  "name": "[『しあわせの青いバラ』]ライスシャワー",
+  "title": "[『しあわせの青いバラ』]",
+  "rarity": 2,
+  "card_type": "speed",
+  "skill_set_id": 9081030
+ },
+ {
+  "id": 20087,
+  "chara_id": 1112,
+  "chara_name": "デアリングハート",
+  "name": "[Daring Music]デアリングハート",
+  "title": "[Daring Music]",
+  "rarity": 2,
+  "card_type": "power",
+  "skill_set_id": 9081112
+ },
+ {
+  "id": 20088,
+  "chara_id": 1134,
+  "chara_name": "カレンブーケドール",
+  "name": "[一輪ずつ、喜びを束ねて]カレンブーケドール",
+  "title": "[一輪ずつ、喜びを束ねて]",
+  "rarity": 2,
+  "card_type": "stamina",
+  "skill_set_id": 9081134
+ },
+ {
+  "id": 20089,
+  "chara_id": 1039,
+  "chara_name": "カワカミプリンセス",
+  "name": "[私たちのプリンセス流儀]カワカミプリンセス",
+  "title": "[私たちのプリンセス流儀]",
+  "rarity": 2,
+  "card_type": "guts",
+  "skill_set_id": 9081039
+ },
+ {
+  "id": 20090,
+  "chara_id": 1054,
+  "chara_name": "ビコーペガサス",
+  "name": "[ニャンともイカすヒーローさ]ビコーペガサス",
+  "title": "[ニャンともイカすヒーローさ]",
+  "rarity": 2,
+  "card_type": "wit",
+  "skill_set_id": 9081054
+ },
+ {
+  "id": 20091,
+  "chara_id": 1126,
+  "chara_name": "サクラチトセオー",
+  "name": "[静寂を煎じ]サクラチトセオー",
+  "title": "[静寂を煎じ]",
+  "rarity": 2,
+  "card_type": "speed",
+  "skill_set_id": 9081126
+ },
+ {
+  "id": 20092,
+  "chara_id": 1099,
+  "chara_name": "ホッコータルマエ",
+  "name": "[続け故郷へ、けっぱり道！]ホッコータルマエ",
+  "title": "[続け故郷へ、けっぱり道！]",
+  "rarity": 2,
+  "card_type": "power",
+  "skill_set_id": 9081099
+ },
+ {
+  "id": 20093,
+  "chara_id": 1059,
+  "chara_name": "メジロドーベル",
+  "name": "[ぬくもりフォー・ユー]メジロドーベル",
+  "title": "[ぬくもりフォー・ユー]",
+  "rarity": 2,
+  "card_type": "speed",
+  "skill_set_id": 9081059
+ },
+ {
+  "id": 20094,
+  "chara_id": 1067,
+  "chara_name": "サトノダイヤモンド",
+  "name": "[私たちのアイディアノート]サトノダイヤモンド",
+  "title": "[私たちのアイディアノート]",
+  "rarity": 2,
+  "card_type": "stamina",
+  "skill_set_id": 9081067
+ },
+ {
+  "id": 20095,
+  "chara_id": 1136,
+  "chara_name": "レッドディザイア",
+  "name": "[Fervent Yearning]レッドディザイア",
+  "title": "[Fervent Yearning]",
+  "rarity": 2,
+  "card_type": "guts",
+  "skill_set_id": 9081136
+ },
+ {
+  "id": 20096,
+  "chara_id": 1010,
+  "chara_name": "タイキシャトル",
+  "name": "[Sushi-Go-Round!]タイキシャトル",
+  "title": "[Sushi-Go-Round!]",
+  "rarity": 2,
+  "card_type": "guts",
+  "skill_set_id": 9081010
+ },
+ {
+  "id": 20097,
+  "chara_id": 1045,
+  "chara_name": "スーパークリーク",
+  "name": "[温もりの一皿、召し上がれ♪]スーパークリーク",
+  "title": "[温もりの一皿、召し上がれ♪]",
+  "rarity": 2,
+  "card_type": "power",
+  "skill_set_id": 9081045
+ },
+ {
+  "id": 20098,
+  "chara_id": 1012,
+  "chara_name": "ヒシアマゾン",
+  "name": "[そびえ立つ背中]ヒシアマゾン",
+  "title": "[そびえ立つ背中]",
+  "rarity": 2,
+  "card_type": "wit",
+  "skill_set_id": 9081012
+ },
+ {
+  "id": 20099,
+  "chara_id": 1071,
+  "chara_name": "メジロアルダン",
+  "name": "[夕映えに身をゆだねて]メジロアルダン",
+  "title": "[夕映えに身をゆだねて]",
+  "rarity": 2,
+  "card_type": "stamina",
+  "skill_set_id": 9081071
+ },
+ {
+  "id": 20100,
+  "chara_id": 1120,
+  "chara_name": "カルストンライトオ",
+  "name": "[瞬光]カルストンライトオ",
+  "title": "[瞬光]",
+  "rarity": 2,
+  "card_type": "speed",
+  "skill_set_id": 9081120
+ },
+ {
+  "id": 20101,
+  "chara_id": 1047,
+  "chara_name": "ゼンノロブロイ",
+  "name": "[清く、やわらかな夜]ゼンノロブロイ",
+  "title": "[清く、やわらかな夜]",
+  "rarity": 2,
+  "card_type": "guts",
+  "skill_set_id": 9081047
+ },
+ {
+  "id": 30001,
+  "chara_id": 1001,
+  "chara_name": "スペシャルウィーク",
+  "name": "[日本一のステージを]スペシャルウィーク",
+  "title": "[日本一のステージを]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081001
+ },
+ {
+  "id": 30002,
+  "chara_id": 1002,
+  "chara_name": "サイレンススズカ",
+  "name": "[輝く景色の、その先に]サイレンススズカ",
+  "title": "[輝く景色の、その先に]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081002
+ },
+ {
+  "id": 30003,
+  "chara_id": 1003,
+  "chara_name": "トウカイテイオー",
+  "name": "[夢は掲げるものなのだっ！]トウカイテイオー",
+  "title": "[夢は掲げるものなのだっ！]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081003
+ },
+ {
+  "id": 30004,
+  "chara_id": 1007,
+  "chara_name": "ゴールドシップ",
+  "name": "[不沈艦の進撃]ゴールドシップ",
+  "title": "[不沈艦の進撃]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081007
+ },
+ {
+  "id": 30005,
+  "chara_id": 1008,
+  "chara_name": "ウオッカ",
+  "name": "[ロード・オブ・ウオッカ]ウオッカ",
+  "title": "[ロード・オブ・ウオッカ]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081008
+ },
+ {
+  "id": 30006,
+  "chara_id": 1011,
+  "chara_name": "グラスワンダー",
+  "name": "[千紫万紅にまぎれぬ一凛]グラスワンダー",
+  "title": "[千紫万紅にまぎれぬ一凛]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081011
+ },
+ {
+  "id": 30007,
+  "chara_id": 1014,
+  "chara_name": "エルコンドルパサー",
+  "name": "[パッションチャンピオーナ！]エルコンドルパサー",
+  "title": "[パッションチャンピオーナ！]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081014
+ },
+ {
+  "id": 30008,
+  "chara_id": 1020,
+  "chara_name": "セイウンスカイ",
+  "name": "[待望の大謀]セイウンスカイ",
+  "title": "[待望の大謀]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081020
+ },
+ {
+  "id": 30009,
+  "chara_id": 1021,
+  "chara_name": "タマモクロス",
+  "name": "[天をも切り裂くイナズマ娘！]タマモクロス",
+  "title": "[天をも切り裂くイナズマ娘！]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081021
+ },
+ {
+  "id": 30010,
+  "chara_id": 1022,
+  "chara_name": "ファインモーション",
+  "name": "[感謝は指先まで込めて]ファインモーション",
+  "title": "[感謝は指先まで込めて]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081022
+ },
+ {
+  "id": 30011,
+  "chara_id": 1031,
+  "chara_name": "アイネスフウジン",
+  "name": "[飛び出せ、キラメケ]アイネスフウジン",
+  "title": "[飛び出せ、キラメケ]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081031
+ },
+ {
+  "id": 30012,
+  "chara_id": 1035,
+  "chara_name": "ウイニングチケット",
+  "name": "[B・N・Winner!!]ウイニングチケット",
+  "title": "[B・N・Winner!!]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081035
+ },
+ {
+  "id": 30013,
+  "chara_id": 1036,
+  "chara_name": "エアシャカール",
+  "name": "[7センチの先へ]エアシャカール",
+  "title": "[7センチの先へ]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081036
+ },
+ {
+  "id": 30014,
+  "chara_id": 1040,
+  "chara_name": "ゴールドシチー",
+  "name": "[Run(my)way]ゴールドシチー",
+  "title": "[Run(my)way]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081040
+ },
+ {
+  "id": 30015,
+  "chara_id": 1041,
+  "chara_name": "サクラバクシンオー",
+  "name": "[はやい！うまい！はやい！]サクラバクシンオー",
+  "title": "[はやい！うまい！はやい！]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081041
+ },
+ {
+  "id": 30016,
+  "chara_id": 1045,
+  "chara_name": "スーパークリーク",
+  "name": "[一粒の安らぎ]スーパークリーク",
+  "title": "[一粒の安らぎ]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081045
+ },
+ {
+  "id": 30017,
+  "chara_id": 1046,
+  "chara_name": "スマートファルコン",
+  "name": "[これが私のウマドル道☆]スマートファルコン",
+  "title": "[これが私のウマドル道☆]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081046
+ },
+ {
+  "id": 30018,
+  "chara_id": 1051,
+  "chara_name": "ニシノフラワー",
+  "name": "[まだ小さな蕾でも]ニシノフラワー",
+  "title": "[まだ小さな蕾でも]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081051
+ },
+ {
+  "id": 30019,
+  "chara_id": 1052,
+  "chara_name": "ハルウララ",
+  "name": "[うらら～な休日]ハルウララ",
+  "title": "[うらら～な休日]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081052
+ },
+ {
+  "id": 30020,
+  "chara_id": 1054,
+  "chara_name": "ビコーペガサス",
+  "name": "[必殺！Wキャロットパンチ！]ビコーペガサス",
+  "title": "[必殺！Wキャロットパンチ！]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081054
+ },
+ {
+  "id": 30021,
+  "chara_id": 9001,
+  "chara_name": "駿川たづな",
+  "name": "[ようこそ、トレセン学園へ！]駿川たづな",
+  "title": "[ようこそ、トレセン学園へ！]",
+  "rarity": 3,
+  "card_type": "friend",
+  "skill_set_id": 9089001
+ },
+ {
+  "id": 30022,
+  "chara_id": 1013,
+  "chara_name": "メジロマックイーン",
+  "name": "[『エース』として]メジロマックイーン",
+  "title": "[『エース』として]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081013
+ },
+ {
+  "id": 30023,
+  "chara_id": 1030,
+  "chara_name": "ライスシャワー",
+  "name": "[『幸せ』が舞う時]ライスシャワー",
+  "title": "[『幸せ』が舞う時]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081030
+ },
+ {
+  "id": 30024,
+  "chara_id": 1006,
+  "chara_name": "オグリキャップ",
+  "name": "[『愛してもらうんだぞ』]オグリキャップ",
+  "title": "[『愛してもらうんだぞ』]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081006
+ },
+ {
+  "id": 30025,
+  "chara_id": 1001,
+  "chara_name": "スペシャルウィーク",
+  "name": "[夕焼けはあこがれの色]スペシャルウィーク",
+  "title": "[夕焼けはあこがれの色]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081001
+ },
+ {
+  "id": 30026,
+  "chara_id": 1066,
+  "chara_name": "ツインターボ",
+  "name": "[ターボエンジン全開宣言！]ツインターボ",
+  "title": "[ターボエンジン全開宣言！]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081066
+ },
+ {
+  "id": 30027,
+  "chara_id": 1064,
+  "chara_name": "メジロパーマー",
+  "name": "[バカと笑え]メジロパーマー",
+  "title": "[バカと笑え]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081064
+ },
+ {
+  "id": 30028,
+  "chara_id": 1068,
+  "chara_name": "キタサンブラック",
+  "name": "[迫る熱に押されて]キタサンブラック",
+  "title": "[迫る熱に押されて]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081068
+ },
+ {
+  "id": 30029,
+  "chara_id": 1067,
+  "chara_name": "サトノダイヤモンド",
+  "name": "[その背中を越えて]サトノダイヤモンド",
+  "title": "[その背中を越えて]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081067
+ },
+ {
+  "id": 30030,
+  "chara_id": 1062,
+  "chara_name": "マチカネタンホイザ",
+  "name": "[Just keep going.]マチカネタンホイザ",
+  "title": "[Just keep going.]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081062
+ },
+ {
+  "id": 30031,
+  "chara_id": 1029,
+  "chara_name": "ユキノビジン",
+  "name": "[ふるさと直送エール！]ユキノビジン",
+  "title": "[ふるさと直送エール！]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081029
+ },
+ {
+  "id": 30032,
+  "chara_id": 1072,
+  "chara_name": "ヤエノムテキ",
+  "name": "[押して忍べど燃ゆるもの]ヤエノムテキ",
+  "title": "[押して忍べど燃ゆるもの]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081072
+ },
+ {
+  "id": 30033,
+  "chara_id": 1035,
+  "chara_name": "ウイニングチケット",
+  "name": "[夢はホントに叶うんだ！]ウイニングチケット",
+  "title": "[夢はホントに叶うんだ！]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081035
+ },
+ {
+  "id": 30034,
+  "chara_id": 1030,
+  "chara_name": "ライスシャワー",
+  "name": "[幸せは曲がり角の向こう]ライスシャワー",
+  "title": "[幸せは曲がり角の向こう]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081030
+ },
+ {
+  "id": 30036,
+  "chara_id": 9006,
+  "chara_name": "樫本理子",
+  "name": "[徹底管理主義]樫本理子",
+  "title": "[徹底管理主義]",
+  "rarity": 3,
+  "card_type": "friend",
+  "skill_set_id": 9089006
+ },
+ {
+  "id": 30037,
+  "chara_id": 1017,
+  "chara_name": "シンボリルドルフ",
+  "name": "[絶対皇帝]シンボリルドルフ",
+  "title": "[絶対皇帝]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081017
+ },
+ {
+  "id": 30038,
+  "chara_id": 1069,
+  "chara_name": "サクラチヨノオー",
+  "name": "[今ぞ盛りのさくら花]サクラチヨノオー",
+  "title": "[今ぞ盛りのさくら花]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081069
+ },
+ {
+  "id": 30039,
+  "chara_id": 1039,
+  "chara_name": "カワカミプリンセス",
+  "name": "[花嫁たるもの！！]カワカミプリンセス",
+  "title": "[花嫁たるもの！！]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081039
+ },
+ {
+  "id": 30040,
+  "chara_id": 1028,
+  "chara_name": "ヒシアケボノ",
+  "name": "[召しませふぁーすとBite！]ヒシアケボノ",
+  "title": "[召しませふぁーすとBite！]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081028
+ },
+ {
+  "id": 30041,
+  "chara_id": 1059,
+  "chara_name": "メジロドーベル",
+  "name": "[おもい、ねがう]メジロドーベル",
+  "title": "[おもい、ねがう]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081059
+ },
+ {
+  "id": 30042,
+  "chara_id": 1053,
+  "chara_name": "バンブーメモリー",
+  "name": "[Head-on fight！]バンブーメモリー",
+  "title": "[Head-on fight！]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081053
+ },
+ {
+  "id": 30043,
+  "chara_id": 1049,
+  "chara_name": "ナカヤマフェスタ",
+  "name": "[43、8、1]ナカヤマフェスタ",
+  "title": "[43、8、1]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081049
+ },
+ {
+  "id": 30044,
+  "chara_id": 1016,
+  "chara_name": "ナリタブライアン",
+  "name": "[Two Pieces]ナリタブライアン",
+  "title": "[Two Pieces]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081016
+ },
+ {
+  "id": 30045,
+  "chara_id": 1044,
+  "chara_name": "スイープトウショウ",
+  "name": "[ツメたいヒトリジメ？]スイープトウショウ",
+  "title": "[ツメたいヒトリジメ？]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081044
+ },
+ {
+  "id": 30046,
+  "chara_id": 1035,
+  "chara_name": "ウイニングチケット",
+  "name": "[全力！タントラムッッ！]ウイニングチケット",
+  "title": "[全力！タントラムッッ！]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081035
+ },
+ {
+  "id": 30047,
+  "chara_id": 1009,
+  "chara_name": "ダイワスカーレット",
+  "name": "[トライフル☆バケーション]ダイワスカーレット",
+  "title": "[トライフル☆バケーション]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081009
+ },
+ {
+  "id": 30048,
+  "chara_id": 1027,
+  "chara_name": "メジロライアン",
+  "name": "[爽快！ウイニングショット！]メジロライアン",
+  "title": "[爽快！ウイニングショット！]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081027
+ },
+ {
+  "id": 30052,
+  "chara_id": 9008,
+  "chara_name": "ライトハロー",
+  "name": "[from the GROUND UP]ライトハロー",
+  "title": "[from the GROUND UP]",
+  "rarity": 3,
+  "card_type": "friend",
+  "skill_set_id": 9089008
+ },
+ {
+  "id": 30053,
+  "chara_id": 1010,
+  "chara_name": "タイキシャトル",
+  "name": "[Hands up, crook!]タイキシャトル",
+  "title": "[Hands up, crook!]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081010
+ },
+ {
+  "id": 30054,
+  "chara_id": 1060,
+  "chara_name": "ナイスネイチャ",
+  "name": "[願いまでは拭わない]ナイスネイチャ",
+  "title": "[願いまでは拭わない]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081060
+ },
+ {
+  "id": 30055,
+  "chara_id": 1020,
+  "chara_name": "セイウンスカイ",
+  "name": "[明日は全国的に赤でしょう♪]セイウンスカイ",
+  "title": "[明日は全国的に赤でしょう♪]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081020
+ },
+ {
+  "id": 30056,
+  "chara_id": 1061,
+  "chara_name": "キングヘイロー",
+  "name": "[今宵、円舞曲にのせて]キングヘイロー",
+  "title": "[今宵、円舞曲にのせて]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081061
+ },
+ {
+  "id": 30057,
+  "chara_id": 1007,
+  "chara_name": "ゴールドシップ",
+  "name": "[ウマ王伝説・最強になった件]ゴールドシップ",
+  "title": "[ウマ王伝説・最強になった件]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081007
+ },
+ {
+  "id": 30058,
+  "chara_id": 1003,
+  "chara_name": "トウカイテイオー",
+  "name": "[ふたつのノーブルライト]トウカイテイオー",
+  "title": "[ふたつのノーブルライト]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081003
+ },
+ {
+  "id": 30059,
+  "chara_id": 1026,
+  "chara_name": "ミホノブルボン",
+  "name": "[祝福はフーガ]ミホノブルボン",
+  "title": "[祝福はフーガ]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081026
+ },
+ {
+  "id": 30060,
+  "chara_id": 1066,
+  "chara_name": "ツインターボ",
+  "name": "[集まってコンステレーション]ツインターボ",
+  "title": "[集まってコンステレーション]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081066
+ },
+ {
+  "id": 30061,
+  "chara_id": 1023,
+  "chara_name": "ビワハヤヒデ",
+  "name": "[響き合うストレイン]ビワハヤヒデ",
+  "title": "[響き合うストレイン]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081023
+ },
+ {
+  "id": 30062,
+  "chara_id": 1002,
+  "chara_name": "サイレンススズカ",
+  "name": "[WINNING DREAM]サイレンススズカ",
+  "title": "[WINNING DREAM]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081002
+ },
+ {
+  "id": 30063,
+  "chara_id": 1063,
+  "chara_name": "イクノディクタス",
+  "name": "[心と足元は温かく]イクノディクタス",
+  "title": "[心と足元は温かく]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081063
+ },
+ {
+  "id": 30064,
+  "chara_id": 1021,
+  "chara_name": "タマモクロス",
+  "name": "[やったれハロウィンナイト！]タマモクロス",
+  "title": "[やったれハロウィンナイト！]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081021
+ },
+ {
+  "id": 30065,
+  "chara_id": 1047,
+  "chara_name": "ゼンノロブロイ",
+  "name": "[魔力授かりし英雄]ゼンノロブロイ",
+  "title": "[魔力授かりし英雄]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081047
+ },
+ {
+  "id": 30066,
+  "chara_id": 1026,
+  "chara_name": "ミホノブルボン",
+  "name": "[幽霊さんとハロウィンの魔法]ミホノブルボン",
+  "title": "[幽霊さんとハロウィンの魔法]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081026
+ },
+ {
+  "id": 30067,
+  "chara_id": 1017,
+  "chara_name": "玉座に集いし者たち",
+  "name": "[尊尚親愛]玉座に集いし者たち",
+  "title": "[尊尚親愛]",
+  "rarity": 3,
+  "card_type": "group",
+  "skill_set_id": 9081017,
+  "members": [
+   "シンボリルドルフ",
+   "トウカイテイオー",
+   "ツルマルツヨシ"
+  ]
+ },
+ {
+  "id": 30068,
+  "chara_id": 1038,
+  "chara_name": "カレンチャン",
+  "name": "[かなし君、うつくし君]カレンチャン",
+  "title": "[かなし君、うつくし君]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081038
+ },
+ {
+  "id": 30069,
+  "chara_id": 1016,
+  "chara_name": "ナリタブライアン",
+  "name": "[天嗤う鏑矢]ナリタブライアン",
+  "title": "[天嗤う鏑矢]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081016
+ },
+ {
+  "id": 30070,
+  "chara_id": 1029,
+  "chara_name": "ユキノビジン",
+  "name": "[宵照らす奉納舞]ユキノビジン",
+  "title": "[宵照らす奉納舞]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081029
+ },
+ {
+  "id": 30071,
+  "chara_id": 1065,
+  "chara_name": "ダイタクヘリオス",
+  "name": "[おどれ・さわげ・フェスれ！]ダイタクヘリオス",
+  "title": "[おどれ・さわげ・フェスれ！]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081065
+ },
+ {
+  "id": 30072,
+  "chara_id": 1024,
+  "chara_name": "マヤノトップガン",
+  "name": "[フォーメーション：PARTY]マヤノトップガン",
+  "title": "[フォーメーション：PARTY]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081024
+ },
+ {
+  "id": 30073,
+  "chara_id": 1050,
+  "chara_name": "ナリタタイシン",
+  "name": "[いじっぱりのマルクト]ナリタタイシン",
+  "title": "[いじっぱりのマルクト]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081050
+ },
+ {
+  "id": 30074,
+  "chara_id": 1055,
+  "chara_name": "マーベラスサンデー",
+  "name": "[スノウクリスタル・デイ]マーベラスサンデー",
+  "title": "[スノウクリスタル・デイ]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081055
+ },
+ {
+  "id": 30075,
+  "chara_id": 1025,
+  "chara_name": "マンハッタンカフェ",
+  "name": "[独奏・螺旋追走曲]マンハッタンカフェ",
+  "title": "[独奏・螺旋追走曲]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081025
+ },
+ {
+  "id": 30076,
+  "chara_id": 1002,
+  "chara_name": "サイレンススズカ",
+  "name": "[まだ見ぬ景色を求めて]サイレンススズカ",
+  "title": "[まだ見ぬ景色を求めて]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081002
+ },
+ {
+  "id": 30077,
+  "chara_id": 1033,
+  "chara_name": "アドマイヤベガ",
+  "name": "[夜に暁、空に瑞星]アドマイヤベガ",
+  "title": "[夜に暁、空に瑞星]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081033
+ },
+ {
+  "id": 30078,
+  "chara_id": 1056,
+  "chara_name": "マチカネフクキタル",
+  "name": "[袖振り合えば福となる♪]マチカネフクキタル",
+  "title": "[袖振り合えば福となる♪]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081056
+ },
+ {
+  "id": 30079,
+  "chara_id": 1058,
+  "chara_name": "メイショウドトウ",
+  "name": "[飛びも出でぬべき心地すれ]メイショウドトウ",
+  "title": "[飛びも出でぬべき心地すれ]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081058
+ },
+ {
+  "id": 30080,
+  "chara_id": 9005,
+  "chara_name": "安心沢刺々美",
+  "name": "[ブスッといっとく？]安心沢刺々美",
+  "title": "[ブスッといっとく？]",
+  "rarity": 3,
+  "card_type": "friend",
+  "skill_set_id": 9089005
+ },
+ {
+  "id": 30081,
+  "chara_id": 1001,
+  "chara_name": "チーム＜シリウス＞",
+  "name": "[紡がれてゆく想い]チーム＜シリウス＞",
+  "title": "[紡がれてゆく想い]",
+  "rarity": 3,
+  "card_type": "group",
+  "skill_set_id": 9081001,
+  "members": [
+   "メジロマックイーン",
+   "ライスシャワー",
+   "ウイニングチケット",
+   "ナリタブライアン",
+   "サイレンススズカ",
+   "スペシャルウィーク"
+  ]
+ },
+ {
+  "id": 30082,
+  "chara_id": 1051,
+  "chara_name": "ニシノフラワー",
+  "name": "[小さなカップに想いをこめて]ニシノフラワー",
+  "title": "[小さなカップに想いをこめて]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081051
+ },
+ {
+  "id": 30083,
+  "chara_id": 1041,
+  "chara_name": "サクラバクシンオー",
+  "name": "[爆速！最速！花あらし！]サクラバクシンオー",
+  "title": "[爆速！最速！花あらし！]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081041
+ },
+ {
+  "id": 30084,
+  "chara_id": 1048,
+  "chara_name": "トーセンジョーダン",
+  "name": "[In my way]トーセンジョーダン",
+  "title": "[In my way]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081048
+ },
+ {
+  "id": 30085,
+  "chara_id": 1019,
+  "chara_name": "アグネスデジタル",
+  "name": "[そこに“いる”幸せ]アグネスデジタル",
+  "title": "[そこに“いる”幸せ]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081019
+ },
+ {
+  "id": 30086,
+  "chara_id": 1077,
+  "chara_name": "ナリタトップロード",
+  "name": "[桃色のバックショット]ナリタトップロード",
+  "title": "[桃色のバックショット]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081077
+ },
+ {
+  "id": 30087,
+  "chara_id": 1074,
+  "chara_name": "メジロブライト",
+  "name": "[リトル・バイ・リトル]メジロブライト",
+  "title": "[リトル・バイ・リトル]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081074
+ },
+ {
+  "id": 30088,
+  "chara_id": 1067,
+  "chara_name": "サトノダイヤモンド",
+  "name": "[SPECIAL DREAMERS!!]サトノダイヤモンド",
+  "title": "[SPECIAL DREAMERS!!]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081067
+ },
+ {
+  "id": 30089,
+  "chara_id": 1055,
+  "chara_name": "マーベラスサンデー",
+  "name": "[世界にもっと☆マーベラス]マーベラスサンデー",
+  "title": "[世界にもっと☆マーベラス]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081055
+ },
+ {
+  "id": 30090,
+  "chara_id": 1017,
+  "chara_name": "シンボリルドルフ",
+  "name": "[Enchaînement]シンボリルドルフ",
+  "title": "[Enchaînement]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081017
+ },
+ {
+  "id": 30091,
+  "chara_id": 1070,
+  "chara_name": "シリウスシンボリ",
+  "name": "[Escorte étoile]シリウスシンボリ",
+  "title": "[Escorte étoile]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081070
+ },
+ {
+  "id": 30092,
+  "chara_id": 1036,
+  "chara_name": "エアシャカール",
+  "name": "[mag!c number]エアシャカール",
+  "title": "[mag!c number]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081036
+ },
+ {
+  "id": 30093,
+  "chara_id": 1009,
+  "chara_name": "ダイワスカーレット",
+  "name": "[Outfit as No.1]ダイワスカーレット",
+  "title": "[Outfit as No.1]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081009
+ },
+ {
+  "id": 30094,
+  "chara_id": 1053,
+  "chara_name": "バンブーメモリー",
+  "name": "[届け、このオモイ！]バンブーメモリー",
+  "title": "[届け、このオモイ！]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081053
+ },
+ {
+  "id": 30095,
+  "chara_id": 1042,
+  "chara_name": "シーキングザパール",
+  "name": "[そのエールは世界を変えた]シーキングザパール",
+  "title": "[そのエールは世界を変えた]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081042
+ },
+ {
+  "id": 30096,
+  "chara_id": 1039,
+  "chara_name": "カワカミプリンセス",
+  "name": "[フレフレ☆プリンセス！]カワカミプリンセス",
+  "title": "[フレフレ☆プリンセス！]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081039
+ },
+ {
+  "id": 30097,
+  "chara_id": 1057,
+  "chara_name": "ミスターシービー",
+  "name": "[Dear Mr. C.B.]ミスターシービー",
+  "title": "[Dear Mr. C.B.]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081057
+ },
+ {
+  "id": 30098,
+  "chara_id": 1052,
+  "chara_name": "ハルウララ",
+  "name": "[うららか・ぱっしょん♪]ハルウララ",
+  "title": "[うららか・ぱっしょん♪]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081052
+ },
+ {
+  "id": 30099,
+  "chara_id": 1063,
+  "chara_name": "イクノディクタス",
+  "name": "[愛すべき金蘭のつどい]イクノディクタス",
+  "title": "[愛すべき金蘭のつどい]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081063
+ },
+ {
+  "id": 30100,
+  "chara_id": 1030,
+  "chara_name": "ライスシャワー",
+  "name": "[あこがれの景色]ライスシャワー",
+  "title": "[あこがれの景色]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081030
+ },
+ {
+  "id": 30101,
+  "chara_id": 1032,
+  "chara_name": "アグネスタキオン",
+  "name": "[Q≠0]アグネスタキオン",
+  "title": "[Q≠0]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081032
+ },
+ {
+  "id": 30102,
+  "chara_id": 1014,
+  "chara_name": "エルコンドルパサー",
+  "name": "[キラキラカケル∞]エルコンドルパサー",
+  "title": "[キラキラカケル∞]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081014
+ },
+ {
+  "id": 30103,
+  "chara_id": 1062,
+  "chara_name": "マチカネタンホイザ",
+  "name": "[マチタン☆アドベンチャー]マチカネタンホイザ",
+  "title": "[マチタン☆アドベンチャー]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081062
+ },
+ {
+  "id": 30104,
+  "chara_id": 1047,
+  "chara_name": "ゼンノロブロイ",
+  "name": "[『ロードナイトと夢の石』]ゼンノロブロイ",
+  "title": "[『ロードナイトと夢の石』]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081047
+ },
+ {
+  "id": 30105,
+  "chara_id": 1001,
+  "chara_name": "スペシャルウィーク",
+  "name": "[私たちと夢、掴みましょう！]スペシャルウィーク",
+  "title": "[私たちと夢、掴みましょう！]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081001
+ },
+ {
+  "id": 30106,
+  "chara_id": 1018,
+  "chara_name": "エアグルーヴ",
+  "name": "[理想へ向かう青嵐]エアグルーヴ",
+  "title": "[理想へ向かう青嵐]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081018
+ },
+ {
+  "id": 30107,
+  "chara_id": 1004,
+  "chara_name": "マルゼンスキー",
+  "name": "[おセンチ注意報♪]マルゼンスキー",
+  "title": "[おセンチ注意報♪]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081004
+ },
+ {
+  "id": 30108,
+  "chara_id": 1049,
+  "chara_name": "ナカヤマフェスタ",
+  "name": "[一天地六に身を任せ]ナカヤマフェスタ",
+  "title": "[一天地六に身を任せ]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081049
+ },
+ {
+  "id": 30109,
+  "chara_id": 1069,
+  "chara_name": "サクラチヨノオー",
+  "name": "[チョベリグ心あれば桜心]サクラチヨノオー",
+  "title": "[チョベリグ心あれば桜心]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081069
+ },
+ {
+  "id": 30110,
+  "chara_id": 1025,
+  "chara_name": "マンハッタンカフェ",
+  "name": "[It's on the house.]マンハッタンカフェ",
+  "title": "[It's on the house.]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081025
+ },
+ {
+  "id": 30111,
+  "chara_id": 1003,
+  "chara_name": "トウカイテイオー",
+  "name": "[テイオー・オー・オー！！！]トウカイテイオー",
+  "title": "[テイオー・オー・オー！！！]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081003
+ },
+ {
+  "id": 30112,
+  "chara_id": 1066,
+  "chara_name": "ツインターボ",
+  "name": "[TT Ignition!]ツインターボ",
+  "title": "[TT Ignition!]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081066
+ },
+ {
+  "id": 30113,
+  "chara_id": 1023,
+  "chara_name": "ビワハヤヒデ",
+  "name": "[ユークロニア・アーキテクト]ビワハヤヒデ",
+  "title": "[ユークロニア・アーキテクト]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081023
+ },
+ {
+  "id": 30114,
+  "chara_id": 1085,
+  "chara_name": "ダイイチルビー",
+  "name": "[嗚呼華麗ナル一族]ダイイチルビー",
+  "title": "[嗚呼華麗ナル一族]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081085
+ },
+ {
+  "id": 30115,
+  "chara_id": 1064,
+  "chara_name": "メジロパーマー",
+  "name": "[月下の悪魔ちゃん♪]メジロパーマー",
+  "title": "[月下の悪魔ちゃん♪]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081064
+ },
+ {
+  "id": 30116,
+  "chara_id": 1065,
+  "chara_name": "ダイタクヘリオス",
+  "name": "[お日さま天使ちゃん♪]ダイタクヘリオス",
+  "title": "[お日さま天使ちゃん♪]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081065
+ },
+ {
+  "id": 30117,
+  "chara_id": 1043,
+  "chara_name": "シンコウウインディ",
+  "name": "[とびだせ！恐怖の魔王軍]シンコウウインディ",
+  "title": "[とびだせ！恐怖の魔王軍]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081043
+ },
+ {
+  "id": 30118,
+  "chara_id": 1083,
+  "chara_name": "シンボリクリスエス",
+  "name": "[A Win Foreshadowed]シンボリクリスエス",
+  "title": "[A Win Foreshadowed]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081083
+ },
+ {
+  "id": 30119,
+  "chara_id": 1071,
+  "chara_name": "メジロアルダン",
+  "name": "[夜風に舞うは祈りの花]メジロアルダン",
+  "title": "[夜風に舞うは祈りの花]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081071
+ },
+ {
+  "id": 30120,
+  "chara_id": 1072,
+  "chara_name": "ヤエノムテキ",
+  "name": "[天まで焦がせ祈りの火]ヤエノムテキ",
+  "title": "[天まで焦がせ祈りの火]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081072
+ },
+ {
+  "id": 30121,
+  "chara_id": 1026,
+  "chara_name": "ミホノブルボン",
+  "name": "[U & Me]ミホノブルボン",
+  "title": "[U & Me]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081026
+ },
+ {
+  "id": 30122,
+  "chara_id": 1037,
+  "chara_name": "エイシンフラッシュ",
+  "name": "[Danke schön]エイシンフラッシュ",
+  "title": "[Danke schön]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081037
+ },
+ {
+  "id": 30123,
+  "chara_id": 1016,
+  "chara_name": "ナリタブライアン",
+  "name": "[GLAD TIDINGS]ナリタブライアン",
+  "title": "[GLAD TIDINGS]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081016
+ },
+ {
+  "id": 30124,
+  "chara_id": 1018,
+  "chara_name": "エアグルーヴ",
+  "name": "[Are you merry?]エアグルーヴ",
+  "title": "[Are you merry?]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081018
+ },
+ {
+  "id": 30125,
+  "chara_id": 1076,
+  "chara_name": "サクラローレル",
+  "name": "[ここからはDon't stop!]サクラローレル",
+  "title": "[ここからはDon't stop!]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081076
+ },
+ {
+  "id": 30126,
+  "chara_id": 1078,
+  "chara_name": "ヤマニンゼファー",
+  "name": "[誰も知らない風へ]ヤマニンゼファー",
+  "title": "[誰も知らない風へ]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081078
+ },
+ {
+  "id": 30127,
+  "chara_id": 1001,
+  "chara_name": "スペシャルウィーク",
+  "name": "[ハネ退け魔を退け願い込め]スペシャルウィーク",
+  "title": "[ハネ退け魔を退け願い込め]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081001
+ },
+ {
+  "id": 30128,
+  "chara_id": 1044,
+  "chara_name": "スイープトウショウ",
+  "name": "[気まぐれ絶佳]スイープトウショウ",
+  "title": "[気まぐれ絶佳]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081044
+ },
+ {
+  "id": 30129,
+  "chara_id": 1011,
+  "chara_name": "グラスワンダー",
+  "name": "[遥か流るる冬夏青青]グラスワンダー",
+  "title": "[遥か流るる冬夏青青]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081011
+ },
+ {
+  "id": 30130,
+  "chara_id": 1093,
+  "chara_name": "ケイエスミラクル",
+  "name": "[To you]ケイエスミラクル",
+  "title": "[To you]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081093
+ },
+ {
+  "id": 30131,
+  "chara_id": 1055,
+  "chara_name": "マーベラスサンデー",
+  "name": "[マーベラス☆ショコラSHOW]マーベラスサンデー",
+  "title": "[マーベラス☆ショコラSHOW]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081055
+ },
+ {
+  "id": 30132,
+  "chara_id": 1054,
+  "chara_name": "ビコーペガサス",
+  "name": "[変身！ギャルソンフォーム！]ビコーペガサス",
+  "title": "[変身！ギャルソンフォーム！]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081054
+ },
+ {
+  "id": 30133,
+  "chara_id": 1028,
+  "chara_name": "ヒシアケボノ",
+  "name": "[フォンデンテで笑って]ヒシアケボノ",
+  "title": "[フォンデンテで笑って]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081028
+ },
+ {
+  "id": 30134,
+  "chara_id": 1086,
+  "chara_name": "メジロラモーヌ",
+  "name": "[燦爛]メジロラモーヌ",
+  "title": "[燦爛]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081086
+ },
+ {
+  "id": 30135,
+  "chara_id": 1104,
+  "chara_name": "カツラギエース",
+  "name": "[掲げよ、燃え盛る灯を]カツラギエース",
+  "title": "[掲げよ、燃え盛る灯を]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081104
+ },
+ {
+  "id": 30136,
+  "chara_id": 1083,
+  "chara_name": "シンボリクリスエス",
+  "name": "[Unyielding resolve]シンボリクリスエス",
+  "title": "[Unyielding resolve]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081083
+ },
+ {
+  "id": 30137,
+  "chara_id": 9040,
+  "chara_name": "祖にして導く者",
+  "name": "[永劫続く栄光へ]祖にして導く者",
+  "title": "[永劫続く栄光へ]",
+  "rarity": 3,
+  "card_type": "group",
+  "skill_set_id": 9089040,
+  "members": [
+   "ダーレーアラビアン",
+   "ゴドルフィンバルブ",
+   "バイアリーターク"
+  ]
+ },
+ {
+  "id": 30138,
+  "chara_id": 1060,
+  "chara_name": "ナイスネイチャ",
+  "name": "[今は瞳を閉じないで]ナイスネイチャ",
+  "title": "[今は瞳を閉じないで]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081060
+ },
+ {
+  "id": 30139,
+  "chara_id": 1013,
+  "chara_name": "メジロマックイーン",
+  "name": "[心、夜風にさらわれて]メジロマックイーン",
+  "title": "[心、夜風にさらわれて]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081013
+ },
+ {
+  "id": 30140,
+  "chara_id": 1003,
+  "chara_name": "トウカイテイオー",
+  "name": "[比翼のワルツ]トウカイテイオー",
+  "title": "[比翼のワルツ]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081003
+ },
+ {
+  "id": 30141,
+  "chara_id": 1026,
+  "chara_name": "ミホノブルボン",
+  "name": "[ミッション『心の栄養補給』]ミホノブルボン",
+  "title": "[ミッション『心の栄養補給』]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081026
+ },
+ {
+  "id": 30142,
+  "chara_id": 1076,
+  "chara_name": "サクラローレル",
+  "name": "[刻下、桜花爛漫]サクラローレル",
+  "title": "[刻下、桜花爛漫]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081076
+ },
+ {
+  "id": 30143,
+  "chara_id": 1063,
+  "chara_name": "イクノディクタス",
+  "name": "[たどり着いた景色]イクノディクタス",
+  "title": "[たどり着いた景色]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081063
+ },
+ {
+  "id": 30145,
+  "chara_id": 1084,
+  "chara_name": "タニノギムレット",
+  "name": "[Welcome to Umayuru]タニノギムレット",
+  "title": "[Welcome to Umayuru]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081084
+ },
+ {
+  "id": 30146,
+  "chara_id": 1006,
+  "chara_name": "オグリキャップ",
+  "name": "[駆けよ、駆けよ、駆けよ！！]オグリキャップ",
+  "title": "[駆けよ、駆けよ、駆けよ！！]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081006
+ },
+ {
+  "id": 30147,
+  "chara_id": 1094,
+  "chara_name": "ジャングルポケット",
+  "name": "[The frontier]ジャングルポケット",
+  "title": "[The frontier]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081094
+ },
+ {
+  "id": 30148,
+  "chara_id": 1009,
+  "chara_name": "ダイワスカーレット",
+  "name": "[Something Blue]ダイワスカーレット",
+  "title": "[Something Blue]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081009
+ },
+ {
+  "id": 30149,
+  "chara_id": 1087,
+  "chara_name": "アストンマーチャン",
+  "name": "[オートクチュール・メモリー]アストンマーチャン",
+  "title": "[オートクチュール・メモリー]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081087
+ },
+ {
+  "id": 30150,
+  "chara_id": 1008,
+  "chara_name": "ウオッカ",
+  "name": "[ハート・イグニッション！！]ウオッカ",
+  "title": "[ハート・イグニッション！！]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081008
+ },
+ {
+  "id": 30151,
+  "chara_id": 1024,
+  "chara_name": "マヤノトップガン",
+  "name": "[Chill chill night*]マヤノトップガン",
+  "title": "[Chill chill night*]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081024
+ },
+ {
+  "id": 30152,
+  "chara_id": 1015,
+  "chara_name": "テイエムオペラオー",
+  "name": "[All'alba vincerò!]テイエムオペラオー",
+  "title": "[All'alba vincerò!]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081015
+ },
+ {
+  "id": 30153,
+  "chara_id": 1040,
+  "chara_name": "ゴールドシチー",
+  "name": "[優しい月]ゴールドシチー",
+  "title": "[優しい月]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081040
+ },
+ {
+  "id": 30154,
+  "chara_id": 1064,
+  "chara_name": "メジロパーマー",
+  "name": "[カモメのように]メジロパーマー",
+  "title": "[カモメのように]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081064
+ },
+ {
+  "id": 30155,
+  "chara_id": 1065,
+  "chara_name": "ダイタクヘリオス",
+  "name": "[#夏 #新しい自分]ダイタクヘリオス",
+  "title": "[#夏 #新しい自分]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081065
+ },
+ {
+  "id": 30156,
+  "chara_id": 1100,
+  "chara_name": "ワンダーアキュート",
+  "name": "[ライフロング・ワンダー]ワンダーアキュート",
+  "title": "[ライフロング・ワンダー]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081100
+ },
+ {
+  "id": 30157,
+  "chara_id": 1025,
+  "chara_name": "マンハッタンカフェ",
+  "name": "[君と見る泡沫]マンハッタンカフェ",
+  "title": "[君と見る泡沫]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081025
+ },
+ {
+  "id": 30158,
+  "chara_id": 1094,
+  "chara_name": "ジャングルポケット",
+  "name": "[トばすぜホットサマー！]ジャングルポケット",
+  "title": "[トばすぜホットサマー！]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081094
+ },
+ {
+  "id": 30159,
+  "chara_id": 1018,
+  "chara_name": "エアグルーヴ",
+  "name": "[Seaside Bloom]エアグルーヴ",
+  "title": "[Seaside Bloom]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081018
+ },
+ {
+  "id": 30160,
+  "chara_id": 9043,
+  "chara_name": "佐岳メイ",
+  "name": "[L'aubeは迫りて]佐岳メイ",
+  "title": "[L'aubeは迫りて]",
+  "rarity": 3,
+  "card_type": "friend",
+  "skill_set_id": 9089043
+ },
+ {
+  "id": 30161,
+  "chara_id": 1014,
+  "chara_name": "エルコンドルパサー",
+  "name": "[大望は飛んでいく]エルコンドルパサー",
+  "title": "[大望は飛んでいく]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081014
+ },
+ {
+  "id": 30162,
+  "chara_id": 1033,
+  "chara_name": "アドマイヤベガ",
+  "name": "[Precious☆Moments]アドマイヤベガ",
+  "title": "[Precious☆Moments]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081033
+ },
+ {
+  "id": 30163,
+  "chara_id": 1049,
+  "chara_name": "ナカヤマフェスタ",
+  "name": "[鉄火場に咲く菫]ナカヤマフェスタ",
+  "title": "[鉄火場に咲く菫]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081049
+ },
+ {
+  "id": 30164,
+  "chara_id": 1012,
+  "chara_name": "ヒシアマゾン",
+  "name": "[炎々、闘志を抱き]ヒシアマゾン",
+  "title": "[炎々、闘志を抱き]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081012
+ },
+ {
+  "id": 30165,
+  "chara_id": 1084,
+  "chara_name": "タニノギムレット",
+  "name": "[フォルトゥーナの喝采]タニノギムレット",
+  "title": "[フォルトゥーナの喝采]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081084
+ },
+ {
+  "id": 30166,
+  "chara_id": 1107,
+  "chara_name": "タップダンスシチー",
+  "name": "[高らかにYO-HO!]タップダンスシチー",
+  "title": "[高らかにYO-HO!]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081107
+ },
+ {
+  "id": 30167,
+  "chara_id": 1022,
+  "chara_name": "ファインモーション",
+  "name": "[Hello my clover]ファインモーション",
+  "title": "[Hello my clover]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081022
+ },
+ {
+  "id": 30168,
+  "chara_id": 1007,
+  "chara_name": "ゴールドシップ",
+  "name": "[波をかきわけ夢がゆく]ゴールドシップ",
+  "title": "[波をかきわけ夢がゆく]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081007
+ },
+ {
+  "id": 30169,
+  "chara_id": 1073,
+  "chara_name": "ツルマルツヨシ",
+  "name": "[天より遣われし微笑み]ツルマルツヨシ",
+  "title": "[天より遣われし微笑み]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081073
+ },
+ {
+  "id": 30170,
+  "chara_id": 1061,
+  "chara_name": "キングヘイロー",
+  "name": "[我が舞、巡りて]キングヘイロー",
+  "title": "[我が舞、巡りて]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081061
+ },
+ {
+  "id": 30171,
+  "chara_id": 1052,
+  "chara_name": "ハルウララ",
+  "name": "[ああ、楽しや、楽しや！]ハルウララ",
+  "title": "[ああ、楽しや、楽しや！]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081052
+ },
+ {
+  "id": 30172,
+  "chara_id": 1013,
+  "chara_name": "メジロマックイーン",
+  "name": "[かっとばせー！ですわ！？]メジロマックイーン",
+  "title": "[かっとばせー！ですわ！？]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081013
+ },
+ {
+  "id": 30173,
+  "chara_id": 1102,
+  "chara_name": "サウンズオブアース",
+  "name": "[大地と我らのアンサンブル]サウンズオブアース",
+  "title": "[大地と我らのアンサンブル]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081102
+ },
+ {
+  "id": 30174,
+  "chara_id": 1059,
+  "chara_name": "メジロドーベル",
+  "name": "[聖夜、変わるために]メジロドーベル",
+  "title": "[聖夜、変わるために]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081059
+ },
+ {
+  "id": 30175,
+  "chara_id": 1086,
+  "chara_name": "メジロラモーヌ",
+  "name": "[冬溶かす熾火]メジロラモーヌ",
+  "title": "[冬溶かす熾火]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081086
+ },
+ {
+  "id": 30176,
+  "chara_id": 1027,
+  "chara_name": "メジロライアン",
+  "name": "[選んで選んで、想いを込めて]メジロライアン",
+  "title": "[選んで選んで、想いを込めて]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081027
+ },
+ {
+  "id": 30177,
+  "chara_id": 1091,
+  "chara_name": "ヴィブロス",
+  "name": "[会心のウイニングスマイル]ヴィブロス",
+  "title": "[会心のウイニングスマイル]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081091
+ },
+ {
+  "id": 30178,
+  "chara_id": 1108,
+  "chara_name": "ドゥラメンテ",
+  "name": "[血脈の胎動]ドゥラメンテ",
+  "title": "[血脈の胎動]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081108
+ },
+ {
+  "id": 30179,
+  "chara_id": 1067,
+  "chara_name": "サトノダイヤモンド",
+  "name": "[百花の願いをこの胸に]サトノダイヤモンド",
+  "title": "[百花の願いをこの胸に]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081067
+ },
+ {
+  "id": 30180,
+  "chara_id": 1068,
+  "chara_name": "刻み続ける者たち",
+  "name": "[この先も！]刻み続ける者たち",
+  "title": "[この先も！]",
+  "rarity": 3,
+  "card_type": "group",
+  "skill_set_id": 9081068,
+  "members": [
+   "キタサンブラック",
+   "トウカイテイオー",
+   "スペシャルウィーク"
+  ]
+ },
+ {
+  "id": 30181,
+  "chara_id": 1066,
+  "chara_name": "ツインターボ",
+  "name": "[ウタエミンナノ]ツインターボ",
+  "title": "[ウタエミンナノ]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081066
+ },
+ {
+  "id": 30182,
+  "chara_id": 1099,
+  "chara_name": "ホッコータルマエ",
+  "name": "[白い翼は舞い戻りて]ホッコータルマエ",
+  "title": "[白い翼は舞い戻りて]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081099
+ },
+ {
+  "id": 30183,
+  "chara_id": 1035,
+  "chara_name": "ウイニングチケット",
+  "name": "[小さな笑顔、2つ]ウイニングチケット",
+  "title": "[小さな笑顔、2つ]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081035
+ },
+ {
+  "id": 30184,
+  "chara_id": 1041,
+  "chara_name": "サクラバクシンオー",
+  "name": "[感謝感謝！サクラ吹雪！！]サクラバクシンオー",
+  "title": "[感謝感謝！サクラ吹雪！！]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081041
+ },
+ {
+  "id": 30185,
+  "chara_id": 1082,
+  "chara_name": "ノースフライト",
+  "name": "[ゴー・ファッショニスタ！]ノースフライト",
+  "title": "[ゴー・ファッショニスタ！]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081082
+ },
+ {
+  "id": 30186,
+  "chara_id": 1116,
+  "chara_name": "ジェンティルドンナ",
+  "name": "[Balliamo?]ジェンティルドンナ",
+  "title": "[Balliamo?]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081116
+ },
+ {
+  "id": 30187,
+  "chara_id": 1115,
+  "chara_name": "オルフェーヴル",
+  "name": "[只、君臨す。]オルフェーヴル",
+  "title": "[只、君臨す。]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081115
+ },
+ {
+  "id": 30188,
+  "chara_id": 9044,
+  "chara_name": "都留岐涼花",
+  "name": "[共に描くキラメキ]都留岐涼花",
+  "title": "[共に描くキラメキ]",
+  "rarity": 3,
+  "card_type": "friend",
+  "skill_set_id": 9089044
+ },
+ {
+  "id": 30189,
+  "chara_id": 1068,
+  "chara_name": "キタサンブラック",
+  "name": "[2人のバウンス・シャッセ]キタサンブラック",
+  "title": "[2人のバウンス・シャッセ]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081068
+ },
+ {
+  "id": 30190,
+  "chara_id": 1108,
+  "chara_name": "ドゥラメンテ",
+  "name": "[激情のピッツィカ]ドゥラメンテ",
+  "title": "[激情のピッツィカ]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081108
+ },
+ {
+  "id": 30191,
+  "chara_id": 1102,
+  "chara_name": "サウンズオブアース",
+  "name": "[ブリッランテな旋律を君と]サウンズオブアース",
+  "title": "[ブリッランテな旋律を君と]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081102
+ },
+ {
+  "id": 30192,
+  "chara_id": 1091,
+  "chara_name": "ヴィブロス",
+  "name": "[とっておきのレヴェランス]ヴィブロス",
+  "title": "[とっておきのレヴェランス]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081091
+ },
+ {
+  "id": 30193,
+  "chara_id": 1089,
+  "chara_name": "シュヴァルグラン",
+  "name": "[Over the Ocean]シュヴァルグラン",
+  "title": "[Over the Ocean]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081089
+ },
+ {
+  "id": 30194,
+  "chara_id": 1109,
+  "chara_name": "ラインクラフト",
+  "name": "[ティアラが描くレイライン]ラインクラフト",
+  "title": "[ティアラが描くレイライン]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081109
+ },
+ {
+  "id": 30195,
+  "chara_id": 1093,
+  "chara_name": "ケイエスミラクル",
+  "name": "[白い鳥のアラベスク]ケイエスミラクル",
+  "title": "[白い鳥のアラベスク]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081093
+ },
+ {
+  "id": 30196,
+  "chara_id": 1078,
+  "chara_name": "ヤマニンゼファー",
+  "name": "[浚いの風]ヤマニンゼファー",
+  "title": "[浚いの風]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081078
+ },
+ {
+  "id": 30197,
+  "chara_id": 1053,
+  "chara_name": "バンブーメモリー",
+  "name": "[Burning!!]バンブーメモリー",
+  "title": "[Burning!!]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081053
+ },
+ {
+  "id": 30198,
+  "chara_id": 1105,
+  "chara_name": "ネオユニヴァース",
+  "name": "[V.E.R.2285のあなたへ]ネオユニヴァース",
+  "title": "[V.E.R.2285のあなたへ]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081105
+ },
+ {
+  "id": 30199,
+  "chara_id": 1106,
+  "chara_name": "ヒシミラクル",
+  "name": "[わーく・あ・みらくる！]ヒシミラクル",
+  "title": "[わーく・あ・みらくる！]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081106
+ },
+ {
+  "id": 30200,
+  "chara_id": 1096,
+  "chara_name": "ノーリーズン",
+  "name": "[大胆不敵の兵よ]ノーリーズン",
+  "title": "[大胆不敵の兵よ]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081096
+ },
+ {
+  "id": 30201,
+  "chara_id": 1050,
+  "chara_name": "ナリタタイシン",
+  "name": "[Take Them Down!]ナリタタイシン",
+  "title": "[Take Them Down!]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081050
+ },
+ {
+  "id": 30202,
+  "chara_id": 1008,
+  "chara_name": "ウオッカ",
+  "name": "[明日のライド・オン]ウオッカ",
+  "title": "[明日のライド・オン]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081008
+ },
+ {
+  "id": 30203,
+  "chara_id": 1094,
+  "chara_name": "ジャングルポケット",
+  "name": "[新時代を開く者]ジャングルポケット",
+  "title": "[新時代を開く者]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081094
+ },
+ {
+  "id": 30204,
+  "chara_id": 1020,
+  "chara_name": "セイウンスカイ",
+  "name": "[幸福の匂いにまどろむ]セイウンスカイ",
+  "title": "[幸福の匂いにまどろむ]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081020
+ },
+ {
+  "id": 30205,
+  "chara_id": 1090,
+  "chara_name": "ヴィルシーナ",
+  "name": "[紺碧の戴冠式]ヴィルシーナ",
+  "title": "[紺碧の戴冠式]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081090
+ },
+ {
+  "id": 30206,
+  "chara_id": 1091,
+  "chara_name": "ヴィブロス",
+  "name": "[アルストロメリアの夢]ヴィブロス",
+  "title": "[アルストロメリアの夢]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081091
+ },
+ {
+  "id": 30207,
+  "chara_id": 9002,
+  "chara_name": "秋川理事長",
+  "name": "[謹製ッ！特大夢にんじん！]秋川理事長",
+  "title": "[謹製ッ！特大夢にんじん！]",
+  "rarity": 3,
+  "card_type": "friend",
+  "skill_set_id": 9089002
+ },
+ {
+  "id": 30208,
+  "chara_id": 1051,
+  "chara_name": "ニシノフラワー",
+  "name": "[朝焼け苺の畑にて]ニシノフラワー",
+  "title": "[朝焼け苺の畑にて]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081051
+ },
+ {
+  "id": 30209,
+  "chara_id": 1092,
+  "chara_name": "ダンツフレーム",
+  "name": "[そして幕は上がる]ダンツフレーム",
+  "title": "[そして幕は上がる]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081092
+ },
+ {
+  "id": 30210,
+  "chara_id": 1046,
+  "chara_name": "スマートファルコン",
+  "name": "[波間のオフショット]スマートファルコン",
+  "title": "[波間のオフショット]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081046
+ },
+ {
+  "id": 30211,
+  "chara_id": 1098,
+  "chara_name": "コパノリッキー",
+  "name": "[Lucky☆Summertime]コパノリッキー",
+  "title": "[Lucky☆Summertime]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081098
+ },
+ {
+  "id": 30212,
+  "chara_id": 1100,
+  "chara_name": "ワンダーアキュート",
+  "name": "[あの夏のキリトリ線]ワンダーアキュート",
+  "title": "[あの夏のキリトリ線]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081100
+ },
+ {
+  "id": 30213,
+  "chara_id": 1003,
+  "chara_name": "トウカイテイオー",
+  "name": "[開催☆ハチャメチャGP！]トウカイテイオー",
+  "title": "[開催☆ハチャメチャGP！]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081003
+ },
+ {
+  "id": 30214,
+  "chara_id": 1022,
+  "chara_name": "ファインモーション",
+  "name": "[歴史も美食も余すところなく]ファインモーション",
+  "title": "[歴史も美食も余すところなく]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081022
+ },
+ {
+  "id": 30215,
+  "chara_id": 1097,
+  "chara_name": "スティルインラブ",
+  "name": "[Devilish Whispers]スティルインラブ",
+  "title": "[Devilish Whispers]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081097
+ },
+ {
+  "id": 30216,
+  "chara_id": 1114,
+  "chara_name": "ブエナビスタ",
+  "name": "[我が学び舎へ、愛をこめて]ブエナビスタ",
+  "title": "[我が学び舎へ、愛をこめて]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081114
+ },
+ {
+  "id": 30217,
+  "chara_id": 1110,
+  "chara_name": "シーザリオ",
+  "name": "[慈恵のMother Sea]シーザリオ",
+  "title": "[慈恵のMother Sea]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081110
+ },
+ {
+  "id": 30218,
+  "chara_id": 1010,
+  "chara_name": "タイキシャトル",
+  "name": "[月下のSunshine]タイキシャトル",
+  "title": "[月下のSunshine]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081010
+ },
+ {
+  "id": 30219,
+  "chara_id": 1005,
+  "chara_name": "フジキセキ",
+  "name": "[悩み事かい？ポニーちゃん]フジキセキ",
+  "title": "[悩み事かい？ポニーちゃん]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081005
+ },
+ {
+  "id": 30220,
+  "chara_id": 1083,
+  "chara_name": "シンボリクリスエス",
+  "name": "[Rewarding Job]シンボリクリスエス",
+  "title": "[Rewarding Job]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081083
+ },
+ {
+  "id": 30221,
+  "chara_id": 1067,
+  "chara_name": "サトノダイヤモンド",
+  "name": "[今日もたのしく、おいしく。]サトノダイヤモンド",
+  "title": "[今日もたのしく、おいしく。]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081067
+ },
+ {
+  "id": 30222,
+  "chara_id": 1081,
+  "chara_name": "エスポワールシチー",
+  "name": "[KNOCK 'EM DOWN!]エスポワールシチー",
+  "title": "[KNOCK 'EM DOWN!]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081081
+ },
+ {
+  "id": 30223,
+  "chara_id": 1012,
+  "chara_name": "ヒシアマゾン",
+  "name": "[牙を立て、リフレイン]ヒシアマゾン",
+  "title": "[牙を立て、リフレイン]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081012
+ },
+ {
+  "id": 30224,
+  "chara_id": 1016,
+  "chara_name": "ナリタブライアン",
+  "name": "[咆哮のアポヤンド]ナリタブライアン",
+  "title": "[咆哮のアポヤンド]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081016
+ },
+ {
+  "id": 30225,
+  "chara_id": 1056,
+  "chara_name": "マチカネフクキタル",
+  "name": "[メークパワートリオ]マチカネフクキタル",
+  "title": "[メークパワートリオ]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081056
+ },
+ {
+  "id": 30226,
+  "chara_id": 1036,
+  "chara_name": "エアシャカール",
+  "name": "[Cocoon]エアシャカール",
+  "title": "[Cocoon]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081036
+ },
+ {
+  "id": 30227,
+  "chara_id": 1009,
+  "chara_name": "ダイワスカーレット",
+  "name": "[緋色の君へ風が吹く]ダイワスカーレット",
+  "title": "[緋色の君へ風が吹く]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081009
+ },
+ {
+  "id": 30228,
+  "chara_id": 1083,
+  "chara_name": "シンボリクリスエス",
+  "name": "[COOL⇔CRAZY/Buddy]シンボリクリスエス",
+  "title": "[COOL⇔CRAZY/Buddy]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081083
+ },
+ {
+  "id": 30229,
+  "chara_id": 1019,
+  "chara_name": "アグネスデジタル",
+  "name": "[【告知】新刊あります！]アグネスデジタル",
+  "title": "[【告知】新刊あります！]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081019
+ },
+ {
+  "id": 30230,
+  "chara_id": 1058,
+  "chara_name": "メイショウドトウ",
+  "name": "[不屈の遠吠え]メイショウドトウ",
+  "title": "[不屈の遠吠え]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081058
+ },
+ {
+  "id": 30231,
+  "chara_id": 1015,
+  "chara_name": "テイエムオペラオー",
+  "name": "[王を統べて覇す者]テイエムオペラオー",
+  "title": "[王を統べて覇す者]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081015
+ },
+ {
+  "id": 30232,
+  "chara_id": 1128,
+  "chara_name": "ブラストワンピース",
+  "name": "[Blast Off!]ブラストワンピース",
+  "title": "[Blast Off!]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081128
+ },
+ {
+  "id": 30233,
+  "chara_id": 1017,
+  "chara_name": "シンボリルドルフ",
+  "name": "[雲煙飛動]シンボリルドルフ",
+  "title": "[雲煙飛動]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081017
+ },
+ {
+  "id": 30234,
+  "chara_id": 1071,
+  "chara_name": "メジロアルダン",
+  "name": "[深窓の少女へ]メジロアルダン",
+  "title": "[深窓の少女へ]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081071
+ },
+ {
+  "id": 30235,
+  "chara_id": 1004,
+  "chara_name": "マルゼンスキー",
+  "name": "[ふりさけみれば天花のわらう]マルゼンスキー",
+  "title": "[ふりさけみれば天花のわらう]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081004
+ },
+ {
+  "id": 30236,
+  "chara_id": 1042,
+  "chara_name": "シーキングザパール",
+  "name": "[飛び立つヴィーナス]シーキングザパール",
+  "title": "[飛び立つヴィーナス]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081042
+ },
+ {
+  "id": 30237,
+  "chara_id": 1038,
+  "chara_name": "カレンチャン",
+  "name": "[Cutest in Ur ♡]カレンチャン",
+  "title": "[Cutest in Ur ♡]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081038
+ },
+ {
+  "id": 30238,
+  "chara_id": 1063,
+  "chara_name": "イクノディクタス",
+  "name": "[鉄の乙女も微笑んで]イクノディクタス",
+  "title": "[鉄の乙女も微笑んで]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081063
+ },
+ {
+  "id": 30239,
+  "chara_id": 1060,
+  "chara_name": "ナイスネイチャ",
+  "name": "[これきり、特別ですよ？]ナイスネイチャ",
+  "title": "[これきり、特別ですよ？]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081060
+ },
+ {
+  "id": 30240,
+  "chara_id": 1094,
+  "chara_name": "ジャングルポケット",
+  "name": "[『最強は俺だ！！』]ジャングルポケット",
+  "title": "[『最強は俺だ！！』]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081094
+ },
+ {
+  "id": 30241,
+  "chara_id": 9047,
+  "chara_name": "伝説の体現者",
+  "name": "[導きの光]伝説の体現者",
+  "title": "[導きの光]",
+  "rarity": 3,
+  "card_type": "group",
+  "skill_set_id": 9089047,
+  "members": [
+   "スピードシンボリ",
+   "セントライト",
+   "ハイセイコー"
+  ]
+ },
+ {
+  "id": 30242,
+  "chara_id": 1129,
+  "chara_name": "アーモンドアイ",
+  "name": "[世界を変える眼差し]アーモンドアイ",
+  "title": "[世界を変える眼差し]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081129
+ },
+ {
+  "id": 30243,
+  "chara_id": 1131,
+  "chara_name": "グランアレグリア",
+  "name": "[NEW TALES AWAIT]グランアレグリア",
+  "title": "[NEW TALES AWAIT]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081131
+ },
+ {
+  "id": 30244,
+  "chara_id": 1074,
+  "chara_name": "メジロブライト",
+  "name": "[春、来たれり]メジロブライト",
+  "title": "[春、来たれり]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081074
+ },
+ {
+  "id": 30245,
+  "chara_id": 1008,
+  "chara_name": "ウオッカ",
+  "name": "[Ballroom Tempest]ウオッカ",
+  "title": "[Ballroom Tempest]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081008
+ },
+ {
+  "id": 30246,
+  "chara_id": 1119,
+  "chara_name": "ドリームジャーニー",
+  "name": "[誘うは夢心地]ドリームジャーニー",
+  "title": "[誘うは夢心地]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081119
+ },
+ {
+  "id": 30247,
+  "chara_id": 1083,
+  "chara_name": "シンボリクリスエス",
+  "name": "[Operation: Escort]シンボリクリスエス",
+  "title": "[Operation: Escort]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081083
+ },
+ {
+  "id": 30248,
+  "chara_id": 1075,
+  "chara_name": "デアリングタクト",
+  "name": "[無垢の白妙]デアリングタクト",
+  "title": "[無垢の白妙]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081075
+ },
+ {
+  "id": 30249,
+  "chara_id": 1080,
+  "chara_name": "トランセンド",
+  "name": "[繋がれパレード・ノーツ♪]トランセンド",
+  "title": "[繋がれパレード・ノーツ♪]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081080
+ },
+ {
+  "id": 30250,
+  "chara_id": 1114,
+  "chara_name": "ブエナビスタ",
+  "name": "[Luz de ensueño]ブエナビスタ",
+  "title": "[Luz de ensueño]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081114
+ },
+ {
+  "id": 30251,
+  "chara_id": 1081,
+  "chara_name": "エスポワールシチー",
+  "name": "[約束のglitter]エスポワールシチー",
+  "title": "[約束のglitter]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081081
+ },
+ {
+  "id": 30252,
+  "chara_id": 1002,
+  "chara_name": "サイレンススズカ",
+  "name": "[My Beloved Scenery]サイレンススズカ",
+  "title": "[My Beloved Scenery]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081002
+ },
+ {
+  "id": 30253,
+  "chara_id": 1109,
+  "chara_name": "ラインクラフト",
+  "name": "[Unveiled Dream]ラインクラフト",
+  "title": "[Unveiled Dream]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081109
+ },
+ {
+  "id": 30254,
+  "chara_id": 1112,
+  "chara_name": "デアリングハート",
+  "name": "[Blooming Buds]デアリングハート",
+  "title": "[Blooming Buds]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081112
+ },
+ {
+  "id": 30255,
+  "chara_id": 1111,
+  "chara_name": "エアメサイア",
+  "name": "[いつか深まる若草]エアメサイア",
+  "title": "[いつか深まる若草]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081111
+ },
+ {
+  "id": 30256,
+  "chara_id": 1021,
+  "chara_name": "タマモクロス",
+  "name": "[白き稲妻の如く]タマモクロス",
+  "title": "[白き稲妻の如く]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081021
+ },
+ {
+  "id": 30257,
+  "chara_id": 9049,
+  "chara_name": "タッカーブライン",
+  "name": "[本能は吼えているか！？]タッカーブライン",
+  "title": "[本能は吼えているか！？]",
+  "rarity": 3,
+  "card_type": "friend",
+  "skill_set_id": 9089049
+ },
+ {
+  "id": 30258,
+  "chara_id": 1027,
+  "chara_name": "メジロライアン",
+  "name": "[瞳に闘志を胸に勝利の渇望を]メジロライアン",
+  "title": "[瞳に闘志を胸に勝利の渇望を]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081027
+ },
+ {
+  "id": 30259,
+  "chara_id": 1113,
+  "chara_name": "フサイチパンドラ",
+  "name": "[ゼッタイ☆天才伝説]フサイチパンドラ",
+  "title": "[ゼッタイ☆天才伝説]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081113
+ },
+ {
+  "id": 30260,
+  "chara_id": 1013,
+  "chara_name": "メジロマックイーン",
+  "name": "[グレイッシュPARTY☆]メジロマックイーン",
+  "title": "[グレイッシュPARTY☆]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081013
+ },
+ {
+  "id": 30261,
+  "chara_id": 1117,
+  "chara_name": "ウインバリアシオン",
+  "name": "[水面のプリンシパル]ウインバリアシオン",
+  "title": "[水面のプリンシパル]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081117
+ },
+ {
+  "id": 30262,
+  "chara_id": 1108,
+  "chara_name": "ドゥラメンテ",
+  "name": "[Tranquillo]ドゥラメンテ",
+  "title": "[Tranquillo]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081108
+ },
+ {
+  "id": 30263,
+  "chara_id": 1091,
+  "chara_name": "ヴィブロス",
+  "name": "[極上スマイルはっし～ん♪]ヴィブロス",
+  "title": "[極上スマイルはっし～ん♪]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081091
+ },
+ {
+  "id": 30264,
+  "chara_id": 1135,
+  "chara_name": "ステイゴールド",
+  "name": "[気まぐれ渡り星]ステイゴールド",
+  "title": "[気まぐれ渡り星]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081135
+ },
+ {
+  "id": 30265,
+  "chara_id": 1118,
+  "chara_name": "アドマイヤグルーヴ",
+  "name": "[氷結晶の静域]アドマイヤグルーヴ",
+  "title": "[氷結晶の静域]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081118
+ },
+ {
+  "id": 30266,
+  "chara_id": 1133,
+  "chara_name": "クロノジェネシス",
+  "name": "[この先の未来で]クロノジェネシス",
+  "title": "[この先の未来で]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081133
+ },
+ {
+  "id": 30267,
+  "chara_id": 1120,
+  "chara_name": "カルストンライトオ",
+  "name": "[カルストンライトオ、猫です]カルストンライトオ",
+  "title": "[カルストンライトオ、猫です]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081120
+ },
+ {
+  "id": 30268,
+  "chara_id": 1121,
+  "chara_name": "デュランダル",
+  "name": "[今宵、我が君のために]デュランダル",
+  "title": "[今宵、我が君のために]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081121
+ },
+ {
+  "id": 30269,
+  "chara_id": 1092,
+  "chara_name": "ダンツフレーム",
+  "name": "[今日が楽しかったから、]ダンツフレーム",
+  "title": "[今日が楽しかったから、]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081092
+ },
+ {
+  "id": 30270,
+  "chara_id": 1085,
+  "chara_name": "ダイイチルビー",
+  "name": "[Inseparable]ダイイチルビー",
+  "title": "[Inseparable]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081085
+ },
+ {
+  "id": 30271,
+  "chara_id": 1005,
+  "chara_name": "フジキセキ",
+  "name": "[壇上より魔法を込めて]フジキセキ",
+  "title": "[壇上より魔法を込めて]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081005
+ },
+ {
+  "id": 30272,
+  "chara_id": 1037,
+  "chara_name": "エイシンフラッシュ",
+  "name": "[Zirkus der Träume]エイシンフラッシュ",
+  "title": "[Zirkus der Träume]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081037
+ },
+ {
+  "id": 30273,
+  "chara_id": 1048,
+  "chara_name": "トーセンジョーダン",
+  "name": "[All-Out Brilliance]トーセンジョーダン",
+  "title": "[All-Out Brilliance]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081048
+ },
+ {
+  "id": 30274,
+  "chara_id": 1134,
+  "chara_name": "カレンブーケドール",
+  "name": "[決意のフローラ]カレンブーケドール",
+  "title": "[決意のフローラ]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081134
+ },
+ {
+  "id": 30275,
+  "chara_id": 1003,
+  "chara_name": "トウカイテイオー",
+  "name": "[天才的ユートピア]トウカイテイオー",
+  "title": "[天才的ユートピア]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081003
+ },
+ {
+  "id": 30276,
+  "chara_id": 9050,
+  "chara_name": "保科健子",
+  "name": "[ゆるり、ゆこま旅館]保科健子",
+  "title": "[ゆるり、ゆこま旅館]",
+  "rarity": 3,
+  "card_type": "friend",
+  "skill_set_id": 9089050
+ },
+ {
+  "id": 30277,
+  "chara_id": 1026,
+  "chara_name": "ミホノブルボン",
+  "name": "[無機の闘志]ミホノブルボン",
+  "title": "[無機の闘志]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081026
+ },
+ {
+  "id": 30278,
+  "chara_id": 1007,
+  "chara_name": "ゴールドシップ",
+  "name": "[激録！爆走トナカイ事件]ゴールドシップ",
+  "title": "[激録！爆走トナカイ事件]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081007
+ },
+ {
+  "id": 30279,
+  "chara_id": 1127,
+  "chara_name": "フェノーメノ",
+  "name": "[ぬくもりのノエル]フェノーメノ",
+  "title": "[ぬくもりのノエル]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081127
+ },
+ {
+  "id": 30280,
+  "chara_id": 1115,
+  "chara_name": "オルフェーヴル",
+  "name": "[黄金の夢に溺れよ]オルフェーヴル",
+  "title": "[黄金の夢に溺れよ]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081115
+ },
+ {
+  "id": 30281,
+  "chara_id": 1034,
+  "chara_name": "イナリワン",
+  "name": "[故郷に錦を飾るんでい！]イナリワン",
+  "title": "[故郷に錦を飾るんでい！]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081034
+ },
+ {
+  "id": 30282,
+  "chara_id": 1018,
+  "chara_name": "エアグルーヴ",
+  "name": "[心覚えし、京の華]エアグルーヴ",
+  "title": "[心覚えし、京の華]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081018
+ },
+ {
+  "id": 30283,
+  "chara_id": 1022,
+  "chara_name": "ファインモーション",
+  "name": "[ゆかし、きらめきの旅路]ファインモーション",
+  "title": "[ゆかし、きらめきの旅路]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081022
+ },
+ {
+  "id": 30284,
+  "chara_id": 1124,
+  "chara_name": "バブルガムフェロー",
+  "name": "[琴線弾きて、風光る]バブルガムフェロー",
+  "title": "[琴線弾きて、風光る]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081124
+ },
+ {
+  "id": 30285,
+  "chara_id": 1061,
+  "chara_name": "キングヘイロー",
+  "name": "[私のためのショッピング]キングヘイロー",
+  "title": "[私のためのショッピング]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081061
+ },
+ {
+  "id": 30286,
+  "chara_id": 1056,
+  "chara_name": "マチカネフクキタル",
+  "name": "[吉兆招福チョコ来たる]マチカネフクキタル",
+  "title": "[吉兆招福チョコ来たる]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081056
+ },
+ {
+  "id": 30287,
+  "chara_id": 1105,
+  "chara_name": "ネオユニヴァース",
+  "name": "[星跨ぐメッセージ]ネオユニヴァース",
+  "title": "[星跨ぐメッセージ]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081105
+ },
+ {
+  "id": 30288,
+  "chara_id": 1002,
+  "chara_name": "サイレンススズカ",
+  "name": "[ギュッとしてマイフレンド]サイレンススズカ",
+  "title": "[ギュッとしてマイフレンド]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081002
+ },
+ {
+  "id": 30289,
+  "chara_id": 1138,
+  "chara_name": "フォーエバーヤング",
+  "name": "[Innovator]フォーエバーヤング",
+  "title": "[Innovator]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081138
+ },
+ {
+  "id": 30290,
+  "chara_id": 1139,
+  "chara_name": "カジノドライヴ",
+  "name": "[American Dream]カジノドライヴ",
+  "title": "[American Dream]",
+  "rarity": 3,
+  "card_type": "friend",
+  "skill_set_id": 9081139
+ },
+ {
+  "id": 30291,
+  "chara_id": 1143,
+  "chara_name": "ヴィクトワールピサ",
+  "name": "[Let's Go Together!]ヴィクトワールピサ",
+  "title": "[Let's Go Together!]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081143
+ },
+ {
+  "id": 30292,
+  "chara_id": 1140,
+  "chara_name": "マルシュロレーヌ",
+  "name": "[響け、二人の凱歌]マルシュロレーヌ",
+  "title": "[響け、二人の凱歌]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081140
+ },
+ {
+  "id": 30293,
+  "chara_id": 1075,
+  "chara_name": "デアリングタクト",
+  "name": "[白に至る純真]デアリングタクト",
+  "title": "[白に至る純真]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081075
+ },
+ {
+  "id": 30294,
+  "chara_id": 1112,
+  "chara_name": "デアリングハート",
+  "name": "[白に至る覚悟]デアリングハート",
+  "title": "[白に至る覚悟]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081112
+ },
+ {
+  "id": 30295,
+  "chara_id": 1134,
+  "chara_name": "カレンブーケドール",
+  "name": "[花ども集いて束となる]カレンブーケドール",
+  "title": "[花ども集いて束となる]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081134
+ },
+ {
+  "id": 30296,
+  "chara_id": 1087,
+  "chara_name": "アストンマーチャン",
+  "name": "[単焦点でつかまえて]アストンマーチャン",
+  "title": "[単焦点でつかまえて]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081087
+ },
+ {
+  "id": 30297,
+  "chara_id": 1019,
+  "chara_name": "アグネスデジタル",
+  "name": "[全てに挑む勇ましき者]アグネスデジタル",
+  "title": "[全てに挑む勇ましき者]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081019
+ },
+ {
+  "id": 30298,
+  "chara_id": 1107,
+  "chara_name": "タップダンスシチー",
+  "name": "[刀光散らしてClash！]タップダンスシチー",
+  "title": "[刀光散らしてClash！]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081107
+ },
+ {
+  "id": 30299,
+  "chara_id": 1032,
+  "chara_name": "アグネスタキオン",
+  "name": "[無辺際ラボラトリィ]アグネスタキオン",
+  "title": "[無辺際ラボラトリィ]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081032
+ },
+ {
+  "id": 30300,
+  "chara_id": 1069,
+  "chara_name": "サクラチヨノオー",
+  "name": "[賑やかな未来を乗せて走れ！]サクラチヨノオー",
+  "title": "[賑やかな未来を乗せて走れ！]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081069
+ },
+ {
+  "id": 30301,
+  "chara_id": 1131,
+  "chara_name": "グランアレグリア",
+  "name": "[スマイル・エバーアフター]グランアレグリア",
+  "title": "[スマイル・エバーアフター]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081131
+ },
+ {
+  "id": 30302,
+  "chara_id": 1067,
+  "chara_name": "サトノダイヤモンド",
+  "name": "[永久の誓い、永久の輝き]サトノダイヤモンド",
+  "title": "[永久の誓い、永久の輝き]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081067
+ },
+ {
+  "id": 30303,
+  "chara_id": 1128,
+  "chara_name": "ブラストワンピース",
+  "name": "[『ずーっと一緒、だぞー！』]ブラストワンピース",
+  "title": "[『ずーっと一緒、だぞー！』]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081128
+ },
+ {
+  "id": 30304,
+  "chara_id": 1058,
+  "chara_name": "メイショウドトウ",
+  "name": "[その執念は怒濤が如く]メイショウドトウ",
+  "title": "[その執念は怒濤が如く]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081058
+ },
+ {
+  "id": 30305,
+  "chara_id": 9001,
+  "chara_name": "駿川たづな",
+  "name": "[一杯のノスタルジア]駿川たづな",
+  "title": "[一杯のノスタルジア]",
+  "rarity": 3,
+  "card_type": "friend",
+  "skill_set_id": 9089001
+ },
+ {
+  "id": 30306,
+  "chara_id": 1060,
+  "chara_name": "ナイスネイチャ",
+  "name": "[両手いっぱい、小倉愛]ナイスネイチャ",
+  "title": "[両手いっぱい、小倉愛]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081060
+ },
+ {
+  "id": 30307,
+  "chara_id": 1137,
+  "chara_name": "キセキ",
+  "name": "[巻頭カラーの夏]キセキ",
+  "title": "[巻頭カラーの夏]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081137
+ },
+ {
+  "id": 30308,
+  "chara_id": 1129,
+  "chara_name": "アーモンドアイ",
+  "name": "[夏空チルタイム]アーモンドアイ",
+  "title": "[夏空チルタイム]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081129
+ },
+ {
+  "id": 30309,
+  "chara_id": 1113,
+  "chara_name": "フサイチパンドラ",
+  "name": "[天才的ガチエモSUMMER!!]フサイチパンドラ",
+  "title": "[天才的ガチエモSUMMER!!]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081113
+ },
+ {
+  "id": 30310,
+  "chara_id": 1136,
+  "chara_name": "レッドディザイア",
+  "name": "[ガブッと、笑顔に]レッドディザイア",
+  "title": "[ガブッと、笑顔に]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081136
+ },
+ {
+  "id": 30311,
+  "chara_id": 1146,
+  "chara_name": "エフフォーリア",
+  "name": "[As if Guided]エフフォーリア",
+  "title": "[As if Guided]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081146
+ },
+ {
+  "id": 30312,
+  "chara_id": 1057,
+  "chara_name": "ミスターシービー",
+  "name": "[時に交わる海と空]ミスターシービー",
+  "title": "[時に交わる海と空]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081057
+ },
+ {
+  "id": 30313,
+  "chara_id": 1145,
+  "chara_name": "ルーラーシップ",
+  "name": "[Endless Game]ルーラーシップ",
+  "title": "[Endless Game]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081145
+ },
+ {
+  "id": 30314,
+  "chara_id": 1052,
+  "chara_name": "ハルウララ",
+  "name": "[わたしときみの交換こ♪]ハルウララ",
+  "title": "[わたしときみの交換こ♪]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081052
+ },
+ {
+  "id": 30315,
+  "chara_id": 1054,
+  "chara_name": "ビコーペガサス",
+  "name": "[ちょいワルヒーロー、見参！]ビコーペガサス",
+  "title": "[ちょいワルヒーロー、見参！]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081054
+ },
+ {
+  "id": 30316,
+  "chara_id": 1101,
+  "chara_name": "サムソンビッグ",
+  "name": "[世界一小さなビッグバン]サムソンビッグ",
+  "title": "[世界一小さなビッグバン]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081101
+ },
+ {
+  "id": 30317,
+  "chara_id": 1062,
+  "chara_name": "マチカネタンホイザ",
+  "name": "[行き先はあたたかな場所]マチカネタンホイザ",
+  "title": "[行き先はあたたかな場所]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081062
+ },
+ {
+  "id": 30318,
+  "chara_id": 1030,
+  "chara_name": "ライスシャワー",
+  "name": "[めぐるぐるぐるトレセン日和]ライスシャワー",
+  "title": "[めぐるぐるぐるトレセン日和]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081030
+ },
+ {
+  "id": 30319,
+  "chara_id": 1016,
+  "chara_name": "ナリタブライアン",
+  "name": "[晩餐]ナリタブライアン",
+  "title": "[晩餐]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081016
+ },
+ {
+  "id": 30320,
+  "chara_id": 1118,
+  "chara_name": "アドマイヤグルーヴ",
+  "name": "[冷凜なるビスクドール]アドマイヤグルーヴ",
+  "title": "[冷凜なるビスクドール]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081118
+ },
+ {
+  "id": 30321,
+  "chara_id": 1108,
+  "chara_name": "ドゥラメンテ",
+  "name": "[“最強”なる眷属]ドゥラメンテ",
+  "title": "[“最強”なる眷属]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081108
+ }
+]

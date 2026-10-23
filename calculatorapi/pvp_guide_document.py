@@ -84,7 +84,7 @@ DECK_SLOTS = 6
 
 # Error copy. Shown beside the field, so written for the editor.
 NOT_IN_CATALOGUE = "Pick one from the list."
-SKILL_NOT_ON_GLOBAL = "That skill is not on global yet."
+SKILL_NOT_SHOWN = "That skill has no English name yet."
 SLOT_NEEDS_SOMETHING = 'Pick a card, or write a note like "or any speed".'
 ONE_BORROW = "Only one slot can be the borrowed card."
 DUPLICATE_SLOT = "Two rows share slot {slot}."
@@ -264,12 +264,15 @@ def errors(data):  # pylint: disable=too-many-locals
         seen.add(key)
 
     skill_ids = {row["skill"] for row in data["skill_recommendations"]}
-    known_skills = dict(Skill.objects.on_global().filter(id__in=skill_ids).values_list("id", "name"))
+    known_skills = {
+        skill.id: skill.shown_name
+        for skill in Skill.objects.shown().filter(id__in=skill_ids).only("id", "name", "translated_name")
+    }
     seen = set()
     for i, row in enumerate(data["skill_recommendations"]):
         name = known_skills.get(row["skill"])
         if name is None:
-            add(f"skill_recommendations[{i}].skill", SKILL_NOT_ON_GLOBAL)
+            add(f"skill_recommendations[{i}].skill", SKILL_NOT_SHOWN)
             continue
         key = (row["style"], row["category"], row["skill"])
         if key in seen:
