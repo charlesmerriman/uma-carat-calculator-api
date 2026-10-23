@@ -502,8 +502,11 @@ class PvpDeck(SkillMentionsMixin, models.Model):
     # deck can carry it and a label can change without losing it.
     is_highlighted = models.BooleanField(
         default=False,
-        verbose_name="Gold box",
-        help_text="Draw this deck in a gold box, to set it apart from the others.",
+        verbose_name="Swap-ins",
+        help_text=(
+            "Draw this deck as a row of swap-ins in a darker panel: cards that can "
+            "replace one in the decks above, each with its reason (Honorable Mentions)."
+        ),
     )
     order = _order_field()
 

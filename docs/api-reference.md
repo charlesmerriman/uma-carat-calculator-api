@@ -759,7 +759,9 @@ may hold `==highlight==` spans the client renders red.
   "stat_configs": [{"style": "everyone", "label": "Minimum", "speed": "1200", "stamina": "578*",
                     "power": "1100+", "guts": "", "wit": "1100+", "footnote": "*Bonus Speed every 300 Power."}],
   "uma_recommendations": [{"style": "front", "stars": 5, "role": "", "note": "Use as runaway",
-                           "uma": {"id": 41, "name": "Maruzensky", "image": "url | null", "portrait": "url | null"}}],
+                           "uma": {"id": 41, "name": "Maruzensky", "image": "url | null", "portrait": "url | null",
+                                   "apt": {"turf": 7, "dirt": 1, "short": 5, "mile": 7, "medium": 6, "long": 3,
+                                           "front": 8, "pace": 6, "late": 2, "end": 1}}}],
   "skill_recommendations": [{"style": "front", "category": "acceleration", "tier": 0, "order": 0, "note": "",
       "skill": {"id": 210, "name": "Lead the Pack", "description": "string", "image": "url | null",
                 "rarity": 5, "unique_of": "Maruzensky", "version": "○ white", "tier": 1, "is_evolved": false,
@@ -775,6 +777,10 @@ may hold `==highlight==` spans the client renders red.
                                      "rarity": 2, "unique_of": null, "version": "◎ gold", "tier": 2,
                                      "is_evolved": false, "versions": []}} }
 ```
+
+Each guide uma carries `apt`, its ten aptitudes as `/pvp-catalogue` sends them (1..8 for
+G..S, null when not imported). The guide draws this course's distance and the row's style
+as letters on the tile.
 
 `skill_mentions` resolves every `[[Skill name]]` written in the guide's text: `{lower-case
 name: skill object}` (the same shape as `skill` above), skills on global only, matched
