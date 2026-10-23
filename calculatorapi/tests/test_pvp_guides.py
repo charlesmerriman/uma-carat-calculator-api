@@ -167,7 +167,7 @@ class GuideEndpointTests(CalculatorTestCase):
         self.assertEqual(body["event"], loh.id)
 
     def test_full_shape(self):
-        uma = Uma.objects.create(name="Maruzensky", is_on_global=True)
+        uma = Uma.objects.create(name="Maruzensky", is_on_global=True, apt_short=2, apt_front=8)
         card = SupportCard.objects.create(name="Kitasan Black", card_type="speed", rarity=3)
         skill = make_skill("Lead the Pack", 100011, rarity=5)
         UmaSkill.objects.create(uma=uma, skill=skill, source="unique")
@@ -200,6 +200,10 @@ class GuideEndpointTests(CalculatorTestCase):
         self.assertEqual(body["stat_configs"][0]["stamina"], "578*")
         self.assertEqual(body["stat_configs"][0]["power"], "")
         self.assertEqual(body["uma_recommendations"][0]["uma"]["name"], "Maruzensky")
+        # The aptitudes ride along for the guide's letters; an unimported one is None.
+        apt = body["uma_recommendations"][0]["uma"]["apt"]
+        self.assertEqual((apt["short"], apt["front"], apt["dirt"]), (2, 8, None))
+        self.assertEqual(len(apt), 10)
         self.assertEqual(body["uma_recommendations"][0]["note"], "Use as runaway")
         rec = body["skill_recommendations"][0]
         self.assertEqual(rec["skill"]["name"], "Lead the Pack")

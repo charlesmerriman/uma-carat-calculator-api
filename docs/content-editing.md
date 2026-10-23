@@ -352,7 +352,8 @@ editing**. The tabs appear.
   the picture, the **note** shows on hover), its **advice** paragraph (the
   sheet's "Rec. Skills" text), its **recommended skills** (pick a category, and
   a tier if the guide has tiers; T0 means take it first) and its **example
-  decks**. For a row of honorable mentions, add a deck with that label.
+  decks**. For a row of honorable mentions, add a deck with that label and tick
+  **Swap-ins**: the site draws it as a row of smaller cards in a darker panel.
 
 Nothing on a style tab asks which style it is for. A number on a tab is how
 many rows it holds; a red number, after a save, is how many rows refused. The
@@ -445,16 +446,36 @@ holds; a red number is how many problems the last check found there.
   letters for this cup's course and this style). Under every tile: the drag grip, a star
   stepper, and a pencil for the role, the note, moving it with the keyboard, or removing
   it. Umas sit in star groups, most stars first, the way the site shows them; drag
-  within a group to reorder.
+  within a group to reorder. The site prints each uma's aptitude letters for the course
+  and the style by itself, with weak ones in red, so leave the **role** empty when it
+  would only say "Sprint F"; keep it for a real role such as "Normal Front". A note that
+  names a skill (`[[Silent Letter]]`) shows that skill on the tile.
 - **Skills.** Under each category, **Add skill** opens the skill list: search by name or
   description, pick the version the guide means (the tag says ○ white, ◎ white, ◎ gold or
   evolved), set the tier. The pencil on a chip changes its tier, category or note.
 - **Decks.** **Add a deck**, give it a label, then fill the six slots: **Card** opens the
   card list (a card already in the deck is greyed; a card not out by the cup is marked),
-  **Note** adds the small text under a card ("2SP", "Gold + Link"), **Borrow** marks the
-  borrowed slot, and **+ or card** / **+ or note** adds an alternative under a slot. A
-  slot with only a note ("or any speed") is fine. Duplicate or delete a deck from its
-  top-right corner; drag the grip to reorder decks.
+  **Note** adds the small text under a card, **Borrow** marks the borrowed slot, and
+  **+ or card** / **+ or note** adds an alternative under a slot. A slot with only a note
+  ("or any speed") is fine. Duplicate or delete a deck from its top-right corner; drag
+  the grip to reorder decks. Readers see one deck at a time, picked by its label
+  (Beginner, Standard, Whale) or All, with the cards every deck shares and what each one
+  changes from the deck before it, so give the decks of a style labels in budget order.
+- **Card notes.** Write them the way you always have, joined with `&`: `[[Unstoppable]]
+  & 2SP & Scenario Link`. The site turns a `[[skill]]` into a skill box, **1SP / 2SP**,
+  **Stats**, **Hints** and **Initial Friendship** into small tags, **Scenario Link** (or
+  just **Link**) into a gold Link badge on the card, and **or any Spd / Wit** into a line
+  with the stat icon. Anything else shows as you wrote it. Notes on cards are drawn
+  plain, so `==red==` is not needed there.
+- **Swap-ins.** The **Swap-ins** switch on a deck (it was "Gold box") draws that deck as
+  a row of swap-ins in a darker panel instead of six slots: the guide's Honorable
+  Mentions, each card with its reason.
+- **Style ranking.** Write it as before: `Pace>>End>Late>Front`. `>` puts a style ahead,
+  `>>` marks a clear gap and `=` or `>=` puts two level. The site draws it as a ladder at
+  the top of the guide and opens the guide on the first style, unless a link names one.
+- **Stats.** Add as many rows as the guide needs: one per style, or a variant with a
+  label ("+ 1 GOLD", "Monster"), each with its own footnote. A single row for everyone
+  with no label or footnote is drawn as five big tiles; more rows as a table.
 - **Text.** In any note or text box, `==words==` shows red and `[[Skill name]]` becomes a
   skill chip. Typing `[[` offers the matching skill names. The long boxes have a toolbar
   (bold, italic, red, skill, link) and an eye button that previews the text as the site
