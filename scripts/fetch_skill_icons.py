@@ -101,6 +101,9 @@ def upload(ids, out_dir):
         if key in existing:
             kept += 1
             continue
+        # An icon the source lacked was never downloaded (download() names them).
+        if not (out_dir / f"{icon_id}.png").is_file():
+            continue
         s3.upload_file(
             str(out_dir / f"{icon_id}.png"), bucket, key,
             ExtraArgs={"ACL": "public-read", "ContentType": "image/png"},
