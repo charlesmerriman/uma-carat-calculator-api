@@ -1,13 +1,18 @@
 {
- "extracted_at": "2026-10-17T05:31:28+00:00",
- "mdb_size_bytes": 17182720,
- "mdb_modified_at": "2026-10-14T23:08:16+00:00",
+ "region": "global",
+ "extracted_at": "2026-10-23T18:27:56+00:00",
+ "mdb_size_bytes": 17334272,
+ "mdb_modified_at": "2026-10-22T18:46:29+00:00",
  "counts": {
-  "skills": 734,
-  "skill_text_ahead": 388,
-  "cards": 109,
-  "card_skills": 889,
-  "support_cards": 262,
-  "support_hints": 1604
+  "skills": 741,
+  "cards": 112,
+  "card_skills": 913,
+  "support_cards": 265,
+  "support_hints": 1627,
+  "evolutions_outfit": 0,
+  "evolutions_scenario": 0,
+  "evolutions_succession": 0,
+  "skill_text_ahead": 381,
+  "evolution_condition_text": 781
  }
 }

@@ -94,6 +94,20 @@ def fetch_card(build_id, slugs):
     return None
 
 
+def rows_for_other_cards(fetched_ids):
+    """
+    The written rows of every card NOT being fetched, so --only refreshes a few
+    cards and keeps the rest. It used to write just the fetched cards, so "a
+    few cards" emptied the file.
+    """
+    if not OUT_PATH.is_file():
+        return []
+    return [
+        row for row in json.loads(OUT_PATH.read_text(encoding="utf-8"))
+        if row["support_card_id"] not in fetched_ids
+    ]
+
+
 def main():
     parser = argparse.ArgumentParser(description="Fetch support card event skills from gametora.")
     parser.add_argument("--only", type=int, nargs="*", help="card ids to fetch (default: all)")
@@ -131,6 +145,8 @@ def main():
             rows.append({"support_card_id": card["id"], "skill_id": skill_id})
         time.sleep(0.2)  # be polite
 
+    if args.only:
+        rows += rows_for_other_cards({card["id"] for card in cards})
     rows.sort(key=lambda row: (row["support_card_id"], row["skill_id"]))
     OUT_PATH.write_text(json.dumps(rows, indent=1) + "\n", encoding="utf-8")
     print(

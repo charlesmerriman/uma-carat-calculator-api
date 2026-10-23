@@ -2613,6 +2613,36 @@
   "skill_set_id": 9081078
  },
  {
+  "id": 30127,
+  "chara_id": 1001,
+  "chara_name": "Special Week",
+  "name": "[Outrunning Misfortune] Special Week",
+  "title": "[Outrunning Misfortune]",
+  "rarity": 3,
+  "card_type": "stamina",
+  "skill_set_id": 9081001
+ },
+ {
+  "id": 30128,
+  "chara_id": 1044,
+  "chara_name": "Sweep Tosho",
+  "name": "[Capricious Excellence] Sweep Tosho",
+  "title": "[Capricious Excellence]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081044
+ },
+ {
+  "id": 30129,
+  "chara_id": 1011,
+  "chara_name": "Grass Wonder",
+  "name": "[From Icy Blues to Verdant Hues] Grass Wonder",
+  "title": "[From Icy Blues to Verdant Hues]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081011
+ },
+ {
   "id": 30145,
   "chara_id": 1084,
   "chara_name": "Tanino Gimlet",
