@@ -17,6 +17,9 @@ class CalculatorapiConfig(AppConfig):
         # -> calculatorapi/pvp_catalogue_cache.py
         from calculatorapi import pvp_catalogue_cache  # pylint: disable=import-outside-toplevel
         pvp_catalogue_cache.connect_invalidation_signals()
+        # The same for GET /skills and the skill pages. -> calculatorapi/skills_cache.py
+        from calculatorapi import skills_cache  # pylint: disable=import-outside-toplevel
+        skills_cache.connect_invalidation_signals()
         # A deleted post or comment strips its moderation card in Discord.
         # -> calculatorapi/moderation_cards.py
         from calculatorapi import moderation_cards  # pylint: disable=import-outside-toplevel

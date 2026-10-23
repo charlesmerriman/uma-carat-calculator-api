@@ -60,6 +60,7 @@ from calculatorapi.views.pvp_guide_editor import (
     pvp_guide_track_greens,
 )
 from calculatorapi.views.pvp_catalogue import pvp_catalogue
+from calculatorapi.views.skills import skill_detail, skill_list
 from calculatorapi.views.pvp_team import pvp_team_detail, pvp_team_list
 from calculatorapi.views.gallery import (
     gallery_comment_detail,
@@ -203,6 +204,10 @@ urlpatterns = [
     # The team builder's catalogue: umas, cards and skills with aptitudes and
     # skill links. Public, cached, fetched lazily. → views/pvp_catalogue.py
     path("pvp-catalogue", pvp_catalogue, name="pvp-catalogue"),
+    # Every skill a player may read about, and one skill in full: the Skills
+    # page and the guide editor's picker. Public, cached. → views/skills.py
+    path("skills", skill_list, name="skill-list"),
+    path("skills/<int:game_id>", skill_detail, name="skill-detail"),
     # A signed-in player's PvP teams. Guests keep theirs on the device.
     # → views/pvp_team.py
     path("pvp-teams", pvp_team_list, name="pvp-team-list"),

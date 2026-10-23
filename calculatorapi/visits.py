@@ -75,6 +75,7 @@ KNOWN_ROUTES = frozenset({
     "/app/selectors",
     "/app/legend-races",
     "/app/pvp",
+    "/app/skills",
     "/account",
     "/login",
 })

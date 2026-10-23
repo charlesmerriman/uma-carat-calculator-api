@@ -81,7 +81,7 @@ from django.contrib import admin, messages
 from django.contrib.admin.views.autocomplete import AutocompleteJsonView
 from django.contrib.admin.widgets import AutocompleteSelect
 from django.core.exceptions import ValidationError
-from django.db.models import Count, F, Prefetch
+from django.db.models import Count, F, Prefetch, Q
 from django.db.models.functions import Coalesce
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
@@ -1222,15 +1222,21 @@ class PvpGuideAdmin(ModelAdmin):
         ]
 
     def skill_names_view(self, request):
-        """Names for the `[[` suggestions in the text boxes: skills on global
-        whose name contains the typed text, with their icons."""
+        """Names for the `[[` suggestions in the text boxes: skills a guide
+        may show whose name (global's, the translation, or an old one) holds
+        the typed text, with their icons. The name offered is the one a player
+        reads; a JP-only skill says so beside its version."""
         term = request.GET.get("q", "").strip()
-        rows = Skill.objects.on_global()
+        rows = Skill.objects.shown().select_related("evolves_from")
         if term:
-            rows = rows.filter(name__icontains=term)
+            rows = rows.filter(
+                Q(name__icontains=term) | Q(translated_name__icontains=term)
+                | Q(aliases__name__icontains=term)
+            ).distinct()
         results = [
-            {"name": skill.name, "picture": picture_url(skill), "version": skill.version_label}
-            for skill in rows.order_by("name")[:12]
+            {"name": skill.shown_name, "picture": picture_url(skill),
+             "version": skill.version_label + (" · JP only" if skill.availability == "jp" else "")}
+            for skill in rows.by_shown_name()[:12]
         ]
         return JsonResponse({"results": results})
 

@@ -19,7 +19,7 @@ from django.core.files.storage import default_storage
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from calculatorapi import pvp_catalogue_cache
+from calculatorapi import pvp_catalogue_cache, skills_cache
 from calculatorapi.models import Skill
 
 ICON_FOLDER = "skills"
@@ -72,4 +72,5 @@ class Command(BaseCommand):
         # The saves above fire the signal; a writer still drops the caches it
         # feeds itself, so a later switch to bulk_update cannot go stale.
         pvp_catalogue_cache.invalidate()
+        skills_cache.invalidate()
         self.stdout.write(self.style.SUCCESS(f"Linked {len(planned)} skill(s)."))

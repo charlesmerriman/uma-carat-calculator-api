@@ -113,7 +113,7 @@ from pathlib import Path
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
-from calculatorapi import public_payload_cache, pvp_catalogue_cache
+from calculatorapi import public_payload_cache, pvp_catalogue_cache, skills_cache
 from calculatorapi.models import (
     Skill, SkillAlias, SkillEvolutionCondition, SupportCard, SupportCardSkill, Uma, UmaSkill,
 )
@@ -778,6 +778,7 @@ class Command(BaseCommand):
         # is that a bulk writer drops the cache itself, so this does too.
         public_payload_cache.invalidate()
         pvp_catalogue_cache.invalidate()
+        skills_cache.invalidate()
         return written
 
     def _report_skill_notes(self, plan):

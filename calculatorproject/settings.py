@@ -866,6 +866,15 @@ CACHES = {
         "LOCATION": "gallery-previews",
         "OPTIONS": {"MAX_ENTRIES": 64},
     },
+    # GET /skills and one GET /skills/<id> page per skill (calculatorapi/skills_cache.py):
+    # the list is a few hundred KB, a page a few KB, so a full set is ~5 MB.
+    # Its own alias so ~2,200 page keys never crowd "default". Same
+    # single-process caveat.
+    "skills": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "skills",
+        "OPTIONS": {"MAX_ENTRIES": 3000},
+    },
 }
 
 # Log all Django errors to stdout so DigitalOcean runtime logs capture tracebacks.

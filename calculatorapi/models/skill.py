@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models.functions import Coalesce, Lower, NullIf
 
 
 class SkillRarity(models.IntegerChoices):
@@ -72,6 +73,21 @@ def on_global_q(prefix=""):
     )
 
 
+def shown_q(prefix=""):
+    """
+    What a guide or the Skills page may show: any skill with an English name,
+    global's or a translation (owner, 2026-10-23: JP-only skills on published
+    guides, tagged "JP only" and crediting UmaTL). A skill with only its
+    Japanese name stays in the admin; an editor can give it a name there.
+
+    The WIDER of the two rules. on_global_q() still decides what is in the
+    game on global: the team builder's catalogue, a skill's "other versions"
+    and the track greens read that one. Callable with no arguments, for
+    limit_choices_to.
+    """
+    return ~models.Q(**{f"{prefix}name": ""}) | ~models.Q(**{f"{prefix}translated_name": ""})
+
+
 class SkillQuerySet(models.QuerySet):
     """
     "May a player be shown this skill?", asked of the database.
@@ -97,6 +113,57 @@ class SkillQuerySet(models.QuerySet):
 
     def not_on_global(self):
         return self.exclude(on_global_q())
+
+    def shown(self):
+        """Skills a guide or the Skills page may show (shown_q)."""
+        return self.filter(shown_q())
+
+    def by_shown_name(self):
+        """Ordered by the name a player reads (Skill.shown_name), in SQL: a
+        JP-only skill's global name is blank and would otherwise sort first."""
+        return self.annotate(
+            shown_name_sort=Lower(Coalesce(NullIf("name", models.Value("")), "translated_name")),
+        ).order_by("shown_name_sort", "game_id")
+
+    def resolve_names(self, names):
+        """
+        {lower-case name: Skill} for every name that names a skill in this
+        queryset, by global's name first, then the translation, then an old
+        name kept as an alias; the lowest game id breaks a tie. Three queries
+        whatever the count. The one place a typed name becomes a skill: the
+        `[[mention]]` check and links, the `[[` suggestions and the sheet.
+        """
+        wanted = {name.strip().lower() for name in names if name and name.strip()}
+        if not wanted:
+            return {}
+        found = {}
+        ranked = []
+        for row in self.annotate(
+            lower_global=Lower("name"),
+            lower_translated=Lower("translated_name"),
+        ).filter(models.Q(lower_global__in=wanted) | models.Q(lower_translated__in=wanted)):
+            if row.lower_global in wanted:
+                ranked.append((0, row.game_id, row.lower_global, row))
+            if row.lower_translated in wanted:
+                ranked.append((1, row.game_id, row.lower_translated, row))
+        # Through the reverse relation: one row per matching alias.
+        for row in self.annotate(lower_alias=Lower("aliases__name")).filter(lower_alias__in=wanted):
+            ranked.append((2, row.game_id, row.lower_alias, row))
+        for _rank, _game_id, name, skill in sorted(ranked, key=lambda item: item[:2]):
+            found.setdefault(name, skill)
+        return found
+
+    def all_names(self):
+        """Every lower-case name the skills here answer to: global's, the
+        translation, and kept aliases. For "does this name exist" checks."""
+        names = set()
+        for name, translated in self.values_list("name", "translated_name"):
+            names.update(value.lower() for value in (name, translated) if value)
+        names.update(
+            name.lower()
+            for name in self.exclude(aliases__isnull=True).values_list("aliases__name", flat=True)
+        )
+        return names
 
 
 class Skill(models.Model):
@@ -260,6 +327,19 @@ class Skill(models.Model):
         if self.availability == SkillAvailability.GLOBAL:
             return True
         return self.availability == SkillAvailability.ANNOUNCED and self.rarity != SkillRarity.EVOLVED
+
+    @property
+    def is_shown(self):
+        """May a guide or the Skills page show it? The same rule as shown_q()."""
+        return bool(self.name or self.translated_name)
+
+    @property
+    def uses_translation(self):
+        """Does a player read UmaTL's text for this skill (name or description)?
+        Wherever that is true the site credits UmaTL."""
+        return (not self.name and bool(self.translated_name)) or (
+            not self.description and bool(self.translated_description)
+        )
 
     @property
     def shown_name(self):
