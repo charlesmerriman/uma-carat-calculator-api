@@ -287,7 +287,7 @@ def _guide_texts(guide):
         yield row.note
 
 
-def _mentioned_skills(guide):
+def _mentioned_skills(guide, skills=None):
     """{lower-case name as written: skill} for every [[name]] in the guide.
 
     Matched the way the save check matches (Skill.objects.shown().resolve_names:
@@ -296,7 +296,8 @@ def _mentioned_skills(guide):
     mention that has since gone stale drops out and renders as plain text.
     """
     names = {name for text in _guide_texts(guide) for name in find_skill_mentions(text)}
-    return Skill.objects.shown().select_related("evolves_from").resolve_names(names)
+    skills = Skill.objects.shown() if skills is None else skills
+    return skills.select_related("evolves_from").resolve_names(names)
 
 
 # A skill with no outfit or card: what `sources` holds for it.
@@ -338,8 +339,15 @@ def _sources(skill_ids):
 
 def serialize_guide(guide, request=None):
     """The response body for one guide. `request` makes image URLs absolute."""
-    skill_rows = sorted(guide.skill_recommendations.all(), key=_skill_key)
-    mentioned = _mentioned_skills(guide)
+    # The shelved skills work (pvp_guide_editing.sees_skills_preview): anyone
+    # but a guide editor gets the guide as before it, global skills only, so a
+    # JP-only skill an editor has added never reaches a player yet.
+    preview = pvp_guide_editing.sees_skills_preview(getattr(request, "user", None))
+    skill_rows = sorted(
+        (row for row in guide.skill_recommendations.all() if preview or row.skill.is_on_global),
+        key=_skill_key,
+    )
+    mentioned = _mentioned_skills(guide, None if preview else Skill.objects.on_global())
     skills = [row.skill for row in skill_rows] + list(mentioned.values())
     skill_ids = [skill.id for skill in skills]
     context = {

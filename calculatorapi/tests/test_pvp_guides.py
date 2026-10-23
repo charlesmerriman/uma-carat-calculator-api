@@ -563,7 +563,10 @@ class SkillMentionTests(CalculatorTestCase):
         guide = PvpGuide.objects.create(
             champions_meeting=self.cm, is_published=True, short_description="Try [[older name]].",
         )
-        body = APIClient().get(url("cm", self.cm.id)).json()
+        # A guide editor's view: JP-only skills are shelved for everyone else.
+        client = APIClient()
+        client.force_authenticate(make_user("editor", is_staff=True))
+        body = client.get(url("cm", self.cm.id)).json()
         mention = body["skill_mentions"]["older name"]
         self.assertEqual((mention["id"], mention["name"], mention["availability"]),
                          (skill.id, "Not Yet", "jp"))

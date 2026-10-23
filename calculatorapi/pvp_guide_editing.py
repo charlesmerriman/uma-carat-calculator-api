@@ -36,6 +36,17 @@ class GuideRefused(Exception):
     """A write the rules refuse. The message is shown to the editor as is."""
 
 
+def sees_skills_preview(user):
+    """
+    Whether `user` sees the SHELVED skills work (owner, 2026-10-23): GET /skills,
+    JP-only skills on guides, and the readable text and sources the hover card
+    draws. The guide editors only, for now; everyone else gets guides exactly
+    as before the work (global skills only). Un-shelving is this one function:
+    return True. See workspace-root skills-plan-4.md.
+    """
+    return can_edit(user)
+
+
 def can_edit(user, guide=None):  # pylint: disable=unused-argument
     """Whether `user` may edit guides on the site: an active staff account.
     `guide` is unused; it is the seam a later feature (supporters' own guides)
