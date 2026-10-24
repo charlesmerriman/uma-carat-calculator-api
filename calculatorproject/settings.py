@@ -507,6 +507,8 @@ REST_FRAMEWORK = {
         "guide_editor_action": "60/hour",
         # The /plan/<id> share page (views/plan_share.py), for the same reason.
         "plan_share": "600/hour",
+        # The /guide/<kind>-<id> share page (views/guide_share.py), likewise.
+        "guide_share": "600/hour",
     },
 }
 
@@ -846,7 +848,8 @@ CACHES = {
     # The gallery's own small keys, kept OUT of "default" on purpose: one
     # "already counted" key per viewer per post per day (gallery.record_view)
     # and every gallery throttle counter (views/gallery.py GalleryThrottle),
-    # plus the /plan/<id> share page's (views/plan_share.py PlanShareThrottle).
+    # plus the /plan/<id> and /guide/<ref> share pages' (views/plan_share.py
+    # PlanShareThrottle, views/guide_share.py GuideShareThrottle).
     # In "default" they would crowd its 40 slots and push the /calculator-data
     # payload out, and every visitor after that would pay the ~2s rebuild (the
     # 2026-09-23 outage). Values are a few bytes each, so the bound is high.
@@ -857,7 +860,8 @@ CACHES = {
         "OPTIONS": {"MAX_ENTRIES": 20000},
     },
     # Rendered link-preview images (calculatorapi/gallery_preview.py for a
-    # post, plan_preview.py for a shared plan), about 100 KB each. Rendered on request and kept here, never written to
+    # post, plan_preview.py for a shared plan, guide_preview.py for a guide),
+    # about 100 KB each. Rendered on request and kept here, never written to
     # storage: default storage is the production Spaces bucket even on a
     # developer's machine. 64 entries caps it near 6 MB; a dropped image costs
     # one re-render the next time a crawler asks.
