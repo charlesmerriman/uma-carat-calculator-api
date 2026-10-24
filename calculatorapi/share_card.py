@@ -21,10 +21,13 @@ has no per-glyph fallback, and a missing glyph draws a blank box.
 """
 
 import io
+import logging
 from functools import lru_cache
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
+
+logger = logging.getLogger(__name__)
 
 # The large-card size both Discord and X use (1.91:1).
 WIDTH, HEIGHT = 1200, 630
@@ -170,6 +173,38 @@ def brand_strip(image, right=""):
         label = fit(right, 26, room, weight=500)
         label_width = text_width(label, 26, weight=500)
         draw_text(draw, (WIDTH - MARGIN - label_width, top + 6), label, 26, MUTED, weight=500)
+
+
+def cover(art, blur):
+    """An uploaded picture (a FieldFile) scaled to cover the card, cropped to
+    its centre and blurred by `blur`, for a backdrop; None when it can't be
+    read. Used by plan_preview.py (a banner's art) and guide_preview.py (an
+    event's)."""
+    try:
+        with art.open("rb") as handle:
+            picture = Image.open(io.BytesIO(handle.read()))
+            picture.load()
+    except Exception as error:  # pylint: disable=broad-exception-caught
+        # Any storage or decoding failure: a crawler must never get a 500.
+        logger.warning("Preview art %s could not be read: %r", getattr(art, "name", art), error)
+        return None
+    picture = picture.convert("RGB")
+    scale = max(WIDTH / picture.width, HEIGHT / picture.height)
+    size = (round(picture.width * scale), round(picture.height * scale))
+    picture = picture.resize(size, Image.Resampling.LANCZOS)
+    left, top = (size[0] - WIDTH) // 2, (size[1] - HEIGHT) // 2
+    return picture.crop((left, top, left + WIDTH, top + HEIGHT)).filter(ImageFilter.GaussianBlur(blur))
+
+
+def shade(image, colour, left, right):
+    """Darken a backdrop left to right, from alpha `left` to `right`, so white
+    words stay readable on any of it."""
+    layer = Image.new("RGBA", (WIDTH, HEIGHT), colour + (0,))
+    draw = ImageDraw.Draw(layer)
+    for x in range(WIDTH):
+        alpha = round(left + (right - left) * x / (WIDTH - 1))
+        draw.line([(x, 0), (x, HEIGHT)], fill=colour + (alpha,))
+    image.paste(layer, (0, 0), layer)
 
 
 def to_jpeg(image):

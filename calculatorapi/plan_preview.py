@@ -27,17 +27,13 @@ crawler that gets a failure caches a card with no picture at all.
 """
 
 import hashlib
-import io
-import logging
 from dataclasses import dataclass
 
 from django.core.cache import caches
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import ImageDraw
 
 from calculatorapi import share_card
 from calculatorapi.share_card import HEIGHT, MARGIN, STRIP_HEIGHT, WIDTH
-
-logger = logging.getLogger(__name__)
 
 # Which drawing this is; part of Card.version. Raise it when the drawing changes.
 LAYOUT = "1"
@@ -71,42 +67,14 @@ class Card:
         return hashlib.sha1(drawn.encode()).hexdigest()[:10]
 
 
-def _cover(art):
-    """The art scaled to cover the card and cropped to its centre, or None."""
-    try:
-        with art.open("rb") as handle:
-            picture = Image.open(io.BytesIO(handle.read()))
-            picture.load()
-    except Exception as error:  # pylint: disable=broad-exception-caught
-        # Any storage or decoding failure: a crawler must never get a 500.
-        logger.warning("Plan preview art %s could not be read: %r", getattr(art, "name", art), error)
-        return None
-    picture = picture.convert("RGB")
-    scale = max(WIDTH / picture.width, HEIGHT / picture.height)
-    size = (round(picture.width * scale), round(picture.height * scale))
-    picture = picture.resize(size, Image.Resampling.LANCZOS)
-    left, top = (size[0] - WIDTH) // 2, (size[1] - HEIGHT) // 2
-    return picture.crop((left, top, left + WIDTH, top + HEIGHT)).filter(ImageFilter.GaussianBlur(ART_BLUR))
-
-
-def _shade(image):
-    """Darken the art left to right so white words stay readable on any of it."""
-    shade = Image.new("RGBA", (WIDTH, HEIGHT), SHADE_COLOUR + (0,))
-    draw = ImageDraw.Draw(shade)
-    for x in range(WIDTH):
-        alpha = round(SHADE_LEFT + (SHADE_RIGHT - SHADE_LEFT) * x / (WIDTH - 1))
-        draw.line([(x, 0), (x, HEIGHT)], fill=SHADE_COLOUR + (alpha,))
-    image.paste(shade, (0, 0), shade)
-
-
 def render(card):
     """JPEG bytes for a plan's card. Pure: no cache, no request."""
-    art = _cover(card.art) if card.art is not None else None
+    art = share_card.cover(card.art, ART_BLUR) if card.art is not None else None
     if art is None:
         image = share_card.background()
     else:
         image = art
-        _shade(image)
+        share_card.shade(image, SHADE_COLOUR, SHADE_LEFT, SHADE_RIGHT)
     share_card.brand_strip(image)
     draw = ImageDraw.Draw(image)
 
