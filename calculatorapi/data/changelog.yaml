@@ -32,6 +32,38 @@
 # module changed. Newest entry first is conventional here but not required — the
 # page sorts by date.
 
+- key: pvp-guide-redesign
+  date: 2026-10-24
+  title: "PvP guides, redesigned from the ground up"
+  version: "v2.7"
+  changes:
+    - changed: "The PvP guide page has been rebuilt from top to bottom. Nearly every part of it is new or redrawn."
+    - added: "A new section at the top of each guide holds the style ranking, the meta notes, the recommended stats, the scenario and the team comps."
+    - added: "The style ranking is a ladder with each style's top umas. Tap a face to jump to that style."
+    - changed: "Recommended stats show as big tiles. A guide with several stat rows gets the full table, notes and all."
+    - added: "You can see which scenario a guide is built for."
+    - changed: "Team comps are drawn as slots in each style's colour."
+    - changed: "Running styles use Hakuraku's colours, and its colorblind palette in Colorblind mode."
+    - changed: "Guides open on the style they rank first. The style tabs show each rank."
+    - changed: "Uma tiles are all one size, grouped under their stars, with the outfit on its own line. They spread evenly across the row."
+    - added: "Every uma shows her aptitude letters for the course. A C is amber; D or worse is red."
+    - changed: "Skills sit in tier rows, T0 to T4, inside each skill type. Every skill gets a box the same size."
+    - changed: "On a phone, General skills fold away until you open them, so you get to the umas a lot sooner."
+    - added: "Decks come one at a time. Pick Beginner, Standard or Whale and the site remembers your budget for every guide."
+    - added: "Each deck says which cards every deck shares and what it swaps in."
+    - changed: "Decks are animated. Switch budgets and shared cards slide to their new spots while the rest fade out. All opens every deck at once."
+    - changed: "Card notes are tags now: 1SP, 2SP, Stats, Hints, Initial Friendship."
+    - added: "Cards linked to the scenario get a Link badge. It replaces the red ring."
+    - changed: "Honorable Mentions is a darker row of smaller cards."
+    - changed: "A borrowed card has a grey tab behind it, like the game's Friend tag."
+    - changed: "The All tab is a quick look at every style in ranking order. Top faces, best skills and each deck on one line, with +N opening the style."
+    - added: "Use this deck sends a guide's deck to My team. Pick a spot or start a new team, and the cards get dealt in one at a time."
+    - added: "Anything it can't place is named in the message. Undo puts your team back."
+    - added: "Copy link gives you a guide link that shows a preview in Discord, ranking and stats included."
+    - changed: "Comment buttons say which thread they open."
+    - fixed: "Long skill and card names wrap instead of getting cut off."
+    - added: "Something skill-shaped is being built behind the scenes. I'm not saying where. Yet."
+
 - key: pvp-free-guide
   date: 2026-10-22
   title: "A free PvP guide, and Champions Meeting 21 for everyone"

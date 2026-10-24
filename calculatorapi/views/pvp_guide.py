@@ -49,6 +49,7 @@ from calculatorapi.models import (
 )
 from calculatorapi.models.pvp_guide import STYLE_RANK, find_skill_mentions
 from calculatorapi.models.skill import skill_families
+from calculatorapi.views.pvp_catalogue import APTITUDE_FIELDS
 
 # The URL's kind -> the guide's FK to that event.
 EVENT_FIELD_FOR_KIND = {
@@ -85,10 +86,18 @@ class _UmaSerializer(serializers.ModelSerializer):
     # The borderless cut (Uma.portrait): the site draws every uma inside a
     # frame of its own (frontend FramedUma). `image` stays the bordered art.
     portrait = serializers.ImageField(read_only=True)
+    # The ten aptitude columns, 1..8 (G..S) or None, as /pvp-catalogue sends
+    # them: the guide draws this course's distance and the row's style as
+    # letters on each uma, so an author no longer types "Sprint F" as a role
+    # (guide-visuals-plan.md, release 4).
+    apt = serializers.SerializerMethodField()
 
     class Meta:
         model = Uma
-        fields = ("id", "name", "image", "portrait")
+        fields = ("id", "name", "image", "portrait", "apt")
+
+    def get_apt(self, uma):
+        return {key: getattr(uma, f"apt_{key}") for key in APTITUDE_FIELDS}
 
 
 class _SupportCardSerializer(serializers.ModelSerializer):

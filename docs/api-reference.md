@@ -759,7 +759,9 @@ may hold `==highlight==` spans the client renders red.
   "stat_configs": [{"style": "everyone", "label": "Minimum", "speed": "1200", "stamina": "578*",
                     "power": "1100+", "guts": "", "wit": "1100+", "footnote": "*Bonus Speed every 300 Power."}],
   "uma_recommendations": [{"style": "front", "stars": 5, "role": "", "note": "Use as runaway",
-                           "uma": {"id": 41, "name": "Maruzensky", "image": "url | null", "portrait": "url | null"}}],
+                           "uma": {"id": 41, "name": "Maruzensky", "image": "url | null", "portrait": "url | null",
+                                   "apt": {"turf": 7, "dirt": 1, "short": 5, "mile": 7, "medium": 6, "long": 3,
+                                           "front": 8, "pace": 6, "late": 2, "end": 1}}}],
   "skill_recommendations": [{"style": "front", "category": "acceleration", "tier": 0, "order": 0, "note": "",
       "skill": {"id": 210, "name": "Lead the Pack", "description": "string", "image": "url | null",
                 "rarity": 5, "unique_of": "Maruzensky", "version": "○ white", "tier": 1, "is_evolved": false,
@@ -776,6 +778,10 @@ may hold `==highlight==` spans the client renders red.
                                      "is_evolved": false, "versions": []}} }
 ```
 
+Each guide uma carries `apt`, its ten aptitudes as `/pvp-catalogue` sends them (1..8 for
+G..S, null when not imported). The guide draws this course's distance and the row's style
+as letters on the tile.
+
 `skill_mentions` resolves every `[[Skill name]]` written in the guide's text: `{lower-case
 name: skill object}` (the same shape as `skill` above), skills on global only, matched
 ignoring case. The client renders a mention it finds here as a skill chip and any other as
@@ -785,6 +791,38 @@ missing key means the skill went stale since.
 A deck slot's `order` 0 is the card and 1+ are alternatives for the same slot; a slot row
 always has a card, a note, or both. Whether an event HAS a published guide is `has_guide`
 on the event itself (below), so the client never probes this route to find out.
+
+### `GET /guide/<kind>-<event_id>` (not under `/api`)
+
+A guide's link, `/guide/cm-21` (the event's database id, as the page's own `?event=` names
+it): what the PvP page's "Copy link" copies since 2026-10-24 (`guide-visuals-plan-2.md`
+release D). An HTML page of link-preview tags on the site's host, through the `/guide`
+ingress rule in `.do/app.yaml`, exactly as `/post` and `/plan`; a browser lands on
+`/app/pvp?event=cm-21`. A `?style=` (one of the running styles or `all`) passes through to
+both addresses; anything else is dropped. Code: `views/guide_share.py`, template
+`share/link_preview.html`.
+
+- **A published guide everyone may read today** (`pvp_gate.guide_is_open`): title "Capricorn
+  Cup PvP guide"; description the facts only, the ranking ("Pace ≫ End > Late > Front"), the
+  stats (the `everyone` row, else the first, "and N more stat rows"), the course. Never the
+  guide's prose, an editor or a comment.
+- **A guide the early-access gate holds back, a draft, or no guide:** the event alone, its
+  name, course and dates. `pvp_gate.py` mirrors the frontend's `usePvpAccess.ts`
+  (`PVP_EARLY_ACCESS`, `PVP_OPEN_CM_NUMBER`, the free guide being the event running now,
+  else the next); flip both together.
+- **An address naming no event:** the site's own tags, a **200**.
+
+Opening it creates and counts nothing. Throttled per address at `guide_share` (600/hour),
+counted in the `gallery` cache. The old `/app/pvp?event=…` address keeps working, with the
+plain preview.
+
+### `GET /guide/<kind>-<event_id>/preview.jpg?v=<version>` (not under `/api`)
+
+A 1200x630 JPEG drawn by `guide_preview.py`: the event's own art, blurred and shaded, the
+brand strip with "CM 21", "PvP guide", the cup and the course; an open guide adds the
+ranking in the style colours ("»" for a clear gap, "›" ahead, "=" level: the card's fonts
+have no "≫") and the stats, a held-back one the dates. Versioned, redirected and cached
+exactly as the plan's picture. **`404`** for an address naming no event.
 
 ### PvP guide editor
 
