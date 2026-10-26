@@ -15,7 +15,7 @@ GET /pvp-catalogue):
 
     {id, uma, label, speed, stamina, power, guts, wit,
      apt: {turf, dirt, short, mile, medium, long, front, pace, late, end},
-     rank_score, source: "import" | "manual", import_key, missing_from_import,
+     rank_score, rank_grade, source: "import" | "manual", import_key, missing_from_import,
      memo, is_borrowed, trained_at, has_game_data, skills: [{skill, level}], created_at, updated_at}
 
 plus `game_data` (the raw game object, or null) on GET /trained-umas/<id> only:
@@ -135,6 +135,8 @@ class _VeteranInput(serializers.Serializer):  # pylint: disable=abstract-method
     wit = _stat_field()
     apt = _AptInput(required=False, default=dict)
     skills = _SkillInput(many=True, required=False, default=list)
+    # The evaluation score the game shows on her, typed by hand (optional).
+    rank_score = serializers.IntegerField(min_value=0, allow_null=True, required=False, default=None)
 
     def validate_skills(self, skills):
         return _validate_skills(skills)
@@ -151,6 +153,7 @@ class _PatchInput(serializers.Serializer):  # pylint: disable=abstract-method
     wit = _stat_field(required=False)
     apt = _AptInput(required=False)
     skills = _SkillInput(many=True, required=False)
+    rank_score = serializers.IntegerField(min_value=0, allow_null=True, required=False)
 
     def validate_skills(self, skills):
         return _validate_skills(skills)
@@ -189,6 +192,7 @@ def serialize_veteran(veteran, with_game_data=False):
         **{stat: getattr(veteran, stat) for stat in STAT_FIELDS},
         "apt": veteran.aptitudes(),
         "rank_score": veteran.rank_score,
+        "rank_grade": veteran.rank_grade,
         "source": veteran.source,
         "import_key": veteran.import_key,
         "missing_from_import": veteran.missing_from_import,

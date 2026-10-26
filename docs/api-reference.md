@@ -1020,7 +1020,7 @@ A signed-in player's veterans, for the Collection page (`views/trained_uma.py`, 
 | Route | Body | Returns |
 |---|---|---|
 | `GET /trained-umas` | | every veteran, newest first (`trained_at`, the game's own time, else when it was added) |
-| `POST /trained-umas` | `{uma, label?, speed, stamina, power, guts, wit, apt?, skills?}` | `201` the veteran (`source: "manual"`) |
+| `POST /trained-umas` | `{uma, label?, speed, stamina, power, guts, wit, apt?, skills?, rank_score?}` | `201` the veteran (`source: "manual"`) |
 | `GET /trained-umas/<id>` | | the veteran, with `game_data` (the raw game object; the list leaves it out) |
 | `PATCH /trained-umas/<id>` | any of the above | the veteran. A game veteran takes `label` only; nobody changes `uma` |
 | `DELETE /trained-umas/<id>` | | `204`. Teams and runs that linked it keep their uma, link `null` |
@@ -1032,12 +1032,15 @@ A veteran:
 { "id": 7, "uma": 41, "label": "", "speed": 1200, "stamina": 800, "power": 1000, "guts": 400, "wit": 900,
   "apt": {"turf": 8, "dirt": 1, "short": 3, "mile": 7, "medium": 7, "long": 6,
           "front": 2, "pace": 7, "late": 7, "end": 4},
-  "rank_score": 12000, "source": "import", "import_key": 12, "missing_from_import": false,
+  "rank_score": 12000, "rank_grade": 13, "source": "import", "import_key": 12, "missing_from_import": false,
   "memo": "Ace", "is_borrowed": false, "trained_at": "2026-09-01T10:00:00Z", "has_game_data": true,
   "skills": [{"skill": 310, "level": 2}], "created_at": "ISO8601", "updated_at": "ISO8601" }
 ```
 
-`apt` is the game's 1..8 (G..S), `null` when not known. **The import** is the game's export
+`apt` is the game's 1..8 (G..S), `null` when not known. `rank_grade` is the game's grade
+number for `rank_score` (1 G ... 18 SS+, 19 UG, 20 UG1 ... 29 UF), from an import only; a
+hand entry may carry a score but never a grade (the thresholds aren't published). The
+letters are the frontend's (`utils/veteranGrade.ts`). **The import** is the game's export
 read in the player's browser (umadump's `trained_chara_data.json`); `import_key` is the game's
 `trained_chara_id`. It updates veterans already imported in place (labels kept), adds new
 ones, and removes the ones the file no longer has EXCEPT any a logged run links: those stay,

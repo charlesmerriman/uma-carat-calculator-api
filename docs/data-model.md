@@ -1114,7 +1114,9 @@ for CM Runs").
 
 - **`TrainedUma`**: `user` (CASCADE), `uma` (one outfit), `label` (40), the five stats
   (0..2000), ten nullable aptitudes `apt_<key>` (1..8 = G..S, the catalogue's keys),
-  `rank_score`, `source` `import` | `manual`, `import_key` (the game's `trained_chara_id`,
+  `rank_score` (an import's, or typed by hand), `rank_grade` (the game's grade number for it,
+  from an import only; promoted out of `game_data["rank"]` by `0117`, which also fills
+  existing rows), `source` `import` | `manual`, `import_key` (the game's `trained_chara_id`,
   set exactly for an import: `trained_uma_source_matches_key`; unique per account),
   `imported_at`, `missing_from_import`, `game_data` (the whole raw game object, NULL for a
   hand entry, deferred by every list), `memo` (the player's own game note, shown only to

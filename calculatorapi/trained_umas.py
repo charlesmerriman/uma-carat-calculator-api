@@ -107,7 +107,9 @@ def _check_catalogue(umas, skill_ids):
 
 
 def _apply(veteran, data):
-    """The validated stats and aptitudes onto the row (not saved)."""
+    """The validated stats, aptitudes and (by hand) rank score onto the row (not saved)."""
+    if "rank_score" in data:
+        veteran.rank_score = data["rank_score"]
     for stat in STAT_FIELDS:
         if stat in data:
             setattr(veteran, stat, data[stat])
@@ -168,6 +170,8 @@ def _apply_import(veteran, item, now):
     veteran.uma_id = item["uma"]
     veteran.rank_score = item["rank_score"]
     raw = item.get("game_data")
+    grade = raw.get("rank") if isinstance(raw, dict) else None
+    veteran.rank_grade = grade if isinstance(grade, int) and 1 <= grade <= 999 else None
     if raw is not None:
         veteran.game_data, veteran.is_borrowed = strip_other_players(raw)
         memo = raw.get("memo")
@@ -229,7 +233,7 @@ def import_veterans(user, items):
         TrainedUma.objects.bulk_create(fresh)
         TrainedUma.objects.bulk_update(
             changed,
-            ["uma", "rank_score", "imported_at", "missing_from_import", "updated_at",
+            ["uma", "rank_score", "rank_grade", "imported_at", "missing_from_import", "updated_at",
              "game_data", "memo", "is_borrowed", "trained_at", *STAT_FIELDS, *[f"apt_{key}" for key in APTITUDE_KEYS]],
         )
         # Skills are replaced whole: two queries for the lot, not two per veteran.

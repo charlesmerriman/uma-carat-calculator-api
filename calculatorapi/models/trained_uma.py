@@ -112,6 +112,12 @@ class TrainedUma(models.Model):
 
     # The game's evaluation score; only an import has it.
     rank_score = models.PositiveIntegerField(null=True, blank=True)
+    # The game's grade for that score as its own number (1 = G ... 18 = SS+,
+    # 19 = UG, 20 = UG1 ...), promoted out of game_data["rank"] so the list can
+    # show "A+ 13,815" without loading the raw object. The frontend owns the
+    # letters (utils/veteranGrade.ts). NULL for a hand entry: the game's
+    # thresholds are not published, so a score typed by hand gets no grade.
+    rank_grade = models.PositiveSmallIntegerField(null=True, blank=True)
 
     source = models.CharField(max_length=6, choices=TrainedUmaSource.choices)
     # The game's trained_chara_id; set exactly when source is "import".
