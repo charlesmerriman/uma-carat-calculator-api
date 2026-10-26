@@ -973,6 +973,40 @@ notes, a note over 1000 characters or an unknown colour (`yellow` / `pink` / `bl
 `green`), and creating a sixth team for one event (`PVP_TEAM_CAP_PER_EVENT`; a save to an
 existing team is never refused for it). A refused `PUT` leaves the team as it was.
 
+### `/pvp-runs`
+
+A signed-in player's logged CM / LoH results, for the PvP page's CM Runs view
+(`views/pvp_run.py`, rules in `pvp_runs.py`). All `IsAuthenticated`, and account only: a
+guest has no device copy. A run is addressed by its **slot**, never an id, so an
+auto-save is idempotent; every query is scoped to the caller.
+
+| Route | Body | Returns |
+|---|---|---|
+| `GET /pvp-runs/<kind>/<event_id>` | | every run the caller logged for the event, days first, then the final |
+| `PUT /pvp-runs/<kind>/<event_id>/day/<d>/ticket/<t>` | `{runners?, races?, note?}` | the run. Creates it on the first save; replaces its runners and races after |
+| `PUT /pvp-runs/<kind>/<event_id>/final` | `{runners?, races?, finals_group?, placement?, note?}` | the run (CM only) |
+| `DELETE` either path | | `204`, also when nothing was logged there |
+
+A run, out (a `PUT` body is the part the URL does not already say):
+
+```json
+{ "kind": "cm", "event": 21, "stage": "day", "day": 1, "ticket": 2,
+  "finals_group": "", "placement": null, "note": "",
+  "runners": [{"position": 0, "uma": 41, "style": "front"}],
+  "races": [{"race": 1, "winner": 0}, {"race": 2, "winner": null}],
+  "updated_at": "ISO8601" }
+```
+
+`winner` is the `position` of the player's uma that won, `null` for a loss; a race that is
+not in the list has not been run. Slots: CM days 1..4 with tickets 1..4, plus the final;
+LoH days 1..6 with tickets 1..5, no final yet (`PVP_RUN_DAYS` / `PVP_RUN_TICKETS`). An
+unknown kind, event, day or ticket, or a LoH final, is **`404`**. **`400 {"error": "<one
+sentence>"}`** for: more than 3 runners or two in one spot, the team rules on the lineup
+(the same uma twice, two outfits of one character, an unknown uma; shared through
+`pvp_teams.check_lineup`), more than 5 races (1 in a final) or the same race twice, a
+winner in a spot with no runner, a group or placement on a day's ticket, a placement
+outside 1..3, a note over 120 characters. A refused `PUT` leaves the slot as it was.
+
 ## Gallery
 
 Posting a PvP team and everything about a post (`views/pvp_gallery.py`, `views/gallery.py`,

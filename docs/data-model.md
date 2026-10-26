@@ -1080,6 +1080,31 @@ shape on the device (frontend `services/guestPvpTeamStore.ts`).
 - A team's `gallery_posts` are the gallery posts copied from it (at most one). The post is a
   frozen copy, so editing or deleting the team never changes it.
 
+### `PvpRun`: a player's logged CM / LoH results
+
+`models/pvp_run.py`, all PRIVATE and in `_IRRELEVANT_MODELS`, like `PvpTeam`. Written by the
+PvP page's CM Runs view through `/pvp-runs`; account only (no guest copy). Design and the
+plan for linking veterans: `notes/pvp-planner-plan.md` ("R3 CM Runs").
+
+- **`PvpRun`**: one ticket of one day (`stage` `day`, `day`, `ticket`) or the final
+  (`stage` `final`, both NULL, plus `finals_group` `A` / `B` and `placement` 1..3), for one
+  event through the `PvpTeam` FK pair and XOR (`exactly_one_pvp_run_event`). The shape is
+  `pvp_run_stage_shape`; it spells out `isnull=False` because a CHECK passes on NULL.
+  One row per slot is a PAIR of partial unique constraints per rule (one per event FK),
+  since NULLs never collide. `note` (120).
+- **`PvpRunRunner`**: `position` 0..2, `uma`, `style` (never `everyone`), unique per run on
+  position and uma. A **copy** of the lineup when the ticket was logged, never a pointer at
+  a `PvpTeam`: editing or deleting a team must not rewrite results, and results belong to
+  the account and the event. R2 adds a nullable `trained_uma` LINK here and on
+  `PvpTeamMember` (stats live only on the veteran).
+- **`PvpRunRace`**: `race` 1..5 and `winner`, the spot of the player's uma that won, NULL
+  for a loss. **No row = not raced yet**, which a win rate leaves out of its denominator.
+- Day and ticket limits per kind are constants (`PVP_RUN_DAYS`, `PVP_RUN_TICKETS`), checked
+  in `pvp_runs.py`, not the database. The lineup obeys the team rules through
+  `pvp_teams.check_lineup`.
+- `DELETE /account` cascades; `purge_user_pii` leaves runs alone (they hold nothing about
+  the person).
+
 ### The gallery: `GalleryPost` and what hangs off it
 
 `models/gallery.py`, all PRIVATE (`content_snapshot.PRIVATE_MODELS`) and on
