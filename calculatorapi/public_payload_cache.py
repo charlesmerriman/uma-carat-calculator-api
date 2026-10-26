@@ -125,6 +125,11 @@ _IRRELEVANT_MODELS = frozenset({
     "pvpteam",
     "pvpteammember",
     "pvpteamcard",
+    # Logged CM / LoH results: the CM Runs view auto-saves on every
+    # dropdown change. Served by /pvp-runs, never here.
+    "pvprun",
+    "pvprunrunner",
+    "pvprunrace",
     # The gallery. A vote, a view or a comment is a write on every click, so
     # the same lesson applies; none of it is on /calculator-data.
     "gallerypost",
