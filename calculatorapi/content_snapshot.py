@@ -97,6 +97,9 @@ PRIVATE_MODELS = (
     # A player's veterans (the Collection page).
     "TrainedUma",
     "TrainedUmaSkill",
+    # What the player owns (the Collection page's Umas and Support cards).
+    "OwnedUma",
+    "OwnedSupportCard",
     # A guide's saves name who saved them. The guide itself is content.
     "PvpGuideRevision",
     # The gallery: posts, votes, comments and reports are people's own

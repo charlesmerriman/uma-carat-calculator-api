@@ -134,6 +134,10 @@ _IRRELEVANT_MODELS = frozenset({
     # an import. Served by /trained-umas, never here.
     "traineduma",
     "trainedumaskill",
+    # What the player owns: tapped on the Collection grid, written in bulk
+    # by an import. Served by /roster, never here.
+    "owneduma",
+    "ownedsupportcard",
     # The gallery. A vote, a view or a comment is a write on every click, so
     # the same lesson applies; none of it is on /calculator-data.
     "gallerypost",
