@@ -87,6 +87,13 @@ from .trained_uma import (
     APTITUDE_KEYS,
     STAT_FIELDS,
 )
+from .roster import (
+    OwnedUma,
+    OwnedSupportCard,
+    ROSTER_STARS_MAX,
+    ROSTER_LIMIT_BREAK_MAX,
+    ROSTER_SPARE_COPIES_MAX,
+)
 from .pvp_run import (
     PvpRun,
     PvpRunRunner,

@@ -704,6 +704,40 @@ Table calculatorapi_trainedumaskill as TrainedUmaSkill {
   }
 }
 
+Table calculatorapi_owneduma as OwnedUma {
+  id bigint [pk, increment, not null]
+  user_id bigint [not null, note: 'Django on_delete: CASCADE.']
+  uma_id bigint [not null, note: 'Django on_delete: CASCADE.']
+  stars smallint [null, note: '1..5']
+  talent_level smallint [null, note: '1..5']
+  source varchar(6) [not null, note: 'import | manual: where the values last came from']
+  game_data jsonb [null]
+  obtained_at timestamptz [null]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+
+  indexes {
+    (user_id, uma_id) [unique]
+  }
+}
+
+Table calculatorapi_ownedsupportcard as OwnedSupportCard {
+  id bigint [pk, increment, not null]
+  user_id bigint [not null, note: 'Django on_delete: CASCADE.']
+  support_card_id bigint [not null, note: 'Django on_delete: CASCADE.']
+  limit_break smallint [not null, note: '0..4']
+  spare_copies smallint [not null]
+  source varchar(6) [not null]
+  game_data jsonb [null]
+  obtained_at timestamptz [null]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+
+  indexes {
+    (user_id, support_card_id) [unique]
+  }
+}
+
 // Configuration and Changelog
 
 Table calculatorapi_calculationconstants as CalculationConstants {
@@ -1044,6 +1078,10 @@ Ref: TrainedUmaSkill.trained_uma_id > TrainedUma.id
 Ref: TrainedUmaSkill.skill_id > Skill.id
 Ref: PvpTeamMember.trained_uma_id > TrainedUma.id
 Ref: PvpRunRunner.trained_uma_id > TrainedUma.id
+Ref: OwnedUma.user_id > CustomUser.id
+Ref: OwnedUma.uma_id > Uma.id
+Ref: OwnedSupportCard.user_id > CustomUser.id
+Ref: OwnedSupportCard.support_card_id > SupportCard.id
 Ref: ChangelogChange.entry_id > ChangelogEntry.id
 Ref: CustomUser.id - PatreonSupporter.linked_user_id
 Ref: PatreonSupporter.tier_id > PatreonTier.id
@@ -1071,6 +1109,8 @@ TableGroup Accounts_and_Plans {
   PvpRunRace
   TrainedUma
   TrainedUmaSkill
+  OwnedUma
+  OwnedSupportCard
   Token
 }
 
