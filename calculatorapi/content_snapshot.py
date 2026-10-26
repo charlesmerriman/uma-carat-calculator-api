@@ -90,6 +90,10 @@ PRIVATE_MODELS = (
     "PvpTeam",
     "PvpTeamMember",
     "PvpTeamCard",
+    # A player's logged CM / LoH results (the CM Runs view).
+    "PvpRun",
+    "PvpRunRunner",
+    "PvpRunRace",
     # A guide's saves name who saved them. The guide itself is content.
     "PvpGuideRevision",
     # The gallery: posts, votes, comments and reports are people's own
