@@ -2,8 +2,8 @@
 
 **Live at [umacaratcalculator.com](https://umacaratcalculator.com)**, with browsable API docs at
 [umacaratcalculator.com/api/docs](https://umacaratcalculator.com/api/docs). A planning tool for
-Uma Musume Pretty Derby players, with tens of thousands of visitors since its September 2026
-launch and dozens of Patreon supporters.
+Uma Musume Pretty Derby players with over **100,000 visitors a month**. Since its September 2026 launch: nearly 400,000
+visits, 16,600 accounts holding 18,500 saved plans, and 86 Patreon supporters.
 
 [![CI](https://github.com/charlesmerriman/uma-carat-calculator-api/actions/workflows/ci.yml/badge.svg)](https://github.com/charlesmerriman/uma-carat-calculator-api/actions/workflows/ci.yml)
 
@@ -19,7 +19,7 @@ README describes what the site does for players.
 - **Predicts dates.** The global server follows the Japanese release schedule but announces
   late, so banner and event dates are predicted from the JP calendar, with admin-set offsets for
   when global slips. Every predicted date is flagged as one.
-- **Stores players' plans**: several per account, each shareable by a public link with a
+- **Stores players' plans**: about 18,500 of them holding 356,000 planned banners, several per account, each shareable by a public link with a
   server-drawn preview image for Discord and X.
 - **Runs the PvP side**: guides with revisions and an editor, a community gallery of teams with
   votes, comments, reports and moderation.
@@ -113,6 +113,9 @@ In continuous development since December 2025 and live since September 2026. The
 model follows [Henry's resource spreadsheet](https://docs.google.com/spreadsheets/d/100t3hnYl5Qm2UR8RtPlH-8Xd9KQbBlxEdXUOIR4d394/),
 the community reference built by Daptrius that this site grew out of. The application is my
 own work: the projection engine, authentication, admin and deployment.
+
+Visitor figures come from the site's own privacy-first analytics (no third-party trackers):
+bots are filtered out and each browser session counts once, as of October 2026.
 
 ## License
 
