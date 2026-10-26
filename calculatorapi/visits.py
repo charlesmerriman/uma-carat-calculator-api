@@ -76,6 +76,8 @@ KNOWN_ROUTES = frozenset({
     "/app/legend-races",
     "/app/pvp",
     "/app/skills",
+    # Account only and not prerendered, like /account, but a landing all the same.
+    "/app/collection",
     "/account",
     "/login",
 })
