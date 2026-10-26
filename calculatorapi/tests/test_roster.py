@@ -104,7 +104,7 @@ class ImportTests(RosterFixture):
 
     def test_an_import_adds_everything_and_keeps_the_raw_object(self):
         body = self.run_import(**self.items()).json()
-        self.assertEqual(body["umas"], {"added": 1, "updated": 0, "kept_by_hand": 0})
+        self.assertEqual(body["umas"], {"added": 1, "updated": 0, "removed": 0})
         uma = OwnedUma.objects.get()
         self.assertEqual((uma.stars, uma.talent_level, uma.source), (3, 5, "import"))
         self.assertEqual(uma.game_data["viewer_id"], 7)
@@ -116,24 +116,40 @@ class ImportTests(RosterFixture):
     def test_a_re_import_updates_what_it_wrote(self):
         self.run_import(**self.items(lb=2))
         body = self.run_import(**self.items(lb=4)).json()
-        self.assertEqual(body["support_cards"], {"added": 0, "updated": 1, "kept_by_hand": 0})
+        self.assertEqual(body["support_cards"], {"added": 0, "updated": 1, "removed": 0})
         self.assertEqual(OwnedSupportCard.objects.get().limit_break, 4)
 
-    def test_hand_edits_win(self):
+    def test_the_file_overwrites_hand_edits(self):
         self.run_import(**self.items(lb=2))
-        # A hand edit turns the imported row into a hand entry...
         self.patch(support_cards=[{"support_card": self.kitasan.id, "owned": True, "limit_break": 3}])
-        body = self.run_import(**self.items(lb=4)).json()
-        # ...which the next import leaves alone.
-        self.assertEqual(body["support_cards"], {"added": 0, "updated": 0, "kept_by_hand": 1})
-        self.assertEqual(OwnedSupportCard.objects.get().limit_break, 3)
+        self.run_import(**self.items(lb=4))
+        card = OwnedSupportCard.objects.get()
+        self.assertEqual((card.limit_break, card.source), (4, "import"))
 
-    def test_an_import_never_deletes(self):
+    def test_what_the_file_lacks_is_removed(self):
+        """Owner, 2026-10-26: if it doesn't exist in the file, it doesn't exist."""
         self.run_import(**self.items())
         self.patch(umas=[{"uma": self.maruzensky.id, "owned": True}])
-        self.run_import(umas=[], support_cards=[])
-        self.assertEqual(OwnedUma.objects.count(), 2)
+        body = self.run_import(umas=self.items()["umas"], support_cards=[]).json()
+        self.assertEqual(body["umas"]["removed"], 1)
+        self.assertEqual(list(OwnedUma.objects.values_list("uma_id", flat=True)), [self.oguri.id])
+        self.assertFalse(OwnedSupportCard.objects.exists())
+
+    def test_a_list_not_sent_is_left_alone(self):
+        self.run_import(**self.items())
+        body = self.run_import(support_cards=[{"support_card": self.tachyon.id, "limit_break": 1}]).json()
+        self.assertNotIn("umas", body)
+        self.assertEqual(OwnedUma.objects.count(), 1)
+        self.assertEqual(list(OwnedSupportCard.objects.values_list("support_card_id", flat=True)), [self.tachyon.id])
+
+    def test_start_over_clears_one_list(self):
+        self.run_import(**self.items())
+        response = self.client.delete("/roster/umas")
+        self.assertEqual(response.json()["umas"], [])
         self.assertEqual(OwnedSupportCard.objects.count(), 1)
+        self.client.delete("/roster/support-cards")
+        self.assertFalse(OwnedSupportCard.objects.exists())
+        self.assertEqual(self.client.delete("/roster/everything").status_code, 404)
 
     def test_another_players_id_is_stripped(self):
         items = self.items()

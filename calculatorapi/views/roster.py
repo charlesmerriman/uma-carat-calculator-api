@@ -1,7 +1,9 @@
 """
 GET    /roster          what the caller owns: {umas: [...], support_cards: [...]}.
 PATCH  /roster          grid edits: {umas?: [change], support_cards?: [change]}.
-POST   /roster/import   a game export's umas and cards; plain or gzipped JSON.
+POST   /roster/import   a game export's umas and/or cards; plain or gzipped JSON.
+DELETE /roster/umas     start over: every owned uma removed.
+DELETE /roster/support-cards   the same for cards.
 
 All IsAuthenticated, account only (the Collection page shows a guest a
 sign-in card). Rules: roster.py; what a row is: models/roster.py.
@@ -13,11 +15,12 @@ On the wire (catalogue ids only):
 
 A PATCH change is {uma | support_card, owned: bool, ...the columns to set};
 `owned: false` removes the row. Every change in one request applies or none
-does, and a hand edit makes the row "manual" so imports leave it alone.
+does.
 
 An import item is a row's columns plus `game_data` (the game's whole object).
-Add-and-update only: rows set by hand are skipped, nothing is deleted. The
-answer counts {added, updated, kept_by_hand} per table and returns the roster.
+Each list sent REPLACES that table, hand edits included, and removes what the
+file lacks (owner, 2026-10-26); a list left out is untouched. The answer counts
+{added, updated, removed} per table sent and returns the roster.
 
 A refusal is a 400 with {"error": "<one sentence for the player>"}.
 """
@@ -95,8 +98,10 @@ class _CardItem(serializers.Serializer):  # pylint: disable=abstract-method
 
 
 class _ImportInput(serializers.Serializer):  # pylint: disable=abstract-method
-    umas = _UmaItem(many=True, required=False, default=list, max_length=_LIST_MAX)
-    support_cards = _CardItem(many=True, required=False, default=list, max_length=_LIST_MAX)
+    # No default: a list left out must stay out, so its table is not replaced
+    # with nothing (roster.import_roster).
+    umas = _UmaItem(many=True, required=False, max_length=_LIST_MAX)
+    support_cards = _CardItem(many=True, required=False, max_length=_LIST_MAX)
 
 
 def _bad_request(message):
@@ -149,3 +154,13 @@ def roster_import(request):
     except roster.RosterRefused as refusal:
         return _bad_request(str(refusal))
     return Response({**counts, "roster": serialize_roster(request.user)})
+
+
+@api_view(["DELETE"])
+@permission_classes([permissions.IsAuthenticated])
+def roster_clear(request, kind):
+    """Start over on one list. `kind` is "umas" or "support-cards" (the URL's spelling)."""
+    if kind not in ("umas", "support-cards"):
+        return Response({"error": "Not found"}, status=status.HTTP_404_NOT_FOUND)
+    roster.clear(request.user, "umas" if kind == "umas" else "support_cards")
+    return Response(serialize_roster(request.user))
