@@ -7,6 +7,8 @@ set of checks. What a veteran is: models/trained_uma.py. The wire shape and
 input validation: views/trained_uma.py.
 """
 
+from datetime import datetime, timezone as dt_timezone
+
 from django.db import transaction
 from django.utils import timezone
 
@@ -150,6 +152,16 @@ def update(veteran, data):
     return veteran
 
 
+def _game_time(value):
+    """The game's "2025-07-10 03:21:45" (UTC) as an aware datetime, or None."""
+    if not isinstance(value, str):
+        return None
+    try:
+        return datetime.strptime(value, "%Y-%m-%d %H:%M:%S").replace(tzinfo=dt_timezone.utc)
+    except ValueError:
+        return None
+
+
 def _apply_import(veteran, item, now):
     """One import item onto its row (not saved): the numbers, and the raw game
     object with other players stripped, its memo and its borrowed flag."""
@@ -160,6 +172,7 @@ def _apply_import(veteran, item, now):
         veteran.game_data, veteran.is_borrowed = strip_other_players(raw)
         memo = raw.get("memo")
         veteran.memo = memo[:TRAINED_UMA_MEMO_MAX_LENGTH] if isinstance(memo, str) else ""
+        veteran.trained_at = _game_time(raw.get("create_time"))
     veteran.imported_at = now
     # bulk_update skips auto_now, so updated_at is set by hand.
     veteran.updated_at = now
@@ -217,7 +230,7 @@ def import_veterans(user, items):
         TrainedUma.objects.bulk_update(
             changed,
             ["uma", "rank_score", "imported_at", "missing_from_import", "updated_at",
-             "game_data", "memo", "is_borrowed", *STAT_FIELDS, *[f"apt_{key}" for key in APTITUDE_KEYS]],
+             "game_data", "memo", "is_borrowed", "trained_at", *STAT_FIELDS, *[f"apt_{key}" for key in APTITUDE_KEYS]],
         )
         # Skills are replaced whole: two queries for the lot, not two per veteran.
         by_key = {veteran.import_key: veteran for veteran in [*fresh, *changed]}

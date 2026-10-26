@@ -1019,7 +1019,7 @@ A signed-in player's veterans, for the Collection page (`views/trained_uma.py`, 
 
 | Route | Body | Returns |
 |---|---|---|
-| `GET /trained-umas` | | every veteran, newest first |
+| `GET /trained-umas` | | every veteran, newest first (`trained_at`, the game's own time, else when it was added) |
 | `POST /trained-umas` | `{uma, label?, speed, stamina, power, guts, wit, apt?, skills?}` | `201` the veteran (`source: "manual"`) |
 | `GET /trained-umas/<id>` | | the veteran, with `game_data` (the raw game object; the list leaves it out) |
 | `PATCH /trained-umas/<id>` | any of the above | the veteran. A game veteran takes `label` only; nobody changes `uma` |
@@ -1033,7 +1033,7 @@ A veteran:
   "apt": {"turf": 8, "dirt": 1, "short": 3, "mile": 7, "medium": 7, "long": 6,
           "front": 2, "pace": 7, "late": 7, "end": 4},
   "rank_score": 12000, "source": "import", "import_key": 12, "missing_from_import": false,
-  "memo": "Ace", "is_borrowed": false, "has_game_data": true,
+  "memo": "Ace", "is_borrowed": false, "trained_at": "2026-09-01T10:00:00Z", "has_game_data": true,
   "skills": [{"skill": 310, "level": 2}], "created_at": "ISO8601", "updated_at": "ISO8601" }
 ```
 

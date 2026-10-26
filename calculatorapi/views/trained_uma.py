@@ -16,7 +16,7 @@ GET /pvp-catalogue):
     {id, uma, label, speed, stamina, power, guts, wit,
      apt: {turf, dirt, short, mile, medium, long, front, pace, late, end},
      rank_score, source: "import" | "manual", import_key, missing_from_import,
-     memo, is_borrowed, has_game_data, skills: [{skill, level}], created_at, updated_at}
+     memo, is_borrowed, trained_at, has_game_data, skills: [{skill, level}], created_at, updated_at}
 
 plus `game_data` (the raw game object, or null) on GET /trained-umas/<id> only:
 it is about 7 KB a veteran, so the list leaves it out.
@@ -194,6 +194,7 @@ def serialize_veteran(veteran, with_game_data=False):
         "missing_from_import": veteran.missing_from_import,
         "memo": veteran.memo,
         "is_borrowed": veteran.is_borrowed,
+        "trained_at": veteran.trained_at,
         # From the source, not the column: the list defers game_data, and
         # reading it here would load every row's 7 KB one by one.
         "has_game_data": veteran.source == "import",
