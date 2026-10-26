@@ -1118,7 +1118,10 @@ for CM Runs").
   set exactly for an import: `trained_uma_source_matches_key`; unique per account),
   `imported_at`, `missing_from_import`, `game_data` (the whole raw game object, NULL for a
   hand entry, deferred by every list), `memo` (the player's own game note, shown only to
-  them) and `is_borrowed` (another player's veteran, a rental).
+  them), `is_borrowed` (another player's veteran, a rental) and `trained_at` (the game's
+  `create_time`, UTC; NULL for a hand entry). Ordered by `Coalesce(trained_at, created_at)`
+  descending: one import saves every row at the same instant, so `created_at` alone would
+  not order them.
 - **All of it is kept, minus other people** (owner, 2026-10-26). `game_data` keeps sparks,
   parents, the training deck, career races, titles, the player's OWN game account id and
   memo; features promote a field to a column when they need to query it. Other players'

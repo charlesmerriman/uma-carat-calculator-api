@@ -42,6 +42,7 @@ PRIVATE: content_snapshot.PRIVATE_MODELS, public_payload_cache._IRRELEVANT_MODEL
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import Q
+from django.db.models.functions import Coalesce
 
 from .custom_user import CustomUser
 from .skill import Skill
@@ -125,12 +126,18 @@ class TrainedUma(models.Model):
     memo = models.CharField(max_length=TRAINED_UMA_MEMO_MAX_LENGTH, blank=True, default="")
     # Another player's veteran (a rental), from the game's use_type / owner.
     is_borrowed = models.BooleanField(default=False)
+    # When the game says she finished training (`create_time`), promoted out
+    # of game_data so the list can be newest first: one import saves every
+    # row at the same instant, so created_at cannot order them. NULL for a
+    # hand entry, which then sorts by when it was added.
+    trained_at = models.DateTimeField(null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ("-created_at", "-id")
+        # Newest first: when she was trained if the game said, else when added.
+        ordering = (Coalesce("trained_at", "created_at").desc(), "-id")
         constraints = [
             models.UniqueConstraint(
                 fields=["user", "import_key"],

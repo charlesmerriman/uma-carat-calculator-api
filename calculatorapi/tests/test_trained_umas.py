@@ -367,3 +367,14 @@ class RawGameDataTests(VeteranFixture):
             HTTP_ACCESS_CONTROL_REQUEST_HEADERS="content-encoding,content-type,authorization",
         )
         self.assertIn("content-encoding", preflight.headers.get("access-control-allow-headers", ""))
+
+    def test_the_list_is_newest_trained_first_after_one_import(self):
+        """One import saves every row at the same instant; the game's time orders them."""
+        self.run_import(
+            self.item(1, game_data=game_object(trained_chara_id=1, create_time="2025-08-01 10:00:00")),
+            self.item(2, game_data=game_object(trained_chara_id=2, create_time="2026-09-01 10:00:00")),
+            self.item(3, game_data=game_object(trained_chara_id=3, create_time="2025-12-01 10:00:00")),
+        )
+        listed = self.client.get("/trained-umas").json()
+        self.assertEqual([veteran["import_key"] for veteran in listed], [2, 3, 1])
+        self.assertEqual(listed[0]["trained_at"], "2026-09-01T10:00:00Z")
