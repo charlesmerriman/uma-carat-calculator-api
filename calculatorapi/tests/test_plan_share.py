@@ -85,7 +85,9 @@ class PlanSharePageTests(CalculatorTestCase):
         # Nothing about the owner, and not the plan's name or id.
         for private in ("SecretName", "sharer", "My secret plan name", DEFAULT_PLAN_NAME):
             self.assertNotIn(private, html)
-        self.assertNotIn(f"/{self.plan.pk}", html)
+        # A whole path segment, not a substring: "/1" is inside "/1cTzf13m" whenever
+        # the random public_id happens to start with the pk's digit.
+        self.assertNotRegex(html, rf"/{self.plan.pk}(?![A-Za-z0-9_-])")
 
     def test_step_up_rows_are_counted_as_steps(self):
         self.row(pulls=30)
