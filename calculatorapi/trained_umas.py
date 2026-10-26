@@ -152,7 +152,7 @@ def update(veteran, data):
     return veteran
 
 
-def _game_time(value):
+def game_time(value):
     """The game's "2025-07-10 03:21:45" (UTC) as an aware datetime, or None."""
     if not isinstance(value, str):
         return None
@@ -172,7 +172,7 @@ def _apply_import(veteran, item, now):
         veteran.game_data, veteran.is_borrowed = strip_other_players(raw)
         memo = raw.get("memo")
         veteran.memo = memo[:TRAINED_UMA_MEMO_MAX_LENGTH] if isinstance(memo, str) else ""
-        veteran.trained_at = _game_time(raw.get("create_time"))
+        veteran.trained_at = game_time(raw.get("create_time"))
     veteran.imported_at = now
     # bulk_update skips auto_now, so updated_at is set by hand.
     veteran.updated_at = now

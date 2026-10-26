@@ -1140,6 +1140,20 @@ for CM Runs").
   (`views/trained_uma.GzipJSONParser`, 24 MB unpacked at most).
 - `DELETE /account` cascades; `purge_user_pii` leaves veterans (game numbers, no person).
 
+### `OwnedUma` / `OwnedSupportCard`: what a player owns
+
+`models/roster.py`, PRIVATE and in `_IRRELEVANT_MODELS`. The Collection's Umas and Support
+cards tabs write them through `/roster`; account only. Not veterans: owning an outfit is
+not having trained her.
+
+- **`OwnedUma`**: `uma` (one per account), `stars` and `talent_level` (1..5, nullable).
+  **`OwnedSupportCard`**: `support_card` (one per account), `limit_break` (0..4),
+  `spare_copies` (the game's `stock`). Both: `source` `manual` | `import`, `game_data` (the
+  game's whole object for an import), `obtained_at` (the game's `create_time`).
+- **Hand edits win** (owner, 2026-10-26): a grid edit makes a row `manual`; an import adds
+  and updates only what it wrote, skips manual rows and never deletes (`roster.import_roster`).
+- `DELETE /account` cascades.
+
 ### The gallery: `GalleryPost` and what hangs off it
 
 `models/gallery.py`, all PRIVATE (`content_snapshot.PRIVATE_MODELS`) and on
