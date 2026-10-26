@@ -1116,7 +1116,14 @@ for CM Runs").
   (0..2000), ten nullable aptitudes `apt_<key>` (1..8 = G..S, the catalogue's keys),
   `rank_score`, `source` `import` | `manual`, `import_key` (the game's `trained_chara_id`,
   set exactly for an import: `trained_uma_source_matches_key`; unique per account),
-  `imported_at`, `missing_from_import`.
+  `imported_at`, `missing_from_import`, `game_data` (the whole raw game object, NULL for a
+  hand entry, deferred by every list), `memo` (the player's own game note, shown only to
+  them) and `is_borrowed` (another player's veteran, a rental).
+- **All of it is kept, minus other people** (owner, 2026-10-26). `game_data` keeps sparks,
+  parents, the training deck, career races, titles, the player's OWN game account id and
+  memo; features promote a field to a column when they need to query it. Other players'
+  account ids (a borrowed veteran's owner, a borrowed parent's owner) and any trainer name
+  are stripped in the browser and again by `trained_umas.strip_other_players`.
 - **`TrainedUmaSkill`**: `skill` and `level` (1..10), unique per veteran.
 - **A fact about the person, never a choice.** Teams (`PvpTeamMember.trained_uma`) and logged
   runs (`PvpRunRunner.trained_uma`) LINK one, nullable SET_NULL, and never copy the numbers:
@@ -1125,9 +1132,9 @@ for CM Runs").
   snapshot never carries it (`gallery.snapshot_from_team` lists its fields).
 - **The import** (`trained_umas.import_veterans`) updates in place by `import_key`, keeps
   labels and hand entries, and deletes a veteran gone from the file UNLESS a logged run
-  links it (then `missing_from_import`). One transaction; past `TRAINED_UMA_CAP` (200) it
-  writes nothing. The game file is parsed in the browser; the game account id and memo are
-  never sent.
+  links it (then `missing_from_import`). One transaction; past `TRAINED_UMA_CAP` (1000) it
+  writes nothing. The game file is parsed in the browser and the request is gzipped
+  (`views/trained_uma.GzipJSONParser`, 24 MB unpacked at most).
 - `DELETE /account` cascades; `purge_user_pii` leaves veterans (game numbers, no person).
 
 ### The gallery: `GalleryPost` and what hangs off it

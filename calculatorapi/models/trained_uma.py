@@ -13,10 +13,20 @@ always reads what a copy would, and the stats live in one place.
 TWO SOURCES, ONE TABLE
 ----------------------
 `import`: read from the player's own game export (umadump's
-trained_chara_data.json), parsed in their browser; only ids and numbers reach
-the server, never the game account id or the memo text. `import_key` is the
-game's own id for the veteran (`trained_chara_id`, unique within one game
-account), which is what a re-import and, later, a race replay match on.
+trained_chara_data.json), parsed in their browser. `import_key` is the game's
+own id for the veteran (`trained_chara_id`, unique within one game account),
+which is what a re-import and, later, a race replay match on.
+
+ALL OF IT IS KEPT, MINUS OTHER PEOPLE (owner, 2026-10-26)
+---------------------------------------------------------
+`game_data` holds the veteran's whole game object as the file gave it: sparks,
+both parents, the training deck, the career's races, titles, the player's own
+game account id and memo. Features promote a field to a real column when they
+need to query it (the stats, aptitudes and skills already are). The one thing
+removed is OTHER players' account ids (a borrowed veteran's owner, a borrowed
+parent's owner): stripped in the browser before upload and again here
+(trained_umas.strip_other_players), so they are never stored. `is_borrowed`
+remembers that a veteran was someone else's after the id is gone.
 `manual`: typed in on the Collection page, the path for phone players. Henry's
 "enter the stats and skills of your umas" is this.
 
@@ -38,14 +48,20 @@ from .skill import Skill
 from .uma import Uma
 
 # Checked on write, like PLAN_CAP: a save that would pass it is refused, and
-# nothing already held is ever removed for it.
-TRAINED_UMA_CAP = 200
+# nothing already held is ever removed for it. 1000 (owner, 2026-10-26: "all
+# of it"): the owner's account held 256 after 15 months, about 7 KB each.
+TRAINED_UMA_CAP = 1000
 
 # The game's stats run 1..1200 in most scenarios and past that in some; the
 # ceiling is generous on purpose, it only stops typos like 12000.
 TRAINED_UMA_STAT_MAX = 2000
 TRAINED_UMA_LABEL_MAX_LENGTH = 40
 TRAINED_UMA_SKILL_CAP = 80
+# The game's memo is a few characters; the ceiling only stops abuse.
+TRAINED_UMA_MEMO_MAX_LENGTH = 100
+# One veteran's raw game object, serialized. The owner's average is 7 KB; the
+# ceiling stops a crafted request from filling the database.
+TRAINED_UMA_GAME_DATA_MAX_BYTES = 64 * 1024
 
 # The ten aptitude columns, in the catalogue's key order (frontend AptitudeKey).
 # 1..8 = G..S, as the game stores them. NULL = not known (a hand entry left blank).
@@ -102,6 +118,13 @@ class TrainedUma(models.Model):
     imported_at = models.DateTimeField(null=True, blank=True)
     # Kept by a re-import only because a logged run links it (module docstring).
     missing_from_import = models.BooleanField(default=False)
+    # The whole game object, other players' ids removed (module docstring).
+    # NULL for a hand entry. Never in the list route: it is about 7 KB each.
+    game_data = models.JSONField(null=True, blank=True)
+    # The player's own note on the veteran, from the game. Shown only to them.
+    memo = models.CharField(max_length=TRAINED_UMA_MEMO_MAX_LENGTH, blank=True, default="")
+    # Another player's veteran (a rental), from the game's use_type / owner.
+    is_borrowed = models.BooleanField(default=False)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

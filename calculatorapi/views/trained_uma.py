@@ -16,24 +16,40 @@ GET /pvp-catalogue):
     {id, uma, label, speed, stamina, power, guts, wit,
      apt: {turf, dirt, short, mile, medium, long, front, pace, late, end},
      rank_score, source: "import" | "manual", import_key, missing_from_import,
-     skills: [{skill, level}], created_at, updated_at}
+     memo, is_borrowed, has_game_data, skills: [{skill, level}], created_at, updated_at}
+
+plus `game_data` (the raw game object, or null) on GET /trained-umas/<id> only:
+it is about 7 KB a veteran, so the list leaves it out.
 
 `apt` values are the game's 1..8 (G..S), null when not known. An import item is
-the same minus id, label, source and the dates, plus `import_key` (the game's
-trained_chara_id). The page reads the game's file in the browser; the game
-account id and the memo text in it are never sent.
+the same minus id, label, source, memo, is_borrowed and the dates, plus
+`import_key` (the game's trained_chara_id) and `game_data` (the veteran's whole
+game object; the server takes the memo and the borrowed flag from it and strips
+other players' account ids again: trained_umas.strip_other_players).
+
+THE IMPORT MAY BE GZIPPED. A long-time account's raw veterans run to megabytes
+(256 were 1.9 MB) against Django's 2.5 MB body limit; gzipped they were 90 KB.
+The page sends `Content-Encoding: gzip`; GzipJSONParser unpacks it, refusing
+anything that unpacks past IMPORT_MAX_BYTES (a zip bomb).
 
 A refusal is a 400 with {"error": "<one sentence for the player>"}.
 """
 
+import io
+import json
+import zlib
+
 from rest_framework import permissions, serializers, status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, parser_classes, permission_classes
+from rest_framework.exceptions import ParseError
+from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
 
 from calculatorapi import trained_umas
 from calculatorapi.models import (
     STAT_FIELDS,
     TRAINED_UMA_CAP,
+    TRAINED_UMA_GAME_DATA_MAX_BYTES,
     TRAINED_UMA_LABEL_MAX_LENGTH,
     TRAINED_UMA_SKILL_CAP,
     TRAINED_UMA_STAT_MAX,
@@ -42,6 +58,33 @@ from calculatorapi.models import (
 from calculatorapi.views.pvp_team import _first_error
 
 _NOT_FOUND = {"error": "Veteran not found"}
+
+# The most an import may unpack to: a full account of raw veterans with room
+# to spare (the owner's 256 were 1.9 MB). Past it the request is refused
+# before any JSON is parsed.
+IMPORT_MAX_BYTES = 24 * 1024 * 1024
+
+
+class GzipJSONParser(JSONParser):  # pylint: disable=too-few-public-methods
+    """JSON, or gzipped JSON when the request says `Content-Encoding: gzip`.
+
+    Unpacked in a bounded step (zlib's max_length), so a few kilobytes that
+    would expand to gigabytes stop at IMPORT_MAX_BYTES and never reach memory.
+    """
+
+    def parse(self, stream, media_type=None, parser_context=None):
+        request = (parser_context or {}).get("request")
+        encoding = request.META.get("HTTP_CONTENT_ENCODING", "") if request is not None else ""
+        if encoding.lower() != "gzip":
+            return super().parse(stream, media_type, parser_context)
+        unpacker = zlib.decompressobj(wbits=31)  # 31: a gzip header and trailer
+        try:
+            raw = unpacker.decompress(stream.read(), IMPORT_MAX_BYTES + 1)
+        except zlib.error as exc:
+            raise ParseError("That import couldn't be read.") from exc
+        if len(raw) > IMPORT_MAX_BYTES or not unpacker.eof:
+            raise ParseError("That import is too large.")
+        return super().parse(io.BytesIO(raw), media_type, parser_context)
 
 
 # ── Input ────────────────────────────────────────────────────────────────────
@@ -117,6 +160,13 @@ class _PatchInput(serializers.Serializer):  # pylint: disable=abstract-method
 class _ImportItem(_VeteranInput):  # pylint: disable=abstract-method
     import_key = serializers.IntegerField(min_value=1)
     rank_score = serializers.IntegerField(min_value=0, allow_null=True, required=False, default=None)
+    # The veteran's whole game object (models/trained_uma.py, "ALL OF IT IS KEPT").
+    game_data = serializers.DictField(required=False, allow_null=True, default=None)
+
+    def validate_game_data(self, game_data):
+        if game_data is not None and len(json.dumps(game_data)) > TRAINED_UMA_GAME_DATA_MAX_BYTES:
+            raise serializers.ValidationError("One veteran in that file is too large to keep.")
+        return game_data
 
 
 class _ImportInput(serializers.Serializer):  # pylint: disable=abstract-method
@@ -129,8 +179,9 @@ def _bad_request(message):
 
 # ── Output ───────────────────────────────────────────────────────────────────
 
-def serialize_veteran(veteran):
-    """One veteran on the wire. Reads `skills` through whatever was prefetched."""
+def serialize_veteran(veteran, with_game_data=False):
+    """One veteran on the wire. Reads `skills` through whatever was prefetched.
+    `game_data` only when asked (one veteran's GET): the list defers it."""
     return {
         "id": veteran.id,
         "uma": veteran.uma_id,
@@ -141,9 +192,15 @@ def serialize_veteran(veteran):
         "source": veteran.source,
         "import_key": veteran.import_key,
         "missing_from_import": veteran.missing_from_import,
+        "memo": veteran.memo,
+        "is_borrowed": veteran.is_borrowed,
+        # From the source, not the column: the list defers game_data, and
+        # reading it here would load every row's 7 KB one by one.
+        "has_game_data": veteran.source == "import",
         "skills": [{"skill": row.skill_id, "level": row.level} for row in veteran.skills.all()],
         "created_at": veteran.created_at,
         "updated_at": veteran.updated_at,
+        **({"game_data": veteran.game_data} if with_game_data else {}),
     }
 
 
@@ -178,7 +235,8 @@ def trained_uma_detail(request, veteran_id):
         return Response(_NOT_FOUND, status=status.HTTP_404_NOT_FOUND)
 
     if request.method == "GET":
-        return Response(serialize_veteran(_fresh(request.user, veteran.id)))
+        full = TrainedUma.objects.prefetch_related("skills").get(id=veteran.id)
+        return Response(serialize_veteran(full, with_game_data=True))
     if request.method == "DELETE":
         veteran.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -195,6 +253,7 @@ def trained_uma_detail(request, veteran_id):
 
 @api_view(["POST"])
 @permission_classes([permissions.IsAuthenticated])
+@parser_classes([GzipJSONParser])
 def trained_uma_import(request):
     payload = _ImportInput(data=request.data)
     if not payload.is_valid():

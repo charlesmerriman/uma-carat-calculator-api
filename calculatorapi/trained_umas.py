@@ -14,6 +14,7 @@ from calculatorapi.models import (
     APTITUDE_KEYS,
     STAT_FIELDS,
     TRAINED_UMA_CAP,
+    TRAINED_UMA_MEMO_MAX_LENGTH,
     CustomUser,
     PvpRunRunner,
     Skill,
@@ -33,8 +34,39 @@ _CAP_MESSAGE = f"You can keep up to {TRAINED_UMA_CAP} veterans. Delete some you 
 
 
 def owned(user):
-    """Every veteran `user` holds, newest first, with skills in one prefetch."""
-    return TrainedUma.objects.filter(user=user).prefetch_related("skills")
+    """Every veteran `user` holds, newest first, with skills in one prefetch.
+    `game_data` is deferred: about 7 KB each, and only one veteran's page reads it."""
+    return TrainedUma.objects.filter(user=user).defer("game_data").prefetch_related("skills")
+
+
+def strip_other_players(game_data):
+    """(cleaned copy, is_borrowed) of one veteran's raw game object.
+
+    Keeps everything the game gave, the player's own account id and memo
+    included (owner, 2026-10-26), but removes OTHER players' account ids at
+    any depth: a key ending in `viewer_id` whose value is another account
+    (the borrowed veteran's owner, a borrowed parent's owner). Any trainer
+    name goes too; the veteran file carries none today, but a name is never
+    stored. The browser strips the same before upload; this is the server's
+    own guarantee, whatever the client sent.
+    """
+    own = game_data.get("viewer_id")
+
+    def clean(value):
+        if isinstance(value, dict):
+            return {
+                key: clean(item)
+                for key, item in value.items()
+                if "trainer_name" not in key
+                and not (key.endswith("viewer_id") and item not in (0, None, own))
+            }
+        if isinstance(value, list):
+            return [clean(item) for item in value]
+        return value
+
+    owner = game_data.get("owner_viewer_id")
+    borrowed = game_data.get("use_type") == 1 or owner not in (0, None, own)
+    return clean(game_data), borrowed
 
 
 def get_owned(user, veteran_id):
@@ -126,10 +158,28 @@ def update(veteran, data):
     return veteran
 
 
+def _apply_import(veteran, item, now):
+    """One import item onto its row (not saved): the numbers, and the raw game
+    object with other players stripped, its memo and its borrowed flag."""
+    veteran.uma_id = item["uma"]
+    veteran.rank_score = item["rank_score"]
+    raw = item.get("game_data")
+    if raw is not None:
+        veteran.game_data, veteran.is_borrowed = strip_other_players(raw)
+        memo = raw.get("memo")
+        veteran.memo = memo[:TRAINED_UMA_MEMO_MAX_LENGTH] if isinstance(memo, str) else ""
+    veteran.imported_at = now
+    # bulk_update skips auto_now, so updated_at is set by hand.
+    veteran.updated_at = now
+    veteran.missing_from_import = False
+    _apply(veteran, item)
+
+
 def import_veterans(user, items):
     """Write a game export's veterans: update the ones already imported (by
     the game's id), add the new ones, and remove the ones the game no longer
-    has, EXCEPT any a logged run links. Those are kept and flagged
+    has, EXCEPT any a logged run links. Each item's `game_data` (the raw game
+    object) is kept after strip_other_players, with its memo and borrowed flag. Those are kept and flagged
     `missing_from_import`, so a re-import never strips stats off CM history.
     Hand-entered veterans are never touched. Labels survive a re-import.
 
@@ -174,18 +224,12 @@ def import_veterans(user, items):
                 fresh.append(veteran)
             else:
                 changed.append(veteran)
-            veteran.uma_id = item["uma"]
-            veteran.rank_score = item["rank_score"]
-            veteran.imported_at = now
-            veteran.updated_at = now
-            veteran.missing_from_import = False
-            _apply(veteran, item)
+            _apply_import(veteran, item, now)
         TrainedUma.objects.bulk_create(fresh)
-        # bulk_update skips auto_now, so updated_at is set by hand above.
         TrainedUma.objects.bulk_update(
             changed,
             ["uma", "rank_score", "imported_at", "missing_from_import", "updated_at",
-             *STAT_FIELDS, *[f"apt_{key}" for key in APTITUDE_KEYS]],
+             "game_data", "memo", "is_borrowed", *STAT_FIELDS, *[f"apt_{key}" for key in APTITUDE_KEYS]],
         )
         # Skills are replaced whole: two queries for the lot, not two per veteran.
         by_key = {veteran.import_key: veteran for veteran in [*fresh, *changed]}

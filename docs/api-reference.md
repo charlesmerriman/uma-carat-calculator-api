@@ -1021,10 +1021,10 @@ A signed-in player's veterans, for the Collection page (`views/trained_uma.py`, 
 |---|---|---|
 | `GET /trained-umas` | | every veteran, newest first |
 | `POST /trained-umas` | `{uma, label?, speed, stamina, power, guts, wit, apt?, skills?}` | `201` the veteran (`source: "manual"`) |
-| `GET /trained-umas/<id>` | | the veteran |
+| `GET /trained-umas/<id>` | | the veteran, with `game_data` (the raw game object; the list leaves it out) |
 | `PATCH /trained-umas/<id>` | any of the above | the veteran. A game veteran takes `label` only; nobody changes `uma` |
 | `DELETE /trained-umas/<id>` | | `204`. Teams and runs that linked it keep their uma, link `null` |
-| `POST /trained-umas/import` | `{items: [{import_key, uma, rank_score?, speed..wit, apt?, skills?}]}` | `{created, updated, removed, kept, veterans}` |
+| `POST /trained-umas/import` | `{items: [{import_key, uma, rank_score?, speed..wit, apt?, skills?, game_data?}]}`, plain or gzipped | `{created, updated, removed, kept, veterans}` |
 
 A veteran:
 
@@ -1033,6 +1033,7 @@ A veteran:
   "apt": {"turf": 8, "dirt": 1, "short": 3, "mile": 7, "medium": 7, "long": 6,
           "front": 2, "pace": 7, "late": 7, "end": 4},
   "rank_score": 12000, "source": "import", "import_key": 12, "missing_from_import": false,
+  "memo": "Ace", "is_borrowed": false, "has_game_data": true,
   "skills": [{"skill": 310, "level": 2}], "created_at": "ISO8601", "updated_at": "ISO8601" }
 ```
 
@@ -1041,10 +1042,16 @@ read in the player's browser (umadump's `trained_chara_data.json`); `import_key`
 `trained_chara_id`. It updates veterans already imported in place (labels kept), adds new
 ones, and removes the ones the file no longer has EXCEPT any a logged run links: those stay,
 `missing_from_import: true`, so a re-import never strips CM history. Hand entries are never
-touched. **`400 {"error": "<one sentence>"}`** for: a stat over 2000, an aptitude outside
+touched. **`game_data`** is the veteran's whole game object (sparks, parents, the training
+deck, the career's races, the player's own game account id and memo; owner, 2026-10-26).
+The server takes `memo` and `is_borrowed` from it and strips OTHER players' account ids and
+any trainer name at every depth again (`trained_umas.strip_other_players`), whatever the
+client sent. **Gzip:** send `Content-Encoding: gzip` (a full account is megabytes raw,
+kilobytes gzipped); `GzipJSONParser` refuses a body that unpacks past 24 MB or doesn't
+unpack, with `400`. **`400 {"error": "<one sentence>"}`** for: a stat over 2000, an aptitude outside
 1..8, an unknown uma or skill, a skill twice, more than 80 skills, a label over 40, more
-than 200 veterans (`TRAINED_UMA_CAP`, hand, kept and imported together; an import past it
-writes nothing), the same `import_key` twice in one file.
+than 1000 veterans (`TRAINED_UMA_CAP`, hand, kept and imported together; an import past it
+writes nothing), the same `import_key` twice in one file, a `game_data` over 64 KB.
 
 ## Gallery
 
