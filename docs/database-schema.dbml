@@ -679,6 +679,7 @@ Table calculatorapi_traineduma as TrainedUma {
   wit smallint [not null]
   apt_turf smallint [null, note: '1..8 = G..S; the same for the other nine apt_ columns.']
   rank_score integer [null]
+  rank_grade smallint [null, note: 'The game grade number (1 G .. 18 SS+, 19 UG ..); import only.']
   source varchar(6) [not null, note: 'import | manual']
   import_key bigint [null, note: 'The game trained_chara_id; set exactly for an import.']
   imported_at timestamptz [null]

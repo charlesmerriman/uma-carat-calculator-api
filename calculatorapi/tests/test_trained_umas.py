@@ -378,3 +378,14 @@ class RawGameDataTests(VeteranFixture):
         listed = self.client.get("/trained-umas").json()
         self.assertEqual([veteran["import_key"] for veteran in listed], [2, 3, 1])
         self.assertEqual(listed[0]["trained_at"], "2026-09-01T10:00:00Z")
+
+    def test_an_import_keeps_the_games_grade_beside_the_score(self):
+        self.run_import(self.item(12, rank_score=13815, game_data=game_object(rank=14)))
+        listed = self.client.get("/trained-umas").json()[0]
+        self.assertEqual((listed["rank_score"], listed["rank_grade"]), (13815, 14))
+
+    def test_a_hand_entry_takes_the_score_but_never_invents_a_grade(self):
+        body = self.add(rank_score=12000).json()
+        self.assertEqual((body["rank_score"], body["rank_grade"]), (12000, None))
+        changed = self.client.patch(f"/trained-umas/{body['id']}", {"rank_score": 12500}, format="json").json()
+        self.assertEqual(changed["rank_score"], 12500)
