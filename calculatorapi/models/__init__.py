@@ -75,6 +75,18 @@ from .pvp_team import (
     PVP_NOTE_CAP,
     PVP_NOTE_MAX_LENGTH,
 )
+from .trained_uma import (
+    TrainedUma,
+    TrainedUmaSkill,
+    TrainedUmaSource,
+    TRAINED_UMA_STAT_MAX,
+    TRAINED_UMA_LABEL_MAX_LENGTH,
+    TRAINED_UMA_SKILL_CAP,
+    TRAINED_UMA_MEMO_MAX_LENGTH,
+    TRAINED_UMA_GAME_DATA_MAX_BYTES,
+    APTITUDE_KEYS,
+    STAT_FIELDS,
+)
 from .pvp_run import (
     PvpRun,
     PvpRunRunner,

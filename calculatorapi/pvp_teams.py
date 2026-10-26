@@ -11,6 +11,8 @@ views/pvp_team.py.
 
 from django.db import transaction
 
+from calculatorapi import trained_umas
+
 from calculatorapi.models import (
     ChampionsMeeting,
     CustomUser,
@@ -136,9 +138,12 @@ def _write_members(team, members):
 
     The serializer has checked each row on its own (positions, slots, styles,
     duplicates inside one deck). What only the whole team can say is checked
-    here: the same uma twice, and two outfits of one character.
+    here: the same uma twice, two outfits of one character, and that a linked
+    veteran is the owner's own and of the member's outfit
+    (trained_umas.VeteranRefused).
     """
     umas = check_lineup([member["uma"] for member in members])
+    veterans = trained_umas.check_links(team.user, members)
     card_ids = {card["support_card"] for member in members for card in member["cards"]}
     if SupportCard.objects.filter(id__in=card_ids).count() != len(card_ids):
         raise TeamRefused("One of those support cards isn't on the site any more.")
@@ -149,6 +154,7 @@ def _write_members(team, members):
             position=member["position"],
             uma=umas[member["uma"]],
             style=member["style"],
+            trained_uma=veterans.get(member.get("trained_uma")),
         )
         PvpTeamCard.objects.bulk_create(
             PvpTeamCard(member=row, slot=card["slot"], support_card_id=card["support_card"])

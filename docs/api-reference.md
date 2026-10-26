@@ -957,12 +957,15 @@ A team, both ways (catalogue ids only):
 ```json
 { "id": 5, "kind": "cm", "event": 12, "name": "", "is_focus": false,
   "notes": [{"text": "Pull Kitasan", "color": "yellow"}],
-  "members": [{"position": 0, "uma": 41, "style": "front",
+  "members": [{"position": 0, "uma": 41, "style": "front", "trained_uma": null,
                "cards": [{"slot": 1, "support_card": 302}, {"slot": 6, "support_card": 88}]}],
   "updated_at": "ISO8601", "post": null }
 ```
 
 `post` (out only) is the public id of the gallery post copied from this team, or `null`.
+`trained_uma` is the member's linked veteran (`/trained-umas`), or `null`; left out on the way
+in means none. It must be the caller's own veteran of the member's own outfit, else `400`.
+A gallery post never carries it.
 
 `kind` is `cm` or `loh`. `style` is `runaway` / `front` / `pace` / `late` / `end`. A draft
 may leave positions and slots empty (no entry). **`400 {"error": "<one sentence>"}`**,
@@ -992,11 +995,12 @@ A run, out (a `PUT` body is the part the URL does not already say):
 ```json
 { "kind": "cm", "event": 21, "stage": "day", "day": 1, "ticket": 2,
   "finals_group": "", "placement": null, "note": "",
-  "runners": [{"position": 0, "uma": 41, "style": "front"}],
+  "runners": [{"position": 0, "uma": 41, "style": "front", "trained_uma": null}],
   "races": [{"race": 1, "winner": 0}, {"race": 2, "winner": null}],
   "updated_at": "ISO8601" }
 ```
 
+A runner's `trained_uma` is the veteran that ran, under the same rule as a team member's.
 `winner` is the `position` of the player's uma that won, `null` for a loss; a race that is
 not in the list has not been run. Slots: CM days 1..4 with tickets 1..4, plus the final;
 LoH days 1..6 with tickets 1..5, no final yet (`PVP_RUN_DAYS` / `PVP_RUN_TICKETS`). An
@@ -1006,6 +1010,48 @@ sentence>"}`** for: more than 3 runners or two in one spot, the team rules on th
 `pvp_teams.check_lineup`), more than 5 races (1 in a final) or the same race twice, a
 winner in a spot with no runner, a group or placement on a day's ticket, a placement
 outside 1..3, a note over 120 characters. A refused `PUT` leaves the slot as it was.
+
+### `/trained-umas`
+
+A signed-in player's veterans, for the Collection page (`views/trained_uma.py`, rules in
+`trained_umas.py`). All `IsAuthenticated`, account only. Every id goes through
+`trained_umas.get_owned()`: somebody else's is `404 {"error": "Veteran not found"}`.
+
+| Route | Body | Returns |
+|---|---|---|
+| `GET /trained-umas` | | every veteran, newest first (`trained_at`, the game's own time, else when it was added) |
+| `POST /trained-umas` | `{uma, label?, speed, stamina, power, guts, wit, apt?, skills?}` | `201` the veteran (`source: "manual"`) |
+| `GET /trained-umas/<id>` | | the veteran, with `game_data` (the raw game object; the list leaves it out) |
+| `PATCH /trained-umas/<id>` | any of the above | the veteran. A game veteran takes `label` only; nobody changes `uma` |
+| `DELETE /trained-umas/<id>` | | `204`. Teams and runs that linked it keep their uma, link `null` |
+| `POST /trained-umas/import` | `{items: [{import_key, uma, rank_score?, speed..wit, apt?, skills?, game_data?}]}`, plain or gzipped | `{created, updated, removed, kept, veterans}` |
+
+A veteran:
+
+```json
+{ "id": 7, "uma": 41, "label": "", "speed": 1200, "stamina": 800, "power": 1000, "guts": 400, "wit": 900,
+  "apt": {"turf": 8, "dirt": 1, "short": 3, "mile": 7, "medium": 7, "long": 6,
+          "front": 2, "pace": 7, "late": 7, "end": 4},
+  "rank_score": 12000, "source": "import", "import_key": 12, "missing_from_import": false,
+  "memo": "Ace", "is_borrowed": false, "trained_at": "2026-09-01T10:00:00Z", "has_game_data": true,
+  "skills": [{"skill": 310, "level": 2}], "created_at": "ISO8601", "updated_at": "ISO8601" }
+```
+
+`apt` is the game's 1..8 (G..S), `null` when not known. **The import** is the game's export
+read in the player's browser (umadump's `trained_chara_data.json`); `import_key` is the game's
+`trained_chara_id`. It updates veterans already imported in place (labels kept), adds new
+ones, and removes the ones the file no longer has EXCEPT any a logged run links: those stay,
+`missing_from_import: true`, so a re-import never strips CM history. Hand entries are never
+touched. **`game_data`** is the veteran's whole game object (sparks, parents, the training
+deck, the career's races, the player's own game account id and memo; owner, 2026-10-26).
+The server takes `memo` and `is_borrowed` from it and strips OTHER players' account ids and
+any trainer name at every depth again (`trained_umas.strip_other_players`), whatever the
+client sent. **Gzip:** send `Content-Encoding: gzip` (a full account is megabytes raw,
+kilobytes gzipped); `GzipJSONParser` refuses a body that unpacks past 24 MB or doesn't
+unpack, with `400`. **`400 {"error": "<one sentence>"}`** for: a stat over 2000, an aptitude outside
+1..8, an unknown uma or skill, a skill twice, more than 80 skills, a label over 40, the same
+`import_key` twice in one file, a `game_data` over 64 KB. **There is no limit on how many
+veterans an account keeps** (owner, 2026-10-26).
 
 ## Gallery
 

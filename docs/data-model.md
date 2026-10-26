@@ -1065,8 +1065,9 @@ shape on the device (frontend `services/guestPvpTeamStore.ts`).
   `notes`, a JSON list of `{text, color}` (at most 10, 1000 characters, four colours;
   validated by `views/pvp_team.py` `NoteSerializer`). A JSON column rather than a table
   because notes are only ever read and written whole, with the team.
-- **`PvpTeamMember`**: `position` 0..2, `uma`, `style` (a `PvpStyle`, never `everyone`).
-  Unique per team on position and on uma.
+- **`PvpTeamMember`**: `position` 0..2, `uma`, `style` (a `PvpStyle`, never `everyone`),
+  `trained_uma` (the linked veteran, nullable; see `TrainedUma`). Unique per team on
+  position and on uma.
 - **`PvpTeamCard`**: `slot` 1..6 (slot 6 is the borrowed card by convention), `support_card`.
   Unique per member on slot and on card, the borrow slot included (the game refuses a
   borrowed copy of a card already in the deck).
@@ -1095,8 +1096,8 @@ plan for linking veterans: `notes/pvp-planner-plan.md` ("R3 CM Runs").
 - **`PvpRunRunner`**: `position` 0..2, `uma`, `style` (never `everyone`), unique per run on
   position and uma. A **copy** of the lineup when the ticket was logged, never a pointer at
   a `PvpTeam`: editing or deleting a team must not rewrite results, and results belong to
-  the account and the event. R2 adds a nullable `trained_uma` LINK here and on
-  `PvpTeamMember` (stats live only on the veteran).
+  the account and the event. `trained_uma` (nullable, SET_NULL) is a LINK to the veteran
+  that ran, the same column `PvpTeamMember` has (stats live only on the veteran).
 - **`PvpRunRace`**: `race` 1..5 and `winner`, the spot of the player's uma that won, NULL
   for a loss. **No row = not raced yet**, which a win rate leaves out of its denominator.
 - Day and ticket limits per kind are constants (`PVP_RUN_DAYS`, `PVP_RUN_TICKETS`), checked
@@ -1104,6 +1105,40 @@ plan for linking veterans: `notes/pvp-planner-plan.md` ("R3 CM Runs").
   `pvp_teams.check_lineup`.
 - `DELETE /account` cascades; `purge_user_pii` leaves runs alone (they hold nothing about
   the person).
+
+### `TrainedUma`: a player's veterans
+
+`models/trained_uma.py`, PRIVATE and in `_IRRELEVANT_MODELS`. The Collection page writes it
+through `/trained-umas`; account only. Design: `notes/pvp-planner-plan.md` (R2, "Veterans
+for CM Runs").
+
+- **`TrainedUma`**: `user` (CASCADE), `uma` (one outfit), `label` (40), the five stats
+  (0..2000), ten nullable aptitudes `apt_<key>` (1..8 = G..S, the catalogue's keys),
+  `rank_score`, `source` `import` | `manual`, `import_key` (the game's `trained_chara_id`,
+  set exactly for an import: `trained_uma_source_matches_key`; unique per account),
+  `imported_at`, `missing_from_import`, `game_data` (the whole raw game object, NULL for a
+  hand entry, deferred by every list), `memo` (the player's own game note, shown only to
+  them), `is_borrowed` (another player's veteran, a rental) and `trained_at` (the game's
+  `create_time`, UTC; NULL for a hand entry). Ordered by `Coalesce(trained_at, created_at)`
+  descending: one import saves every row at the same instant, so `created_at` alone would
+  not order them.
+- **All of it is kept, minus other people** (owner, 2026-10-26). `game_data` keeps sparks,
+  parents, the training deck, career races, titles, the player's OWN game account id and
+  memo; features promote a field to a column when they need to query it. Other players'
+  account ids (a borrowed veteran's owner, a borrowed parent's owner) and any trainer name
+  are stripped in the browser and again by `trained_umas.strip_other_players`.
+- **`TrainedUmaSkill`**: `skill` and `level` (1..10), unique per veteran.
+- **A fact about the person, never a choice.** Teams (`PvpTeamMember.trained_uma`) and logged
+  runs (`PvpRunRunner.trained_uma`) LINK one, nullable SET_NULL, and never copy the numbers:
+  a game veteran is frozen once trained. `trained_umas.check_links` refuses a link to
+  somebody else's veteran or to another outfit on every team and run save. A gallery
+  snapshot never carries it (`gallery.snapshot_from_team` lists its fields).
+- **The import** (`trained_umas.import_veterans`) updates in place by `import_key`, keeps
+  labels and hand entries, and deletes a veteran gone from the file UNLESS a logged run
+  links it (then `missing_from_import`). One transaction. **No cap on how many veterans an
+  account keeps** (owner, 2026-10-26). The game file is parsed in the browser and the request is gzipped
+  (`views/trained_uma.GzipJSONParser`, 24 MB unpacked at most).
+- `DELETE /account` cascades; `purge_user_pii` leaves veterans (game numbers, no person).
 
 ### The gallery: `GalleryPost` and what hangs off it
 
