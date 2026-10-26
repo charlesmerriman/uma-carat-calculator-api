@@ -3,6 +3,7 @@ from pathlib import Path
 import os
 import dj_database_url
 from dotenv import load_dotenv
+from corsheaders.defaults import default_headers
 # reverse_lazy (NOT reverse) is required in the UNFOLD sidebar: settings.py is
 # imported before the URLconf is loaded, so eager reverse() would raise. The
 # lazy variant resolves the URL only when the sidebar is rendered.
@@ -514,6 +515,10 @@ REST_FRAMEWORK = {
 
 CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOWED_ORIGINS = os.getenv("CORS_ORIGIN_WHITELIST", "http://localhost:5173").split(",")
+# The library's defaults plus Content-Encoding: the veteran import is gzipped
+# (views/trained_uma.GzipJSONParser), and a cross-origin page (local dev,
+# `npm run dev:live` against prod) is refused at the preflight without it.
+CORS_ALLOW_HEADERS = (*default_headers, "content-encoding")
 
 # --- Social sign-in (Google / Discord) -------------------------------------
 # Ordinary accounts authenticate through a provider instead of a password, so

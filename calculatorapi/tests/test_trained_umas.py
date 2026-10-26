@@ -358,3 +358,12 @@ class RawGameDataTests(VeteranFixture):
         with mock.patch.object(trained_uma_view, "IMPORT_MAX_BYTES", 100):
             self.assertEqual(self.gzipped({"items": [self.item(12)]}).status_code, 400)
         self.assertFalse(TrainedUma.objects.exists())
+
+    def test_a_cross_origin_page_may_send_a_gzipped_import(self):
+        preflight = self.client.options(
+            "/trained-umas/import",
+            HTTP_ORIGIN="http://localhost:5173",
+            HTTP_ACCESS_CONTROL_REQUEST_METHOD="POST",
+            HTTP_ACCESS_CONTROL_REQUEST_HEADERS="content-encoding,content-type,authorization",
+        )
+        self.assertIn("content-encoding", preflight.headers.get("access-control-allow-headers", ""))
