@@ -48,7 +48,6 @@ from rest_framework.response import Response
 from calculatorapi import trained_umas
 from calculatorapi.models import (
     STAT_FIELDS,
-    TRAINED_UMA_CAP,
     TRAINED_UMA_GAME_DATA_MAX_BYTES,
     TRAINED_UMA_LABEL_MAX_LENGTH,
     TRAINED_UMA_SKILL_CAP,
@@ -170,7 +169,8 @@ class _ImportItem(_VeteranInput):  # pylint: disable=abstract-method
 
 
 class _ImportInput(serializers.Serializer):  # pylint: disable=abstract-method
-    items = _ImportItem(many=True, max_length=TRAINED_UMA_CAP)
+    # No count limit (no veteran cap); IMPORT_MAX_BYTES bounds the request.
+    items = _ImportItem(many=True)
 
 
 def _bad_request(message):

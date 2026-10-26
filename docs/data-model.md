@@ -1132,8 +1132,8 @@ for CM Runs").
   snapshot never carries it (`gallery.snapshot_from_team` lists its fields).
 - **The import** (`trained_umas.import_veterans`) updates in place by `import_key`, keeps
   labels and hand entries, and deletes a veteran gone from the file UNLESS a logged run
-  links it (then `missing_from_import`). One transaction; past `TRAINED_UMA_CAP` (1000) it
-  writes nothing. The game file is parsed in the browser and the request is gzipped
+  links it (then `missing_from_import`). One transaction. **No cap on how many veterans an
+  account keeps** (owner, 2026-10-26). The game file is parsed in the browser and the request is gzipped
   (`views/trained_uma.GzipJSONParser`, 24 MB unpacked at most).
 - `DELETE /account` cascades; `purge_user_pii` leaves veterans (game numbers, no person).
 

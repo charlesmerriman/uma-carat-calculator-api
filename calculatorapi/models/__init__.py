@@ -79,7 +79,6 @@ from .trained_uma import (
     TrainedUma,
     TrainedUmaSkill,
     TrainedUmaSource,
-    TRAINED_UMA_CAP,
     TRAINED_UMA_STAT_MAX,
     TRAINED_UMA_LABEL_MAX_LENGTH,
     TRAINED_UMA_SKILL_CAP,

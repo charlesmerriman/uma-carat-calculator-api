@@ -13,7 +13,6 @@ from django.utils import timezone
 from calculatorapi.models import (
     APTITUDE_KEYS,
     STAT_FIELDS,
-    TRAINED_UMA_CAP,
     TRAINED_UMA_MEMO_MAX_LENGTH,
     CustomUser,
     PvpRunRunner,
@@ -28,9 +27,6 @@ from calculatorapi.models import (
 class VeteranRefused(Exception):
     """A write the rules refuse. The message is shown to the player as is
     (.claude/rules/copy.md)."""
-
-
-_CAP_MESSAGE = f"You can keep up to {TRAINED_UMA_CAP} veterans. Delete some you no longer use first."
 
 
 def owned(user):
@@ -123,13 +119,9 @@ def _skill_rows(veteran, skills):
 
 
 def create_manual(user, data):
-    """A hand-entered veteran. VeteranRefused at the cap or for an unknown uma or skill."""
+    """A hand-entered veteran. VeteranRefused for an unknown uma or skill."""
     _check_catalogue([data["uma"]], [entry["skill"] for entry in data["skills"]])
     with transaction.atomic():
-        # Locks the account row for the count-then-create (pvp_teams.create_team).
-        CustomUser.objects.select_for_update().get(pk=user.pk)
-        if TrainedUma.objects.filter(user=user).count() >= TRAINED_UMA_CAP:
-            raise VeteranRefused(_CAP_MESSAGE)
         veteran = TrainedUma(user=user, uma_id=data["uma"], label=data["label"], source=TrainedUmaSource.MANUAL)
         _apply(veteran, data)
         veteran.save()
@@ -178,14 +170,11 @@ def _apply_import(veteran, item, now):
 def import_veterans(user, items):
     """Write a game export's veterans: update the ones already imported (by
     the game's id), add the new ones, and remove the ones the game no longer
-    has, EXCEPT any a logged run links. Each item's `game_data` (the raw game
-    object) is kept after strip_other_players, with its memo and borrowed flag. Those are kept and flagged
+    has, EXCEPT any a logged run links: those are kept and flagged
     `missing_from_import`, so a re-import never strips stats off CM history.
-    Hand-entered veterans are never touched. Labels survive a re-import.
-
-    Refused as a whole (nothing written) past the cap: hand-entered ones, the
-    kept ones and the file's together. The page trims the file first, so this
-    is the backstop.
+    Hand-entered veterans are never touched. Labels survive a re-import. Each
+    item's `game_data` (the raw game object) is kept after
+    strip_other_players, with its memo and borrowed flag.
 
     Returns {"created", "updated", "removed", "kept"} counts.
     """
@@ -198,6 +187,8 @@ def import_veterans(user, items):
     )
     now = timezone.now()
     with transaction.atomic():
+        # Locks the account row, so two imports at once run one after the other
+        # instead of both deleting and re-adding the same veterans.
         CustomUser.objects.select_for_update().get(pk=user.pk)
         imported = {
             veteran.import_key: veteran
@@ -209,9 +200,6 @@ def import_veterans(user, items):
         )
         kept = [veteran for veteran in gone if veteran.id in linked]
         removed = [veteran for veteran in gone if veteran.id not in linked]
-        manual = TrainedUma.objects.filter(user=user, source=TrainedUmaSource.MANUAL).count()
-        if manual + len(kept) + len(items) > TRAINED_UMA_CAP:
-            raise VeteranRefused(_CAP_MESSAGE)
 
         TrainedUma.objects.filter(id__in=[veteran.id for veteran in removed]).delete()
         TrainedUma.objects.filter(id__in=[veteran.id for veteran in kept]).update(missing_from_import=True)
