@@ -2,10 +2,13 @@
 
 **Live at [umacaratcalculator.com](https://umacaratcalculator.com)**, with browsable API docs at
 [umacaratcalculator.com/api/docs](https://umacaratcalculator.com/api/docs). A planning tool for
-Uma Musume Pretty Derby players with over **100,000 visitors a month**. Since its September 2026 launch: nearly 400,000
-visits, 16,600 accounts holding 18,500 saved plans, and 86 Patreon supporters.
+Uma Musume Pretty Derby players with over **100,000 visitors a month**. Since its September
+2026 launch: nearly 400,000 visits, 16,600 accounts (95% of them actively planning) holding
+18,500 saved plans, and 86 Patreon supporters.
 
 [![CI](https://github.com/charlesmerriman/uma-carat-calculator-api/actions/workflows/ci.yml/badge.svg)](https://github.com/charlesmerriman/uma-carat-calculator-api/actions/workflows/ci.yml)
+
+![The planner this API serves](https://raw.githubusercontent.com/charlesmerriman/uma-carat-calculator-web/develop/docs/images/planner.webp)
 
 This is the Django REST API. The React frontend is
 [uma-carat-calculator-web](https://github.com/charlesmerriman/uma-carat-calculator-web), and its
