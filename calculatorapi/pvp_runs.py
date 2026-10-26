@@ -67,7 +67,8 @@ def runs_for_event(user, kind, event_id):
 
 def write_run(user, kind, event_id, *, day=None, ticket=None, data):  # pylint: disable=too-many-arguments
     """Write one slot whole, creating the row on the first save. `data` is the
-    view's validated body: runners, races, finals_group, placement, note.
+    view's validated body: runners, races, finals_group, placement, note,
+    skipped.
 
     Delete-then-create for the runners and races, in one transaction, like
     pvp_teams.replace_team: the client sends the ticket as it should be. A
@@ -86,6 +87,15 @@ def write_run(user, kind, event_id, *, day=None, ticket=None, data):  # pylint: 
     placement = data.get("placement")
     if placement is not None and not 1 <= placement <= PVP_FINAL_PLACEMENTS:
         raise RunRefused("A final places you 1st, 2nd or 3rd.")
+    # Skipped means "the races not listed were never run" (models/pvp_run.py),
+    # so a ticket with every race listed has nothing left to skip. Un-skipping
+    # is the client's: a PUT without the flag (the player logged a race after
+    # all, or undid it).
+    skipped = data.get("skipped", False)
+    if skipped and is_final:
+        raise RunRefused("Only a day's ticket can be skipped.")
+    if skipped and len(races) >= PVP_RUN_RACES:
+        raise RunRefused(f"All {PVP_RUN_RACES} races are logged, so none were skipped.")
 
     with transaction.atomic():
         run = _get_or_create(_slot_filter(user, event, day, ticket))
@@ -107,8 +117,9 @@ def write_run(user, kind, event_id, *, day=None, ticket=None, data):  # pylint: 
         run.finals_group = data.get("finals_group", "")
         run.placement = placement
         run.note = data.get("note", "")
+        run.skipped = skipped
         # Saved even with no column changed, so updated_at says "edited now".
-        run.save(update_fields=["finals_group", "placement", "note", "updated_at"])
+        run.save(update_fields=["finals_group", "placement", "note", "skipped", "updated_at"])
     return run
 
 

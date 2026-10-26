@@ -1092,7 +1092,12 @@ plan for linking veterans: `notes/pvp-planner-plan.md` ("R3 CM Runs").
   event through the `PvpTeam` FK pair and XOR (`exactly_one_pvp_run_event`). The shape is
   `pvp_run_stage_shape`; it spells out `isnull=False` because a CHECK passes on NULL.
   One row per slot is a PAIR of partial unique constraints per rule (one per event FK),
-  since NULLs never collide. `note` (120).
+  since NULLs never collide. `note` (120). `skipped` (a day's ticket only, also in
+  `pvp_run_stage_shape`; `0118`): the player's word that the races the ticket does not list
+  were never run, so no races = an unused ticket and some = stopped after those. Only the
+  player sets it, never the clock ("not logged" on a past day may be slow typing), and a
+  `PUT` without it takes it back. Win rates are unchanged by it: an unlisted race was never
+  in a denominator.
 - **`PvpRunRunner`**: `position` 0..2, `uma`, `style` (never `everyone`), unique per run on
   position and uma. A **copy** of the lineup when the ticket was logged, never a pointer at
   a `PvpTeam`: editing or deleting a team must not rewrite results, and results belong to
