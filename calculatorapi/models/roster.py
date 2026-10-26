@@ -7,14 +7,15 @@ Collection page's Umas and Support cards tabs (notes/pvp-planner-plan.md, R2,
 A FACT ABOUT THE PERSON, NEVER A CHOICE: on the account, one row per uma or
 card, never on a Plan or a PvpTeam.
 
-TWO SOURCES, AND HAND EDITS WIN (owner, 2026-10-26)
----------------------------------------------------
+TWO SOURCES, AND THE FILE IS THE TRUTH (owner, 2026-10-26)
+--------------------------------------------------------
 `manual`: ticked on the Collection grid (the path for phone players).
 `import`: read from the player's own umadump export, in their browser.
-An import ADDS what is new and UPDATES what it wrote before; it never touches a
-row the player set by hand, and it never deletes (the game never takes a card
-or an uma away). Editing an imported row by hand makes it `manual`, so later
-imports leave it alone (roster.py).
+An import REPLACES the list it carries: whatever the file has is written over
+what is there, hand edits included, and a row the file lacks is removed ("if it
+doesn't exist in the file, it doesn't exist"). The player edits afterwards. A
+list the import does not carry (only the cards file was dropped) is left alone
+(roster.py). `source` says where a row's values last came from.
 
 ALL OF IT IS KEPT, LIKE A VETERAN: an imported row keeps the game's whole object
 in `game_data` (the player's own account id included; these files name no other

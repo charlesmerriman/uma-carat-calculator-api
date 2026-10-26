@@ -1062,15 +1062,17 @@ What a signed-in player owns, for the Collection's Umas and Support cards tabs
 |---|---|---|
 | `GET /roster` | | `{umas: [uma], support_cards: [card]}` |
 | `PATCH /roster` | `{umas?: [{uma, owned, stars?, talent_level?}], support_cards?: [{support_card, owned, limit_break?, spare_copies?}]}` | the roster. `owned: false` removes the row; every change applies or none does |
-| `POST /roster/import` | `{umas?: [{uma, stars?, talent_level?, game_data?}], support_cards?: [{support_card, limit_break, spare_copies?, game_data?}]}`, plain or gzipped | `{umas: counts, support_cards: counts, roster}`, counts `{added, updated, kept_by_hand}` |
+| `POST /roster/import` | `{umas?: [{uma, stars?, talent_level?, game_data?}], support_cards?: [{support_card, limit_break, spare_copies?, game_data?}]}`, plain or gzipped | `{umas?: counts, support_cards?: counts, roster}`, counts `{added, updated, removed}` per list sent |
+| `DELETE /roster/umas`, `DELETE /roster/support-cards` | | the roster, that list emptied (start over) |
 
 `uma` = `{uma, stars, talent_level, source, obtained_at}`; `card` = `{support_card,
 limit_break, spare_copies, source, obtained_at}`. Stars and potential are 1..5 (null when not
-set), a limit break 0..4 (4 is MLB), `spare_copies` the game's `stock`. **Hand edits win**
-(owner, 2026-10-26): a PATCH makes the row `manual`; an import adds new rows and updates the
-ones it wrote, skips manual rows (counted as `kept_by_hand`) and never deletes (the game never
-takes a card or an uma away). An imported row keeps the game's whole object (`game_data`, not
-on the wire; other players' ids stripped as for veterans). **`400 {"error": ...}`** for an
+set), a limit break 0..4 (4 is MLB), `spare_copies` the game's `stock`. **The file is the
+truth** (owner, 2026-10-26): each list an import sends REPLACES that table, hand edits
+included, and removes every row the file lacks; a list left out of the request is untouched.
+The player edits afterwards. `source` says where a row's values last came from. An imported
+row keeps the game's whole object (`game_data`, not on the wire; other players' ids stripped as
+for veterans). **`400 {"error": ...}`** for an
 unknown uma or card, one twice in a request, a value out of range, a `game_data` over 64 KB.
 
 ## Gallery

@@ -710,7 +710,7 @@ Table calculatorapi_owneduma as OwnedUma {
   uma_id bigint [not null, note: 'Django on_delete: CASCADE.']
   stars smallint [null, note: '1..5']
   talent_level smallint [null, note: '1..5']
-  source varchar(6) [not null, note: 'import | manual; manual is never touched by an import']
+  source varchar(6) [not null, note: 'import | manual: where the values last came from']
   game_data jsonb [null]
   obtained_at timestamptz [null]
   created_at timestamptz [not null]
