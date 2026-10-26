@@ -11,7 +11,6 @@ from rest_framework.test import APIClient
 from calculatorapi import gallery, public_payload_cache, trained_umas
 from calculatorapi.views import trained_uma as trained_uma_view
 from calculatorapi.models import (
-    TRAINED_UMA_CAP,
     PvpRunRunner,
     PvpTeam,
     PvpTeamMember,
@@ -108,11 +107,12 @@ class ByHandTests(VeteranFixture):
                 self.assertIn("error", response.json())
         self.assertFalse(TrainedUma.objects.exists())
 
-    def test_the_cap_is_on_adding(self):
+    def test_there_is_no_cap(self):
+        """Owner, 2026-10-26: no limit. 300 is past every cap this route ever had."""
         TrainedUma.objects.bulk_create(
-            TrainedUma(user=self.user, uma=self.oguri, source="manual", **STATS) for _ in range(TRAINED_UMA_CAP)
+            TrainedUma(user=self.user, uma=self.oguri, source="manual", **STATS) for _ in range(300)
         )
-        self.assertEqual(self.add().status_code, 400)
+        self.assertEqual(self.add().status_code, 201)
 
     def test_edit_changes_what_is_sent_and_replaces_skills(self):
         veteran_id = self.add(skills=[{"skill": self.skill.id}]).json()["id"]
@@ -193,13 +193,10 @@ class ImportTests(VeteranFixture):
         linked.refresh_from_db()
         self.assertFalse(linked.missing_from_import)
 
-    def test_an_import_past_the_cap_writes_nothing(self):
-        TrainedUma.objects.bulk_create(
-            TrainedUma(user=self.user, uma=self.oguri, source="manual", **STATS) for _ in range(TRAINED_UMA_CAP - 1)
-        )
-        response = self.run_import(self.item(12), self.item(13))
-        self.assertEqual(response.status_code, 400)
-        self.assertFalse(TrainedUma.objects.filter(source="import").exists())
+    def test_an_import_has_no_count_limit(self):
+        response = self.run_import(*[self.item(key) for key in range(1, 301)])
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(TrainedUma.objects.filter(source="import").count(), 300)
 
     def test_a_game_veteran_keeps_the_games_numbers(self):
         self.run_import(self.item(12))

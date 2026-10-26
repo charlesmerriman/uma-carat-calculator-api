@@ -47,10 +47,10 @@ from .custom_user import CustomUser
 from .skill import Skill
 from .uma import Uma
 
-# Checked on write, like PLAN_CAP: a save that would pass it is refused, and
-# nothing already held is ever removed for it. 1000 (owner, 2026-10-26: "all
-# of it"): the owner's account held 256 after 15 months, about 7 KB each.
-TRAINED_UMA_CAP = 1000
+# NO cap on how many veterans an account keeps (owner, 2026-10-26: "we have no
+# use for a limit"). The owner's account held 256 after 15 months, about 7 KB
+# each raw. What bounds a request is the import's unpacked size and the
+# per-veteran size below (views/trained_uma.py), which protect the server.
 
 # The game's stats run 1..1200 in most scenarios and past that in some; the
 # ceiling is generous on purpose, it only stops typos like 12000.

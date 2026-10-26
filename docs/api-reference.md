@@ -1049,9 +1049,9 @@ any trainer name at every depth again (`trained_umas.strip_other_players`), what
 client sent. **Gzip:** send `Content-Encoding: gzip` (a full account is megabytes raw,
 kilobytes gzipped); `GzipJSONParser` refuses a body that unpacks past 24 MB or doesn't
 unpack, with `400`. **`400 {"error": "<one sentence>"}`** for: a stat over 2000, an aptitude outside
-1..8, an unknown uma or skill, a skill twice, more than 80 skills, a label over 40, more
-than 1000 veterans (`TRAINED_UMA_CAP`, hand, kept and imported together; an import past it
-writes nothing), the same `import_key` twice in one file, a `game_data` over 64 KB.
+1..8, an unknown uma or skill, a skill twice, more than 80 skills, a label over 40, the same
+`import_key` twice in one file, a `game_data` over 64 KB. **There is no limit on how many
+veterans an account keeps** (owner, 2026-10-26).
 
 ## Gallery
 
