@@ -17,7 +17,7 @@ A team on the wire, both ways (catalogue ids only, never embedded objects; the
 client draws them from GET /pvp-catalogue):
 
     {id, kind: "cm" | "loh", event, name, is_focus, notes: [{text, color}],
-     members: [{position, uma, style, cards: [{slot, support_card}]}],
+     members: [{position, uma, style, trained_uma, cards: [{slot, support_card}]}],
      updated_at, post}    (post: the gallery post's public id, or null; out only)
 
 A refusal is a 400 with {"error": "<one sentence for the player>"}; the builder
@@ -31,7 +31,7 @@ from rest_framework import permissions, serializers, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
-from calculatorapi import pvp_teams
+from calculatorapi import pvp_teams, trained_umas
 from calculatorapi.models import (
     PVP_DECK_SIZE,
     PVP_NOTE_CAP,
@@ -68,6 +68,8 @@ class _MemberInput(serializers.Serializer):  # pylint: disable=abstract-method
     uma = serializers.IntegerField(min_value=1)
     style = serializers.ChoiceField(choices=_MEMBER_STYLES)
     cards = _CardInput(many=True, required=False, default=list)
+    # The veteran that is this uma (R2), or null. Left out = none.
+    trained_uma = serializers.IntegerField(min_value=1, allow_null=True, required=False, default=None)
 
     def validate_cards(self, cards):
         if len(cards) > PVP_DECK_SIZE:
@@ -140,6 +142,7 @@ def serialize_team(team):
                 "position": member.position,
                 "uma": member.uma_id,
                 "style": member.style,
+                "trained_uma": member.trained_uma_id,
                 "cards": [
                     {"slot": card.slot, "support_card": card.support_card_id}
                     for card in member.cards.all()
@@ -184,7 +187,7 @@ def pvp_team_list(request):
             members=data["members"],
             notes=data.get("notes", []),
         )
-    except pvp_teams.TeamRefused as refusal:
+    except (pvp_teams.TeamRefused, trained_umas.VeteranRefused) as refusal:
         return _bad_request(str(refusal))
     return Response(serialize_team(_fresh(team)), status=status.HTTP_201_CREATED)
 
@@ -196,7 +199,7 @@ def _replace(request, team):
     data = payload.validated_data
     try:
         pvp_teams.replace_team(team, members=data["members"], notes=data.get("notes"))
-    except pvp_teams.TeamRefused as refusal:
+    except (pvp_teams.TeamRefused, trained_umas.VeteranRefused) as refusal:
         return _bad_request(str(refusal))
     return Response(serialize_team(_fresh(team)))
 

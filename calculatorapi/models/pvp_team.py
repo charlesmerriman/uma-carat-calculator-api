@@ -144,6 +144,12 @@ class PvpTeamMember(models.Model):
     uma = models.ForeignKey(Uma, on_delete=models.CASCADE, related_name="+")
     # A style a uma actually runs: never "everyone", which only a guide row uses.
     style = models.CharField(max_length=10, choices=PvpStyle.choices)
+    # The veteran that is this uma (R2), or NULL. A LINK, never a copy of
+    # her numbers: models/trained_uma.py says why. Must be the owner's own
+    # veteran of this same outfit (trained_umas.check_links, on every save).
+    trained_uma = models.ForeignKey(
+        "TrainedUma", on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
 
     class Meta:
         ordering = ("position",)

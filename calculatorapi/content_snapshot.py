@@ -94,6 +94,9 @@ PRIVATE_MODELS = (
     "PvpRun",
     "PvpRunRunner",
     "PvpRunRace",
+    # A player's veterans (the Collection page).
+    "TrainedUma",
+    "TrainedUmaSkill",
     # A guide's saves name who saved them. The guide itself is content.
     "PvpGuideRevision",
     # The gallery: posts, votes, comments and reports are people's own
