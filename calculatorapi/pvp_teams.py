@@ -112,13 +112,14 @@ def replace_team(team, *, members, notes=None):
     return team
 
 
-def check_lineup(uma_ids):
-    """{id: Uma} for a lineup's umas, or TeamRefused for one the game refuses:
-    an uma not on the site, the same uma twice, or two outfits of one character.
+def _write_members(team, members):
+    """Create the member and card rows for already-shaped `members`.
 
-    Shared with pvp_runs.py, so a logged ticket's lineup obeys the same rules
-    as the team it was copied from.
+    The serializer has checked each row on its own (positions, slots, styles,
+    duplicates inside one deck). What only the whole team can say is checked
+    here: the same uma twice, and two outfits of one character.
     """
+    uma_ids = [member["uma"] for member in members]
     umas = Uma.objects.in_bulk(uma_ids)
     if len(umas) != len(set(uma_ids)):
         raise TeamRefused("One of those umas isn't on the site any more.")
@@ -128,17 +129,6 @@ def check_lineup(uma_ids):
     known = [character for character in characters if character is not None]
     if len(set(known)) != len(known):
         raise TeamRefused("A team can't have two outfits of the same uma.")
-    return umas
-
-
-def _write_members(team, members):
-    """Create the member and card rows for already-shaped `members`.
-
-    The serializer has checked each row on its own (positions, slots, styles,
-    duplicates inside one deck). What only the whole team can say is checked
-    here: the same uma twice, and two outfits of one character.
-    """
-    umas = check_lineup([member["uma"] for member in members])
     card_ids = {card["support_card"] for member in members for card in member["cards"]}
     if SupportCard.objects.filter(id__in=card_ids).count() != len(card_ids):
         raise TeamRefused("One of those support cards isn't on the site any more.")

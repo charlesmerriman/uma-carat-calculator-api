@@ -626,47 +626,6 @@ Table calculatorapi_pvpteamcard as PvpTeamCard {
   }
 }
 
-Table calculatorapi_pvprun as PvpRun {
-  id bigint [pk, increment, not null]
-  user_id bigint [not null, note: 'Django on_delete: CASCADE.']
-  champions_meeting_id bigint [null, note: 'Django on_delete: CASCADE. Exactly one of the two events.']
-  league_of_heroes_id bigint [null, note: 'Django on_delete: CASCADE.']
-  stage varchar(5) [not null, note: 'day | final']
-  day smallint [null, note: 'Set for a day, NULL for the final.']
-  ticket smallint [null]
-  finals_group varchar(1) [not null, note: 'A | B | blank; the final only.']
-  placement smallint [null, note: '1..3; the final only.']
-  note varchar(120) [not null]
-  created_at timestamptz [not null]
-  updated_at timestamptz [not null]
-
-  Note: 'PRIVATE. One ticket or the final of one CM / LoH event. One row per slot by partial unique constraints.'
-}
-
-Table calculatorapi_pvprunrunner as PvpRunRunner {
-  id bigint [pk, increment, not null]
-  run_id bigint [not null, note: 'Django on_delete: CASCADE.']
-  position smallint [not null, check: `"position" <= 2`]
-  uma_id bigint [not null, note: 'Django on_delete: CASCADE. A copy of the lineup, never a team pointer.']
-  style varchar(10) [not null, check: `NOT ("style" = 'everyone')`]
-
-  indexes {
-    (run_id, position) [unique]
-    (run_id, uma_id) [unique]
-  }
-}
-
-Table calculatorapi_pvprunrace as PvpRunRace {
-  id bigint [pk, increment, not null]
-  run_id bigint [not null, note: 'Django on_delete: CASCADE.']
-  race smallint [not null, check: `"race" >= 1 AND "race" <= 5`]
-  winner smallint [null, note: 'The winning runner position; NULL = lost. No row = not raced.']
-
-  indexes {
-    (run_id, race) [unique]
-  }
-}
-
 // Configuration and Changelog
 
 Table calculatorapi_calculationconstants as CalculationConstants {
@@ -995,12 +954,6 @@ Ref: PvpTeamMember.team_id > PvpTeam.id
 Ref: PvpTeamMember.uma_id > Uma.id
 Ref: PvpTeamCard.member_id > PvpTeamMember.id
 Ref: PvpTeamCard.support_card_id > SupportCard.id
-Ref: PvpRun.user_id > CustomUser.id
-Ref: PvpRun.champions_meeting_id > ChampionsMeeting.id
-Ref: PvpRun.league_of_heroes_id > LeagueOfHeroes.id
-Ref: PvpRunRunner.run_id > PvpRun.id
-Ref: PvpRunRunner.uma_id > Uma.id
-Ref: PvpRunRace.run_id > PvpRun.id
 Ref: ChangelogChange.entry_id > ChangelogEntry.id
 Ref: CustomUser.id - PatreonSupporter.linked_user_id
 Ref: PatreonSupporter.tier_id > PatreonTier.id
@@ -1023,9 +976,6 @@ TableGroup Accounts_and_Plans {
   PvpTeam
   PvpTeamMember
   PvpTeamCard
-  PvpRun
-  PvpRunRunner
-  PvpRunRace
   Token
 }
 

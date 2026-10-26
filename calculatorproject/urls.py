@@ -62,7 +62,6 @@ from calculatorapi.views.pvp_guide_editor import (
 from calculatorapi.views.pvp_catalogue import pvp_catalogue
 from calculatorapi.views.skills import skill_detail, skill_list
 from calculatorapi.views.pvp_team import pvp_team_detail, pvp_team_list
-from calculatorapi.views.pvp_run import pvp_run_final, pvp_run_list, pvp_run_ticket
 from calculatorapi.views.gallery import (
     gallery_comment_detail,
     gallery_comment_vote,
@@ -215,14 +214,6 @@ urlpatterns = [
     # → views/pvp_team.py
     path("pvp-teams", pvp_team_list, name="pvp-team-list"),
     path("pvp-teams/<int:team_id>", pvp_team_detail, name="pvp-team-detail"),
-    # A signed-in player's logged CM / LoH results, one row per ticket and one
-    # for the final, addressed by slot. Account only. → views/pvp_run.py
-    path("pvp-runs/<str:kind>/<int:event_id>", pvp_run_list, name="pvp-run-list"),
-    path(
-        "pvp-runs/<str:kind>/<int:event_id>/day/<int:day>/ticket/<int:ticket>",
-        pvp_run_ticket, name="pvp-run-ticket",
-    ),
-    path("pvp-runs/<str:kind>/<int:event_id>/final", pvp_run_final, name="pvp-run-final"),
     # The PvP gallery: posting a team and one event's ranked feed.
     # → views/pvp_gallery.py
     path("pvp-teams/<int:team_id>/publish", pvp_team_publish, name="pvp-team-publish"),
