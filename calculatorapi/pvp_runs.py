@@ -15,7 +15,7 @@ views/pvp_run.py.
 
 from django.db import IntegrityError, transaction
 
-from calculatorapi import pvp_teams
+from calculatorapi import pvp_teams, trained_umas
 from calculatorapi.models import (
     PVP_FINAL_PLACEMENTS,
     PVP_FINAL_RACES,
@@ -80,6 +80,7 @@ def write_run(user, kind, event_id, *, day=None, ticket=None, data):  # pylint: 
 
     _check_races(races, is_final, {runner["position"] for runner in runners})
     umas = pvp_teams.check_lineup([runner["uma"] for runner in runners])
+    veterans = trained_umas.check_links(user, runners)
     if not is_final and (data.get("finals_group") or data.get("placement") is not None):
         raise RunRefused("Only the final has a group and a placement.")
     placement = data.get("placement")
@@ -96,6 +97,7 @@ def write_run(user, kind, event_id, *, day=None, ticket=None, data):  # pylint: 
                 position=runner["position"],
                 uma=umas[runner["uma"]],
                 style=runner["style"],
+                trained_uma=veterans.get(runner.get("trained_uma")),
             )
             for runner in runners
         )

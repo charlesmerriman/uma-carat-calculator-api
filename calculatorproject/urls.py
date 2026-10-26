@@ -63,6 +63,7 @@ from calculatorapi.views.pvp_catalogue import pvp_catalogue
 from calculatorapi.views.skills import skill_detail, skill_list
 from calculatorapi.views.pvp_team import pvp_team_detail, pvp_team_list
 from calculatorapi.views.pvp_run import pvp_run_final, pvp_run_list, pvp_run_ticket
+from calculatorapi.views.trained_uma import trained_uma_detail, trained_uma_import, trained_uma_list
 from calculatorapi.views.gallery import (
     gallery_comment_detail,
     gallery_comment_vote,
@@ -223,6 +224,11 @@ urlpatterns = [
         pvp_run_ticket, name="pvp-run-ticket",
     ),
     path("pvp-runs/<str:kind>/<int:event_id>/final", pvp_run_final, name="pvp-run-final"),
+    # A signed-in player's veterans (the Collection page), and the import of a
+    # game export. Account only. → views/trained_uma.py
+    path("trained-umas", trained_uma_list, name="trained-uma-list"),
+    path("trained-umas/import", trained_uma_import, name="trained-uma-import"),
+    path("trained-umas/<int:veteran_id>", trained_uma_detail, name="trained-uma-detail"),
     # The PvP gallery: posting a team and one event's ranked feed.
     # → views/pvp_gallery.py
     path("pvp-teams/<int:team_id>/publish", pvp_team_publish, name="pvp-team-publish"),

@@ -15,7 +15,7 @@ GET /pvp-catalogue):
 
     {kind: "cm" | "loh", event, stage: "day" | "final", day, ticket,
      finals_group: "" | "A" | "B", placement: null | 1..3, note,
-     runners: [{position, uma, style}], races: [{race, winner}], updated_at}
+     runners: [{position, uma, style, trained_uma}], races: [{race, winner}], updated_at}
 
 A PUT body is the same minus kind, event, stage, day, ticket and updated_at
 (the URL says those). `winner` is the spot (a runner's position) of the uma
@@ -29,7 +29,7 @@ from rest_framework import permissions, serializers, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
-from calculatorapi import pvp_runs, pvp_teams
+from calculatorapi import pvp_runs, pvp_teams, trained_umas
 from calculatorapi.models import (
     PVP_RUN_NOTE_MAX_LENGTH,
     PVP_RUN_RACES,
@@ -47,6 +47,8 @@ class _RunnerInput(serializers.Serializer):  # pylint: disable=abstract-method
     position = serializers.IntegerField(min_value=0, max_value=PVP_TEAM_SIZE - 1)
     uma = serializers.IntegerField(min_value=1)
     style = serializers.ChoiceField(choices=_MEMBER_STYLES)
+    # The veteran that ran (R2), or null. Left out = none.
+    trained_uma = serializers.IntegerField(min_value=1, allow_null=True, required=False, default=None)
 
 
 class _RaceInput(serializers.Serializer):  # pylint: disable=abstract-method
@@ -88,7 +90,12 @@ def serialize_run(run):
         "placement": run.placement,
         "note": run.note,
         "runners": [
-            {"position": runner.position, "uma": runner.uma_id, "style": runner.style}
+            {
+                "position": runner.position,
+                "uma": runner.uma_id,
+                "style": runner.style,
+                "trained_uma": runner.trained_uma_id,
+            }
             for runner in run.runners.all()
         ],
         "races": [{"race": race.race, "winner": race.winner} for race in run.races.all()],
@@ -132,7 +139,7 @@ def _write_or_clear(request, kind, event_id, day=None, ticket=None):
         run = pvp_runs.write_run(
             request.user, kind, event_id, day=day, ticket=ticket, data=payload.validated_data
         )
-    except pvp_runs.RunRefused as refusal:
+    except (pvp_runs.RunRefused, trained_umas.VeteranRefused) as refusal:
         return Response({"error": str(refusal)}, status=status.HTTP_400_BAD_REQUEST)
     # Re-read with the prefetch, so the response is exactly what a GET returns.
     fresh = pvp_runs.runs_for_event(request.user, kind, event_id).get(id=run.id)

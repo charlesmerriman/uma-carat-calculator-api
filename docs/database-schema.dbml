@@ -667,6 +667,39 @@ Table calculatorapi_pvprunrace as PvpRunRace {
   }
 }
 
+Table calculatorapi_traineduma as TrainedUma {
+  id bigint [pk, increment, not null]
+  user_id bigint [not null, note: 'Django on_delete: CASCADE.']
+  uma_id bigint [not null, note: 'Django on_delete: CASCADE. One outfit.']
+  label varchar(40) [not null]
+  speed smallint [not null]
+  stamina smallint [not null]
+  power smallint [not null]
+  guts smallint [not null]
+  wit smallint [not null]
+  apt_turf smallint [null, note: '1..8 = G..S; the same for the other nine apt_ columns.']
+  rank_score integer [null]
+  source varchar(6) [not null, note: 'import | manual']
+  import_key bigint [null, note: 'The game trained_chara_id; set exactly for an import.']
+  imported_at timestamptz [null]
+  missing_from_import boolean [not null]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+
+  Note: 'PRIVATE. A veteran. Teams and runs LINK it, never copy it.'
+}
+
+Table calculatorapi_trainedumaskill as TrainedUmaSkill {
+  id bigint [pk, increment, not null]
+  trained_uma_id bigint [not null, note: 'Django on_delete: CASCADE.']
+  skill_id bigint [not null, note: 'Django on_delete: CASCADE.']
+  level smallint [not null]
+
+  indexes {
+    (trained_uma_id, skill_id) [unique]
+  }
+}
+
 // Configuration and Changelog
 
 Table calculatorapi_calculationconstants as CalculationConstants {
@@ -1001,6 +1034,12 @@ Ref: PvpRun.league_of_heroes_id > LeagueOfHeroes.id
 Ref: PvpRunRunner.run_id > PvpRun.id
 Ref: PvpRunRunner.uma_id > Uma.id
 Ref: PvpRunRace.run_id > PvpRun.id
+Ref: TrainedUma.user_id > CustomUser.id
+Ref: TrainedUma.uma_id > Uma.id
+Ref: TrainedUmaSkill.trained_uma_id > TrainedUma.id
+Ref: TrainedUmaSkill.skill_id > Skill.id
+Ref: PvpTeamMember.trained_uma_id > TrainedUma.id
+Ref: PvpRunRunner.trained_uma_id > TrainedUma.id
 Ref: ChangelogChange.entry_id > ChangelogEntry.id
 Ref: CustomUser.id - PatreonSupporter.linked_user_id
 Ref: PatreonSupporter.tier_id > PatreonTier.id
@@ -1026,6 +1065,8 @@ TableGroup Accounts_and_Plans {
   PvpRun
   PvpRunRunner
   PvpRunRace
+  TrainedUma
+  TrainedUmaSkill
   Token
 }
 

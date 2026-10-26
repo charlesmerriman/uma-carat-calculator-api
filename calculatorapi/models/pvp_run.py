@@ -10,7 +10,7 @@ A RUN IS A FACT, A TEAM IS A CHOICE
 A run copies its lineup (uma and style per spot) when the ticket is started and
 owns it from then on. It never points at the PvpTeam it came from: editing or
 deleting a team must not rewrite what already happened, and results hang off
-the account and the event, not off a team. R2 adds PvpRunRunner.trained_uma, a
+the account and the event, not off a team. PvpRunRunner.trained_uma is a
 LINK to the veteran that ran (a game veteran is frozen once trained, so a link
 reads the same numbers a copy would, and the stats live in one place).
 
@@ -181,6 +181,12 @@ class PvpRunRunner(models.Model):
     )
     uma = models.ForeignKey(Uma, on_delete=models.CASCADE, related_name="+")
     style = models.CharField(max_length=10, choices=PvpStyle.choices)
+    # The veteran that ran (R2), or NULL. A LINK, never a copy of
+    # her numbers: models/trained_uma.py says why. Must be the owner's own
+    # veteran of this same outfit (trained_umas.check_links, on every save).
+    trained_uma = models.ForeignKey(
+        "TrainedUma", on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
 
     class Meta:
         ordering = ("position",)
