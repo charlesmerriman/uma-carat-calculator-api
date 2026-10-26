@@ -1,10 +1,15 @@
 """Veterans: the model's rules, the /trained-umas routes, the import, and the links from teams and runs."""
 
+import gzip
+import json
+from unittest import mock
+
 from django.db import IntegrityError, transaction
 from django.test import override_settings
 from rest_framework.test import APIClient
 
-from calculatorapi import gallery, public_payload_cache
+from calculatorapi import gallery, public_payload_cache, trained_umas
+from calculatorapi.views import trained_uma as trained_uma_view
 from calculatorapi.models import (
     TRAINED_UMA_CAP,
     PvpRunRunner,
@@ -277,3 +282,82 @@ class LifecycleTests(VeteranFixture):
         team_id = response.json()["id"]
         snapshot = gallery.snapshot_from_team(PvpTeam.objects.get(id=team_id))
         self.assertTrue(all("trained_uma" not in member for member in snapshot))
+
+
+OWN = 311943848596
+OTHER = 206074645533
+
+
+def game_object(**extra):
+    """One veteran's raw game object, in umadump's shape, trimmed."""
+    return {
+        "viewer_id": OWN, "trained_chara_id": 12, "card_id": 100601, "memo": "Ace", "use_type": 0,
+        "owner_viewer_id": 0, "factor_info_array": [{"factor_id": 101, "level": 3}],
+        "succession_chara_array": [
+            {"position_id": 10, "card_id": 100901, "owner_viewer_id": OWN},
+            {"position_id": 20, "card_id": 100101, "owner_viewer_id": OTHER, "owner_trainer_name": "Someone"},
+        ],
+        "race_result_list": [{"turn": 12, "result_rank": 1}],
+        **extra,
+    }
+
+
+class RawGameDataTests(VeteranFixture):
+    # DRF's client.generic returns a response; pylint reads Django's stub as a request.
+    # pylint: disable=no-member
+
+    def test_strip_keeps_your_id_and_drops_other_players_at_any_depth(self):
+        cleaned, borrowed = trained_umas.strip_other_players(game_object())
+        self.assertFalse(borrowed)
+        self.assertEqual(cleaned["viewer_id"], OWN)
+        self.assertEqual(cleaned["succession_chara_array"][0]["owner_viewer_id"], OWN)
+        self.assertNotIn("owner_viewer_id", cleaned["succession_chara_array"][1])
+        self.assertNotIn("owner_trainer_name", cleaned["succession_chara_array"][1])
+        self.assertNotIn(str(OTHER), json.dumps(cleaned))
+        # Everything else is kept as given.
+        self.assertEqual(cleaned["factor_info_array"], [{"factor_id": 101, "level": 3}])
+        self.assertEqual(cleaned["race_result_list"], [{"turn": 12, "result_rank": 1}])
+
+    def test_a_borrowed_veteran_is_kept_and_flagged_without_its_owner(self):
+        cleaned, borrowed = trained_umas.strip_other_players(game_object(use_type=1, owner_viewer_id=OTHER))
+        self.assertTrue(borrowed)
+        self.assertNotIn("owner_viewer_id", cleaned)
+
+    def test_an_import_keeps_the_raw_object_memo_and_flag_but_never_another_players_id(self):
+        response = self.run_import(self.item(12, game_data=game_object(use_type=1, owner_viewer_id=OTHER)))
+        self.assertEqual(response.status_code, 200, response.content)
+        veteran = TrainedUma.objects.get(import_key=12)
+        self.assertEqual((veteran.memo, veteran.is_borrowed), ("Ace", True))
+        self.assertEqual(veteran.game_data["viewer_id"], OWN)
+        self.assertNotIn(str(OTHER), json.dumps(veteran.game_data))
+
+        listed = self.client.get("/trained-umas").json()[0]
+        self.assertNotIn("game_data", listed)
+        self.assertEqual((listed["memo"], listed["is_borrowed"], listed["has_game_data"]), ("Ace", True, True))
+        detail = self.client.get(f"/trained-umas/{veteran.id}").json()
+        self.assertEqual(detail["game_data"]["race_result_list"], [{"turn": 12, "result_rank": 1}])
+
+    def test_a_veteran_too_large_to_keep_is_refused(self):
+        huge = game_object(race_result_list=[{"turn": n, "note": "x" * 100} for n in range(1000)])
+        self.assertEqual(self.run_import(self.item(12, game_data=huge)).status_code, 400)
+        self.assertFalse(TrainedUma.objects.exists())
+
+    def gzipped(self, body):
+        return self.client.generic(
+            "POST", "/trained-umas/import", gzip.compress(json.dumps(body).encode()),
+            content_type="application/json", HTTP_CONTENT_ENCODING="gzip",
+        )
+
+    def test_a_gzipped_import_is_read(self):
+        response = self.gzipped({"items": [self.item(12, game_data=game_object())]})
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(TrainedUma.objects.get().memo, "Ace")
+
+    def test_a_broken_or_oversized_gzip_is_refused(self):
+        broken = self.client.generic(
+            "POST", "/trained-umas/import", b"not gzip", content_type="application/json", HTTP_CONTENT_ENCODING="gzip"
+        )
+        self.assertEqual(broken.status_code, 400)
+        with mock.patch.object(trained_uma_view, "IMPORT_MAX_BYTES", 100):
+            self.assertEqual(self.gzipped({"items": [self.item(12)]}).status_code, 400)
+        self.assertFalse(TrainedUma.objects.exists())

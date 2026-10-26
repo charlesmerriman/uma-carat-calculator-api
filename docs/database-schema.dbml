@@ -683,6 +683,9 @@ Table calculatorapi_traineduma as TrainedUma {
   import_key bigint [null, note: 'The game trained_chara_id; set exactly for an import.']
   imported_at timestamptz [null]
   missing_from_import boolean [not null]
+  game_data jsonb [null, note: 'The raw game object, other players stripped. NULL for a hand entry.']
+  memo varchar(100) [not null, note: 'The player''s own game note; shown only to them.']
+  is_borrowed boolean [not null]
   created_at timestamptz [not null]
   updated_at timestamptz [not null]
 
