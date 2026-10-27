@@ -334,14 +334,38 @@ def signed_in_gzip(entry, user_json):
     return _GZIP_HEADER + entry.head_deflate + tail_deflate + trailer
 
 
+# The date lookups a signed-in request needs to order and annotate its own rows
+# (views/calculator.py build_user_context): resolved banner and campaign dates,
+# and each card's first JP date. They are built from the same catalogue tables
+# as the payload, so they go stale at the same moments and are dropped with it
+# by invalidate(). Kept under their own key rather than inside CachedPayload so
+# a guest's read never pays to unpickle them. Bump the suffix when the tuple's
+# shape changes.
+USER_CONTEXT_KEY = "calculator_data:user_context:v1"
+
+
+def read_user_context():
+    """The cached (emap, anniversary_emap, card_context), or None on a miss.
+
+    LocMem unpickles on every read, so each caller gets its own copy and no
+    request can mutate another's.
+    """
+    return cache.get(USER_CONTEXT_KEY)
+
+
+def store_user_context(context):
+    cache.set(USER_CONTEXT_KEY, context, CACHE_TTL_SECONDS)
+
+
 def invalidate(**_kwargs):
-    """Drop the cached payload. Also the signal receiver, hence **_kwargs.
+    """Drop the cached payload and the user context built from the same
+    tables. Also the signal receiver, hence **_kwargs.
 
     Deletes rather than rebuilds: the next reader repopulates it. Rebuilding
     here would put a multi-second job inside an admin save's request/response
     cycle, and would run once per row on a bulk edit.
     """
-    cache.delete(CACHE_KEY)
+    cache.delete_many([CACHE_KEY, USER_CONTEXT_KEY])
 
 
 def _invalidate_now_and_on_commit():
