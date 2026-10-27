@@ -429,8 +429,8 @@ class AnalyticsFavouriteTests(CalculatorTestCase):
                 UserOshi.objects.create(user=user, uma=second, position=1)
         UserOshi.objects.create(user=make_user('staff', is_staff=True), uma=spe, position=0)
         rows = build_analytics_report()['favourite_umas']
-        self.assertEqual(rows[0], {'uma': 'Rice', 'people': 3, 'as_picture': 2})
-        self.assertEqual(rows[1], {'uma': 'Spe', 'people': 2, 'as_picture': 1})
+        self.assertEqual(rows[0], {'uma': 'Rice', 'uma_id': rice.id, 'people': 3, 'as_picture': 2})
+        self.assertEqual(rows[1], {'uma': 'Spe', 'uma_id': spe.id, 'people': 2, 'as_picture': 1})
 
 
 class AnalyticsReferrerTests(CalculatorTestCase):

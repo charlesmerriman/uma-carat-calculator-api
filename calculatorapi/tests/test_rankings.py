@@ -9,8 +9,8 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from calculatorapi.models import (
-    GalleryPost, GalleryPostKind, PvpDeck, PvpDeckSlot, PvpGuide, PvpUmaRecommendation, SupportCard, Uma,
-    UserPlannedBanner,
+    GalleryPost, GalleryPostKind, PvpDeck, PvpDeckSlot, PvpGuide, PvpRun, PvpRunRace, PvpRunRunner, PvpTeam,
+    PvpTeamCard, PvpTeamMember, PvpUmaRecommendation, SupportCard, Uma, UserOshi, UserPlannedBanner,
 )
 from calculatorapi.tests.base import CalculatorTestCase
 from calculatorapi.tests.factories import (
@@ -271,3 +271,84 @@ class PullPlansTests(CalculatorTestCase):
             client, _ = auth_client(user)
             self.assertEqual(client.get(self.URL).status_code, 403, user.username)
         self.assertEqual(APIClient().get(self.URL).status_code, 401)
+
+
+class PvpRankingsTests(CalculatorTestCase):  # pylint: disable=too-many-instance-attributes
+    """GET /rankings/pvp/<kind>/<id>: every saved team (not only posted ones),
+    and CM Runs win rates, staff out."""
+
+    def setUp(self):
+        self.cm = make_champions_meeting(name="Libra Cup", cm_number=21)
+        self.oguri = Uma.objects.create(name="Oguri Cap")
+        self.maru = Uma.objects.create(name="Maruzensky")
+        self.light = SupportCard.objects.create(name="Light Hello", card_type="friend", rarity=3)
+        self.player = make_user("player")
+        self.team(self.player, [(self.oguri, "pace", [(1, self.light), (6, self.light)]), (self.maru, "front", [])])
+        self.team(make_user("other"), [(self.oguri, "end", [(1, self.light)])])
+        self.team(make_user("empty"), [])
+        self.team(make_user("staffer", is_staff=True), [(self.maru, "front", [(1, self.light)])])
+        self.url = f"/rankings/pvp/cm/{self.cm.id}"
+        self.client, _ = auth_client(make_user("staff", is_staff=True))
+
+    def team(self, user, members):
+        team = PvpTeam.objects.create(user=user, champions_meeting=self.cm)
+        for position, (uma, style, cards) in enumerate(members):
+            member = PvpTeamMember.objects.create(team=team, position=position, uma=uma, style=style)
+            for slot, card in cards:
+                PvpTeamCard.objects.create(member=member, slot=slot, support_card=card)
+
+    def log_run(self, user, winners, skipped=False, ticket=1):
+        run = PvpRun.objects.create(
+            user=user, champions_meeting=self.cm, stage="day", day=1, ticket=ticket, skipped=skipped,
+        )
+        PvpRunRunner.objects.create(run=run, position=0, uma=self.oguri, style="pace")
+        PvpRunRunner.objects.create(run=run, position=1, uma=self.maru, style="front")
+        for race, winner in enumerate(winners, start=1):
+            PvpRunRace.objects.create(run=run, race=race, winner=winner)
+
+    def test_counts_every_saved_team(self):
+        built = self.client.get(self.url).json()["built"]
+        self.assertEqual((built["teams"], built["decks"]), (2, 3))
+        self.assertEqual(built["umas"][0], {"uma": self.oguri.id, "teams": 2, "styles": {"pace": 1, "end": 1}})
+        self.assertEqual(built["cards"], [{"card": self.light.id, "decks": 3, "borrows": 1}])
+
+    def test_win_rates_per_uma_and_strategy(self):
+        self.log_run(self.player, [0, None, 1])
+        self.log_run(self.player, [0, 0, 0], skipped=True, ticket=2)
+        self.log_run(make_user("staffer2", is_staff=True), [0, 0, 0])
+        runs = self.client.get(self.url).json()["runs"]
+        self.assertEqual((runs["players"], runs["races"], runs["min_races"]), (1, 3, 20))
+        self.assertEqual(runs["rows"], [
+            {"uma": self.oguri.id, "style": "pace", "races": 3, "wins": 1},
+            {"uma": self.maru.id, "style": "front", "races": 3, "wins": 1},
+        ])
+
+    def test_early_access_only_and_a_real_event(self):
+        plain, _ = auth_client(make_user("plain"))
+        self.assertEqual(plain.get(self.url).status_code, 403)
+        self.assertEqual(self.client.get("/rankings/pvp/cm/9999").status_code, 404)
+
+
+class PlayersRankingsTests(CalculatorTestCase):
+    """GET /rankings/players: the four panels, staff out, ranks without "Not set"."""
+
+    URL = "/rankings/players"
+
+    def test_the_four_panels(self):
+        uma = Uma.objects.create(name="Special Week")
+        fan = make_user("fan")
+        UserOshi.objects.create(user=fan, uma=uma, position=0)
+        UserOshi.objects.create(user=make_user("staffer", is_staff=True), uma=uma, position=0)
+        client, _ = auth_client(make_user("staff", is_staff=True))
+        body = client.get(self.URL).json()
+        self.assertEqual(body["favourites"], [{"uma": uma.id, "people": 1}])
+        self.assertEqual([rank["label"] for rank in body["ranks"]], ["Team Trials", "Club Rank"])
+        for rank in body["ranks"]:
+            self.assertNotIn("Not set", [row["name"] for row in rank["rows"]])
+            self.assertEqual(rank["people"], sum(row["people"] for row in rank["rows"]))
+        self.assertIn("daily_carat", [row["key"] for row in body["income"]])
+        self.assertIn("selectors", body)
+
+    def test_early_access_only(self):
+        plain, _ = auth_client(make_user("plain"))
+        self.assertEqual(plain.get(self.URL).status_code, 403)

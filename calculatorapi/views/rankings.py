@@ -8,6 +8,10 @@ one per tab:
   GET /rankings/pull-plans                 the banners players plan to pull
                                            on, and when (behind the Raptive
                                            gate, below)
+  GET /rankings/pvp/<kind>/<event_id>      one event's saved teams, counted,
+                                           and CM Runs win rates
+  GET /rankings/players                    favourite umas, ranks, income
+                                           options, selector picks
 
 EARLY ACCESS ONLY (owner, 2026-10-27: "Patreon only for now"). Every route
 checks benefits.early_access on the server; a guest gets 401, anyone else
@@ -46,15 +50,22 @@ client picks the window.
 
 from collections import Counter, defaultdict
 
-from django.db.models import F
+from django.db.models import F, Q
 from django.views.decorators.gzip import gzip_page
 from rest_framework import permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
 from calculatorapi import benefits, gallery, pvp_guide_editing, pvp_teams
-from calculatorapi.analytics.banners import banner_popularity, demand_calendar, step_up_popularity
-from calculatorapi.models import BannerTimeline, PvpDeckSlot, PvpGuide, PvpUmaRecommendation, Scenario, SupportCard
+from calculatorapi.analytics.banners import (
+    banner_popularity, demand_calendar, favourite_umas, step_up_popularity,
+)
+from calculatorapi.analytics.income_settings import income_settings, rank_distributions, selector_purchases
+from calculatorapi.analytics.people import engaged_subset, non_staff_users
+from calculatorapi.models import (
+    BannerTimeline, PvpDeckSlot, PvpGuide, PvpRunRace, PvpRunRunner, PvpTeamCard, PvpTeamMember,
+    PvpUmaRecommendation, Scenario, SupportCard, UserPlannedPurchase,
+)
 from calculatorapi.predictions import build_effective_date_maps
 from calculatorapi.rankings_cache import cached_payload
 
@@ -156,33 +167,40 @@ def rankings_guides(request):
     return Response(cached_payload("guides", guides_payload))
 
 
-def gallery_payload(event):
-    """One event's visible gallery posts, counted: {"posts", "decks", "umas":
-    [{"uma", "teams", "styles": {style: members}}], "cards": [{"card",
-    "decks", "borrows"}]}, most first.
+def count_teams(teams):
+    """Teams counted: {"teams", "decks", "umas": [{"uma", "teams", "styles":
+    {style: members}}], "cards": [{"card", "decks", "borrows"}]}, most first.
 
-    COUNTED HERE, unlike the guides: the tab has no filters, so the client
-    needs totals, and a few hundred posts' snapshots stay on the server.
-    An uma counts once per post with her (a team never repeats a character);
-    a card once per member deck holding it, the borrowed card included (the
-    owner's rule for the guides, kept here), with the borrows counted apart.
-    Ties go to the lower id. `decks` is every member counted, a card's share's denominator; `posts`
-    an uma's. Placeholder cards ("your best SSR Speed card") are no card to
-    pull, so they never count. Two queries.
+    `teams` is a list of teams, each a list of members shaped like a gallery
+    snapshot's: {"uma", "style", "cards": [{"slot", "support_card"}]}. Shared
+    by the gallery (posted teams) and the PvP tab (saved teams), so the two
+    count by one rule:
+
+      - an uma once per team with her (a team never repeats a character),
+        with how many members ran each strategy;
+      - a card once per member's deck holding it, the borrowed card (slot 6)
+        included (the owner's rule for the guides, kept here) and counted
+        apart in `borrows`;
+      - placeholder cards ("your best SSR Speed card") never: they are no
+        card to pull;
+      - a team with no member is no team.
+
+    `teams` is every team counted (an uma's share is out of it), `decks`
+    every member (a card's share). Ties go to the lower id. One query.
     """
-    snapshots = list(gallery.visible_posts().filter(**event).values_list("team_snapshot", flat=True))
-    card_ids = {card["support_card"] for snapshot in snapshots for member in snapshot for card in member["cards"]}
+    teams = [team for team in teams if team]
+    card_ids = {card["support_card"] for team in teams for member in team for card in member["cards"]}
     placeholders = set(
         SupportCard.objects.filter(id__in=card_ids, is_placeholder=True).values_list("id", flat=True)
     )
-
-    teams, styles = Counter(), defaultdict(Counter)
+    umas, styles = Counter(), defaultdict(Counter)
     decks, borrows = Counter(), Counter()
     members = 0
-    for snapshot in snapshots:
-        for member in snapshot:
+    for team in teams:
+        for uma in {member["uma"] for member in team}:
+            umas[uma] += 1
+        for member in team:
             members += 1
-            teams[member["uma"]] += 1
             styles[member["uma"]][member["style"]] += 1
             for card in member["cards"]:
                 if card["support_card"] in placeholders:
@@ -190,19 +208,28 @@ def gallery_payload(event):
                 decks[card["support_card"]] += 1
                 if card["slot"] == BORROW_SLOT:
                     borrows[card["support_card"]] += 1
-
     return {
-        "posts": len(snapshots),
+        "teams": len(teams),
         "decks": members,
         "umas": [
             {"uma": uma, "teams": count, "styles": dict(styles[uma])}
-            for uma, count in _most_first(teams)
+            for uma, count in _most_first(umas)
         ],
         "cards": [
             {"card": card, "decks": count, "borrows": borrows[card]}
             for card, count in _most_first(decks)
         ],
     }
+
+
+def gallery_payload(event):
+    """One event's visible gallery posts, counted (count_teams); `posts` is
+    its `teams`. COUNTED HERE, unlike the guides: the tab has no filters, so
+    the client needs totals, and a few hundred posts' snapshots stay on the
+    server. Two queries."""
+    counted = count_teams(gallery.visible_posts().filter(**event).values_list("team_snapshot", flat=True))
+    counted["posts"] = counted.pop("teams")
+    return counted
 
 
 def _most_first(counter):
@@ -278,3 +305,176 @@ def rankings_pull_plans(request):
     if not (benefits.early_access(request.user) and sees_pull_plans(request.user)):
         return Response(REFUSED, status=403)
     return Response(cached_payload("pull-plans", pull_plans_payload))
+
+
+# A win rate under this many races is noise; the client says "not enough
+# runs yet" for it rather than drawing 100% from one lucky ticket.
+MIN_RACES = 20
+
+
+def saved_teams(event):
+    """Every non-staff saved team for `event`, as count_teams() reads them.
+    Saved, not only posted: what players BUILD (owner, 2026-10-27; the
+    privacy policy says totals count saved teams). Two queries."""
+    lookup = {f"team__{field}": value for field, value in event.items()}
+    members = {}
+    teams = defaultdict(list)
+    for member_id, team_id, uma_id, style in (
+        PvpTeamMember.objects.filter(team__user__is_staff=False, **lookup)
+        .order_by("team_id", "position")
+        .values_list("id", "team_id", "uma_id", "style")
+    ):
+        members[member_id] = {"uma": uma_id, "style": style, "cards": []}
+        teams[team_id].append(members[member_id])
+    card_lookup = {f"member__{key}": value for key, value in lookup.items()}
+    for member_id, slot, card_id in (
+        PvpTeamCard.objects.filter(member__team__user__is_staff=False, **card_lookup)
+        .values_list("member_id", "slot", "support_card_id")
+    ):
+        members[member_id]["cards"].append({"slot": slot, "support_card": card_id})
+    return list(teams.values())
+
+
+def run_results(event):
+    """CM Runs, totalled per uma and strategy: {"players", "races", "rows":
+    [{"uma", "style", "races", "wins"}]}, most races first.
+
+    A runner RAN every race of her ticket that has a result (a race with no
+    row isn't raced yet), and WON the ones whose winner is her spot. So a
+    ticket's three runners share its races, and their wins add up to the
+    ticket's wins. Skipped tickets never count; staff never do. `min_races`
+    is the floor under which the client shows no rate. Two queries.
+    """
+    lookup = {f"run__{field}": value for field, value in event.items()}
+    base = {"run__user__is_staff": False, "run__skipped": False, **lookup}
+    races = defaultdict(list)
+    for run_id, winner in PvpRunRace.objects.filter(**base).values_list("run_id", "winner"):
+        races[run_id].append(winner)
+    totals = defaultdict(lambda: {"races": 0, "wins": 0})
+    players = set()
+    for run_id, user_id, position, uma_id, style in (
+        PvpRunRunner.objects.filter(**base).values_list("run_id", "run__user_id", "position", "uma_id", "style")
+    ):
+        if not races[run_id]:
+            continue
+        players.add(user_id)
+        row = totals[(uma_id, style)]
+        row["races"] += len(races[run_id])
+        row["wins"] += sum(1 for winner in races[run_id] if winner == position)
+    rows = [{"uma": uma, "style": style, **counts} for (uma, style), counts in totals.items()]
+    rows.sort(key=lambda row: (-row["races"], row["uma"], row["style"]))
+    return {
+        "players": len(players),
+        "races": sum(len(results) for results in races.values()),
+        "min_races": MIN_RACES,
+        "rows": rows,
+    }
+
+
+def pvp_payload(event):
+    """The Rankings page's PvP tab for one event: what players build (every
+    saved team, count_teams) and what wins (CM Runs, run_results)."""
+    return {"built": count_teams(saved_teams(event)), "runs": run_results(event)}
+
+
+@gzip_page
+@api_view(["GET"])
+@permission_classes([permissions.IsAuthenticated])
+def rankings_pvp(request, kind, event_id):
+    if not benefits.early_access(request.user):
+        return Response(REFUSED, status=403)
+    try:
+        event = pvp_teams.resolve_event(kind, event_id)
+    except pvp_teams.TeamRefused:
+        return Response({"error": "Event not found"}, status=404)
+    return Response(cached_payload(f"pvp:{kind}:{event_id}", lambda: pvp_payload(event)))
+
+
+# The income ranks the Players tab shows, by the label rank_distributions gives them.
+PLAYER_RANKS = ("Team Trials", "Club Rank")
+# Picks listed under each selector.
+TOP_PICKS = 5
+
+
+def selector_picks():
+    """{product id: [{"uma"|"card": id, "people"}]}, the cards and umas people
+    plan to take with each campaign selector, most first, at most TOP_PICKS.
+    Distinct people, staff out, quantity 1 or more. One query."""
+    picks = defaultdict(Counter)
+    seen = set()
+    for user_id, product_id, uma_id, card_id in (
+        UserPlannedPurchase.objects.filter(
+            user__is_staff=False, quantity__gte=1,
+        ).filter(Q(target_uma__isnull=False) | Q(target_support__isnull=False))
+        .values_list("user_id", "product_id", "target_uma_id", "target_support_id")
+    ):
+        target = ("uma", uma_id) if uma_id else ("card", card_id)
+        # One person planning the same pick for two stats blocks is one person.
+        if (user_id, product_id, target) in seen:
+            continue
+        seen.add((user_id, product_id, target))
+        picks[product_id][target] += 1
+    return {
+        product_id: [
+            {target[0]: target[1], "people": people}
+            for target, people in sorted(counter.items(), key=lambda item: (-item[1], item[0]))[:TOP_PICKS]
+        ]
+        for product_id, counter in picks.items()
+    }
+
+
+def players_payload():
+    """The Players tab: four panels, from the admin analytics, among ENGAGED
+    accounts (people who use the calculator; analytics.people.engaged_q),
+    staff out.
+
+      favourites  the most-picked favourite umas (id, people)
+      ranks       Team Trials and club rank: people per rank among those who
+                  set one (the "Not set" row is left out, and the share is out
+                  of the people who set it)
+      income      each income option: people with it on, of `engaged`
+      selectors   each campaign selector: buyers, how many picked a card, and
+                  the top picks
+    """
+    engaged = engaged_subset(non_staff_users())
+    engaged_count = engaged.count()
+
+    ranks = []
+    for distribution in rank_distributions(engaged, engaged_count):
+        if distribution["label"] not in PLAYER_RANKS:
+            continue
+        rows = [row for row in distribution["rows"] if row["name"] != "Not set"]
+        set_count = sum(row["count"] for row in rows)
+        ranks.append({
+            "label": distribution["label"],
+            "people": set_count,
+            "rows": [{"name": row["name"], "people": row["count"]} for row in rows],
+        })
+
+    picks = selector_picks()
+    selectors = selector_purchases(engaged_count, engaged_count)["selector_purchases"]
+    return {
+        "engaged": engaged_count,
+        "favourites": [{"uma": row["uma_id"], "people": row["people"]} for row in favourite_umas()],
+        "ranks": ranks,
+        "income": [
+            {"key": row["key"], "label": row["label"], "people": row["users_on"]}
+            for row in income_settings(engaged, engaged_count)
+        ],
+        "selectors": [
+            {
+                "campaign": row["campaign"], "label": row["label"], "buyers": row["count"],
+                "picked": row["picked"], "top": picks.get(row["id"], []),
+            }
+            for row in selectors
+        ],
+    }
+
+
+@gzip_page
+@api_view(["GET"])
+@permission_classes([permissions.IsAuthenticated])
+def rankings_players(request):
+    if not benefits.early_access(request.user):
+        return Response(REFUSED, status=403)
+    return Response(cached_payload("players", players_payload))
