@@ -847,6 +847,9 @@ CACHES = {
             # (~500 KB, calculatorapi/pvp_catalogue_cache.py), read only when
             # someone opens the builder, so 40 keeps it from being the next key
             # to fall off. Worst case: two payloads, two catalogues, counters.
+            # Since 2026-10-27 also the signed-in date lookups beside the
+            # payload (public_payload_cache.USER_CONTEXT_KEY, ~26 KB), read on
+            # every signed-in load, so never the key that falls off.
             "MAX_ENTRIES": 40,
         },
     },

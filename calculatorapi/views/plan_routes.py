@@ -45,9 +45,9 @@ from rest_framework.response import Response
 from calculatorapi import plans
 from calculatorapi.models import PLAN_CAP, Plan
 from calculatorapi.views.calculator import (
-    build_user_context,
     serialize_planned_banners,
     serialize_planned_purchases,
+    user_context,
 )
 from calculatorapi.views.income_profile import stats_serializer
 from calculatorapi.views.plan import PlanSerializer
@@ -66,7 +66,7 @@ def plan_with_rows(plan):
     """A plan, its banner rows, its stats and its purchases, shaped like the
     matching /calculator-data keys so the client stores them with the same
     code. Everything that changes on a switch, and nothing that does not."""
-    emap, anniversary_emap, card_context = build_user_context()
+    emap, anniversary_emap, card_context = user_context()
     return {
         "plan": PlanSerializer(plan).data,
         # The stats this plan is projected against: its income profile's, or

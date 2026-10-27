@@ -212,6 +212,25 @@ def build_user_context():
     }
 
 
+def user_context():
+    """build_user_context(), cached: what signed-in requests call.
+
+    Its eight queries (~6ms locally) read only catalogue tables and nothing
+    about the viewer or the date, so every signed-in /calculator-data load and
+    every plan switch was building the same answer. It is kept beside the
+    payload and dropped with it (public_payload_cache.USER_CONTEXT_KEY).
+
+    No rebuild lock, unlike the payload: a miss costs ~6ms and well under a
+    megabyte, so two threads occasionally building it together is cheaper than
+    making one wait.
+    """
+    context = public_payload_cache.read_user_context()
+    if context is None:
+        context = build_user_context()
+        public_payload_cache.store_user_context(context)
+    return context
+
+
 def planned_banners_in_order(rows, *, emap):
     """Planned rows in the order the planner renders them: resolved start
     date, then kind (_planned_banner_kind_rank). `rows` must select_related
@@ -425,7 +444,7 @@ class CalculatorViewSet(ViewSet):
         # 2026-10-27 this parsed the whole catalogue back into Python and
         # re-rendered it (~36ms, ~10MB, 1.27MB sent uncompressed) for the same
         # guest-shaped reason as above. See "STITCHING" in public_payload_cache.
-        emap, anniversary_emap, card_context = build_user_context()
+        emap, anniversary_emap, card_context = user_context()
         user_payload = _build_user_payload(
             request.user,
             emap=emap,
