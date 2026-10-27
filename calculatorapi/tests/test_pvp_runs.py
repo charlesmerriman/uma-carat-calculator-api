@@ -66,6 +66,10 @@ class ModelConstraintTests(PvpRunFixture):
                 user=self.user, champions_meeting=self.cm, stage="day", day=1, ticket=1, placement=1
             )
 
+    def test_a_final_cannot_be_skipped(self):
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            PvpRun.objects.create(user=self.user, champions_meeting=self.cm, stage="final", skipped=True)
+
     def test_one_row_per_ticket_and_one_final(self):
         PvpRun.objects.create(user=self.user, champions_meeting=self.cm, stage="day", day=1, ticket=1)
         with self.assertRaises(IntegrityError), transaction.atomic():
@@ -124,6 +128,30 @@ class WriteTests(PvpRunFixture):
         self.assertEqual(self.put(self.ticket_url(), client=APIClient()).status_code, 401)
 
 
+class SkipTests(PvpRunFixture):
+    """A skip is the player's word that the races a ticket doesn't list never ran."""
+
+    def test_a_whole_ticket_can_be_skipped(self):
+        response = self.put(self.ticket_url(), runners=[], skipped=True)
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual((response.json()["skipped"], response.json()["races"]), (True, []))
+
+    def test_a_ticket_can_stop_after_some_races(self):
+        self.put(self.ticket_url(), races=self.races(0, None), skipped=True)
+        run = PvpRun.objects.get()
+        self.assertTrue(run.skipped)
+        self.assertEqual(run.races.count(), 2)
+
+    def test_a_put_without_the_flag_undoes_it(self):
+        # Slow typing, not a skip: the player logs race 3 after all.
+        self.put(self.ticket_url(), races=self.races(0, None), skipped=True)
+        self.put(self.ticket_url(), races=self.races(0, None, 1))
+        self.assertFalse(PvpRun.objects.get().skipped)
+
+    def test_a_run_says_it_is_not_skipped(self):
+        self.assertIs(self.put(self.ticket_url()).json()["skipped"], False)
+
+
 class RefusalTests(PvpRunFixture):
 
     def assert_refused(self, response, status=400):
@@ -169,6 +197,12 @@ class RefusalTests(PvpRunFixture):
         self.assert_refused(self.put(self.ticket_url(), placement=1))
         self.assert_refused(self.put(self.ticket_url(), finals_group="A"))
         self.assert_refused(self.put(self.final_url(), placement=4))
+
+    def test_a_skipped_final(self):
+        self.assert_refused(self.put(self.final_url(), skipped=True))
+
+    def test_skipping_a_ticket_with_every_race_logged(self):
+        self.assert_refused(self.put(self.ticket_url(), races=self.races(0, 0, 0, 0, 0), skipped=True))
 
     def test_a_refused_put_changes_nothing(self):
         self.put(self.ticket_url(), races=self.races(0, 1))

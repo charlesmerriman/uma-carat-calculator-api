@@ -98,6 +98,12 @@ class PvpRun(models.Model):
     )
     placement = models.PositiveSmallIntegerField(null=True, blank=True)
     note = models.CharField(max_length=PVP_RUN_NOTE_MAX_LENGTH, blank=True, default="")
+    # The player's word that the races this ticket does not list were never
+    # run: with none listed the ticket went unused, with some they stopped
+    # after those. Only ever set by the player, never from the clock: "not
+    # logged" on a past day may only be slow typing, and a guessed skip would
+    # stay wrong. A day's ticket only (pvp_run_stage_shape).
+    skipped = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -111,9 +117,10 @@ class PvpRun(models.Model):
                 ),
                 name="exactly_one_pvp_run_event",
             ),
-            # A day's ticket has a day and a number; a final has neither, and
-            # only a final has a group or a placement. The isnull terms are
-            # not redundant: NULL >= 1 is unknown, and a CHECK passes unknown.
+            # A day's ticket has a day and a number; a final has neither. Only
+            # a final has a group or a placement, and only a day's ticket can
+            # be skipped. The isnull terms are not redundant: NULL >= 1 is
+            # unknown, and a CHECK passes unknown.
             models.CheckConstraint(
                 condition=(
                     Q(
@@ -125,7 +132,7 @@ class PvpRun(models.Model):
                         finals_group="",
                         placement__isnull=True,
                     )
-                    | Q(stage=PvpRunStage.FINAL, day__isnull=True, ticket__isnull=True)
+                    | Q(stage=PvpRunStage.FINAL, day__isnull=True, ticket__isnull=True, skipped=False)
                 ),
                 name="pvp_run_stage_shape",
             ),

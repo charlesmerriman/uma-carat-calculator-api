@@ -14,12 +14,13 @@ A run on the wire (catalogue ids only; the client draws them from
 GET /pvp-catalogue):
 
     {kind: "cm" | "loh", event, stage: "day" | "final", day, ticket,
-     finals_group: "" | "A" | "B", placement: null | 1..3, note,
+     finals_group: "" | "A" | "B", placement: null | 1..3, note, skipped,
      runners: [{position, uma, style, trained_uma}], races: [{race, winner}], updated_at}
 
 A PUT body is the same minus kind, event, stage, day, ticket and updated_at
 (the URL says those). `winner` is the spot (a runner's position) of the uma
-that won, or null for a loss; a race not in the list has not been run yet.
+that won, or null for a loss; a race not in the list has not been run yet,
+unless `skipped` says it never will be (a day's ticket only).
 
 An unknown kind, event, day or ticket is a 404; a refused write is a 400 with
 {"error": "<one sentence for the player>"}, shown as a toast.
@@ -66,6 +67,8 @@ class _RunInput(serializers.Serializer):  # pylint: disable=abstract-method
     note = serializers.CharField(
         max_length=PVP_RUN_NOTE_MAX_LENGTH, allow_blank=True, required=False, default=""
     )
+    # Left out = not skipped, so an older client's PUT un-skips, never skips.
+    skipped = serializers.BooleanField(required=False, default=False)
 
     def validate_runners(self, runners):
         if len(runners) > PVP_TEAM_SIZE:
@@ -89,6 +92,7 @@ def serialize_run(run):
         "finals_group": run.finals_group,
         "placement": run.placement,
         "note": run.note,
+        "skipped": run.skipped,
         "runners": [
             {
                 "position": runner.position,
