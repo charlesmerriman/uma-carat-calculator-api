@@ -214,10 +214,11 @@ def selector_purchases(total_users, engaged_users):
         # order stands in for "oldest campaign first"; within a campaign, the
         # admin's own product order.
         .order_by("anniversary_event_id", "order", "id")
-        .values("name", "anniversary_event__name", "buyers", "picked")
+        .values("id", "name", "anniversary_event__name", "buyers", "picked")
     )
     rows = [
         {
+            "id": product["id"],
             "campaign": product["anniversary_event__name"],
             "label": product["name"],
             "count": product["buyers"],

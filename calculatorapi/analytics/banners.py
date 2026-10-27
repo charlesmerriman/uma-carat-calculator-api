@@ -325,5 +325,5 @@ def favourite_umas():
                   as_picture=Count("user", distinct=True, filter=Q(position=0)))
         .order_by("-people", "-as_picture", "uma__name")[:FAVOURITES_LIMIT]
     )
-    return [{"uma": row["uma__name"], "people": row["people"],
+    return [{"uma": row["uma__name"], "uma_id": row["uma_id"], "people": row["people"],
              "as_picture": row["as_picture"]} for row in rows]

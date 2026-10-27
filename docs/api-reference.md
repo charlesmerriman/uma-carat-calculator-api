@@ -978,7 +978,8 @@ event or kind (`cm` / `loh`). Two queries on a miss.
 ```
 
 `posts` is every post counted (an uma's share is out of it: a team never repeats a
-character), `decks` every member (a card's share). A card counts once per member's deck, the
+character), `decks` every member (a card's share). The counting is `views/rankings.count_teams`,
+shared with the PvP tab. A card counts once per member's deck, the
 borrowed card (slot 6) included and counted apart in `borrows`; placeholder cards never
 count. Most first, ties by id.
 
@@ -1002,6 +1003,43 @@ the client's `useRankingsPullPlans`) until the owner says Raptive approved; 403 
 pulls. Staff are left out and only active plans count; an implausible pull count still
 counts its planner but not the figures. Every banner anyone plans is sent, ended ones
 included (`status`).
+
+### `GET /rankings/pvp/<kind>/<event_id>`
+
+The Rankings page's PvP tab for one event, same gate and hourly cache as every
+`/rankings/*` route; 404 for an unknown event. `built` counts **every saved team**
+(`PvpTeam`, posted or not, staff out) by the gallery route's rule (`count_teams`: an uma
+once per team, a card once per member's deck, borrows apart, placeholders never), with
+`teams` in place of `posts`. `runs` totals CM Runs per uma and strategy: a runner ran every
+race of her ticket that has a result and won those whose winner is her spot; skipped
+tickets and staff never count. Four queries on a miss.
+
+```json
+{ "generated_at": "...",
+  "built": {"teams": 1350, "decks": 4050, "umas": [{"uma": 41, "teams": 394, "styles": {"pace": 233}}],
+            "cards": [{"card": 12, "decks": 900, "borrows": 30}]},
+  "runs": {"players": 210, "races": 4200, "min_races": 20,
+           "rows": [{"uma": 41, "style": "pace", "races": 600, "wins": 190}]} }
+```
+
+`min_races` is the floor under which the client shows no win rate.
+
+### `GET /rankings/players`
+
+The Rankings page's Players tab, same gate and cache: the admin analytics among engaged
+accounts, staff out. `favourites` (uma id, people), `ranks` (Team Trials and club rank:
+people per rank among those who set one, no "Not set" row), `income` (people with each
+income option on, of `engaged`), `selectors` (buyers, how many picked, and the top five
+picks per campaign selector, each `{"uma": id}` or `{"card": id}` with `people`).
+
+```json
+{ "generated_at": "...", "engaged": 16000,
+  "favourites": [{"uma": 41, "people": 900}],
+  "ranks": [{"label": "Team Trials", "people": 12000, "rows": [{"name": "Class 6", "people": 4560}]}],
+  "income": [{"key": "daily_carat", "label": "Daily Carat Pack", "people": 6700}],
+  "selectors": [{"campaign": "1st Anniversary", "label": "SSR Uma Selector", "buyers": 800, "picked": 600,
+                 "top": [{"uma": 41, "people": 120}]}] }
+```
 
 ### `/pvp-teams`
 
