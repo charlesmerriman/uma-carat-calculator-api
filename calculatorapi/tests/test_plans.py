@@ -329,7 +329,7 @@ class PlanRouteTests(CalculatorTestCase):
         main.refresh_from_db()
         self.assertFalse(main.is_active)
         # And /calculator-data now opens on it.
-        self.assertEqual(self.client.get("/calculator-data").data["active_plan_id"], other.id)
+        self.assertEqual(self.client.get("/calculator-data").json()["active_plan_id"], other.id)
 
     def test_is_active_false_is_ignored(self):
         main = plans.get_active_plan(self.user)
@@ -374,11 +374,11 @@ class PlanScopedSaveTests(CalculatorTestCase):
 
     def test_get_serves_the_active_plans_rows_and_the_plan_list(self):
         res = self.client.get("/calculator-data")
-        self.assertEqual(res.data["active_plan_id"], self.plan_a.id)
-        self.assertEqual([p["name"] for p in res.data["user_plans"]],
+        self.assertEqual(res.json()["active_plan_id"], self.plan_a.id)
+        self.assertEqual([p["name"] for p in res.json()["user_plans"]],
                          [DEFAULT_PLAN_NAME, "B"])
         self.assertEqual(
-            [row["id"] for row in res.data["user_planned_banner_data"]],
+            [row["id"] for row in res.json()["user_planned_banner_data"]],
             [self.row_a.id],
         )
 
@@ -488,8 +488,8 @@ class PlanScopedSaveTests(CalculatorTestCase):
 
         res = self.client.get("/calculator-data")
 
-        self.assertEqual(res.data["active_plan_id"], self.plan_b.id)
-        self.assertEqual(len(res.data["user_planned_purchase_data"]), 1)
+        self.assertEqual(res.json()["active_plan_id"], self.plan_b.id)
+        self.assertEqual(len(res.json()["user_planned_purchase_data"]), 1)
         self.assertEqual(UserPlannedPurchase.objects.filter(user=self.user).count(), 1)
 
     def test_saving_rows_stamps_the_plan(self):
@@ -736,7 +736,7 @@ class IncomeProfileTests(CalculatorTestCase):
         res = self.client.get(f"/plans/{self.plan.id}")
         self.assertEqual(res.data["user_stats_data"]["current_carat"], 123)
         # The whitelist is identical for both blocks.
-        own = self.client.get("/calculator-data").data["user_stats_data"]
+        own = self.client.get("/calculator-data").json()["user_stats_data"]
         self.assertEqual(set(own.keys()), set(res.data["user_stats_data"].keys()))
 
     def test_calculator_data_serves_the_active_plans_target(self):
@@ -746,8 +746,8 @@ class IncomeProfileTests(CalculatorTestCase):
 
         res = self.client.get("/calculator-data")
 
-        self.assertEqual(res.data["user_stats_data"]["current_carat"], 123)
-        self.assertEqual(res.data["user_plans"][0]["income_profile_id"],
+        self.assertEqual(res.json()["user_stats_data"]["current_carat"], 123)
+        self.assertEqual(res.json()["user_plans"][0]["income_profile_id"],
                          self.plan.income_profile_id)
 
     def test_stats_save_lands_on_the_plans_target_and_nowhere_else(self):
@@ -870,7 +870,7 @@ class ProfilePurchaseTests(CalculatorTestCase):
 
         res = self.client.get("/calculator-data")
         self.assertEqual(res.status_code, 200)
-        rows = res.data["user_planned_purchase_data"]
+        rows = res.json()["user_planned_purchase_data"]
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0]["quantity"], 7)
 
@@ -879,7 +879,7 @@ class ProfilePurchaseTests(CalculatorTestCase):
         plans.set_active_plan(other)
         res = self.client.get("/calculator-data")
         self.assertEqual(
-            self._product_ids(res.data["user_planned_purchase_data"]),
+            self._product_ids(res.json()["user_planned_purchase_data"]),
             sorted([self.pack.id, self.selector.id]),
         )
 

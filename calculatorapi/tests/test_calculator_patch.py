@@ -199,7 +199,7 @@ class CalculatorPatchTests(CalculatorTestCase):  # pylint: disable=too-many-publ
 
         res = self.client.get('/calculator-data')
         self.assertEqual(
-            res.data['user_stats_data']['skipped_race_events'],
+            res.json()['user_stats_data']['skipped_race_events'],
             {'champions_meeting': [3, 12]},
         )
 
@@ -636,8 +636,8 @@ class UserPlannedPurchaseTests(CalculatorTestCase):
         self._patch([{'product': self.pack.id, 'quantity': 1}])
 
         res = self.client.get('/calculator-data')
-        self.assertEqual(len(res.data['user_planned_purchase_data']), 1)
-        self.assertEqual(res.data['user_planned_purchase_data'][0]['quantity'], 1)
+        self.assertEqual(len(res.json()['user_planned_purchase_data']), 1)
+        self.assertEqual(res.json()['user_planned_purchase_data'][0]['quantity'], 1)
 
 
 class ReservedCopiesTests(CalculatorTestCase):
@@ -673,7 +673,7 @@ class ReservedCopiesTests(CalculatorTestCase):
         self.assertEqual(planned.reserved_copies, 2)
 
         res = self.client.get('/calculator-data')
-        self.assertEqual(res.data['user_planned_banner_data'][0]['reserved_copies'], 2)
+        self.assertEqual(res.json()['user_planned_banner_data'][0]['reserved_copies'], 2)
 
 
 class PlannedBannerNoteTests(CalculatorTestCase):
@@ -708,7 +708,7 @@ class PlannedBannerNoteTests(CalculatorTestCase):
 
         res = self.client.get('/calculator-data')
         self.assertEqual(
-            res.data['user_planned_banner_data'][0]['note'],
+            res.json()['user_planned_banner_data'][0]['note'],
             'skip if the selector covers her',
         )
 
@@ -782,7 +782,7 @@ class PlannedBannerOddsCardTests(CalculatorTestCase):
         })
         self.assertEqual(res.status_code, 200)
 
-        row = self.client.get('/calculator-data').data['user_planned_banner_data'][0]
+        row = self.client.get('/calculator-data').json()['user_planned_banner_data'][0]
         self.assertEqual((row['primary_card'], row['second_card']), (7, 9))
 
     def test_a_body_without_them_keeps_the_stored_ones(self):
@@ -833,7 +833,7 @@ class PlannedBannerOddsCardTests(CalculatorTestCase):
             'primary_target': 5,
         })
         self.assertEqual(res.status_code, 200)
-        row = self.client.get('/calculator-data').data['user_planned_banner_data'][0]
+        row = self.client.get('/calculator-data').json()['user_planned_banner_data'][0]
         self.assertEqual(row['primary_target'], 5)
 
     def test_primary_target_null_restores_the_default(self):
@@ -877,7 +877,7 @@ class PlannedBannerRowOptionsTests(CalculatorTestCase):
     def test_defaults_are_the_behaviour_from_before_the_options(self):
         res = self._patch({'banner_uma': self.banner.id, 'number_of_pulls': 50})
         self.assertEqual(res.status_code, 200)
-        row = self.client.get('/calculator-data').data['user_planned_banner_data'][0]
+        row = self.client.get('/calculator-data').json()['user_planned_banner_data'][0]
         self.assertIsNone(row['tickets_to_use'])
         self.assertIsNone(row['paid_carat_use'])
         self.assertEqual(row['pulls_already_made'], 0)
