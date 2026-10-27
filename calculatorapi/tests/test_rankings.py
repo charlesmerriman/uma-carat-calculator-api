@@ -10,10 +10,12 @@ from rest_framework.test import APIClient
 
 from calculatorapi.models import (
     GalleryPost, GalleryPostKind, PvpDeck, PvpDeckSlot, PvpGuide, PvpUmaRecommendation, SupportCard, Uma,
+    UserPlannedBanner,
 )
 from calculatorapi.tests.base import CalculatorTestCase
 from calculatorapi.tests.factories import (
-    auth_client, make_champions_meeting, make_league_of_heroes, make_scenario, make_timeline, make_user,
+    auth_client, make_champions_meeting, make_league_of_heroes, make_scenario, make_step_up_banner, make_timeline,
+    make_uma_banner, make_user,
 )
 from calculatorapi.views.rankings import deck_tier, guides_payload
 
@@ -229,3 +231,43 @@ class GalleryRankingsTests(CalculatorTestCase):  # pylint: disable=too-many-inst
         self.assertEqual(plain.get(self.url).status_code, 403)
         self.assertEqual(self.client.get("/rankings/gallery/cm/9999").status_code, 404)
         self.assertEqual(self.client.get(f"/rankings/gallery/xx/{self.cm.id}").status_code, 404)
+
+
+class PullPlansTests(CalculatorTestCase):
+    """GET /rankings/pull-plans: the admin's banner tables with a median, behind
+    the Raptive gate (guide editors only, views/rankings.sees_pull_plans)."""
+
+    URL = "/rankings/pull-plans"
+
+    def setUp(self):
+        self.uma = make_uma_banner(name="Gentildonna")
+        self.step_up = make_step_up_banner(name="Anniversary Step-Up")
+        for name, pulls in (("a", 100), ("b", 150), ("c", 1000)):
+            UserPlannedBanner.objects.create(user=make_user(name), banner_uma=self.uma, number_of_pulls=pulls)
+        UserPlannedBanner.objects.create(user=make_user("d"), banner_step_up=self.step_up, number_of_pulls=4)
+        UserPlannedBanner.objects.create(
+            user=make_user("staffer", is_staff=True), banner_uma=self.uma, number_of_pulls=5,
+        )
+        self.editor, _ = auth_client(make_user("editor", is_staff=True))
+
+    def test_banners_with_a_median_and_steps_kept_apart(self):
+        body = self.editor.get(self.URL).json()
+        uma = next(row for row in body["banners"] if row["type"] == "uma")
+        self.assertEqual(
+            (uma["id"], uma["name"], uma["unit"], uma["planners"], uma["total"], uma["median"]),
+            (self.uma.id, "Gentildonna", "pulls", 3, 1250, 150),
+        )
+        self.assertAlmostEqual(uma["average"], 416.7)
+        step_up = next(row for row in body["banners"] if row["type"] == "step_up")
+        self.assertEqual((step_up["unit"], step_up["total"], step_up["median"]), ("steps", 4, 4))
+        self.assertIn("demand", body)
+        self.assertIn("generated_at", body)
+
+    def test_behind_the_raptive_gate(self):
+        tester = make_user("tester")
+        tester.early_access = True
+        tester.save(update_fields=["early_access"])
+        for user in (make_user("plain"), tester):
+            client, _ = auth_client(user)
+            self.assertEqual(client.get(self.URL).status_code, 403, user.username)
+        self.assertEqual(APIClient().get(self.URL).status_code, 401)
