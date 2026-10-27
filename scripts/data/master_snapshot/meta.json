@@ -1,6 +1,6 @@
 {
  "region": "global",
- "extracted_at": "2026-10-23T18:27:56+00:00",
+ "extracted_at": "2026-10-27T06:20:30+00:00",
  "mdb_size_bytes": 17334272,
  "mdb_modified_at": "2026-10-22T18:46:29+00:00",
  "counts": {
@@ -13,6 +13,7 @@
   "evolutions_scenario": 0,
   "evolutions_succession": 0,
   "skill_text_ahead": 381,
-  "evolution_condition_text": 781
+  "evolution_condition_text": 781,
+  "sparks": 1205
  }
 }

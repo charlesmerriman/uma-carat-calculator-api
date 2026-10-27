@@ -1,0 +1,7232 @@
+[
+ {
+  "id": 101,
+  "kind": "stat",
+  "stars": 1,
+  "name": "Speed"
+ },
+ {
+  "id": 102,
+  "kind": "stat",
+  "stars": 2,
+  "name": "Speed"
+ },
+ {
+  "id": 103,
+  "kind": "stat",
+  "stars": 3,
+  "name": "Speed"
+ },
+ {
+  "id": 201,
+  "kind": "stat",
+  "stars": 1,
+  "name": "Stamina"
+ },
+ {
+  "id": 202,
+  "kind": "stat",
+  "stars": 2,
+  "name": "Stamina"
+ },
+ {
+  "id": 203,
+  "kind": "stat",
+  "stars": 3,
+  "name": "Stamina"
+ },
+ {
+  "id": 301,
+  "kind": "stat",
+  "stars": 1,
+  "name": "Power"
+ },
+ {
+  "id": 302,
+  "kind": "stat",
+  "stars": 2,
+  "name": "Power"
+ },
+ {
+  "id": 303,
+  "kind": "stat",
+  "stars": 3,
+  "name": "Power"
+ },
+ {
+  "id": 401,
+  "kind": "stat",
+  "stars": 1,
+  "name": "Guts"
+ },
+ {
+  "id": 402,
+  "kind": "stat",
+  "stars": 2,
+  "name": "Guts"
+ },
+ {
+  "id": 403,
+  "kind": "stat",
+  "stars": 3,
+  "name": "Guts"
+ },
+ {
+  "id": 501,
+  "kind": "stat",
+  "stars": 1,
+  "name": "Wit"
+ },
+ {
+  "id": 502,
+  "kind": "stat",
+  "stars": 2,
+  "name": "Wit"
+ },
+ {
+  "id": 503,
+  "kind": "stat",
+  "stars": 3,
+  "name": "Wit"
+ },
+ {
+  "id": 1101,
+  "kind": "aptitude",
+  "stars": 1,
+  "name": "Turf"
+ },
+ {
+  "id": 1102,
+  "kind": "aptitude",
+  "stars": 2,
+  "name": "Turf"
+ },
+ {
+  "id": 1103,
+  "kind": "aptitude",
+  "stars": 3,
+  "name": "Turf"
+ },
+ {
+  "id": 1201,
+  "kind": "aptitude",
+  "stars": 1,
+  "name": "Dirt"
+ },
+ {
+  "id": 1202,
+  "kind": "aptitude",
+  "stars": 2,
+  "name": "Dirt"
+ },
+ {
+  "id": 1203,
+  "kind": "aptitude",
+  "stars": 3,
+  "name": "Dirt"
+ },
+ {
+  "id": 2101,
+  "kind": "aptitude",
+  "stars": 1,
+  "name": "Front Runner"
+ },
+ {
+  "id": 2102,
+  "kind": "aptitude",
+  "stars": 2,
+  "name": "Front Runner"
+ },
+ {
+  "id": 2103,
+  "kind": "aptitude",
+  "stars": 3,
+  "name": "Front Runner"
+ },
+ {
+  "id": 2201,
+  "kind": "aptitude",
+  "stars": 1,
+  "name": "Pace Chaser"
+ },
+ {
+  "id": 2202,
+  "kind": "aptitude",
+  "stars": 2,
+  "name": "Pace Chaser"
+ },
+ {
+  "id": 2203,
+  "kind": "aptitude",
+  "stars": 3,
+  "name": "Pace Chaser"
+ },
+ {
+  "id": 2301,
+  "kind": "aptitude",
+  "stars": 1,
+  "name": "Late Surger"
+ },
+ {
+  "id": 2302,
+  "kind": "aptitude",
+  "stars": 2,
+  "name": "Late Surger"
+ },
+ {
+  "id": 2303,
+  "kind": "aptitude",
+  "stars": 3,
+  "name": "Late Surger"
+ },
+ {
+  "id": 2401,
+  "kind": "aptitude",
+  "stars": 1,
+  "name": "End Closer"
+ },
+ {
+  "id": 2402,
+  "kind": "aptitude",
+  "stars": 2,
+  "name": "End Closer"
+ },
+ {
+  "id": 2403,
+  "kind": "aptitude",
+  "stars": 3,
+  "name": "End Closer"
+ },
+ {
+  "id": 3101,
+  "kind": "aptitude",
+  "stars": 1,
+  "name": "Sprint"
+ },
+ {
+  "id": 3102,
+  "kind": "aptitude",
+  "stars": 2,
+  "name": "Sprint"
+ },
+ {
+  "id": 3103,
+  "kind": "aptitude",
+  "stars": 3,
+  "name": "Sprint"
+ },
+ {
+  "id": 3201,
+  "kind": "aptitude",
+  "stars": 1,
+  "name": "Mile"
+ },
+ {
+  "id": 3202,
+  "kind": "aptitude",
+  "stars": 2,
+  "name": "Mile"
+ },
+ {
+  "id": 3203,
+  "kind": "aptitude",
+  "stars": 3,
+  "name": "Mile"
+ },
+ {
+  "id": 3301,
+  "kind": "aptitude",
+  "stars": 1,
+  "name": "Medium"
+ },
+ {
+  "id": 3302,
+  "kind": "aptitude",
+  "stars": 2,
+  "name": "Medium"
+ },
+ {
+  "id": 3303,
+  "kind": "aptitude",
+  "stars": 3,
+  "name": "Medium"
+ },
+ {
+  "id": 3401,
+  "kind": "aptitude",
+  "stars": 1,
+  "name": "Long"
+ },
+ {
+  "id": 3402,
+  "kind": "aptitude",
+  "stars": 2,
+  "name": "Long"
+ },
+ {
+  "id": 3403,
+  "kind": "aptitude",
+  "stars": 3,
+  "name": "Long"
+ },
+ {
+  "id": 1000101,
+  "kind": "race",
+  "stars": 1,
+  "name": "February S."
+ },
+ {
+  "id": 1000102,
+  "kind": "race",
+  "stars": 2,
+  "name": "February S."
+ },
+ {
+  "id": 1000103,
+  "kind": "race",
+  "stars": 3,
+  "name": "February S."
+ },
+ {
+  "id": 1000201,
+  "kind": "race",
+  "stars": 1,
+  "name": "Takamatsunomiya Kinen"
+ },
+ {
+  "id": 1000202,
+  "kind": "race",
+  "stars": 2,
+  "name": "Takamatsunomiya Kinen"
+ },
+ {
+  "id": 1000203,
+  "kind": "race",
+  "stars": 3,
+  "name": "Takamatsunomiya Kinen"
+ },
+ {
+  "id": 1000301,
+  "kind": "race",
+  "stars": 1,
+  "name": "Osaka Hai"
+ },
+ {
+  "id": 1000302,
+  "kind": "race",
+  "stars": 2,
+  "name": "Osaka Hai"
+ },
+ {
+  "id": 1000303,
+  "kind": "race",
+  "stars": 3,
+  "name": "Osaka Hai"
+ },
+ {
+  "id": 1000401,
+  "kind": "race",
+  "stars": 1,
+  "name": "Oka Sho"
+ },
+ {
+  "id": 1000402,
+  "kind": "race",
+  "stars": 2,
+  "name": "Oka Sho"
+ },
+ {
+  "id": 1000403,
+  "kind": "race",
+  "stars": 3,
+  "name": "Oka Sho"
+ },
+ {
+  "id": 1000501,
+  "kind": "race",
+  "stars": 1,
+  "name": "Satsuki Sho"
+ },
+ {
+  "id": 1000502,
+  "kind": "race",
+  "stars": 2,
+  "name": "Satsuki Sho"
+ },
+ {
+  "id": 1000503,
+  "kind": "race",
+  "stars": 3,
+  "name": "Satsuki Sho"
+ },
+ {
+  "id": 1000601,
+  "kind": "race",
+  "stars": 1,
+  "name": "Tenno Sho (Spring)"
+ },
+ {
+  "id": 1000602,
+  "kind": "race",
+  "stars": 2,
+  "name": "Tenno Sho (Spring)"
+ },
+ {
+  "id": 1000603,
+  "kind": "race",
+  "stars": 3,
+  "name": "Tenno Sho (Spring)"
+ },
+ {
+  "id": 1000701,
+  "kind": "race",
+  "stars": 1,
+  "name": "NHK Mile C."
+ },
+ {
+  "id": 1000702,
+  "kind": "race",
+  "stars": 2,
+  "name": "NHK Mile C."
+ },
+ {
+  "id": 1000703,
+  "kind": "race",
+  "stars": 3,
+  "name": "NHK Mile C."
+ },
+ {
+  "id": 1000801,
+  "kind": "race",
+  "stars": 1,
+  "name": "Victoria Mile"
+ },
+ {
+  "id": 1000802,
+  "kind": "race",
+  "stars": 2,
+  "name": "Victoria Mile"
+ },
+ {
+  "id": 1000803,
+  "kind": "race",
+  "stars": 3,
+  "name": "Victoria Mile"
+ },
+ {
+  "id": 1000901,
+  "kind": "race",
+  "stars": 1,
+  "name": "Japanese Oaks"
+ },
+ {
+  "id": 1000902,
+  "kind": "race",
+  "stars": 2,
+  "name": "Japanese Oaks"
+ },
+ {
+  "id": 1000903,
+  "kind": "race",
+  "stars": 3,
+  "name": "Japanese Oaks"
+ },
+ {
+  "id": 1001001,
+  "kind": "race",
+  "stars": 1,
+  "name": "Japanese Derby"
+ },
+ {
+  "id": 1001002,
+  "kind": "race",
+  "stars": 2,
+  "name": "Japanese Derby"
+ },
+ {
+  "id": 1001003,
+  "kind": "race",
+  "stars": 3,
+  "name": "Japanese Derby"
+ },
+ {
+  "id": 1001101,
+  "kind": "race",
+  "stars": 1,
+  "name": "Yasuda Kinen"
+ },
+ {
+  "id": 1001102,
+  "kind": "race",
+  "stars": 2,
+  "name": "Yasuda Kinen"
+ },
+ {
+  "id": 1001103,
+  "kind": "race",
+  "stars": 3,
+  "name": "Yasuda Kinen"
+ },
+ {
+  "id": 1001201,
+  "kind": "race",
+  "stars": 1,
+  "name": "Takarazuka Kinen"
+ },
+ {
+  "id": 1001202,
+  "kind": "race",
+  "stars": 2,
+  "name": "Takarazuka Kinen"
+ },
+ {
+  "id": 1001203,
+  "kind": "race",
+  "stars": 3,
+  "name": "Takarazuka Kinen"
+ },
+ {
+  "id": 1001301,
+  "kind": "race",
+  "stars": 1,
+  "name": "Sprinters S."
+ },
+ {
+  "id": 1001302,
+  "kind": "race",
+  "stars": 2,
+  "name": "Sprinters S."
+ },
+ {
+  "id": 1001303,
+  "kind": "race",
+  "stars": 3,
+  "name": "Sprinters S."
+ },
+ {
+  "id": 1001401,
+  "kind": "race",
+  "stars": 1,
+  "name": "Shuka Sho"
+ },
+ {
+  "id": 1001402,
+  "kind": "race",
+  "stars": 2,
+  "name": "Shuka Sho"
+ },
+ {
+  "id": 1001403,
+  "kind": "race",
+  "stars": 3,
+  "name": "Shuka Sho"
+ },
+ {
+  "id": 1001501,
+  "kind": "race",
+  "stars": 1,
+  "name": "Kikuka Sho"
+ },
+ {
+  "id": 1001502,
+  "kind": "race",
+  "stars": 2,
+  "name": "Kikuka Sho"
+ },
+ {
+  "id": 1001503,
+  "kind": "race",
+  "stars": 3,
+  "name": "Kikuka Sho"
+ },
+ {
+  "id": 1001601,
+  "kind": "race",
+  "stars": 1,
+  "name": "Tenno Sho (Autumn)"
+ },
+ {
+  "id": 1001602,
+  "kind": "race",
+  "stars": 2,
+  "name": "Tenno Sho (Autumn)"
+ },
+ {
+  "id": 1001603,
+  "kind": "race",
+  "stars": 3,
+  "name": "Tenno Sho (Autumn)"
+ },
+ {
+  "id": 1001701,
+  "kind": "race",
+  "stars": 1,
+  "name": "Queen Elizabeth II Cup"
+ },
+ {
+  "id": 1001702,
+  "kind": "race",
+  "stars": 2,
+  "name": "Queen Elizabeth II Cup"
+ },
+ {
+  "id": 1001703,
+  "kind": "race",
+  "stars": 3,
+  "name": "Queen Elizabeth II Cup"
+ },
+ {
+  "id": 1001801,
+  "kind": "race",
+  "stars": 1,
+  "name": "Mile Ch."
+ },
+ {
+  "id": 1001802,
+  "kind": "race",
+  "stars": 2,
+  "name": "Mile Ch."
+ },
+ {
+  "id": 1001803,
+  "kind": "race",
+  "stars": 3,
+  "name": "Mile Ch."
+ },
+ {
+  "id": 1001901,
+  "kind": "race",
+  "stars": 1,
+  "name": "Japan C."
+ },
+ {
+  "id": 1001902,
+  "kind": "race",
+  "stars": 2,
+  "name": "Japan C."
+ },
+ {
+  "id": 1001903,
+  "kind": "race",
+  "stars": 3,
+  "name": "Japan C."
+ },
+ {
+  "id": 1002001,
+  "kind": "race",
+  "stars": 1,
+  "name": "Champions C."
+ },
+ {
+  "id": 1002002,
+  "kind": "race",
+  "stars": 2,
+  "name": "Champions C."
+ },
+ {
+  "id": 1002003,
+  "kind": "race",
+  "stars": 3,
+  "name": "Champions C."
+ },
+ {
+  "id": 1002101,
+  "kind": "race",
+  "stars": 1,
+  "name": "Hanshin J.F."
+ },
+ {
+  "id": 1002102,
+  "kind": "race",
+  "stars": 2,
+  "name": "Hanshin J.F."
+ },
+ {
+  "id": 1002103,
+  "kind": "race",
+  "stars": 3,
+  "name": "Hanshin J.F."
+ },
+ {
+  "id": 1002201,
+  "kind": "race",
+  "stars": 1,
+  "name": "Asahi Hai F.S."
+ },
+ {
+  "id": 1002202,
+  "kind": "race",
+  "stars": 2,
+  "name": "Asahi Hai F.S."
+ },
+ {
+  "id": 1002203,
+  "kind": "race",
+  "stars": 3,
+  "name": "Asahi Hai F.S."
+ },
+ {
+  "id": 1002301,
+  "kind": "race",
+  "stars": 1,
+  "name": "Arima Kinen"
+ },
+ {
+  "id": 1002302,
+  "kind": "race",
+  "stars": 2,
+  "name": "Arima Kinen"
+ },
+ {
+  "id": 1002303,
+  "kind": "race",
+  "stars": 3,
+  "name": "Arima Kinen"
+ },
+ {
+  "id": 1002401,
+  "kind": "race",
+  "stars": 1,
+  "name": "Hopeful S."
+ },
+ {
+  "id": 1002402,
+  "kind": "race",
+  "stars": 2,
+  "name": "Hopeful S."
+ },
+ {
+  "id": 1002403,
+  "kind": "race",
+  "stars": 3,
+  "name": "Hopeful S."
+ },
+ {
+  "id": 1002501,
+  "kind": "race",
+  "stars": 1,
+  "name": "Teio Sho"
+ },
+ {
+  "id": 1002502,
+  "kind": "race",
+  "stars": 2,
+  "name": "Teio Sho"
+ },
+ {
+  "id": 1002503,
+  "kind": "race",
+  "stars": 3,
+  "name": "Teio Sho"
+ },
+ {
+  "id": 1002601,
+  "kind": "race",
+  "stars": 1,
+  "name": "J.D. Derby"
+ },
+ {
+  "id": 1002602,
+  "kind": "race",
+  "stars": 2,
+  "name": "J.D. Derby"
+ },
+ {
+  "id": 1002603,
+  "kind": "race",
+  "stars": 3,
+  "name": "J.D. Derby"
+ },
+ {
+  "id": 1002701,
+  "kind": "race",
+  "stars": 1,
+  "name": "JBC L. Classic"
+ },
+ {
+  "id": 1002702,
+  "kind": "race",
+  "stars": 2,
+  "name": "JBC L. Classic"
+ },
+ {
+  "id": 1002703,
+  "kind": "race",
+  "stars": 3,
+  "name": "JBC L. Classic"
+ },
+ {
+  "id": 1002801,
+  "kind": "race",
+  "stars": 1,
+  "name": "JBC Sprint"
+ },
+ {
+  "id": 1002802,
+  "kind": "race",
+  "stars": 2,
+  "name": "JBC Sprint"
+ },
+ {
+  "id": 1002803,
+  "kind": "race",
+  "stars": 3,
+  "name": "JBC Sprint"
+ },
+ {
+  "id": 1002901,
+  "kind": "race",
+  "stars": 1,
+  "name": "JBC Classic"
+ },
+ {
+  "id": 1002902,
+  "kind": "race",
+  "stars": 2,
+  "name": "JBC Classic"
+ },
+ {
+  "id": 1002903,
+  "kind": "race",
+  "stars": 3,
+  "name": "JBC Classic"
+ },
+ {
+  "id": 1003001,
+  "kind": "race",
+  "stars": 1,
+  "name": "Tokyo Daishoten"
+ },
+ {
+  "id": 1003002,
+  "kind": "race",
+  "stars": 2,
+  "name": "Tokyo Daishoten"
+ },
+ {
+  "id": 1003003,
+  "kind": "race",
+  "stars": 3,
+  "name": "Tokyo Daishoten"
+ },
+ {
+  "id": 1003101,
+  "kind": "race",
+  "stars": 1,
+  "name": "M.C. Nambu Hai"
+ },
+ {
+  "id": 1003102,
+  "kind": "race",
+  "stars": 2,
+  "name": "M.C. Nambu Hai"
+ },
+ {
+  "id": 1003103,
+  "kind": "race",
+  "stars": 3,
+  "name": "M.C. Nambu Hai"
+ },
+ {
+  "id": 1003201,
+  "kind": "race",
+  "stars": 1,
+  "name": "Kashiwa Kinen"
+ },
+ {
+  "id": 1003202,
+  "kind": "race",
+  "stars": 2,
+  "name": "Kashiwa Kinen"
+ },
+ {
+  "id": 1003203,
+  "kind": "race",
+  "stars": 3,
+  "name": "Kashiwa Kinen"
+ },
+ {
+  "id": 1003301,
+  "kind": "race",
+  "stars": 1,
+  "name": "Zen-Nippon Junior Yushun"
+ },
+ {
+  "id": 1003302,
+  "kind": "race",
+  "stars": 2,
+  "name": "Zen-Nippon Junior Yushun"
+ },
+ {
+  "id": 1003303,
+  "kind": "race",
+  "stars": 3,
+  "name": "Zen-Nippon Junior Yushun"
+ },
+ {
+  "id": 1003401,
+  "kind": "race",
+  "stars": 1,
+  "name": "Kawasaki Kinen"
+ },
+ {
+  "id": 1003402,
+  "kind": "race",
+  "stars": 2,
+  "name": "Kawasaki Kinen"
+ },
+ {
+  "id": 1003403,
+  "kind": "race",
+  "stars": 3,
+  "name": "Kawasaki Kinen"
+ },
+ {
+  "id": 2000101,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Right-Handed ○"
+ },
+ {
+  "id": 2000102,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Right-Handed ○"
+ },
+ {
+  "id": 2000103,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Right-Handed ○"
+ },
+ {
+  "id": 2000201,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Left-Handed ○"
+ },
+ {
+  "id": 2000202,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Left-Handed ○"
+ },
+ {
+  "id": 2000203,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Left-Handed ○"
+ },
+ {
+  "id": 2000301,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Tokyo Racecourse ○"
+ },
+ {
+  "id": 2000302,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Tokyo Racecourse ○"
+ },
+ {
+  "id": 2000303,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Tokyo Racecourse ○"
+ },
+ {
+  "id": 2000401,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Nakayama Racecourse ○"
+ },
+ {
+  "id": 2000402,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Nakayama Racecourse ○"
+ },
+ {
+  "id": 2000403,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Nakayama Racecourse ○"
+ },
+ {
+  "id": 2000501,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Hanshin Racecourse ○"
+ },
+ {
+  "id": 2000502,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Hanshin Racecourse ○"
+ },
+ {
+  "id": 2000503,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Hanshin Racecourse ○"
+ },
+ {
+  "id": 2000601,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Kyoto Racecourse ○"
+ },
+ {
+  "id": 2000602,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Kyoto Racecourse ○"
+ },
+ {
+  "id": 2000603,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Kyoto Racecourse ○"
+ },
+ {
+  "id": 2000701,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Chukyo Racecourse ○"
+ },
+ {
+  "id": 2000702,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Chukyo Racecourse ○"
+ },
+ {
+  "id": 2000703,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Chukyo Racecourse ○"
+ },
+ {
+  "id": 2000801,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Sapporo Racecourse ○"
+ },
+ {
+  "id": 2000802,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Sapporo Racecourse ○"
+ },
+ {
+  "id": 2000803,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Sapporo Racecourse ○"
+ },
+ {
+  "id": 2000901,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Hakodate Racecourse ○"
+ },
+ {
+  "id": 2000902,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Hakodate Racecourse ○"
+ },
+ {
+  "id": 2000903,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Hakodate Racecourse ○"
+ },
+ {
+  "id": 2001001,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Fukushima Racecourse ○"
+ },
+ {
+  "id": 2001002,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Fukushima Racecourse ○"
+ },
+ {
+  "id": 2001003,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Fukushima Racecourse ○"
+ },
+ {
+  "id": 2001101,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Niigata Racecourse ○"
+ },
+ {
+  "id": 2001102,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Niigata Racecourse ○"
+ },
+ {
+  "id": 2001103,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Niigata Racecourse ○"
+ },
+ {
+  "id": 2001201,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Kokura Racecourse ○"
+ },
+ {
+  "id": 2001202,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Kokura Racecourse ○"
+ },
+ {
+  "id": 2001203,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Kokura Racecourse ○"
+ },
+ {
+  "id": 2001301,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Standard Distance ○"
+ },
+ {
+  "id": 2001302,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Standard Distance ○"
+ },
+ {
+  "id": 2001303,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Standard Distance ○"
+ },
+ {
+  "id": 2001401,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Non-Standard Distance ○"
+ },
+ {
+  "id": 2001402,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Non-Standard Distance ○"
+ },
+ {
+  "id": 2001403,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Non-Standard Distance ○"
+ },
+ {
+  "id": 2001501,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Firm Conditions ○"
+ },
+ {
+  "id": 2001502,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Firm Conditions ○"
+ },
+ {
+  "id": 2001503,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Firm Conditions ○"
+ },
+ {
+  "id": 2001601,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Wet Conditions ○"
+ },
+ {
+  "id": 2001602,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Wet Conditions ○"
+ },
+ {
+  "id": 2001603,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Wet Conditions ○"
+ },
+ {
+  "id": 2001701,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Spring Runner ○"
+ },
+ {
+  "id": 2001702,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Spring Runner ○"
+ },
+ {
+  "id": 2001703,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Spring Runner ○"
+ },
+ {
+  "id": 2001801,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Summer Runner ○"
+ },
+ {
+  "id": 2001802,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Summer Runner ○"
+ },
+ {
+  "id": 2001803,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Summer Runner ○"
+ },
+ {
+  "id": 2001901,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Fall Runner ○"
+ },
+ {
+  "id": 2001902,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Fall Runner ○"
+ },
+ {
+  "id": 2001903,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Fall Runner ○"
+ },
+ {
+  "id": 2002001,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Winter Runner ○"
+ },
+ {
+  "id": 2002002,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Winter Runner ○"
+ },
+ {
+  "id": 2002003,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Winter Runner ○"
+ },
+ {
+  "id": 2002101,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Sunny Days ○"
+ },
+ {
+  "id": 2002102,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Sunny Days ○"
+ },
+ {
+  "id": 2002103,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Sunny Days ○"
+ },
+ {
+  "id": 2002201,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Cloudy Days ○"
+ },
+ {
+  "id": 2002202,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Cloudy Days ○"
+ },
+ {
+  "id": 2002203,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Cloudy Days ○"
+ },
+ {
+  "id": 2002301,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Rainy Days ○"
+ },
+ {
+  "id": 2002302,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Rainy Days ○"
+ },
+ {
+  "id": 2002303,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Rainy Days ○"
+ },
+ {
+  "id": 2002401,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Snowy Days ○"
+ },
+ {
+  "id": 2002402,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Snowy Days ○"
+ },
+ {
+  "id": 2002403,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Snowy Days ○"
+ },
+ {
+  "id": 2002501,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Inner Post Proficiency ○"
+ },
+ {
+  "id": 2002502,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Inner Post Proficiency ○"
+ },
+ {
+  "id": 2002503,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Inner Post Proficiency ○"
+ },
+ {
+  "id": 2002601,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Outer Post Proficiency ○"
+ },
+ {
+  "id": 2002602,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Outer Post Proficiency ○"
+ },
+ {
+  "id": 2002603,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Outer Post Proficiency ○"
+ },
+ {
+  "id": 2002701,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Maverick ○"
+ },
+ {
+  "id": 2002702,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Maverick ○"
+ },
+ {
+  "id": 2002703,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Maverick ○"
+ },
+ {
+  "id": 2002801,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Competitive Spirit ○"
+ },
+ {
+  "id": 2002802,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Competitive Spirit ○"
+ },
+ {
+  "id": 2002803,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Competitive Spirit ○"
+ },
+ {
+  "id": 2002901,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Target in Sight ○"
+ },
+ {
+  "id": 2002902,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Target in Sight ○"
+ },
+ {
+  "id": 2002903,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Target in Sight ○"
+ },
+ {
+  "id": 2003001,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Long Shot ○"
+ },
+ {
+  "id": 2003002,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Long Shot ○"
+ },
+ {
+  "id": 2003003,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Long Shot ○"
+ },
+ {
+  "id": 2003301,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Corner Adept ○"
+ },
+ {
+  "id": 2003302,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Corner Adept ○"
+ },
+ {
+  "id": 2003303,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Corner Adept ○"
+ },
+ {
+  "id": 2003401,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Corner Acceleration ○"
+ },
+ {
+  "id": 2003402,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Corner Acceleration ○"
+ },
+ {
+  "id": 2003403,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Corner Acceleration ○"
+ },
+ {
+  "id": 2003501,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Corner Recovery ○"
+ },
+ {
+  "id": 2003502,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Corner Recovery ○"
+ },
+ {
+  "id": 2003503,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Corner Recovery ○"
+ },
+ {
+  "id": 2003601,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Straightaway Adept"
+ },
+ {
+  "id": 2003602,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Straightaway Adept"
+ },
+ {
+  "id": 2003603,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Straightaway Adept"
+ },
+ {
+  "id": 2003701,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Straightaway Acceleration"
+ },
+ {
+  "id": 2003702,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Straightaway Acceleration"
+ },
+ {
+  "id": 2003703,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Straightaway Acceleration"
+ },
+ {
+  "id": 2003801,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Straightaway Recovery"
+ },
+ {
+  "id": 2003802,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Straightaway Recovery"
+ },
+ {
+  "id": 2003803,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Straightaway Recovery"
+ },
+ {
+  "id": 2004301,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Focus"
+ },
+ {
+  "id": 2004302,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Focus"
+ },
+ {
+  "id": 2004303,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Focus"
+ },
+ {
+  "id": 2004401,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Lay Low"
+ },
+ {
+  "id": 2004402,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Lay Low"
+ },
+ {
+  "id": 2004403,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Lay Low"
+ },
+ {
+  "id": 2004501,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Prudent Positioning"
+ },
+ {
+  "id": 2004502,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Prudent Positioning"
+ },
+ {
+  "id": 2004503,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Prudent Positioning"
+ },
+ {
+  "id": 2004601,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Ramp Up"
+ },
+ {
+  "id": 2004602,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Ramp Up"
+ },
+ {
+  "id": 2004603,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Ramp Up"
+ },
+ {
+  "id": 2004701,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Pace Strategy"
+ },
+ {
+  "id": 2004702,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Pace Strategy"
+ },
+ {
+  "id": 2004703,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Pace Strategy"
+ },
+ {
+  "id": 2004801,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Calm in a Crowd"
+ },
+ {
+  "id": 2004802,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Calm in a Crowd"
+ },
+ {
+  "id": 2004803,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Calm in a Crowd"
+ },
+ {
+  "id": 2004901,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Nimble Navigator"
+ },
+ {
+  "id": 2004902,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Nimble Navigator"
+ },
+ {
+  "id": 2004903,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Nimble Navigator"
+ },
+ {
+  "id": 2005001,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Go with the Flow"
+ },
+ {
+  "id": 2005002,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Go with the Flow"
+ },
+ {
+  "id": 2005003,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Go with the Flow"
+ },
+ {
+  "id": 2005101,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Homestretch Haste"
+ },
+ {
+  "id": 2005102,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Homestretch Haste"
+ },
+ {
+  "id": 2005103,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Homestretch Haste"
+ },
+ {
+  "id": 2005301,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Early Lead"
+ },
+ {
+  "id": 2005302,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Early Lead"
+ },
+ {
+  "id": 2005303,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Early Lead"
+ },
+ {
+  "id": 2005401,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Fast-Paced"
+ },
+ {
+  "id": 2005402,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Fast-Paced"
+ },
+ {
+  "id": 2005403,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Fast-Paced"
+ },
+ {
+  "id": 2005501,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Final Push"
+ },
+ {
+  "id": 2005502,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Final Push"
+ },
+ {
+  "id": 2005503,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Final Push"
+ },
+ {
+  "id": 2005601,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Stamina to Spare"
+ },
+ {
+  "id": 2005602,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Stamina to Spare"
+ },
+ {
+  "id": 2005603,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Stamina to Spare"
+ },
+ {
+  "id": 2005701,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Preferred Position"
+ },
+ {
+  "id": 2005702,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Preferred Position"
+ },
+ {
+  "id": 2005703,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Preferred Position"
+ },
+ {
+  "id": 2005801,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Prepared to Pass"
+ },
+ {
+  "id": 2005802,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Prepared to Pass"
+ },
+ {
+  "id": 2005803,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Prepared to Pass"
+ },
+ {
+  "id": 2005901,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Position Pilfer"
+ },
+ {
+  "id": 2005902,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Position Pilfer"
+ },
+ {
+  "id": 2005903,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Position Pilfer"
+ },
+ {
+  "id": 2006001,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Slick Surge"
+ },
+ {
+  "id": 2006002,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Slick Surge"
+ },
+ {
+  "id": 2006003,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Slick Surge"
+ },
+ {
+  "id": 2006101,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Outer Swell"
+ },
+ {
+  "id": 2006102,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Outer Swell"
+ },
+ {
+  "id": 2006103,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Outer Swell"
+ },
+ {
+  "id": 2006201,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Standing By"
+ },
+ {
+  "id": 2006202,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Standing By"
+ },
+ {
+  "id": 2006203,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Standing By"
+ },
+ {
+  "id": 2006301,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Masterful Gambit"
+ },
+ {
+  "id": 2006302,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Masterful Gambit"
+ },
+ {
+  "id": 2006303,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Masterful Gambit"
+ },
+ {
+  "id": 2006401,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Straightaway Spurt"
+ },
+ {
+  "id": 2006402,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Straightaway Spurt"
+ },
+ {
+  "id": 2006403,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Straightaway Spurt"
+ },
+ {
+  "id": 2006501,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Sprinting Gear"
+ },
+ {
+  "id": 2006502,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Sprinting Gear"
+ },
+ {
+  "id": 2006503,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Sprinting Gear"
+ },
+ {
+  "id": 2006601,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Wait-and-See"
+ },
+ {
+  "id": 2006602,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Wait-and-See"
+ },
+ {
+  "id": 2006603,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Wait-and-See"
+ },
+ {
+  "id": 2006701,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Gap Closer"
+ },
+ {
+  "id": 2006702,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Gap Closer"
+ },
+ {
+  "id": 2006703,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Gap Closer"
+ },
+ {
+  "id": 2006801,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Productive Plan"
+ },
+ {
+  "id": 2006802,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Productive Plan"
+ },
+ {
+  "id": 2006803,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Productive Plan"
+ },
+ {
+  "id": 2006901,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Watchful Eye"
+ },
+ {
+  "id": 2006902,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Watchful Eye"
+ },
+ {
+  "id": 2006903,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Watchful Eye"
+ },
+ {
+  "id": 2007001,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Updrafters"
+ },
+ {
+  "id": 2007002,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Updrafters"
+ },
+ {
+  "id": 2007003,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Updrafters"
+ },
+ {
+  "id": 2007101,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Rosy Outlook"
+ },
+ {
+  "id": 2007102,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Rosy Outlook"
+ },
+ {
+  "id": 2007103,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Rosy Outlook"
+ },
+ {
+  "id": 2007201,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Up-Tempo"
+ },
+ {
+  "id": 2007202,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Up-Tempo"
+ },
+ {
+  "id": 2007203,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Up-Tempo"
+ },
+ {
+  "id": 2007301,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Steadfast"
+ },
+ {
+  "id": 2007302,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Steadfast"
+ },
+ {
+  "id": 2007303,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Steadfast"
+ },
+ {
+  "id": 2007401,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Deep Breaths"
+ },
+ {
+  "id": 2007402,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Deep Breaths"
+ },
+ {
+  "id": 2007403,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Deep Breaths"
+ },
+ {
+  "id": 2007501,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Inside Scoop"
+ },
+ {
+  "id": 2007502,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Inside Scoop"
+ },
+ {
+  "id": 2007503,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Inside Scoop"
+ },
+ {
+  "id": 2007601,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Extra Tank"
+ },
+ {
+  "id": 2007602,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Extra Tank"
+ },
+ {
+  "id": 2007603,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Extra Tank"
+ },
+ {
+  "id": 2007701,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Trick (Front)"
+ },
+ {
+  "id": 2007702,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Trick (Front)"
+ },
+ {
+  "id": 2007703,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Trick (Front)"
+ },
+ {
+  "id": 2007801,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Trick (Rear)"
+ },
+ {
+  "id": 2007802,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Trick (Rear)"
+ },
+ {
+  "id": 2007803,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Trick (Rear)"
+ },
+ {
+  "id": 2007901,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Frenzied Front Runners"
+ },
+ {
+  "id": 2007902,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Frenzied Front Runners"
+ },
+ {
+  "id": 2007903,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Frenzied Front Runners"
+ },
+ {
+  "id": 2008001,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Frenzied Pace Chasers"
+ },
+ {
+  "id": 2008002,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Frenzied Pace Chasers"
+ },
+ {
+  "id": 2008003,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Frenzied Pace Chasers"
+ },
+ {
+  "id": 2008101,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Frenzied Late Surgers"
+ },
+ {
+  "id": 2008102,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Frenzied Late Surgers"
+ },
+ {
+  "id": 2008103,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Frenzied Late Surgers"
+ },
+ {
+  "id": 2008201,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Frenzied End Closers"
+ },
+ {
+  "id": 2008202,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Frenzied End Closers"
+ },
+ {
+  "id": 2008203,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Frenzied End Closers"
+ },
+ {
+  "id": 2008301,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Subdued Front Runners"
+ },
+ {
+  "id": 2008302,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Subdued Front Runners"
+ },
+ {
+  "id": 2008303,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Subdued Front Runners"
+ },
+ {
+  "id": 2008401,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Flustered Front Runners"
+ },
+ {
+  "id": 2008402,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Flustered Front Runners"
+ },
+ {
+  "id": 2008403,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Flustered Front Runners"
+ },
+ {
+  "id": 2008501,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Hesitant Front Runners"
+ },
+ {
+  "id": 2008502,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Hesitant Front Runners"
+ },
+ {
+  "id": 2008503,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Hesitant Front Runners"
+ },
+ {
+  "id": 2008601,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Subdued Pace Chasers"
+ },
+ {
+  "id": 2008602,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Subdued Pace Chasers"
+ },
+ {
+  "id": 2008603,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Subdued Pace Chasers"
+ },
+ {
+  "id": 2008701,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Flustered Pace Chasers"
+ },
+ {
+  "id": 2008702,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Flustered Pace Chasers"
+ },
+ {
+  "id": 2008703,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Flustered Pace Chasers"
+ },
+ {
+  "id": 2008801,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Hesitant Pace Chasers"
+ },
+ {
+  "id": 2008802,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Hesitant Pace Chasers"
+ },
+ {
+  "id": 2008803,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Hesitant Pace Chasers"
+ },
+ {
+  "id": 2008901,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Subdued Late Surgers"
+ },
+ {
+  "id": 2008902,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Subdued Late Surgers"
+ },
+ {
+  "id": 2008903,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Subdued Late Surgers"
+ },
+ {
+  "id": 2009001,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Flustered Late Surgers"
+ },
+ {
+  "id": 2009002,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Flustered Late Surgers"
+ },
+ {
+  "id": 2009003,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Flustered Late Surgers"
+ },
+ {
+  "id": 2009101,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Hesitant Late Surgers"
+ },
+ {
+  "id": 2009102,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Hesitant Late Surgers"
+ },
+ {
+  "id": 2009103,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Hesitant Late Surgers"
+ },
+ {
+  "id": 2009201,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Subdued End Closers"
+ },
+ {
+  "id": 2009202,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Subdued End Closers"
+ },
+ {
+  "id": 2009203,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Subdued End Closers"
+ },
+ {
+  "id": 2009301,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Flustered End Closers"
+ },
+ {
+  "id": 2009302,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Flustered End Closers"
+ },
+ {
+  "id": 2009303,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Flustered End Closers"
+ },
+ {
+  "id": 2009401,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Hesitant End Closers"
+ },
+ {
+  "id": 2009402,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Hesitant End Closers"
+ },
+ {
+  "id": 2009403,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Hesitant End Closers"
+ },
+ {
+  "id": 2009501,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Oi Racecourse ○"
+ },
+ {
+  "id": 2009502,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Oi Racecourse ○"
+ },
+ {
+  "id": 2009503,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Oi Racecourse ○"
+ },
+ {
+  "id": 2009601,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Sprint Straightaways ○"
+ },
+ {
+  "id": 2009602,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Sprint Straightaways ○"
+ },
+ {
+  "id": 2009603,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Sprint Straightaways ○"
+ },
+ {
+  "id": 2009701,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Sprint Corners ○"
+ },
+ {
+  "id": 2009702,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Sprint Corners ○"
+ },
+ {
+  "id": 2009703,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Sprint Corners ○"
+ },
+ {
+  "id": 2009801,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Huge Lead"
+ },
+ {
+  "id": 2009802,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Huge Lead"
+ },
+ {
+  "id": 2009803,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Huge Lead"
+ },
+ {
+  "id": 2009901,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Countermeasure"
+ },
+ {
+  "id": 2009902,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Countermeasure"
+ },
+ {
+  "id": 2009903,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Countermeasure"
+ },
+ {
+  "id": 2010001,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Meticulous Measures"
+ },
+ {
+  "id": 2010002,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Meticulous Measures"
+ },
+ {
+  "id": 2010003,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Meticulous Measures"
+ },
+ {
+  "id": 2010101,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Intimidate"
+ },
+ {
+  "id": 2010102,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Intimidate"
+ },
+ {
+  "id": 2010103,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Intimidate"
+ },
+ {
+  "id": 2010201,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Stop Right There!"
+ },
+ {
+  "id": 2010202,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Stop Right There!"
+ },
+ {
+  "id": 2010203,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Stop Right There!"
+ },
+ {
+  "id": 2010301,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Mile Straightaways ○"
+ },
+ {
+  "id": 2010302,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Mile Straightaways ○"
+ },
+ {
+  "id": 2010303,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Mile Straightaways ○"
+ },
+ {
+  "id": 2010401,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Mile Corners ○"
+ },
+ {
+  "id": 2010402,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Mile Corners ○"
+ },
+ {
+  "id": 2010403,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Mile Corners ○"
+ },
+ {
+  "id": 2010501,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Shifting Gears"
+ },
+ {
+  "id": 2010502,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Shifting Gears"
+ },
+ {
+  "id": 2010503,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Shifting Gears"
+ },
+ {
+  "id": 2010601,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Acceleration"
+ },
+ {
+  "id": 2010602,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Acceleration"
+ },
+ {
+  "id": 2010603,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Acceleration"
+ },
+ {
+  "id": 2010701,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Unyielding Spirit"
+ },
+ {
+  "id": 2010702,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Unyielding Spirit"
+ },
+ {
+  "id": 2010703,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Unyielding Spirit"
+ },
+ {
+  "id": 2010801,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Speed Eater"
+ },
+ {
+  "id": 2010802,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Speed Eater"
+ },
+ {
+  "id": 2010803,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Speed Eater"
+ },
+ {
+  "id": 2010901,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Opening Gambit"
+ },
+ {
+  "id": 2010902,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Opening Gambit"
+ },
+ {
+  "id": 2010903,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Opening Gambit"
+ },
+ {
+  "id": 2011001,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Medium Straightaways ○"
+ },
+ {
+  "id": 2011002,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Medium Straightaways ○"
+ },
+ {
+  "id": 2011003,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Medium Straightaways ○"
+ },
+ {
+  "id": 2011101,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Medium Corners ○"
+ },
+ {
+  "id": 2011102,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Medium Corners ○"
+ },
+ {
+  "id": 2011103,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Medium Corners ○"
+ },
+ {
+  "id": 2011201,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Hawkeye"
+ },
+ {
+  "id": 2011202,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Hawkeye"
+ },
+ {
+  "id": 2011203,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Hawkeye"
+ },
+ {
+  "id": 2011301,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Thunderbolt Step"
+ },
+ {
+  "id": 2011302,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Thunderbolt Step"
+ },
+ {
+  "id": 2011303,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Thunderbolt Step"
+ },
+ {
+  "id": 2011401,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Soft Step"
+ },
+ {
+  "id": 2011402,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Soft Step"
+ },
+ {
+  "id": 2011403,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Soft Step"
+ },
+ {
+  "id": 2011501,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Tether"
+ },
+ {
+  "id": 2011502,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Tether"
+ },
+ {
+  "id": 2011503,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Tether"
+ },
+ {
+  "id": 2011601,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Murmur"
+ },
+ {
+  "id": 2011602,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Murmur"
+ },
+ {
+  "id": 2011603,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Murmur"
+ },
+ {
+  "id": 2011701,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Long Straightaways ○"
+ },
+ {
+  "id": 2011702,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Long Straightaways ○"
+ },
+ {
+  "id": 2011703,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Long Straightaways ○"
+ },
+ {
+  "id": 2011801,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Long Corners ○"
+ },
+ {
+  "id": 2011802,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Long Corners ○"
+ },
+ {
+  "id": 2011803,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Long Corners ○"
+ },
+ {
+  "id": 2011901,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Keeping the Lead"
+ },
+ {
+  "id": 2011902,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Keeping the Lead"
+ },
+ {
+  "id": 2011903,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Keeping the Lead"
+ },
+ {
+  "id": 2012001,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Passing Pro"
+ },
+ {
+  "id": 2012002,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Passing Pro"
+ },
+ {
+  "id": 2012003,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Passing Pro"
+ },
+ {
+  "id": 2012101,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Pressure"
+ },
+ {
+  "id": 2012102,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Pressure"
+ },
+ {
+  "id": 2012103,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Pressure"
+ },
+ {
+  "id": 2012201,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Stamina Eater"
+ },
+ {
+  "id": 2012202,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Stamina Eater"
+ },
+ {
+  "id": 2012203,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Stamina Eater"
+ },
+ {
+  "id": 2012301,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Smoke Screen"
+ },
+ {
+  "id": 2012302,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Smoke Screen"
+ },
+ {
+  "id": 2012303,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Smoke Screen"
+ },
+ {
+  "id": 2012401,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Front Runner Straightaways ○"
+ },
+ {
+  "id": 2012402,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Front Runner Straightaways ○"
+ },
+ {
+  "id": 2012403,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Front Runner Straightaways ○"
+ },
+ {
+  "id": 2012501,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Front Runner Corners ○"
+ },
+ {
+  "id": 2012502,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Front Runner Corners ○"
+ },
+ {
+  "id": 2012503,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Front Runner Corners ○"
+ },
+ {
+  "id": 2012601,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Dodging Danger"
+ },
+ {
+  "id": 2012602,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Dodging Danger"
+ },
+ {
+  "id": 2012603,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Dodging Danger"
+ },
+ {
+  "id": 2012701,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Leader's Pride"
+ },
+ {
+  "id": 2012702,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Leader's Pride"
+ },
+ {
+  "id": 2012703,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Leader's Pride"
+ },
+ {
+  "id": 2012801,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Moxie"
+ },
+ {
+  "id": 2012802,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Moxie"
+ },
+ {
+  "id": 2012803,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Moxie"
+ },
+ {
+  "id": 2012901,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Second Wind"
+ },
+ {
+  "id": 2012902,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Second Wind"
+ },
+ {
+  "id": 2012903,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Second Wind"
+ },
+ {
+  "id": 2013001,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Restart"
+ },
+ {
+  "id": 2013002,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Restart"
+ },
+ {
+  "id": 2013003,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Restart"
+ },
+ {
+  "id": 2013101,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Pace Chaser Straightaways ○"
+ },
+ {
+  "id": 2013102,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Pace Chaser Straightaways ○"
+ },
+ {
+  "id": 2013103,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Pace Chaser Straightaways ○"
+ },
+ {
+  "id": 2013201,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Pace Chaser Corners ○"
+ },
+ {
+  "id": 2013202,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Pace Chaser Corners ○"
+ },
+ {
+  "id": 2013203,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Pace Chaser Corners ○"
+ },
+ {
+  "id": 2013301,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Shrewd Step"
+ },
+ {
+  "id": 2013302,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Shrewd Step"
+ },
+ {
+  "id": 2013303,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Shrewd Step"
+ },
+ {
+  "id": 2013401,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Straight Descent"
+ },
+ {
+  "id": 2013402,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Straight Descent"
+ },
+ {
+  "id": 2013403,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Straight Descent"
+ },
+ {
+  "id": 2013501,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Hydrate"
+ },
+ {
+  "id": 2013502,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Hydrate"
+ },
+ {
+  "id": 2013503,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Hydrate"
+ },
+ {
+  "id": 2013601,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Tactical Tweak"
+ },
+ {
+  "id": 2013602,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Tactical Tweak"
+ },
+ {
+  "id": 2013603,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Tactical Tweak"
+ },
+ {
+  "id": 2013701,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Disorient"
+ },
+ {
+  "id": 2013702,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Disorient"
+ },
+ {
+  "id": 2013703,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Disorient"
+ },
+ {
+  "id": 2013801,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Late Surger Straightaways ○"
+ },
+ {
+  "id": 2013802,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Late Surger Straightaways ○"
+ },
+ {
+  "id": 2013803,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Late Surger Straightaways ○"
+ },
+ {
+  "id": 2013901,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Late Surger Corners ○"
+ },
+ {
+  "id": 2013902,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Late Surger Corners ○"
+ },
+ {
+  "id": 2013903,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Late Surger Corners ○"
+ },
+ {
+  "id": 2014001,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Fighter"
+ },
+ {
+  "id": 2014002,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Fighter"
+ },
+ {
+  "id": 2014003,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Fighter"
+ },
+ {
+  "id": 2014101,
+  "kind": "skill",
+  "stars": 1,
+  "name": "1,500,000 CC"
+ },
+ {
+  "id": 2014102,
+  "kind": "skill",
+  "stars": 2,
+  "name": "1,500,000 CC"
+ },
+ {
+  "id": 2014103,
+  "kind": "skill",
+  "stars": 3,
+  "name": "1,500,000 CC"
+ },
+ {
+  "id": 2014201,
+  "kind": "skill",
+  "stars": 1,
+  "name": "A Small Breather"
+ },
+ {
+  "id": 2014202,
+  "kind": "skill",
+  "stars": 2,
+  "name": "A Small Breather"
+ },
+ {
+  "id": 2014203,
+  "kind": "skill",
+  "stars": 3,
+  "name": "A Small Breather"
+ },
+ {
+  "id": 2014301,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Studious"
+ },
+ {
+  "id": 2014302,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Studious"
+ },
+ {
+  "id": 2014303,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Studious"
+ },
+ {
+  "id": 2014401,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Sharp Gaze"
+ },
+ {
+  "id": 2014402,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Sharp Gaze"
+ },
+ {
+  "id": 2014403,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Sharp Gaze"
+ },
+ {
+  "id": 2014501,
+  "kind": "skill",
+  "stars": 1,
+  "name": "End Closer Straightaways ○"
+ },
+ {
+  "id": 2014502,
+  "kind": "skill",
+  "stars": 2,
+  "name": "End Closer Straightaways ○"
+ },
+ {
+  "id": 2014503,
+  "kind": "skill",
+  "stars": 3,
+  "name": "End Closer Straightaways ○"
+ },
+ {
+  "id": 2014601,
+  "kind": "skill",
+  "stars": 1,
+  "name": "End Closer Corners ○"
+ },
+ {
+  "id": 2014602,
+  "kind": "skill",
+  "stars": 2,
+  "name": "End Closer Corners ○"
+ },
+ {
+  "id": 2014603,
+  "kind": "skill",
+  "stars": 3,
+  "name": "End Closer Corners ○"
+ },
+ {
+  "id": 2014701,
+  "kind": "skill",
+  "stars": 1,
+  "name": "I Can See Right Through You"
+ },
+ {
+  "id": 2014702,
+  "kind": "skill",
+  "stars": 2,
+  "name": "I Can See Right Through You"
+ },
+ {
+  "id": 2014703,
+  "kind": "skill",
+  "stars": 3,
+  "name": "I Can See Right Through You"
+ },
+ {
+  "id": 2014801,
+  "kind": "skill",
+  "stars": 1,
+  "name": "After-School Stroll"
+ },
+ {
+  "id": 2014802,
+  "kind": "skill",
+  "stars": 2,
+  "name": "After-School Stroll"
+ },
+ {
+  "id": 2014803,
+  "kind": "skill",
+  "stars": 3,
+  "name": "After-School Stroll"
+ },
+ {
+  "id": 2014901,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Levelheaded"
+ },
+ {
+  "id": 2014902,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Levelheaded"
+ },
+ {
+  "id": 2014903,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Levelheaded"
+ },
+ {
+  "id": 2015001,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Strategist"
+ },
+ {
+  "id": 2015002,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Strategist"
+ },
+ {
+  "id": 2015003,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Strategist"
+ },
+ {
+  "id": 2015101,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Intense Gaze"
+ },
+ {
+  "id": 2015102,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Intense Gaze"
+ },
+ {
+  "id": 2015103,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Intense Gaze"
+ },
+ {
+  "id": 2015201,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Front Runner Savvy ○"
+ },
+ {
+  "id": 2015202,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Front Runner Savvy ○"
+ },
+ {
+  "id": 2015203,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Front Runner Savvy ○"
+ },
+ {
+  "id": 2015301,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Pace Chaser Savvy ○"
+ },
+ {
+  "id": 2015302,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Pace Chaser Savvy ○"
+ },
+ {
+  "id": 2015303,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Pace Chaser Savvy ○"
+ },
+ {
+  "id": 2015401,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Late Surger Savvy ○"
+ },
+ {
+  "id": 2015402,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Late Surger Savvy ○"
+ },
+ {
+  "id": 2015403,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Late Surger Savvy ○"
+ },
+ {
+  "id": 2015501,
+  "kind": "skill",
+  "stars": 1,
+  "name": "End Closer Savvy ○"
+ },
+ {
+  "id": 2015502,
+  "kind": "skill",
+  "stars": 2,
+  "name": "End Closer Savvy ○"
+ },
+ {
+  "id": 2015503,
+  "kind": "skill",
+  "stars": 3,
+  "name": "End Closer Savvy ○"
+ },
+ {
+  "id": 2015601,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Lucky Seven"
+ },
+ {
+  "id": 2015602,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Lucky Seven"
+ },
+ {
+  "id": 2015603,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Lucky Seven"
+ },
+ {
+  "id": 2015701,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Triple 7s"
+ },
+ {
+  "id": 2015702,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Triple 7s"
+ },
+ {
+  "id": 2015703,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Triple 7s"
+ },
+ {
+  "id": 2015801,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Highlander"
+ },
+ {
+  "id": 2015802,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Highlander"
+ },
+ {
+  "id": 2015803,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Highlander"
+ },
+ {
+  "id": 2015901,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Uma Stan"
+ },
+ {
+  "id": 2015902,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Uma Stan"
+ },
+ {
+  "id": 2015903,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Uma Stan"
+ },
+ {
+  "id": 2016001,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Groundwork"
+ },
+ {
+  "id": 2016002,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Groundwork"
+ },
+ {
+  "id": 2016003,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Groundwork"
+ },
+ {
+  "id": 2016101,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Tail Held High"
+ },
+ {
+  "id": 2016102,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Tail Held High"
+ },
+ {
+  "id": 2016103,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Tail Held High"
+ },
+ {
+  "id": 2016201,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Shake It Out"
+ },
+ {
+  "id": 2016202,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Shake It Out"
+ },
+ {
+  "id": 2016203,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Shake It Out"
+ },
+ {
+  "id": 2016301,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Sympathy"
+ },
+ {
+  "id": 2016302,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Sympathy"
+ },
+ {
+  "id": 2016303,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Sympathy"
+ },
+ {
+  "id": 2016401,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Lone Wolf"
+ },
+ {
+  "id": 2016402,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Lone Wolf"
+ },
+ {
+  "id": 2016403,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Lone Wolf"
+ },
+ {
+  "id": 2016501,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Slipstream"
+ },
+ {
+  "id": 2016502,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Slipstream"
+ },
+ {
+  "id": 2016503,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Slipstream"
+ },
+ {
+  "id": 2016601,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Playtime's Over!"
+ },
+ {
+  "id": 2016602,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Playtime's Over!"
+ },
+ {
+  "id": 2016603,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Playtime's Over!"
+ },
+ {
+  "id": 2016701,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Top Pick"
+ },
+ {
+  "id": 2016702,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Top Pick"
+ },
+ {
+  "id": 2016703,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Top Pick"
+ },
+ {
+  "id": 2016801,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Forward, March!"
+ },
+ {
+  "id": 2016802,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Forward, March!"
+ },
+ {
+  "id": 2016803,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Forward, March!"
+ },
+ {
+  "id": 2016901,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Be Still"
+ },
+ {
+  "id": 2016902,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Be Still"
+ },
+ {
+  "id": 2016903,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Be Still"
+ },
+ {
+  "id": 2017001,
+  "kind": "skill",
+  "stars": 1,
+  "name": "All I've Got"
+ },
+ {
+  "id": 2017002,
+  "kind": "skill",
+  "stars": 2,
+  "name": "All I've Got"
+ },
+ {
+  "id": 2017003,
+  "kind": "skill",
+  "stars": 3,
+  "name": "All I've Got"
+ },
+ {
+  "id": 2019001,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Head-On"
+ },
+ {
+  "id": 2019002,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Head-On"
+ },
+ {
+  "id": 2019003,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Head-On"
+ },
+ {
+  "id": 2020001,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Familiar Ground"
+ },
+ {
+  "id": 2020002,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Familiar Ground"
+ },
+ {
+  "id": 2020003,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Familiar Ground"
+ },
+ {
+  "id": 2020101,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Feature Act"
+ },
+ {
+  "id": 2020102,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Feature Act"
+ },
+ {
+  "id": 2020103,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Feature Act"
+ },
+ {
+  "id": 2020201,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Early Start"
+ },
+ {
+  "id": 2020202,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Early Start"
+ },
+ {
+  "id": 2020203,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Early Start"
+ },
+ {
+  "id": 2020301,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Risky Business"
+ },
+ {
+  "id": 2020302,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Risky Business"
+ },
+ {
+  "id": 2020303,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Risky Business"
+ },
+ {
+  "id": 2020401,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Light as a Feather"
+ },
+ {
+  "id": 2020402,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Light as a Feather"
+ },
+ {
+  "id": 2020403,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Light as a Feather"
+ },
+ {
+  "id": 2020701,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Free-Spirited"
+ },
+ {
+  "id": 2020702,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Free-Spirited"
+ },
+ {
+  "id": 2020703,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Free-Spirited"
+ },
+ {
+  "id": 2020801,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Take the Chance"
+ },
+ {
+  "id": 2020802,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Take the Chance"
+ },
+ {
+  "id": 2020803,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Take the Chance"
+ },
+ {
+  "id": 2020901,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Fighting Spirit"
+ },
+ {
+  "id": 2020902,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Fighting Spirit"
+ },
+ {
+  "id": 2020903,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Fighting Spirit"
+ },
+ {
+  "id": 2021001,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Eager"
+ },
+ {
+  "id": 2021002,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Eager"
+ },
+ {
+  "id": 2021003,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Eager"
+ },
+ {
+  "id": 2021101,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Pumped"
+ },
+ {
+  "id": 2021102,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Pumped"
+ },
+ {
+  "id": 2021103,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Pumped"
+ },
+ {
+  "id": 2021201,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Fearless"
+ },
+ {
+  "id": 2021202,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Fearless"
+ },
+ {
+  "id": 2021203,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Fearless"
+ },
+ {
+  "id": 2021301,
+  "kind": "skill",
+  "stars": 1,
+  "name": "With All My Soul"
+ },
+ {
+  "id": 2021302,
+  "kind": "skill",
+  "stars": 2,
+  "name": "With All My Soul"
+ },
+ {
+  "id": 2021303,
+  "kind": "skill",
+  "stars": 3,
+  "name": "With All My Soul"
+ },
+ {
+  "id": 2021501,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Full Throttle"
+ },
+ {
+  "id": 2021502,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Full Throttle"
+ },
+ {
+  "id": 2021503,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Full Throttle"
+ },
+ {
+  "id": 2021601,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Restraint"
+ },
+ {
+  "id": 2021602,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Restraint"
+ },
+ {
+  "id": 2021603,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Restraint"
+ },
+ {
+  "id": 2021701,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Downhill Speedster"
+ },
+ {
+  "id": 2021702,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Downhill Speedster"
+ },
+ {
+  "id": 2021703,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Downhill Speedster"
+ },
+ {
+  "id": 2021901,
+  "kind": "skill",
+  "stars": 1,
+  "name": "All Set"
+ },
+ {
+  "id": 2021902,
+  "kind": "skill",
+  "stars": 2,
+  "name": "All Set"
+ },
+ {
+  "id": 2021903,
+  "kind": "skill",
+  "stars": 3,
+  "name": "All Set"
+ },
+ {
+  "id": 2022001,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Kawasaki Racecourse ○"
+ },
+ {
+  "id": 2022002,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Kawasaki Racecourse ○"
+ },
+ {
+  "id": 2022003,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Kawasaki Racecourse ○"
+ },
+ {
+  "id": 2022101,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Funabashi Racecourse ○"
+ },
+ {
+  "id": 2022102,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Funabashi Racecourse ○"
+ },
+ {
+  "id": 2022103,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Funabashi Racecourse ○"
+ },
+ {
+  "id": 2022201,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Morioka Racecourse ○"
+ },
+ {
+  "id": 2022202,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Morioka Racecourse ○"
+ },
+ {
+  "id": 2022203,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Morioka Racecourse ○"
+ },
+ {
+  "id": 2022301,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Night Races ○"
+ },
+ {
+  "id": 2022302,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Night Races ○"
+ },
+ {
+  "id": 2022303,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Night Races ○"
+ },
+ {
+  "id": 2022401,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Sharp Turns ○"
+ },
+ {
+  "id": 2022402,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Sharp Turns ○"
+ },
+ {
+  "id": 2022403,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Sharp Turns ○"
+ },
+ {
+  "id": 2022501,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Collaborative Graded Races ○"
+ },
+ {
+  "id": 2022502,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Collaborative Graded Races ○"
+ },
+ {
+  "id": 2022503,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Collaborative Graded Races ○"
+ },
+ {
+  "id": 2022601,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Sunny Sign"
+ },
+ {
+  "id": 2022602,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Sunny Sign"
+ },
+ {
+  "id": 2022603,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Sunny Sign"
+ },
+ {
+  "id": 2022701,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Comeback"
+ },
+ {
+  "id": 2022702,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Comeback"
+ },
+ {
+  "id": 2022703,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Comeback"
+ },
+ {
+  "id": 2022801,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Full Tilt"
+ },
+ {
+  "id": 2022802,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Full Tilt"
+ },
+ {
+  "id": 2022803,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Full Tilt"
+ },
+ {
+  "id": 2022901,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Rational"
+ },
+ {
+  "id": 2022902,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Rational"
+ },
+ {
+  "id": 2022903,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Rational"
+ },
+ {
+  "id": 2023001,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Down in the Dirt ○"
+ },
+ {
+  "id": 2023002,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Down in the Dirt ○"
+ },
+ {
+  "id": 2023003,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Down in the Dirt ○"
+ },
+ {
+  "id": 2023101,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Got the Spirit!"
+ },
+ {
+  "id": 2023102,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Got the Spirit!"
+ },
+ {
+  "id": 2023103,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Got the Spirit!"
+ },
+ {
+  "id": 2023201,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Rapid Gain"
+ },
+ {
+  "id": 2023202,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Rapid Gain"
+ },
+ {
+  "id": 2023203,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Rapid Gain"
+ },
+ {
+  "id": 2023301,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Solid Steps"
+ },
+ {
+  "id": 2023302,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Solid Steps"
+ },
+ {
+  "id": 2023303,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Solid Steps"
+ },
+ {
+  "id": 2023401,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Muddy ○"
+ },
+ {
+  "id": 2023402,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Muddy ○"
+ },
+ {
+  "id": 2023403,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Muddy ○"
+ },
+ {
+  "id": 2023501,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Dust Cloud"
+ },
+ {
+  "id": 2023502,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Dust Cloud"
+ },
+ {
+  "id": 2023503,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Dust Cloud"
+ },
+ {
+  "id": 2023601,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Oppression"
+ },
+ {
+  "id": 2023602,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Oppression"
+ },
+ {
+  "id": 2023603,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Oppression"
+ },
+ {
+  "id": 2023701,
+  "kind": "skill",
+  "stars": 1,
+  "name": "On the Attack"
+ },
+ {
+  "id": 2023702,
+  "kind": "skill",
+  "stars": 2,
+  "name": "On the Attack"
+ },
+ {
+  "id": 2023703,
+  "kind": "skill",
+  "stars": 3,
+  "name": "On the Attack"
+ },
+ {
+  "id": 2023801,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Breakin' Out"
+ },
+ {
+  "id": 2023802,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Breakin' Out"
+ },
+ {
+  "id": 2023803,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Breakin' Out"
+ },
+ {
+  "id": 2023901,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Mad Dash"
+ },
+ {
+  "id": 2023902,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Mad Dash"
+ },
+ {
+  "id": 2023903,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Mad Dash"
+ },
+ {
+  "id": 2024001,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Leap Forward"
+ },
+ {
+  "id": 2024002,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Leap Forward"
+ },
+ {
+  "id": 2024003,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Leap Forward"
+ },
+ {
+  "id": 2024101,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Aspire"
+ },
+ {
+  "id": 2024102,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Aspire"
+ },
+ {
+  "id": 2024103,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Aspire"
+ },
+ {
+  "id": 2024201,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Scramble"
+ },
+ {
+  "id": 2024202,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Scramble"
+ },
+ {
+  "id": 2024203,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Scramble"
+ },
+ {
+  "id": 2024301,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Steady Gait"
+ },
+ {
+  "id": 2024302,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Steady Gait"
+ },
+ {
+  "id": 2024303,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Steady Gait"
+ },
+ {
+  "id": 2024401,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Risk-Taker"
+ },
+ {
+  "id": 2024402,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Risk-Taker"
+ },
+ {
+  "id": 2024403,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Risk-Taker"
+ },
+ {
+  "id": 2024501,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Pedal to the Metal"
+ },
+ {
+  "id": 2024502,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Pedal to the Metal"
+ },
+ {
+  "id": 2024503,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Pedal to the Metal"
+ },
+ {
+  "id": 2024601,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Firm Resolve"
+ },
+ {
+  "id": 2024602,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Firm Resolve"
+ },
+ {
+  "id": 2024603,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Firm Resolve"
+ },
+ {
+  "id": 2024701,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Latch On"
+ },
+ {
+  "id": 2024702,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Latch On"
+ },
+ {
+  "id": 2024703,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Latch On"
+ },
+ {
+  "id": 2024801,
+  "kind": "skill",
+  "stars": 1,
+  "name": "My True Strength"
+ },
+ {
+  "id": 2024802,
+  "kind": "skill",
+  "stars": 2,
+  "name": "My True Strength"
+ },
+ {
+  "id": 2024803,
+  "kind": "skill",
+  "stars": 3,
+  "name": "My True Strength"
+ },
+ {
+  "id": 2024901,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Sharp Steps"
+ },
+ {
+  "id": 2024902,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Sharp Steps"
+ },
+ {
+  "id": 2024903,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Sharp Steps"
+ },
+ {
+  "id": 2025001,
+  "kind": "skill",
+  "stars": 1,
+  "name": "No Looking Back"
+ },
+ {
+  "id": 2025002,
+  "kind": "skill",
+  "stars": 2,
+  "name": "No Looking Back"
+ },
+ {
+  "id": 2025003,
+  "kind": "skill",
+  "stars": 3,
+  "name": "No Looking Back"
+ },
+ {
+  "id": 2100101,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Ignited Spirit SPD"
+ },
+ {
+  "id": 2100102,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Ignited Spirit SPD"
+ },
+ {
+  "id": 2100103,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Ignited Spirit SPD"
+ },
+ {
+  "id": 2100201,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Ignited Spirit STA"
+ },
+ {
+  "id": 2100202,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Ignited Spirit STA"
+ },
+ {
+  "id": 2100203,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Ignited Spirit STA"
+ },
+ {
+  "id": 2100301,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Ignited Spirit PWR"
+ },
+ {
+  "id": 2100302,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Ignited Spirit PWR"
+ },
+ {
+  "id": 2100303,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Ignited Spirit PWR"
+ },
+ {
+  "id": 2100401,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Ignited Spirit GUTS"
+ },
+ {
+  "id": 2100402,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Ignited Spirit GUTS"
+ },
+ {
+  "id": 2100403,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Ignited Spirit GUTS"
+ },
+ {
+  "id": 2100501,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Ignited Spirit WIT"
+ },
+ {
+  "id": 2100502,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Ignited Spirit WIT"
+ },
+ {
+  "id": 2100503,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Ignited Spirit WIT"
+ },
+ {
+  "id": 2100601,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Glittering Star"
+ },
+ {
+  "id": 2100602,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Glittering Star"
+ },
+ {
+  "id": 2100603,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Glittering Star"
+ },
+ {
+  "id": 2100701,
+  "kind": "skill",
+  "stars": 1,
+  "name": "On the Way to Our Dream"
+ },
+ {
+  "id": 2100702,
+  "kind": "skill",
+  "stars": 2,
+  "name": "On the Way to Our Dream"
+ },
+ {
+  "id": 2100703,
+  "kind": "skill",
+  "stars": 3,
+  "name": "On the Way to Our Dream"
+ },
+ {
+  "id": 2100801,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Racing Spirit: Speed"
+ },
+ {
+  "id": 2100802,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Racing Spirit: Speed"
+ },
+ {
+  "id": 2100803,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Racing Spirit: Speed"
+ },
+ {
+  "id": 2100901,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Racing Spirit: Stamina"
+ },
+ {
+  "id": 2100902,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Racing Spirit: Stamina"
+ },
+ {
+  "id": 2100903,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Racing Spirit: Stamina"
+ },
+ {
+  "id": 2101001,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Racing Spirit: Power"
+ },
+ {
+  "id": 2101002,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Racing Spirit: Power"
+ },
+ {
+  "id": 2101003,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Racing Spirit: Power"
+ },
+ {
+  "id": 2101101,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Racing Spirit: Guts"
+ },
+ {
+  "id": 2101102,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Racing Spirit: Guts"
+ },
+ {
+  "id": 2101103,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Racing Spirit: Guts"
+ },
+ {
+  "id": 2101201,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Racing Spirit: Wit"
+ },
+ {
+  "id": 2101202,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Racing Spirit: Wit"
+ },
+ {
+  "id": 2101203,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Racing Spirit: Wit"
+ },
+ {
+  "id": 2101301,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Racing Spirit: Mood"
+ },
+ {
+  "id": 2101302,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Racing Spirit: Mood"
+ },
+ {
+  "id": 2101303,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Racing Spirit: Mood"
+ },
+ {
+  "id": 2101401,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Racing Spirit: Speed +"
+ },
+ {
+  "id": 2101402,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Racing Spirit: Speed +"
+ },
+ {
+  "id": 2101403,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Racing Spirit: Speed +"
+ },
+ {
+  "id": 2101501,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Racing Spirit: Stamina +"
+ },
+ {
+  "id": 2101502,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Racing Spirit: Stamina +"
+ },
+ {
+  "id": 2101503,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Racing Spirit: Stamina +"
+ },
+ {
+  "id": 2101601,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Racing Spirit: Power +"
+ },
+ {
+  "id": 2101602,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Racing Spirit: Power +"
+ },
+ {
+  "id": 2101603,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Racing Spirit: Power +"
+ },
+ {
+  "id": 2101701,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Racing Spirit: Guts +"
+ },
+ {
+  "id": 2101702,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Racing Spirit: Guts +"
+ },
+ {
+  "id": 2101703,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Racing Spirit: Guts +"
+ },
+ {
+  "id": 2101801,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Racing Spirit: Wit +"
+ },
+ {
+  "id": 2101802,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Racing Spirit: Wit +"
+ },
+ {
+  "id": 2101803,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Racing Spirit: Wit +"
+ },
+ {
+  "id": 2101901,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Racing Spirit: Mood +"
+ },
+ {
+  "id": 2101902,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Racing Spirit: Mood +"
+ },
+ {
+  "id": 2101903,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Racing Spirit: Mood +"
+ },
+ {
+  "id": 2102001,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Eyes on the Goal"
+ },
+ {
+  "id": 2102002,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Eyes on the Goal"
+ },
+ {
+  "id": 2102003,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Eyes on the Goal"
+ },
+ {
+  "id": 2102101,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Ignited Spirit: Speed +"
+ },
+ {
+  "id": 2102102,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Ignited Spirit: Speed +"
+ },
+ {
+  "id": 2102103,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Ignited Spirit: Speed +"
+ },
+ {
+  "id": 2102201,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Ignited Spirit: Stamina +"
+ },
+ {
+  "id": 2102202,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Ignited Spirit: Stamina +"
+ },
+ {
+  "id": 2102203,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Ignited Spirit: Stamina +"
+ },
+ {
+  "id": 2102301,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Ignited Spirit: Power +"
+ },
+ {
+  "id": 2102302,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Ignited Spirit: Power +"
+ },
+ {
+  "id": 2102303,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Ignited Spirit: Power +"
+ },
+ {
+  "id": 2102401,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Ignited Spirit: Guts +"
+ },
+ {
+  "id": 2102402,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Ignited Spirit: Guts +"
+ },
+ {
+  "id": 2102403,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Ignited Spirit: Guts +"
+ },
+ {
+  "id": 2102501,
+  "kind": "skill",
+  "stars": 1,
+  "name": "Ignited Spirit: Wit +"
+ },
+ {
+  "id": 2102502,
+  "kind": "skill",
+  "stars": 2,
+  "name": "Ignited Spirit: Wit +"
+ },
+ {
+  "id": 2102503,
+  "kind": "skill",
+  "stars": 3,
+  "name": "Ignited Spirit: Wit +"
+ },
+ {
+  "id": 3000101,
+  "kind": "scenario",
+  "stars": 1,
+  "name": "URA Finale"
+ },
+ {
+  "id": 3000102,
+  "kind": "scenario",
+  "stars": 2,
+  "name": "URA Finale"
+ },
+ {
+  "id": 3000103,
+  "kind": "scenario",
+  "stars": 3,
+  "name": "URA Finale"
+ },
+ {
+  "id": 3000201,
+  "kind": "scenario",
+  "stars": 1,
+  "name": "Unity Cup"
+ },
+ {
+  "id": 3000202,
+  "kind": "scenario",
+  "stars": 2,
+  "name": "Unity Cup"
+ },
+ {
+  "id": 3000203,
+  "kind": "scenario",
+  "stars": 3,
+  "name": "Unity Cup"
+ },
+ {
+  "id": 3000301,
+  "kind": "scenario",
+  "stars": 1,
+  "name": "TS Climax Scenario"
+ },
+ {
+  "id": 3000302,
+  "kind": "scenario",
+  "stars": 2,
+  "name": "TS Climax Scenario"
+ },
+ {
+  "id": 3000303,
+  "kind": "scenario",
+  "stars": 3,
+  "name": "TS Climax Scenario"
+ },
+ {
+  "id": 3000401,
+  "kind": "scenario",
+  "stars": 1,
+  "name": "Our Grand Concert"
+ },
+ {
+  "id": 3000402,
+  "kind": "scenario",
+  "stars": 2,
+  "name": "Our Grand Concert"
+ },
+ {
+  "id": 3000403,
+  "kind": "scenario",
+  "stars": 3,
+  "name": "Our Grand Concert"
+ },
+ {
+  "id": 4000101,
+  "kind": "carnival",
+  "stars": 1,
+  "name": "Carnival Bonus"
+ },
+ {
+  "id": 4000102,
+  "kind": "carnival",
+  "stars": 1,
+  "name": "Carnival Bonus"
+ },
+ {
+  "id": 10010101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Shooting Star"
+ },
+ {
+  "id": 10010102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Shooting Star"
+ },
+ {
+  "id": 10010103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Shooting Star"
+ },
+ {
+  "id": 10010201,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Dazzl'n ♪ Diver"
+ },
+ {
+  "id": 10010202,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Dazzl'n ♪ Diver"
+ },
+ {
+  "id": 10010203,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Dazzl'n ♪ Diver"
+ },
+ {
+  "id": 10010301,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Dreams Donned with Pride!"
+ },
+ {
+  "id": 10010302,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Dreams Donned with Pride!"
+ },
+ {
+  "id": 10010303,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Dreams Donned with Pride!"
+ },
+ {
+  "id": 10020101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "The View from the Lead Is Mine!"
+ },
+ {
+  "id": 10020102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "The View from the Lead Is Mine!"
+ },
+ {
+  "id": 10020103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "The View from the Lead Is Mine!"
+ },
+ {
+  "id": 10030101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Sky-High Teio Step"
+ },
+ {
+  "id": 10030102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Sky-High Teio Step"
+ },
+ {
+  "id": 10030103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Sky-High Teio Step"
+ },
+ {
+  "id": 10030201,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Certain Victory"
+ },
+ {
+  "id": 10030202,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Certain Victory"
+ },
+ {
+  "id": 10030203,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Certain Victory"
+ },
+ {
+  "id": 10040101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Red Shift/LP1211-M"
+ },
+ {
+  "id": 10040102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Red Shift/LP1211-M"
+ },
+ {
+  "id": 10040103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Red Shift/LP1211-M"
+ },
+ {
+  "id": 10040201,
+  "kind": "unique",
+  "stars": 1,
+  "name": "A Kiss for Courage"
+ },
+ {
+  "id": 10040202,
+  "kind": "unique",
+  "stars": 2,
+  "name": "A Kiss for Courage"
+ },
+ {
+  "id": 10040203,
+  "kind": "unique",
+  "stars": 3,
+  "name": "A Kiss for Courage"
+ },
+ {
+  "id": 10050101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Lights of Vaudeville"
+ },
+ {
+  "id": 10050102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Lights of Vaudeville"
+ },
+ {
+  "id": 10050103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Lights of Vaudeville"
+ },
+ {
+  "id": 10050201,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Ravissant"
+ },
+ {
+  "id": 10050202,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Ravissant"
+ },
+ {
+  "id": 10050203,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Ravissant"
+ },
+ {
+  "id": 10060101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Triumphant Pulse"
+ },
+ {
+  "id": 10060102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Triumphant Pulse"
+ },
+ {
+  "id": 10060103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Triumphant Pulse"
+ },
+ {
+  "id": 10060201,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Festive Miracle"
+ },
+ {
+  "id": 10060202,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Festive Miracle"
+ },
+ {
+  "id": 10060203,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Festive Miracle"
+ },
+ {
+  "id": 10070101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Anchors Aweigh!"
+ },
+ {
+  "id": 10070102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Anchors Aweigh!"
+ },
+ {
+  "id": 10070103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Anchors Aweigh!"
+ },
+ {
+  "id": 10070201,
+  "kind": "unique",
+  "stars": 1,
+  "name": "564 Escapades"
+ },
+ {
+  "id": 10070202,
+  "kind": "unique",
+  "stars": 2,
+  "name": "564 Escapades"
+ },
+ {
+  "id": 10070203,
+  "kind": "unique",
+  "stars": 3,
+  "name": "564 Escapades"
+ },
+ {
+  "id": 10080101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Cut and Drive!"
+ },
+ {
+  "id": 10080102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Cut and Drive!"
+ },
+ {
+  "id": 10080103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Cut and Drive!"
+ },
+ {
+  "id": 10080201,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Into High Gear!"
+ },
+ {
+  "id": 10080202,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Into High Gear!"
+ },
+ {
+  "id": 10080203,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Into High Gear!"
+ },
+ {
+  "id": 10090101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Resplendent Red Ace"
+ },
+ {
+  "id": 10090102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Resplendent Red Ace"
+ },
+ {
+  "id": 10090103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Resplendent Red Ace"
+ },
+ {
+  "id": 10090201,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Queen's Lumination"
+ },
+ {
+  "id": 10090202,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Queen's Lumination"
+ },
+ {
+  "id": 10090203,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Queen's Lumination"
+ },
+ {
+  "id": 10100101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Shooting for Victory!"
+ },
+ {
+  "id": 10100102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Shooting for Victory!"
+ },
+ {
+  "id": 10100103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Shooting for Victory!"
+ },
+ {
+  "id": 10100201,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Joyful Voyage!"
+ },
+ {
+  "id": 10100202,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Joyful Voyage!"
+ },
+ {
+  "id": 10100203,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Joyful Voyage!"
+ },
+ {
+  "id": 10110101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Where There's a Will, There's a Way"
+ },
+ {
+  "id": 10110102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Where There's a Will, There's a Way"
+ },
+ {
+  "id": 10110103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Where There's a Will, There's a Way"
+ },
+ {
+  "id": 10110201,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Superior Heal"
+ },
+ {
+  "id": 10110202,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Superior Heal"
+ },
+ {
+  "id": 10110203,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Superior Heal"
+ },
+ {
+  "id": 10120101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "You and Me! One-on-One!"
+ },
+ {
+  "id": 10120102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "You and Me! One-on-One!"
+ },
+ {
+  "id": 10120103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "You and Me! One-on-One!"
+ },
+ {
+  "id": 10130101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "The Duty of Dignity Calls"
+ },
+ {
+  "id": 10130102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "The Duty of Dignity Calls"
+ },
+ {
+  "id": 10130103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "The Duty of Dignity Calls"
+ },
+ {
+  "id": 10130201,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Legacy of the Strong"
+ },
+ {
+  "id": 10130202,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Legacy of the Strong"
+ },
+ {
+  "id": 10130203,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Legacy of the Strong"
+ },
+ {
+  "id": 10130301,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Your Smile Sparkles as the Waves"
+ },
+ {
+  "id": 10130302,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Your Smile Sparkles as the Waves"
+ },
+ {
+  "id": 10130303,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Your Smile Sparkles as the Waves"
+ },
+ {
+  "id": 10140101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Victoria por plancha ☆"
+ },
+ {
+  "id": 10140102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Victoria por plancha ☆"
+ },
+ {
+  "id": 10140103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Victoria por plancha ☆"
+ },
+ {
+  "id": 10140201,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Condor's Fury"
+ },
+ {
+  "id": 10140202,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Condor's Fury"
+ },
+ {
+  "id": 10140203,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Condor's Fury"
+ },
+ {
+  "id": 10150101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "This Dance Is for Vittoria!"
+ },
+ {
+  "id": 10150102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "This Dance Is for Vittoria!"
+ },
+ {
+  "id": 10150103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "This Dance Is for Vittoria!"
+ },
+ {
+  "id": 10150201,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Barcarole of Blessings"
+ },
+ {
+  "id": 10150202,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Barcarole of Blessings"
+ },
+ {
+  "id": 10150203,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Barcarole of Blessings"
+ },
+ {
+  "id": 10160101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Shadow Break"
+ },
+ {
+  "id": 10160102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Shadow Break"
+ },
+ {
+  "id": 10160103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Shadow Break"
+ },
+ {
+  "id": 10160201,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Free from the Ashes"
+ },
+ {
+  "id": 10160202,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Free from the Ashes"
+ },
+ {
+  "id": 10160203,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Free from the Ashes"
+ },
+ {
+  "id": 10170101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Behold Thine Emperor's Divine Might"
+ },
+ {
+  "id": 10170102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Behold Thine Emperor's Divine Might"
+ },
+ {
+  "id": 10170103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Behold Thine Emperor's Divine Might"
+ },
+ {
+  "id": 10170201,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Arrows Whistle, Shadows Disperse"
+ },
+ {
+  "id": 10170202,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Arrows Whistle, Shadows Disperse"
+ },
+ {
+  "id": 10170203,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Arrows Whistle, Shadows Disperse"
+ },
+ {
+  "id": 10180101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Blazing Pride"
+ },
+ {
+  "id": 10180102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Blazing Pride"
+ },
+ {
+  "id": 10180103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Blazing Pride"
+ },
+ {
+  "id": 10180201,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Eternal Moments"
+ },
+ {
+  "id": 10180202,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Eternal Moments"
+ },
+ {
+  "id": 10180203,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Eternal Moments"
+ },
+ {
+  "id": 10190101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "OMG! (ﾟ∀ﾟ)  The Final Sprint! ☆"
+ },
+ {
+  "id": 10190102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "OMG! (ﾟ∀ﾟ)  The Final Sprint! ☆"
+ },
+ {
+  "id": 10190103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "OMG! (ﾟ∀ﾟ)  The Final Sprint! ☆"
+ },
+ {
+  "id": 10190201,
+  "kind": "unique",
+  "stars": 1,
+  "name": "THE MOE AAAA Thanks for My Life"
+ },
+ {
+  "id": 10190202,
+  "kind": "unique",
+  "stars": 2,
+  "name": "THE MOE AAAA Thanks for My Life"
+ },
+ {
+  "id": 10190203,
+  "kind": "unique",
+  "stars": 3,
+  "name": "THE MOE AAAA Thanks for My Life"
+ },
+ {
+  "id": 10200101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Angling and Scheming"
+ },
+ {
+  "id": 10200102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Angling and Scheming"
+ },
+ {
+  "id": 10200103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Angling and Scheming"
+ },
+ {
+  "id": 10200201,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Break It Down!"
+ },
+ {
+  "id": 10200202,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Break It Down!"
+ },
+ {
+  "id": 10200203,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Break It Down!"
+ },
+ {
+  "id": 10210101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "White Lightning Comin' Through!"
+ },
+ {
+  "id": 10210102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "White Lightning Comin' Through!"
+ },
+ {
+  "id": 10210103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "White Lightning Comin' Through!"
+ },
+ {
+  "id": 10210201,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Lightning Flare"
+ },
+ {
+  "id": 10210202,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Lightning Flare"
+ },
+ {
+  "id": 10210203,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Lightning Flare"
+ },
+ {
+  "id": 10220101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Fairy Tale"
+ },
+ {
+  "id": 10220102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Fairy Tale"
+ },
+ {
+  "id": 10220103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Fairy Tale"
+ },
+ {
+  "id": 10220201,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Best day ever"
+ },
+ {
+  "id": 10220202,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Best day ever"
+ },
+ {
+  "id": 10220203,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Best day ever"
+ },
+ {
+  "id": 10230101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "∴win Q.E.D."
+ },
+ {
+  "id": 10230102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "∴win Q.E.D."
+ },
+ {
+  "id": 10230103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "∴win Q.E.D."
+ },
+ {
+  "id": 10230201,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Presents from X"
+ },
+ {
+  "id": 10230202,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Presents from X"
+ },
+ {
+  "id": 10230203,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Presents from X"
+ },
+ {
+  "id": 10240101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Flashy☆Landing"
+ },
+ {
+  "id": 10240102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Flashy☆Landing"
+ },
+ {
+  "id": 10240103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Flashy☆Landing"
+ },
+ {
+  "id": 10240201,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Flowery☆Maneuver"
+ },
+ {
+  "id": 10240202,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Flowery☆Maneuver"
+ },
+ {
+  "id": 10240203,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Flowery☆Maneuver"
+ },
+ {
+  "id": 10250101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Chasing after You"
+ },
+ {
+  "id": 10250102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Chasing after You"
+ },
+ {
+  "id": 10250103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Chasing after You"
+ },
+ {
+  "id": 10260101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "G00 1st. F∞;"
+ },
+ {
+  "id": 10260102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "G00 1st. F∞;"
+ },
+ {
+  "id": 10260103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "G00 1st. F∞;"
+ },
+ {
+  "id": 10260201,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Operation Cacao"
+ },
+ {
+  "id": 10260202,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Operation Cacao"
+ },
+ {
+  "id": 10260203,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Operation Cacao"
+ },
+ {
+  "id": 10270101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Let's Pump Some Iron!"
+ },
+ {
+  "id": 10270102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Let's Pump Some Iron!"
+ },
+ {
+  "id": 10270103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Let's Pump Some Iron!"
+ },
+ {
+  "id": 10280101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "YUMMY☆SPEED!"
+ },
+ {
+  "id": 10280102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "YUMMY☆SPEED!"
+ },
+ {
+  "id": 10280103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "YUMMY☆SPEED!"
+ },
+ {
+  "id": 10290101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Snow Bright, Snow Flight"
+ },
+ {
+  "id": 10290102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Snow Bright, Snow Flight"
+ },
+ {
+  "id": 10290103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Snow Bright, Snow Flight"
+ },
+ {
+  "id": 10300101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Blue Rose Closer"
+ },
+ {
+  "id": 10300102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Blue Rose Closer"
+ },
+ {
+  "id": 10300103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Blue Rose Closer"
+ },
+ {
+  "id": 10300201,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Every Rose Has Its Fangs"
+ },
+ {
+  "id": 10300202,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Every Rose Has Its Fangs"
+ },
+ {
+  "id": 10300203,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Every Rose Has Its Fangs"
+ },
+ {
+  "id": 10310101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "All Charged! It's Go Time!"
+ },
+ {
+  "id": 10310102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "All Charged! It's Go Time!"
+ },
+ {
+  "id": 10310103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "All Charged! It's Go Time!"
+ },
+ {
+  "id": 10320101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "U=ma2"
+ },
+ {
+  "id": 10320102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "U=ma2"
+ },
+ {
+  "id": 10320103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "U=ma2"
+ },
+ {
+  "id": 10330101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Shooting Star of Dioskouroi"
+ },
+ {
+  "id": 10330102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Shooting Star of Dioskouroi"
+ },
+ {
+  "id": 10330103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Shooting Star of Dioskouroi"
+ },
+ {
+  "id": 10340101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Now We're Cruisin'!"
+ },
+ {
+  "id": 10340102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Now We're Cruisin'!"
+ },
+ {
+  "id": 10340103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Now We're Cruisin'!"
+ },
+ {
+  "id": 10340201,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Firelight"
+ },
+ {
+  "id": 10340202,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Firelight"
+ },
+ {
+  "id": 10340203,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Firelight"
+ },
+ {
+  "id": 10350101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Our Ticket to Win!"
+ },
+ {
+  "id": 10350102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Our Ticket to Win!"
+ },
+ {
+  "id": 10350103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Our Ticket to Win!"
+ },
+ {
+  "id": 10350201,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Ticket to Your Dreams!"
+ },
+ {
+  "id": 10350202,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Ticket to Your Dreams!"
+ },
+ {
+  "id": 10350203,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Ticket to Your Dreams!"
+ },
+ {
+  "id": 10360101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "trigger:BEAT"
+ },
+ {
+  "id": 10360102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "trigger:BEAT"
+ },
+ {
+  "id": 10360103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "trigger:BEAT"
+ },
+ {
+  "id": 10370101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Schwarzes Schwert"
+ },
+ {
+  "id": 10370102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Schwarzes Schwert"
+ },
+ {
+  "id": 10370103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Schwarzes Schwert"
+ },
+ {
+  "id": 10370201,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Guten Appetit ♪"
+ },
+ {
+  "id": 10370202,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Guten Appetit ♪"
+ },
+ {
+  "id": 10370203,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Guten Appetit ♪"
+ },
+ {
+  "id": 10380101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "#LookatCurren"
+ },
+ {
+  "id": 10380102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "#LookatCurren"
+ },
+ {
+  "id": 10380103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "#LookatCurren"
+ },
+ {
+  "id": 10380201,
+  "kind": "unique",
+  "stars": 1,
+  "name": "One True Color"
+ },
+ {
+  "id": 10380202,
+  "kind": "unique",
+  "stars": 2,
+  "name": "One True Color"
+ },
+ {
+  "id": 10380203,
+  "kind": "unique",
+  "stars": 3,
+  "name": "One True Color"
+ },
+ {
+  "id": 10390101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "A Princess Must Seize Victory!"
+ },
+ {
+  "id": 10390102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "A Princess Must Seize Victory!"
+ },
+ {
+  "id": 10390103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "A Princess Must Seize Victory!"
+ },
+ {
+  "id": 10400101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "KEEP IT REAL."
+ },
+ {
+  "id": 10400102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "KEEP IT REAL."
+ },
+ {
+  "id": 10400103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "KEEP IT REAL."
+ },
+ {
+  "id": 10400201,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Dancing in the Leaves"
+ },
+ {
+  "id": 10400202,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Dancing in the Leaves"
+ },
+ {
+  "id": 10400203,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Dancing in the Leaves"
+ },
+ {
+  "id": 10410101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Genius x Bakushin = Victory"
+ },
+ {
+  "id": 10410102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Genius x Bakushin = Victory"
+ },
+ {
+  "id": 10410103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Genius x Bakushin = Victory"
+ },
+ {
+  "id": 10420101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "I'm Possible!"
+ },
+ {
+  "id": 10420102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "I'm Possible!"
+ },
+ {
+  "id": 10420103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "I'm Possible!"
+ },
+ {
+  "id": 10440101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Victory belongs to me—Strelitzia! ☆"
+ },
+ {
+  "id": 10440102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Victory belongs to me—Strelitzia! ☆"
+ },
+ {
+  "id": 10440103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Victory belongs to me—Strelitzia! ☆"
+ },
+ {
+  "id": 10450101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Pure Heart"
+ },
+ {
+  "id": 10450102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Pure Heart"
+ },
+ {
+  "id": 10450103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Pure Heart"
+ },
+ {
+  "id": 10450201,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Give Mummy a Hug ♡"
+ },
+ {
+  "id": 10450202,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Give Mummy a Hug ♡"
+ },
+ {
+  "id": 10450203,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Give Mummy a Hug ♡"
+ },
+ {
+  "id": 10460101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "SPARKLY☆STARDOM"
+ },
+ {
+  "id": 10460102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "SPARKLY☆STARDOM"
+ },
+ {
+  "id": 10460103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "SPARKLY☆STARDOM"
+ },
+ {
+  "id": 10460201,
+  "kind": "unique",
+  "stars": 1,
+  "name": "α-star*"
+ },
+ {
+  "id": 10460202,
+  "kind": "unique",
+  "stars": 2,
+  "name": "α-star*"
+ },
+ {
+  "id": 10460203,
+  "kind": "unique",
+  "stars": 3,
+  "name": "α-star*"
+ },
+ {
+  "id": 10470101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Raise My Soul's Blade!"
+ },
+ {
+  "id": 10470102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Raise My Soul's Blade!"
+ },
+ {
+  "id": 10470103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Raise My Soul's Blade!"
+ },
+ {
+  "id": 10480101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Pop & Polish"
+ },
+ {
+  "id": 10480102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Pop & Polish"
+ },
+ {
+  "id": 10480103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Pop & Polish"
+ },
+ {
+  "id": 10490101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Laugh at the Odds"
+ },
+ {
+  "id": 10490102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Laugh at the Odds"
+ },
+ {
+  "id": 10490103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Laugh at the Odds"
+ },
+ {
+  "id": 10500101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Nemesis"
+ },
+ {
+  "id": 10500102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Nemesis"
+ },
+ {
+  "id": 10500103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Nemesis"
+ },
+ {
+  "id": 10500201,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Hephaestus"
+ },
+ {
+  "id": 10500202,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Hephaestus"
+ },
+ {
+  "id": 10500203,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Hephaestus"
+ },
+ {
+  "id": 10510101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Budding Blossom"
+ },
+ {
+  "id": 10510102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Budding Blossom"
+ },
+ {
+  "id": 10510103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Budding Blossom"
+ },
+ {
+  "id": 10520101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Super-Duper Climax"
+ },
+ {
+  "id": 10520102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Super-Duper Climax"
+ },
+ {
+  "id": 10520103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Super-Duper Climax"
+ },
+ {
+  "id": 10520201,
+  "kind": "unique",
+  "stars": 1,
+  "name": "114th Time's the Charm"
+ },
+ {
+  "id": 10520202,
+  "kind": "unique",
+  "stars": 2,
+  "name": "114th Time's the Charm"
+ },
+ {
+  "id": 10520203,
+  "kind": "unique",
+  "stars": 3,
+  "name": "114th Time's the Charm"
+ },
+ {
+  "id": 10530101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Red-Hot Discipline!"
+ },
+ {
+  "id": 10530102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Red-Hot Discipline!"
+ },
+ {
+  "id": 10530103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Red-Hot Discipline!"
+ },
+ {
+  "id": 10560101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "I See Victory in My Future!"
+ },
+ {
+  "id": 10560102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "I See Victory in My Future!"
+ },
+ {
+  "id": 10560103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "I See Victory in My Future!"
+ },
+ {
+  "id": 10560201,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Bountiful Harvest"
+ },
+ {
+  "id": 10560202,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Bountiful Harvest"
+ },
+ {
+  "id": 10560203,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Bountiful Harvest"
+ },
+ {
+  "id": 10580101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "I Never Goof Up!"
+ },
+ {
+  "id": 10580102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "I Never Goof Up!"
+ },
+ {
+  "id": 10580103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "I Never Goof Up!"
+ },
+ {
+  "id": 10580201,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Spooky, Scary, Happy"
+ },
+ {
+  "id": 10580202,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Spooky, Scary, Happy"
+ },
+ {
+  "id": 10580203,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Spooky, Scary, Happy"
+ },
+ {
+  "id": 10590101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Moving Past, and Beyond"
+ },
+ {
+  "id": 10590102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Moving Past, and Beyond"
+ },
+ {
+  "id": 10590103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Moving Past, and Beyond"
+ },
+ {
+  "id": 10590201,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Wherever This Wonder Leads"
+ },
+ {
+  "id": 10590202,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Wherever This Wonder Leads"
+ },
+ {
+  "id": 10590203,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Wherever This Wonder Leads"
+ },
+ {
+  "id": 10600101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Just a Little Farther!"
+ },
+ {
+  "id": 10600102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Just a Little Farther!"
+ },
+ {
+  "id": 10600103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Just a Little Farther!"
+ },
+ {
+  "id": 10600201,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Go☆Go☆Goal!"
+ },
+ {
+  "id": 10600202,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Go☆Go☆Goal!"
+ },
+ {
+  "id": 10600203,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Go☆Go☆Goal!"
+ },
+ {
+  "id": 10610101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Prideful King"
+ },
+ {
+  "id": 10610102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Prideful King"
+ },
+ {
+  "id": 10610103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Prideful King"
+ },
+ {
+  "id": 10610201,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Louder! Tracen Cheer!"
+ },
+ {
+  "id": 10610202,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Louder! Tracen Cheer!"
+ },
+ {
+  "id": 10610203,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Louder! Tracen Cheer!"
+ },
+ {
+  "id": 10620101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Go, Go, Mun!"
+ },
+ {
+  "id": 10620102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Go, Go, Mun!"
+ },
+ {
+  "id": 10620103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Go, Go, Mun!"
+ },
+ {
+  "id": 10640101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Keep Pushing Ahead"
+ },
+ {
+  "id": 10640102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Keep Pushing Ahead"
+ },
+ {
+  "id": 10640103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Keep Pushing Ahead"
+ },
+ {
+  "id": 10670101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Eternal Encompassing Shine"
+ },
+ {
+  "id": 10670102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Eternal Encompassing Shine"
+ },
+ {
+  "id": 10670103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Eternal Encompassing Shine"
+ },
+ {
+  "id": 10670201,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Rain Cloud Bolt"
+ },
+ {
+  "id": 10670202,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Rain Cloud Bolt"
+ },
+ {
+  "id": 10670203,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Rain Cloud Bolt"
+ },
+ {
+  "id": 10680101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Victory Cheer!"
+ },
+ {
+  "id": 10680102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Victory Cheer!"
+ },
+ {
+  "id": 10680103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Victory Cheer!"
+ },
+ {
+  "id": 10680201,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Bring on the Banquet!"
+ },
+ {
+  "id": 10680202,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Bring on the Banquet!"
+ },
+ {
+  "id": 10680203,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Bring on the Banquet!"
+ },
+ {
+  "id": 10690101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Ambition to Surpass the Sakura"
+ },
+ {
+  "id": 10690102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Ambition to Surpass the Sakura"
+ },
+ {
+  "id": 10690103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Ambition to Surpass the Sakura"
+ },
+ {
+  "id": 10710101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "A Lifelong Dream, A Moment's Flight"
+ },
+ {
+  "id": 10710102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "A Lifelong Dream, A Moment's Flight"
+ },
+ {
+  "id": 10710103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "A Lifelong Dream, A Moment's Flight"
+ },
+ {
+  "id": 10720101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Peerless Dance of Flowering Flames"
+ },
+ {
+  "id": 10720102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Peerless Dance of Flowering Flames"
+ },
+ {
+  "id": 10720103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Peerless Dance of Flowering Flames"
+ },
+ {
+  "id": 10740101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Lovely Spring Breeze"
+ },
+ {
+  "id": 10740102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Lovely Spring Breeze"
+ },
+ {
+  "id": 10740103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Lovely Spring Breeze"
+ },
+ {
+  "id": 10780101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Sunny Breeze"
+ },
+ {
+  "id": 10780102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Sunny Breeze"
+ },
+ {
+  "id": 10780103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Sunny Breeze"
+ },
+ {
+  "id": 10870101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Silent Letter"
+ },
+ {
+  "id": 10870102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Silent Letter"
+ },
+ {
+  "id": 10870103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Silent Letter"
+ },
+ {
+  "id": 10980101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Luck Runs My Way"
+ },
+ {
+  "id": 10980102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Luck Runs My Way"
+ },
+ {
+  "id": 10980103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Luck Runs My Way"
+ },
+ {
+  "id": 10990101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Shine On, Tomakomai! ☆"
+ },
+ {
+  "id": 10990102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Shine On, Tomakomai! ☆"
+ },
+ {
+  "id": 10990103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Shine On, Tomakomai! ☆"
+ },
+ {
+  "id": 11000101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Never Say Never"
+ },
+ {
+  "id": 11000102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Never Say Never"
+ },
+ {
+  "id": 11000103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Never Say Never"
+ }
+]

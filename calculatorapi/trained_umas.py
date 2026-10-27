@@ -19,6 +19,7 @@ from calculatorapi.models import (
     CustomUser,
     PvpRunRunner,
     Skill,
+    Spark,
     TrainedUma,
     TrainedUmaSkill,
     TrainedUmaSource,
@@ -65,6 +66,37 @@ def strip_other_players(game_data):
     owner = game_data.get("owner_viewer_id")
     borrowed = game_data.get("use_type") == 1 or owner not in (0, None, own)
     return clean(game_data), borrowed
+
+
+def spark_names(game_data):
+    """{"<factor_id>": {name, kind, stars}} for every spark in a veteran's
+    raw game object: hers (`factor_info_array`) and each parent's and
+    grandparent's (`succession_chara_array[].factor_info_array`). One query.
+
+    `game_data` came from the player's file, so nothing about its shape is
+    trusted: anything that isn't a list of objects with a whole `factor_id`
+    is passed over. An id the Spark table doesn't know is left out, and the
+    page doesn't draw it.
+    """
+    def ids_in(row):
+        factors = row.get("factor_info_array") if isinstance(row, dict) else None
+        for factor in factors if isinstance(factors, list) else []:
+            factor_id = factor.get("factor_id") if isinstance(factor, dict) else None
+            if isinstance(factor_id, int) and not isinstance(factor_id, bool):
+                yield factor_id
+
+    if not isinstance(game_data, dict):
+        return {}
+    lineage = game_data.get("succession_chara_array")
+    ids = set(ids_in(game_data))
+    for relative in lineage if isinstance(lineage, list) else []:
+        ids.update(ids_in(relative))
+    if not ids:
+        return {}
+    return {
+        str(spark.id): {"name": spark.name, "kind": spark.kind, "stars": spark.stars}
+        for spark in Spark.objects.filter(id__in=ids)
+    }
 
 
 def get_owned(user, veteran_id):

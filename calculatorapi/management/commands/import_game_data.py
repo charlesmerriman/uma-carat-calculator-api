@@ -75,6 +75,10 @@ WHAT IT WRITES, and what it leaves alone:
                (gametora, via scripts/fetch_support_events.py; optional, so a
                snapshot without it imports hints alone). Same add-never-delete
                rule, matched on the card's game_id.
+  Spark        every spark in sparks.json (kind, stars, name), keyed on the
+               game's own id, created when missing. Optional: a snapshot from
+               before 2026-10-27 has none. A kind models/spark.py doesn't name
+               is skipped and reported. Never deleted.
 
   Never: name, image, admin_comments, purpose, is_time_limited. Those are the
   editors'. Never creates an Uma or SupportCard either: a card needs art, and a
@@ -115,7 +119,8 @@ from django.db import transaction
 
 from calculatorapi import public_payload_cache, pvp_catalogue_cache, skills_cache
 from calculatorapi.models import (
-    Skill, SkillAlias, SkillEvolutionCondition, SupportCard, SupportCardSkill, Uma, UmaSkill,
+    Skill, SkillAlias, SkillEvolutionCondition, Spark, SparkKind, SupportCard, SupportCardSkill,
+    Uma, UmaSkill,
 )
 from calculatorapi.game_data_sources import (
     SecondarySources, jp_owner_links, name_matches, plan_evolutions,
@@ -147,9 +152,10 @@ def load_snapshot(directory):
         if not path.is_file():
             raise CommandError(f"snapshot file missing: {path}")
         files[name] = json.loads(path.read_text(encoding="utf-8"))
-    # Optional: event skills come from gametora, not the game, and a snapshot
-    # from before 2026-10-16 has no text-ahead file.
-    for name in ("support_events", "skill_text_ahead"):
+    # Optional: event skills come from gametora, not the game, a snapshot
+    # from before 2026-10-16 has no text-ahead file, and one from before
+    # 2026-10-27 no sparks.
+    for name in ("support_events", "skill_text_ahead", "sparks"):
         path = directory / f"{name}.json"
         files[name] = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else []
     # Global's English for evolution conditions, keyed by condition id; a
@@ -455,6 +461,7 @@ class Command(BaseCommand):
                 known_skills, distrusted=support_plan["distrusted"] | jp_links["card_distrusted"],
             ),
             self._plan_evolution_links(evolutions, known_skills),
+            self._plan_sparks(snapshot["sparks"]),
         ]
         if sources.jp is not None:
             plans.append(self._jp_notice(jp_links, evolutions))
@@ -601,6 +608,44 @@ class Command(BaseCommand):
             "unchanged": unchanged, "missing": [], "mismatched": [], "ahead": len(taken),
             "jp_only": jp_only,
         }
+
+    @staticmethod
+    def _plan_sparks(sparks):
+        """
+        Like _plan_skills without the editors: every spark is the game's, so a
+        missing row is created and a changed one overwritten. `skipped` counts
+        the kinds models/spark.py has no name for yet.
+        """
+        by_id = Spark.objects.in_bulk()
+        kinds = set(SparkKind.values)
+        changed, created, unchanged, skipped = [], [], 0, 0
+        for spark in sparks:
+            if spark["kind"] not in kinds:
+                skipped += 1
+                continue
+            values = {"kind": spark["kind"], "stars": spark["stars"], "name": spark["name"]}
+            row = by_id.get(spark["id"])
+            if row is None:
+                created.append(Spark(id=spark["id"], **values))
+                continue
+            diff = {column: value for column, value in values.items() if getattr(row, column) != value}
+            if diff:
+                changed.append((row, diff))
+            else:
+                unchanged += 1
+        return {
+            "label": "spark", "spark": True, "changed": changed, "created": created,
+            "unchanged": unchanged, "skipped_kinds": skipped, "missing": [], "mismatched": [],
+        }
+
+    @staticmethod
+    def _write_sparks(plan):
+        for row, diff in plan["changed"]:
+            for column, value in diff.items():
+                setattr(row, column, value)
+            row.save(update_fields=list(diff))
+        Spark.objects.bulk_create(plan["created"])
+        return len(plan["changed"]) + len(plan["created"])
 
     @staticmethod
     def _plan_junction(spec, rows, known_skills, distrusted=frozenset()):
@@ -755,6 +800,9 @@ class Command(BaseCommand):
                 if plan.get("evolution"):
                     written += Command._write_evolutions(plan)
                     continue
+                if plan.get("spark"):
+                    written += Command._write_sparks(plan)
+                    continue
                 for row, diff in plan["changed"]:
                     for column, value in diff.items():
                         setattr(row, column, value)
@@ -782,7 +830,12 @@ class Command(BaseCommand):
         return written
 
     def _report_skill_notes(self, plan):
-        """The skill plan's JP-only count and new aliases, when there are any."""
+        """The skill plan's JP-only count and new aliases, and the spark plan's
+        unknown kinds, when there are any."""
+        if plan.get("skipped_kinds"):
+            self.stdout.write(self.style.WARNING(
+                f"    {plan['skipped_kinds']} of a kind models/spark.py doesn't name yet, skipped"
+            ))
         if plan.get("jp_only"):
             self.stdout.write(f"    {plan['jp_only']} are JP-only skills, hidden from players")
         if plan.get("aliases"):
