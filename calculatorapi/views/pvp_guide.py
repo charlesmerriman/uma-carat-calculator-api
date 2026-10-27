@@ -389,6 +389,7 @@ def serialize_guide(guide, request=None):
         "style_ranking": guide.style_ranking,
         "short_description": guide.short_description,
         "meta_analysis": guide.meta_analysis,
+        "under_construction": guide.under_construction,
         "team_comps": many(_TeamCompSerializer, guide.team_comps.all()),
         "stat_configs": many(
             _StatConfigSerializer, sorted(guide.stat_configs.all(), key=_stat_key)

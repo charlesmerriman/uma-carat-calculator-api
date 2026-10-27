@@ -24,10 +24,12 @@ WHAT A SAVE MAY HOLD
 --------------------
 A draft may be incomplete (an empty slot is simply no row), but it may never
 hold a shape the game refuses: the same uma twice, the same card twice in one
-deck, or two outfits of one character on a team. The first two are unique
-constraints; the character rule spans rows and is checked by pvp_teams.py on
-every save, not only when posting, so a draft never drifts into a team that
-cannot be posted without the player noticing.
+deck, or two outfits of one character on a team. The first is a unique
+constraint. The second is the deck serializer's (views/pvp_team.py), since a
+placeholder card may sit in one deck twice (0121 dropped its constraint). The
+character rule spans rows and is checked by pvp_teams.py on every save, not
+only when posting, so a draft never drifts into a team that cannot be posted
+without the player noticing.
 """
 
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -190,11 +192,6 @@ class PvpTeamCard(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=["member", "slot"], name="unique_pvp_deck_slot"
-            ),
-            # The game refuses a borrowed copy of a card already in the deck,
-            # so the borrow slot is included.
-            models.UniqueConstraint(
-                fields=["member", "support_card"], name="unique_pvp_deck_card"
             ),
             models.CheckConstraint(
                 condition=Q(slot__gte=1, slot__lte=PVP_DECK_SIZE),

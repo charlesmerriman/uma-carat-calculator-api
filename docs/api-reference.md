@@ -757,7 +757,7 @@ may hold `==highlight==` spans the client renders red.
 { "event_type": "champions_meeting", "event": 12, "is_published": true, "updated_at": "ISO8601",
   "scenario": {"id": 3, "name": "Grand Live", "image": "url | null"},
   "style_ranking": "Front >> Runaway >= End > Late > Pace",
-  "short_description": "markdown", "meta_analysis": "markdown",
+  "short_description": "markdown", "meta_analysis": "markdown", "under_construction": false,
   "team_comps": [{"text": "2 Front + 1 Pace", "note": "61% in sims"}],
   "stat_configs": [{"style": "everyone", "label": "Minimum", "speed": "1200", "stamina": "578*",
                     "power": "1100+", "guts": "", "wit": "1100+", "footnote": "*Bonus Speed every 300 Power."}],
@@ -863,7 +863,7 @@ client flushes its autosave first and replaces its copy with the answer.
 { "id": 7, "version": 12, "event_type": "champions_meeting", "event": 20,
   "is_published": false, "updated_at": "…", "scenario": 3,
   "style_ranking": "Front >> End", "short_description": "markdown", "meta_analysis": "markdown",
-  "admin_comments": "never public",
+  "under_construction": false, "admin_comments": "never public",
   "stat_configs": [{"style": "everyone", "label": "", "speed": "1100+", "stamina": "578*",
                     "power": "", "guts": "", "wit": "", "footnote": ""}],
   "team_comps": [{"text": "2 Front + 1 Pace", "note": ""}],
@@ -939,6 +939,108 @@ builder's deck rules count it as a card of each of them. `game_id` (all three) a
 skill's `version` label (`○ white`, `◎ white`, `◎ gold`, `evolved`: `Skill.version_label`)
 are for the guide editor's pickers and its paste-from-the-sheet matching (2026-10-21).
 
+### `GET /rankings/guides`
+
+The Rankings page's Guide rankings tab (`/app/rankings`, `views/rankings.py`): every pick in
+the published guides, which the client counts (`utils/guideRankings.ts`). **Early access
+only** (`benefits.early_access`), like every `/rankings/*` route: 401 for a guest, 403 for
+anyone else without it. **Built at most once an hour** and never invalidated
+(`rankings_cache.py`, the `rankings` cache alias); `generated_at` says when. Four queries on
+a miss, gzipped.
+
+```json
+{ "generated_at": "2026-10-27T20:15:03.120000+00:00",
+  "scenarios": [{"id": 12, "name": "Trackblazer"}],
+  "guides": [
+  { "kind": "cm", "event": 22, "scenario": 12,
+    "cards": [{"card": 12, "deck": 310, "style": "front", "tier": "whale", "role": "main"}],
+    "umas": [{"uma": 41, "style": "front", "stars": 3}] }
+] }
+```
+
+`deck` is the deck's id, so the client can count decks (a card's share). `scenarios` lists only the scenarios some published guide names, in JP release order; a
+guide's `scenario` is null when the editor hasn't set one. `tier` is `beginner` / `standard` /
+`whale` from the deck's label, `honorable` for a label starting "honorable mention" (any
+case), else `other` (one-off decks). `role` is `main`, `borrow` (counted like a main pick,
+owner) or `alt` (an alternative, shown but not counted). Placeholder cards, note-only slots
+and drafts are never sent; past events are, and the client picks the window.
+
+### `GET /rankings/gallery/<kind>/<event_id>`
+
+The PvP page's Rankings tab: one event's visible gallery posts (`gallery.visible_posts()`),
+counted on the server. Same gate and hourly cache as `/rankings/guides`; 404 for an unknown
+event or kind (`cm` / `loh`). Two queries on a miss.
+
+```json
+{ "generated_at": "2026-10-27T20:15:03.120000+00:00", "posts": 143, "decks": 429,
+  "umas": [{"uma": 41, "teams": 120, "styles": {"pace": 70, "end": 50}}],
+  "cards": [{"card": 12, "decks": 401, "borrows": 20}] }
+```
+
+`posts` is every post counted (an uma's share is out of it: a team never repeats a
+character), `decks` every member (a card's share). The counting is `views/rankings.count_teams`,
+shared with the PvP tab. A card counts once per member's deck, the
+borrowed card (slot 6) included and counted apart in `borrows`; placeholder cards never
+count. Most first, ties by id.
+
+### `GET /rankings/pull-plans`
+
+The Rankings page's Pull plans tab: the admin analytics' Popular banners tables and demand
+by month (`analytics/banners.py`), hourly like every `/rankings/*` route. **Behind the
+Raptive gate**: early access AND a guide editor (`views/rankings.sees_pull_plans`, twin of
+the client's `useRankingsPullPlans`) until the owner says Raptive approved; 403 otherwise.
+
+```json
+{ "generated_at": "...",
+  "banners": [{"type": "uma", "unit": "pulls", "id": 88, "name": "Gentildonna",
+               "start_date": "...", "end_date": "...", "predicted": true, "status": "upcoming",
+               "planners": 5807, "total": 958000, "average": 165.0, "median": 150}],
+  "demand": [{"month": "2026-11", "banners": 6, "planners": 9000, "total_pulls": 1200000,
+              "excluded": 3, "step_up_planners": 40}, {"month": "Later", "...": "..."}] }
+```
+
+`type` is `uma`, `support` or `step_up`; a step-up's figures are **steps** (`unit`), never
+pulls. Staff are left out and only active plans count; an implausible pull count still
+counts its planner but not the figures. Every banner anyone plans is sent, ended ones
+included (`status`).
+
+### `GET /rankings/pvp/<kind>/<event_id>`
+
+The Rankings page's PvP tab for one event, same gate and hourly cache as every
+`/rankings/*` route; 404 for an unknown event. `built` counts **every saved team**
+(`PvpTeam`, posted or not, staff out) by the gallery route's rule (`count_teams`: an uma
+once per team, a card once per member's deck, borrows apart, placeholders never), with
+`teams` in place of `posts`. `runs` totals CM Runs per uma and strategy: a runner ran every
+race of her ticket that has a result and won those whose winner is her spot; skipped
+tickets and staff never count. Four queries on a miss.
+
+```json
+{ "generated_at": "...",
+  "built": {"teams": 1350, "decks": 4050, "umas": [{"uma": 41, "teams": 394, "styles": {"pace": 233}}],
+            "cards": [{"card": 12, "decks": 900, "borrows": 30}]},
+  "runs": {"players": 210, "races": 4200, "min_races": 20,
+           "rows": [{"uma": 41, "style": "pace", "races": 600, "wins": 190}]} }
+```
+
+`min_races` is the floor under which the client shows no win rate.
+
+### `GET /rankings/players`
+
+The Rankings page's Players tab, same gate and cache: the admin analytics among engaged
+accounts, staff out. `favourites` (uma id, people), `ranks` (Team Trials and club rank:
+people per rank among those who set one, no "Not set" row), `income` (people with each
+income option on, of `engaged`), `selectors` (buyers, how many picked, and the top five
+picks per campaign selector, each `{"uma": id}` or `{"card": id}` with `people`).
+
+```json
+{ "generated_at": "...", "engaged": 16000,
+  "favourites": [{"uma": 41, "people": 900}],
+  "ranks": [{"label": "Team Trials", "people": 12000, "rows": [{"name": "Class 6", "people": 4560}]}],
+  "income": [{"key": "daily_carat", "label": "Daily Carat Pack", "people": 6700}],
+  "selectors": [{"campaign": "1st Anniversary", "label": "SSR Uma Selector", "buyers": 800, "picked": 600,
+                 "top": [{"uma": 41, "people": 120}]}] }
+```
+
 ### `/pvp-teams`
 
 A signed-in player's teams (`views/pvp_team.py`, rules in `pvp_teams.py`). All
@@ -974,7 +1076,8 @@ A gallery post never carries it.
 may leave positions and slots empty (no entry). **`400 {"error": "<one sentence>"}`**,
 written for the player, for: an unknown event, more than 3 umas or 6 cards, two members in
 one position or two cards in one slot, the same uma twice, **two outfits of one character**,
-the same card twice in one deck (borrow slot included), an unknown uma or card, more than 10
+the same card twice in one deck (borrow slot included; a placeholder card may repeat), an
+unknown uma or card, more than 10
 notes, a note over 1000 characters or an unknown colour (`yellow` / `pink` / `blue` /
 `green`), and creating a sixth team for one event (`PVP_TEAM_CAP_PER_EVENT`; a save to an
 existing team is never refused for it). A refused `PUT` leaves the team as it was.

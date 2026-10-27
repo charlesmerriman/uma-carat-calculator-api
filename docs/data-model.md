@@ -989,6 +989,10 @@ erDiagram
     `PvpDeck.is_highlighted` ("Gold box", `0105`) draws any deck in a gold box to set it
     apart, the way the sheet sets that row apart. An editor's switch per deck, never keyed
     to the label (owner, 2026-10-22).
+  - `PvpGuide.under_construction` (`0120`, Henry 2026-10-24) puts a banner on the reader
+    saying the guide is still being updated. A document field like `style_ranking` (it
+    autosaves and a revision restores it; optional on input, so an older revision restores
+    it off), and in the admin beside "published".
   - `PvpTeamComp`: free text ("2 Front + 1 Pace") and a note.
 - **`[[Skill name]]` mentions** may appear in any guide text field. `SkillMentionsMixin`
   (`MENTION_FIELDS` per model) refuses a save whose mention matches no skill on global,
@@ -1651,6 +1655,16 @@ result ("In plain English") with "Where it comes from".
 ids in the global snapshot. The PvP catalogue's `on_global` reads them (it used to mean
 "has skill links", which JP-only outfits now have too), and ships skill links for on-global
 outfits and cards only, so the team builder never counts a JP card's skills.
+
+**`SupportCard.is_placeholder`** (`0121`, owner 2026-10-27, Henry's and Daptrius's ask): a
+stand-in for "your best SSR Speed card" in a shared team. The 21 rows (R, SR and SSR of each
+type, made-up game ids `11000`-`37000`: rarity digit, then type) were added in the admin and
+ticked by `0121`'s fill step. The catalogue sends `placeholder`; the team builder treats one
+as always out, skips the uma-clash rules for it, and a deck may hold it twice (the
+`unique_pvp_deck_card` constraint went in `0121`; `views/pvp_team.py` checks repeats).
+Placeholders teach no skills and stay out of any ranking or team analytics. Guides don't use
+them: a guide's "Any Wit" slot already says that. An NPC uma placeholder is still to come
+(no row or art yet).
 
 ## The game's master database (`master.mdb`) and the committed snapshot
 

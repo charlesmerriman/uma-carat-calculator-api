@@ -188,9 +188,9 @@ class GuideEndpointTests(CalculatorTestCase):
 
         self.assertEqual(set(body), {
             "event_type", "event", "is_published", "updated_at", "scenario", "style_ranking",
-            "short_description", "meta_analysis", "team_comps", "stat_configs",
-            "uma_recommendations", "skill_recommendations", "style_notes", "decks",
-            "skill_mentions", "comment_counts",
+            "short_description", "meta_analysis", "under_construction", "team_comps",
+            "stat_configs", "uma_recommendations", "skill_recommendations", "style_notes",
+            "decks", "skill_mentions", "comment_counts",
         })
         self.assertNotIn("admin_comments", body)
         self.assertEqual(body["event_type"], "champions_meeting")

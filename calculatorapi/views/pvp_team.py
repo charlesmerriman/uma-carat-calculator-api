@@ -40,6 +40,7 @@ from calculatorapi.models import (
     PvpNoteColor,
     PvpStyle,
     PvpTeam,
+    SupportCard,
 )
 
 _NOT_FOUND = {"error": "Team not found"}
@@ -76,9 +77,12 @@ class _MemberInput(serializers.Serializer):  # pylint: disable=abstract-method
             raise serializers.ValidationError(f"A deck holds {PVP_DECK_SIZE} cards.")
         if len({card["slot"] for card in cards}) != len(cards):
             raise serializers.ValidationError("Two cards are in the same slot.")
-        if len({card["support_card"] for card in cards}) != len(cards):
-            # The borrow slot included: the game refuses a borrowed copy of a
-            # card already in the deck.
+        ids = [card["support_card"] for card in cards]
+        repeated = {card_id for card_id in ids if ids.count(card_id) > 1}
+        # The borrow slot included: the game refuses a borrowed copy of a card
+        # already in the deck. A placeholder ("your best SSR Speed card") is no
+        # one card, so it may stand in twice. One query, only for a repeat.
+        if repeated and SupportCard.objects.filter(id__in=repeated, is_placeholder=False).exists():
             raise serializers.ValidationError("A deck can't hold the same card twice.")
         return cards
 

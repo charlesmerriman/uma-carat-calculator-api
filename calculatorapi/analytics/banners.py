@@ -2,6 +2,7 @@
 demand falls due, and the umas they pick as favourites."""
 
 import datetime
+import statistics
 from collections import defaultdict
 
 from django.db.models import Avg, Count, F, Q, Sum
@@ -74,6 +75,24 @@ def _dated(timeline_id, timeline_dates, now):
     }
 
 
+def _medians(fk_name, sane):
+    """{banner id: the median of its sane rows' number_of_pulls}, one query.
+
+    The MEDIAN ("typical") beside the average, for the Rankings page's Pull
+    plans tab (notes/rankings-page-plan.md): a handful of 1,000-pull whales
+    drags an average far past what most planners budget, and the median is
+    what one ordinary planner does. SQL has no portable median, so the rows
+    come back sorted and Python takes the middle; at prod's ~100k active rows
+    that is one pass, and the Rankings tab builds it at most once an hour.
+    """
+    by_banner = defaultdict(list)
+    for banner_id, pulls in active_rows().filter(sane, **{f"{fk_name}__isnull": False}).values_list(
+        fk_name, "number_of_pulls"
+    ):
+        by_banner[banner_id].append(pulls)
+    return {banner_id: statistics.median(pulls) for banner_id, pulls in by_banner.items()}
+
+
 def banner_popularity(fk_name, timeline_dates):
     """
     Popularity rows for one banner type. fk_name is the FK field on
@@ -125,9 +144,11 @@ def banner_popularity(fk_name, timeline_dates):
         # figures for at the top of the table.
         .order_by("-planners", F("total_pulls").desc(nulls_last=True))
     )
+    medians = _medians(fk_name, sane)
     now = timezone.now()
     return [
         {
+            "id": row[fk_name],
             "name": row[f"{fk_name}__name"],
             "timeline": row[f"{fk_name}__banner_timeline__name"],
             **_dated(row[f"{fk_name}__banner_timeline_id"], timeline_dates, now),
@@ -137,6 +158,7 @@ def banner_popularity(fk_name, timeline_dates):
             # an error — report it as zero rather than crashing the page.
             "total_pulls": row["total_pulls"] or 0,
             "avg_pulls": round(row["avg_pulls"] or 0, 1),
+            "median_pulls": medians.get(row[fk_name], 0),
             "excluded": row["excluded"],
         }
         for row in rows
@@ -182,6 +204,7 @@ def step_up_popularity(timeline_dates):
         .annotate(people=Count("user", distinct=True))
         .values_list("banner_step_up", "people")
     )
+    medians = _medians("banner_step_up", sane)
     step_ups = (BannerStepUp.objects
                 .filter(id__in=planned.keys() | picked.keys())
                 .select_related("anniversary_event"))
@@ -190,6 +213,7 @@ def step_up_popularity(timeline_dates):
     for step_up in step_ups:
         plan = planned.get(step_up.id, {})
         rows.append({
+            "id": step_up.id,
             "name": step_up.name,
             "campaign": step_up.anniversary_event.name,
             "card_type": step_up.get_card_type_display(),
@@ -198,6 +222,7 @@ def step_up_popularity(timeline_dates):
             "picked": picked.get(step_up.id, 0),
             "total_steps": plan.get("total_steps") or 0,
             "avg_steps": round(plan.get("avg_steps") or 0, 1),
+            "median_steps": medians.get(step_up.id, 0),
             "excluded": plan.get("excluded", 0),
         })
     rows.sort(key=lambda row: (-row["planners"], -row["total_steps"], row["name"]))
@@ -300,5 +325,5 @@ def favourite_umas():
                   as_picture=Count("user", distinct=True, filter=Q(position=0)))
         .order_by("-people", "-as_picture", "uma__name")[:FAVOURITES_LIMIT]
     )
-    return [{"uma": row["uma__name"], "people": row["people"],
+    return [{"uma": row["uma__name"], "uma_id": row["uma_id"], "people": row["people"],
              "as_picture": row["as_picture"]} for row in rows]
