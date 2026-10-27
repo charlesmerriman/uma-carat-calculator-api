@@ -3,6 +3,8 @@
 import datetime
 import gzip
 import json
+import threading
+from unittest import mock
 
 from django.core.cache import cache
 from django.utils import timezone
@@ -10,6 +12,7 @@ from rest_framework.test import APIClient
 
 from calculatorapi import public_payload_cache
 from calculatorapi.predictions import GAME_EVENT_END_DATE_BUFFER
+from calculatorapi.views.calculator import CalculatorViewSet
 from calculatorapi.models import (
     AnalyticsSnapshot,
     AnniversaryEventBanner,
@@ -836,6 +839,54 @@ class PublicPayloadCacheTests(CalculatorTestCase):
         cached = json.loads(gzip.decompress(public_payload_cache.read()))
         self.assertEqual(set(cached.keys()), _EXPECTED_GET_KEYS)
 
+
+
+class PublicPayloadRebuildLockTests(CalculatorTestCase):
+    """Threads that find the cache empty together rebuild it once, not once each.
+
+    Four overlapping rebuilds were four ~47MB bursts at once, and the process
+    kept that memory: the 2026-10 "memory above 80%" alerts.
+    -> public_payload_cache.rebuild_lock
+    """
+
+    THREADS = 4  # gunicorn.conf.py's thread count
+
+    def test_concurrent_misses_build_the_payload_once(self):
+        real_read = public_payload_cache.read
+        reads, builds, statuses = [], [], []
+        every_thread_has_looked = threading.Event()
+
+        def counting_read():
+            reads.append(1)
+            if len(reads) >= self.THREADS:
+                every_thread_has_looked.set()
+            return real_read()
+
+        def slow_build():
+            # Hold the rebuild open until the other threads have read the
+            # cache too, so they genuinely overlap with it. Without the lock
+            # every one of them would have missed and ended up in here.
+            builds.append(1)
+            every_thread_has_looked.wait(timeout=5)
+            # A stand-in payload: the real build would query the test DB from
+            # threads that have no connection to it.
+            return {'stand_in': True}
+
+        def guest_load():
+            statuses.append(APIClient().get('/calculator-data').status_code)
+
+        with mock.patch.object(public_payload_cache, 'read', counting_read), \
+                mock.patch.object(CalculatorViewSet, '_build_public_payload',
+                                  side_effect=slow_build):
+            workers = [threading.Thread(target=guest_load) for _ in range(self.THREADS)]
+            for worker in workers:
+                worker.start()
+            for worker in workers:
+                worker.join(timeout=10)
+
+        self.assertEqual(statuses, [200] * self.THREADS)
+        self.assertEqual(len(builds), 1)
+        self.assertIsNotNone(real_read())
 
 
 class GuestPayloadEncodingTests(CalculatorTestCase):
