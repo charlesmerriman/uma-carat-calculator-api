@@ -65,7 +65,9 @@ WHAT IT WRITES, and what it leaves alone:
                bonuses. `rarity` is what the selector pickers read, through
                `Uma.is_three_star`. Matched on `game_id`.
   SupportCard  card_type, rarity, character_id, title, and group_members (a
-               group card's umas, by name). Matched on `game_id`.
+               group card's umas, by name). Matched on `game_id`. A card
+               global doesn't have takes `card_type` alone from the JP
+               snapshot, after the same name check as its links.
   UmaSkill     one row per (uma, skill, source) the game lists: unique, innate
                and awakening skills, with `level` (see the model). Rows are
                ADDED and never deleted, so a hand-added row survives. An
@@ -430,6 +432,7 @@ class Command(BaseCommand):
         support_plan = self._plan(
             "support card", SupportCard, snapshot["support_cards"], support_values,
         )
+        self._add_jp_card_types(support_plan, jp_links["card_types"])
         known_skills = (
             {skill["id"] for skill in snapshot["skills"]}
             | {skill["id"] for skill in snapshot["skill_text_ahead"]}
@@ -527,6 +530,23 @@ class Command(BaseCommand):
             "label": label, "changed": changed, "unchanged": unchanged,
             "missing": missing, "mismatched": mismatched, "distrusted": distrusted,
         }
+
+    @staticmethod
+    def _add_jp_card_types(plan, card_types):
+        """
+        Fold the JP-only cards' types into the support card plan. A row the
+        plan already changes (it said it was on global and no longer is)
+        gets the type in the same diff, so it is saved once.
+        """
+        pending = {row.game_id: diff for row, diff in plan["changed"]}
+        for row in SupportCard.objects.filter(game_id__in=card_types):
+            card_type = card_types[row.game_id]
+            if row.card_type == card_type:
+                continue
+            if row.game_id in pending:
+                pending[row.game_id]["card_type"] = card_type
+            else:
+                plan["changed"].append((row, {"card_type": card_type}))
 
     @staticmethod
     def _plan_skills(skills, detailed, ahead=(), sources=None, evolutions=None):  # pylint: disable=too-many-locals
