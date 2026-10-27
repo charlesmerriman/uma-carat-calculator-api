@@ -974,7 +974,8 @@ A gallery post never carries it.
 may leave positions and slots empty (no entry). **`400 {"error": "<one sentence>"}`**,
 written for the player, for: an unknown event, more than 3 umas or 6 cards, two members in
 one position or two cards in one slot, the same uma twice, **two outfits of one character**,
-the same card twice in one deck (borrow slot included), an unknown uma or card, more than 10
+the same card twice in one deck (borrow slot included; a placeholder card may repeat), an
+unknown uma or card, more than 10
 notes, a note over 1000 characters or an unknown colour (`yellow` / `pink` / `blue` /
 `green`), and creating a sixth team for one event (`PVP_TEAM_CAP_PER_EVENT`; a save to an
 existing team is never refused for it). A refused `PUT` leaves the team as it was.

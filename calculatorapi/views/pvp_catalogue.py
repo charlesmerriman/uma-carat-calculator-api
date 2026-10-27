@@ -137,10 +137,12 @@ def build_catalogue():
         # group_members: a group card's umas, by name, which the builder's
         # deck rules treat as that many cards. [] on every other card.
         .values("id", "name", "game_id", "image", "card_type", "rarity", "title", "group_members",
-                "is_on_global")
+                "is_on_global", "is_placeholder")
     ):
         card["image"] = _url(card["image"])
         card["on_global"] = card.pop("is_on_global")
+        # A stand-in ("your best SSR Speed card"): always out, see SupportCard.
+        card["placeholder"] = card.pop("is_placeholder")
         card["skills"] = card_skills.get(card["id"], [])
         support_cards.append(card)
 

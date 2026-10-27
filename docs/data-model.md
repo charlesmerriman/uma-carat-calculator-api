@@ -1656,6 +1656,16 @@ ids in the global snapshot. The PvP catalogue's `on_global` reads them (it used 
 "has skill links", which JP-only outfits now have too), and ships skill links for on-global
 outfits and cards only, so the team builder never counts a JP card's skills.
 
+**`SupportCard.is_placeholder`** (`0121`, owner 2026-10-27, Henry's and Daptrius's ask): a
+stand-in for "your best SSR Speed card" in a shared team. The 21 rows (R, SR and SSR of each
+type, made-up game ids `11000`-`37000`: rarity digit, then type) were added in the admin and
+ticked by `0121`'s fill step. The catalogue sends `placeholder`; the team builder treats one
+as always out, skips the uma-clash rules for it, and a deck may hold it twice (the
+`unique_pvp_deck_card` constraint went in `0121`; `views/pvp_team.py` checks repeats).
+Placeholders teach no skills and stay out of any ranking or team analytics. Guides don't use
+them: a guide's "Any Wit" slot already says that. An NPC uma placeholder is still to come
+(no row or art yet).
+
 ## The game's master database (`master.mdb`) and the committed snapshot
 
 The skills work imports from the global game client's own database rather than a fan
