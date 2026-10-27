@@ -168,6 +168,17 @@ class RuleTests(PvpTeamFixture):
         members[0]["cards"][5]["support_card"] = self.cards[0].id   # the borrow slot too
         self.assert_refused(members, "same card twice")
 
+    def test_a_placeholder_may_stand_in_twice(self):
+        any_speed = make_card("SSR Speed", 31000)
+        any_speed.is_placeholder = True
+        any_speed.save(update_fields=["is_placeholder"])
+        members = self.members(self.oguri)
+        members[0]["cards"][0]["support_card"] = any_speed.id
+        members[0]["cards"][5]["support_card"] = any_speed.id
+        response = self.create(members=members)
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(PvpTeamCard.objects.filter(support_card=any_speed).count(), 2)
+
     def test_two_cards_in_one_slot(self):
         members = self.members(self.oguri)
         members[0]["cards"][1]["slot"] = 1

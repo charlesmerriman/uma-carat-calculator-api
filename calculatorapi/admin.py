@@ -801,14 +801,15 @@ class SupportCardAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
     inlines = (SupportCardSkillInline,)
     list_display = ("image_preview", "name", "game_id", "card_type", "rarity")
     list_display_links = ("name",)
-    list_filter = ("card_type", "rarity", PURPOSE_FILTER)
+    list_filter = ("card_type", "rarity", "is_placeholder", PURPOSE_FILTER)
     ordering = ("name",)
     search_fields = ("name", "=game_id")  # required: autocomplete source for banner inlines
     readonly_fields = ("image_preview", "is_on_global")
     # Explicit since purpose arrived: Django's every-field default form had
     # nowhere to say that one of these boxes is public.
     fieldsets = (
-        (None, {"fields": ("name", "game_id", "image", "image_preview", "admin_comments")}),
+        (None, {"fields": ("name", "game_id", "image", "image_preview", "is_placeholder",
+                           "admin_comments")}),
         PURPOSE_FIELDSET,
         ("Game data", {
             "classes": ("collapse",),

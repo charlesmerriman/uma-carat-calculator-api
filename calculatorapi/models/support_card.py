@@ -68,6 +68,21 @@ class SupportCard(models.Model):
         ),
     )
 
+    # Henry and Daptrius, 2026-10-23 (owner's yes 2026-10-27): a stand-in for
+    # "your best SSR Speed card", for a team shared before the player knows
+    # which card. Not a game card: its game_id is made up (31000 is SSR
+    # Speed), so the import never touches it. The team builder treats it as
+    # always out, a deck may hold it twice (views/pvp_team.py), and it counts
+    # toward nothing that ranks cards.
+    is_placeholder = models.BooleanField(
+        default=False,
+        verbose_name="placeholder",
+        help_text=(
+            "A stand-in for \"your best card of this type and rarity\". Always "
+            "pickable in My team, and a deck may hold it twice."
+        ),
+    )
+
     # ---- Game data, filled by `manage.py import_game_data`. ----
     card_type = models.CharField(
         max_length=10,

@@ -1,5 +1,8 @@
 """GET /pvp-catalogue: what it carries, what it leaves out, and its cache."""
 
+import importlib
+
+from django.apps import apps as django_apps
 from django.db import connection
 from django.test import override_settings
 from django.test.utils import CaptureQueriesContext
@@ -67,6 +70,25 @@ class CatalogueTests(CalculatorTestCase):
         self.assertEqual([card["name"] for card in body["support_cards"]], ["Kitasan Black"])
         self.assertEqual(body["support_cards"][0]["card_type"], "speed")
         self.assertEqual(body["support_cards"][0]["group_members"], [])
+
+    def test_a_placeholder_says_so(self):
+        SupportCard.objects.create(
+            name="SSR Speed", game_id=31000, image="support_cards/31000.png",
+            card_type="speed", rarity=3, is_placeholder=True,
+        )
+        flags = {card["name"]: card["placeholder"] for card in self.fetch()["support_cards"]}
+        self.assertEqual(flags, {"Kitasan Black": False, "SSR Speed": True})
+
+    def test_the_placeholder_migration_ticks_only_exact_matches(self):
+        migration = importlib.import_module("calculatorapi.migrations.0121_support_card_placeholder")
+        exact = SupportCard.objects.create(name="SSR Speed", game_id=31000)
+        renamed = SupportCard.objects.create(name="Any SSR Speed", game_id=32000)
+        migration.tick_placeholders(django_apps, None)
+        exact.refresh_from_db()
+        renamed.refresh_from_db()
+        self.assertTrue(exact.is_placeholder)
+        self.assertFalse(renamed.is_placeholder)
+        self.assertFalse(SupportCard.objects.get(name="Kitasan Black").is_placeholder)
 
     def test_a_group_card_carries_its_umas(self):
         SupportCard.objects.create(
