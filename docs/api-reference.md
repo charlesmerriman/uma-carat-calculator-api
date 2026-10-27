@@ -965,6 +965,23 @@ case), else `other` (one-off decks). `role` is `main`, `borrow` (counted like a 
 owner) or `alt` (an alternative, shown but not counted). Placeholder cards, note-only slots
 and drafts are never sent; past events are, and the client picks the window.
 
+### `GET /rankings/gallery/<kind>/<event_id>`
+
+The PvP page's Rankings tab: one event's visible gallery posts (`gallery.visible_posts()`),
+counted on the server. Same gate and hourly cache as `/rankings/guides`; 404 for an unknown
+event or kind (`cm` / `loh`). Two queries on a miss.
+
+```json
+{ "generated_at": "2026-10-27T20:15:03.120000+00:00", "posts": 143, "decks": 429,
+  "umas": [{"uma": 41, "teams": 120, "styles": {"pace": 70, "end": 50}}],
+  "cards": [{"card": 12, "decks": 401, "borrows": 20}] }
+```
+
+`posts` is every post counted (an uma's share is out of it: a team never repeats a
+character), `decks` every member (a card's share). A card counts once per member's deck, the
+borrowed card (slot 6) included and counted apart in `borrows`; placeholder cards never
+count. Most first, ties by id.
+
 ### `/pvp-teams`
 
 A signed-in player's teams (`views/pvp_team.py`, rules in `pvp_teams.py`). All

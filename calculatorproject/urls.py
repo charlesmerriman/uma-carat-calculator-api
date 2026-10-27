@@ -60,7 +60,7 @@ from calculatorapi.views.pvp_guide_editor import (
     pvp_guide_track_greens,
 )
 from calculatorapi.views.pvp_catalogue import pvp_catalogue
-from calculatorapi.views.rankings import rankings_guides
+from calculatorapi.views.rankings import rankings_gallery, rankings_guides
 from calculatorapi.views.skills import skill_detail, skill_list
 from calculatorapi.views.pvp_team import pvp_team_detail, pvp_team_list
 from calculatorapi.views.pvp_run import pvp_run_final, pvp_run_list, pvp_run_ticket
@@ -213,6 +213,7 @@ urlpatterns = [
     # The Rankings page (/app/rankings), one route per tab, each built at
     # most once an hour. Early access only. → views/rankings.py
     path("rankings/guides", rankings_guides, name="rankings-guides"),
+    path("rankings/gallery/<str:kind>/<int:event_id>", rankings_gallery, name="rankings-gallery"),
     # Every skill a player may read about, and one skill in full: the Skills
     # page and the guide editor's picker. Public, cached. → views/skills.py
     path("skills", skill_list, name="skill-list"),

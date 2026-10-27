@@ -2,7 +2,9 @@
 The Rankings page's routes (/app/rankings, notes/rankings-page-plan.md),
 one per tab:
 
-  GET /rankings/guides   every pick in the published PvP guides
+  GET /rankings/guides                     every pick in the published PvP guides
+  GET /rankings/gallery/<kind>/<event_id>  one event's gallery posts, counted
+                                           (the PvP page's Rankings tab)
 
 EARLY ACCESS ONLY (owner, 2026-10-27: "Patreon only for now"). Every route
 checks benefits.early_access on the server; a guest gets 401, anyone else
@@ -39,17 +41,21 @@ pull), note-only slots ("Any Wit"), and drafts. Past events are sent; the
 client picks the window.
 """
 
+from collections import Counter, defaultdict
+
 from django.db.models import F
 from django.views.decorators.gzip import gzip_page
 from rest_framework import permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
-from calculatorapi import benefits
-from calculatorapi.models import PvpDeckSlot, PvpGuide, PvpUmaRecommendation, Scenario
+from calculatorapi import benefits, gallery, pvp_teams
+from calculatorapi.models import PvpDeckSlot, PvpGuide, PvpUmaRecommendation, Scenario, SupportCard
 from calculatorapi.rankings_cache import cached_payload
 
 TIERS = ("beginner", "standard", "whale")
+# A gallery member's borrowed card sits in slot 6 (gallery.snapshot_from_team).
+BORROW_SLOT = 6
 # Matched as the label's START, any case: prod has "Honorable mention",
 # "Honorable mentions" and "Honorable mention deck".
 HONORABLE = "honorable mention"
@@ -143,3 +149,70 @@ def rankings_guides(request):
     if not benefits.early_access(request.user):
         return Response(REFUSED, status=403)
     return Response(cached_payload("guides", guides_payload))
+
+
+def gallery_payload(event):
+    """One event's visible gallery posts, counted: {"posts", "decks", "umas":
+    [{"uma", "teams", "styles": {style: members}}], "cards": [{"card",
+    "decks", "borrows"}]}, most first.
+
+    COUNTED HERE, unlike the guides: the tab has no filters, so the client
+    needs totals, and a few hundred posts' snapshots stay on the server.
+    An uma counts once per post with her (a team never repeats a character);
+    a card once per member deck holding it, the borrowed card included (the
+    owner's rule for the guides, kept here), with the borrows counted apart.
+    Ties go to the lower id. `decks` is every member counted, a card's share's denominator; `posts`
+    an uma's. Placeholder cards ("your best SSR Speed card") are no card to
+    pull, so they never count. Two queries.
+    """
+    snapshots = list(gallery.visible_posts().filter(**event).values_list("team_snapshot", flat=True))
+    card_ids = {card["support_card"] for snapshot in snapshots for member in snapshot for card in member["cards"]}
+    placeholders = set(
+        SupportCard.objects.filter(id__in=card_ids, is_placeholder=True).values_list("id", flat=True)
+    )
+
+    teams, styles = Counter(), defaultdict(Counter)
+    decks, borrows = Counter(), Counter()
+    members = 0
+    for snapshot in snapshots:
+        for member in snapshot:
+            members += 1
+            teams[member["uma"]] += 1
+            styles[member["uma"]][member["style"]] += 1
+            for card in member["cards"]:
+                if card["support_card"] in placeholders:
+                    continue
+                decks[card["support_card"]] += 1
+                if card["slot"] == BORROW_SLOT:
+                    borrows[card["support_card"]] += 1
+
+    return {
+        "posts": len(snapshots),
+        "decks": members,
+        "umas": [
+            {"uma": uma, "teams": count, "styles": dict(styles[uma])}
+            for uma, count in _most_first(teams)
+        ],
+        "cards": [
+            {"card": card, "decks": count, "borrows": borrows[card]}
+            for card, count in _most_first(decks)
+        ],
+    }
+
+
+def _most_first(counter):
+    """(id, count), most first, ties by id so the order never depends on the posts'."""
+    return sorted(counter.items(), key=lambda item: (-item[1], item[0]))
+
+
+@gzip_page
+@api_view(["GET"])
+@permission_classes([permissions.IsAuthenticated])
+def rankings_gallery(request, kind, event_id):
+    if not benefits.early_access(request.user):
+        return Response(REFUSED, status=403)
+    try:
+        event = pvp_teams.resolve_event(kind, event_id)
+    except pvp_teams.TeamRefused:
+        return Response({"error": "Event not found"}, status=404)
+    return Response(cached_payload(f"gallery:{kind}:{event_id}", lambda: gallery_payload(event)))
