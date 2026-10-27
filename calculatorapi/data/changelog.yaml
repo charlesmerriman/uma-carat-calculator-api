@@ -40,8 +40,8 @@
     - added: "Introducing the CM Runs tab, just in time for CM 21! Log every ticket race by race and watch your win rates come together for each uma."
     - added: "Meet the Collection, home for your veterans, umas and support cards. Veterans are the big one for CM Runs: link one to each runner and your win rates show which build is carrying you. Find it in your profile menu or on the Account page."
     - added: "In CM Runs, start a ticket in one tap from your last lineup or a team, then log each race with a single tap, Finals included. Skip a ticket or stop one early, clear a finished day's leftovers, leave a note, and see your win rates by uma and by veteran. It all saves to your account."
-    - added: "In the Collection, add veterans by hand or import them from umadump's export files, along with the umas and cards you own. Veterans go by their grade and score like in the game, and tapping one opens her full card: stats, aptitudes, skills, sparks and training. Your stars, potential and limit breaks show right on the art, and the Missing filter shows what you're short on."
-    - added: "In My team, link each member to one of your veterans and her aptitude letters follow. The pickers can show only what you own."
+    - added: "In the Collection, add veterans by hand or import them from umadump's export files, along with the umas and cards you own. Veterans go by their grade and score like in the game. Filter them by uma or aptitude, and tap one for her full card: stats, aptitudes, skills, sparks and training. Stars, potential and limit breaks show on the art, each tab opens with a summary, Missing shows what you're short on, and an uma's tile links to her veterans."
+    - added: "In My team, link each member to one of your veterans and her aptitude letters follow. A CM Runs ticket loaded from that team keeps the links, and the pickers can show only what you own."
     - changed: "Pages load faster when you're signed in. The site sends about a tenth of the data it used to, which you'll feel on a slow connection."
     - changed: "The Privacy Policy now covers logged runs, veterans and imports."
 
