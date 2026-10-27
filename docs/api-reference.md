@@ -939,6 +939,25 @@ builder's deck rules count it as a card of each of them. `game_id` (all three) a
 skill's `version` label (`○ white`, `◎ white`, `◎ gold`, `evolved`: `Skill.version_label`)
 are for the guide editor's pickers and its paste-from-the-sheet matching (2026-10-21).
 
+### `GET /pvp-rankings`
+
+Every pick in the published guides, for the PvP page's Rankings view, which does the
+counting (`utils/pvpRankings.ts`). **Early access only** (`benefits.early_access`): 401 for a
+guest, 403 for anyone else without it. Three queries, no cache.
+
+```json
+{ "guides": [
+  { "kind": "cm", "event": 22,
+    "cards": [{"card": 12, "style": "front", "deck": "Whale", "tier": "whale", "role": "main"}],
+    "umas": [{"uma": 41, "style": "front", "stars": 3}] }
+] }
+```
+
+`tier` is `beginner` / `standard` / `whale` from the deck's label, else `other`
+(honorable mentions, one-off decks). `role` is `main`, `borrow` (counted like a main pick,
+owner) or `alt` (an alternative, shown but not counted). Placeholder cards, note-only slots
+and drafts are never sent; past events are, and the client keeps the upcoming ones.
+
 ### `/pvp-teams`
 
 A signed-in player's teams (`views/pvp_team.py`, rules in `pvp_teams.py`). All
