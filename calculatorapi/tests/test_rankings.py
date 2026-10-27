@@ -1,5 +1,5 @@
-"""The Rankings page's routes: who may read them, the rows they send, and
-the hourly cache (views/rankings.py, rankings_cache.py)."""
+"""The Rankings page's routes: who may read them, what they send, and the
+hourly cache (views/rankings.py, rankings_cache.py)."""
 
 from datetime import timedelta
 
@@ -9,7 +9,7 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from calculatorapi.models import (
-    PvpDeck, PvpDeckSlot, PvpGuide, PvpUmaRecommendation, SupportCard, Uma,
+    GalleryPost, GalleryPostKind, PvpDeck, PvpDeckSlot, PvpGuide, PvpUmaRecommendation, SupportCard, Uma,
 )
 from calculatorapi.tests.base import CalculatorTestCase
 from calculatorapi.tests.factories import (
@@ -174,3 +174,58 @@ class HourlyCacheTests(RankingsFixture):
         self.assertEqual(second, first)
         # Only the account's own reads: the payload's four never run.
         self.assertFalse(any("pvpdeckslot" in query["sql"].lower() for query in queries))
+
+
+class GalleryRankingsTests(CalculatorTestCase):  # pylint: disable=too-many-instance-attributes
+    """GET /rankings/gallery/<kind>/<id>: one event's posted teams, counted."""
+
+    def setUp(self):
+        self.cm = make_champions_meeting(name="Libra Cup", cm_number=21)
+        self.oguri = Uma.objects.create(name="Oguri Cap")
+        self.maru = Uma.objects.create(name="Maruzensky")
+        self.light = SupportCard.objects.create(name="Light Hello", card_type="friend", rarity=3)
+        self.kitasan = SupportCard.objects.create(name="Kitasan Black", card_type="speed", rarity=3)
+        self.any_speed = SupportCard.objects.create(
+            name="SSR Speed", card_type="speed", rarity=3, is_placeholder=True,
+        )
+        self.post(make_user("a"), [
+            self.member(self.oguri, "pace", [(1, self.light), (2, self.any_speed), (6, self.kitasan)]),
+            self.member(self.maru, "front", [(1, self.light)]),
+        ])
+        self.post(make_user("b"), [self.member(self.oguri, "end", [(1, self.kitasan)])])
+        blocked = make_user("blocked")
+        blocked.publishing_blocked = True
+        blocked.save(update_fields=["publishing_blocked"])
+        self.post(blocked, [self.member(self.maru, "front", [(1, self.kitasan)])])
+        self.url = f"/rankings/gallery/cm/{self.cm.id}"
+        self.client, _ = auth_client(make_user("staff", is_staff=True))
+
+    @staticmethod
+    def member(uma, style, cards):
+        return {"position": 0, "uma": uma.id, "style": style,
+                "cards": [{"slot": slot, "support_card": card.id} for slot, card in cards]}
+
+    def post(self, author, snapshot):
+        GalleryPost.objects.create(
+            author=author, kind=GalleryPostKind.PVP_TEAM, champions_meeting=self.cm, team_snapshot=snapshot,
+        )
+
+    def test_counts_visible_posts_umas_and_cards(self):
+        body = self.client.get(self.url).json()
+        self.assertEqual((body["posts"], body["decks"]), (2, 3))
+        self.assertEqual(body["umas"], [
+            {"uma": self.oguri.id, "teams": 2, "styles": {"pace": 1, "end": 1}},
+            {"uma": self.maru.id, "teams": 1, "styles": {"front": 1}},
+        ])
+        self.assertEqual(body["cards"], [
+            {"card": self.light.id, "decks": 2, "borrows": 0},
+            {"card": self.kitasan.id, "decks": 2, "borrows": 1},
+        ])
+        self.assertIn("generated_at", body)
+
+    def test_early_access_only_and_a_real_event(self):
+        self.assertEqual(APIClient().get(self.url).status_code, 401)
+        plain, _ = auth_client(make_user("plain"))
+        self.assertEqual(plain.get(self.url).status_code, 403)
+        self.assertEqual(self.client.get("/rankings/gallery/cm/9999").status_code, 404)
+        self.assertEqual(self.client.get(f"/rankings/gallery/xx/{self.cm.id}").status_code, 404)
