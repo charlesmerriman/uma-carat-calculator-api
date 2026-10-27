@@ -218,6 +218,37 @@ class JpImportTests(CalculatorTestCase):  # pylint: disable=too-many-instance-at
         self.assertFalse(SupportCardSkill.objects.filter(support_card=wrong).exists())
         self.assertIn("JP support card 30300", out)
 
+    def test_a_jp_card_takes_its_type_from_jp_and_a_global_card_keeps_globals(self):
+        self.jp["support_cards"] = [
+            {"id": 30300, "chara_id": 1068, "card_type": "speed"},
+            # On global too, where it is a Wit card: global's type wins.
+            {"id": 30028, "chara_id": 1068, "card_type": "speed"},
+        ]
+        jp_card = SupportCard.objects.create(name="[New Outfit] Kitasan Black", game_id=30300)
+        global_card = SupportCard.objects.create(name="Kitasan Black", game_id=30028)
+
+        self.run_import(extra_global={"support_cards": [{
+            "id": 30028, "chara_id": 1068, "chara_name": "Kitasan Black", "name": "Kitasan Black",
+            "title": "", "rarity": 3, "card_type": "wit", "skill_set_id": 1,
+        }]})
+
+        jp_card.refresh_from_db()
+        global_card.refresh_from_db()
+        self.assertEqual((jp_card.card_type, jp_card.is_on_global), ("speed", False))
+        self.assertEqual(global_card.card_type, "wit")
+
+    def test_a_jp_card_whose_row_names_someone_else_gets_no_type(self):
+        self.jp["support_cards"] = [{"id": 30300, "chara_id": 1068, "card_type": "speed"}]
+        wrong = SupportCard.objects.create(name="Somebody Else", game_id=30300)
+
+        self.run_import(extra_global={"support_cards": [{
+            "id": 30028, "chara_id": 1068, "chara_name": "Kitasan Black", "name": "Kitasan Black",
+            "title": "", "rarity": 3, "card_type": "speed", "skill_set_id": 1,
+        }]})
+
+        wrong.refresh_from_db()
+        self.assertEqual(wrong.card_type, "")
+
     def test_global_only_ignores_both(self):
         self.run_import("--global-only")
         self.assertFalse(Skill.objects.filter(game_id=FAN_SKILL).exists())

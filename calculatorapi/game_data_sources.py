@@ -188,13 +188,18 @@ def jp_owner_links(sources, snapshot):
     JP snapshot. Outfits and cards ON global keep global's links only: JP's
     lists can differ, and global's are what a player there gets.
 
+    Also `card_types`, {game id: type} for the same JP-only support cards:
+    global's files don't type a card it doesn't have, and a blank type matched
+    no filter in the team builder's card picker (board, 2026-10-26). Global's
+    type always wins, because a card on global is never in this list.
+
     THE NAME CHECK, in English: a JP card's names are Japanese, so its
     character id is looked up in global's data instead, and our row's name
     must contain that character's English name, as for global cards. A
     character global doesn't have at all can't be checked; its rows are
     trusted and counted as `unchecked` in the report.
     """
-    result = {"uma_rows": [], "card_rows": [], "uma_distrusted": set(),
+    result = {"uma_rows": [], "card_rows": [], "card_types": {}, "uma_distrusted": set(),
               "card_distrusted": set(), "lines": [], "unchecked": 0}
     if sources.jp is None:
         return result
@@ -239,4 +244,10 @@ def jp_owner_links(sources, snapshot):
         (row["support_card_id"], row["skill_id"], "hint", None)
         for row in sources.jp["support_hints"] if row["support_card_id"] in jp_cards
     ]
+    # A distrusted id is no better a key for a type than for skills.
+    result["card_types"] = {
+        card["id"]: card["card_type"] for card in sources.jp["support_cards"]
+        if card["id"] in jp_cards and card["id"] not in result["card_distrusted"]
+        and card.get("card_type")
+    }
     return result
