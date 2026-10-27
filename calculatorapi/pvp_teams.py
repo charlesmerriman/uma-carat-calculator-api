@@ -11,6 +11,8 @@ views/pvp_team.py.
 
 from django.db import transaction
 
+from calculatorapi import trained_umas
+
 from calculatorapi.models import (
     ChampionsMeeting,
     CustomUser,
@@ -112,14 +114,13 @@ def replace_team(team, *, members, notes=None):
     return team
 
 
-def _write_members(team, members):
-    """Create the member and card rows for already-shaped `members`.
+def check_lineup(uma_ids):
+    """{id: Uma} for a lineup's umas, or TeamRefused for one the game refuses:
+    an uma not on the site, the same uma twice, or two outfits of one character.
 
-    The serializer has checked each row on its own (positions, slots, styles,
-    duplicates inside one deck). What only the whole team can say is checked
-    here: the same uma twice, and two outfits of one character.
+    Shared with pvp_runs.py, so a logged ticket's lineup obeys the same rules
+    as the team it was copied from.
     """
-    uma_ids = [member["uma"] for member in members]
     umas = Uma.objects.in_bulk(uma_ids)
     if len(umas) != len(set(uma_ids)):
         raise TeamRefused("One of those umas isn't on the site any more.")
@@ -129,6 +130,20 @@ def _write_members(team, members):
     known = [character for character in characters if character is not None]
     if len(set(known)) != len(known):
         raise TeamRefused("A team can't have two outfits of the same uma.")
+    return umas
+
+
+def _write_members(team, members):
+    """Create the member and card rows for already-shaped `members`.
+
+    The serializer has checked each row on its own (positions, slots, styles,
+    duplicates inside one deck). What only the whole team can say is checked
+    here: the same uma twice, two outfits of one character, and that a linked
+    veteran is the owner's own and of the member's outfit
+    (trained_umas.VeteranRefused).
+    """
+    umas = check_lineup([member["uma"] for member in members])
+    veterans = trained_umas.check_links(team.user, members)
     card_ids = {card["support_card"] for member in members for card in member["cards"]}
     if SupportCard.objects.filter(id__in=card_ids).count() != len(card_ids):
         raise TeamRefused("One of those support cards isn't on the site any more.")
@@ -139,6 +154,7 @@ def _write_members(team, members):
             position=member["position"],
             uma=umas[member["uma"]],
             style=member["style"],
+            trained_uma=veterans.get(member.get("trained_uma")),
         )
         PvpTeamCard.objects.bulk_create(
             PvpTeamCard(member=row, slot=card["slot"], support_card_id=card["support_card"])

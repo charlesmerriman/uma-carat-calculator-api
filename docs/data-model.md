@@ -1065,8 +1065,9 @@ shape on the device (frontend `services/guestPvpTeamStore.ts`).
   `notes`, a JSON list of `{text, color}` (at most 10, 1000 characters, four colours;
   validated by `views/pvp_team.py` `NoteSerializer`). A JSON column rather than a table
   because notes are only ever read and written whole, with the team.
-- **`PvpTeamMember`**: `position` 0..2, `uma`, `style` (a `PvpStyle`, never `everyone`).
-  Unique per team on position and on uma.
+- **`PvpTeamMember`**: `position` 0..2, `uma`, `style` (a `PvpStyle`, never `everyone`),
+  `trained_uma` (the linked veteran, nullable; see `TrainedUma`). Unique per team on
+  position and on uma.
 - **`PvpTeamCard`**: `slot` 1..6 (slot 6 is the borrowed card by convention), `support_card`.
   Unique per member on slot and on card, the borrow slot included (the game refuses a
   borrowed copy of a card already in the deck).
@@ -1079,6 +1080,100 @@ shape on the device (frontend `services/guestPvpTeamStore.ts`).
   the person).
 - A team's `gallery_posts` are the gallery posts copied from it (at most one). The post is a
   frozen copy, so editing or deleting the team never changes it.
+
+### `PvpRun`: a player's logged CM / LoH results
+
+`models/pvp_run.py`, all PRIVATE and in `_IRRELEVANT_MODELS`, like `PvpTeam`. Written by the
+PvP page's CM Runs view through `/pvp-runs`; account only (no guest copy). Design and the
+plan for linking veterans: `notes/pvp-planner-plan.md` ("R3 CM Runs").
+
+- **`PvpRun`**: one ticket of one day (`stage` `day`, `day`, `ticket`) or the final
+  (`stage` `final`, both NULL, plus `finals_group` `A` / `B` and `placement` 1..3), for one
+  event through the `PvpTeam` FK pair and XOR (`exactly_one_pvp_run_event`). The shape is
+  `pvp_run_stage_shape`; it spells out `isnull=False` because a CHECK passes on NULL.
+  One row per slot is a PAIR of partial unique constraints per rule (one per event FK),
+  since NULLs never collide. `note` (120). `skipped` (a day's ticket only, also in
+  `pvp_run_stage_shape`; `0118`): the player's word that the races the ticket does not list
+  were never run, so no races = an unused ticket and some = stopped after those. Only the
+  player sets it, never the clock ("not logged" on a past day may be slow typing), and a
+  `PUT` without it takes it back. Win rates are unchanged by it: an unlisted race was never
+  in a denominator.
+- **`PvpRunRunner`**: `position` 0..2, `uma`, `style` (never `everyone`), unique per run on
+  position and uma. A **copy** of the lineup when the ticket was logged, never a pointer at
+  a `PvpTeam`: editing or deleting a team must not rewrite results, and results belong to
+  the account and the event. `trained_uma` (nullable, SET_NULL) is a LINK to the veteran
+  that ran, the same column `PvpTeamMember` has (stats live only on the veteran).
+- **`PvpRunRace`**: `race` 1..5 and `winner`, the spot of the player's uma that won, NULL
+  for a loss. **No row = not raced yet**, which a win rate leaves out of its denominator.
+- Day and ticket limits per kind are constants (`PVP_RUN_DAYS`, `PVP_RUN_TICKETS`), checked
+  in `pvp_runs.py`, not the database. The lineup obeys the team rules through
+  `pvp_teams.check_lineup`.
+- `DELETE /account` cascades; `purge_user_pii` leaves runs alone (they hold nothing about
+  the person).
+
+### `TrainedUma`: a player's veterans
+
+`models/trained_uma.py`, PRIVATE and in `_IRRELEVANT_MODELS`. The Collection page writes it
+through `/trained-umas`; account only. Design: `notes/pvp-planner-plan.md` (R2, "Veterans
+for CM Runs").
+
+- **`TrainedUma`**: `user` (CASCADE), `uma` (one outfit), `label` (40), the five stats
+  (0..2000), ten nullable aptitudes `apt_<key>` (1..8 = G..S, the catalogue's keys),
+  `rank_score` (an import's, or typed by hand), `rank_grade` (the game's grade number for it,
+  from an import only; promoted out of `game_data["rank"]` by `0117`, which also fills
+  existing rows), `source` `import` | `manual`, `import_key` (the game's `trained_chara_id`,
+  set exactly for an import: `trained_uma_source_matches_key`; unique per account),
+  `imported_at`, `missing_from_import`, `game_data` (the whole raw game object, NULL for a
+  hand entry, deferred by every list), `memo` (the player's own game note, shown only to
+  them), `is_borrowed` (another player's veteran, a rental) and `trained_at` (the game's
+  `create_time`, UTC; NULL for a hand entry). Ordered by `Coalesce(trained_at, created_at)`
+  descending: one import saves every row at the same instant, so `created_at` alone would
+  not order them.
+- **All of it is kept, minus other people** (owner, 2026-10-26). `game_data` keeps sparks,
+  parents, the training deck, career races, titles, the player's OWN game account id and
+  memo; features promote a field to a column when they need to query it. Other players'
+  account ids (a borrowed veteran's owner, a borrowed parent's owner) and any trainer name
+  are stripped in the browser and again by `trained_umas.strip_other_players`.
+- **`TrainedUmaSkill`**: `skill` and `level` (1..10), unique per veteran.
+- **A fact about the person, never a choice.** Teams (`PvpTeamMember.trained_uma`) and logged
+  runs (`PvpRunRunner.trained_uma`) LINK one, nullable SET_NULL, and never copy the numbers:
+  a game veteran is frozen once trained. `trained_umas.check_links` refuses a link to
+  somebody else's veteran or to another outfit on every team and run save. A gallery
+  snapshot never carries it (`gallery.snapshot_from_team` lists its fields).
+- **The import** (`trained_umas.import_veterans`) updates in place by `import_key`, keeps
+  labels and hand entries, and deletes a veteran gone from the file UNLESS a logged run
+  links it (then `missing_from_import`). One transaction. **No cap on how many veterans an
+  account keeps** (owner, 2026-10-26). The game file is parsed in the browser and the request is gzipped
+  (`views/trained_uma.GzipJSONParser`, 24 MB unpacked at most).
+- `DELETE /account` cascades; `purge_user_pii` leaves veterans (game numbers, no person).
+
+### `Spark`: what a veteran's spark ids mean
+
+`models/spark.py`, CONTENT and in `_IRRELEVANT_MODELS`, no admin page. A veteran's
+`game_data` lists her sparks (the game's "factors") and each parent's and grandparent's as
+bare ids; `GET /trained-umas/<id>` names them from this table (`trained_umas.spark_names`,
+one query). The primary key is the game's `factor_id`; `kind` is `stat`, `aptitude`,
+`unique`, `skill`, `race`, `scenario` or `carnival` (the game's `factor_type` 1..7), `stars`
+is 1..3 (the game's `rarity`; the export's own `level` is 0 on every spark) and `name` is
+global's English. Filled by `import_game_data` from `sparks.json` on every deploy, created
+when missing, never deleted. Checked 2026-10-27 against the owner's export: all 256 veterans
+carry exactly one stat, one aptitude and one unique spark, and every id in it and in each
+lineage is in the table. Design: `notes/collection-redesign-plan.md`.
+
+### `OwnedUma` / `OwnedSupportCard`: what a player owns
+
+`models/roster.py`, PRIVATE and in `_IRRELEVANT_MODELS`. The Collection's Umas and Support
+cards tabs write them through `/roster`; account only. Not veterans: owning an outfit is
+not having trained her.
+
+- **`OwnedUma`**: `uma` (one per account), `stars` and `talent_level` (1..5, nullable).
+  **`OwnedSupportCard`**: `support_card` (one per account), `limit_break` (0..4),
+  `spare_copies` (the game's `stock`). Both: `source` `manual` | `import`, `game_data` (the
+  game's whole object for an import), `obtained_at` (the game's `create_time`).
+- **The file is the truth** (owner, 2026-10-26): each list an import sends replaces that
+  table, hand edits included, and removes what the file lacks; a list not sent is untouched
+  (`roster.import_roster`). `DELETE /roster/<list>` starts one list over.
+- `DELETE /account` cascades.
 
 ### The gallery: `GalleryPost` and what hangs off it
 
@@ -1583,6 +1678,7 @@ The tables the extractor reads, and the two places the schema is not what it loo
 | group card members | `support_card_group` | one row per (`support_card_id`, `chara_id`): every uma a group card stands for. `support_card_data.chara_id` files the card under just one of them (Team Sirius under Special Week). Written as names (`text_data` category 6), because the team builder's deck rules match cards to umas by name |
 | support card hints | `single_mode_hint_gain` (2063) | **keyed per card by `support_card_id`**, not by the card's `skill_set_id` (several cards of one character share that as `hint_id`, with different rows each). `hint_gain_type` 0 rows are skills (`hint_value_1`); type 1 are stat hints, skipped. 15 cards have none: friend, group and Haru Urara cards |
 | support card text | `text_data` cat 75 (full), 76 (title), 77 (character) | |
+| sparks | `succession_factor` (1,205), names in `text_data` cat 147 | keyed by `factor_id`, which a veteran's export uses. `rarity` is the stars (1..3); `factor_type` the kind: 1 stat (blue), 2 aptitude (pink), 3 unique (green), 4 skill, 5 race, 6 scenario, 7 carnival. Written to `sparks.json`, global only |
 
 What the ids encode, which the import asserts on: an outfit id `100101` is character
 `1001`, outfit `01`, so the character is `id // 100`; a support id's leading digit is its

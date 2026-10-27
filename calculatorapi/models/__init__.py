@@ -13,6 +13,7 @@ from .uma import Uma, Rarity, RunningStyle, Aptitude
 from .skill import Skill, SkillAvailability, SkillRarity, SkillTier
 from .skill_alias import SkillAlias
 from .skill_evolution_condition import SkillEvolutionCondition
+from .spark import Spark, SparkKind
 from .uma_skill import UmaSkill, UmaSkillSource
 from .support_card_skill import SupportCardSkill, SupportCardSkillSource
 from .champions_meeting import ChampionsMeeting
@@ -74,6 +75,38 @@ from .pvp_team import (
     PVP_BORROW_SLOT,
     PVP_NOTE_CAP,
     PVP_NOTE_MAX_LENGTH,
+)
+from .trained_uma import (
+    TrainedUma,
+    TrainedUmaSkill,
+    TrainedUmaSource,
+    TRAINED_UMA_STAT_MAX,
+    TRAINED_UMA_LABEL_MAX_LENGTH,
+    TRAINED_UMA_SKILL_CAP,
+    TRAINED_UMA_MEMO_MAX_LENGTH,
+    TRAINED_UMA_GAME_DATA_MAX_BYTES,
+    APTITUDE_KEYS,
+    STAT_FIELDS,
+)
+from .roster import (
+    OwnedUma,
+    OwnedSupportCard,
+    ROSTER_STARS_MAX,
+    ROSTER_LIMIT_BREAK_MAX,
+    ROSTER_SPARE_COPIES_MAX,
+)
+from .pvp_run import (
+    PvpRun,
+    PvpRunRunner,
+    PvpRunRace,
+    PvpRunStage,
+    PvpFinalsGroup,
+    PVP_RUN_RACES,
+    PVP_FINAL_RACES,
+    PVP_RUN_DAYS,
+    PVP_RUN_TICKETS,
+    PVP_FINAL_PLACEMENTS,
+    PVP_RUN_NOTE_MAX_LENGTH,
 )
 from .gallery import (
     BlockedTerm,

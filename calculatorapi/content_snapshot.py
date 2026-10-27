@@ -38,6 +38,7 @@ CONTENT_MODELS = (
     "Skill",
     "SkillAlias",
     "SkillEvolutionCondition",
+    "Spark",
     "UmaSkill",
     "SupportCardSkill",
     # The timeline and everything hanging off it
@@ -90,6 +91,16 @@ PRIVATE_MODELS = (
     "PvpTeam",
     "PvpTeamMember",
     "PvpTeamCard",
+    # A player's logged CM / LoH results (the CM Runs view).
+    "PvpRun",
+    "PvpRunRunner",
+    "PvpRunRace",
+    # A player's veterans (the Collection page).
+    "TrainedUma",
+    "TrainedUmaSkill",
+    # What the player owns (the Collection page's Umas and Support cards).
+    "OwnedUma",
+    "OwnedSupportCard",
     # A guide's saves name who saved them. The guide itself is content.
     "PvpGuideRevision",
     # The gallery: posts, votes, comments and reports are people's own

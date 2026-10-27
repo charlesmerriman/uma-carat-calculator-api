@@ -3,6 +3,7 @@ from pathlib import Path
 import os
 import dj_database_url
 from dotenv import load_dotenv
+from corsheaders.defaults import default_headers
 # reverse_lazy (NOT reverse) is required in the UNFOLD sidebar: settings.py is
 # imported before the URLconf is loaded, so eager reverse() would raise. The
 # lazy variant resolves the URL only when the sidebar is rendered.
@@ -514,6 +515,10 @@ REST_FRAMEWORK = {
 
 CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOWED_ORIGINS = os.getenv("CORS_ORIGIN_WHITELIST", "http://localhost:5173").split(",")
+# The library's defaults plus Content-Encoding: the veteran import is gzipped
+# (views/trained_uma.GzipJSONParser), and a cross-origin page (local dev,
+# `npm run dev:live` against prod) is refused at the preflight without it.
+CORS_ALLOW_HEADERS = (*default_headers, "content-encoding")
 
 # --- Social sign-in (Google / Discord) -------------------------------------
 # Ordinary accounts authenticate through a provider instead of a password, so
@@ -842,6 +847,9 @@ CACHES = {
             # (~500 KB, calculatorapi/pvp_catalogue_cache.py), read only when
             # someone opens the builder, so 40 keeps it from being the next key
             # to fall off. Worst case: two payloads, two catalogues, counters.
+            # Since 2026-10-27 also the signed-in date lookups beside the
+            # payload (public_payload_cache.USER_CONTEXT_KEY, ~26 KB), read on
+            # every signed-in load, so never the key that falls off.
             "MAX_ENTRIES": 40,
         },
     },

@@ -108,7 +108,7 @@ class BannerStepUpTests(CalculatorTestCase):
         res = self.client.get('/calculator-data')
 
         self.assertEqual(res.status_code, 200)
-        rows = res.data['banner_step_up_data']
+        rows = res.json()['banner_step_up_data']
         self.assertEqual(len(rows), 1)
         row = rows[0]
         self.assertEqual(row['name'], '5th Anniversary SSR Select Step-Up')
@@ -136,7 +136,7 @@ class BannerStepUpTests(CalculatorTestCase):
         # Serialized as an ISO string, the same shape the campaign products
         # emit theirs in.
         self.assertEqual(
-            res.data['banner_step_up_data'][0]['jp_cutoff_date'], '2026-01-30',
+            res.json()['banner_step_up_data'][0]['jp_cutoff_date'], '2026-01-30',
         )
 
     def test_planned_step_up_round_trips_through_patch(self):
@@ -160,7 +160,7 @@ class BannerStepUpTests(CalculatorTestCase):
 
         # And it comes back nested, not as a bare id.
         got = self.client.get('/calculator-data')
-        row = got.data['user_planned_banner_data'][0]
+        row = got.json()['user_planned_banner_data'][0]
         self.assertEqual(row['banner_step_up']['id'], step_up.id)
 
     def test_patch_rejects_a_row_with_two_targets(self):
@@ -212,7 +212,7 @@ class BannerStepUpTests(CalculatorTestCase):
         )
 
         res = self.client.get('/calculator-data')
-        rows = res.data['user_planned_banner_data']
+        rows = res.json()['user_planned_banner_data']
         self.assertEqual(len(rows), 2)
         # The step-up dates off June, so it sorts second -- not first, which is
         # where an unresolved (None) key would put it.
@@ -559,7 +559,7 @@ class UserStepUpSelectionTests(CalculatorTestCase):
         self._patch([self._slot(slot=3, is_target=True)])
         res = self.client.get('/calculator-data')
         self.assertEqual(res.status_code, 200)
-        rows = res.data['user_step_up_selection_data']
+        rows = res.json()['user_step_up_selection_data']
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0]['banner_step_up'], self.uma_step_up.id)
         self.assertEqual(rows[0]['uma'], self.eligible_uma.id)
@@ -582,7 +582,7 @@ class UserStepUpSelectionTests(CalculatorTestCase):
             uma=self.eligible_uma,
         )
         res = self.client.get('/calculator-data')
-        self.assertEqual(res.data['user_step_up_selection_data'], [])
+        self.assertEqual(res.json()['user_step_up_selection_data'], [])
 
     def test_whole_body_round_trip(self):
         """Every collection in one PATCH, as the client actually saves.
@@ -615,6 +615,6 @@ class UserStepUpSelectionTests(CalculatorTestCase):
         self.assertEqual(UserStepUpSelection.objects.filter(user=self.user).count(), 2)
 
         # And it reads back through the same endpoint.
-        body = self.client.get('/calculator-data').data
+        body = self.client.get('/calculator-data').json()
         self.assertEqual(len(body['user_step_up_selection_data']), 2)
         self.assertEqual(len(body['user_planned_banner_data']), 1)

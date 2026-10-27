@@ -12,9 +12,9 @@ and none of it varies per visitor.
 
 So the public half is built once, rendered to JSON bytes, gzipped, and kept. A
 guest is then answered with those gzip bytes verbatim -- no queries, no
-serializers, no JSON parsing or rendering, no compression. A signed-in user pays
-a decompress and a ``json.loads`` (~6ms locally) and gets their own user-scoped
-keys merged in, still skipping the whole catalogue.
+serializers, no JSON parsing or rendering, no compression. A signed-in user gets
+the same catalogue bytes with their own ~9KB of user-scoped keys STITCHED onto
+the end (see "STITCHING" below): only their part is serialized or compressed.
 
 WHY GZIP, AND WHY ONCE
 ----------------------
@@ -32,10 +32,39 @@ twelfth of that time. And compressing once here is the whole trick:
 Django's GZipMiddleware would compress the megabyte again on every request,
 which spends the CPU this module exists to save.
 
-Only the gzip is kept, not the raw JSON beside it. The rare client that does
-not accept gzip, and every signed-in read, pay a ~1ms decompress instead. In
-exchange there is one value to store, evict and invalidate, so two copies can
-never drift apart.
+Only compressed bytes are kept, never the raw JSON beside them. The rare client
+that does not accept gzip pays a ~1ms decompress instead. Both compressed forms
+(the guest's and the signed-in head below) travel in ONE cache value, a
+``CachedPayload``, so there is one thing to store, evict and invalidate and the
+two can never drift apart.
+
+STITCHING (THE SIGNED-IN RESPONSE)
+----------------------------------
+Until 2026-10-27 a signed-in read decompressed the cached JSON, ``json.loads``-ed
+it into ~1MB of Python objects, merged the user keys in and let DRF render the
+whole thing back out: ~36ms and a ~10MB burst per request locally, sent as
+1.27MB uncompressed, for a user part of ~9KB. Two in three /app loads are
+signed in, so that was most of the server's work on a banner day.
+
+Now the cache also keeps a "head": the public payload WITHOUT the six user
+keys, minus its closing ``}``, compressed as an unfinished deflate stream. A
+signed-in request renders only its own six keys as ``,"user_plans":...}``,
+compresses just that, and ``signed_in_gzip()`` joins the two into one gzip
+file. The JSON it decompresses to is the head's keys followed by the user's,
+each key once.
+
+Why joining compressed pieces is legal: deflate (the compression inside gzip)
+is a sequence of blocks, and only the last one is marked final. Flushing the
+head with ``Z_SYNC_FLUSH`` ends it on a byte boundary WITHOUT that mark, so a
+second, independently compressed stream can follow it and the decoder simply
+reads on. The second stream only refers back to its own bytes, which are
+always within the decoder's reach. gzip's trailer (a CRC-32 and the length of
+the uncompressed data) is computed by continuing the head's CRC over the tail,
+so nothing is ever decompressed to produce it. The result is a single,
+ordinary gzip member; pigz (parallel gzip) builds its files the same way.
+
+The test that guards it decompresses with a strict single-member decoder and
+compares the JSON against the old merge, key for key.
 
 WHY IT IS SAFE TO HOLD INDEFINITELY
 -----------------------------------
@@ -76,6 +105,10 @@ else in this module needs to change.
 """
 
 import gzip
+import struct
+import threading
+import zlib
+from typing import NamedTuple
 
 from django.core.cache import cache
 
@@ -84,18 +117,40 @@ from django.core.cache import cache
 # the cache on its own -- the process restart does -- but an explicit version
 # means a rolling restart can never serve a half-old shape to a new frontend.
 # v2 (2026-10): the value became gzip bytes instead of raw JSON.
-CACHE_KEY = "calculator_data:public:v2"
+# v3 (2026-10-27): the value became a CachedPayload (guest gzip + signed-in head).
+CACHE_KEY = "calculator_data:public:v3"
 
 # Level 6 is gzip's default. Level 9 saves another 3KB for twice the time,
 # level 1 costs 30KB more for less than half; neither moves the needle when
 # it runs once per content edit.
 GZIP_LEVEL = 6
 
-# Backstop only. With one worker the signal below does the real work and this
-# never matters; with several it caps how long a process can serve stale
-# content. Five minutes is short enough not to confuse a content editor and
-# long enough that the cache still absorbs essentially all traffic.
-CACHE_TTL_SECONDS = 300
+# Backstop only. With one worker the signal below does the real work, so an
+# admin edit shows at once whatever this says. What it does bound is the writes
+# the signal cannot see: a bulk writer that forgets invalidate(), and anything
+# run through `doctl apps console`, which is its own process with its own cache
+# and so cannot clear this one.
+#
+# It was 300 until 2026-10-27, and that cost more than it looked. Every expiry
+# is a full rebuild (~47MB of Python objects at its peak, measured locally),
+# 288 of them a day, and the memory a rebuild borrows is kept by the process
+# afterwards, not handed back to the OS. Busy moments overlapped several of
+# them (see rebuild_lock below) and pushed the 512MB instance past DO's 80%
+# memory alert. Thirty minutes is six times fewer rebuilds, and still short
+# enough that a console write shows up within a coffee break.
+CACHE_TTL_SECONDS = 1800
+
+# Held by whichever request finds the cache empty, for as long as it takes to
+# rebuild and store the payload. Without it, every gunicorn thread that misses
+# in the same few seconds runs its own copy of the ~2s rebuild: four threads,
+# four 47MB bursts at once, for four identical answers. With it the first
+# thread builds, the rest wait on the lock and then read what it stored.
+#
+# A plain threading.Lock is enough because this is ONE process (see above);
+# it does nothing across processes, which is one more thing a move to Redis
+# would need to replace. The waiters are not slower than before: they would
+# otherwise have spent the same seconds building the payload themselves.
+rebuild_lock = threading.Lock()
 
 # Models whose rows CANNOT change the public payload. Everything else in the
 # calculatorapi app invalidates.
@@ -125,6 +180,19 @@ _IRRELEVANT_MODELS = frozenset({
     "pvpteam",
     "pvpteammember",
     "pvpteamcard",
+    # Logged CM / LoH results: the CM Runs view auto-saves on every
+    # dropdown change. Served by /pvp-runs, never here.
+    "pvprun",
+    "pvprunrunner",
+    "pvprunrace",
+    # A player's veterans: edited on the Collection page, written in bulk by
+    # an import. Served by /trained-umas, never here.
+    "traineduma",
+    "trainedumaskill",
+    # What the player owns: tapped on the Collection grid, written in bulk
+    # by an import. Served by /roster, never here.
+    "owneduma",
+    "ownedsupportcard",
     # The gallery. A vote, a view or a comment is a write on every click, so
     # the same lesson applies; none of it is on /calculator-data.
     "gallerypost",
@@ -137,6 +205,8 @@ _IRRELEVANT_MODELS = frozenset({
     "customuser",
     "socialaccount",
     # Their own endpoints; absent from /calculator-data entirely.
+    # A spark is named only on one veteran's GET /trained-umas/<id>.
+    "spark",
     "changelogentry",
     "changelogchange",
     "patreontier",
@@ -176,33 +246,128 @@ _IRRELEVANT_MODELS = frozenset({
 })
 
 
-def read():
-    """The cached public payload as GZIPPED JSON bytes, or None on a miss.
+class CachedPayload(NamedTuple):
+    """The one cache value: both compressed forms of the public payload."""
 
-    ``gzip.decompress()`` it for the JSON itself.
-    """
+    # The whole guest response, gzipped. Sent exactly as it is.
+    guest_gzip: bytes
+    # The public payload minus the user keys and its closing brace, as an
+    # UNFINISHED deflate stream (see "STITCHING" above). Never sent on its own.
+    head_deflate: bytes
+    # CRC-32 and byte length of the head's uncompressed JSON, which the gzip
+    # trailer of every stitched response is continued from.
+    head_crc: int
+    head_length: int
+
+
+# A minimal gzip header (RFC 1952): magic, deflate, no flags, no timestamp,
+# no extra-flags, OS "unknown". Python's own gzip.compress(mtime=0) writes the
+# same ten bytes apart from the extra-flags byte, which decoders ignore.
+_GZIP_HEADER = b"\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff"
+
+
+def _raw_deflater():
+    # Negative wbits = raw deflate: no zlib/gzip wrapper, so the pieces can be
+    # framed by hand into one gzip member.
+    return zlib.compressobj(GZIP_LEVEL, zlib.DEFLATED, -zlib.MAX_WBITS)
+
+
+def read_entry():
+    """The cached CachedPayload, or None on a miss."""
     return cache.get(CACHE_KEY)
 
 
-def store(json_bytes):
-    """Compress the rendered public payload, keep it, and return the gzip.
+def read():
+    """The cached GUEST payload as gzipped JSON bytes, or None on a miss.
 
+    ``gzip.decompress()`` it for the JSON itself.
+    """
+    entry = read_entry()
+    return None if entry is None else entry.guest_gzip
+
+
+def store(guest_json, head_json):
+    """Compress and keep the public payload, and return the CachedPayload.
+
+    `guest_json` is the full guest response; `head_json` is the same payload
+    rendered WITHOUT the user-scoped keys, which signed-in responses supply.
     Returned so the request that paid for the rebuild can answer from it
     without a second cache read.
     """
-    gzipped = gzip.compress(json_bytes, compresslevel=GZIP_LEVEL)
-    cache.set(CACHE_KEY, gzipped, CACHE_TTL_SECONDS)
-    return gzipped
+    # Drop the closing brace: the user keys are appended after the head's last
+    # value, and signed_in_gzip() supplies the brace that closes them.
+    head = head_json[:-1]
+    deflater = _raw_deflater()
+    # Z_SYNC_FLUSH, not finish: everything so far is written out and
+    # byte-aligned, but the stream stays open for the tail to continue it.
+    head_deflate = deflater.compress(head) + deflater.flush(zlib.Z_SYNC_FLUSH)
+    entry = CachedPayload(
+        guest_gzip=gzip.compress(guest_json, compresslevel=GZIP_LEVEL),
+        head_deflate=head_deflate,
+        head_crc=zlib.crc32(head),
+        head_length=len(head),
+    )
+    cache.set(CACHE_KEY, entry, CACHE_TTL_SECONDS)
+    return entry
+
+
+def signed_in_gzip(entry, user_json):
+    """One gzip file: the cached head with `user_json`'s keys stitched on.
+
+    `user_json` is the rendered user-scoped half, a JSON object. Only it is
+    compressed here (~9KB, well under a millisecond); the catalogue is reused
+    as it was compressed at store time.
+    """
+    # '{"user_plans":...}' becomes ',"user_plans":...}': its keys continue the
+    # head's object, and its closing brace closes the whole response.
+    tail = b"," + user_json[1:]
+    deflater = _raw_deflater()
+    # A plain flush() finishes the stream: its last block carries the "final"
+    # mark the head's flush deliberately left off.
+    tail_deflate = deflater.compress(tail) + deflater.flush()
+    trailer = struct.pack(
+        "<II",
+        # zlib.crc32's second argument continues a running CRC, so the CRC of
+        # head + tail comes without the head's bytes in hand.
+        zlib.crc32(tail, entry.head_crc),
+        # gzip stores the uncompressed length modulo 2**32.
+        (entry.head_length + len(tail)) & 0xFFFFFFFF,
+    )
+    return _GZIP_HEADER + entry.head_deflate + tail_deflate + trailer
+
+
+# The date lookups a signed-in request needs to order and annotate its own rows
+# (views/calculator.py build_user_context): resolved banner and campaign dates,
+# and each card's first JP date. They are built from the same catalogue tables
+# as the payload, so they go stale at the same moments and are dropped with it
+# by invalidate(). Kept under their own key rather than inside CachedPayload so
+# a guest's read never pays to unpickle them. Bump the suffix when the tuple's
+# shape changes.
+USER_CONTEXT_KEY = "calculator_data:user_context:v1"
+
+
+def read_user_context():
+    """The cached (emap, anniversary_emap, card_context), or None on a miss.
+
+    LocMem unpickles on every read, so each caller gets its own copy and no
+    request can mutate another's.
+    """
+    return cache.get(USER_CONTEXT_KEY)
+
+
+def store_user_context(context):
+    cache.set(USER_CONTEXT_KEY, context, CACHE_TTL_SECONDS)
 
 
 def invalidate(**_kwargs):
-    """Drop the cached payload. Also the signal receiver, hence **_kwargs.
+    """Drop the cached payload and the user context built from the same
+    tables. Also the signal receiver, hence **_kwargs.
 
     Deletes rather than rebuilds: the next reader repopulates it. Rebuilding
     here would put a multi-second job inside an admin save's request/response
     cycle, and would run once per row on a bulk edit.
     """
-    cache.delete(CACHE_KEY)
+    cache.delete_many([CACHE_KEY, USER_CONTEXT_KEY])
 
 
 def _invalidate_now_and_on_commit():

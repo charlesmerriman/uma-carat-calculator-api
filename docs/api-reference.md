@@ -315,9 +315,12 @@ assumption it rests on, in `calculatorapi/public_payload_cache.py`.
 rendered JSON compressed once at store time, and a guest whose `Accept-Encoding` lists
 `gzip` (every browser, and Cloudflare in front of the ingress) gets exactly those bytes
 with `Content-Encoding: gzip`; anyone else gets them decompressed. Both carry
-`Vary: Accept-Encoding, Accept, origin`. The JSON is identical either way. A signed-in
-response is a normal DRF render with the user keys merged in, and is never served from
-the shared bytes.
+`Vary: Accept-Encoding, Accept, origin`. The JSON is identical either way. **A signed-in
+response is gzipped the same way**, but is never the shared bytes: the cache also keeps the
+catalogue without the six user keys as an open-ended compressed stream, and each signed-in
+request compresses only its own six keys and stitches them onto the end, one valid gzip
+file whose JSON carries every key once (`public_payload_cache.signed_in_gzip`, "STITCHING"
+in that module).
 
 **Response `200`**
 ```json
@@ -957,12 +960,15 @@ A team, both ways (catalogue ids only):
 ```json
 { "id": 5, "kind": "cm", "event": 12, "name": "", "is_focus": false,
   "notes": [{"text": "Pull Kitasan", "color": "yellow"}],
-  "members": [{"position": 0, "uma": 41, "style": "front",
+  "members": [{"position": 0, "uma": 41, "style": "front", "trained_uma": null,
                "cards": [{"slot": 1, "support_card": 302}, {"slot": 6, "support_card": 88}]}],
   "updated_at": "ISO8601", "post": null }
 ```
 
 `post` (out only) is the public id of the gallery post copied from this team, or `null`.
+`trained_uma` is the member's linked veteran (`/trained-umas`), or `null`; left out on the way
+in means none. It must be the caller's own veteran of the member's own outfit, else `400`.
+A gallery post never carries it.
 
 `kind` is `cm` or `loh`. `style` is `runaway` / `front` / `pace` / `late` / `end`. A draft
 may leave positions and slots empty (no entry). **`400 {"error": "<one sentence>"}`**,
@@ -972,6 +978,112 @@ the same card twice in one deck (borrow slot included), an unknown uma or card, 
 notes, a note over 1000 characters or an unknown colour (`yellow` / `pink` / `blue` /
 `green`), and creating a sixth team for one event (`PVP_TEAM_CAP_PER_EVENT`; a save to an
 existing team is never refused for it). A refused `PUT` leaves the team as it was.
+
+### `/pvp-runs`
+
+A signed-in player's logged CM / LoH results, for the PvP page's CM Runs view
+(`views/pvp_run.py`, rules in `pvp_runs.py`). All `IsAuthenticated`, and account only: a
+guest has no device copy. A run is addressed by its **slot**, never an id, so an
+auto-save is idempotent; every query is scoped to the caller.
+
+| Route | Body | Returns |
+|---|---|---|
+| `GET /pvp-runs/<kind>/<event_id>` | | every run the caller logged for the event, days first, then the final |
+| `PUT /pvp-runs/<kind>/<event_id>/day/<d>/ticket/<t>` | `{runners?, races?, note?, skipped?}` | the run. Creates it on the first save; replaces its runners and races after |
+| `PUT /pvp-runs/<kind>/<event_id>/final` | `{runners?, races?, finals_group?, placement?, note?}` | the run (CM only) |
+| `DELETE` either path | | `204`, also when nothing was logged there |
+
+A run, out (a `PUT` body is the part the URL does not already say):
+
+```json
+{ "kind": "cm", "event": 21, "stage": "day", "day": 1, "ticket": 2,
+  "finals_group": "", "placement": null, "note": "", "skipped": false,
+  "runners": [{"position": 0, "uma": 41, "style": "front", "trained_uma": null}],
+  "races": [{"race": 1, "winner": 0}, {"race": 2, "winner": null}],
+  "updated_at": "ISO8601" }
+```
+
+A runner's `trained_uma` is the veteran that ran, under the same rule as a team member's.
+`winner` is the `position` of the player's uma that won, `null` for a loss; a race that is
+not in the list has not been run. `skipped: true` (a day's ticket only) is the player saying
+the races not in the list never will be: with none listed the ticket went unused, with some
+they stopped after those. A `PUT` without it un-skips, which is how a player who was only
+slow to type takes it back. Slots: CM days 1..4 with tickets 1..4, plus the final;
+LoH days 1..6 with tickets 1..5, no final yet (`PVP_RUN_DAYS` / `PVP_RUN_TICKETS`). An
+unknown kind, event, day or ticket, or a LoH final, is **`404`**. **`400 {"error": "<one
+sentence>"}`** for: more than 3 runners or two in one spot, the team rules on the lineup
+(the same uma twice, two outfits of one character, an unknown uma; shared through
+`pvp_teams.check_lineup`), more than 5 races (1 in a final) or the same race twice, a
+winner in a spot with no runner, a group or placement on a day's ticket, a placement
+outside 1..3, a note over 120 characters, `skipped` on the final or on a ticket with all 5
+races listed. A refused `PUT` leaves the slot as it was.
+
+### `/trained-umas`
+
+A signed-in player's veterans, for the Collection page (`views/trained_uma.py`, rules in
+`trained_umas.py`). All `IsAuthenticated`, account only. Every id goes through
+`trained_umas.get_owned()`: somebody else's is `404 {"error": "Veteran not found"}`.
+
+| Route | Body | Returns |
+|---|---|---|
+| `GET /trained-umas` | | every veteran, newest first (`trained_at`, the game's own time, else when it was added) |
+| `POST /trained-umas` | `{uma, label?, speed, stamina, power, guts, wit, apt?, skills?, rank_score?}` | `201` the veteran (`source: "manual"`) |
+| `GET /trained-umas/<id>` | | the veteran, with `game_data` (the raw game object; the list leaves it out) and `sparks`: `{"<factor_id>": {name, kind, stars}}` for every spark in it, hers and her lineage's (`{}` for a hand entry; an id the `Spark` table doesn't know is left out) |
+| `PATCH /trained-umas/<id>` | any of the above | the veteran. A game veteran takes `label` only; nobody changes `uma` |
+| `DELETE /trained-umas/<id>` | | `204`. Teams and runs that linked it keep their uma, link `null` |
+| `POST /trained-umas/import` | `{items: [{import_key, uma, rank_score?, speed..wit, apt?, skills?, game_data?}]}`, plain or gzipped | `{created, updated, removed, kept, veterans}` |
+
+A veteran:
+
+```json
+{ "id": 7, "uma": 41, "label": "", "speed": 1200, "stamina": 800, "power": 1000, "guts": 400, "wit": 900,
+  "apt": {"turf": 8, "dirt": 1, "short": 3, "mile": 7, "medium": 7, "long": 6,
+          "front": 2, "pace": 7, "late": 7, "end": 4},
+  "rank_score": 12000, "rank_grade": 13, "source": "import", "import_key": 12, "missing_from_import": false,
+  "memo": "Ace", "is_borrowed": false, "trained_at": "2026-09-01T10:00:00Z", "has_game_data": true,
+  "skills": [{"skill": 310, "level": 2}], "created_at": "ISO8601", "updated_at": "ISO8601" }
+```
+
+`apt` is the game's 1..8 (G..S), `null` when not known. `rank_grade` is the game's grade
+number for `rank_score` (1 G ... 18 SS+, 19 UG, 20 UG1 ... 29 UF), from an import only; a
+hand entry may carry a score but never a grade (the thresholds aren't published). The
+letters are the frontend's (`utils/veteranGrade.ts`). **The import** is the game's export
+read in the player's browser (umadump's `trained_chara_data.json`); `import_key` is the game's
+`trained_chara_id`. It updates veterans already imported in place (labels kept), adds new
+ones, and removes the ones the file no longer has EXCEPT any a logged run links: those stay,
+`missing_from_import: true`, so a re-import never strips CM history. Hand entries are never
+touched. **`game_data`** is the veteran's whole game object (sparks, parents, the training
+deck, the career's races, the player's own game account id and memo; owner, 2026-10-26).
+The server takes `memo` and `is_borrowed` from it and strips OTHER players' account ids and
+any trainer name at every depth again (`trained_umas.strip_other_players`), whatever the
+client sent. **Gzip:** send `Content-Encoding: gzip` (a full account is megabytes raw,
+kilobytes gzipped); `GzipJSONParser` refuses a body that unpacks past 24 MB or doesn't
+unpack, with `400`. **`400 {"error": "<one sentence>"}`** for: a stat over 2000, an aptitude outside
+1..8, an unknown uma or skill, a skill twice, more than 80 skills, a label over 40, the same
+`import_key` twice in one file, a `game_data` over 64 KB. **There is no limit on how many
+veterans an account keeps** (owner, 2026-10-26).
+
+### `/roster`
+
+What a signed-in player owns, for the Collection's Umas and Support cards tabs
+(`views/roster.py`, rules in `roster.py`). All `IsAuthenticated`, account only.
+
+| Route | Body | Returns |
+|---|---|---|
+| `GET /roster` | | `{umas: [uma], support_cards: [card]}` |
+| `PATCH /roster` | `{umas?: [{uma, owned, stars?, talent_level?}], support_cards?: [{support_card, owned, limit_break?, spare_copies?}]}` | the roster. `owned: false` removes the row; every change applies or none does |
+| `POST /roster/import` | `{umas?: [{uma, stars?, talent_level?, game_data?}], support_cards?: [{support_card, limit_break, spare_copies?, game_data?}]}`, plain or gzipped | `{umas?: counts, support_cards?: counts, roster}`, counts `{added, updated, removed}` per list sent |
+| `DELETE /roster/umas`, `DELETE /roster/support-cards` | | the roster, that list emptied (start over) |
+
+`uma` = `{uma, stars, talent_level, source, obtained_at}`; `card` = `{support_card,
+limit_break, spare_copies, source, obtained_at}`. Stars and potential are 1..5 (null when not
+set), a limit break 0..4 (4 is MLB), `spare_copies` the game's `stock`. **The file is the
+truth** (owner, 2026-10-26): each list an import sends REPLACES that table, hand edits
+included, and removes every row the file lacks; a list left out of the request is untouched.
+The player edits afterwards. `source` says where a row's values last came from. An imported
+row keeps the game's whole object (`game_data`, not on the wire; other players' ids stripped as
+for veterans). **`400 {"error": ...}`** for an
+unknown uma or card, one twice in a request, a value out of range, a `game_data` over 64 KB.
 
 ## Gallery
 
