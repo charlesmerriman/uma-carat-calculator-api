@@ -154,8 +154,12 @@ def pvp_catalogue(request):  # pylint: disable=unused-argument
     is no per-user half to merge in, so nothing here needs the parsed dict."""
     body = pvp_catalogue_cache.read()
     if body is None:
-        body = json.dumps(build_catalogue(), separators=(",", ":")).encode()
-        pvp_catalogue_cache.store(body)
+        # Re-read under the lock: a thread that waited finds the stored bytes.
+        with pvp_catalogue_cache.rebuild_lock:
+            body = pvp_catalogue_cache.read()
+            if body is None:
+                body = json.dumps(build_catalogue(), separators=(",", ":")).encode()
+                pvp_catalogue_cache.store(body)
     # Bytes already rendered, so JsonResponse (which serialises a dict) would
     # undo the point of caching them.
     return HttpResponse(body, content_type="application/json")  # pylint: disable=http-response-with-content-type-json

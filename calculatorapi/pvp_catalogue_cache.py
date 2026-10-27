@@ -21,13 +21,19 @@ The payload does not depend on the date or the viewer, so it is safe to hold
 until one of those five tables changes.
 """
 
+import threading
+
 from django.core.cache import cache
 
 # Bump the suffix when the payload's SHAPE changes.
 CACHE_KEY = "pvp_catalogue:v3"
 
-# Backstop only, as in public_payload_cache.py.
+# Backstop only, as in public_payload_cache.py. Left at five minutes: this
+# rebuild is ~4MB, not ~47MB, and runs only while someone has the builder open.
 CACHE_TTL_SECONDS = 300
+
+# One rebuild at a time, for the reason public_payload_cache.rebuild_lock gives.
+rebuild_lock = threading.Lock()
 
 # The models whose rows ARE the catalogue. Lower-case model names.
 _RELEVANT_MODELS = frozenset({

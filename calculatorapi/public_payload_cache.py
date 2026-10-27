@@ -76,6 +76,7 @@ else in this module needs to change.
 """
 
 import gzip
+import threading
 
 from django.core.cache import cache
 
@@ -91,11 +92,32 @@ CACHE_KEY = "calculator_data:public:v2"
 # it runs once per content edit.
 GZIP_LEVEL = 6
 
-# Backstop only. With one worker the signal below does the real work and this
-# never matters; with several it caps how long a process can serve stale
-# content. Five minutes is short enough not to confuse a content editor and
-# long enough that the cache still absorbs essentially all traffic.
-CACHE_TTL_SECONDS = 300
+# Backstop only. With one worker the signal below does the real work, so an
+# admin edit shows at once whatever this says. What it does bound is the writes
+# the signal cannot see: a bulk writer that forgets invalidate(), and anything
+# run through `doctl apps console`, which is its own process with its own cache
+# and so cannot clear this one.
+#
+# It was 300 until 2026-10-27, and that cost more than it looked. Every expiry
+# is a full rebuild (~47MB of Python objects at its peak, measured locally),
+# 288 of them a day, and the memory a rebuild borrows is kept by the process
+# afterwards, not handed back to the OS. Busy moments overlapped several of
+# them (see rebuild_lock below) and pushed the 512MB instance past DO's 80%
+# memory alert. Thirty minutes is six times fewer rebuilds, and still short
+# enough that a console write shows up within a coffee break.
+CACHE_TTL_SECONDS = 1800
+
+# Held by whichever request finds the cache empty, for as long as it takes to
+# rebuild and store the payload. Without it, every gunicorn thread that misses
+# in the same few seconds runs its own copy of the ~2s rebuild: four threads,
+# four 47MB bursts at once, for four identical answers. With it the first
+# thread builds, the rest wait on the lock and then read what it stored.
+#
+# A plain threading.Lock is enough because this is ONE process (see above);
+# it does nothing across processes, which is one more thing a move to Redis
+# would need to replace. The waiters are not slower than before: they would
+# otherwise have spent the same seconds building the payload themselves.
+rebuild_lock = threading.Lock()
 
 # Models whose rows CANNOT change the public payload. Everything else in the
 # calculatorapi app invalidates.

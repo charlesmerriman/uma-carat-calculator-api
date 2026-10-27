@@ -379,8 +379,14 @@ class CalculatorViewSet(ViewSet):
         payload = None
         gzipped = public_payload_cache.read()
         if gzipped is None:
-            payload = self._build_public_payload()
-            gzipped = public_payload_cache.store(JSONRenderer().render(payload))
+            # One rebuild at a time (public_payload_cache.rebuild_lock). The
+            # second read is the point: a thread that waited on the lock finds
+            # the payload the first thread just stored and skips the rebuild.
+            with public_payload_cache.rebuild_lock:
+                gzipped = public_payload_cache.read()
+                if gzipped is None:
+                    payload = self._build_public_payload()
+                    gzipped = public_payload_cache.store(JSONRenderer().render(payload))
 
         # A guest is answered with the cached bytes exactly as stored. This
         # used to json.loads them and let DRF render them straight back to the
