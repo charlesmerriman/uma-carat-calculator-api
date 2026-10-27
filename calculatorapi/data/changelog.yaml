@@ -37,8 +37,8 @@
   title: "CM Runs, and your Collection"
   version: "v2.8"
   changes:
-    - added: "CM Runs is a new tab on the PvP page. Log every Champions Meeting ticket race by race and watch your win rates build up for each uma."
-    - added: "The Collection is new too: your veterans, the umas you own and your support cards, all on your account. Open it from your profile menu or the Account page."
+    - added: "Introducing the CM Runs tab, just in time for CM 21! Log every ticket race by race and watch your win rates come together for each uma."
+    - added: "Meet the Collection, home for your veterans, umas and support cards. Veterans are the big one for CM Runs: link one to each runner and your win rates show which build is carrying you. Find it in your profile menu or on the Account page."
     - added: "Starting a ticket is one tap. Reuse the last ticket's three, or load one of your teams."
     - added: "Each race result is a single tap, Finals included."
     - added: "Days sit under their round, with one ticket open at a time."
@@ -46,7 +46,7 @@
     - added: "Once a day is over, Mark the rest skipped clears its leftover tickets. Nothing gets skipped unless you say so."
     - added: "Every ticket has room for a short note."
     - added: "Your totals sit beside the tickets on a computer and in a small strip on a phone."
-    - added: "Win rates also split by veteran, so you can see which of your Oguris is pulling her weight."
+    - added: "Win rates split by veteran too. Find out which of your Oguris is pulling her weight."
     - added: "CM Runs saves to your account. Guests get a sign-in card."
     - added: "Add a veteran by hand: stats, aptitudes, skills and her score if you know it."
     - added: "Or import from the game with umadump's export files. You tick the veterans to keep, and borrowed ones are marked."
@@ -55,7 +55,8 @@
     - changed: "Veterans go by their grade and score, like in the game (Main Oguri, A+ 13,815). Hover for her stats."
     - added: "Link a team member to one of your veterans in My team. Her aptitude letters follow."
     - added: "My team's pickers have an Owned only filter once you own anything."
-    - added: "CM Runs runners can be linked to veterans too. A ticket loaded from a team keeps its links."
+    - added: "A ticket loaded from a team keeps its veteran links."
+    - changed: "Pages load faster when you're signed in. The site sends about a tenth of the data it used to, which you'll feel on a slow connection."
     - changed: "The Privacy Policy now covers logged runs, veterans and imports."
 
 - key: pvp-guide-redesign
