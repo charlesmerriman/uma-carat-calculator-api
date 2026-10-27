@@ -28,9 +28,12 @@ client knows the dates (the calculator payload) and keeps the upcoming ones.
 
 Three queries whatever the guide count, and no cache: a few thousand small
 rows, fetched only when an early-access reader opens the view. A cache would
-need every guide save to invalidate it for no measurable gain.
+need every guide save to invalidate it for no measurable gain. Gzipped
+(`gzip_page`): the rows repeat their keys, so ~280 KB of JSON is ~12 KB on
+the wire. The site has no GZipMiddleware; /calculator-data gzips its own.
 """
 
+from django.views.decorators.gzip import gzip_page
 from rest_framework import permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -98,6 +101,7 @@ def rankings_payload():
     return {"guides": list(guides.values())}
 
 
+@gzip_page
 @api_view(["GET"])
 @permission_classes([permissions.IsAuthenticated])
 def pvp_rankings(request):

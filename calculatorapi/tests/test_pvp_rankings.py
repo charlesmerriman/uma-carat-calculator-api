@@ -79,6 +79,11 @@ class PayloadTests(RankingsFixture):
         ])
         self.assertEqual(guide["umas"], [{"uma": self.maru.id, "style": "front", "stars": 3}])
 
+    def test_gzipped_when_asked(self):
+        response = self.client.get(URL, HTTP_ACCEPT_ENCODING="gzip, deflate")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Encoding"], "gzip")
+
     def test_no_placeholder_and_no_note_only_slot(self):
         cards = self.client.get(URL).json()["guides"][0]["cards"]
         self.assertNotIn(self.any_speed.id, [row["card"] for row in cards])
