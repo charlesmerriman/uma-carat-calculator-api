@@ -258,6 +258,17 @@ class PvpGuide(SkillMentionsMixin, models.Model):
             "draft that only signed-in staff can see on the site."
         ),
     )
+    # Henry, 2026-10-24: a guide published early, before its author has
+    # updated it for the event, says so in a banner instead of passing off
+    # last event's picks as this one's. Part of the document, so it autosaves
+    # with the rest and a revision restores it.
+    under_construction = models.BooleanField(
+        default=False,
+        help_text=(
+            "Shows a banner on the guide saying it is still being updated. "
+            "Turn it off once the guide is done."
+        ),
+    )
     admin_comments = models.TextField(
         blank=True,
         help_text="Notes for editors. Never shown on the site.",

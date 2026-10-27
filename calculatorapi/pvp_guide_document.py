@@ -166,6 +166,9 @@ class DocumentInput(serializers.Serializer):
     style_ranking = _text(PvpGuide, "style_ranking", required=True, default=serializers.empty)
     short_description = serializers.CharField(allow_blank=True)
     meta_analysis = serializers.CharField(allow_blank=True)
+    # Optional, so a revision saved before the field existed restores without
+    # the banner.
+    under_construction = serializers.BooleanField(required=False, default=False)
     admin_comments = serializers.CharField(allow_blank=True)
     stat_configs = _StatInput(many=True)
     team_comps = _TeamCompInput(many=True)
@@ -349,6 +352,7 @@ def serialize(guide):
         "style_ranking": guide.style_ranking,
         "short_description": guide.short_description,
         "meta_analysis": guide.meta_analysis,
+        "under_construction": guide.under_construction,
         "admin_comments": guide.admin_comments,
         "stat_configs": [
             {
@@ -418,6 +422,7 @@ def write(guide, data):
         style_ranking=data["style_ranking"],
         short_description=data["short_description"],
         meta_analysis=data["meta_analysis"],
+        under_construction=data["under_construction"],
         admin_comments=data["admin_comments"],
         updated_at=timezone.now(),
     )

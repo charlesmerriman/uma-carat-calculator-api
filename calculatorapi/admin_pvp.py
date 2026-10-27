@@ -806,8 +806,8 @@ class PvpGuideForm(MentionAwareForm):
     class Meta:
         model = PvpGuide
         fields = (
-            "scenario", "is_published", "style_ranking", "short_description",
-            "meta_analysis", "admin_comments",
+            "scenario", "is_published", "under_construction", "style_ranking",
+            "short_description", "meta_analysis", "admin_comments",
         )
 
     def __init__(self, *args, **kwargs):
@@ -907,7 +907,7 @@ class PvpGuideAdmin(ModelAdmin):
     readonly_fields = ("site_link", "updated_at")
     fieldsets = (
         (None, {
-            "fields": ("event", "scenario", "is_published", "site_link"),
+            "fields": ("event", "scenario", "is_published", "under_construction", "site_link"),
         }),
         ("Overview", {
             "fields": ("style_ranking", "short_description", "meta_analysis"),
