@@ -989,6 +989,10 @@ erDiagram
     `PvpDeck.is_highlighted` ("Gold box", `0105`) draws any deck in a gold box to set it
     apart, the way the sheet sets that row apart. An editor's switch per deck, never keyed
     to the label (owner, 2026-10-22).
+  - `PvpGuide.under_construction` (`0120`, Henry 2026-10-24) puts a banner on the reader
+    saying the guide is still being updated. A document field like `style_ranking` (it
+    autosaves and a revision restores it; optional on input, so an older revision restores
+    it off), and in the admin beside "published".
   - `PvpTeamComp`: free text ("2 Front + 1 Pace") and a note.
 - **`[[Skill name]]` mentions** may appear in any guide text field. `SkillMentionsMixin`
   (`MENTION_FIELDS` per model) refuses a save whose mention matches no skill on global,

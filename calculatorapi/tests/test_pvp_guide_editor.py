@@ -191,8 +191,8 @@ class DocumentRoundTripTests(CalculatorTestCase):
         body = self.client.get(doc_url(self.guide)).json()
         self.assertEqual(set(body), {
             "id", "version", "event_type", "event", "is_published", "updated_at", "scenario",
-            "style_ranking", "short_description", "meta_analysis", "admin_comments",
-            "stat_configs", "team_comps", "uma_recommendations", "skill_recommendations",
+            "style_ranking", "short_description", "meta_analysis", "under_construction",
+            "admin_comments", "stat_configs", "team_comps", "uma_recommendations", "skill_recommendations",
             "style_notes", "decks",
         })
         self.assertEqual(body["version"], 0)
@@ -245,6 +245,22 @@ class DocumentRoundTripTests(CalculatorTestCase):
         self.assertEqual(list(boxes), [True, False])
         reader = self.client.get(f"/pvp-guides/cm/{self.fixture.cm.id}").json()
         self.assertEqual([deck["is_highlighted"] for deck in reader["decks"]], [True, False])
+
+    def test_under_construction_saves_and_reaches_the_reader(self):
+        document = self.client.get(doc_url(self.guide)).json()
+        self.assertIs(document["under_construction"], False)
+        res = self.client.put(doc_url(self.guide), put_body(document, under_construction=True), format="json")
+        self.assertEqual(res.status_code, 200, res.content)
+        reader = self.client.get(f"/pvp-guides/cm/{self.fixture.cm.id}").json()
+        self.assertIs(reader["under_construction"], True)
+        # A document sent without the key (a revision saved before the field
+        # existed) turns the banner off.
+        document = res.json()["document"]
+        del document["under_construction"]
+        res = self.client.put(doc_url(self.guide), put_body(document), format="json")
+        self.assertEqual(res.status_code, 200, res.content)
+        self.guide.refresh_from_db()
+        self.assertIs(self.guide.under_construction, False)
 
     def test_decks_keep_their_id_when_named_and_are_replaced_otherwise(self):
         document = self.client.get(doc_url(self.guide)).json()
