@@ -56,6 +56,12 @@ python manage.py createsuperuser
   beside them, so they cannot be tied to a visitor even inside the database.
   The rest of a link is never sent. Disclosed in the Privacy Policy's "Our own
   counter" paragraph.
+- **Some of these figures are shown on the site** (since 2026-10-27): the Rankings
+  page's Pull plans tab (`GET /rankings/pull-plans`, `views/rankings.py`) reads
+  `banner_popularity`, `step_up_popularity` and `demand_calendar` and shows the same
+  counts to Patreon supporters, rebuilt at most once an hour. It is behind the Raptive
+  gate (guide editors only) until the owner lifts it. Same exclusions: staff out,
+  active plans only.
 - This use of planning data is disclosed in the site's Privacy Policy
   ("How We Use Your Information"), and traffic counting under "Traffic
   Measurement".
@@ -282,6 +288,9 @@ Rows are ranked by:
   primary popularity signal)
 - **Total pulls** — the sum of pulls everyone has budgeted for it
 - **Avg pulls** — total pulls ÷ plan rows (how invested each planner is)
+- **Median** (`median_pulls`, the Rankings page's "typical"; not a dashboard column
+  yet) — the middle planner's pulls, which a few huge budgets can't drag the way they
+  drag the average
 - **Ignored values** — plan rows whose pull count was too large to be a real answer
 
 **Only each account's active plan is read.** An account can hold several

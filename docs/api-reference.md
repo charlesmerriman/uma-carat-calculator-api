@@ -982,6 +982,27 @@ character), `decks` every member (a card's share). A card counts once per member
 borrowed card (slot 6) included and counted apart in `borrows`; placeholder cards never
 count. Most first, ties by id.
 
+### `GET /rankings/pull-plans`
+
+The Rankings page's Pull plans tab: the admin analytics' Popular banners tables and demand
+by month (`analytics/banners.py`), hourly like every `/rankings/*` route. **Behind the
+Raptive gate**: early access AND a guide editor (`views/rankings.sees_pull_plans`, twin of
+the client's `useRankingsPullPlans`) until the owner says Raptive approved; 403 otherwise.
+
+```json
+{ "generated_at": "...",
+  "banners": [{"type": "uma", "unit": "pulls", "id": 88, "name": "Gentildonna",
+               "start_date": "...", "end_date": "...", "predicted": true, "status": "upcoming",
+               "planners": 5807, "total": 958000, "average": 165.0, "median": 150}],
+  "demand": [{"month": "2026-11", "banners": 6, "planners": 9000, "total_pulls": 1200000,
+              "excluded": 3, "step_up_planners": 40}, {"month": "Later", "...": "..."}] }
+```
+
+`type` is `uma`, `support` or `step_up`; a step-up's figures are **steps** (`unit`), never
+pulls. Staff are left out and only active plans count; an implausible pull count still
+counts its planner but not the figures. Every banner anyone plans is sent, ended ones
+included (`status`).
+
 ### `/pvp-teams`
 
 A signed-in player's teams (`views/pvp_team.py`, rules in `pvp_teams.py`). All

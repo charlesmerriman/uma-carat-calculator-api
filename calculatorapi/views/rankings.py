@@ -5,6 +5,9 @@ one per tab:
   GET /rankings/guides                     every pick in the published PvP guides
   GET /rankings/gallery/<kind>/<event_id>  one event's gallery posts, counted
                                            (the PvP page's Rankings tab)
+  GET /rankings/pull-plans                 the banners players plan to pull
+                                           on, and when (behind the Raptive
+                                           gate, below)
 
 EARLY ACCESS ONLY (owner, 2026-10-27: "Patreon only for now"). Every route
 checks benefits.early_access on the server; a guest gets 401, anyone else
@@ -49,8 +52,10 @@ from rest_framework import permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
-from calculatorapi import benefits, gallery, pvp_teams
-from calculatorapi.models import PvpDeckSlot, PvpGuide, PvpUmaRecommendation, Scenario, SupportCard
+from calculatorapi import benefits, gallery, pvp_guide_editing, pvp_teams
+from calculatorapi.analytics.banners import banner_popularity, demand_calendar, step_up_popularity
+from calculatorapi.models import BannerTimeline, PvpDeckSlot, PvpGuide, PvpUmaRecommendation, Scenario, SupportCard
+from calculatorapi.predictions import build_effective_date_maps
 from calculatorapi.rankings_cache import cached_payload
 
 TIERS = ("beginner", "standard", "whale")
@@ -216,3 +221,60 @@ def rankings_gallery(request, kind, event_id):
     except pvp_teams.TeamRefused:
         return Response({"error": "Event not found"}, status=404)
     return Response(cached_payload(f"gallery:{kind}:{event_id}", lambda: gallery_payload(event)))
+
+
+def sees_pull_plans(user):
+    """Whether `user` sees the Pull plans tab: the guide editors only, until
+    the owner says Raptive (the ad network) has approved the site. Henry,
+    2026-10-27: the pull-plan tables stay "hidden until we get raptive
+    approval (similar to skills tab)". The client's twin is
+    hooks/useRankingsPullPlans.ts; un-gating is both: return True here (the
+    early-access check still applies) and there."""
+    return pvp_guide_editing.can_edit(user)
+
+
+def pull_plans_payload():
+    """The admin analytics' Popular banners tables as one list, plus the
+    demand calendar: {"banners": [...], "demand": [...]}.
+
+    One row per banner anyone plans: `type` ("uma" / "support" / "step_up"),
+    its id, name and banner window (start, end, predicted, status), and
+    `planners`, `total`, `average`, `median`. A step-up row's figures are
+    STEPS (`unit`), never pulls (rules file step-up.md), so the client never
+    adds them to a pull figure. Staff are left out and only active plans
+    count (analytics.banners.active_rows); a row with an impossible pull
+    count still counts as a planner but not in the figures (`SANE_MAX_*`).
+    """
+    timeline_dates = build_effective_date_maps()[BannerTimeline]
+
+    def window(row):
+        return {key: row[key] for key in ("start_date", "end_date", "predicted", "status")}
+
+    banners = [
+        {
+            "type": banner_type, "unit": "pulls", "id": row["id"], "name": row["name"], **window(row),
+            "planners": row["planners"], "total": row["total_pulls"],
+            "average": row["avg_pulls"], "median": row["median_pulls"],
+        }
+        for banner_type, fk_name in (("uma", "banner_uma"), ("support", "banner_support"))
+        for row in banner_popularity(fk_name, timeline_dates)
+    ] + [
+        {
+            "type": "step_up", "unit": "steps", "id": row["id"], "name": row["name"], **window(row),
+            "planners": row["planners"], "total": row["total_steps"],
+            "average": row["avg_steps"], "median": row["median_steps"],
+        }
+        for row in step_up_popularity(timeline_dates)
+        # Picked cards but planned no steps: nothing to rank.
+        if row["planners"] > 0
+    ]
+    return {"banners": banners, "demand": demand_calendar(timeline_dates)}
+
+
+@gzip_page
+@api_view(["GET"])
+@permission_classes([permissions.IsAuthenticated])
+def rankings_pull_plans(request):
+    if not (benefits.early_access(request.user) and sees_pull_plans(request.user)):
+        return Response(REFUSED, status=403)
+    return Response(cached_payload("pull-plans", pull_plans_payload))
