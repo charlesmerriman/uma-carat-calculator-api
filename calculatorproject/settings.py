@@ -887,6 +887,15 @@ CACHES = {
         "LOCATION": "skills",
         "OPTIONS": {"MAX_ENTRIES": 3000},
     },
+    # The Rankings page's payloads (calculatorapi/rankings_cache.py), each
+    # built at most once an hour by decision and never invalidated: one per
+    # tab, plus one per event for the PvP tabs. Tens of KB each. Its own alias
+    # so they never crowd "default". Same single-process caveat.
+    "rankings": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "rankings",
+        "OPTIONS": {"MAX_ENTRIES": 200},
+    },
 }
 
 # Log all Django errors to stdout so DigitalOcean runtime logs capture tracebacks.

@@ -1,0 +1,176 @@
+"""The Rankings page's routes: who may read them, the rows they send, and
+the hourly cache (views/rankings.py, rankings_cache.py)."""
+
+from datetime import timedelta
+
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
+from django.utils import timezone
+from rest_framework.test import APIClient
+
+from calculatorapi.models import (
+    PvpDeck, PvpDeckSlot, PvpGuide, PvpUmaRecommendation, SupportCard, Uma,
+)
+from calculatorapi.tests.base import CalculatorTestCase
+from calculatorapi.tests.factories import (
+    auth_client, make_champions_meeting, make_league_of_heroes, make_scenario, make_timeline, make_user,
+)
+from calculatorapi.views.rankings import deck_tier, guides_payload
+
+URL = "/rankings/guides"
+
+
+class RankingsFixture(CalculatorTestCase):  # pylint: disable=too-many-instance-attributes
+    def setUp(self):
+        self.cm = make_champions_meeting(name="Aquarius Cup", cm_number=22)
+        self.loh = make_league_of_heroes(name="LoH 2")
+        now = timezone.now()
+        # Created newest first, so release order is not id order.
+        self.newer = make_scenario(name="Trackblazer", banner_timeline=make_timeline(jp_start_date=now))
+        self.older = make_scenario(
+            name="Grand Live", banner_timeline=make_timeline(jp_start_date=now - timedelta(days=400)),
+        )
+        make_scenario(name="Unused")
+        self.kitasan = SupportCard.objects.create(name="Kitasan Black", card_type="speed", rarity=3)
+        self.fine = SupportCard.objects.create(name="Fine Motion", card_type="wit", rarity=3)
+        self.any_speed = SupportCard.objects.create(
+            name="SSR Speed", card_type="speed", rarity=3, is_placeholder=True,
+        )
+        self.maru = Uma.objects.create(name="Maruzensky")
+
+        self.guide = PvpGuide.objects.create(champions_meeting=self.cm, scenario=self.newer, is_published=True)
+        deck = PvpDeck.objects.create(guide=self.guide, style="front", label=" whale ")
+        PvpDeckSlot.objects.create(deck=deck, slot=1, support_card=self.kitasan)
+        PvpDeckSlot.objects.create(deck=deck, slot=1, order=1, support_card=self.fine)
+        PvpDeckSlot.objects.create(deck=deck, slot=2, note="Any Wit")
+        PvpDeckSlot.objects.create(deck=deck, slot=3, support_card=self.any_speed)
+        PvpDeckSlot.objects.create(deck=deck, slot=6, is_borrow=True, support_card=self.fine)
+        self.deck = deck
+        mention = PvpDeck.objects.create(guide=self.guide, style="pace", label="Honorable mention deck", order=1)
+        PvpDeckSlot.objects.create(deck=mention, slot=1, support_card=self.kitasan)
+        self.mention = mention
+        one_off = PvpDeck.objects.create(guide=self.guide, style="pace", label="Xoguri pace", order=2)
+        PvpDeckSlot.objects.create(deck=one_off, slot=1, support_card=self.fine)
+        self.one_off = one_off
+        PvpUmaRecommendation.objects.create(guide=self.guide, style="front", uma=self.maru, stars=3)
+
+        older = PvpGuide.objects.create(league_of_heroes=self.loh, scenario=self.older, is_published=True)
+        PvpUmaRecommendation.objects.create(guide=older, style="end", uma=self.maru, stars=1)
+
+        draft = PvpGuide.objects.create(
+            champions_meeting=make_champions_meeting(name="Draft Cup", cm_number=23), is_published=False,
+        )
+        hidden = PvpDeck.objects.create(guide=draft, style="front", label="Standard")
+        PvpDeckSlot.objects.create(deck=hidden, slot=1, support_card=self.kitasan)
+
+
+class AccessTests(RankingsFixture):
+    def test_a_guest_is_asked_to_sign_in(self):
+        self.assertEqual(APIClient().get(URL).status_code, 401)
+
+    def test_a_plain_account_is_refused(self):
+        client, _ = auth_client(make_user("plain"))
+        response = client.get(URL)
+        self.assertEqual(response.status_code, 403)
+        self.assertNotIn("guides", response.json())
+
+    def test_staff_and_a_granted_account_may_read(self):
+        granted = make_user("tester")
+        granted.early_access = True
+        granted.save(update_fields=["early_access"])
+        for user in (make_user("staff", is_staff=True), granted):
+            client, _ = auth_client(user)
+            self.assertEqual(client.get(URL).status_code, 200, user.username)
+
+
+class DeckTierTests(CalculatorTestCase):
+    def test_labels(self):
+        cases = {
+            "Whale": "whale",
+            " beginner ": "beginner",
+            "Honorable mention": "honorable",
+            "Honorable Mentions": "honorable",
+            "honorable mention deck": "honorable",
+            "Xoguri pace": "other",
+            "": "other",
+        }
+        for label, tier in cases.items():
+            self.assertEqual(deck_tier(label), tier, label)
+
+
+class PayloadTests(RankingsFixture):
+    def setUp(self):
+        super().setUp()
+        self.client, _ = auth_client(make_user("staff", is_staff=True))
+
+    def guide_for(self, body, kind):
+        return next(guide for guide in body["guides"] if guide["kind"] == kind)
+
+    def test_published_guides_only_with_their_rows(self):
+        body = self.client.get(URL).json()
+        self.assertEqual(len(body["guides"]), 2)
+        guide = self.guide_for(body, "cm")
+        self.assertEqual((guide["event"], guide["scenario"]), (self.cm.id, self.newer.id))
+        whale, mention, one_off = self.deck.id, self.mention.id, self.one_off.id
+        self.assertEqual(guide["cards"], [
+            {"card": self.kitasan.id, "deck": whale, "style": "front", "tier": "whale", "role": "main"},
+            {"card": self.fine.id, "deck": whale, "style": "front", "tier": "whale", "role": "alt"},
+            {"card": self.fine.id, "deck": whale, "style": "front", "tier": "whale", "role": "borrow"},
+            {"card": self.kitasan.id, "deck": mention, "style": "pace", "tier": "honorable", "role": "main"},
+            {"card": self.fine.id, "deck": one_off, "style": "pace", "tier": "other", "role": "main"},
+        ])
+        self.assertEqual(guide["umas"], [{"uma": self.maru.id, "style": "front", "stars": 3}])
+
+    def test_scenarios_in_use_in_release_order(self):
+        body = self.client.get(URL).json()
+        self.assertEqual(body["scenarios"], [
+            {"id": self.older.id, "name": "Grand Live"},
+            {"id": self.newer.id, "name": "Trackblazer"},
+        ])
+
+    def test_a_guide_without_a_scenario_sends_null(self):
+        PvpGuide.objects.filter(pk=self.guide.pk).update(scenario=None)
+        guide = self.guide_for(self.client.get(URL).json(), "cm")
+        self.assertIsNone(guide["scenario"])
+
+    def test_gzipped_when_asked(self):
+        response = self.client.get(URL, HTTP_ACCEPT_ENCODING="gzip, deflate")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Encoding"], "gzip")
+
+    def test_no_placeholder_and_no_note_only_slot(self):
+        cards = self.guide_for(self.client.get(URL).json(), "cm")["cards"]
+        self.assertNotIn(self.any_speed.id, [row["card"] for row in cards])
+        self.assertTrue(all(row["card"] for row in cards))
+
+    def test_four_queries_whatever_the_guide_count(self):
+        def count():
+            with CaptureQueriesContext(connection) as queries:
+                guides_payload()
+            return len(queries)
+
+        before = count()
+        cm = make_champions_meeting(name="Piscis Cup", cm_number=24)
+        guide = PvpGuide.objects.create(champions_meeting=cm, scenario=self.older, is_published=True)
+        deck = PvpDeck.objects.create(guide=guide, style="end", label="Beginner")
+        PvpDeckSlot.objects.create(deck=deck, slot=1, support_card=self.kitasan)
+        PvpUmaRecommendation.objects.create(guide=guide, style="end", uma=self.maru, stars=1)
+        self.assertEqual(count(), before)
+        self.assertEqual(before, 4)
+
+
+class HourlyCacheTests(RankingsFixture):
+    """Built once, stamped, and NOT invalidated by a guide edit: hourly
+    staleness is the owner's decision (rankings_cache.py)."""
+
+    def test_stamped_and_served_from_the_cache_until_it_expires(self):
+        client, _ = auth_client(make_user("staff", is_staff=True))
+        first = client.get(URL).json()
+        self.assertIn("generated_at", first)
+
+        PvpUmaRecommendation.objects.filter(guide=self.guide).delete()
+        with CaptureQueriesContext(connection) as queries:
+            second = client.get(URL).json()
+        self.assertEqual(second, first)
+        # Only the account's own reads: the payload's four never run.
+        self.assertFalse(any("pvpdeckslot" in query["sql"].lower() for query in queries))

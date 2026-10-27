@@ -939,24 +939,31 @@ builder's deck rules count it as a card of each of them. `game_id` (all three) a
 skill's `version` label (`○ white`, `◎ white`, `◎ gold`, `evolved`: `Skill.version_label`)
 are for the guide editor's pickers and its paste-from-the-sheet matching (2026-10-21).
 
-### `GET /pvp-rankings`
+### `GET /rankings/guides`
 
-Every pick in the published guides, for the PvP page's Rankings view, which does the
-counting (`utils/pvpRankings.ts`). **Early access only** (`benefits.early_access`): 401 for a
-guest, 403 for anyone else without it. Three queries, no cache.
+The Rankings page's Guide rankings tab (`/app/rankings`, `views/rankings.py`): every pick in
+the published guides, which the client counts (`utils/guideRankings.ts`). **Early access
+only** (`benefits.early_access`), like every `/rankings/*` route: 401 for a guest, 403 for
+anyone else without it. **Built at most once an hour** and never invalidated
+(`rankings_cache.py`, the `rankings` cache alias); `generated_at` says when. Four queries on
+a miss, gzipped.
 
 ```json
-{ "guides": [
-  { "kind": "cm", "event": 22,
-    "cards": [{"card": 12, "style": "front", "deck": "Whale", "tier": "whale", "role": "main"}],
+{ "generated_at": "2026-10-27T20:15:03.120000+00:00",
+  "scenarios": [{"id": 12, "name": "Trackblazer"}],
+  "guides": [
+  { "kind": "cm", "event": 22, "scenario": 12,
+    "cards": [{"card": 12, "deck": 310, "style": "front", "tier": "whale", "role": "main"}],
     "umas": [{"uma": 41, "style": "front", "stars": 3}] }
 ] }
 ```
 
-`tier` is `beginner` / `standard` / `whale` from the deck's label, else `other`
-(honorable mentions, one-off decks). `role` is `main`, `borrow` (counted like a main pick,
+`deck` is the deck's id, so the client can count decks (a card's share). `scenarios` lists only the scenarios some published guide names, in JP release order; a
+guide's `scenario` is null when the editor hasn't set one. `tier` is `beginner` / `standard` /
+`whale` from the deck's label, `honorable` for a label starting "honorable mention" (any
+case), else `other` (one-off decks). `role` is `main`, `borrow` (counted like a main pick,
 owner) or `alt` (an alternative, shown but not counted). Placeholder cards, note-only slots
-and drafts are never sent; past events are, and the client keeps the upcoming ones.
+and drafts are never sent; past events are, and the client picks the window.
 
 ### `/pvp-teams`
 
