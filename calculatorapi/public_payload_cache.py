@@ -150,6 +150,8 @@ _IRRELEVANT_MODELS = frozenset({
     "customuser",
     "socialaccount",
     # Their own endpoints; absent from /calculator-data entirely.
+    # A spark is named only on one veteran's GET /trained-umas/<id>.
+    "spark",
     "changelogentry",
     "changelogchange",
     "patreontier",

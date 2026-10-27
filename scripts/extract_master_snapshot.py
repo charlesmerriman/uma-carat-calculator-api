@@ -35,6 +35,8 @@ What comes out, one file per concern (all sorted by id, so re-runs diff cleanly)
   evolution_condition_text.json  global only: the official English text of
                       evolution conditions, keyed by condition id. Like skill
                       names, this text ships before global has the conditions
+  sparks.json         global only: every spark (the game's "factor"), what a
+                      veteran's export lists by id: kind, stars and name
 
 What the ids encode, because the import asserts on it:
 
@@ -93,6 +95,15 @@ TEXT_SUPPORT_FULL = 75      # "[Get Lots of Hugs for Me] Oguri Cap"
 TEXT_SUPPORT_TITLE = 76
 TEXT_SUPPORT_CHARA = 77
 TEXT_EVOLUTION_CONDITION = 290  # "Reach 600 Stamina", by skill_upgrade_condition.id
+TEXT_SPARK_NAME = 147       # "Speed", "Oka Sho", by succession_factor.factor_id
+
+# succession_factor.factor_type -> what the spark is, read from the global
+# client on 2026-10-27: 1 the five stats (blue in the game), 2 the surface,
+# distance and style aptitudes (pink), 3 an outfit's unique skill (green), 4 a
+# white skill, 5 a race won, 6 a training scenario, 7 the Carnival bonus. A
+# type the game adds later is written as its number, so a review sees it and
+# the import skips it until it has a name here.
+SPARK_KINDS = {1: "stat", 2: "aptitude", 3: "unique", 4: "skill", 5: "race", 6: "scenario", 7: "carnival"}
 
 TUTORIAL_CARD_MIN_ID = 9_000_000
 
@@ -376,6 +387,27 @@ def extract_support_cards(conn, region="global"):
     return cards, hints
 
 
+def extract_sparks(conn):
+    """
+    Every spark: what a veteran passes on when she is a parent. Her export
+    lists them as ids (`factor_info_array`, and each parent's), and this is
+    what the ids mean. `stars` is the row's `rarity`, 1..3: the export's own
+    `level` field is 0 on every spark and says nothing.
+    """
+    names = text_map(conn, TEXT_SPARK_NAME)
+    return [
+        {
+            "id": row["factor_id"],
+            "kind": SPARK_KINDS.get(row["factor_type"], str(row["factor_type"])),
+            "stars": row["rarity"],
+            "name": names.get(row["factor_id"], ""),
+        }
+        for row in conn.execute(
+            "SELECT factor_id, factor_type, rarity FROM succession_factor ORDER BY factor_id"
+        )
+    ]
+
+
 def has_table(conn, name):
     return conn.execute(
         "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?", (name,)
@@ -453,13 +485,18 @@ def extract(mdb_path, region="global"):
         support_cards, support_hints = extract_support_cards(conn, region)
         evolutions = extract_evolutions(conn)
         # Text ahead of definitions is a global thing: JP defines what it
-        # names, and global's English is the text worth having early.
+        # names, and global's English is the text worth having early. So are
+        # the spark names: global's English is what a veteran card shows.
+        global_only = {}
         if region == "global":
-            skill_text_ahead = extract_skill_text_ahead(conn, skills)
-            evolution_condition_text = {
-                str(condition_id): text
-                for condition_id, text in sorted(text_map(conn, TEXT_EVOLUTION_CONDITION).items())
-                if text.strip()
+            global_only = {
+                "skill_text_ahead.json": extract_skill_text_ahead(conn, skills),
+                "evolution_condition_text.json": {
+                    str(condition_id): text
+                    for condition_id, text in sorted(text_map(conn, TEXT_EVOLUTION_CONDITION).items())
+                    if text.strip()
+                },
+                "sparks.json": extract_sparks(conn),
             }
     finally:
         conn.close()
@@ -483,11 +520,8 @@ def extract(mdb_path, region="global"):
         "support_hints.json": support_hints,
         "evolutions.json": evolutions,
     }
-    if region == "global":
-        counts["skill_text_ahead"] = len(skill_text_ahead)
-        counts["evolution_condition_text"] = len(evolution_condition_text)
-        files["skill_text_ahead.json"] = skill_text_ahead
-        files["evolution_condition_text.json"] = evolution_condition_text
+    counts.update({name.removesuffix(".json"): len(payload) for name, payload in global_only.items()})
+    files.update(global_only)
     meta = {
         "region": region,
         "extracted_at": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"),

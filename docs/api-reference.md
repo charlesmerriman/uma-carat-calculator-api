@@ -1025,7 +1025,7 @@ A signed-in player's veterans, for the Collection page (`views/trained_uma.py`, 
 |---|---|---|
 | `GET /trained-umas` | | every veteran, newest first (`trained_at`, the game's own time, else when it was added) |
 | `POST /trained-umas` | `{uma, label?, speed, stamina, power, guts, wit, apt?, skills?, rank_score?}` | `201` the veteran (`source: "manual"`) |
-| `GET /trained-umas/<id>` | | the veteran, with `game_data` (the raw game object; the list leaves it out) |
+| `GET /trained-umas/<id>` | | the veteran, with `game_data` (the raw game object; the list leaves it out) and `sparks`: `{"<factor_id>": {name, kind, stars}}` for every spark in it, hers and her lineage's (`{}` for a hand entry; an id the `Spark` table doesn't know is left out) |
 | `PATCH /trained-umas/<id>` | any of the above | the veteran. A game veteran takes `label` only; nobody changes `uma` |
 | `DELETE /trained-umas/<id>` | | `204`. Teams and runs that linked it keep their uma, link `null` |
 | `POST /trained-umas/import` | `{items: [{import_key, uma, rank_score?, speed..wit, apt?, skills?, game_data?}]}`, plain or gzipped | `{created, updated, removed, kept, veterans}` |

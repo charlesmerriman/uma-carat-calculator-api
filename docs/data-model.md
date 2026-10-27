@@ -1147,6 +1147,19 @@ for CM Runs").
   (`views/trained_uma.GzipJSONParser`, 24 MB unpacked at most).
 - `DELETE /account` cascades; `purge_user_pii` leaves veterans (game numbers, no person).
 
+### `Spark`: what a veteran's spark ids mean
+
+`models/spark.py`, CONTENT and in `_IRRELEVANT_MODELS`, no admin page. A veteran's
+`game_data` lists her sparks (the game's "factors") and each parent's and grandparent's as
+bare ids; `GET /trained-umas/<id>` names them from this table (`trained_umas.spark_names`,
+one query). The primary key is the game's `factor_id`; `kind` is `stat`, `aptitude`,
+`unique`, `skill`, `race`, `scenario` or `carnival` (the game's `factor_type` 1..7), `stars`
+is 1..3 (the game's `rarity`; the export's own `level` is 0 on every spark) and `name` is
+global's English. Filled by `import_game_data` from `sparks.json` on every deploy, created
+when missing, never deleted. Checked 2026-10-27 against the owner's export: all 256 veterans
+carry exactly one stat, one aptitude and one unique spark, and every id in it and in each
+lineage is in the table. Design: `notes/collection-redesign-plan.md`.
+
 ### `OwnedUma` / `OwnedSupportCard`: what a player owns
 
 `models/roster.py`, PRIVATE and in `_IRRELEVANT_MODELS`. The Collection's Umas and Support
@@ -1665,6 +1678,7 @@ The tables the extractor reads, and the two places the schema is not what it loo
 | group card members | `support_card_group` | one row per (`support_card_id`, `chara_id`): every uma a group card stands for. `support_card_data.chara_id` files the card under just one of them (Team Sirius under Special Week). Written as names (`text_data` category 6), because the team builder's deck rules match cards to umas by name |
 | support card hints | `single_mode_hint_gain` (2063) | **keyed per card by `support_card_id`**, not by the card's `skill_set_id` (several cards of one character share that as `hint_id`, with different rows each). `hint_gain_type` 0 rows are skills (`hint_value_1`); type 1 are stat hints, skipped. 15 cards have none: friend, group and Haru Urara cards |
 | support card text | `text_data` cat 75 (full), 76 (title), 77 (character) | |
+| sparks | `succession_factor` (1,205), names in `text_data` cat 147 | keyed by `factor_id`, which a veteran's export uses. `rarity` is the stars (1..3); `factor_type` the kind: 1 stat (blue), 2 aptitude (pink), 3 unique (green), 4 skill, 5 race, 6 scenario, 7 carnival. Written to `sparks.json`, global only |
 
 What the ids encode, which the import asserts on: an outfit id `100101` is character
 `1001`, outfit `01`, so the character is `id // 100`; a support id's leading digit is its

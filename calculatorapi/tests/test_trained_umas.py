@@ -14,6 +14,7 @@ from calculatorapi.models import (
     PvpRunRunner,
     PvpTeam,
     PvpTeamMember,
+    Spark,
     TrainedUma,
     TrainedUmaSkill,
 )
@@ -389,3 +390,44 @@ class RawGameDataTests(VeteranFixture):
         self.assertEqual((body["rank_score"], body["rank_grade"]), (12000, None))
         changed = self.client.patch(f"/trained-umas/{body['id']}", {"rank_score": 12500}, format="json").json()
         self.assertEqual(changed["rank_score"], 12500)
+
+
+class SparkNameTests(VeteranFixture):
+    """One veteran's GET names her sparks and her lineage's (trained_umas.spark_names)."""
+
+    def setUp(self):
+        super().setUp()
+        Spark.objects.bulk_create([
+            Spark(id=103, kind="stat", stars=3, name="Speed"),
+            Spark(id=3402, kind="aptitude", stars=2, name="Long"),
+            Spark(id=1000401, kind="race", stars=1, name="Oka Sho"),
+        ])
+
+    def test_her_sparks_and_her_lineages_are_named_and_unknown_ones_left_out(self):
+        lineage = [
+            {"position_id": 10, "card_id": 100901, "factor_info_array": [{"factor_id": 3402, "level": 0}]},
+            {"position_id": 11, "card_id": 100101, "factor_info_array": [{"factor_id": 1000401, "level": 0}]},
+        ]
+        self.run_import(self.item(12, game_data=game_object(
+            factor_info_array=[{"factor_id": 103, "level": 0}, {"factor_id": 999, "level": 0}],
+            succession_chara_array=lineage,
+        )))
+        veteran = TrainedUma.objects.get(import_key=12)
+        # The token, the ownership check, the veteran with her skills (two), then
+        # ONE query for every spark, however many relatives she has.
+        with self.assertNumQueries(5):
+            detail = self.client.get(f"/trained-umas/{veteran.id}").json()
+        self.assertEqual(detail["sparks"], {
+            "103": {"name": "Speed", "kind": "stat", "stars": 3},
+            "3402": {"name": "Long", "kind": "aptitude", "stars": 2},
+            "1000401": {"name": "Oka Sho", "kind": "race", "stars": 1},
+        })
+        self.assertNotIn("sparks", self.client.get("/trained-umas").json()[0])
+
+    def test_a_hand_entry_or_a_strange_file_has_no_sparks(self):
+        self.assertEqual(trained_umas.spark_names(None), {})
+        self.assertEqual(trained_umas.spark_names({
+            "factor_info_array": "103", "succession_chara_array": [None, {"factor_info_array": [{"factor_id": True}]}],
+        }), {})
+        body = self.add().json()
+        self.assertEqual(self.client.get(f"/trained-umas/{body['id']}").json()["sparks"], {})

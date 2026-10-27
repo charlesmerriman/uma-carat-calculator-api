@@ -18,8 +18,10 @@ GET /pvp-catalogue):
      rank_score, rank_grade, source: "import" | "manual", import_key, missing_from_import,
      memo, is_borrowed, trained_at, has_game_data, skills: [{skill, level}], created_at, updated_at}
 
-plus `game_data` (the raw game object, or null) on GET /trained-umas/<id> only:
-it is about 7 KB a veteran, so the list leaves it out.
+plus, on GET /trained-umas/<id> only, `game_data` (the raw game object, or
+null; about 7 KB a veteran, so the list leaves it out) and `sparks`, the names
+of the sparks in it: {"<factor_id>": {name, kind, stars}}, hers and her
+lineage's (trained_umas.spark_names; {} for a hand entry).
 
 `apt` values are the game's 1..8 (G..S), null when not known. An import item is
 the same minus id, label, source, memo, is_borrowed and the dates, plus
@@ -184,7 +186,8 @@ def _bad_request(message):
 
 def serialize_veteran(veteran, with_game_data=False):
     """One veteran on the wire. Reads `skills` through whatever was prefetched.
-    `game_data` only when asked (one veteran's GET): the list defers it."""
+    `game_data` and its spark names only when asked (one veteran's GET): the
+    list defers it."""
     return {
         "id": veteran.id,
         "uma": veteran.uma_id,
@@ -205,7 +208,10 @@ def serialize_veteran(veteran, with_game_data=False):
         "skills": [{"skill": row.skill_id, "level": row.level} for row in veteran.skills.all()],
         "created_at": veteran.created_at,
         "updated_at": veteran.updated_at,
-        **({"game_data": veteran.game_data} if with_game_data else {}),
+        **(
+            {"game_data": veteran.game_data, "sparks": trained_umas.spark_names(veteran.game_data)}
+            if with_game_data else {}
+        ),
     }
 
 

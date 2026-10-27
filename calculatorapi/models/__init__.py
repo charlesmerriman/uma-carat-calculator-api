@@ -13,6 +13,7 @@ from .uma import Uma, Rarity, RunningStyle, Aptitude
 from .skill import Skill, SkillAvailability, SkillRarity, SkillTier
 from .skill_alias import SkillAlias
 from .skill_evolution_condition import SkillEvolutionCondition
+from .spark import Spark, SparkKind
 from .uma_skill import UmaSkill, UmaSkillSource
 from .support_card_skill import SupportCardSkill, SupportCardSkillSource
 from .champions_meeting import ChampionsMeeting
