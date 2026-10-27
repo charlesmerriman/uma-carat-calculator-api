@@ -88,7 +88,7 @@ class CalculatorGetTests(CalculatorTestCase):
 
     def test_response_contains_all_expected_keys(self):
         res = self.client.get('/calculator-data')
-        self.assertEqual(set(res.data.keys()), _EXPECTED_GET_KEYS)
+        self.assertEqual(set(res.json().keys()), _EXPECTED_GET_KEYS)
 
     def test_planned_banners_scoped_to_requesting_user(self):
         # This user's banner should appear; the other user's should not.
@@ -98,13 +98,13 @@ class CalculatorGetTests(CalculatorTestCase):
         UserPlannedBanner.objects.create(user=other_user, banner_uma=uma_banner, number_of_pulls=10)
 
         res = self.client.get('/calculator-data')
-        self.assertEqual(len(res.data['user_planned_banner_data']), 1)
-        self.assertEqual(res.data['user_planned_banner_data'][0]['number_of_pulls'], 5)
+        self.assertEqual(len(res.json()['user_planned_banner_data']), 1)
+        self.assertEqual(res.json()['user_planned_banner_data'][0]['number_of_pulls'], 5)
 
     def test_timeline_data_exposes_resolved_and_predicted_fields(self):
         make_timeline(name='Confirmed')  # default: confirmed global banner
         res = self.client.get('/calculator-data')
-        entry = res.data['banner_timeline_data'][0]
+        entry = res.json()['banner_timeline_data'][0]
         for key in ('start_date', 'end_date', 'is_predicted',
                     'jp_start_date', 'global_start_date'):
             self.assertIn(key, entry)
@@ -131,18 +131,18 @@ class CalculatorGetTests(CalculatorTestCase):
 
         expected_start = _iso(_predicted(_dt(2025, 6, 1), 30))
 
-        top = next(t for t in res.data['banner_timeline_data'] if t['id'] == predicted_tl.id)
+        top = next(t for t in res.json()['banner_timeline_data'] if t['id'] == predicted_tl.id)
         self.assertTrue(top['is_predicted'])
         self.assertEqual(top['start_date'], expected_start)
 
         nested_uma = next(
-            b for b in res.data['banner_uma_data']
+            b for b in res.json()['banner_uma_data']
             if b['banner_timeline']['id'] == predicted_tl.id
         )
         self.assertTrue(nested_uma['banner_timeline']['is_predicted'])
         self.assertEqual(nested_uma['banner_timeline']['start_date'], expected_start)
 
-        planned_tl = res.data['user_planned_banner_data'][0]['banner_uma']['banner_timeline']
+        planned_tl = res.json()['user_planned_banner_data'][0]['banner_uma']['banner_timeline']
         self.assertEqual(planned_tl['start_date'], expected_start)
         self.assertTrue(planned_tl['is_predicted'])
 
@@ -173,7 +173,7 @@ class CalculatorGetTests(CalculatorTestCase):
         expected_start = _iso(shifted_start)
         expected_end = _iso(_predicted_end(_dt(2025, 6, 1), 30, 7, offset_days=7))
 
-        top = next(t for t in res.data['banner_timeline_data'] if t['id'] == offset_tl.id)
+        top = next(t for t in res.json()['banner_timeline_data'] if t['id'] == offset_tl.id)
         self.assertEqual(top['start_date'], expected_start)
         self.assertEqual(top['end_date'], expected_end)
         self.assertTrue(top['is_predicted'])
@@ -181,12 +181,12 @@ class CalculatorGetTests(CalculatorTestCase):
         self.assertEqual(top['applied_offset_days'], 7)
 
         nested_uma = next(
-            b for b in res.data['banner_uma_data']
+            b for b in res.json()['banner_uma_data']
             if b['banner_timeline']['id'] == offset_tl.id
         )
         self.assertEqual(nested_uma['banner_timeline']['start_date'], expected_start)
 
-        planned_tl = res.data['user_planned_banner_data'][0]['banner_uma']['banner_timeline']
+        planned_tl = res.json()['user_planned_banner_data'][0]['banner_uma']['banner_timeline']
         self.assertEqual(planned_tl['start_date'], expected_start)
         self.assertEqual(planned_tl['applied_offset_days'], 7)
 
@@ -231,18 +231,18 @@ class CalculatorGetTests(CalculatorTestCase):
 
         res = self.client.get('/calculator-data')
 
-        earlier = next(t for t in res.data['banner_timeline_data'] if t['id'] == earlier_tl.id)
+        earlier = next(t for t in res.json()['banner_timeline_data'] if t['id'] == earlier_tl.id)
         self.assertEqual(earlier['start_date'], _iso(_predicted(_dt(2025, 6, 1), 20)))
         self.assertEqual(earlier['applied_offset_days'], 0)
 
         # Both predict off their own anchors, land after the slip, inherit the +7.
         inherited = _iso(_predicted(_dt(2025, 6, 10), 30, offset_days=7))
 
-        cm = next(c for c in res.data['champions_meeting_data'] if c['id'] == later_cm.id)
+        cm = next(c for c in res.json()['champions_meeting_data'] if c['id'] == later_cm.id)
         self.assertEqual(cm['start_date'], inherited)
         self.assertEqual(cm['applied_offset_days'], 7)
 
-        loh = next(e for e in res.data['league_of_heroes_event_data'] if e['id'] == later_loh.id)
+        loh = next(e for e in res.json()['league_of_heroes_event_data'] if e['id'] == later_loh.id)
         self.assertEqual(loh['start_date'], inherited)
         self.assertEqual(loh['applied_offset_days'], 7)
 
@@ -262,11 +262,11 @@ class CalculatorGetTests(CalculatorTestCase):
 
         res = self.client.get('/calculator-data')
 
-        confirmed = next(t for t in res.data['banner_timeline_data'] if t['id'] == confirmed_tl.id)
+        confirmed = next(t for t in res.json()['banner_timeline_data'] if t['id'] == confirmed_tl.id)
         self.assertEqual(confirmed['start_date'], '2025-06-01T00:00:00Z')
         self.assertEqual(confirmed['applied_offset_days'], 0)
 
-        later = next(t for t in res.data['banner_timeline_data'] if t['id'] == later_tl.id)
+        later = next(t for t in res.json()['banner_timeline_data'] if t['id'] == later_tl.id)
         self.assertEqual(later['start_date'], _iso(_predicted(_dt(2025, 6, 1), 30)))
         self.assertEqual(later['applied_offset_days'], 0)
 
@@ -284,7 +284,7 @@ class CalculatorGetTests(CalculatorTestCase):
         event = make_game_event(name='Slipped Event', banner_timeline=offset_tl)
 
         res = self.client.get('/calculator-data')
-        entry = next(e for e in res.data['events_data'] if e['id'] == event.id)
+        entry = next(e for e in res.json()['events_data'] if e['id'] == event.id)
 
         # The banner's 7-day run shifts whole by the offset; the event's end
         # still trails it by the usual 4-day buffer.
@@ -297,7 +297,7 @@ class CalculatorGetTests(CalculatorTestCase):
     def test_champions_meeting_exposes_resolved_and_predicted_fields(self):
         make_champions_meeting(name='Confirmed CM')  # default: confirmed global
         res = self.client.get('/calculator-data')
-        entry = res.data['champions_meeting_data'][0]
+        entry = res.json()['champions_meeting_data'][0]
         for key in ('start_date', 'end_date', 'is_predicted',
                     'jp_start_date', 'global_start_date'):
             self.assertIn(key, entry)
@@ -307,7 +307,7 @@ class CalculatorGetTests(CalculatorTestCase):
     def test_league_of_heroes_exposes_resolved_and_predicted_fields(self):
         make_league_of_heroes(name='Confirmed LoH')  # default: confirmed global
         res = self.client.get('/calculator-data')
-        entry = res.data['league_of_heroes_event_data'][0]
+        entry = res.json()['league_of_heroes_event_data'][0]
         for key in ('start_date', 'end_date', 'is_predicted',
                     'jp_start_date', 'global_start_date'):
             self.assertIn(key, entry)
@@ -326,7 +326,7 @@ class CalculatorGetTests(CalculatorTestCase):
             jp_start_date=_dt(2025, 1, 31), jp_end_date=_dt(2025, 2, 7),
         )
         res = self.client.get('/calculator-data')
-        entry = next(c for c in res.data['champions_meeting_data'] if c['id'] == predicted.id)
+        entry = next(c for c in res.json()['champions_meeting_data'] if c['id'] == predicted.id)
         self.assertTrue(entry['is_predicted'])
         self.assertEqual(entry['start_date'], _iso(_predicted(_dt(2025, 6, 1), 30)))
 
@@ -341,7 +341,7 @@ class CalculatorGetTests(CalculatorTestCase):
             jp_start_date=_dt(2025, 1, 31), jp_end_date=_dt(2025, 2, 7),
         )
         res = self.client.get('/calculator-data')
-        entry = next(l for l in res.data['league_of_heroes_event_data'] if l['id'] == predicted.id)
+        entry = next(l for l in res.json()['league_of_heroes_event_data'] if l['id'] == predicted.id)
         self.assertTrue(entry['is_predicted'])
         self.assertEqual(entry['start_date'], _iso(_predicted(_dt(2025, 6, 1), 30)))
 
@@ -360,7 +360,7 @@ class CalculatorGetTests(CalculatorTestCase):
             jp_start_date=_dt(2025, 1, 31), jp_end_date=_dt(2025, 2, 7),
         )
         res = self.client.get('/calculator-data')
-        entry = next(l for l in res.data['league_of_heroes_event_data'] if l['id'] == loh.id)
+        entry = next(l for l in res.json()['league_of_heroes_event_data'] if l['id'] == loh.id)
         self.assertFalse(entry['is_predicted'])
         self.assertIsNone(entry['start_date'])
 
@@ -374,7 +374,7 @@ class CalculatorGetTests(CalculatorTestCase):
             carat_amount=80, carats_throughout=1050,
         )
         res = self.client.get('/calculator-data')
-        entry = next(e for e in res.data['events_data'] if e['id'] == event.id)
+        entry = next(e for e in res.json()['events_data'] if e['id'] == event.id)
         for key in ('start_date', 'end_date', 'is_predicted', 'banner_timeline'):
             self.assertIn(key, entry)
         self.assertEqual(entry['start_date'], '2025-06-01T00:00:00Z')
@@ -397,7 +397,7 @@ class CalculatorGetTests(CalculatorTestCase):
         )
         event = make_game_event(name='Predicted Event', banner_timeline=predicted_tl)
         res = self.client.get('/calculator-data')
-        entry = next(e for e in res.data['events_data'] if e['id'] == event.id)
+        entry = next(e for e in res.json()['events_data'] if e['id'] == event.id)
         # Banner runs 7d from its predicted start, then the event's +4d buffer.
         predicted_start = _predicted(_dt(2025, 6, 1), 30)
         self.assertTrue(entry['is_predicted'])
@@ -408,7 +408,7 @@ class CalculatorGetTests(CalculatorTestCase):
     def test_game_event_with_no_banner_timeline_resolves_null_dates(self):
         event = make_game_event(name='Unlinked Event', banner_timeline=None)
         res = self.client.get('/calculator-data')
-        entry = next(e for e in res.data['events_data'] if e['id'] == event.id)
+        entry = next(e for e in res.json()['events_data'] if e['id'] == event.id)
         self.assertIsNone(entry['start_date'])
         self.assertIsNone(entry['end_date'])
         self.assertFalse(entry['is_predicted'])
@@ -630,7 +630,7 @@ class AnniversaryEventApiTests(CalculatorTestCase):
     def test_banner_carries_its_campaign_and_part_number(self):
         res = self.client.get('/calculator-data')
         timeline = next(
-            t for t in res.data['banner_timeline_data'] if t['id'] == self.timeline.id
+            t for t in res.json()['banner_timeline_data'] if t['id'] == self.timeline.id
         )
         self.assertEqual(timeline['anniversary_event']['name'], '3rd Anniversary')
         self.assertEqual(timeline['anniversary_event']['part_number'], 1)
@@ -639,7 +639,7 @@ class AnniversaryEventApiTests(CalculatorTestCase):
         loose = make_timeline(name='Ordinary banner')
         res = self.client.get('/calculator-data')
         timeline = next(
-            t for t in res.data['banner_timeline_data'] if t['id'] == loose.id
+            t for t in res.json()['banner_timeline_data'] if t['id'] == loose.id
         )
         self.assertIsNone(timeline['anniversary_event'])
 
@@ -656,7 +656,7 @@ class AnniversaryEventApiTests(CalculatorTestCase):
         )
         res = self.client.get('/calculator-data')
         timeline = next(
-            t for t in res.data['banner_timeline_data'] if t['id'] == self.timeline.id
+            t for t in res.json()['banner_timeline_data'] if t['id'] == self.timeline.id
         )
 
         by_type = {s['card_type']: s for s in timeline['banner_step_ups']}
@@ -670,7 +670,7 @@ class AnniversaryEventApiTests(CalculatorTestCase):
         loose = make_timeline(name='Ordinary banner')
         res = self.client.get('/calculator-data')
         timeline = next(
-            t for t in res.data['banner_timeline_data'] if t['id'] == loose.id
+            t for t in res.json()['banner_timeline_data'] if t['id'] == loose.id
         )
         self.assertEqual(timeline['banner_step_ups'], [])
 
@@ -800,7 +800,7 @@ class PublicPayloadCacheTests(CalculatorTestCase):
         # The SIGNED-IN request populates the cache first.
         cache.clear()
         signed_in = self.client.get('/calculator-data')
-        self.assertEqual(len(signed_in.data['user_planned_banner_data']), 1)
+        self.assertEqual(len(signed_in.json()['user_planned_banner_data']), 1)
 
         guest = APIClient().get('/calculator-data')
         self.assertIsNone(guest.json()['user_stats_data'])
@@ -816,12 +816,12 @@ class PublicPayloadCacheTests(CalculatorTestCase):
             user=self.user, banner_uma=self.uma_banner, number_of_pulls=7)
 
         res = self.client.get('/calculator-data')
-        self.assertEqual(len(res.data['user_planned_banner_data']), 1)
+        self.assertEqual(len(res.json()['user_planned_banner_data']), 1)
         self.assertEqual(
-            res.data['user_planned_banner_data'][0]['number_of_pulls'], 7)
-        self.assertIsNotNone(res.data['user_stats_data'])
+            res.json()['user_planned_banner_data'][0]['number_of_pulls'], 7)
+        self.assertIsNotNone(res.json()['user_stats_data'])
         # ...and the catalogue still came through with it.
-        self.assertTrue(res.data['banner_timeline_data'])
+        self.assertTrue(res.json()['banner_timeline_data'])
 
     def test_one_user_never_sees_another_users_rows_from_the_cache(self):
         UserPlannedBanner.objects.create(
@@ -831,7 +831,7 @@ class PublicPayloadCacheTests(CalculatorTestCase):
         other = make_user('otheruser')
         other_client, _ = auth_client(other)
         res = other_client.get('/calculator-data')
-        self.assertEqual(res.data['user_planned_banner_data'], [])
+        self.assertEqual(res.json()['user_planned_banner_data'], [])
 
     def test_cached_payload_carries_every_expected_key(self):
         # A key missing from the cached half would only show up for guests.
@@ -932,14 +932,15 @@ class GuestPayloadEncodingTests(CalculatorTestCase):
         vary = {v.strip().lower() for v in res['Vary'].split(',')}
         self.assertTrue({'accept-encoding', 'accept', 'origin'} <= vary, vary)
 
-    def test_a_signed_in_hit_is_never_served_the_shared_gzip(self):
-        # The cached bytes are the GUEST payload. A signed-in request asking
-        # for gzip must still get its own rows merged in, so it cannot take
-        # the shortcut.
+    def test_a_signed_in_hit_gets_its_own_rows_stitched_into_gzip(self):
+        # The cached guest bytes cannot be sent to a signed-in user as they
+        # are; their rows go on the end (public_payload_cache.signed_in_gzip).
         APIClient().get('/calculator-data')
         UserPlannedBanner.objects.create(
             user=self.user, banner_uma=self.uma_banner, number_of_pulls=3)
 
         res = self.client.get('/calculator-data', HTTP_ACCEPT_ENCODING='gzip')
-        self.assertFalse(res.has_header('Content-Encoding'))
-        self.assertEqual(len(res.json()['user_planned_banner_data']), 1)
+        self.assertEqual(res['Content-Encoding'], 'gzip')
+        self.assertNotEqual(res.content, public_payload_cache.read())
+        body = json.loads(gzip.decompress(res.content))
+        self.assertEqual(len(body['user_planned_banner_data']), 1)

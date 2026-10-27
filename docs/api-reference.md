@@ -315,9 +315,12 @@ assumption it rests on, in `calculatorapi/public_payload_cache.py`.
 rendered JSON compressed once at store time, and a guest whose `Accept-Encoding` lists
 `gzip` (every browser, and Cloudflare in front of the ingress) gets exactly those bytes
 with `Content-Encoding: gzip`; anyone else gets them decompressed. Both carry
-`Vary: Accept-Encoding, Accept, origin`. The JSON is identical either way. A signed-in
-response is a normal DRF render with the user keys merged in, and is never served from
-the shared bytes.
+`Vary: Accept-Encoding, Accept, origin`. The JSON is identical either way. **A signed-in
+response is gzipped the same way**, but is never the shared bytes: the cache also keeps the
+catalogue without the six user keys as an open-ended compressed stream, and each signed-in
+request compresses only its own six keys and stitches them onto the end, one valid gzip
+file whose JSON carries every key once (`public_payload_cache.signed_in_gzip`, "STITCHING"
+in that module).
 
 **Response `200`**
 ```json

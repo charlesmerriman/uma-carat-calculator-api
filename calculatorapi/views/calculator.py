@@ -1,5 +1,4 @@
 import gzip
-import json
 import re
 
 from rest_framework.viewsets import ViewSet
@@ -288,11 +287,25 @@ def serialize_planned_purchases(scope, *, anniversary_emap):
     return UserPlannedPurchaseSerializer(planned_purchases, many=True).data
 
 
+# The keys _build_user_payload() returns. The cached signed-in "head" is the
+# public payload WITHOUT these, and a signed-in response appends the user's own
+# (public_payload_cache.signed_in_gzip), so a key returned there but missing
+# here would be sent twice. A test holds the two together.
+USER_PAYLOAD_KEYS = frozenset({
+    "user_plans",
+    "active_plan_id",
+    "user_planned_banner_data",
+    "user_planned_purchase_data",
+    "user_step_up_selection_data",
+    "user_stats_data",
+})
+
+
 def _build_user_payload(user, *, emap, anniversary_emap, card_context):
-    """The user-owned half of the response, serialized, for merging over the
-    cached guest payload. Every key here MUST also appear in
-    _build_public_payload()'s response dict with its guest value, or a signed-in
-    response and a guest one would carry different keys.
+    """The user-owned half of the response, serialized, for stitching onto the
+    cached public payload. Every key here MUST be in USER_PAYLOAD_KEYS and also
+    appear in _build_public_payload()'s response dict with its guest value, or a
+    signed-in response and a guest one would carry different keys.
 
     Planned banners are the ACTIVE PLAN's, and so are the stats and the
     purchases: a plan reads either the account's own or its income profile's
@@ -333,14 +346,15 @@ def _build_user_payload(user, *, emap, anniversary_emap, card_context):
 _ACCEPTS_GZIP = re.compile(r"\bgzip\b")
 
 
-def _guest_payload_response(request, gzipped):
-    """The cached public payload as the HTTP body, compressed when allowed.
+def _payload_response(request, gzipped):
+    """A gzipped /calculator-data body as the HTTP response, compressed when allowed.
 
-    Every browser, and Cloudflare in front of the ingress, sends
-    `Accept-Encoding: gzip`, so in production the stored bytes go out
-    untouched. Cloudflare may re-encode them as brotli for the browser, which
-    is its CPU, not ours. Anything that does not ask for gzip (curl without
-    --compressed, the test client) gets them decompressed.
+    Used for both the guest's cached bytes and a signed-in user's stitched
+    ones. Every browser, and Cloudflare in front of the ingress, sends
+    `Accept-Encoding: gzip`, so in production the bytes go out untouched.
+    Cloudflare may re-encode them as brotli for the browser, which is its CPU,
+    not ours. Anything that does not ask for gzip (curl without --compressed,
+    the test client) gets them decompressed.
     """
     # HttpResponse, not the JsonResponse pylint suggests: JsonResponse
     # serializes a dict, and the whole point is that these bytes already are.
@@ -373,20 +387,25 @@ class CalculatorViewSet(ViewSet):
         part of this response is identical for every visitor -- the catalogue
         below serializes ~900 nested cards twice over and none of it is
         per-user. On a cache hit neither branch runs a single catalogue query:
-        a guest is answered straight from the cached JSON, and a signed-in user
-        has only their own user-scoped keys read and merged over it.
+        a guest is answered straight from the cached bytes, and a signed-in user
+        has only their own user-scoped keys read and stitched onto them.
         """
-        payload = None
-        gzipped = public_payload_cache.read()
-        if gzipped is None:
+        entry = public_payload_cache.read_entry()
+        if entry is None:
             # One rebuild at a time (public_payload_cache.rebuild_lock). The
             # second read is the point: a thread that waited on the lock finds
             # the payload the first thread just stored and skips the rebuild.
             with public_payload_cache.rebuild_lock:
-                gzipped = public_payload_cache.read()
-                if gzipped is None:
+                entry = public_payload_cache.read_entry()
+                if entry is None:
                     payload = self._build_public_payload()
-                    gzipped = public_payload_cache.store(JSONRenderer().render(payload))
+                    # Rendered twice, once per rebuild: the full guest
+                    # response, and the "head" signed-in responses are
+                    # stitched onto, which leaves the user keys to them.
+                    head = {k: v for k, v in payload.items() if k not in USER_PAYLOAD_KEYS}
+                    entry = public_payload_cache.store(
+                        JSONRenderer().render(payload), JSONRenderer().render(head)
+                    )
 
         # A guest is answered with the cached bytes exactly as stored. This
         # used to json.loads them and let DRF render them straight back to the
@@ -396,25 +415,27 @@ class CalculatorViewSet(ViewSet):
         # and a banner-launch crowd of guests running it at once pinned the CPU
         # and ran the instance out of memory. Sending the bytes costs 0.04ms.
         # What it gives up: DRF's content negotiation (there is only one
-        # renderer anyway) and `.data` on the test client, so guest tests read
+        # renderer anyway) and `.data` on the test client, so these tests read
         # `res.json()`.
         if not request.user.is_authenticated:
-            return _guest_payload_response(request, gzipped)
+            return _payload_response(request, entry.guest_gzip)
 
-        # The rebuild above already holds the dict; only a cache hit parses.
-        if payload is None:
-            payload = json.loads(gzip.decompress(gzipped))
+        # A signed-in user's own ~9KB is the only part rendered and compressed
+        # here; it is stitched onto the cached catalogue as it stands. Until
+        # 2026-10-27 this parsed the whole catalogue back into Python and
+        # re-rendered it (~36ms, ~10MB, 1.27MB sent uncompressed) for the same
+        # guest-shaped reason as above. See "STITCHING" in public_payload_cache.
         emap, anniversary_emap, card_context = build_user_context()
-        payload.update(
-            _build_user_payload(
-                request.user,
-                emap=emap,
-                anniversary_emap=anniversary_emap,
-                card_context=card_context,
-            )
+        user_payload = _build_user_payload(
+            request.user,
+            emap=emap,
+            anniversary_emap=anniversary_emap,
+            card_context=card_context,
         )
-
-        return Response(payload, status=status.HTTP_200_OK)
+        return _payload_response(
+            request,
+            public_payload_cache.signed_in_gzip(entry, JSONRenderer().render(user_payload)),
+        )
 
     def _build_public_payload(self):
         """Assemble the visitor-independent half of /calculator-data.
