@@ -59,7 +59,7 @@ python manage.py createsuperuser
 - **Some of these figures are shown on the site** (since 2026-10-27): the Rankings
   page's Pull plans tab (`GET /rankings/pull-plans`, `views/rankings.py`) reads
   `banner_popularity`, `step_up_popularity` and `demand_calendar` and shows the same
-  counts to Patreon supporters, rebuilt at most once an hour. It is behind the Raptive
+  counts to Patreon supporters, rebuilt at most once every half day. It is behind the Raptive
   gate (guide editors only) until the owner lifts it. Same exclusions: staff out,
   active plans only. Since step 4 of the redesign (notes/rankings-redesign-plan.md) the
   Rankings payloads also carry figures the dashboard doesn't show, counted in

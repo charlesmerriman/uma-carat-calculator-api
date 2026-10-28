@@ -22,8 +22,8 @@ SHARES, NEVER A COUNT OF PEOPLE (owner, 2026-10-28). The payloads below are
 built with counts, which the week's snapshot needs; what is sent is
 rankings_shares.py's version of each, percentages only.
 
-HOURLY (rankings_cache.py). Each payload is built at most once an hour,
-stamped with `generated_at`, and never invalidated: the page says how old it
+HALF-DAILY (rankings_cache.py). Each payload is built at most once every
+12 hours, stamped with `generated_at`, and never invalidated: the page says how old it
 is. Gzipped (`gzip_page`): the rows repeat their keys, so ~280 KB of JSON is
 ~12 KB on the wire. The site has no GZipMiddleware; /calculator-data gzips
 its own.
