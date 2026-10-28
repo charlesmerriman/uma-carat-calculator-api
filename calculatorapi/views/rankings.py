@@ -68,8 +68,13 @@ from calculatorapi.models import (
 )
 from calculatorapi.predictions import build_effective_date_maps
 from calculatorapi.rankings_cache import cached_payload
+from calculatorapi.rankings_figures import budget_by_class, pull_plan_figures, selector_windows
 
 TIERS = ("beginner", "standard", "whale")
+# Exact three-uma teams listed under "Trios players build most".
+TOP_TRIOS = 10
+# Posts listed under the PvP page's "Most copied posts".
+TOP_COPIED = 3
 # A gallery member's borrowed card sits in slot 6 (gallery.snapshot_from_team).
 BORROW_SLOT = 6
 # Matched as the label's START, any case: prod has "Honorable mention",
@@ -187,6 +192,9 @@ def count_teams(teams):
 
     `teams` is every team counted (an uma's share is out of it), `decks`
     every member (a card's share). Ties go to the lower id. One query.
+
+    `trios`: the exact three-uma teams built most, any styles, as sorted id
+    triples, the top TOP_TRIOS (the redesign's "Trios players build most").
     """
     teams = [team for team in teams if team]
     card_ids = {card["support_card"] for team in teams for member in team for card in member["cards"]}
@@ -195,10 +203,14 @@ def count_teams(teams):
     )
     umas, styles = Counter(), defaultdict(Counter)
     decks, borrows = Counter(), Counter()
+    trios = Counter()
     members = 0
     for team in teams:
-        for uma in {member["uma"] for member in team}:
+        team_umas = {member["uma"] for member in team}
+        for uma in team_umas:
             umas[uma] += 1
+        if len(team_umas) == 3:
+            trios[tuple(sorted(team_umas))] += 1
         for member in team:
             members += 1
             styles[member["uma"]][member["style"]] += 1
@@ -219,6 +231,7 @@ def count_teams(teams):
             {"card": card, "decks": count, "borrows": borrows[card]}
             for card, count in _most_first(decks)
         ],
+        "trios": [{"umas": list(trio), "teams": count} for trio, count in _most_first(trios)[:TOP_TRIOS]],
     }
 
 
@@ -229,7 +242,23 @@ def gallery_payload(event):
     server. Two queries."""
     counted = count_teams(gallery.visible_posts().filter(**event).values_list("team_snapshot", flat=True))
     counted["posts"] = counted.pop("teams")
+    counted["copied"] = most_copied(event)
     return counted
+
+
+def most_copied(event):
+    """The event's TOP_COPIED most copied visible posts, as {"public_id",
+    "caption", "copies", "umas"}: what the post page already shows anyone,
+    minus the poster's name (the client links to the post, which carries it).
+    A post nobody copied isn't listed. One query."""
+    return [
+        {"public_id": public_id, "caption": caption, "copies": copies, "umas": [member["uma"] for member in snapshot]}
+        for public_id, caption, copies, snapshot in (
+            gallery.visible_posts().filter(copy_count__gt=0, **event)
+            .order_by("-copy_count", "id")
+            .values_list("public_id", "caption", "copy_count", "team_snapshot")[:TOP_COPIED]
+        )
+    ]
 
 
 def _most_first(counter):
@@ -274,7 +303,8 @@ def pull_plans_payload():
 
     `planners` at the top is everyone with any banner in their active plan,
     each once: the denominator of a row's "N% of planners" (the redesign's
-    Pull plans tab, notes/rankings-redesign-plan.md).
+    Pull plans tab, notes/rankings-redesign-plan.md). Each row also carries
+    `spread` and `also` (rankings_figures.pull_plan_figures).
     """
     timeline_dates = build_effective_date_maps()[BannerTimeline]
 
@@ -299,6 +329,12 @@ def pull_plans_payload():
         # Picked cards but planned no steps: nothing to rank.
         if row["planners"] > 0
     ]
+    names = {(row["type"], row["id"]): row["name"] for row in banners}
+    live = {(row["type"], row["id"]) for row in banners if row["status"] != "ended"}
+    figures = pull_plan_figures(live, names)
+    empty = {"spread": None, "also": []}
+    for row in banners:
+        row.update(figures.get((row["type"], row["id"]), empty))
     return {
         "planners": active_rows().values("user_id").distinct().count(),
         "banners": banners,
@@ -440,9 +476,12 @@ def players_payload():
       ranks       Team Trials and club rank: people per rank among those who
                   set one (the "Not set" row is left out, and the share is out
                   of the people who set it)
-      income      each income option: people with it on, of `engaged`
-      selectors   each campaign selector: buyers, how many picked a card, and
-                  the top picks
+      income      each income option: people with it on, of `engaged`, and
+                  whether a new account starts with it on (`default_on`)
+      budget      per Team Trials class: people and the median carats held and
+                  pulls planned (rankings_figures.budget_by_class)
+      selectors   each campaign selector: buyers, how many picked a card, the
+                  top picks, and whether it is on sale (`status`, `end_date`)
     """
     engaged = engaged_subset(non_staff_users())
     engaged_count = engaged.count()
@@ -460,19 +499,22 @@ def players_payload():
         })
 
     picks = selector_picks()
+    windows = selector_windows()
     selectors = selector_purchases(engaged_count, engaged_count)["selector_purchases"]
     return {
         "engaged": engaged_count,
         "favourites": [{"uma": row["uma_id"], "people": row["people"]} for row in favourite_umas()],
         "ranks": ranks,
         "income": [
-            {"key": row["key"], "label": row["label"], "people": row["users_on"]}
+            {"key": row["key"], "label": row["label"], "people": row["users_on"], "default_on": row["default"] == "On"}
             for row in income_settings(engaged, engaged_count)
         ],
+        "budget": budget_by_class(engaged),
         "selectors": [
             {
                 "campaign": row["campaign"], "label": row["label"], "buyers": row["count"],
                 "picked": row["picked"], "top": picks.get(row["id"], []),
+                **windows.get(row["id"], {"status": "upcoming", "end_date": None}),
             }
             for row in selectors
         ],

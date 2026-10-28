@@ -23,7 +23,7 @@ CACHE_TTL_SECONDS = 60 * 60
 # Bump the version when a payload's SHAPE changes, so a deploy never serves
 # an hour of the old shape to the new client. (A deploy restarts the process,
 # which empties LocMem anyway; the version is for the day that changes.)
-KEY = "rankings:{name}:v1"
+KEY = "rankings:{name}:v2"
 
 
 def cached_payload(name, build):
