@@ -1,14 +1,30 @@
 """What people plan to pull on: banner popularity, step-ups, when the
-demand falls due, and the umas they pick as favourites."""
+demand falls due, and the umas they pick as favourites.
+
+ONE PASS OVER THE ROWS (notes/rankings-speed-plan.md). Prod holds ~320,000
+active planned-banner rows (2026-10-28). The popularity tables, the demand
+calendar and the Rankings page's pull figures used to read them once each:
+seven passes, two holding every row in Python at once (~130 MB, a 31 s
+Rankings build on the one shared CPU). Now active_people() streams the rows
+ONCE, a person at a time, and each figure is a small tally that fold() feeds:
+
+    popularity, demand = BannerTally(), DemandTally(timeline_dates)
+    planners = fold(popularity, demand)
+    banner_popularity("banner_uma", timeline_dates, popularity)
+
+Called without a tally, each function folds its own, so a caller that wants
+one figure still gets it in one call."""
 
 import datetime
 import statistics
-from collections import defaultdict
+from collections import Counter, defaultdict
+from itertools import groupby
+from operator import itemgetter
 
-from django.db.models import Avg, Count, F, Q, Sum
+from django.db.models import Avg, Count, Q, Sum
 from django.utils import timezone
 
-from ..models import BannerStepUp, UserOshi, UserPlannedBanner, UserStepUpSelection
+from ..models import BannerStepUp, BannerSupport, BannerUma, UserOshi, UserPlannedBanner, UserStepUpSelection
 from .common import SANE_MAX_PULLS, SANE_MAX_STEPS
 
 # How many calendar months the demand calendar lists one by one, this one
@@ -40,6 +56,72 @@ def active_rows():
         # has no plan yet (plans._adopt_planless_rows) and is still a real row.
         .filter(Q(plan__is_active=True) | Q(plan__isnull=True))
     )
+
+
+# Rows fetched per round trip while streaming: big enough that the round trips
+# don't add up, small enough that one chunk is a few hundred KB.
+STREAM_CHUNK = 10_000
+
+
+def active_people():
+    """Every person with a row in their active plan, one at a time, as
+    (user_id, [(key, number_of_pulls), ...]). A key is ("uma" | "support" |
+    "step_up", banner id); on a step-up the number is STEPS (rules file
+    step-up.md).
+
+    Ordered by person and streamed (`iterator()`), so only one person's rows
+    are in Python at a time, however many rows the site holds. One query.
+    """
+    rows = (
+        active_rows()
+        .order_by("user_id")
+        .values_list("user_id", "banner_uma_id", "banner_support_id", "banner_step_up_id", "number_of_pulls")
+        .iterator(chunk_size=STREAM_CHUNK)
+    )
+    for user_id, group in groupby(rows, key=itemgetter(0)):
+        yield user_id, [(_row_key(uma, support, step_up), pulls) for _, uma, support, step_up, pulls in group]
+
+
+def _row_key(uma, support, step_up):
+    # The exactly_one_banner_target constraint guarantees exactly one is set.
+    if uma is not None:
+        return ("uma", uma)
+    if support is not None:
+        return ("support", support)
+    return ("step_up", step_up)
+
+
+def fold(*tallies):
+    """Feed every active person to each tally (anything with `add(user_id,
+    rows)`), in ONE pass. Returns how many people have an active row: the
+    distinct planners."""
+    people = 0
+    for user_id, rows in active_people():
+        people += 1
+        for tally in tallies:
+            tally.add(user_id, rows)
+    return people
+
+
+def banner_timelines():
+    """{key: banner_timeline_id} for every banner of the three kinds. Three
+    small queries (a few hundred banners), so a pass over the rows never joins
+    the banner tables."""
+    timelines = {}
+    for kind, model in (("uma", BannerUma), ("support", BannerSupport), ("step_up", BannerStepUp)):
+        for banner_id, timeline_id in model.objects.values_list("id", "banner_timeline_id"):
+            timelines[(kind, banner_id)] = timeline_id
+    return timelines
+
+
+def live_banner_keys(timeline_dates, timelines=None):
+    """The keys of every banner still to come or running (not "ended")."""
+    now = timezone.now()
+    timelines = banner_timelines() if timelines is None else timelines
+    return {
+        key for key, timeline_id in timelines.items()
+        if banner_status(timeline_dates.get(timeline_id), now) != "ended"
+    }
 
 
 def banner_status(entry, now):
@@ -93,7 +175,7 @@ def _medians(fk_name, sane):
     return {banner_id: statistics.median(pulls) for banner_id, pulls in by_banner.items()}
 
 
-def banner_popularity(fk_name, timeline_dates):
+def banner_popularity(fk_name, timeline_dates, tally=None):
     """
     Popularity rows for one banner type. fk_name is the FK field on
     UserPlannedBanner: "banner_uma" or "banner_support". `timeline_dates` is
@@ -116,53 +198,77 @@ def banner_popularity(fk_name, timeline_dates):
     surprising average can be checked against the count that caused it instead
     of being reverse-engineered from the arithmetic.
 
-    Active plans only: see active_rows().
+    Active plans only: see active_rows(). `tally` is a BannerTally already
+    fed by fold(); without one, this folds its own.
     """
-    # Non-null ints, so ~sane is a clean complement with no third case.
-    sane = Q(number_of_pulls__lte=SANE_MAX_PULLS)
-    rows = (
-        active_rows()
-        # Only this banner type.
-        .filter(**{f"{fk_name}__isnull": False})
-        # values() before annotate() = GROUP BY these fields. Including the
-        # FK id guarantees two banners that share a name never merge.
-        .values(
-            fk_name,
-            f"{fk_name}__name",
-            f"{fk_name}__banner_timeline_id",
-            f"{fk_name}__banner_timeline__name",
+    if tally is None:
+        tally = BannerTally()
+        fold(tally)
+    kind, model = {"banner_uma": ("uma", BannerUma), "banner_support": ("support", BannerSupport)}[fk_name]
+    planned = {banner_id: people for (row_kind, banner_id), people in tally.planners.items() if row_kind == kind}
+    # Keyed by id, so two banners that share a name never merge.
+    banners = {
+        banner["id"]: banner
+        for banner in model.objects.filter(id__in=planned).values(
+            "id", "name", "banner_timeline_id", "banner_timeline__name",
         )
-        .annotate(
-            planners=Count("user", distinct=True),
-            total_pulls=Sum("number_of_pulls", filter=sane),
-            avg_pulls=Avg("number_of_pulls", filter=sane),
-            excluded=Count("id", filter=~sane),
-        )
-        # nulls_last matters now that total_pulls is filtered: a banner whose
-        # every row was excluded aggregates to NULL, and Postgres sorts NULLs
-        # FIRST in a plain DESC — which would put the one banner we have no
-        # figures for at the top of the table.
-        .order_by("-planners", F("total_pulls").desc(nulls_last=True))
-    )
-    medians = _medians(fk_name, sane)
+    }
     now = timezone.now()
-    return [
-        {
-            "id": row[fk_name],
-            "name": row[f"{fk_name}__name"],
-            "timeline": row[f"{fk_name}__banner_timeline__name"],
-            **_dated(row[f"{fk_name}__banner_timeline_id"], timeline_dates, now),
-            "planners": row["planners"],
-            # Both aggregates come back NULL when the filter matched nothing,
-            # which is a real state (a banner planned only by the outlier), not
-            # an error — report it as zero rather than crashing the page.
-            "total_pulls": row["total_pulls"] or 0,
-            "avg_pulls": round(row["avg_pulls"] or 0, 1),
-            "median_pulls": medians.get(row[fk_name], 0),
-            "excluded": row["excluded"],
-        }
-        for row in rows
-    ]
+    rows = []
+    for banner_id, people in planned.items():
+        banner = banners[banner_id]
+        sane = tally.sane[(kind, banner_id)]
+        rows.append({
+            "id": banner_id,
+            "name": banner["name"],
+            "timeline": banner["banner_timeline__name"],
+            **_dated(banner["banner_timeline_id"], timeline_dates, now),
+            "planners": people,
+            # A banner planned only by an outlier has no sane row: zero, not
+            # an error.
+            "total_pulls": sum(sane),
+            "avg_pulls": round(sum(sane) / len(sane), 1) if sane else 0,
+            # The MEDIAN ("typical") beside the average, for the Rankings
+            # page's Pull plans tab: a handful of 1,000-pull whales drags an
+            # average far past what most planners budget.
+            "median_pulls": statistics.median(sane) if sane else 0,
+            "excluded": tally.excluded[(kind, banner_id)],
+            # Sorting only: a banner with NO sane row goes after one whose
+            # sane rows sum to zero (the old SQL's NULLS LAST).
+            "_has_sane": bool(sane),
+        })
+    # Most planners, then most pulls, then the lower id, so ties never wobble
+    # between builds.
+    rows.sort(key=lambda row: (-row["planners"], not row["_has_sane"], -row["total_pulls"], row["id"]))
+    for row in rows:
+        del row["_has_sane"]
+    return rows
+
+
+class BannerTally:  # pylint: disable=too-few-public-methods
+    """Per uma and support banner: its planners (each person once), the pulls
+    of its SANE rows (a list, for the sum, the average and the median), and
+    how many rows were over SANE_MAX_PULLS. What banner_popularity reads.
+    Step-up rows are left to step_up_popularity (STEPS, its own cap)."""
+
+    def __init__(self):
+        self.planners = Counter()
+        self.sane = defaultdict(list)
+        self.excluded = Counter()
+
+    def add(self, _user_id, rows):
+        seen = set()
+        for key, pulls in rows:
+            if key[0] == "step_up":
+                continue
+            # A person with two rows on one banner is one planner.
+            if key not in seen:
+                seen.add(key)
+                self.planners[key] += 1
+            if pulls <= SANE_MAX_PULLS:
+                self.sane[key].append(pulls)
+            else:
+                self.excluded[key] += 1
 
 
 def step_up_popularity(timeline_dates):
@@ -237,7 +343,7 @@ def _next_month(month_start):
     return (month_start + datetime.timedelta(days=32)).replace(day=1)
 
 
-def demand_calendar(timeline_dates):
+def demand_calendar(timeline_dates, tally=None):
     """Planned demand grouped by the month each banner ENDS, soonest first.
 
     The end date because that is when the carats leave: income in the
@@ -251,59 +357,85 @@ def demand_calendar(timeline_dates):
     they budget (sane rows only, Ignored says how many were not), and how many
     people plan a step-up there. Step-up rows hold STEPS, so they never reach
     the pull total.
+
+    `tally` is a DemandTally already fed by fold(); without one, this folds
+    its own.
     """
-    now = timezone.now()
-    this_month = _month_start(now)
-    months = [this_month]
-    while len(months) < DEMAND_MONTHS:
-        months.append(_next_month(months[-1]))
-    later = "Later"
-
-    buckets = defaultdict(lambda: {"banners": set(), "planners": set(),
-                                   "total_pulls": 0, "excluded": 0,
-                                   "step_up_planners": set()})
-    rows = active_rows().values(
-        "user_id", "number_of_pulls",
-        "banner_uma_id", "banner_uma__banner_timeline_id",
-        "banner_support_id", "banner_support__banner_timeline_id",
-        "banner_step_up_id", "banner_step_up__banner_timeline_id",
-    )
-    for row in rows:
-        timeline_id = (row["banner_uma__banner_timeline_id"]
-                       or row["banner_support__banner_timeline_id"]
-                       or row["banner_step_up__banner_timeline_id"])
-        entry = timeline_dates.get(timeline_id)
-        if banner_status(entry, now) == "ended":
-            continue
-        end = entry["end_date"] if entry else None
-        month = _month_start(end) if end is not None else later
-        bucket = buckets[month if month in months else later]
-        if row["banner_step_up_id"] is not None:
-            bucket["step_up_planners"].add(row["user_id"])
-            continue
-        bucket["banners"].add(("uma", row["banner_uma_id"])
-                              if row["banner_uma_id"] is not None
-                              else ("support", row["banner_support_id"]))
-        bucket["planners"].add(row["user_id"])
-        if row["number_of_pulls"] <= SANE_MAX_PULLS:
-            bucket["total_pulls"] += row["number_of_pulls"]
-        else:
-            bucket["excluded"] += 1
-
+    if tally is None:
+        tally = DemandTally(timeline_dates)
+        fold(tally)
     calendar = []
-    for month in [*months, later]:
-        if month not in buckets:
+    for month in [*tally.months, LATER]:
+        if month not in tally.buckets:
             continue
-        bucket = buckets[month]
+        bucket = tally.buckets[month]
         calendar.append({
-            "month": month if month == later else f"{month:%Y-%m}",
+            "month": month if month == LATER else f"{month:%Y-%m}",
             "banners": len(bucket["banners"]),
-            "planners": len(bucket["planners"]),
+            "planners": bucket["planners"],
             "total_pulls": bucket["total_pulls"],
             "excluded": bucket["excluded"],
-            "step_up_planners": len(bucket["step_up_planners"]),
+            "step_up_planners": bucket["step_up_planners"],
         })
     return calendar
+
+
+LATER = "Later"
+# A banner's month when it has ended: left out of the calendar.
+_ENDED = object()
+
+
+class DemandTally:  # pylint: disable=too-few-public-methods
+    """What demand_calendar reads, per month bucket: the banners planned
+    there, the people (each once per month), the sane pulls, the rows over
+    SANE_MAX_PULLS, and the people planning a step-up there."""
+
+    def __init__(self, timeline_dates, timelines=None):
+        self.now = timezone.now()
+        self.months = [_month_start(self.now)]
+        while len(self.months) < DEMAND_MONTHS:
+            self.months.append(_next_month(self.months[-1]))
+        self.timeline_dates = timeline_dates
+        self.timelines = banner_timelines() if timelines is None else timelines
+        self.month_of = {}
+        self.buckets = defaultdict(lambda: {"banners": set(), "planners": 0, "total_pulls": 0,
+                                            "excluded": 0, "step_up_planners": 0})
+
+    def _month(self, key):
+        """The bucket a banner's rows land in, or _ENDED. Worked out once per
+        banner, not once per row."""
+        if key not in self.month_of:
+            entry = self.timeline_dates.get(self.timelines.get(key))
+            if banner_status(entry, self.now) == "ended":
+                self.month_of[key] = _ENDED
+            else:
+                end = entry["end_date"] if entry else None
+                month = _month_start(end) if end is not None else LATER
+                self.month_of[key] = month if month in self.months else LATER
+        return self.month_of[key]
+
+    def add(self, _user_id, rows):
+        planner_months, step_up_months = set(), set()
+        for key, pulls in rows:
+            month = self._month(key)
+            if month is _ENDED:
+                continue
+            # Touched first, so a month with only step-up rows still lists.
+            bucket = self.buckets[month]
+            if key[0] == "step_up":
+                step_up_months.add(month)
+                continue
+            bucket["banners"].add(key)
+            planner_months.add(month)
+            if pulls <= SANE_MAX_PULLS:
+                bucket["total_pulls"] += pulls
+            else:
+                bucket["excluded"] += 1
+        # This person counts once in each month they plan in.
+        for month in planner_months:
+            self.buckets[month]["planners"] += 1
+        for month in step_up_months:
+            self.buckets[month]["step_up_planners"] += 1
 
 
 # How many umas the favourites leaderboard lists.

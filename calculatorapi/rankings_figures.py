@@ -3,7 +3,7 @@ The Rankings page's server-side figures that the client can't count itself
 (notes/rankings-redesign-plan.md, step 4): each needs per-person rows the
 browser never sees, so it is counted here and only the totals leave.
 
-  pull_plan_figures   per banner: how planners spread their pulls (or steps)
+  PlanFigures         per banner: how planners spread their pulls (or steps)
                       over a few buckets, and the three banners most often in
                       the same plans ("also planning")
   budget_by_class     per Team Trials class: people, and the MEDIAN carats held
@@ -21,7 +21,7 @@ from collections import Counter, defaultdict
 
 from django.utils import timezone
 
-from calculatorapi.analytics.banners import active_rows
+from calculatorapi.analytics.banners import STREAM_CHUNK, active_rows
 from calculatorapi.analytics.common import SANE_MAX_PULLS, SANE_MAX_STEPS
 from calculatorapi.models import AnniversaryEvent, AnniversaryEventProduct, BannerTimeline
 from calculatorapi.predictions import anniversary_event_effective_dates, build_effective_date_maps
@@ -44,9 +44,10 @@ def _bucket(value, edges):
     return index
 
 
-def pull_plan_figures(live_keys, names):
+class PlanFigures:
     """{(type, id): {"spread": {"edges", "planners"}, "also": [...]}} for every
-    planned banner, in one pass over the active rows.
+    planned banner, as a tally that analytics.banners.fold() feeds one person
+    at a time (the one pass over the active rows; notes/rankings-speed-plan.md).
 
     SPREAD: each planner once per banner, by what they plan on it (pulls, or
     steps for a step-up), in buckets from PULL_EDGES / STEP_EDGES. A row over
@@ -56,53 +57,55 @@ def pull_plan_figures(live_keys, names):
 
     ALSO PLANNING: among the people planning a banner, the other banners they
     plan most, by distinct people. Only banners still to come or running
-    (`live_keys`): an ended banner is nothing to plan beside. `names` maps a
-    key to its display name.
+    (`live_keys`): an ended banner is nothing to plan beside.
     """
-    planned, sane = _planned_by_person()
-    spreads = {}
-    together = defaultdict(Counter)
-    for user_id, banners in planned.items():
-        for key, total in banners.items():
-            edges = STEP_EDGES if key[0] == "step_up" else PULL_EDGES
-            spread = spreads.setdefault(key, {"edges": list(edges), "planners": [0] * len(edges)})
-            if sane[(user_id, key)]:
-                spread["planners"][_bucket(total, edges)] += 1
-            for other in banners:
-                if other != key and other in live_keys:
-                    together[key][other] += 1
 
-    return {
-        key: {
-            "spread": spread,
-            "also": [
-                {"type": other[0], "id": other[1], "name": names.get(other, ""), "planners": people}
-                # Most people first, then the key, so the order never wobbles between builds.
-                for other, people in sorted(together[key].items(), key=_most_first)[:ALSO_PLANNING]
-            ],
+    def __init__(self, live_keys):
+        self.live_keys = live_keys
+        self.spreads = {}
+        self.together = defaultdict(Counter)
+
+    def add(self, _user_id, rows):
+        # What this person plans per banner, and whether every row of it is
+        # under the cap. One row over the cap marks the banner's figure for
+        # this person as not sane.
+        totals, sane = defaultdict(int), {}
+        for key, pulls in rows:
+            cap = SANE_MAX_STEPS if key[0] == "step_up" else SANE_MAX_PULLS
+            totals[key] += pulls
+            sane[key] = sane.get(key, True) and pulls <= cap
+        live = [key for key in totals if key in self.live_keys]
+        for key, total in totals.items():
+            edges = STEP_EDGES if key[0] == "step_up" else PULL_EDGES
+            spread = self.spreads.setdefault(key, {"edges": list(edges), "planners": [0] * len(edges)})
+            if sane[key]:
+                spread["planners"][_bucket(total, edges)] += 1
+            # Counter.update counts a whole list in C: this loop is the pairs
+            # of a person's banners, ~20 x 20 each, the costliest step of the
+            # build when it was one Python += per pair. It counts the banner
+            # beside itself too; result() skips that.
+            self.together[key].update(live)
+
+    def result(self, names):
+        """The figures, keyed (type, id). `names` maps a key to its display name."""
+        return {
+            key: {
+                "spread": spread,
+                "also": [
+                    {"type": other[0], "id": other[1], "name": names.get(other, ""), "planners": people}
+                    # Most people first, then the key, so the order never wobbles between builds.
+                    for other, people in sorted(
+                        ((other, people) for other, people in self.together[key].items() if other != key),
+                        key=_most_first,
+                    )[:ALSO_PLANNING]
+                ],
+            }
+            for key, spread in self.spreads.items()
         }
-        for key, spread in spreads.items()
-    }
 
 
 def _most_first(item):
     return (-item[1], item[0])
-
-
-def _planned_by_person():
-    """({user: {banner key: pulls or steps planned}}, {(user, key): sane}), one
-    query over the active rows. One row over the cap marks that person's
-    figure for the banner as not sane."""
-    planned = defaultdict(lambda: defaultdict(int))
-    sane = {}
-    for user_id, uma_id, support_id, step_up_id, pulls in active_rows().values_list(
-        "user_id", "banner_uma_id", "banner_support_id", "banner_step_up_id", "number_of_pulls"
-    ):
-        key = ("uma", uma_id) if uma_id else ("support", support_id) if support_id else ("step_up", step_up_id)
-        cap = SANE_MAX_STEPS if key[0] == "step_up" else SANE_MAX_PULLS
-        planned[user_id][key] += pulls
-        sane[(user_id, key)] = sane.get((user_id, key), True) and pulls <= cap
-    return planned, sane
 
 
 def _median(values):
@@ -125,7 +128,8 @@ def budget_by_class(engaged):
 
     pulls = defaultdict(int)
     sane_pulls = active_rows().filter(banner_step_up__isnull=True, number_of_pulls__lte=SANE_MAX_PULLS)
-    for user_id, count in sane_pulls.values_list("user_id", "number_of_pulls"):
+    # Streamed (iterator), so the ~300,000 rows never sit in memory at once.
+    for user_id, count in sane_pulls.values_list("user_id", "number_of_pulls").iterator(chunk_size=STREAM_CHUNK):
         pulls[user_id] += count
 
     rows = []

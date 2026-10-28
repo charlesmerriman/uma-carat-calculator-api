@@ -1,5 +1,5 @@
 """The Rankings page's routes: who may read them, what they send, and the
-hourly cache (views/rankings.py, rankings_cache.py)."""
+half-day cache (views/rankings.py, rankings_cache.py)."""
 
 from datetime import timedelta
 
@@ -163,8 +163,8 @@ class PayloadTests(RankingsFixture):
         self.assertEqual(before, 4)
 
 
-class HourlyCacheTests(RankingsFixture):
-    """Built once, stamped, and NOT invalidated by a guide edit: hourly
+class HalfDayCacheTests(RankingsFixture):
+    """Built once, stamped, and NOT invalidated by a guide edit: half-day
     staleness is the owner's decision (rankings_cache.py)."""
 
     def test_stamped_and_served_from_the_cache_until_it_expires(self):

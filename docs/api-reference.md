@@ -944,7 +944,7 @@ are for the guide editor's pickers and its paste-from-the-sheet matching (2026-1
 The Rankings page's Guide rankings tab (`/app/rankings`, `views/rankings.py`): every pick in
 the published guides, which the client counts (`utils/guideRankings.ts`). **Early access
 only** (`benefits.early_access`), like every `/rankings/*` route: 401 for a guest, 403 for
-anyone else without it. **Built at most once an hour** and never invalidated
+anyone else without it. **Built at most once every half day** and never invalidated
 (`rankings_cache.py`, the `rankings` cache alias); `generated_at` says when. Four queries on
 a miss, gzipped.
 
@@ -983,7 +983,7 @@ and drafts are never sent; past events are, and the client picks the window.
 ### `GET /rankings/gallery/<kind>/<event_id>`
 
 The PvP page's Rankings tab: one event's visible gallery posts (`gallery.visible_posts()`),
-counted on the server. Same gate and hourly cache as `/rankings/guides`; 404 for an unknown
+counted on the server. Same gate and half-day cache as `/rankings/guides`; 404 for an unknown
 event or kind (`cm` / `loh`). Two queries on a miss.
 
 ```json
@@ -1006,7 +1006,7 @@ any styles). `copied` is the event's three most copied visible posts (`copy_coun
 ### `GET /rankings/pull-plans`
 
 The Rankings page's Pull plans tab: the admin analytics' Popular banners tables and demand
-by month (`analytics/banners.py`), hourly like every `/rankings/*` route. **Behind the
+by month (`analytics/banners.py`), half-daily like every `/rankings/*` route. **Behind the
 Raptive gate**: early access AND a guide editor (`views/rankings.sees_pull_plans`, twin of
 the client's `useRankingsPullPlans`) until the owner says Raptive approved; 403 otherwise.
 
@@ -1029,12 +1029,12 @@ included (`status`). `spread` is each planner once by what they plan there, as s
 planners with a sane figure, in buckets that start at each edge (the last is open); a
 step-up's edges are STEPS (`[0, 2, 3, 4, 5]`). `also` is the three running or upcoming
 banners most often in the same plans, as a share of this banner's planners
-(`rankings_figures.pull_plan_figures`). `demand` is each month's share of every planned pull,
+(`rankings_figures.PlanFigures`). `demand` is each month's share of every planned pull,
 by the month a banner ends.
 
 ### `GET /rankings/pvp/<kind>/<event_id>`
 
-The Rankings page's PvP tab for one event, same gate and hourly cache as every
+The Rankings page's PvP tab for one event, same gate and half-day cache as every
 `/rankings/*` route; 404 for an unknown event. `built` is **every saved team**
 (`PvpTeam`, posted or not, staff out) by the gallery route's rule and shares (`count_teams`,
 `team_shares`), without the gallery's `posts` and `decks`. `runs` is CM Runs per uma and

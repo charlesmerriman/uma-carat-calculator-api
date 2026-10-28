@@ -59,13 +59,20 @@ python manage.py createsuperuser
 - **Some of these figures are shown on the site** (since 2026-10-27): the Rankings
   page's Pull plans tab (`GET /rankings/pull-plans`, `views/rankings.py`) reads
   `banner_popularity`, `step_up_popularity` and `demand_calendar` and shows the same
-  counts to Patreon supporters, rebuilt at most once an hour. It is behind the Raptive
+  counts to Patreon supporters, rebuilt at most once every half day. It is behind the Raptive
   gate (guide editors only) until the owner lifts it. Same exclusions: staff out,
   active plans only. Since step 4 of the redesign (notes/rankings-redesign-plan.md) the
   Rankings payloads also carry figures the dashboard doesn't show, counted in
   `calculatorapi/rankings_figures.py` by the same rules: each banner's pull spread and
   "also planning", the typical (median) carats and pulls per Team Trials class (a class of
   one is never shown), and each selector's on-sale status.
+- **The planned-banner figures read the rows ONCE** (since 2026-10-28,
+  notes/rankings-speed-plan.md). `analytics.banners.active_people()` streams the active
+  rows a person at a time, and `fold()` feeds them to small tallies (`BannerTally`,
+  `DemandTally`, `rankings_figures.PlanFigures`) in one pass. The report and the Pull plans
+  tab each fold once. A new figure over these rows is another tally in the same `fold()`,
+  never another pass: prod holds ~320,000 active rows, and seven passes (two holding every
+  row in memory) made a 31 s build.
 - This use of planning data is disclosed in the site's Privacy Policy
   ("How We Use Your Information"), and traffic counting under "Traffic
   Measurement".
