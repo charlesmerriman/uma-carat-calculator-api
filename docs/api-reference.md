@@ -991,7 +991,7 @@ Raptive gate**: early access AND a guide editor (`views/rankings.sees_pull_plans
 the client's `useRankingsPullPlans`) until the owner says Raptive approved; 403 otherwise.
 
 ```json
-{ "generated_at": "...",
+{ "generated_at": "...", "planners": 16000,
   "banners": [{"type": "uma", "unit": "pulls", "id": 88, "name": "Gentildonna",
                "start_date": "...", "end_date": "...", "predicted": true, "status": "upcoming",
                "planners": 5807, "total": 958000, "average": 165.0, "median": 150}],
@@ -1000,7 +1000,8 @@ the client's `useRankingsPullPlans`) until the owner says Raptive approved; 403 
 ```
 
 `type` is `uma`, `support` or `step_up`; a step-up's figures are **steps** (`unit`), never
-pulls. Staff are left out and only active plans count; an implausible pull count still
+pulls. The top-level `planners` is everyone with any banner in their active plan, each once
+(a row's share is out of it). Staff are left out and only active plans count; an implausible pull count still
 counts its planner but not the figures. Every banner anyone plans is sent, ended ones
 included (`status`).
 

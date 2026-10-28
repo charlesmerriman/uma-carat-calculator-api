@@ -260,6 +260,8 @@ class PullPlansTests(CalculatorTestCase):
         self.assertAlmostEqual(uma["average"], 416.7)
         step_up = next(row for row in body["banners"] if row["type"] == "step_up")
         self.assertEqual((step_up["unit"], step_up["total"], step_up["median"]), ("steps", 4, 4))
+        # Everyone with a banner planned, each once, staff out: a, b, c and d.
+        self.assertEqual(body["planners"], 4)
         self.assertIn("demand", body)
         self.assertIn("generated_at", body)
 

@@ -58,7 +58,7 @@ from rest_framework.response import Response
 
 from calculatorapi import benefits, gallery, pvp_guide_editing, pvp_teams
 from calculatorapi.analytics.banners import (
-    banner_popularity, demand_calendar, favourite_umas, step_up_popularity,
+    active_rows, banner_popularity, demand_calendar, favourite_umas, step_up_popularity,
 )
 from calculatorapi.analytics.income_settings import income_settings, rank_distributions, selector_purchases
 from calculatorapi.analytics.people import engaged_subset, non_staff_users
@@ -271,6 +271,10 @@ def pull_plans_payload():
     adds them to a pull figure. Staff are left out and only active plans
     count (analytics.banners.active_rows); a row with an impossible pull
     count still counts as a planner but not in the figures (`SANE_MAX_*`).
+
+    `planners` at the top is everyone with any banner in their active plan,
+    each once: the denominator of a row's "N% of planners" (the redesign's
+    Pull plans tab, notes/rankings-redesign-plan.md).
     """
     timeline_dates = build_effective_date_maps()[BannerTimeline]
 
@@ -295,7 +299,11 @@ def pull_plans_payload():
         # Picked cards but planned no steps: nothing to rank.
         if row["planners"] > 0
     ]
-    return {"banners": banners, "demand": demand_calendar(timeline_dates)}
+    return {
+        "planners": active_rows().values("user_id").distinct().count(),
+        "banners": banners,
+        "demand": demand_calendar(timeline_dates),
+    }
 
 
 @gzip_page
