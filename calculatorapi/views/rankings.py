@@ -18,6 +18,10 @@ checks benefits.early_access on the server; a guest gets 401, anyone else
 403. The page and its navbar item are drawn only for early access too, but
 that is presentation: this is the gate.
 
+SHARES, NEVER A COUNT OF PEOPLE (owner, 2026-10-28). The payloads below are
+built with counts, which the week's snapshot needs; what is sent is
+rankings_shares.py's version of each, percentages only.
+
 HOURLY (rankings_cache.py). Each payload is built at most once an hour,
 stamped with `generated_at`, and never invalidated: the page says how old it
 is. Gzipped (`gzip_page`): the rows repeat their keys, so ~280 KB of JSON is
@@ -68,6 +72,7 @@ from calculatorapi.models import (
 )
 from calculatorapi.predictions import build_effective_date_maps
 from calculatorapi.rankings_cache import cached_payload
+from calculatorapi.rankings_shares import gallery_shares, player_shares, pull_plan_shares, pvp_shares
 from calculatorapi.rankings_figures import budget_by_class, pull_plan_figures, selector_windows
 
 TIERS = ("beginner", "standard", "whale")
@@ -276,7 +281,7 @@ def rankings_gallery(request, kind, event_id):
         event = pvp_teams.resolve_event(kind, event_id)
     except pvp_teams.TeamRefused:
         return Response({"error": "Event not found"}, status=404)
-    return Response(cached_payload(f"gallery:{kind}:{event_id}", lambda: gallery_payload(event)))
+    return Response(cached_payload(f"gallery:{kind}:{event_id}", lambda: gallery_payload(event), gallery_shares))
 
 
 def sees_pull_plans(user):
@@ -348,7 +353,7 @@ def pull_plans_payload():
 def rankings_pull_plans(request):
     if not (benefits.early_access(request.user) and sees_pull_plans(request.user)):
         return Response(REFUSED, status=403)
-    return Response(cached_payload("pull-plans", pull_plans_payload))
+    return Response(cached_payload("pull-plans", pull_plans_payload, pull_plan_shares))
 
 
 # A win rate under this many races is noise; the client says "not enough
@@ -431,7 +436,7 @@ def rankings_pvp(request, kind, event_id):
         event = pvp_teams.resolve_event(kind, event_id)
     except pvp_teams.TeamRefused:
         return Response({"error": "Event not found"}, status=404)
-    return Response(cached_payload(f"pvp:{kind}:{event_id}", lambda: pvp_payload(event)))
+    return Response(cached_payload(f"pvp:{kind}:{event_id}", lambda: pvp_payload(event), pvp_shares))
 
 
 # The income ranks the Players tab shows, by the label rank_distributions gives them.
@@ -527,4 +532,4 @@ def players_payload():
 def rankings_players(request):
     if not benefits.early_access(request.user):
         return Response(REFUSED, status=403)
-    return Response(cached_payload("players", players_payload))
+    return Response(cached_payload("players", players_payload, player_shares))
