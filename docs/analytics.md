@@ -61,7 +61,11 @@ python manage.py createsuperuser
   `banner_popularity`, `step_up_popularity` and `demand_calendar` and shows the same
   counts to Patreon supporters, rebuilt at most once an hour. It is behind the Raptive
   gate (guide editors only) until the owner lifts it. Same exclusions: staff out,
-  active plans only.
+  active plans only. Since step 4 of the redesign (notes/rankings-redesign-plan.md) the
+  Rankings payloads also carry figures the dashboard doesn't show, counted in
+  `calculatorapi/rankings_figures.py` by the same rules: each banner's pull spread and
+  "also planning", the typical (median) carats and pulls per Team Trials class (a class of
+  one is never shown), and each selector's on-sale status.
 - This use of planning data is disclosed in the site's Privacy Policy
   ("How We Use Your Information"), and traffic counting under "Traffic
   Measurement".
