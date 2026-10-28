@@ -62,7 +62,8 @@ from rest_framework.response import Response
 
 from calculatorapi import benefits, gallery, pvp_guide_editing, pvp_teams
 from calculatorapi.analytics.banners import (
-    active_rows, banner_popularity, demand_calendar, favourite_umas, step_up_popularity,
+    BannerTally, DemandTally, banner_popularity, banner_timelines, demand_calendar, favourite_umas, fold,
+    live_banner_keys, step_up_popularity,
 )
 from calculatorapi.analytics.income_settings import income_settings, rank_distributions, selector_purchases
 from calculatorapi.analytics.people import engaged_subset, non_staff_users
@@ -73,7 +74,7 @@ from calculatorapi.models import (
 from calculatorapi.predictions import build_effective_date_maps
 from calculatorapi.rankings_cache import cached_payload
 from calculatorapi.rankings_shares import gallery_shares, player_shares, pull_plan_shares, pvp_shares
-from calculatorapi.rankings_figures import budget_by_class, pull_plan_figures, selector_windows
+from calculatorapi.rankings_figures import PlanFigures, budget_by_class, selector_windows
 
 TIERS = ("beginner", "standard", "whale")
 # Exact three-uma teams listed under "Trios players build most".
@@ -309,9 +310,16 @@ def pull_plans_payload():
     `planners` at the top is everyone with any banner in their active plan,
     each once: the denominator of a row's "N% of planners" (the redesign's
     Pull plans tab, notes/rankings-redesign-plan.md). Each row also carries
-    `spread` and `also` (rankings_figures.pull_plan_figures).
+    `spread` and `also` (rankings_figures.PlanFigures).
+
+    ONE PASS over the active rows feeds every figure here (analytics.banners
+    fold(); notes/rankings-speed-plan.md): it was seven, and 31 s on prod.
     """
     timeline_dates = build_effective_date_maps()[BannerTimeline]
+    timelines = banner_timelines()
+    popularity, demand = BannerTally(), DemandTally(timeline_dates, timelines)
+    figures = PlanFigures(live_banner_keys(timeline_dates, timelines))
+    planners = fold(popularity, demand, figures)
 
     def window(row):
         return {key: row[key] for key in ("start_date", "end_date", "predicted", "status")}
@@ -323,7 +331,7 @@ def pull_plans_payload():
             "average": row["avg_pulls"], "median": row["median_pulls"],
         }
         for banner_type, fk_name in (("uma", "banner_uma"), ("support", "banner_support"))
-        for row in banner_popularity(fk_name, timeline_dates)
+        for row in banner_popularity(fk_name, timeline_dates, popularity)
     ] + [
         {
             "type": "step_up", "unit": "steps", "id": row["id"], "name": row["name"], **window(row),
@@ -335,15 +343,14 @@ def pull_plans_payload():
         if row["planners"] > 0
     ]
     names = {(row["type"], row["id"]): row["name"] for row in banners}
-    live = {(row["type"], row["id"]) for row in banners if row["status"] != "ended"}
-    figures = pull_plan_figures(live, names)
+    by_key = figures.result(names)
     empty = {"spread": None, "also": []}
     for row in banners:
-        row.update(figures.get((row["type"], row["id"]), empty))
+        row.update(by_key.get((row["type"], row["id"]), empty))
     return {
-        "planners": active_rows().values("user_id").distinct().count(),
+        "planners": planners,
         "banners": banners,
-        "demand": demand_calendar(timeline_dates),
+        "demand": demand_calendar(timeline_dates, demand),
     }
 
 

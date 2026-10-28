@@ -5,9 +5,12 @@ from django.utils import timezone
 from ..models import BannerTimeline
 from ..predictions import build_effective_date_maps
 from .banners import (
+    BannerTally,
+    DemandTally,
     banner_popularity,
     demand_calendar,
     favourite_umas,
+    fold,
     step_up_popularity,
 )
 from .common import pct
@@ -75,6 +78,10 @@ def build_analytics_report():
     # Resolved once for every banner section, as one calendar: the plural
     # builder is the only correct one (.claude/rules/backend-models.md).
     timeline_dates = build_effective_date_maps()[BannerTimeline]
+    # One pass over the active planned rows feeds both popularity tables and
+    # the demand calendar (banners.fold).
+    popularity, demand = BannerTally(), DemandTally(timeline_dates)
+    fold(popularity, demand)
 
     report = {
         "generated_at": timezone.now(),
@@ -94,10 +101,10 @@ def build_analytics_report():
         # Averaging over never-configured accounts full of zeroes would be
         # meaningless, so this section uses the engaged denominator.
         "resource_averages": resource_statistics(engaged),
-        "popular_uma_banners": banner_popularity("banner_uma", timeline_dates),
-        "popular_support_banners": banner_popularity("banner_support", timeline_dates),
+        "popular_uma_banners": banner_popularity("banner_uma", timeline_dates, popularity),
+        "popular_support_banners": banner_popularity("banner_support", timeline_dates, popularity),
         "step_up_popularity": step_up_popularity(timeline_dates),
-        "demand_calendar": demand_calendar(timeline_dates),
+        "demand_calendar": demand_calendar(timeline_dates, demand),
         "favourite_umas": favourite_umas(),
     }
     # Last, because both read the figures above. Neither is ever stored in a
