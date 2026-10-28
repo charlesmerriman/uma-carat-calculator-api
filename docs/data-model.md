@@ -1511,6 +1511,18 @@ Routing only: no message text and nothing about a person. PRIVATE in
 `content_snapshot` (a local copy would believe it had already posted), in
 `public_payload_cache._IRRELEVANT_MODELS`, and not registered in the admin.
 
+### `RankingsSnapshot` — the start of the week, for rank movement
+
+One row per Rankings cache name (`guides`, `pull-plans`, `players`, `pvp:cm:21`,
+`gallery:cm:21`): the payload as the first rebuild after Monday 00:00 UTC built it
+(`rankings_snapshots.py`), so each `/rankings/*` payload can carry `previous` and the
+page can draw "▲2" beside a row. A table, not the cache: the `rankings` LocMem cache
+empties on every deploy, which would make "a week ago" rarely a week. The rotation also
+sends the Monday movers post to `DISCORD_RANKINGS_CHANNEL_ID` (one `DiscordMessage` key
+per list and ISO week). The payload is stored with `DjangoJSONEncoder` (it carries
+datetimes). Analytics built from people's plans: PRIVATE in `content_snapshot`, in
+`public_payload_cache._IRRELEVANT_MODELS`, not in the admin.
+
 ### `SitePage`, `FaqCategory`, `FaqItem` — the prose the team edits
 
 The About page, the carat income guide and the FAQ. They used to ship in the
