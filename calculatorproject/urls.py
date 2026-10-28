@@ -213,7 +213,7 @@ urlpatterns = [
     # skill links. Public, cached, fetched lazily. → views/pvp_catalogue.py
     path("pvp-catalogue", pvp_catalogue, name="pvp-catalogue"),
     # The Rankings page (/app/rankings), one route per tab, each built at
-    # most once an hour. Early access only. → views/rankings.py
+    # most once every half day. Early access only. → views/rankings.py
     path("rankings/guides", rankings_guides, name="rankings-guides"),
     path("rankings/gallery/<str:kind>/<int:event_id>", rankings_gallery, name="rankings-gallery"),
     path("rankings/pull-plans", rankings_pull_plans, name="rankings-pull-plans"),
