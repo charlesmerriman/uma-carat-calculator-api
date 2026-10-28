@@ -1029,7 +1029,7 @@ included (`status`). `spread` is each planner once by what they plan there, as s
 planners with a sane figure, in buckets that start at each edge (the last is open); a
 step-up's edges are STEPS (`[0, 2, 3, 4, 5]`). `also` is the three running or upcoming
 banners most often in the same plans, as a share of this banner's planners
-(`rankings_figures.pull_plan_figures`). `demand` is each month's share of every planned pull,
+(`rankings_figures.PlanFigures`). `demand` is each month's share of every planned pull,
 by the month a banner ends.
 
 ### `GET /rankings/pvp/<kind>/<event_id>`

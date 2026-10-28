@@ -66,6 +66,13 @@ python manage.py createsuperuser
   `calculatorapi/rankings_figures.py` by the same rules: each banner's pull spread and
   "also planning", the typical (median) carats and pulls per Team Trials class (a class of
   one is never shown), and each selector's on-sale status.
+- **The planned-banner figures read the rows ONCE** (since 2026-10-28,
+  notes/rankings-speed-plan.md). `analytics.banners.active_people()` streams the active
+  rows a person at a time, and `fold()` feeds them to small tallies (`BannerTally`,
+  `DemandTally`, `rankings_figures.PlanFigures`) in one pass. The report and the Pull plans
+  tab each fold once. A new figure over these rows is another tally in the same `fold()`,
+  never another pass: prod holds ~320,000 active rows, and seven passes (two holding every
+  row in memory) made a 31 s build.
 - This use of planning data is disclosed in the site's Privacy Policy
   ("How We Use Your Information"), and traffic counting under "Traffic
   Measurement".
