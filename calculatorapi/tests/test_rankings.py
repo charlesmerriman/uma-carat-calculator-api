@@ -10,9 +10,10 @@ from rest_framework.test import APIClient
 
 from calculatorapi.models import (
     GalleryPost, GalleryPostKind, PvpDeck, PvpDeckSlot, PvpGuide, PvpRun, PvpRunRace, PvpRunRunner, PvpTeam,
-    PvpTeamCard, PvpTeamMember, PvpUmaRecommendation, SupportCard, TeamTrialsRank, Uma, UserOshi,
+    PvpTeamCard, PvpTeamMember, PvpUmaRecommendation, RankingsSnapshot, SupportCard, TeamTrialsRank, Uma, UserOshi,
     UserPlannedBanner, UserPlannedPurchase,
 )
+from calculatorapi.rankings_shares import SMALL, run_shares, share
 from calculatorapi.tests.base import CalculatorTestCase
 from calculatorapi.tests.factories import (
     auth_client, make_anniversary_event, make_champions_meeting, make_league_of_heroes, make_scenario,
@@ -213,16 +214,18 @@ class GalleryRankingsTests(CalculatorTestCase):  # pylint: disable=too-many-inst
             author=author, kind=GalleryPostKind.PVP_TEAM, champions_meeting=self.cm, team_snapshot=snapshot,
         )
 
-    def test_counts_visible_posts_umas_and_cards(self):
+    def test_visible_posts_umas_and_cards_as_shares(self):
         body = self.client.get(self.url).json()
+        # Posts are public (the post page shows them), so their counts stay.
         self.assertEqual((body["posts"], body["decks"]), (2, 3))
         self.assertEqual(body["umas"], [
-            {"uma": self.oguri.id, "teams": 2, "styles": {"pace": 1, "end": 1}},
-            {"uma": self.maru.id, "teams": 1, "styles": {"front": 1}},
+            {"uma": self.oguri.id, "share": 1.0, "styles": {"pace": 0.5, "end": 0.5}},
+            {"uma": self.maru.id, "share": 0.5, "styles": {"front": 0.5}},
         ])
+        # A borrow is a share of the card's own decks.
         self.assertEqual(body["cards"], [
-            {"card": self.light.id, "decks": 2, "borrows": 0},
-            {"card": self.kitasan.id, "decks": 2, "borrows": 1},
+            {"card": self.light.id, "share": 0.67, "borrowed": 0},
+            {"card": self.kitasan.id, "share": 0.67, "borrowed": 0.5},
         ])
         self.assertIn("generated_at", body)
 
@@ -269,26 +272,27 @@ class PullPlansTests(CalculatorTestCase):
     def test_banners_with_a_median_and_steps_kept_apart(self):
         body = self.editor.get(self.URL).json()
         uma = next(row for row in body["banners"] if row["type"] == "uma")
+        # Three of the four people with a banner planned (a, b, c and d; staff out).
         self.assertEqual(
-            (uma["id"], uma["name"], uma["unit"], uma["planners"], uma["total"], uma["median"]),
-            (self.uma.id, "Gentildonna", "pulls", 3, 1250, 150),
+            (uma["id"], uma["name"], uma["unit"], uma["share"], uma["median"]),
+            (self.uma.id, "Gentildonna", "pulls", 0.75, 150),
         )
         self.assertAlmostEqual(uma["average"], 416.7)
         step_up = next(row for row in body["banners"] if row["type"] == "step_up")
-        self.assertEqual((step_up["unit"], step_up["total"], step_up["median"]), ("steps", 4, 4))
-        # Everyone with a banner planned, each once, staff out: a, b, c and d.
-        self.assertEqual(body["planners"], 4)
+        self.assertEqual((step_up["unit"], step_up["median"]), ("steps", 4))
+        # Never a count: not everyone's, not a banner's planners or total pulls.
+        self.assertNotIn("planners", body)
+        self.assertFalse({"planners", "total"} & set(uma))
         self.assertIn("demand", body)
         self.assertIn("generated_at", body)
 
-    def test_spread_sums_to_the_planners_and_steps_keep_their_own_buckets(self):
+    def test_spread_is_shares_and_steps_keep_their_own_buckets(self):
         body = self.editor.get(self.URL).json()
         uma = next(row for row in body["banners"] if row["type"] == "uma")
-        # a 100, b 150, c 1000: the 100 to 199 bucket holds two, 300 and up one.
-        self.assertEqual(uma["spread"], {"edges": [0, 50, 100, 200, 300], "planners": [0, 0, 2, 0, 1]})
-        self.assertEqual(sum(uma["spread"]["planners"]), uma["planners"])
+        # a 100, b 150, c 1000: the 100 to 199 bucket holds two of three, 300 and up one.
+        self.assertEqual(uma["spread"], {"edges": [0, 50, 100, 200, 300], "shares": [0, 0, 0.67, 0, 0.33]})
         step_up = next(row for row in body["banners"] if row["type"] == "step_up")
-        self.assertEqual(step_up["spread"], {"edges": [0, 2, 3, 4, 5], "planners": [0, 0, 0, 1, 0]})
+        self.assertEqual(step_up["spread"], {"edges": [0, 2, 3, 4, 5], "shares": [0, 0, 0, 1.0, 0]})
 
     def test_also_planning_lists_the_other_banners_never_the_banner_itself(self):
         support = make_support_banner(name="Kitasan Black")
@@ -297,7 +301,7 @@ class PullPlansTests(CalculatorTestCase):
         body = self.editor.get(self.URL).json()
         uma = next(row for row in body["banners"] if row["type"] == "uma")
         self.assertEqual(
-            uma["also"], [{"type": "support", "id": support.id, "name": "Kitasan Black", "planners": 2}],
+            uma["also"], [{"type": "support", "id": support.id, "name": "Kitasan Black", "share": 0.67}],
         )
         self.assertNotIn(("uma", self.uma.id), [(row["type"], row["id"]) for row in uma["also"]])
 
@@ -344,11 +348,12 @@ class PvpRankingsTests(CalculatorTestCase):  # pylint: disable=too-many-instance
         for race, winner in enumerate(winners, start=1):
             PvpRunRace.objects.create(run=run, race=race, winner=winner)
 
-    def test_counts_every_saved_team(self):
+    def test_every_saved_team_as_shares(self):
         built = self.client.get(self.url).json()["built"]
-        self.assertEqual((built["teams"], built["decks"]), (2, 3))
-        self.assertEqual(built["umas"][0], {"uma": self.oguri.id, "teams": 2, "styles": {"pace": 1, "end": 1}})
-        self.assertEqual(built["cards"], [{"card": self.light.id, "decks": 3, "borrows": 1}])
+        # Two teams with a member, three member decks: never sent.
+        self.assertFalse({"teams", "decks"} & set(built))
+        self.assertEqual(built["umas"][0], {"uma": self.oguri.id, "share": 1.0, "styles": {"pace": 0.5, "end": 0.5}})
+        self.assertEqual(built["cards"], [{"card": self.light.id, "share": 1.0, "borrowed": 0.33}])
 
     def test_trios_count_exact_three_uma_teams_once_each(self):
         kitasan = Uma.objects.create(name="Kitasan Black")
@@ -356,18 +361,26 @@ class PvpRankingsTests(CalculatorTestCase):  # pylint: disable=too-many-instance
             self.team(make_user(name), [(self.oguri, "pace", []), (self.maru, "front", []), (kitasan, "end", [])])
         built = self.client.get(self.url).json()["built"]
         # Two-uma teams make no trio.
-        self.assertEqual(built["trios"], [{"umas": sorted([self.oguri.id, self.maru.id, kitasan.id]), "teams": 2}])
+        self.assertEqual(built["trios"], [{"umas": sorted([self.oguri.id, self.maru.id, kitasan.id]), "share": 0.5}])
 
     def test_win_rates_per_uma_and_strategy(self):
-        self.log_run(self.player, [0, None, 1])
-        self.log_run(self.player, [0, 0, 0], skipped=True, ticket=2)
-        self.log_run(make_user("staffer2", is_staff=True), [0, 0, 0])
+        # Five tickets of five races, 25 in all: Oguri wins 10, Maruzensky 5.
+        for ticket in range(1, 6):
+            self.log_run(self.player, [0, 0, 1, None, None], ticket=ticket)
+        # A skipped ticket and a staff member's never count.
+        self.log_run(make_user("skipper"), [0, 0, 0], skipped=True)
+        self.log_run(make_user("staffer2", is_staff=True), [1, 1, 1])
         runs = self.client.get(self.url).json()["runs"]
-        self.assertEqual((runs["players"], runs["races"], runs["min_races"]), (1, 3, 20))
-        self.assertEqual(runs["rows"], [
-            {"uma": self.oguri.id, "style": "pace", "races": 3, "wins": 1},
-            {"uma": self.maru.id, "style": "front", "races": 3, "wins": 1},
+        # Rates and how much to trust them, never races, wins or players. Under
+        # RANKED_RACES, so unranked, with one mark.
+        self.assertEqual(runs, [
+            {"uma": self.oguri.id, "style": "pace", "rate": 0.4, "marks": 1, "ranked": False},
+            {"uma": self.maru.id, "style": "front", "rate": 0.2, "marks": 1, "ranked": False},
         ])
+
+    def test_a_win_rate_under_the_floor_is_never_sent(self):
+        self.log_run(self.player, [0, None, 1])
+        self.assertEqual(self.client.get(self.url).json()["runs"], [])
 
     def test_early_access_only_and_a_real_event(self):
         plain, _ = auth_client(make_user("plain"))
@@ -387,11 +400,12 @@ class PlayersRankingsTests(CalculatorTestCase):
         UserOshi.objects.create(user=make_user("staffer", is_staff=True), uma=uma, position=0)
         client, _ = auth_client(make_user("staff", is_staff=True))
         body = client.get(self.URL).json()
-        self.assertEqual(body["favourites"], [{"uma": uma.id, "people": 1}])
+        self.assertEqual([row["uma"] for row in body["favourites"]], [uma.id])
+        self.assertEqual(set(body["favourites"][0]), {"uma", "share"})
         self.assertEqual([rank["label"] for rank in body["ranks"]], ["Team Trials", "Club Rank"])
         for rank in body["ranks"]:
             self.assertNotIn("Not set", [row["name"] for row in rank["rows"]])
-            self.assertEqual(rank["people"], sum(row["people"] for row in rank["rows"]))
+        self.assertNotIn("engaged", body)
         self.assertIn("daily_carat", [row["key"] for row in body["income"]])
         self.assertIn("selectors", body)
 
@@ -414,7 +428,7 @@ class PlayersRankingsTests(CalculatorTestCase):
         budget = client.get(self.URL).json()["budget"]
         # An even count: the median of 10k, 20k, 30k and 40k is 25k. Pulls among the
         # three who plan any: 200. Class 5's one person is never shown.
-        self.assertEqual(budget, [{"name": "Class 6", "people": 4, "carats": 25_000, "pulls": 200}])
+        self.assertEqual(budget, [{"name": "Class 6", "carats": 25_000, "pulls": 200}])
 
     def test_income_options_say_where_a_new_account_starts(self):
         client, _ = auth_client(make_user("staff", is_staff=True))
@@ -448,3 +462,58 @@ class PlayersRankingsTests(CalculatorTestCase):
     def test_early_access_only(self):
         plain, _ = auth_client(make_user("plain"))
         self.assertEqual(plain.get(self.URL).status_code, 403)
+
+
+class SharesNeverCountsTests(CalculatorTestCase):
+    """rankings_shares.py: no Rankings payload sends a count of people (owner,
+    2026-10-28), and a share is a whole percent."""
+
+    # Keys that held a count of people before the shares; none may come back.
+    COUNT_KEYS = {
+        "people", "planners", "teams", "races", "wins", "players", "engaged", "total", "borrows", "total_pulls",
+    }
+
+    def keys(self, value):
+        if isinstance(value, dict):
+            return set(value) | {key for item in value.values() for key in self.keys(item)}
+        if isinstance(value, list):
+            return {key for item in value for key in self.keys(item)}
+        return set()
+
+    def test_no_payload_sends_a_count_of_people(self):
+        cm = make_champions_meeting(name="Libra Cup", cm_number=21)
+        client, _ = auth_client(make_user("staff", is_staff=True))
+        for url in (
+            "/rankings/players", "/rankings/pull-plans", f"/rankings/pvp/cm/{cm.id}", f"/rankings/gallery/cm/{cm.id}",
+        ):
+            body = client.get(url).json()
+            # `previous` is ids in rank order, and the gallery's posts are public.
+            body.pop("previous", None)
+            self.assertEqual(self.keys(body) & self.COUNT_KEYS, set(), url)
+
+    def test_the_snapshot_keeps_the_counts(self):
+        client, _ = auth_client(make_user("staff", is_staff=True))
+        client.get("/rankings/players")
+        self.assertIn("engaged", RankingsSnapshot.objects.get(name="players").payload)
+
+    def test_a_share_is_a_whole_percent_and_a_sliver_is_never_nothing(self):
+        self.assertEqual([share(1, 3), share(2, 3), share(0, 5), share(3, 0)], [0.33, 0.67, 0, 0])
+        # 1 of 300 is 0.33%: sent as SMALL, which the page says as "<1%".
+        self.assertEqual(share(1, 300), SMALL)
+
+    def test_win_rates_ranked_from_100_races_the_thin_ones_under_and_marked(self):
+        rows = [
+            {"uma": 1, "style": "pace", "races": 400, "wins": 100},
+            {"uma": 2, "style": "end", "races": 19, "wins": 19},
+            {"uma": 3, "style": "front", "races": 44, "wins": 13},
+            {"uma": 4, "style": "late", "races": 120, "wins": 36},
+            {"uma": 5, "style": "pace", "races": 75, "wins": 15},
+            {"uma": 6, "style": "end", "races": 100, "wins": 30},
+        ]
+        rated = run_shares({"min_races": 20, "rows": rows})
+        # By rate from 100 races, more races breaking a tie; then 20 to 99 by
+        # races (30% from 44 never outranks 25% from 400); 19 races never sent.
+        self.assertEqual(
+            [(row["uma"], row["rate"], row["marks"], row["ranked"]) for row in rated],
+            [(4, 0.3, 2, True), (6, 0.3, 2, True), (1, 0.25, 3, True), (5, 0.2, 1, False), (3, 0.3, 1, False)],
+        )

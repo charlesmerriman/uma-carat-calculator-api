@@ -25,13 +25,17 @@ CACHE_TTL_SECONDS = 60 * 60
 # Bump the version when a payload's SHAPE changes, so a deploy never serves
 # an hour of the old shape to the new client. (A deploy restarts the process,
 # which empties LocMem anyway; the version is for the day that changes.)
-KEY = "rankings:{name}:v3"
+KEY = "rankings:{name}:v4"
 
 
-def cached_payload(name, build):
+def cached_payload(name, build, public=None):
     """The payload cached under `name`, built with `build()` on a miss and
     stamped with `generated_at` (ISO 8601, UTC). `name` includes any
     parameters the payload depends on ("pvp:cm:21").
+
+    `public` turns the counted payload into what is sent (rankings_shares.py:
+    shares, never a count of people). The snapshot gets the counted one, the
+    cache and the browser only `public`'s.
 
     A build also carries `previous` (the week's start, for rank movement) and
     may rotate that snapshot and post the week's movers
@@ -43,5 +47,7 @@ def cached_payload(name, build):
     if payload is None:
         now = timezone.now()
         payload = attach_previous(name, {"generated_at": now.isoformat(), **build()}, now)
+        if public is not None:
+            payload = public(payload)
         cache.set(key, payload, CACHE_TTL_SECONDS)
     return payload
