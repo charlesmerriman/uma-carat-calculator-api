@@ -219,6 +219,9 @@ _IRRELEVANT_MODELS = frozenset({
     # The Rankings page's start-of-week snapshots, written on a rankings rebuild
     # (rankings_snapshots.py). Read only by /rankings/*, never here.
     "rankingssnapshot",
+    # The latest build of each Rankings payload (rankings_cache.py), written by
+    # a rebuild at most every half day per key. Read only by /rankings/*.
+    "rankingspayload",
     "sitepage",
     "faqcategory",
     "faqitem",

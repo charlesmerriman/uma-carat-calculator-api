@@ -944,7 +944,8 @@ are for the guide editor's pickers and its paste-from-the-sheet matching (2026-1
 The Rankings page's Guide rankings tab (`/app/rankings`, `views/rankings.py`): every pick in
 the published guides, which the client counts (`utils/guideRankings.ts`). **Early access
 only** (`benefits.early_access`), like every `/rankings/*` route: 401 for a guest, 403 for
-anyone else without it. **Built at most once every half day** and never invalidated
+anyone else without it. **Built at most once every half day** (a stale copy is served while one rebuild runs
+behind it, and the last build is kept in `RankingsPayload` across deploys) and never invalidated
 (`rankings_cache.py`, the `rankings` cache alias); `generated_at` says when. Four queries on
 a miss, gzipped.
 
