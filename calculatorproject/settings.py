@@ -591,6 +591,10 @@ DISCORD_CHANGELOG_START_DATE = os.getenv("DISCORD_CHANGELOG_START_DATE", "")
 # #calc-mod-queue: a card per reported gallery post or comment
 # (calculatorapi/moderation_cards.py). Private to moderators in Discord.
 DISCORD_MOD_QUEUE_CHANNEL_ID = os.getenv("DISCORD_MOD_QUEUE_CHANNEL_ID", "")
+# The team's channel for the Rankings page's weekly movers post
+# (calculatorapi/rankings_snapshots.py): the three biggest climbers of the
+# lists worth pinning, once a week. Blank: nothing is posted.
+DISCORD_RANKINGS_CHANNEL_ID = os.getenv("DISCORD_RANKINGS_CHANNEL_ID", "")
 # The bot worker's key to the bot API (views/bot_api.py), sent as X-Bot-Key.
 # Blank: every bot route 404s AND the cards carry no buttons, so a card never
 # offers a click nothing is listening for. Set it together with the worker.

@@ -10,12 +10,13 @@ from rest_framework.test import APIClient
 
 from calculatorapi.models import (
     GalleryPost, GalleryPostKind, PvpDeck, PvpDeckSlot, PvpGuide, PvpRun, PvpRunRace, PvpRunRunner, PvpTeam,
-    PvpTeamCard, PvpTeamMember, PvpUmaRecommendation, SupportCard, Uma, UserOshi, UserPlannedBanner,
+    PvpTeamCard, PvpTeamMember, PvpUmaRecommendation, SupportCard, TeamTrialsRank, Uma, UserOshi,
+    UserPlannedBanner, UserPlannedPurchase,
 )
 from calculatorapi.tests.base import CalculatorTestCase
 from calculatorapi.tests.factories import (
-    auth_client, make_champions_meeting, make_league_of_heroes, make_scenario, make_step_up_banner, make_timeline,
-    make_uma_banner, make_user,
+    auth_client, make_anniversary_event, make_champions_meeting, make_league_of_heroes, make_scenario,
+    make_step_up_banner, make_support_banner, make_timeline, make_uma_banner, make_user,
 )
 from calculatorapi.views.rankings import deck_tier, guides_payload
 
@@ -225,6 +226,19 @@ class GalleryRankingsTests(CalculatorTestCase):  # pylint: disable=too-many-inst
         ])
         self.assertIn("generated_at", body)
 
+    def test_most_copied_posts_in_copy_order_never_a_hidden_one(self):
+        posts = list(GalleryPost.objects.order_by("id"))
+        GalleryPost.objects.filter(id=posts[0].id).update(copy_count=3, caption="Pace core")
+        GalleryPost.objects.filter(id=posts[1].id).update(copy_count=7)
+        # The blocked author's post is the most copied, and still never listed.
+        GalleryPost.objects.filter(id=posts[2].id).update(copy_count=99)
+        copied = self.client.get(self.url).json()["copied"]
+        self.assertEqual([post["public_id"] for post in copied], [posts[1].public_id, posts[0].public_id])
+        self.assertEqual(copied[1], {
+            "public_id": posts[0].public_id, "caption": "Pace core", "copies": 3,
+            "umas": [self.oguri.id, self.maru.id],
+        })
+
     def test_early_access_only_and_a_real_event(self):
         self.assertEqual(APIClient().get(self.url).status_code, 401)
         plain, _ = auth_client(make_user("plain"))
@@ -242,8 +256,10 @@ class PullPlansTests(CalculatorTestCase):
     def setUp(self):
         self.uma = make_uma_banner(name="Gentildonna")
         self.step_up = make_step_up_banner(name="Anniversary Step-Up")
+        self.users = {}
         for name, pulls in (("a", 100), ("b", 150), ("c", 1000)):
-            UserPlannedBanner.objects.create(user=make_user(name), banner_uma=self.uma, number_of_pulls=pulls)
+            self.users[name] = make_user(name)
+            UserPlannedBanner.objects.create(user=self.users[name], banner_uma=self.uma, number_of_pulls=pulls)
         UserPlannedBanner.objects.create(user=make_user("d"), banner_step_up=self.step_up, number_of_pulls=4)
         UserPlannedBanner.objects.create(
             user=make_user("staffer", is_staff=True), banner_uma=self.uma, number_of_pulls=5,
@@ -260,8 +276,30 @@ class PullPlansTests(CalculatorTestCase):
         self.assertAlmostEqual(uma["average"], 416.7)
         step_up = next(row for row in body["banners"] if row["type"] == "step_up")
         self.assertEqual((step_up["unit"], step_up["total"], step_up["median"]), ("steps", 4, 4))
+        # Everyone with a banner planned, each once, staff out: a, b, c and d.
+        self.assertEqual(body["planners"], 4)
         self.assertIn("demand", body)
         self.assertIn("generated_at", body)
+
+    def test_spread_sums_to_the_planners_and_steps_keep_their_own_buckets(self):
+        body = self.editor.get(self.URL).json()
+        uma = next(row for row in body["banners"] if row["type"] == "uma")
+        # a 100, b 150, c 1000: the 100 to 199 bucket holds two, 300 and up one.
+        self.assertEqual(uma["spread"], {"edges": [0, 50, 100, 200, 300], "planners": [0, 0, 2, 0, 1]})
+        self.assertEqual(sum(uma["spread"]["planners"]), uma["planners"])
+        step_up = next(row for row in body["banners"] if row["type"] == "step_up")
+        self.assertEqual(step_up["spread"], {"edges": [0, 2, 3, 4, 5], "planners": [0, 0, 0, 1, 0]})
+
+    def test_also_planning_lists_the_other_banners_never_the_banner_itself(self):
+        support = make_support_banner(name="Kitasan Black")
+        for name in ("a", "b"):
+            UserPlannedBanner.objects.create(user=self.users[name], banner_support=support, number_of_pulls=50)
+        body = self.editor.get(self.URL).json()
+        uma = next(row for row in body["banners"] if row["type"] == "uma")
+        self.assertEqual(
+            uma["also"], [{"type": "support", "id": support.id, "name": "Kitasan Black", "planners": 2}],
+        )
+        self.assertNotIn(("uma", self.uma.id), [(row["type"], row["id"]) for row in uma["also"]])
 
     def test_behind_the_raptive_gate(self):
         tester = make_user("tester")
@@ -312,6 +350,14 @@ class PvpRankingsTests(CalculatorTestCase):  # pylint: disable=too-many-instance
         self.assertEqual(built["umas"][0], {"uma": self.oguri.id, "teams": 2, "styles": {"pace": 1, "end": 1}})
         self.assertEqual(built["cards"], [{"card": self.light.id, "decks": 3, "borrows": 1}])
 
+    def test_trios_count_exact_three_uma_teams_once_each(self):
+        kitasan = Uma.objects.create(name="Kitasan Black")
+        for name in ("t1", "t2"):
+            self.team(make_user(name), [(self.oguri, "pace", []), (self.maru, "front", []), (kitasan, "end", [])])
+        built = self.client.get(self.url).json()["built"]
+        # Two-uma teams make no trio.
+        self.assertEqual(built["trios"], [{"umas": sorted([self.oguri.id, self.maru.id, kitasan.id]), "teams": 2}])
+
     def test_win_rates_per_uma_and_strategy(self):
         self.log_run(self.player, [0, None, 1])
         self.log_run(self.player, [0, 0, 0], skipped=True, ticket=2)
@@ -348,6 +394,56 @@ class PlayersRankingsTests(CalculatorTestCase):
             self.assertEqual(rank["people"], sum(row["people"] for row in rank["rows"]))
         self.assertIn("daily_carat", [row["key"] for row in body["income"]])
         self.assertIn("selectors", body)
+
+    def test_budget_by_class_is_medians_and_never_one_person(self):
+        class6 = TeamTrialsRank.objects.create(name="Class 6", income_amount=900)
+        class5 = TeamTrialsRank.objects.create(name="Class 5", income_amount=600)
+        banner = make_uma_banner(name="Gentildonna")
+        for name, rank, carats, pulls in (
+            ("a", class6, 10_000, 100), ("b", class6, 20_000, 200),
+            ("c", class6, 30_000, 0), ("d", class6, 40_000, 300),
+            ("lone", class5, 99_999, 999),
+        ):
+            user = make_user(name)
+            user.team_trials_rank = rank
+            user.current_carat = carats
+            user.save(update_fields=["team_trials_rank", "current_carat"])
+            if pulls:
+                UserPlannedBanner.objects.create(user=user, banner_uma=banner, number_of_pulls=pulls)
+        client, _ = auth_client(make_user("staff", is_staff=True))
+        budget = client.get(self.URL).json()["budget"]
+        # An even count: the median of 10k, 20k, 30k and 40k is 25k. Pulls among the
+        # three who plan any: 200. Class 5's one person is never shown.
+        self.assertEqual(budget, [{"name": "Class 6", "people": 4, "carats": 25_000, "pulls": 200}])
+
+    def test_income_options_say_where_a_new_account_starts(self):
+        client, _ = auth_client(make_user("staff", is_staff=True))
+        income = {row["key"]: row for row in client.get(self.URL).json()["income"]}
+        self.assertTrue(income["misc_earnings"]["default_on"])
+        self.assertFalse(income["daily_carat"]["default_on"])
+
+    def test_a_selector_says_whether_it_is_on_sale(self):
+        now = timezone.now()
+        windows = {
+            "on sale": (now - timedelta(days=2), now + timedelta(days=5)),
+            "past": (now - timedelta(days=40), now - timedelta(days=10)),
+            "upcoming": (now + timedelta(days=10), now + timedelta(days=20)),
+        }
+        for name, (start, end) in windows.items():
+            timeline = make_timeline(name=name, global_start_date=start, global_end_date=end)
+            event = make_anniversary_event(name=name, event_type="campaign", parts=[timeline], products=[{
+                "product_type": "uma_selector", "name": f"{name} selector", "usd_cost": 10, "paid_carat_amount": 0,
+            }])
+            UserPlannedPurchase.objects.create(
+                user=make_user(f"buyer {name}"), product=event.products.get(), quantity=1,
+            )
+        client, _ = auth_client(make_user("staff", is_staff=True))
+        selectors = {row["campaign"]: row for row in client.get(self.URL).json()["selectors"]}
+        self.assertEqual(
+            {name: row["status"] for name, row in selectors.items()},
+            {"on sale": "on_sale", "past": "past", "upcoming": "upcoming"},
+        )
+        self.assertIsNotNone(selectors["on sale"]["end_date"])
 
     def test_early_access_only(self):
         plain, _ = auth_client(make_user("plain"))

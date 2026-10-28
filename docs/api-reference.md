@@ -948,6 +948,14 @@ anyone else without it. **Built at most once an hour** and never invalidated
 (`rankings_cache.py`, the `rankings` cache alias); `generated_at` says when. Four queries on
 a miss, gzipped.
 
+**Every `/rankings/*` payload carries `previous`**: its lists as they stood at the start of
+the week (`RankingsSnapshot`, rotated by the first rebuild after Monday 00:00 UTC), or null
+before a first snapshot exists. For `guides` it is `{"generated_at", "guides": [...]}` (the
+rows, so the client counts them under its filters); for the rest the ranked ids in order,
+`{"generated_at", "umas", "cards", "runs"}` (PvP; `runs` as `"<uma>-<style>"`, ranked from
+100 races), `{"umas", "cards"}` (gallery), `{"banners"}` (pull plans, `"<type>-<id>"` by
+planners) or `{"favourites"}` (players).
+
 ```json
 { "generated_at": "2026-10-27T20:15:03.120000+00:00",
   "scenarios": [{"id": 12, "name": "Trackblazer"}],
@@ -974,14 +982,18 @@ event or kind (`cm` / `loh`). Two queries on a miss.
 ```json
 { "generated_at": "2026-10-27T20:15:03.120000+00:00", "posts": 143, "decks": 429,
   "umas": [{"uma": 41, "teams": 120, "styles": {"pace": 70, "end": 50}}],
-  "cards": [{"card": 12, "decks": 401, "borrows": 20}] }
+  "cards": [{"card": 12, "decks": 401, "borrows": 20}],
+  "trios": [{"umas": [41, 52, 77], "teams": 12}],
+  "copied": [{"public_id": "k3x9...", "caption": "Pace core", "copies": 12, "umas": [41, 52, 77]}] }
 ```
 
 `posts` is every post counted (an uma's share is out of it: a team never repeats a
 character), `decks` every member (a card's share). The counting is `views/rankings.count_teams`,
 shared with the PvP tab. A card counts once per member's deck, the
 borrowed card (slot 6) included and counted apart in `borrows`; placeholder cards never
-count. Most first, ties by id.
+count. Most first, ties by id. `trios` is the top ten exact three-uma teams (sorted ids,
+any styles). `copied` is the event's three most copied visible posts (`copy_count`, none at
+0), without the poster's name: the client links to the post, which shows it.
 
 ### `GET /rankings/pull-plans`
 
@@ -991,18 +1003,25 @@ Raptive gate**: early access AND a guide editor (`views/rankings.sees_pull_plans
 the client's `useRankingsPullPlans`) until the owner says Raptive approved; 403 otherwise.
 
 ```json
-{ "generated_at": "...",
+{ "generated_at": "...", "planners": 16000,
   "banners": [{"type": "uma", "unit": "pulls", "id": 88, "name": "Gentildonna",
                "start_date": "...", "end_date": "...", "predicted": true, "status": "upcoming",
-               "planners": 5807, "total": 958000, "average": 165.0, "median": 150}],
+               "planners": 5807, "total": 958000, "average": 165.0, "median": 150,
+               "spread": {"edges": [0, 50, 100, 200, 300], "planners": [600, 1400, 2700, 700, 400]},
+               "also": [{"type": "support", "id": 90, "name": "Kitasan Black", "planners": 2100}]}],
   "demand": [{"month": "2026-11", "banners": 6, "planners": 9000, "total_pulls": 1200000,
               "excluded": 3, "step_up_planners": 40}, {"month": "Later", "...": "..."}] }
 ```
 
 `type` is `uma`, `support` or `step_up`; a step-up's figures are **steps** (`unit`), never
-pulls. Staff are left out and only active plans count; an implausible pull count still
-counts its planner but not the figures. Every banner anyone plans is sent, ended ones
-included (`status`).
+pulls. The top-level `planners` is everyone with any banner in their active plan, each once
+(a row's share is out of it). Staff are left out and only active plans count; an implausible
+pull count still counts its planner but not the figures. Every banner anyone plans is sent,
+ended ones included (`status`). `spread` is each planner once by what they plan there, in
+buckets that start at each edge (the last is open); a step-up's edges are STEPS
+(`[0, 2, 3, 4, 5]`), and an insane row is left out, so a spread can sum to fewer than
+`planners`. `also` is the three running or upcoming banners most often in the same plans, by
+people (`rankings_figures.pull_plan_figures`).
 
 ### `GET /rankings/pvp/<kind>/<event_id>`
 
@@ -1029,16 +1048,20 @@ tickets and staff never count. Four queries on a miss.
 The Rankings page's Players tab, same gate and cache: the admin analytics among engaged
 accounts, staff out. `favourites` (uma id, people), `ranks` (Team Trials and club rank:
 people per rank among those who set one, no "Not set" row), `income` (people with each
-income option on, of `engaged`), `selectors` (buyers, how many picked, and the top five
-picks per campaign selector, each `{"uma": id}` or `{"card": id}` with `people`).
+income option on, of `engaged`, and `default_on`: where a new account starts), `budget`
+(per Team Trials class, highest first: people and the MEDIAN carats held and pulls planned,
+a class of one never shown), `selectors` (buyers, how many picked, the top five picks per
+campaign selector, each `{"uma": id}` or `{"card": id}` with `people`, and `status`:
+`on_sale` / `upcoming` / `past` from the campaign's derived dates, with `end_date`).
 
 ```json
 { "generated_at": "...", "engaged": 16000,
   "favourites": [{"uma": 41, "people": 900}],
   "ranks": [{"label": "Team Trials", "people": 12000, "rows": [{"name": "Class 6", "people": 4560}]}],
-  "income": [{"key": "daily_carat", "label": "Daily Carat Pack", "people": 6700}],
+  "income": [{"key": "daily_carat", "label": "Daily Carat Pack", "people": 6700, "default_on": false}],
+  "budget": [{"name": "Class 6", "people": 4560, "carats": 24000, "pulls": 150}],
   "selectors": [{"campaign": "1st Anniversary", "label": "SSR Uma Selector", "buyers": 800, "picked": 600,
-                 "top": [{"uma": 41, "people": 120}]}] }
+                 "top": [{"uma": 41, "people": 120}], "status": "on_sale", "end_date": "..."}] }
 ```
 
 ### `/pvp-teams`

@@ -270,6 +270,11 @@ services:
   - key: DISCORD_MOD_QUEUE_CHANNEL_ID
     scope: RUN_TIME
     value: ""
+  # The team's channel for the Rankings page's weekly movers post
+  # (calculatorapi/rankings_snapshots.py). Blank: nothing is posted.
+  - key: DISCORD_RANKINGS_CHANNEL_ID
+    scope: RUN_TIME
+    value: ""
   # The bot worker's key to /bot/* (views/bot_api.py). Blank: those routes 404
   # and the cards carry no buttons. Set together with the worker component.
   - key: BOT_API_SECRET
