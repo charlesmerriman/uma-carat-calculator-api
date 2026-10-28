@@ -32,6 +32,21 @@
 # module changed. Newest entry first is conventional here but not required — the
 # page sorts by date.
 
+- key: rankings-placeholders
+  date: 2026-10-28
+  title: "Rankings for supporters, and placeholder cards"
+  version: "v2.9"
+  changes:
+    - added: "New for Patreon supporters: the Rankings page! See which cards and umas the PvP guides lean on most, what teams players build, what actually wins in CM Runs, and how everyone else plays."
+    - added: "Rankings has Guides, PvP and Players tabs. Filter the guides the way the guide sheet does, open any row for its numbers, and see what climbed or fell this week. PvP shows the most built trios and the best win rates, and Players shows typical budgets by class and which selectors people plan to buy. Pin a top ten to the side of any page while you plan, or tuck it into the corner. On a phone the filters fold into one button."
+    - added: "The PvP page gets a Rankings tab too, for supporters: which umas this event's gallery teams pick most, what the guide does with each one, and the three most copied posts."
+    - added: "Placeholder cards. When any good card will do, a deck can hold one like \"Your best SSR Speed card\". They have their own switch in the card picker."
+    - added: "Guides still being written now carry an Under construction banner."
+    - changed: "A PvP guide opens on the style you picked last time again, not the one it ranks first."
+    - changed: "The Privacy Policy now covers the Rankings page. Your saved PvP teams count toward its totals even if you never post them, and it only ever shows totals and medians."
+    - fixed: "JP-only support cards sort under their proper type."
+    - fixed: "The pulls pad in the planner stays on its row while you scroll."
+
 - key: cm-runs-collection
   date: 2026-10-27
   title: "CM Runs, and your Collection"
