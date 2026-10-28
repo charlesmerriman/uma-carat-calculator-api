@@ -97,6 +97,8 @@ PRIVATE_MODELS = (
     "PvpRunRace",
     # The Rankings page's start-of-week copy of each payload, for rank movement.
     "RankingsSnapshot",
+    # The Rankings page's latest build of each payload, so a deploy starts warm.
+    "RankingsPayload",
     # A player's veterans (the Collection page).
     "TrainedUma",
     "TrainedUmaSkill",

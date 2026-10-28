@@ -1523,6 +1523,16 @@ per list and ISO week). The payload is stored with `DjangoJSONEncoder` (it carri
 datetimes). Analytics built from people's plans: PRIVATE in `content_snapshot`, in
 `public_payload_cache._IRRELEVANT_MODELS`, not in the admin.
 
+### `RankingsPayload` — the latest build, so a deploy starts warm
+
+One row per Rankings cache KEY (`rankings:pull-plans:v4`; the key carries the shape
+version, so a bump leaves old rows unread): the payload as last built and sent, shares
+only. `rankings_cache.cached_payload` reads the LocMem copy, then this row, and builds
+inline only when neither exists; a copy older than 12 hours is served at once and rebuilt
+in a background thread, one per key. So a deploy or restart never makes a visitor wait
+for a build (`notes/rankings-speed-plan.md`). Written by a rebuild only. PRIVATE in
+`content_snapshot`, in `_IRRELEVANT_MODELS`, not in the admin.
+
 ### `SitePage`, `FaqCategory`, `FaqItem` — the prose the team edits
 
 The About page, the carat income guide and the FAQ. They used to ship in the

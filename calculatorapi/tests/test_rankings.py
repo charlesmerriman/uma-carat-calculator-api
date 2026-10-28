@@ -3,6 +3,7 @@ half-day cache (views/rankings.py, rankings_cache.py)."""
 
 from datetime import timedelta
 
+from django.core.cache import caches
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
@@ -10,9 +11,10 @@ from rest_framework.test import APIClient
 
 from calculatorapi.models import (
     GalleryPost, GalleryPostKind, PvpDeck, PvpDeckSlot, PvpGuide, PvpRun, PvpRunRace, PvpRunRunner, PvpTeam,
-    PvpTeamCard, PvpTeamMember, PvpUmaRecommendation, RankingsSnapshot, SupportCard, TeamTrialsRank, Uma, UserOshi,
-    UserPlannedBanner, UserPlannedPurchase,
+    PvpTeamCard, PvpTeamMember, PvpUmaRecommendation, RankingsPayload, RankingsSnapshot, SupportCard, TeamTrialsRank,
+    Uma, UserOshi, UserPlannedBanner, UserPlannedPurchase,
 )
+from calculatorapi import rankings_cache
 from calculatorapi.rankings_shares import SMALL, run_shares, share
 from calculatorapi.tests.base import CalculatorTestCase
 from calculatorapi.tests.factories import (
@@ -178,6 +180,80 @@ class HalfDayCacheTests(RankingsFixture):
         self.assertEqual(second, first)
         # Only the account's own reads: the payload's four never run.
         self.assertFalse(any("pvpdeckslot" in query["sql"].lower() for query in queries))
+
+
+class NobodyWaitsTests(RankingsFixture):
+    """A deploy starts from the stored build, and a stale copy is served at
+    once and rebuilt behind it (rankings_cache.py; the rebuild runs inline in
+    tests, tests/base.py)."""
+
+    KEY = rankings_cache.KEY.format(name="guides")
+
+    def setUp(self):
+        super().setUp()
+        self.client, _ = auth_client(make_user("staff", is_staff=True))
+
+    def age(self, hours):
+        """Make the stored and cached copy `hours` old."""
+        row = RankingsPayload.objects.get(key=self.KEY)
+        row.payload["generated_at"] = (timezone.now() - timedelta(hours=hours)).isoformat()
+        row.save()
+        caches[rankings_cache.CACHE_ALIAS].set(self.KEY, row.payload, None)
+        return row.payload
+
+    def test_a_restart_serves_the_stored_build_without_building(self):
+        first = self.client.get(URL).json()
+        caches[rankings_cache.CACHE_ALIAS].clear()  # what a deploy does
+        PvpUmaRecommendation.objects.filter(guide=self.guide).delete()
+        with CaptureQueriesContext(connection) as queries:
+            second = self.client.get(URL).json()
+        self.assertEqual(second, first)
+        self.assertFalse(any("pvpdeckslot" in query["sql"].lower() for query in queries))
+
+    def test_a_fresh_copy_is_not_rebuilt(self):
+        self.client.get(URL)
+        stamp = self.age(11)["generated_at"]
+        self.assertEqual(self.client.get(URL).json()["generated_at"], stamp)
+        self.assertEqual(RankingsPayload.objects.get(key=self.KEY).payload["generated_at"], stamp)
+
+    def test_a_stale_copy_is_served_then_rebuilt_behind_it(self):
+        self.client.get(URL)
+        stale = self.age(13)
+        PvpUmaRecommendation.objects.filter(guide=self.guide).delete()
+
+        served = self.client.get(URL).json()
+        self.assertEqual(served["generated_at"], stale["generated_at"])
+        self.assertTrue(served["guides"][0]["umas"])
+
+        rebuilt = self.client.get(URL).json()
+        self.assertNotEqual(rebuilt["generated_at"], stale["generated_at"])
+        self.assertEqual(rebuilt["guides"][0]["umas"], [])
+        self.assertEqual(RankingsPayload.objects.get(key=self.KEY).payload, rebuilt)
+
+    def test_one_rebuild_at_a_time(self):
+        self.client.get(URL)
+        stale = self.age(13)
+        rankings_cache._rebuilding.add(self.KEY)  # pylint: disable=protected-access
+        try:
+            with CaptureQueriesContext(connection) as queries:
+                served = self.client.get(URL).json()
+        finally:
+            rankings_cache._rebuilding.discard(self.KEY)  # pylint: disable=protected-access
+        self.assertEqual(served, stale)
+        self.assertFalse(any("pvpdeckslot" in query["sql"].lower() for query in queries))
+
+    def test_a_failed_rebuild_keeps_the_stale_copy(self):
+        self.client.get(URL)
+        stale = self.age(13)
+
+        def broken():
+            raise RuntimeError("boom")
+
+        with self.assertLogs("calculatorapi.rankings_cache", level="ERROR"):
+            served = rankings_cache.cached_payload("guides", broken)
+        self.assertEqual(served, stale)
+        self.assertEqual(RankingsPayload.objects.get(key=self.KEY).payload, stale)
+        self.assertNotIn(self.KEY, rankings_cache._rebuilding)  # pylint: disable=protected-access
 
 
 class GalleryRankingsTests(CalculatorTestCase):  # pylint: disable=too-many-instance-attributes

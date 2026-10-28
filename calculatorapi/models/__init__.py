@@ -127,4 +127,5 @@ from .gallery import (
 )
 from .discord_message import DiscordMessage
 from .team_queue import TeamQueueEntry
+from .rankings_payload import RankingsPayload
 from .rankings_snapshot import RankingsSnapshot
