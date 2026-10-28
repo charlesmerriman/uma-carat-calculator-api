@@ -948,6 +948,14 @@ anyone else without it. **Built at most once an hour** and never invalidated
 (`rankings_cache.py`, the `rankings` cache alias); `generated_at` says when. Four queries on
 a miss, gzipped.
 
+**Every `/rankings/*` payload carries `previous`**: its lists as they stood at the start of
+the week (`RankingsSnapshot`, rotated by the first rebuild after Monday 00:00 UTC), or null
+before a first snapshot exists. For `guides` it is `{"generated_at", "guides": [...]}` (the
+rows, so the client counts them under its filters); for the rest the ranked ids in order,
+`{"generated_at", "umas", "cards", "runs"}` (PvP; `runs` as `"<uma>-<style>"`, ranked from
+100 races), `{"umas", "cards"}` (gallery), `{"banners"}` (pull plans, `"<type>-<id>"` by
+planners) or `{"favourites"}` (players).
+
 ```json
 { "generated_at": "2026-10-27T20:15:03.120000+00:00",
   "scenarios": [{"id": 12, "name": "Trackblazer"}],
