@@ -942,9 +942,17 @@ are for the guide editor's pickers and its paste-from-the-sheet matching (2026-1
 ### `GET /rankings/guides`
 
 The Rankings page's Guide rankings tab (`/app/rankings`, `views/rankings.py`): every pick in
-the published guides, which the client counts (`utils/guideRankings.ts`). **Early access
-only** (`benefits.early_access`), like every `/rankings/*` route: 401 for a guest, 403 for
-anyone else without it. **Built at most once an hour** and never invalidated
+the published guides, which the client counts (`utils/guideRankings.ts`). **The whole
+payload is early access only** (`benefits.early_access`). Guides, PvP, the gallery and Players
+answer ANYONE, guests included (redesign step 6): a reader without early access gets the
+payload cut to the top three of each list with `"limited": true` and no `previous`
+(`rankings_public.limited`). For guides the cut is the server's own count with every box
+ticked, not rows: `{"limited": true, "totals": {"guides", "decks", "scenarios"}, "cards":
+[{"card", "decks", "borrows", "share"}], "umas": [{"uma", "picks", "share"}]}`. PvP and the
+gallery keep their counts with three umas, cards and trios (no `copied`); `runs.rows` keeps
+the top three RANKED rows (100 races up); Players keeps `engaged`, three favourites, the
+biggest Team Trials class and the Daily Carat Pack row. Pull plans stay behind the Raptive
+gate for everyone. **Built at most once an hour** and never invalidated
 (`rankings_cache.py`, the `rankings` cache alias); `generated_at` says when. Four queries on
 a miss, gzipped.
 

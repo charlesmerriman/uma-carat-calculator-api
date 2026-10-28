@@ -18,6 +18,7 @@ from calculatorapi.tests.factories import (
     auth_client, make_anniversary_event, make_champions_meeting, make_league_of_heroes, make_scenario,
     make_step_up_banner, make_support_banner, make_timeline, make_uma_banner, make_user,
 )
+from calculatorapi.rankings_public import limited
 from calculatorapi.views.rankings import deck_tier, guides_payload
 
 URL = "/rankings/guides"
@@ -68,14 +69,21 @@ class RankingsFixture(CalculatorTestCase):  # pylint: disable=too-many-instance-
 
 
 class AccessTests(RankingsFixture):
-    def test_a_guest_is_asked_to_sign_in(self):
-        self.assertEqual(APIClient().get(URL).status_code, 401)
+    def test_a_guest_gets_the_top_three_counted_on_the_server(self):
+        body = APIClient().get(URL).json()
+        self.assertTrue(body["limited"])
+        # No rows to count: the server's own count, every box ticked, three at most.
+        self.assertNotIn("guides", body)
+        self.assertNotIn("previous", body)
+        self.assertLessEqual(len(body["cards"]), 3)
+        self.assertLessEqual(len(body["umas"]), 3)
+        self.assertEqual(set(body["totals"]), {"guides", "decks", "scenarios"})
 
-    def test_a_plain_account_is_refused(self):
+    def test_a_plain_account_gets_the_same_cut(self):
         client, _ = auth_client(make_user("plain"))
-        response = client.get(URL)
-        self.assertEqual(response.status_code, 403)
-        self.assertNotIn("guides", response.json())
+        body = client.get(URL).json()
+        self.assertTrue(body["limited"])
+        self.assertNotIn("guides", body)
 
     def test_staff_and_a_granted_account_may_read(self):
         granted = make_user("tester")
@@ -239,10 +247,12 @@ class GalleryRankingsTests(CalculatorTestCase):  # pylint: disable=too-many-inst
             "umas": [self.oguri.id, self.maru.id],
         })
 
-    def test_early_access_only_and_a_real_event(self):
-        self.assertEqual(APIClient().get(self.url).status_code, 401)
-        plain, _ = auth_client(make_user("plain"))
-        self.assertEqual(plain.get(self.url).status_code, 403)
+    def test_anyone_else_gets_the_top_three_and_a_real_event(self):
+        body = APIClient().get(self.url).json()
+        self.assertTrue(body["limited"])
+        self.assertEqual((body["posts"], body["decks"]), (2, 3))
+        self.assertLessEqual(len(body["umas"]), 3)
+        self.assertNotIn("copied", body)
         self.assertEqual(self.client.get("/rankings/gallery/cm/9999").status_code, 404)
         self.assertEqual(self.client.get(f"/rankings/gallery/xx/{self.cm.id}").status_code, 404)
 
@@ -369,9 +379,18 @@ class PvpRankingsTests(CalculatorTestCase):  # pylint: disable=too-many-instance
             {"uma": self.maru.id, "style": "front", "races": 3, "wins": 1},
         ])
 
-    def test_early_access_only_and_a_real_event(self):
+    def test_anyone_else_gets_the_top_three_ranked_and_a_real_event(self):
+        self.log_run(self.player, [0, None, 1])
+        self.assertEqual(len(self.client.get(self.url).json()["runs"]["rows"]), 2)
         plain, _ = auth_client(make_user("plain"))
-        self.assertEqual(plain.get(self.url).status_code, 403)
+        body = plain.get(self.url).json()
+        self.assertTrue(body["limited"])
+        self.assertNotIn("previous", body)
+        self.assertEqual(body["built"]["teams"], 2)
+        self.assertLessEqual(len(body["built"]["umas"]), 3)
+        # Three races: under the ranked floor, so no place to show, so not sent.
+        self.assertEqual(body["runs"]["rows"], [])
+        self.assertEqual(body["runs"]["races"], 3)
         self.assertEqual(self.client.get("/rankings/pvp/cm/9999").status_code, 404)
 
 
@@ -445,6 +464,35 @@ class PlayersRankingsTests(CalculatorTestCase):
         )
         self.assertIsNotNone(selectors["on sale"]["end_date"])
 
-    def test_early_access_only(self):
-        plain, _ = auth_client(make_user("plain"))
-        self.assertEqual(plain.get(self.URL).status_code, 403)
+    def test_anyone_else_gets_the_band_and_three_favourites(self):
+        umas = [Uma.objects.create(name=f"Uma {index}") for index in range(5)]
+        for index, uma in enumerate(umas):
+            UserOshi.objects.create(user=make_user(f"fan {index}"), uma=uma, position=0)
+        body = APIClient().get(self.URL).json()
+        self.assertTrue(body["limited"])
+        self.assertEqual(len(body["favourites"]), 3)
+        self.assertEqual([row["key"] for row in body["income"]], ["daily_carat"])
+        self.assertEqual((body["budget"], body["selectors"]), ([], []))
+        self.assertLessEqual(len(body["ranks"]), 1)
+
+
+class PublicCutTests(CalculatorTestCase):
+    """rankings_public.limited: the top three by the client's own rules."""
+
+    def test_guides_count_borrows_in_alternatives_out_three_at_most(self):
+        def row(card, deck, role="main"):
+            return {"card": card, "deck": deck, "style": "pace", "tier": "standard", "role": role}
+        payload = {"generated_at": "x", "scenarios": [], "guides": [{
+            "kind": "cm", "event": 1, "scenario": 5,
+            "cards": [row(1, 1), row(1, 2, "borrow"), row(2, 1), row(3, 2), row(4, 3), row(9, 3, "alt")],
+            "umas": [{"uma": 7, "style": "pace", "stars": 3}, {"uma": 8, "style": "end", "stars": 1}],
+        }]}
+        cut = limited("guides", payload)
+        self.assertEqual(cut["totals"], {"guides": 1, "decks": 3, "scenarios": 1})
+        self.assertEqual(cut["cards"][0], {"card": 1, "decks": 2, "borrows": 1, "share": 2 / 3})
+        self.assertEqual([entry["card"] for entry in cut["cards"]], [1, 2, 3])
+        self.assertEqual([(entry["uma"], entry["share"]) for entry in cut["umas"]], [(7, 0.5), (8, 0.5)])
+
+    def test_pull_plans_have_no_cut(self):
+        with self.assertRaises(ValueError):
+            limited("pull-plans", {"generated_at": "x"})

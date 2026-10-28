@@ -13,10 +13,14 @@ one per tab:
   GET /rankings/players                    favourite umas, ranks, income
                                            options, selector picks
 
-EARLY ACCESS ONLY (owner, 2026-10-27: "Patreon only for now"). Every route
-checks benefits.early_access on the server; a guest gets 401, anyone else
-403. The page and its navbar item are drawn only for early access too, but
-that is presentation: this is the gate.
+THE TOP THREE FOR EVERYONE, THE REST FOR SUPPORTERS (redesign step 6,
+notes/rankings-redesign-plan.md; owner, 2026-10-27 "Patreon only for now",
+widened then). Guides, PvP, the gallery and Players answer anyone, guests
+included: early access (benefits.early_access) gets the whole payload, anyone
+else the same payload cut to the top three of each list, `"limited": true`
+(rankings_public.limited). Pull plans stay behind the Raptive gate
+(sees_pull_plans) for everyone. The page draws what it is sent; this is the
+gate.
 
 HOURLY (rankings_cache.py). Each payload is built at most once an hour,
 stamped with `generated_at`, and never invalidated: the page says how old it
@@ -69,6 +73,7 @@ from calculatorapi.models import (
 from calculatorapi.predictions import build_effective_date_maps
 from calculatorapi.rankings_cache import cached_payload
 from calculatorapi.rankings_figures import budget_by_class, pull_plan_figures, selector_windows
+from calculatorapi.rankings_public import limited
 
 TIERS = ("beginner", "standard", "whale")
 # Exact three-uma teams listed under "Trios players build most".
@@ -82,6 +87,13 @@ BORROW_SLOT = 6
 HONORABLE = "honorable mention"
 
 REFUSED = {"error": "Rankings are open to supporters first."}
+
+
+def _for_reader(request, name, build):
+    """The cached payload `name`, whole for early access, else cut to the top
+    three of each list (rankings_public.limited)."""
+    payload = cached_payload(name, build)
+    return payload if benefits.early_access(request.user) else limited(name, payload)
 
 
 def deck_tier(label):
@@ -165,11 +177,9 @@ def _scenarios_in_use(guides):
 
 @gzip_page
 @api_view(["GET"])
-@permission_classes([permissions.IsAuthenticated])
+@permission_classes([permissions.AllowAny])
 def rankings_guides(request):
-    if not benefits.early_access(request.user):
-        return Response(REFUSED, status=403)
-    return Response(cached_payload("guides", guides_payload))
+    return Response(_for_reader(request, "guides", guides_payload))
 
 
 def count_teams(teams):
@@ -268,15 +278,13 @@ def _most_first(counter):
 
 @gzip_page
 @api_view(["GET"])
-@permission_classes([permissions.IsAuthenticated])
+@permission_classes([permissions.AllowAny])
 def rankings_gallery(request, kind, event_id):
-    if not benefits.early_access(request.user):
-        return Response(REFUSED, status=403)
     try:
         event = pvp_teams.resolve_event(kind, event_id)
     except pvp_teams.TeamRefused:
         return Response({"error": "Event not found"}, status=404)
-    return Response(cached_payload(f"gallery:{kind}:{event_id}", lambda: gallery_payload(event)))
+    return Response(_for_reader(request, f"gallery:{kind}:{event_id}", lambda: gallery_payload(event)))
 
 
 def sees_pull_plans(user):
@@ -423,15 +431,13 @@ def pvp_payload(event):
 
 @gzip_page
 @api_view(["GET"])
-@permission_classes([permissions.IsAuthenticated])
+@permission_classes([permissions.AllowAny])
 def rankings_pvp(request, kind, event_id):
-    if not benefits.early_access(request.user):
-        return Response(REFUSED, status=403)
     try:
         event = pvp_teams.resolve_event(kind, event_id)
     except pvp_teams.TeamRefused:
         return Response({"error": "Event not found"}, status=404)
-    return Response(cached_payload(f"pvp:{kind}:{event_id}", lambda: pvp_payload(event)))
+    return Response(_for_reader(request, f"pvp:{kind}:{event_id}", lambda: pvp_payload(event)))
 
 
 # The income ranks the Players tab shows, by the label rank_distributions gives them.
@@ -523,8 +529,6 @@ def players_payload():
 
 @gzip_page
 @api_view(["GET"])
-@permission_classes([permissions.IsAuthenticated])
+@permission_classes([permissions.AllowAny])
 def rankings_players(request):
-    if not benefits.early_access(request.user):
-        return Response(REFUSED, status=403)
-    return Response(cached_payload("players", players_payload))
+    return Response(_for_reader(request, "players", players_payload))
