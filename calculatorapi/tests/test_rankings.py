@@ -479,6 +479,10 @@ class PlayersRankingsTests(CalculatorTestCase):
 class PublicCutTests(CalculatorTestCase):
     """rankings_public.limited: the top three by the client's own rules."""
 
+    def setUp(self):
+        for card in (1, 2, 3, 4, 9):
+            SupportCard.objects.create(id=card, name=f"Card {card}", card_type="speed", rarity=3)
+
     def test_guides_count_borrows_in_alternatives_out_three_at_most(self):
         def row(card, deck, role="main"):
             return {"card": card, "deck": deck, "style": "pace", "tier": "standard", "role": role}
@@ -492,6 +496,18 @@ class PublicCutTests(CalculatorTestCase):
         self.assertEqual(cut["cards"][0], {"card": 1, "decks": 2, "borrows": 1, "share": 2 / 3})
         self.assertEqual([entry["card"] for entry in cut["cards"]], [1, 2, 3])
         self.assertEqual([(entry["uma"], entry["share"]) for entry in cut["umas"]], [(7, 0.5), (8, 0.5)])
+
+    def test_a_card_with_no_type_is_left_off_as_the_page_does(self):
+        SupportCard.objects.filter(id=1).update(card_type="")
+        payload = {"generated_at": "x", "scenarios": [], "guides": [{
+            "kind": "cm", "event": 1, "scenario": None, "umas": [],
+            "cards": [{"card": 1, "deck": deck, "style": "pace", "tier": "standard", "role": "main"} for deck in (1, 2)]
+            + [{"card": 2, "deck": 1, "style": "pace", "tier": "standard", "role": "main"}],
+        }]}
+        cut = limited("guides", payload)
+        self.assertEqual([entry["card"] for entry in cut["cards"]], [2])
+        # Its decks still count toward every share.
+        self.assertEqual(cut["totals"]["decks"], 2)
 
     def test_pull_plans_have_no_cut(self):
         with self.assertRaises(ValueError):

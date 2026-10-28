@@ -22,6 +22,8 @@ editors) until the owner lifts it, whoever is asking.
 
 from collections import defaultdict
 
+from calculatorapi.models import SupportCard
+
 # Rows a limited reader gets per list.
 TOP = 3
 # A win rate takes a place from this many races (the client's RANKED_RACES).
@@ -88,7 +90,15 @@ def _guides(payload):
     rules (utils/guideRankings.ts), the top three of each list with the band's
     totals."""
     guides = payload["guides"]
-    cards, every_deck = _guide_cards(guides)
+    # The page drops a card it can't type (its card-type boxes can't place it),
+    # so the count here does too, or a guest's top three would differ from a
+    # supporter's.
+    ids = {row["card"] for guide in guides for row in guide["cards"]}
+    typed = set(
+        SupportCard.objects.filter(id__in=ids).exclude(card_type__isnull=True).exclude(card_type="")
+        .values_list("id", flat=True)
+    )
+    cards, every_deck = _guide_cards(guides, typed)
     return {
         "totals": {
             "guides": len(guides),
@@ -100,16 +110,17 @@ def _guides(payload):
     }
 
 
-def _guide_cards(guides):
+def _guide_cards(guides, typed):
     """([{"card", "decks", "borrows"}] most decks first, every deck counted): a
     card once per deck it is the card or the borrowed card in, alternatives
-    out. Ties: more events first, then first seen."""
+    out, cards outside `typed` left off (their decks still count). Ties: more
+    events first, then first seen."""
     every_deck = set()
     decks, borrows, events, seen = defaultdict(set), defaultdict(int), defaultdict(set), []
     for guide in guides:
         for row in guide["cards"]:
             every_deck.add(row["deck"])
-            if row["role"] == "alt":
+            if row["role"] == "alt" or row["card"] not in typed:
                 continue
             if row["card"] not in decks:
                 seen.append(row["card"])
