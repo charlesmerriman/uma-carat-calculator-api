@@ -62,9 +62,59 @@ def render_digest(data, probe):
     if probe:
         p95 = f", 95% of responses within {probe['p95_seconds']} s" if probe["p95_seconds"] is not None else ""
         lines.append(f"**Site health** {probe['uptime_pct']}% of {probe['checks']:,} checks good{p95}")
+        hour = probe.get("slowest_hour")
+        if hour:
+            within = (
+                f"95% of API responses within {hour['p95_seconds']} s"
+                if hour["p95_seconds"] is not None
+                else "no API response at all"
+            )
+            lines.append(
+                f"**Slowest hour** {hour['hour']:02d}:00 UTC, {within} "
+                f"({hour['good']:,} of {hour['checks']:,} checks good)"
+            )
     else:
         lines.append("**Site health** no full day of checks yet (the bot restarted)")
     return discord.Embed(title=f"Yesterday, {data['date']}", description="\n".join(lines), colour=0x3B82F6)
+
+
+def _megabytes(size_bytes):
+    return f"{size_bytes / 1_000_000:,.0f} MB"
+
+
+def render_database_week(data, today):
+    """The Monday post, from GET /bot/database: the database's size and running
+    totals, and the queries that took the most total time once
+    pg_stat_statements is installed (notes/server-diagnostics-plan.md, item 10)."""
+    overview, top = data.get("overview"), data.get("top_queries")
+    lines = []
+    if overview:
+        since = f"since {overview['since'][:10]}" if overview.get("since") else "since the statistics began"
+        lines.append(f"**Size** {_megabytes(overview['size_bytes'])}")
+        if overview.get("cache_hit_pct") is not None:
+            lines.append(f"**Reads served from memory** {overview['cache_hit_pct']}%, {since}")
+        lines.append(
+            f"**Deadlocks** {overview['deadlocks']:,}, **temp files** {overview['temp_files']:,} "
+            f"({_megabytes(overview['temp_bytes'])}), {since}"
+        )
+    else:
+        lines.append("The site sent no database numbers.")
+    if top is None:
+        lines += ["", "Query statistics are off: `pg_stat_statements` isn't installed on the database yet."]
+    elif not top.get("queries"):
+        lines += ["", "No query statistics yet."]
+    else:
+        since = f" since {top['since'][:10]}" if top.get("since") else ""
+        lines += ["", f"**Most time-consuming queries**{since}:"]
+        for number, query in enumerate(top["queries"], start=1):
+            # In backticks, so a backtick inside would end the code span early.
+            text = query["query"].replace("`", "'")
+            lines.append(f"{number}. `{text}`")
+            lines.append(
+                f"{_plural(query['calls'], 'call')}, {query['total_ms'] / 1000:,.0f} s in all, "
+                f"{query['mean_ms']} ms each"
+            )
+    return discord.Embed(title=f"The database, week of {today:%Y-%m-%d}", description="\n".join(lines), colour=0x3B82F6)
 
 
 def deploy_line(deployment, app_id):
@@ -99,6 +149,8 @@ class Ops:
         # The UTC date whose digest is settled, so the retry loop stops asking.
         # In memory only: after a restart the site's claim answers instead.
         self.digest_done_for = None
+        # The same, for the Monday database post.
+        self.database_done_for = None
 
     # ── The daily digest ──
 
@@ -142,22 +194,59 @@ class Ops:
         self.digest_done_for = today
         return True
 
+    # ── The database, on Mondays ──
+
+    def database_due(self, now):
+        """Mondays from the digest hour on, until this Monday's post is settled.
+        Rides the digest's 5-minute loop, so a failed try is retried the same way."""
+        return now.weekday() == 0 and now.hour >= self.config.digest_hour_utc and self.database_done_for != now.date()
+
+    async def database_week(self, today):
+        """Post the database's numbers once a week. Returns whether it posted."""
+        key = f"database:{today:%Y%m%d}"
+        try:
+            claim = await self.api.claim(key, self.config.ops_channel_id)
+        except SiteUnavailable:
+            return False
+        if claim.status != 201:
+            self.database_done_for = today
+            return False
+        try:
+            answer = await self.api.database()
+        except SiteUnavailable:
+            answer = None
+        if answer is None or not answer.ok:
+            logger.warning("Database post for %s not posted: the site's numbers didn't arrive; will retry", today)
+            await self._release(key)
+            return False
+        ops = await self.get_channel(self.config.ops_channel_id)
+        try:
+            message = await ops.send(embed=render_database_week(answer.data, today), allowed_mentions=NO_MENTIONS)
+        except discord.HTTPException:
+            await self._release(key)
+            raise
+        await self._record(key, message.id)
+        self.database_done_for = today
+        return True
+
     # ── The health probe ──
 
     async def check(self, session, now):
         """One probe; posts the alert or the recovery when the state flips.
         Returns the flip ("down", "up") or None."""
         readings = await health.probe(session, self.config.site_url, self.config.probe_slow_seconds)
+        logger.info("probe %s", health.log_line(readings))
         change = self.tracker.feed(readings, now)
         if change is None:
             return None
         ops = await self.get_channel(self.config.ops_channel_id)
         if change == "down":
             peaks = await self.do.peaks() if self.do else None
+            routes = await self._busiest_routes()
             role = self.config.team_role_id
             await ops.send(
                 content=f"<@&{role}>" if role else None,
-                embed=health.render_alert(self.tracker, peaks),
+                embed=health.render_alert(self.tracker, peaks, routes),
                 # The one ping the bot makes: @Web Developer on trouble, by the
                 # owner's choice; never anyone else, never on recovery.
                 allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=[discord.Object(role)])
@@ -166,6 +255,17 @@ class Ops:
         else:
             await ops.send(health.render_recovery(self.tracker, now), allowed_mentions=NO_MENTIONS)
         return change
+
+    async def _busiest_routes(self):
+        """GET bot/health's snapshot for the alert, or None. ONE try, no retry:
+        the API is the thing that's slow, so it may well not answer, and the
+        alert goes out either way (the probe never adds load while the site is
+        bad: health.py)."""
+        try:
+            answer = await self.api.health()
+        except SiteUnavailable:
+            return None
+        return answer.data if answer.ok else None
 
     # ── Deploy news ──
 

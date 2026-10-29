@@ -6,8 +6,6 @@ from rest_framework.decorators import action
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework import permissions, status
-from rest_framework.exceptions import ValidationError as DRFValidationError
-from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.db.models import Prefetch
 from django.http import HttpResponse
@@ -62,182 +60,7 @@ from calculatorapi.views.calculation_constants import CalculationConstantsSerial
 from calculatorapi.views.user_planned_purchase import UserPlannedPurchaseSerializer
 from calculatorapi.views.user_step_up_selection import UserStepUpSelectionSerializer
 from calculatorapi.views.plan import PlanSerializer
-
-
-def _writable_columns(serializer_class, context):
-    """Pair each writable field of `serializer_class` with the column it writes.
-
-    Returns ({body key: (serializer field, model column)}, {writable keys that
-    write no single column}). _row_is_unchanged can only vouch for the first
-    kind; a key of the second kind always takes the full save path.
-
-    Built from a throwaway serializer once per collection per request rather
-    than cached at module scope: bound DRF fields are not meant to be shared
-    across threads, and building them costs well under a millisecond.
-    """
-    model = serializer_class.Meta.model
-    by_name = {column.name: column for column in model._meta.concrete_fields}
-    comparable, opaque = {}, set()
-    for key, field in serializer_class(context=context or {}).fields.items():
-        if field.read_only:
-            # `id`, and whatever the scope writes (`user`, `plan`): the
-            # serializer ignores these keys in a body, so they compare as equal.
-            continue
-        column = by_name.get(field.source)
-        if column is None:
-            opaque.add(key)
-        else:
-            comparable[key] = (field, column)
-    return comparable, opaque
-
-
-def _as_pk(model, value):
-    """`value` as `model`'s primary key, or None if it can't be one.
-
-    The stored rows are keyed by int, and a JSON body could carry "12". None
-    reads as "not found", the same 404 a foreign id gets (it used to be a 500).
-    """
-    try:
-        return model._meta.pk.to_python(value)
-    except (DjangoValidationError, TypeError, ValueError):
-        return None
-
-
-def _row_is_unchanged(instance, row, columns):
-    """Would saving `row` over `instance` write exactly what is stored?
-
-    Only keys the body carries are compared (the save is partial, so an absent
-    key leaves its column alone either way). A plain value is parsed the way
-    the serializer would parse it, validators included, so a malformed value
-    still reaches the serializer and gets its 400 even on a row that otherwise
-    looks untouched. A relation is compared by id WITHOUT the lookup the
-    serializer makes, which is the point: that lookup is a query per field
-    per row. An id that names a since-deleted target and is already stored
-    therefore passes, like any grandfathered value.
-
-    Anything this can't vouch for answers False, and False is always safe: the
-    row takes the same validate-and-save path every row took before.
-
-    Not run here: the serializer's validate() and validate_<field>() methods.
-    The banner and purchase serializers have no validate_<field>(), and their
-    validate() only checks (it never rewrites attrs), which is what makes
-    "equal to stored" mean "the save is a no-op". A serializer that grows a
-    transforming validate_<field>() or validate() must revisit this.
-    """
-    comparable, opaque = columns
-    for key, value in row.items():
-        if key in opaque:
-            return False
-        if key not in comparable:
-            continue
-        field, column = comparable[key]
-        try:
-            if column.is_relation:
-                # DRF's PrimaryKeyRelatedField refuses a boolean pk, and a null
-                # where the field disallows one.
-                if isinstance(value, bool) or (value is None and not field.allow_null):
-                    return False
-                incoming = None if value is None else column.target_field.to_python(value)
-            else:
-                incoming = field.run_validation(value)
-        except (DRFValidationError, DjangoValidationError, TypeError, ValueError):
-            return False
-        if incoming != getattr(instance, column.attname):
-            return False
-    return True
-
-
-def _replace_user_rows(rows, *, model, serializer_class, scope, missing_message,
-                       context=None):
-    # pylint: disable=too-many-arguments
-    # Every one after `rows` is keyword-only and names a distinct part of the
-    # contract below; bundling them into a config object would hide which
-    # collection is being reconciled at each call site.
-    """Reconcile one of the PATCH body's user-owned collections against the DB.
-
-    The contract every such collection shares:
-
-      * key absent from the body (rows is None) -> leave the collection alone
-      * []                                      -> delete every row
-      * row carrying an id                      -> partial update, 404 if the
-                                                   id isn't inside `scope`
-      * row without an id                       -> create, inside `scope`
-
-    `scope` is the filter that says WHICH rows this body owns, and always
-    carries the user. It is one dict for the delete, the lookup and the save,
-    so the three can never disagree. Each collection narrows differently:
-    banners to the named plan (`plan`), purchases to the stats block that
-    plan reads (`income_profile`, None for the account's own; see
-    plans.purchase_scope), step-up selections to the account alone. The
-    narrowing is not optional in spirit: the delete below removes every row
-    the body did not name, so reconciling plan A's body against ALL of the
-    user's banner rows would wipe plans B through E, and reconciling one
-    profile's purchases against the account's would do the same. The caller
-    resolves the plan through plans.get_owned_plan(), so a scope that reaches
-    here is already known to be this user's.
-
-    `context` is handed to every row's serializer. Collections that validate a
-    row against something outside it (step-up selections against the JP cutoff,
-    and against what the user already had stored) pass their shared lookups in
-    that way rather than rebuilding them per row.
-
-    Returns an error Response to bail out with, or None on success. The caller
-    runs inside transaction.atomic(), so returning early rolls back whatever
-    earlier collections had already written -- a half-saved plan is worse than
-    a rejected one.
-
-    NOTE for collections with a UNIQUE constraint: sending rows WITHOUT ids
-    makes this a delete-all-then-create, which is collision-free. Sending ids
-    updates rows one at a time, so moving a value between two rows (a card from
-    slot 3 to slot 4) transiently duplicates it and trips the constraint.
-    UserStepUpSelection relies on the id-less form.
-
-    A row carrying an id that arrives EXACTLY as stored is skipped: no
-    validation, no write. Auto-save sends the whole plan after every edit, so
-    on a typical save every row but one is unchanged, and re-validating and
-    rewriting each cost four queries per row (133 for a 30-row plan, measured
-    2026-10-29, when this was ~45% of the server's time at the daily peak).
-    See _row_is_unchanged for what "exactly" means. Skipping an untouched
-    row's validation is the grandfathering every collection already wants:
-    a rule that tightened after the row was saved must not 400 a plan its
-    owner never touched (UserPlannedPurchaseSerializer._pairing_is_unchanged).
-    """
-    if rows is None:
-        return None
-
-    incoming_ids = [row["id"] for row in rows if "id" in row]
-    model.objects.filter(**scope).exclude(id__in=incoming_ids).delete()
-
-    # What the delete left is exactly the rows this body names and owns:
-    # read them in ONE query, where looking each up cost one query per row.
-    # An id-less body (step-up selections) has nothing left to read.
-    stored, columns = {}, None
-    if incoming_ids:
-        stored = {instance.pk: instance for instance in model.objects.filter(**scope)}
-        columns = _writable_columns(serializer_class, context)
-
-    for row in rows:
-        row_id = row.get("id")
-        if row_id:
-            # An id from ANOTHER of this user's plans is "not found" too:
-            # a body is reconciled against one plan, never across them.
-            instance = stored.get(_as_pk(model, row_id))
-            if instance is None:
-                return Response({"error": missing_message},
-                                status=status.HTTP_404_NOT_FOUND)
-            if _row_is_unchanged(instance, row, columns):
-                continue
-            serializer = serializer_class(
-                instance, data=row, partial=True, context=context or {}
-            )
-        else:
-            serializer = serializer_class(data=row, context=context or {})
-
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        serializer.save(**scope)
-
-    return None
+from calculatorapi.views.user_rows import replace_user_rows
 
 
 def _planned_banner_kind_rank(planned_banner):
@@ -289,6 +112,33 @@ def _stored_selection_pairs(user):
     return pairs
 
 
+def _save_contexts(data, user):
+    """{collection key: serializer context} for the collections that take one,
+    each None when the body leaves that collection out.
+
+    The step-up picks' context is snapshotted BEFORE any collection is
+    written, because replace_user_rows deletes the user's existing selections
+    before recreating them: read afterwards, every pick would look new. See
+    UserStepUpSelectionSerializer._validate_eligibility for why grandfathering
+    the stored set is what stops a corrected cutoff from 400ing an untouched
+    plan. Purchases check a selector's pick against the same eligibility maps,
+    read from the cache (first_jp_date_maps).
+    """
+    selection_context = None
+    if data.get("user_step_up_selection_data") is not None:
+        selection_context = {
+            "stored_pairs": _stored_selection_pairs(user),
+            "first_jp_dates": first_jp_date_maps(),
+        }
+    purchase_context = None
+    if data.get("user_planned_purchase_data") is not None:
+        purchase_context = {"first_jp_dates": first_jp_date_maps()}
+    return {
+        "user_step_up_selection_data": selection_context,
+        "user_planned_purchase_data": purchase_context,
+    }
+
+
 def build_user_context():
     """The three lookups the user-scoped collections need, and nothing else.
 
@@ -333,6 +183,21 @@ def user_context():
         context = build_user_context()
         public_payload_cache.store_user_context(context)
     return context
+
+
+def first_jp_date_maps():
+    """(uma_map, support_map), the selector-eligibility maps, from the cached
+    user_context() instead of two fresh aggregate queries.
+
+    Saves validate step-up picks and selector purchases against these maps, and
+    used to rebuild them every time: pg_stat_statements put those two queries
+    at the top of the database's total time for October (1,240,706 runs each,
+    ~6,100 s together), because every auto-save carries the step-up picks. They
+    read only catalogue tables, so the cached copy, dropped with the payload on
+    any catalogue edit, is exactly as fresh as what signed-in loads already use.
+    """
+    card_context = user_context()[2]
+    return card_context["uma_first_jp_dates"], card_context["support_first_jp_dates"]
 
 
 def planned_banners_in_order(rows, *, emap):
@@ -836,7 +701,7 @@ class CalculatorViewSet(ViewSet):
         user = request.user
 
         # WHICH PLAN the banner rows belong to. The body says; the server never
-        # guesses for a client that knows about plans. _replace_user_rows
+        # guesses for a client that knows about plans. replace_user_rows
         # deletes every row the body does not name, and auto-save fires five
         # seconds after the last edit -- so "whatever plan is active when the
         # save arrives" would let someone who edits plan A and switches to B
@@ -871,18 +736,8 @@ class CalculatorViewSet(ViewSet):
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             serializer.save()
 
-        # Snapshotted BEFORE any collection is written, because
-        # _replace_user_rows deletes the user's existing selections before
-        # recreating them -- read it afterwards and every pick would look new.
-        # See UserStepUpSelectionSerializer._validate_eligibility for why
-        # grandfathering the stored set is what stops a corrected cutoff from
-        # 400ing an untouched plan.
-        selection_context = None
-        if request.data.get("user_step_up_selection_data") is not None:
-            selection_context = {
-                "stored_pairs": _stored_selection_pairs(user),
-                "first_jp_dates": build_first_jp_date_maps(),
-            }
+        # Built BEFORE any collection is written: see _save_contexts.
+        contexts = _save_contexts(request.data, user)
 
         # Banners are scoped to the plan; purchases to the stats block the
         # plan reads (the account's own, or its profile's); step-up selections
@@ -894,15 +749,16 @@ class CalculatorViewSet(ViewSet):
              UserPlannedBannerSerializer, "Banner not found", None,
              {"user": user, "plan": plan}),
             ("user_planned_purchase_data", UserPlannedPurchase,
-             UserPlannedPurchaseSerializer, "Purchase not found", None,
+             UserPlannedPurchaseSerializer, "Purchase not found",
+             contexts["user_planned_purchase_data"],
              plans.purchase_scope(plan)),
             ("user_step_up_selection_data", UserStepUpSelection,
              UserStepUpSelectionSerializer, "Step-up selection not found",
-             selection_context, {"user": user}),
+             contexts["user_step_up_selection_data"], {"user": user}),
         )
         for key, model, serializer_class, missing_message, context, scope \
                 in collections:
-            error = _replace_user_rows(
+            error = replace_user_rows(
                 request.data.get(key),
                 model=model,
                 serializer_class=serializer_class,

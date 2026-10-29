@@ -54,12 +54,19 @@ repeated it.
 `bot/ops.py`, `bot/health.py`, `bot/digitalocean.py`, on while `DISCORD_OPS_CHANNEL_ID` is set:
 
 - **Daily digest** at `DIGEST_HOUR_UTC` (08:00) in `#calc-ops`, from `GET bot/digest`
-  (numbers only), plus the probe's day (uptime, 95th-percentile first byte).
-- **Health probe** every minute: `/api/calculator-data` and `/` from outside
-  (`SITE_URL`, else `API_BASE_URL` minus `/api`), bad on an error, a timeout, a non-200,
-  the wrong page or first byte over `PROBE_SLOW_SECONDS` (3). Three bad in a row post ONE
-  alert, pinging `@Web Developer` (`DISCORD_TEAM_ROLE_ID`), with the API's CPU, memory and
-  restarts when DigitalOcean is configured; three good post ONE recovery line, no ping.
+  (numbers only), plus the probe's day (uptime, 95th-percentile first byte) and its
+  slowest hour for the API request, the one place a request queue shows from outside.
+  On Mondays, from the same loop, **the database's week**: its size, the share of reads served
+  from memory, deadlocks and temp files, and the five most time-consuming queries once
+  `pg_stat_statements` is installed (`GET bot/database`, claimed as `database:<yyyymmdd>`).
+- **Health probe** every minute: `/api/calculator-data` and `/` from outside (`SITE_URL`,
+  else `API_BASE_URL` minus `/api`), one `probe api 200 0.31s, home 200 0.08s` log line per
+  check. Bad on an error, a timeout, a non-200, the wrong page or first byte over
+  `PROBE_SLOW_SECONDS` (3). Three bad in a row post ONE alert, pinging `@Web Developer`
+  (`DISCORD_TEAM_ROLE_ID`), with the API's CPU, memory and restarts when DigitalOcean is
+  configured, and the five busiest routes and the database's connections from
+  `GET bot/health` when the API answers (one try, no retry); three good post ONE recovery
+  line, no ping.
 - **Deploy news** in `#calc-dev-log` (`DISCORD_DEVLOG_CHANNEL_ID`): one line per finished
   deploy (live, failed, cancelled), polled every 2 minutes. Needs `DO_API_TOKEN` (a
   READ-ONLY token: custom scopes app read + monitoring read, never the admin's) and

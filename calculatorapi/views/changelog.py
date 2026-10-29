@@ -32,7 +32,10 @@ class ChangelogEntryViewSet(ViewSet):
     permission_classes = [permissions.AllowAny]
 
     def list(self, request):
-        entries = ChangelogEntry.objects.all().order_by("-date", "-id")
+        # The changes in ONE query, not one per entry: every /app load asks
+        # for this, and with ~30 entries it was 9% of the server's time at the
+        # 2026-10-29 peak. The prefetch keeps ChangelogChange's own ordering.
+        entries = ChangelogEntry.objects.prefetch_related("changes").order_by("-date", "-id")
         serializer = ChangelogEntrySerializer(entries, many=True)
         return Response(serializer.data)
 

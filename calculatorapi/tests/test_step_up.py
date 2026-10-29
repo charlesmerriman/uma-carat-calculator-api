@@ -7,7 +7,8 @@
 import datetime
 
 from django.core.exceptions import ValidationError
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError, connection, transaction
+from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 from rest_framework.test import APIClient
 
@@ -178,7 +179,7 @@ class BannerStepUpTests(CalculatorTestCase):
         self.assertEqual(res.status_code, 400)
 
     def test_partial_update_keeps_the_existing_target(self):
-        # _replace_user_rows patches with partial=True. A body that names only
+        # replace_user_rows patches with partial=True. A body that names only
         # number_of_pulls must not read as "no target provided".
         step_up = make_step_up_banner()
         row = UserPlannedBanner.objects.create(
@@ -618,3 +619,89 @@ class UserStepUpSelectionTests(CalculatorTestCase):
         body = self.client.get('/calculator-data').json()
         self.assertEqual(len(body['user_step_up_selection_data']), 2)
         self.assertEqual(len(body['user_planned_banner_data']), 1)
+
+
+class UnchangedStepUpPicksTests(CalculatorTestCase):
+    """An auto-save that resends the same picks leaves them alone
+    (views/user_rows.py, _idless_body_is_unchanged), and every real change
+    still takes the delete-and-recreate path."""
+
+    def setUp(self):
+        super().setUp()
+        self.user = make_user()
+        self.client, _ = auth_client(self.user)
+        event = make_anniversary_event(
+            name='5th Anniversary',
+            jp_cutoff_date=datetime.date(2026, 1, 30),
+            parts=[make_timeline(name='5th Part 2')],
+        )
+        self.step_up = make_step_up_banner(
+            event=event, timeline=event.banner_links.first().banner_timeline,
+            name='5th ★3 Select Step-Up', card_type='uma', banner_count=2,
+        )
+        self.umas = []
+        for n in range(3):
+            uma = Uma.objects.create(name=f'Uma {n}')
+            debut = make_timeline(name=f'Uma {n} debut', jp_start_date=_dt(2025, 6, n + 1))
+            UmasOnUmaBanner.objects.create(uma=uma, banner_uma=make_uma_banner(debut, name=f'Uma {n} banner'))
+            self.umas.append(uma)
+
+    def _picks(self, *umas, target=None):
+        """The rows as the client sends them: every writable field, no ids."""
+        return [
+            {'banner_step_up': self.step_up.id, 'uma': uma.id, 'support': None, 'slot': slot,
+             'is_target': uma == target}
+            for slot, uma in enumerate(umas, start=1)
+        ]
+
+    def _save(self, picks):
+        """Save `picks`; the statements that wrote to the picks table."""
+        with CaptureQueriesContext(connection) as ctx:
+            res = self.client.patch('/calculator-data', {'user_step_up_selection_data': picks}, format='json')
+        self.assertEqual(res.status_code, 200, res.content)
+        return [
+            query['sql'] for query in ctx.captured_queries
+            if 'calculatorapi_userstepupselection' in query['sql']
+            and query['sql'].lstrip().upper().startswith(('INSERT', 'UPDATE', 'DELETE'))
+        ]
+
+    def _stored(self):
+        return sorted(UserStepUpSelection.objects.filter(user=self.user).values_list('slot', 'uma_id', 'is_target'))
+
+    def test_resending_the_same_picks_writes_nothing(self):
+        picks = self._picks(*self.umas, target=self.umas[0])
+        self.assertTrue(self._save(picks))
+        ids = set(UserStepUpSelection.objects.values_list('id', flat=True))
+        self.assertEqual(self._save(picks), [])
+        self.assertEqual(set(UserStepUpSelection.objects.values_list('id', flat=True)), ids)
+
+    def test_the_same_picks_in_another_order_are_unchanged(self):
+        picks = self._picks(*self.umas)
+        self._save(picks)
+        self.assertEqual(self._save(list(reversed(picks))), [])
+
+    def test_a_moved_card_is_written(self):
+        # Slots 1 and 2 trade cards: the move the id-less form exists for.
+        self._save(self._picks(*self.umas))
+        self.assertTrue(self._save(self._picks(self.umas[1], self.umas[0], self.umas[2])))
+        self.assertEqual(self._stored(), [
+            (1, self.umas[1].id, False), (2, self.umas[0].id, False), (3, self.umas[2].id, False),
+        ])
+
+    def test_a_new_target_is_written(self):
+        self._save(self._picks(*self.umas))
+        self.assertTrue(self._save(self._picks(*self.umas, target=self.umas[2])))
+        self.assertIn((3, self.umas[2].id, True), self._stored())
+
+    def test_a_pick_left_out_is_deleted(self):
+        self._save(self._picks(*self.umas))
+        self.assertTrue(self._save(self._picks(*self.umas[:2])))
+        self.assertEqual(len(self._stored()), 2)
+
+    def test_a_row_missing_a_field_takes_the_full_path(self):
+        # is_target left out is recreated with its default, which a comparison
+        # against the stored value couldn't see, so nothing may be skipped.
+        self._save(self._picks(*self.umas, target=self.umas[0]))
+        partial = [{key: value for key, value in row.items() if key != 'is_target'} for row in self._picks(*self.umas)]
+        self.assertTrue(self._save(partial))
+        self.assertEqual([target for _, _, target in self._stored()], [False, False, False])

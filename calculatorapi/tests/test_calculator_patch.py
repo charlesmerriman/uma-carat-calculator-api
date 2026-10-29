@@ -4,6 +4,7 @@
 # pylint: disable=too-many-instance-attributes,too-many-lines
 
 import datetime
+from unittest import mock
 
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
@@ -20,6 +21,7 @@ from calculatorapi.models import (
 from calculatorapi import plans
 from calculatorapi.tests.base import CalculatorTestCase
 from calculatorapi.views.user_planned_banner import NOTE_MAX_LENGTH
+from calculatorapi.views.calculator import user_context
 from calculatorapi.tests.factories import (
     make_user,
     make_timeline,
@@ -365,7 +367,7 @@ class CalculatorPatchTests(CalculatorTestCase):  # pylint: disable=too-many-publ
     # already committed. This is a known limitation in the current implementation.
 
 
-class UserPlannedPurchaseTests(CalculatorTestCase):
+class UserPlannedPurchaseTests(CalculatorTestCase):  # pylint: disable=too-many-public-methods
     """The PATCH upsert and the selector-target validation behind it."""
 
     def setUp(self):
@@ -466,6 +468,32 @@ class UserPlannedPurchaseTests(CalculatorTestCase):
         res = self._patch([
             {'product': self.uma_selector.id, 'quantity': 1,
              'target_uma': self.late_uma.id}
+        ])
+        self.assertEqual(res.status_code, 400)
+        self.assertEqual(UserPlannedPurchase.objects.filter(user=self.user).count(), 0)
+
+    def test_a_save_reads_the_cached_eligibility_maps(self):
+        # The two first-JP aggregates topped the database's total time in
+        # October (pg_stat_statements), because every save rebuilt them. With
+        # the catalogue context cached, as any signed-in load leaves it, a save
+        # carrying a selector pick and step-up picks rebuilds nothing.
+        user_context()
+        with mock.patch('calculatorapi.views.user_planned_purchase.build_first_jp_date_maps') as purchase, \
+                mock.patch('calculatorapi.views.calculator.build_first_jp_date_maps') as selection:
+            res = self.client.patch('/calculator-data', {
+                'user_planned_purchase_data': [
+                    {'product': self.uma_selector.id, 'quantity': 1, 'target_uma': self.eligible_uma.id}
+                ],
+                'user_step_up_selection_data': [],
+            }, format='json')
+        self.assertEqual(res.status_code, 200)
+        purchase.assert_not_called()
+        selection.assert_not_called()
+
+    def test_the_cached_maps_still_refuse_a_pick_too_new(self):
+        user_context()
+        res = self._patch([
+            {'product': self.uma_selector.id, 'quantity': 1, 'target_uma': self.late_uma.id}
         ])
         self.assertEqual(res.status_code, 400)
         self.assertEqual(UserPlannedPurchase.objects.filter(user=self.user).count(), 0)
@@ -939,7 +967,7 @@ class UnchangedRowsTests(CalculatorTestCase):
 
     Auto-save sends the whole plan after every edit, so most rows of a typical
     save are unchanged. Validating and rewriting each cost four queries per
-    row; see _replace_user_rows and _row_is_unchanged in views/calculator.py.
+    row; see replace_user_rows and _row_is_unchanged in views/user_rows.py.
     """
 
     def setUp(self):

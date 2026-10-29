@@ -105,14 +105,16 @@ class SiteBot(discord.Client):
         digest on 2026-10-22. Every 5 minutes it tries again until the day is
         settled (Ops.digest_due), and 5 minutes is also the site's report cache
         (analytics/cache.py), so a retry reads a build the site finished after
-        we gave up. A restart past the hour still posts, once, thanks to the claim."""
+        we gave up. A restart past the hour still posts, once, thanks to the claim.
+        On Mondays the database's week (Ops.database_week) rides the same loop."""
         now = discord.utils.utcnow()
-        if not self.ops.digest_due(now):
-            return
         try:
-            await self.ops.digest(now.date())
+            if self.ops.digest_due(now):
+                await self.ops.digest(now.date())
+            if self.ops.database_due(now):
+                await self.ops.database_week(now.date())
         except discord.HTTPException:
-            logger.warning("Daily digest failed; retrying in 5 minutes", exc_info=True)
+            logger.warning("Daily digest or database post failed; retrying in 5 minutes", exc_info=True)
 
     @tasks.loop(minutes=2)
     async def deploy_watch(self):

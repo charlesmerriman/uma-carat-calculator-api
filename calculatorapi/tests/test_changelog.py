@@ -10,7 +10,9 @@ from unittest import mock
 import requests
 
 from django.core.management import call_command
+from django.db import connection
 from django.test import override_settings
+from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 from rest_framework.test import APIClient
 
@@ -64,6 +66,18 @@ class ChangelogEndpointTests(CalculatorTestCase):
         self.assertEqual(
             [c['category'] for c in newest['changes']], ['added', 'changed']
         )
+
+    def test_the_list_costs_the_same_queries_however_many_entries(self):
+        def queries():
+            with CaptureQueriesContext(connection) as ctx:
+                self.assertEqual(APIClient().get('/changelog').status_code, 200)
+            return len(ctx.captured_queries)
+
+        before = queries()
+        for n in range(5):
+            entry = ChangelogEntry.objects.create(title=f'Patch {n}', date=datetime.date(2026, 8, n + 1))
+            ChangelogChange.objects.create(entry=entry, category=ChangelogChange.FIXED, text='A fix.')
+        self.assertEqual(queries(), before)
 
     def test_retrieve_is_public(self):
         res = APIClient().get(f'/changelog/{self.newer.id}')

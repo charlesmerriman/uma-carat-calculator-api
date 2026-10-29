@@ -5,9 +5,19 @@ alerts:
 # channel's webhook with /slack appended, and the owner's email) are set with
 # `doctl apps update-alert-destinations`, not in this file.
 - rule: DEPLOYMENT_LIVE
+# A managed Postgres cluster (db-s-1vcpu-1gb, $15.15/month) since 2026-10-29: the
+# App Platform dev database was converted in place ("Convert to a Managed
+# Database"), so the component keeps its dev-db name and the
+# ${dev-db-462490.DATABASE_URL} bindings keep working. What the convert bought:
+# daily backups with point-in-time restore (7 days), CPU/memory/disk metrics and
+# alerts, room to resize. Trusted sources: this app only.
 databases:
-- engine: PG
+- cluster_name: app-a449c6a6-365a-4a11-9ba5-e9ccd860aa8b
+  db_name: dev-db-462490
+  db_user: dev-db-462490
+  engine: PG
   name: dev-db-462490
+  production: true
   version: "17"
 # App-level env vars (shared by all components) — DigitalOcean Spaces image storage
 envs:

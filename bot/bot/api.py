@@ -53,7 +53,9 @@ class Answer:
         return 200 <= self.status < 300
 
 
-class SiteApi:
+# One method per bot route, so the count grows with the routes; pylint's cap of
+# 20 public methods doesn't fit a thin client.
+class SiteApi:  # pylint: disable=too-many-public-methods
 
     def __init__(self, base_url, secret):
         self._base_url = base_url.rstrip("/")
@@ -133,6 +135,19 @@ class SiteApi:
     async def digest(self):
         """Yesterday's numbers for the daily digest (aggregates only)."""
         return await self._request("GET", "bot/digest", timeout=DIGEST_TIMEOUT_SECONDS)
+
+    async def health(self, minutes=5):
+        """What the API was busy with over the last `minutes`, for the health
+        alert: the busiest routes by total time (patterns, never paths), how
+        many requests are in progress, and whether the guest payload is cached.
+        On the usual timeout: the alert asks once and doesn't wait longer for
+        an API that is the thing being slow."""
+        return await self._request("GET", f"bot/health?minutes={minutes}")
+
+    async def database(self):
+        """The database's numbers for the Monday post: size, running totals,
+        and the queries that took the most time (aggregates and query shapes)."""
+        return await self._request("GET", "bot/database")
 
     # The team board's ordered queue (the site's team_queue.py).
 

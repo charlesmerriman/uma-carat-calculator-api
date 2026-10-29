@@ -141,7 +141,9 @@ class UserPlannedPurchaseSerializer(serializers.ModelSerializer):
         # cutoff skips building the maps entirely.
         first_jp = None
         if cutoff is not None:
-            uma_dates, support_dates = build_first_jp_date_maps()
+            # /calculator-data passes the cached maps (first_jp_date_maps());
+            # anything else that saves a purchase builds them here.
+            uma_dates, support_dates = self.context.get("first_jp_dates") or build_first_jp_date_maps()
             dates = uma_dates if target_uma else support_dates
             first_jp = dates.get(target.id)
 

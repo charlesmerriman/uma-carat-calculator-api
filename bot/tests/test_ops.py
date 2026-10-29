@@ -13,7 +13,7 @@ from aiohttp.test_utils import TestServer
 from bot import health
 from bot.api import Answer
 from bot.config import load
-from bot.ops import Ops, deploy_line, render_digest
+from bot.ops import Ops, deploy_line, render_database_week, render_digest
 from tests.fakes import CONFIG, TEAM_ROLE, FakeApi
 from tests.test_config import GOOD
 
@@ -28,6 +28,20 @@ SLOW_CHECK = [health.Reading("api", False, 200, 6.1, "slow 6.1s"), health.Readin
 
 def minutes(n):
     return T0 + datetime.timedelta(minutes=n)
+
+
+# GET bot/health's answer, the shape calculatorapi/views/bot_api.py sends.
+ROUTES = {
+    "minutes": 5, "in_flight": 4, "requests": 1301, "payload_cached": True,
+    "routes": [
+        {"route": "PATCH calculator-data", "count": 165, "total_ms": 545210, "max_ms": 13000,
+         "db_ms": 120040, "queries": 2805},
+        {"route": "GET calculator-data", "count": 1135, "total_ms": 380000, "max_ms": 9100,
+         "db_ms": 40000, "queries": 9080},
+        {"route": "GET plan/<str:public_id>", "count": 1, "total_ms": 80, "max_ms": 80,
+         "db_ms": 20, "queries": 4},
+    ],
+}
 
 
 class TrackerTests(unittest.TestCase):
@@ -69,6 +83,66 @@ class TrackerTests(unittest.TestCase):
         self.assertIn("CPU up to 99%, memory up to 91%, restarts 1", embed.description)
         tracker.feed(BAD_CHECK, minutes(3))
         self.assertEqual(health.render_alert(tracker, None).title, "The site looks down")
+
+    def test_the_slowest_hour_is_the_api_request_s(self):
+        tracker = health.Tracker()
+        fast = [health.Reading("api", True, 200, 0.2), health.Reading("home", True, 200, 9.0)]
+        slow = [health.Reading("api", True, 200, 2.5), health.Reading("home", True, 200, 0.1)]
+        for n in range(3):
+            tracker.feed(fast, T0.replace(hour=9) + datetime.timedelta(minutes=n))
+            tracker.feed(slow, T0.replace(hour=15) + datetime.timedelta(minutes=n))
+        # 15:00, not 09:00: the home page's 9 s doesn't count, it's a CDN file.
+        self.assertEqual(
+            tracker.summary(T0.date())["slowest_hour"],
+            {"hour": 15, "p95_seconds": 2.5, "checks": 3, "good": 3},
+        )
+
+    def test_an_hour_with_failures_beats_a_slow_one(self):
+        tracker = health.Tracker()
+        slow = [health.Reading("api", True, 200, 2.5), health.Reading("home", True, 200, 0.1)]
+        down = [health.Reading("api", False, problem="timed out"), health.Reading("home", True, 200, 0.1)]
+        tracker.feed(slow, T0.replace(hour=15))
+        tracker.feed(down, T0.replace(hour=16))
+        self.assertEqual(
+            tracker.summary(T0.date())["slowest_hour"],
+            {"hour": 16, "p95_seconds": None, "checks": 1, "good": 0},
+        )
+
+    def test_the_log_line(self):
+        self.assertEqual(health.log_line(GOOD_CHECK), "api 200 0.30s, home 200 0.10s")
+        timed_out = [health.Reading("api", False, problem="timed out"), GOOD_CHECK[1]]
+        self.assertEqual(health.log_line(timed_out), "api timed out, home 200 0.10s")
+
+    def test_the_alert_quotes_the_busiest_routes(self):
+        tracker = health.Tracker()
+        for n in range(3):
+            tracker.feed(SLOW_CHECK, minutes(n))
+        text = health.render_alert(tracker, None, ROUTES).description
+        self.assertIn("Busiest routes, last 5 minutes (4 in progress now):", text)
+        self.assertIn("`PATCH calculator-data` 165 requests, 545.2 s in all (120.0 s database), slowest 13.0 s", text)
+        self.assertIn("`GET plan/<str:public_id>` 1 request,", text)
+        self.assertNotIn("isn't cached", text)
+        uncached = health.render_alert(tracker, None, {**ROUTES, "payload_cached": False}).description
+        self.assertIn("The guest payload isn't cached", uncached)
+
+    def test_the_alert_names_the_database_side(self):
+        tracker = health.Tracker()
+        for n in range(3):
+            tracker.feed(SLOW_CHECK, minutes(n))
+        busy = {**ROUTES, "database": {"connections": {"idle": 1, "active": 4, "idle in transaction": 1},
+                                       "waiting_on_locks": 2}}
+        text = health.render_alert(tracker, None, busy).description
+        self.assertIn("Database: 6 connections (4 active, 1 idle, 1 idle in transaction), 2 waiting on a lock", text)
+        calm = {**ROUTES, "database": {"connections": {"idle": 4}, "waiting_on_locks": 0}}
+        self.assertIn("Database: 4 connections (4 idle)\n", health.render_alert(tracker, None, calm).description + "\n")
+
+    def test_no_route_lines_without_an_answer(self):
+        tracker = health.Tracker()
+        for n in range(3):
+            tracker.feed(SLOW_CHECK, minutes(n))
+        bare = health.render_alert(tracker, None).description
+        self.assertEqual(health.render_alert(tracker, None, {}).description, bare)
+        self.assertNotIn("Busiest", bare)
 
 
 class ProbeTests(unittest.IsolatedAsyncioTestCase):
@@ -166,7 +240,16 @@ class DigestTests(OpsFixture):
         self.assertIn("1 post, 3 comments, 0 reports", text)
         self.assertIn("**Waiting for a moderator** 2 items", text)
         self.assertIn("99.93% of 1,440 checks good, 95% of responses within 0.42 s", text)
+        self.assertNotIn("Slowest hour", text)
         self.assertIn("no full day of checks yet", render_digest(DIGEST, None).description)
+
+    def test_render_the_slowest_hour(self):
+        probe = {"checks": 1440, "uptime_pct": 97.5, "p95_seconds": 0.6,
+                 "slowest_hour": {"hour": 15, "p95_seconds": 4.2, "checks": 60, "good": 41}}
+        text = render_digest(DIGEST, probe).description
+        self.assertIn("**Slowest hour** 15:00 UTC, 95% of API responses within 4.2 s (41 of 60 checks good)", text)
+        down = {**probe, "slowest_hour": {"hour": 16, "p95_seconds": None, "checks": 60, "good": 0}}
+        self.assertIn("16:00 UTC, no API response at all (0 of 60", render_digest(DIGEST, down).description)
 
     async def test_posts_once_a_day(self):
         ops = self.ops(Answer(201, {}), Answer(200, DIGEST), Answer(200, {}))
@@ -233,6 +316,114 @@ class AlertTests(OpsFixture):
         self.assertFalse(alert[1]["allowed_mentions"].everyone)
         self.assertTrue(recovery[0].startswith("The site is back to normal"))
         self.assertEqual(recovery[1]["allowed_mentions"].to_dict()["parse"], [])
+
+    async def _alert_with(self, *answers):
+        """The alert posted after three bad checks, with the site API answering
+        `answers` in turn."""
+        ops = self.ops(*answers)
+        original = health.probe
+
+        async def fake_probe(*_args):
+            return BAD_CHECK
+
+        health.probe = fake_probe
+        try:
+            for n in range(3):
+                await ops.check(None, minutes(n))
+        finally:
+            health.probe = original
+        return self.channels[OPS_ID].sent[0][1]["embed"].description
+
+    async def test_every_check_writes_one_log_line(self):
+        ops = self.ops()
+        original = health.probe
+
+        async def fake_probe(*_args):
+            return GOOD_CHECK
+
+        health.probe = fake_probe
+        try:
+            with self.assertLogs("bot.ops", level="INFO") as logs:
+                await ops.check(None, minutes(0))
+        finally:
+            health.probe = original
+        self.assertEqual(logs.output, ["INFO:bot.ops:probe api 200 0.30s, home 200 0.10s"])
+
+    async def test_the_alert_asks_the_api_once_for_its_routes(self):
+        text = await self._alert_with(Answer(200, ROUTES))
+        self.assertEqual([call for call in self.api.calls if call[0] == "health"], [("health", 5)])
+        self.assertIn("`PATCH calculator-data` 165 requests", text)
+
+    async def test_the_alert_goes_out_when_the_api_does_not_answer(self):
+        text = await self._alert_with("down")
+        self.assertEqual([call for call in self.api.calls if call[0] == "health"], [("health", 5)])
+        self.assertIn("api HTTP 502", text)
+        self.assertNotIn("Busiest", text)
+
+
+# GET /bot/database's answer, the shape calculatorapi/database_stats.py sends.
+DATABASE = {
+    "overview": {"size_bytes": 604_567_219, "cache_hit_pct": 99.91, "deadlocks": 9, "temp_files": 1177,
+                 "temp_bytes": 10_856_422_710, "since": None},
+    "top_queries": {
+        "since": "2026-10-29T20:00:00+00:00",
+        "queries": [
+            {"query": 'UPDATE "calculatorapi_userplannedbanner" SET "plan_id" = $1 WHERE `x` = $2',
+             "calls": 12_345, "total_ms": 1_234_000, "mean_ms": 99.9, "rows": 12_345},
+        ],
+    },
+}
+MONDAY = datetime.date(2026, 10, 26)
+
+
+class DatabaseWeekTests(OpsFixture):
+
+    def test_render(self):
+        text = render_database_week(DATABASE, MONDAY).description
+        self.assertIn("**Size** 605 MB", text)
+        self.assertIn("**Reads served from memory** 99.91%, since the statistics began", text)
+        self.assertIn("**Deadlocks** 9, **temp files** 1,177 (10,856 MB), since the statistics began", text)
+        self.assertIn("**Most time-consuming queries** since 2026-10-29:", text)
+        # A backtick in the query can't end the code span early.
+        self.assertIn("1. `UPDATE \"calculatorapi_userplannedbanner\" SET \"plan_id\" = $1 WHERE 'x' = $2`", text)
+        self.assertIn("12,345 calls, 1,234 s in all, 99.9 ms each", text)
+        self.assertEqual(render_database_week(DATABASE, MONDAY).title, "The database, week of 2026-10-26")
+
+    def test_render_before_query_statistics(self):
+        off = render_database_week({**DATABASE, "top_queries": None}, MONDAY).description
+        self.assertIn("Query statistics are off: `pg_stat_statements` isn't installed", off)
+        empty = render_database_week({**DATABASE, "top_queries": {"since": None, "queries": []}}, MONDAY).description
+        self.assertIn("No query statistics yet.", empty)
+        self.assertIn("The site sent no database numbers.", render_database_week({}, MONDAY).description)
+
+    def test_due_on_mondays_from_the_digest_hour_until_settled(self):
+        ops = self.ops()
+
+        def at(day, hour):
+            return datetime.datetime.combine(day, datetime.time(hour), tzinfo=datetime.timezone.utc)
+
+        self.assertFalse(ops.database_due(at(MONDAY, OPS_CONFIG.digest_hour_utc - 1)))
+        self.assertTrue(ops.database_due(at(MONDAY, OPS_CONFIG.digest_hour_utc)))
+        self.assertFalse(ops.database_due(at(MONDAY + datetime.timedelta(days=1), 12)))
+        ops.database_done_for = MONDAY
+        self.assertFalse(ops.database_due(at(MONDAY, 12)))
+
+    async def test_posts_once_a_week(self):
+        ops = self.ops(Answer(201, {}), Answer(200, DATABASE), Answer(200, {}))
+        self.assertTrue(await ops.database_week(MONDAY))
+        self.assertEqual(self.api.calls[0], ("claim", "database:20261026", OPS_ID))
+        self.assertEqual(self.api.calls[1], ("database",))
+        self.assertEqual(self.channels[OPS_ID].sent[0][1]["embed"].title, "The database, week of 2026-10-26")
+        ops = self.ops(Answer(409, {"message_id": "1"}))
+        self.assertFalse(await ops.database_week(MONDAY))
+        self.assertEqual(ops.database_done_for, MONDAY)
+
+    async def test_a_failed_read_gives_the_week_back(self):
+        ops = self.ops(Answer(201, {}), "down", Answer(204, {}))
+        self.assertFalse(await ops.database_week(MONDAY))
+        self.assertEqual([call[0] for call in self.api.calls], ["claim", "database", "release"])
+        self.assertIsNone(ops.database_done_for)
+        self.assertEqual(self.channels[OPS_ID].sent, [])
 
 
 class FakeDo:

@@ -1429,6 +1429,23 @@ saved in the last 7 days, active supporters, gallery posts / comments / reports 
 24 hours, and items with an open report. It reads the admin dashboard's cached report
 (`analytics/digest.py`), so reading it also keeps the day's analytics snapshot.
 
+**The health snapshot**: `GET bot/health?minutes=5` (1 to 10) returns what the API has been
+busy with, for Oguri Bot's health alert: `{minutes, in_flight, requests, payload_cached,
+database, routes: [{route, count, total_ms, max_ms, db_ms, queries}]}`, the eight routes with the most
+total time first. A route is its method and URL PATTERN (`PATCH calculator-data`, `GET
+plan/<str:public_id>`), never a path, so it carries no ids. `in_flight` leaves out the health
+request itself. It counts this process's requests (`calculatorapi/middleware.py`), which is
+all of them while production runs one gunicorn process. Aggregates only.
+`database` is `{connections: {state: count}, waiting_on_locks}` from `pg_stat_activity`
+(`database_stats.activity`), or `null` off Postgres.
+
+**The database's week**: `GET bot/database` returns `{overview: {size_bytes, cache_hit_pct,
+deadlocks, temp_files, temp_bytes, since}, top_queries: {since, queries: [{query, calls,
+total_ms, mean_ms, rows}]}}` for the Monday post in `#calc-ops` (`database_stats.py`).
+`top_queries` is `null` until `pg_stat_statements` is installed, and both are `null` off
+Postgres. A query's text is its normalised SHAPE (every literal is `$1`, `$2`...), cut to 200
+characters: table and column names, never a value.
+
 **Announcements**: `GET bot/upcoming?days=14` (max 60) returns every banner and event
 moment due from 6 hours ago to `days` ahead (`announcements.py`), from the same
 `build_effective_date_maps` the Timeline uses: `{moments: [{key, kind, milestone, at,
@@ -1962,8 +1979,8 @@ The flat, date-sorted timeline the projection queries for cumulative income tota
 
 Five things to know:
 
-- **`date` is the instant the reward lands** — an event's resolved start; for a race event, its resolved **end less that kind's `RACE_REWARD_LEAD_TIME`**. A Champions Meeting settles its placements at the daily reset **a day before** its window closes, so its row sits a day ahead of the end date the timeline shows; League of Heroes has no lead time and is dated at its end. The offset is a `timedelta` of 23:59:59, so it preserves time of day — a CM closing 21:59:59 pays at 22:00:00 the day before. The client credits a row to a banner when `date <= banner end`, so a CM ending the day after a banner is never credited to that banner: its rewards arrive a minute after the banner closes.
-- **`payouts` lists the instants a race event pays, one per payout day** (5 for a CM, 8 for an LoH; `calculatorapi/race_payouts.py`), the last always equal to `date`. Empty on `event` rows. **`tickets_at` / `shards_at`** are when a race event pays the rank's tickets and its shards (a CM both on day 4; an LoH shards on day 3, tickets on day 4), each one of `payouts`; null on `event` rows. Each CM / LoH rank, and each of its `rewards` rows, carries `day_amounts`, the carats paid at each of those instants (`[]` = the rank pays everything at `date`; on a `rewards` row, the rank's own split scaled to the row's total).
+- **`date` is the instant the reward lands** — an event's resolved start; for a race event, its resolved **end less that kind's `RACE_REWARD_LEAD_TIME`**. A Champions Meeting or League of Heroes settles its placements at the daily reset **a day before** its window closes, so its row sits a day ahead of the end date the timeline shows (LoH since 2026-10-29; it used to be dated at its end). The offset is a `timedelta` of 23:59:59, so it preserves time of day — a CM closing 21:59:59 pays at 22:00:00 the day before. The client credits a row to a banner when `date <= banner end`, so a CM ending the day after a banner is never credited to that banner: its rewards arrive a minute after the banner closes.
+- **`payouts` lists the instants a race event pays, one per payout day** (5 for a CM, 8 for an LoH; `calculatorapi/race_payouts.py`), the last always equal to `date`. Empty on `event` rows. **`tickets_at` / `shards_at`** are when a race event pays the rank's tickets and its shards (a CM both with the finals, at `date`; an LoH shards on day 3, tickets on day 4), each one of `payouts`; null on `event` rows. Each CM / LoH rank, and each of its `rewards` rows, carries `day_amounts`, the carats paid at each of those instants (`[]` = the rank pays everything at `date`; on a `rewards` row, the rank's own split scaled to the row's total).
 - **Race rows carry no amounts.** `champions_meeting` / `league_of_heroes` rows are indicators; what a placement pays depends on the user's rank row, which only the client knows. Every amount field is still present (as `0`), so the client never guards on shape.
 - **`event_number` says which race event a row is**: `cm_number` / `loh_number` on race rows, `null` on `event` rows. It exists because what a rank pays depends on the event's number: each CM / LoH rank in `/calculator-data` carries `rewards`, `[{"from_event_number": 30, "income_amount": 3800}, ...]` ascending, and the client pays the largest `from_event_number` at or below the row's number, else the rank's own `income_amount` (`raceRewardAmount` in `frontend/src/utils/incomeLedger.ts`). The public `/championsmeetingranks` and `/leagueofheroesranks` carry the same list. The number rather than `source_id`, because it is the identity the game and the sheet use, and it is stable across databases.
 - **`throughout_end` is the linked banner's end, with `GAME_EVENT_END_DATE_BUFFER` already removed.** The `carats_throughout` pool decays over the banner, not over the event, whose own `end_date` trails it by 4 days. Emitting it pre-stripped is what stops the client keeping its own copy of that constant.

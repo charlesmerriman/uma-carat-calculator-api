@@ -18,6 +18,7 @@ from calculatorapi.models import (
     AnniversaryEventProduct,
     PvpGuide,
     PvpUmaRecommendation,
+    SupportCard,
     Uma,
     UmasOnUmaBanner,
     UserOshi,
@@ -503,6 +504,44 @@ class ImportGameDataUmaTests(CalculatorTestCase):
         )
         self.assertIn("umas:", out)
         self.assertIn("support cards:", out)
+
+
+class ImportGameDataSupportGlobalTests(CalculatorTestCase):
+    """`is_on_global` on a support card: in the snapshot AND out by now."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()  # pylint: disable=consider-using-with
+        self.addCleanup(self.tmp.cleanup)
+        self.turbo = SupportCard.objects.create(name="Twin Turbo", game_id=30060, is_on_global=True)
+        self.kitasan = SupportCard.objects.create(name="Kitasan Black", game_id=30028)
+
+    @staticmethod
+    def card(card_id, chara_name, start_date):
+        return {
+            "id": card_id, "chara_id": 1066, "chara_name": chara_name, "name": f"[X] {chara_name}",
+            "title": "[X]", "rarity": 3, "card_type": "guts", "skill_set_id": 1, "start_date": start_date,
+        }
+
+    def test_a_card_the_client_dates_2099_is_not_on_global(self):
+        # The global client's "not released here" mark (Daptrius, 2026-10-29:
+        # the Collection showed Twin Turbo [Constellation of Stars]).
+        write_snapshot(self.tmp.name, support_cards=[
+            self.card(30060, "Twin Turbo", 4070988000),
+            self.card(30028, "Kitasan Black", 1751493600),
+        ])
+
+        import_game_data(self.tmp.name)
+
+        self.turbo.refresh_from_db()
+        self.kitasan.refresh_from_db()
+        self.assertFalse(self.turbo.is_on_global)
+        self.assertTrue(self.kitasan.is_on_global)
+
+    def test_the_committed_snapshot_dates_exactly_four_cards_ahead(self):
+        path = Path(__file__).resolve().parents[2] / "scripts" / "data" / "master_snapshot" / "support_cards.json"
+        cards = json.loads(path.read_text(encoding="utf-8"))
+        ahead = sorted(card["id"] for card in cards if card["start_date"] > 4_000_000_000)
+        self.assertEqual(ahead, [30058, 30059, 30060, 30061])
 
 
 @override_settings(STORAGES=PLAIN_TEST_STORAGES)

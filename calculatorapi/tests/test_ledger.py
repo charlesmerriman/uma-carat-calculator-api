@@ -309,11 +309,10 @@ class LedgerTests(CalculatorTestCase):
         self.assertEqual(self._ledger(), [])
 
     def test_race_rows_are_dated_at_end_less_lead_time_and_carry_no_amounts(self):
-        # A Champions Meeting settles its placements at the daily reset a day
-        # before its window closes (end less 23:59:59); League of Heroes has no
-        # lead time. The gap between the two is the only place these otherwise
-        # identical kinds diverge, so it is asserted side by side rather than
-        # in separate tests.
+        # Both kinds settle their placements at the daily reset a day before
+        # the window closes (end less 23:59:59). League of Heroes had no lead
+        # time until 2026-10-29; asserted side by side so the two kinds can't
+        # drift apart unnoticed.
         make_champions_meeting(
             name='CM', global_start_date=_dt(2025, 6, 1),
             global_end_date=_dt(2025, 6, 8),
@@ -328,17 +327,18 @@ class LedgerTests(CalculatorTestCase):
         self.assertEqual((cm['kind'], cm['date']),
                          ('champions_meeting', _dt(2025, 6, 7, 0, 0, 1)))
         self.assertEqual((loh['kind'], loh['date']),
-                         ('league_of_heroes', _dt(2025, 7, 8)))
+                         ('league_of_heroes', _dt(2025, 7, 7, 0, 0, 1)))
         # Amounts stay zero: what a placement pays depends on the user's rank.
         for row in (cm, loh):
             self.assertEqual(row['carats'], 0)
             self.assertEqual(row['uma_tickets'], 0)
 
     def test_race_rows_pay_day_by_day_and_last_at_their_date(self):
-        # race_payouts.py: CM days 1-4 at the end of each day, the finals at
-        # the row's date; LoH days 1-6, second stage 1 on day 8, stage 2 at
-        # the row's date. The last payout is always the date, so the total
-        # lands when it always did. Game event rows carry none.
+        # race_payouts.py: every day pays at the reset that opens it, day 1
+        # the moment the event opens (Daptrius, 2026-10-29). CM days 1-4, the
+        # finals at the row's date; LoH days 1-6, second stage 1 on day 8,
+        # stage 2 at the row's date. The last payout is always the date, 24
+        # hours before the listed end. Game event rows carry none.
         make_champions_meeting(
             name='CM', global_start_date=_dt(2025, 6, 1, 22, 0, 0),
             global_end_date=_dt(2025, 6, 7, 21, 59, 59),
@@ -355,19 +355,20 @@ class LedgerTests(CalculatorTestCase):
         rows = {row['kind']: row for row in self._ledger()}
         cm, loh = rows['champions_meeting'], rows['league_of_heroes']
         self.assertEqual(cm['payouts'], [
-            _dt(2025, 6, 2, 22), _dt(2025, 6, 3, 22), _dt(2025, 6, 4, 22), _dt(2025, 6, 5, 22),
+            _dt(2025, 6, 1, 22), _dt(2025, 6, 2, 22), _dt(2025, 6, 3, 22), _dt(2025, 6, 4, 22),
             _dt(2025, 6, 6, 22),
         ])
         self.assertEqual(cm['payouts'][-1], cm['date'])
         self.assertEqual(loh['payouts'], [
-            _dt(2025, 7, 2, 22), _dt(2025, 7, 3, 22), _dt(2025, 7, 4, 22), _dt(2025, 7, 5, 22),
-            _dt(2025, 7, 6, 22), _dt(2025, 7, 7, 22), _dt(2025, 7, 9, 22), _dt(2025, 7, 10, 21, 59, 59),
+            _dt(2025, 7, 1, 22), _dt(2025, 7, 2, 22), _dt(2025, 7, 3, 22), _dt(2025, 7, 4, 22),
+            _dt(2025, 7, 5, 22), _dt(2025, 7, 6, 22), _dt(2025, 7, 8, 22), _dt(2025, 7, 9, 22),
         ])
         self.assertEqual(loh['payouts'][-1], loh['date'])
         self.assertEqual(rows['event']['payouts'], [])
-        # Tickets and shards (Daptrius, 2026-10-22): a CM's both on day 4, an
-        # LoH's shards on day 3 and tickets on day 4, each one of the payouts.
-        self.assertEqual((cm['tickets_at'], cm['shards_at']), (cm['payouts'][3], cm['payouts'][3]))
+        # Tickets and shards (Daptrius, 2026-10-22 and 2026-10-29): a CM's both
+        # with the finals, an LoH's shards on day 3 and tickets on day 4, each
+        # one of the payouts.
+        self.assertEqual((cm['tickets_at'], cm['shards_at']), (cm['date'], cm['date']))
         self.assertEqual((loh['tickets_at'], loh['shards_at']), (loh['payouts'][3], loh['payouts'][2]))
         self.assertEqual((rows['event']['tickets_at'], rows['event']['shards_at']), (None, None))
 
@@ -378,6 +379,9 @@ class LedgerTests(CalculatorTestCase):
         self.assertEqual(race_payouts.item_payout_instant('league_of_heroes', 'shards', None, last), last)
         start = _dt(2025, 7, 8, 22)
         self.assertEqual(race_payouts.item_payout_instant('league_of_heroes', 'tickets', start, last), last)
+        # A CM's come with the finals whatever the window.
+        cm_start = _dt(2025, 7, 1, 22)
+        self.assertEqual(race_payouts.item_payout_instant('champions_meeting', 'tickets', cm_start, last), last)
 
     def test_race_rows_carry_their_event_number(self):
         # The client caps the rank a few specific events pay at (League of

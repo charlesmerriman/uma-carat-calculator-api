@@ -56,7 +56,9 @@ Two places the schema is not what it looks like:
     card's `skill_set_id` (which several cards of one character share as
     `hint_id`). Rows with hint_gain_type 1 are stat hints and are skipped.
 
-The global client defines nothing that has not released on global. Its TEXT
+The global client defines nothing that has not released on global, with one
+exception: four JP-only support cards (30058 to 30061) sit in support_card_data
+dated 2099-01-01, which is why each card carries its start_date. Its TEXT
 runs ahead, though: the names and descriptions of upcoming skills ship before
 their definitions, and skill_text_ahead.json carries them. Tutorial cards (ids
 above 9,000,000, default_rarity 0) are skipped. Evolved skills (rarity 6) exist
@@ -365,6 +367,11 @@ def extract_support_cards(conn, region="global"):
                 or SUPPORT_CARD_TYPES.get(row["support_card_type"], "?")
             ),
             "skill_set_id": row["skill_set_id"],
+            # When the card comes out on this region, as unix seconds. The
+            # global client carries a few JP-only cards dated 2099-01-01, its
+            # "not released here" mark, so being in the table is not being
+            # out (import_game_data reads this for is_on_global).
+            "start_date": row["start_date"],
         }
         # Group cards only, so the other 260 rows diff the same as before.
         if card["card_type"] == "group":
