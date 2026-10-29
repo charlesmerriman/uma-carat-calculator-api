@@ -5,6 +5,7 @@
 # pylint: disable=too-many-instance-attributes,too-many-lines
 
 from importlib import import_module
+from unittest import mock
 
 from django.apps import apps
 from django.core.exceptions import ValidationError
@@ -355,6 +356,50 @@ class PlanRouteTests(CalculatorTestCase):
         self.assertEqual(res.status_code, 400)
         self.assertTrue(Plan.objects.filter(id=main.id).exists())
 
+    def test_delete_locks_the_plan_before_taking_its_rows(self):
+        """The deadlock fix (board, 2026-10-28): plan row first, then the CASCADE."""
+        plans.get_active_plan(self.user)
+        other = Plan.objects.create(user=self.user, name="Other")
+        _row(other, self.banner)
+        rows_at_lock = []
+
+        def spy(plan):
+            rows_at_lock.append(UserPlannedBanner.objects.filter(plan=plan).count())
+            return real_lock(plan)
+
+        real_lock = plans.lock_plan
+        with mock.patch.object(plans, "lock_plan", side_effect=spy):
+            res = self.client.delete(f"/plans/{other.id}")
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(rows_at_lock, [1])
+
+    def test_a_delete_that_waited_on_another_lands_on_a_survivor(self):
+        """A double click: the first delete finished while the second waited."""
+        main = plans.get_active_plan(self.user)
+        other = Plan.objects.create(user=self.user, name="Other")
+
+        with mock.patch.object(plans, "lock_plan", side_effect=Plan.DoesNotExist):
+            res = self.client.delete(f"/plans/{other.id}")
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.data["active_plan_id"], main.id)
+
+
+class LockPlanTests(CalculatorTestCase):
+    """plans.lock_plan: the existence half (SQLite has no row locks to check)."""
+
+    def test_a_live_plan_locks(self):
+        plan = plans.get_active_plan(make_user())
+        with transaction.atomic():
+            plans.lock_plan(plan)
+
+    def test_a_plan_deleted_meanwhile_is_missing(self):
+        plan = plans.get_active_plan(make_user())
+        Plan.objects.filter(pk=plan.pk).delete()
+        with transaction.atomic(), self.assertRaises(Plan.DoesNotExist):
+            plans.lock_plan(plan)
+
 
 class PlanScopedSaveTests(CalculatorTestCase):
     """PATCH /calculator-data writes banner rows into the plan the body names."""
@@ -381,6 +426,39 @@ class PlanScopedSaveTests(CalculatorTestCase):
             [row["id"] for row in res.json()["user_planned_banner_data"]],
             [self.row_a.id],
         )
+
+    def test_the_save_locks_its_plan_before_writing_anything(self):
+        rows_at_lock = []
+
+        def spy(plan):
+            self.row_a.refresh_from_db()
+            rows_at_lock.append((plan.id, self.row_a.number_of_pulls))
+            return real_lock(plan)
+
+        real_lock = plans.lock_plan
+        with mock.patch.object(plans, "lock_plan", side_effect=spy):
+            res = self._patch({
+                "plan_id": self.plan_a.id,
+                "user_planned_banner_data": [{"id": self.row_a.id, "number_of_pulls": 150}],
+            })
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(rows_at_lock, [(self.plan_a.id, 100)])
+
+    def test_a_save_that_waited_on_a_delete_404s_and_writes_nothing(self):
+        """The plan was deleted while the save waited for its lock."""
+        with mock.patch.object(plans, "lock_plan", side_effect=Plan.DoesNotExist):
+            res = self._patch({
+                "plan_id": self.plan_a.id,
+                "user_planned_banner_data": [{"id": self.row_a.id, "number_of_pulls": 150}],
+                "user_stats_data": {"current_carat": 12345},
+            })
+
+        self.assertEqual(res.status_code, 404)
+        self.row_a.refresh_from_db()
+        self.assertEqual(self.row_a.number_of_pulls, 100)
+        self.user.refresh_from_db()
+        self.assertNotEqual(self.user.current_carat, 12345)
 
     def test_a_late_save_for_plan_a_cannot_touch_plan_b(self):
         """The auto-save race: edit A, switch to B, THEN the 5 s timer fires.
