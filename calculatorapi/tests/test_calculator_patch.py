@@ -1,10 +1,12 @@
 """PATCH /calculator-data: saving planned banners, campaign purchases and reserved copies."""
 
 # A setUp that builds a scenario keeps one attribute per object under test.
-# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-instance-attributes,too-many-lines
 
 import datetime
 
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 from rest_framework.test import APIClient
 
@@ -930,3 +932,161 @@ class PlannedBannerRowOptionsTests(CalculatorTestCase):
                     {'banner_uma': self.banner.id, 'number_of_pulls': 50, **extra})
                 self.assertEqual(res.status_code, 400)
         self.assertFalse(UserPlannedBanner.objects.filter(user=self.user).exists())
+
+
+class UnchangedRowsTests(CalculatorTestCase):
+    """Rows that arrive exactly as stored are skipped, not re-saved.
+
+    Auto-save sends the whole plan after every edit, so most rows of a typical
+    save are unchanged. Validating and rewriting each cost four queries per
+    row; see _replace_user_rows and _row_is_unchanged in views/calculator.py.
+    """
+
+    def setUp(self):
+        self.user = make_user()
+        self.client, _ = auth_client(self.user)
+        self.plan = plans.get_active_plan(self.user)
+        self.banner = make_uma_banner()
+
+    def _add_rows(self, count, plan=None):
+        return [
+            UserPlannedBanner.objects.create(
+                user=self.user, plan=plan or self.plan,
+                banner_uma=self.banner, number_of_pulls=10 + i,
+            )
+            for i in range(count)
+        ]
+
+    @staticmethod
+    def _as_sent(row, **changes):
+        """A row the way the client's toBannerPayload sends it: the GET's
+        fields (read-only ones included), with ids for the three targets."""
+        return {
+            'id': row.id, 'user': row.user_id, 'plan': row.plan_id,
+            'banner_uma': row.banner_uma_id, 'banner_support': None,
+            'banner_step_up': None, 'number_of_pulls': row.number_of_pulls,
+            'reserved_copies': row.reserved_copies, 'note': row.note,
+            'primary_card': row.primary_card, 'second_card': row.second_card,
+            'primary_target': row.primary_target,
+            'tickets_to_use': row.tickets_to_use,
+            'paid_carat_use': row.paid_carat_use,
+            'pulls_already_made': row.pulls_already_made,
+            'excluded_from_projection': row.excluded_from_projection,
+            **changes,
+        }
+
+    def _save(self, body_rows, plan=None):
+        """PATCH the rows; return (response, query count, row UPDATEs)."""
+        table = UserPlannedBanner._meta.db_table
+        with CaptureQueriesContext(connection) as queries:
+            res = self.client.patch(
+                '/calculator-data',
+                {'plan_id': (plan or self.plan).id,
+                 'user_planned_banner_data': body_rows},
+                format='json',
+            )
+        row_updates = [
+            q['sql'] for q in queries
+            if q['sql'].startswith('UPDATE') and table in q['sql']
+        ]
+        return res, len(queries), row_updates
+
+    def test_an_unchanged_plan_writes_no_row(self):
+        rows = self._add_rows(5)
+        res, _, row_updates = self._save([self._as_sent(row) for row in rows])
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(row_updates, [])
+        self.assertEqual(UserPlannedBanner.objects.filter(plan=self.plan).count(), 5)
+
+    def test_the_query_count_does_not_grow_with_the_plan(self):
+        """The regression this guards: a query per row, per save."""
+        rows = self._add_rows(3)
+        self._save([self._as_sent(row) for row in rows])  # warm the per-request lookups
+        _, small, _ = self._save([self._as_sent(row) for row in rows])
+        rows += self._add_rows(12)
+        _, large, _ = self._save([self._as_sent(row) for row in rows])
+        self.assertEqual(small, large)
+
+    def test_only_the_edited_row_is_written(self):
+        rows = self._add_rows(5)
+        body = [self._as_sent(row) for row in rows]
+        body[2] = self._as_sent(rows[2], number_of_pulls=99)
+        res, _, row_updates = self._save(body)
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(len(row_updates), 1)
+        rows[2].refresh_from_db()
+        self.assertEqual(rows[2].number_of_pulls, 99)
+
+    def test_a_changed_target_is_written(self):
+        """A relation is compared by id, so moving a row to another banner
+        still takes the save path."""
+        row = self._add_rows(1)[0]
+        other = make_uma_banner(name='Another Uma Banner')
+        res, _, row_updates = self._save([self._as_sent(row, banner_uma=other.id)])
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(len(row_updates), 1)
+        row.refresh_from_db()
+        self.assertEqual(row.banner_uma_id, other.id)
+
+    def test_a_malformed_value_on_an_untouched_row_is_still_a_400(self):
+        """Values are parsed the way the serializer parses them, so one it
+        would refuse can't slip through as "unchanged"."""
+        row = self._add_rows(1)[0]
+        for changes in (
+            {'number_of_pulls': 10.5},       # an int field refuses a fraction
+            {'banner_uma': True},            # DRF refuses a boolean pk
+            {'tickets_to_use': -1},          # the field's min_value
+            {'paid_carat_use': 'some'},      # not a choice
+        ):
+            with self.subTest(changes=changes):
+                res, _, _ = self._save([self._as_sent(row, **changes)])
+                self.assertEqual(res.status_code, 400)
+
+    def test_a_row_the_body_leaves_out_is_still_deleted(self):
+        keep, drop = self._add_rows(2)
+        res, _, _ = self._save([self._as_sent(keep)])
+        self.assertEqual(res.status_code, 200)
+        self.assertTrue(UserPlannedBanner.objects.filter(id=keep.id).exists())
+        self.assertFalse(UserPlannedBanner.objects.filter(id=drop.id).exists())
+
+    def test_an_unchanged_row_from_another_plan_is_not_found(self):
+        """The one-query read keeps the scope: a row of plan B named in plan
+        A's body is a 404, and the rollback keeps plan A's rows."""
+        mine = self._add_rows(1)[0]
+        other_plan = plans.create_plan(self.user, 'Plan B')
+        theirs = self._add_rows(1, plan=other_plan)[0]
+        res, _, _ = self._save([self._as_sent(mine), self._as_sent(theirs)])
+        self.assertEqual(res.status_code, 404)
+        self.assertTrue(UserPlannedBanner.objects.filter(id=mine.id).exists())
+        self.assertTrue(UserPlannedBanner.objects.filter(id=theirs.id).exists())
+
+    def test_an_id_sent_as_a_string_still_finds_its_row(self):
+        row = self._add_rows(1)[0]
+        res, _, _ = self._save([self._as_sent(row, id=str(row.id))])
+        self.assertEqual(res.status_code, 200)
+        self.assertTrue(UserPlannedBanner.objects.filter(id=row.id).exists())
+
+    def test_an_unchanged_purchase_is_not_rewritten(self):
+        event = make_anniversary_event(name='Anniv', parts=[make_timeline()])
+        pack = AnniversaryEventProduct.objects.create(
+            anniversary_event=event, product_type='carat_pack',
+            name='Pack', usd_cost=70, paid_carat_amount=7500, max_quantity=3,
+        )
+        purchase = UserPlannedPurchase.objects.create(
+            user=self.user, product=pack, quantity=2,
+        )
+        table = UserPlannedPurchase._meta.db_table
+        with CaptureQueriesContext(connection) as queries:
+            res = self.client.patch(
+                '/calculator-data',
+                {'plan_id': self.plan.id, 'user_planned_purchase_data': [{
+                    'id': purchase.id, 'product': pack.id, 'quantity': 2,
+                    'target_uma': None, 'target_support': None,
+                }]},
+                format='json',
+            )
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(
+            [q['sql'] for q in queries if q['sql'].startswith('UPDATE') and table in q['sql']],
+            [],
+        )
