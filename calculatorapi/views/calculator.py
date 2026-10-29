@@ -289,6 +289,33 @@ def _stored_selection_pairs(user):
     return pairs
 
 
+def _save_contexts(data, user):
+    """{collection key: serializer context} for the collections that take one,
+    each None when the body leaves that collection out.
+
+    The step-up picks' context is snapshotted BEFORE any collection is
+    written, because _replace_user_rows deletes the user's existing selections
+    before recreating them: read afterwards, every pick would look new. See
+    UserStepUpSelectionSerializer._validate_eligibility for why grandfathering
+    the stored set is what stops a corrected cutoff from 400ing an untouched
+    plan. Purchases check a selector's pick against the same eligibility maps,
+    read from the cache (first_jp_date_maps).
+    """
+    selection_context = None
+    if data.get("user_step_up_selection_data") is not None:
+        selection_context = {
+            "stored_pairs": _stored_selection_pairs(user),
+            "first_jp_dates": first_jp_date_maps(),
+        }
+    purchase_context = None
+    if data.get("user_planned_purchase_data") is not None:
+        purchase_context = {"first_jp_dates": first_jp_date_maps()}
+    return {
+        "user_step_up_selection_data": selection_context,
+        "user_planned_purchase_data": purchase_context,
+    }
+
+
 def build_user_context():
     """The three lookups the user-scoped collections need, and nothing else.
 
@@ -886,22 +913,8 @@ class CalculatorViewSet(ViewSet):
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             serializer.save()
 
-        # Snapshotted BEFORE any collection is written, because
-        # _replace_user_rows deletes the user's existing selections before
-        # recreating them -- read it afterwards and every pick would look new.
-        # See UserStepUpSelectionSerializer._validate_eligibility for why
-        # grandfathering the stored set is what stops a corrected cutoff from
-        # 400ing an untouched plan.
-        selection_context = None
-        if request.data.get("user_step_up_selection_data") is not None:
-            selection_context = {
-                "stored_pairs": _stored_selection_pairs(user),
-                "first_jp_dates": first_jp_date_maps(),
-            }
-        # Purchases check a selector's pick against the same maps.
-        purchase_context = None
-        if request.data.get("user_planned_purchase_data") is not None:
-            purchase_context = {"first_jp_dates": first_jp_date_maps()}
+        # Built BEFORE any collection is written: see _save_contexts.
+        contexts = _save_contexts(request.data, user)
 
         # Banners are scoped to the plan; purchases to the stats block the
         # plan reads (the account's own, or its profile's); step-up selections
@@ -913,11 +926,12 @@ class CalculatorViewSet(ViewSet):
              UserPlannedBannerSerializer, "Banner not found", None,
              {"user": user, "plan": plan}),
             ("user_planned_purchase_data", UserPlannedPurchase,
-             UserPlannedPurchaseSerializer, "Purchase not found", purchase_context,
+             UserPlannedPurchaseSerializer, "Purchase not found",
+             contexts["user_planned_purchase_data"],
              plans.purchase_scope(plan)),
             ("user_step_up_selection_data", UserStepUpSelection,
              UserStepUpSelectionSerializer, "Step-up selection not found",
-             selection_context, {"user": user}),
+             contexts["user_step_up_selection_data"], {"user": user}),
         )
         for key, model, serializer_class, missing_message, context, scope \
                 in collections:

@@ -367,7 +367,7 @@ class CalculatorPatchTests(CalculatorTestCase):  # pylint: disable=too-many-publ
     # already committed. This is a known limitation in the current implementation.
 
 
-class UserPlannedPurchaseTests(CalculatorTestCase):
+class UserPlannedPurchaseTests(CalculatorTestCase):  # pylint: disable=too-many-public-methods
     """The PATCH upsert and the selector-target validation behind it."""
 
     def setUp(self):
