@@ -53,7 +53,9 @@ class Answer:
         return 200 <= self.status < 300
 
 
-class SiteApi:
+# One method per bot route, so the count grows with the routes; pylint's cap of
+# 20 public methods doesn't fit a thin client.
+class SiteApi:  # pylint: disable=too-many-public-methods
 
     def __init__(self, base_url, secret):
         self._base_url = base_url.rstrip("/")
