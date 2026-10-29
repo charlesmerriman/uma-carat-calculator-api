@@ -50,7 +50,14 @@ from rest_framework.decorators import api_view, permission_classes, throttle_cla
 from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle
 
-from calculatorapi import announcements, gallery_moderation, moderation_cards, team_queue
+from calculatorapi import (
+    announcements,
+    gallery_moderation,
+    middleware,
+    moderation_cards,
+    public_payload_cache,
+    team_queue,
+)
 from calculatorapi.analytics.digest import digest
 from calculatorapi.models import (
     BlockedTerm,
@@ -482,6 +489,31 @@ def bot_digest(request):  # pylint: disable=unused-argument
     nothing in it names or points at a person. Reading it also keeps today's
     analytics snapshot, as opening the admin dashboard does."""
     return Response(digest())
+
+
+# ── The health snapshot (middleware.py) ────────────────────────────────────
+
+@bot_route(["GET"])
+def bot_health(request):
+    """GET /bot/health?minutes=5: what the API has been busy with, for the
+    health alert. Per route PATTERN, never a raw path (so no plan or post ids),
+    over the last `minutes` (1 to WINDOW_MINUTES): requests, total and slowest
+    time, database time and queries; plus how many requests are in progress
+    and whether the guest payload is cached. Aggregates only, and only this
+    process's (middleware.py says why that is the whole picture today)."""
+    try:
+        minutes = int(request.query_params.get("minutes", 5))
+    except ValueError:
+        return _bad("minutes must be a whole number.")
+    minutes = max(1, min(middleware.WINDOW_MINUTES, minutes))
+    # Through the module, not a name imported from it, so a test that swaps in
+    # fresh counters swaps them for the middleware and this view at once.
+    snapshot = middleware.ROUTE_STATS.busiest(minutes)
+    # This request is one of those in progress; the alert wants the others.
+    snapshot["in_flight"] = max(0, snapshot["in_flight"] - 1)
+    snapshot["minutes"] = minutes
+    snapshot["payload_cached"] = public_payload_cache.is_cached()
+    return Response(snapshot)
 
 
 # ── Announcements (announcements.py) ───────────────────────────────────────

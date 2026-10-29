@@ -154,10 +154,11 @@ class Ops:
         ops = await self.get_channel(self.config.ops_channel_id)
         if change == "down":
             peaks = await self.do.peaks() if self.do else None
+            routes = await self._busiest_routes()
             role = self.config.team_role_id
             await ops.send(
                 content=f"<@&{role}>" if role else None,
-                embed=health.render_alert(self.tracker, peaks),
+                embed=health.render_alert(self.tracker, peaks, routes),
                 # The one ping the bot makes: @Web Developer on trouble, by the
                 # owner's choice; never anyone else, never on recovery.
                 allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=[discord.Object(role)])
@@ -166,6 +167,17 @@ class Ops:
         else:
             await ops.send(health.render_recovery(self.tracker, now), allowed_mentions=NO_MENTIONS)
         return change
+
+    async def _busiest_routes(self):
+        """GET bot/health's snapshot for the alert, or None. ONE try, no retry:
+        the API is the thing that's slow, so it may well not answer, and the
+        alert goes out either way (the probe never adds load while the site is
+        bad: health.py)."""
+        try:
+            answer = await self.api.health()
+        except SiteUnavailable:
+            return None
+        return answer.data if answer.ok else None
 
     # ── Deploy news ──
 

@@ -362,6 +362,13 @@ def store_user_context(context):
     cache.set(USER_CONTEXT_KEY, context, CACHE_TTL_SECONDS)
 
 
+def is_cached():
+    """Whether the guest payload is in the cache right now, without reading it
+    (a read would unpickle the whole entry). For GET /bot/health: a dropped
+    cache is what made the 2026-09-15 and 09-23 outages."""
+    return cache.has_key(CACHE_KEY)
+
+
 def invalidate(**_kwargs):
     """Drop the cached payload and the user context built from the same
     tables. Also the signal receiver, hence **_kwargs.

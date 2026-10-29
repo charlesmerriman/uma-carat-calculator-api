@@ -156,9 +156,44 @@ def _clock(when):
     return when.strftime("%H:%M UTC")
 
 
-def render_alert(tracker, peaks):
-    """The one alert: what went wrong in the last three checks, and the API's
-    resources over the last five minutes when DigitalOcean is reachable."""
+# How many of GET bot/health's routes the alert lists: enough to show what the
+# API was busy with, short enough to read on a phone.
+ROUTES_SHOWN = 5
+
+
+def _seconds(ms):
+    return f"{ms / 1000:.1f} s"
+
+
+def render_routes(routes):
+    """The alert's lines for GET bot/health's snapshot: the busiest routes by
+    total time, with their database share, how many requests were in progress,
+    and a warning when the guest payload isn't cached (what made the 2026-09-15
+    and 09-23 outages). Empty when there is nothing to say."""
+    lines = []
+    rows = routes.get("routes") or []
+    if rows:
+        head = f"Busiest routes, last {routes.get('minutes', 5)} minutes"
+        if routes.get("in_flight") is not None:
+            head += f" ({routes['in_flight']} in progress now)"
+        lines.append(head + ":")
+        for row in rows[:ROUTES_SHOWN]:
+            # In backticks: a pattern like `plan/<str:public_id>` must not be
+            # read as Discord markdown.
+            count = f"{row['count']:,} request{'' if row['count'] == 1 else 's'}"
+            lines.append(
+                f"`{row['route']}` {count}, {_seconds(row['total_ms'])} in all "
+                f"({_seconds(row['db_ms'])} database), slowest {_seconds(row['max_ms'])}"
+            )
+    if routes.get("payload_cached") is False:
+        lines.append("The guest payload isn't cached: every guest load is rebuilding it.")
+    return lines
+
+
+def render_alert(tracker, peaks, routes=None):
+    """The one alert: what went wrong in the last three checks, the API's
+    resources over the last five minutes when DigitalOcean is reachable, and
+    what the API was busy with when it answered GET bot/health in time."""
     lines = [f"{_clock(when)}: " + ", ".join(r.describe() for r in readings) for when, readings in tracker.recent]
     slow_only = all(
         reading.ok or reading.problem.startswith("slow") for _, readings in tracker.recent for reading in readings
@@ -172,6 +207,9 @@ def render_alert(tracker, peaks):
         if "restart_count" in peaks:
             parts.append(f"restarts {peaks['restart_count']:.0f}")
         lines += ["", "API, last 5 minutes: " + ", ".join(parts)]
+    route_lines = render_routes(routes) if routes else []
+    if route_lines:
+        lines += ["", *route_lines]
     return discord.Embed(
         title="The site is slow" if slow_only else "The site looks down",
         description="\n".join(lines),
