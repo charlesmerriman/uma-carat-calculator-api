@@ -27,6 +27,18 @@ to.
 The day's tallies (checks, how many were good, first-byte times) are kept in
 memory for the digest's "site health" line. A restart starts them over,
 which the digest says.
+
+THE SLOWEST HOUR, AND A LINE PER CHECK
+--------------------------------------
+gunicorn's access line times a request from when a thread picks it up, so it
+can't see a queue: on 2026-10-29 `/site-content` took 67 ms in the app and
+15-17 s for a visitor. The probe sees what a visitor sees, so the tallies also
+keep the API request's first byte per HOUR, and the digest names the day's
+slowest hour (notes/server-diagnostics-plan.md, item 8). Only the API request:
+the home page is a static file from the CDN and would water the number down.
+Each check also writes one log line ("probe api 200 0.31s, home 200 0.08s"),
+so the run log holds the minute-by-minute history, and keeps it for days once
+the logs are forwarded somewhere (the plan's item 3).
 """
 
 import asyncio
@@ -95,6 +107,24 @@ async def probe(session, site_url, slow_seconds):
     return readings
 
 
+def log_line(readings):
+    """One check for the run log: "api 200 0.31s, home 200 0.08s", or the
+    problem for a request that got no answer ("api timed out")."""
+    parts = []
+    for reading in readings:
+        if reading.seconds is None:
+            parts.append(f"{reading.what} {reading.problem}")
+        else:
+            parts.append(f"{reading.what} {reading.status} {reading.seconds:.2f}s")
+    return ", ".join(parts)
+
+
+def _p95(seconds):
+    """The 95th percentile of `seconds` (nearest rank), or None for none."""
+    ordered = sorted(seconds)
+    return ordered[max(0, math.ceil(0.95 * len(ordered)) - 1)] if ordered else None
+
+
 def new_session():
     return aiohttp.ClientSession(
         timeout=aiohttp.ClientTimeout(total=REQUEST_TIMEOUT_SECONDS),
@@ -118,10 +148,17 @@ class Tracker:
         "up" when it flips back, else None."""
         ok = all(reading.ok for reading in readings)
         self.recent.append((when, readings))
-        day = self.days.setdefault(when.date(), {"checks": 0, "good": 0, "seconds": []})
+        day = self.days.setdefault(when.date(), {"checks": 0, "good": 0, "seconds": [], "hours": {}})
         day["checks"] += 1
         day["good"] += ok
         day["seconds"] += [reading.seconds for reading in readings if reading.seconds is not None]
+        api = next((reading for reading in readings if reading.what == "api"), None)
+        if api is not None:
+            hour = day["hours"].setdefault(when.hour, {"checks": 0, "good": 0, "seconds": []})
+            hour["checks"] += 1
+            hour["good"] += api.ok
+            if api.seconds is not None:
+                hour["seconds"].append(api.seconds)
         for old in [d for d in self.days if d < when.date() - datetime.timedelta(days=KEEP_DAYS)]:
             del self.days[old]
 
@@ -139,17 +176,41 @@ class Tracker:
         return None
 
     def summary(self, day):
-        """{checks, uptime_pct, p95_seconds} for `day`, or None without data."""
+        """{checks, uptime_pct, p95_seconds, slowest_hour} for `day`, or None
+        without data. slowest_hour is {hour, p95_seconds, checks, good} for the
+        API request, or None."""
         tally = self.days.get(day)
         if not tally or not tally["checks"]:
             return None
-        seconds = sorted(tally["seconds"])
-        p95 = seconds[max(0, math.ceil(0.95 * len(seconds)) - 1)] if seconds else None
+        p95 = _p95(tally["seconds"])
         return {
             "checks": tally["checks"],
             "uptime_pct": round(100 * tally["good"] / tally["checks"], 2),
             "p95_seconds": round(p95, 2) if p95 is not None else None,
+            "slowest_hour": _slowest_hour(tally.get("hours") or {}),
         }
+
+
+def _slowest_hour(hours):
+    """The worst hour of a day for the API request: the lowest share of good
+    checks first (an outage hour beats a merely slow one), then the highest
+    95th-percentile first byte. Ties go to the earlier hour."""
+    if not hours:
+        return None
+
+    def badness(item):
+        hour, tally = item
+        p95 = _p95(tally["seconds"])
+        return (tally["good"] / tally["checks"], -(p95 or 0.0), hour)
+
+    hour, tally = min(hours.items(), key=badness)
+    p95 = _p95(tally["seconds"])
+    return {
+        "hour": hour,
+        "p95_seconds": round(p95, 2) if p95 is not None else None,
+        "checks": tally["checks"],
+        "good": tally["good"],
+    }
 
 
 def _clock(when):

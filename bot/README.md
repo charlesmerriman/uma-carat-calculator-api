@@ -54,9 +54,11 @@ repeated it.
 `bot/ops.py`, `bot/health.py`, `bot/digitalocean.py`, on while `DISCORD_OPS_CHANNEL_ID` is set:
 
 - **Daily digest** at `DIGEST_HOUR_UTC` (08:00) in `#calc-ops`, from `GET bot/digest`
-  (numbers only), plus the probe's day (uptime, 95th-percentile first byte).
-- **Health probe** every minute: `/api/calculator-data` and `/` from outside
-  (`SITE_URL`, else `API_BASE_URL` minus `/api`), bad on an error, a timeout, a non-200,
+  (numbers only), plus the probe's day (uptime, 95th-percentile first byte) and its
+  slowest hour for the API request, the one place a request queue shows from outside.
+- **Health probe** every minute: `/api/calculator-data` and `/` from outside (`SITE_URL`,
+  else `API_BASE_URL` minus `/api`), one `probe api 200 0.31s, home 200 0.08s` log line per
+  check, bad on an error, a timeout, a non-200,
   the wrong page or first byte over `PROBE_SLOW_SECONDS` (3). Three bad in a row post ONE
   alert, pinging `@Web Developer` (`DISCORD_TEAM_ROLE_ID`), with the API's CPU, memory and
   restarts when DigitalOcean is configured, and the API's five busiest routes from
