@@ -123,6 +123,9 @@ class FakeApi:
     async def digest(self):
         return self._next("digest")
 
+    async def health(self, minutes=5):
+        return self._next("health", minutes)
+
     async def find_record(self, message_id):
         return self._next("find_record", message_id)
 

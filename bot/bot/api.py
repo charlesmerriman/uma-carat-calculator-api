@@ -134,6 +134,14 @@ class SiteApi:
         """Yesterday's numbers for the daily digest (aggregates only)."""
         return await self._request("GET", "bot/digest", timeout=DIGEST_TIMEOUT_SECONDS)
 
+    async def health(self, minutes=5):
+        """What the API was busy with over the last `minutes`, for the health
+        alert: the busiest routes by total time (patterns, never paths), how
+        many requests are in progress, and whether the guest payload is cached.
+        On the usual timeout: the alert asks once and doesn't wait longer for
+        an API that is the thing being slow."""
+        return await self._request("GET", f"bot/health?minutes={minutes}")
+
     # The team board's ordered queue (the site's team_queue.py).
 
     async def queue(self):

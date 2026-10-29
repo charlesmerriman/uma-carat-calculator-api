@@ -30,6 +30,20 @@ def minutes(n):
     return T0 + datetime.timedelta(minutes=n)
 
 
+# GET bot/health's answer, the shape calculatorapi/views/bot_api.py sends.
+ROUTES = {
+    "minutes": 5, "in_flight": 4, "requests": 1301, "payload_cached": True,
+    "routes": [
+        {"route": "PATCH calculator-data", "count": 165, "total_ms": 545210, "max_ms": 13000,
+         "db_ms": 120040, "queries": 2805},
+        {"route": "GET calculator-data", "count": 1135, "total_ms": 380000, "max_ms": 9100,
+         "db_ms": 40000, "queries": 9080},
+        {"route": "GET plan/<str:public_id>", "count": 1, "total_ms": 80, "max_ms": 80,
+         "db_ms": 20, "queries": 4},
+    ],
+}
+
+
 class TrackerTests(unittest.TestCase):
 
     def test_three_bad_trip_once_three_good_recover_once(self):
@@ -69,6 +83,26 @@ class TrackerTests(unittest.TestCase):
         self.assertIn("CPU up to 99%, memory up to 91%, restarts 1", embed.description)
         tracker.feed(BAD_CHECK, minutes(3))
         self.assertEqual(health.render_alert(tracker, None).title, "The site looks down")
+
+    def test_the_alert_quotes_the_busiest_routes(self):
+        tracker = health.Tracker()
+        for n in range(3):
+            tracker.feed(SLOW_CHECK, minutes(n))
+        text = health.render_alert(tracker, None, ROUTES).description
+        self.assertIn("Busiest routes, last 5 minutes (4 in progress now):", text)
+        self.assertIn("`PATCH calculator-data` 165 requests, 545.2 s in all (120.0 s database), slowest 13.0 s", text)
+        self.assertIn("`GET plan/<str:public_id>` 1 request,", text)
+        self.assertNotIn("isn't cached", text)
+        uncached = health.render_alert(tracker, None, {**ROUTES, "payload_cached": False}).description
+        self.assertIn("The guest payload isn't cached", uncached)
+
+    def test_no_route_lines_without_an_answer(self):
+        tracker = health.Tracker()
+        for n in range(3):
+            tracker.feed(SLOW_CHECK, minutes(n))
+        bare = health.render_alert(tracker, None).description
+        self.assertEqual(health.render_alert(tracker, None, {}).description, bare)
+        self.assertNotIn("Busiest", bare)
 
 
 class ProbeTests(unittest.IsolatedAsyncioTestCase):
@@ -233,6 +267,34 @@ class AlertTests(OpsFixture):
         self.assertFalse(alert[1]["allowed_mentions"].everyone)
         self.assertTrue(recovery[0].startswith("The site is back to normal"))
         self.assertEqual(recovery[1]["allowed_mentions"].to_dict()["parse"], [])
+
+    async def _alert_with(self, *answers):
+        """The alert posted after three bad checks, with the site API answering
+        `answers` in turn."""
+        ops = self.ops(*answers)
+        original = health.probe
+
+        async def fake_probe(*_args):
+            return BAD_CHECK
+
+        health.probe = fake_probe
+        try:
+            for n in range(3):
+                await ops.check(None, minutes(n))
+        finally:
+            health.probe = original
+        return self.channels[OPS_ID].sent[0][1]["embed"].description
+
+    async def test_the_alert_asks_the_api_once_for_its_routes(self):
+        text = await self._alert_with(Answer(200, ROUTES))
+        self.assertEqual([call for call in self.api.calls if call[0] == "health"], [("health", 5)])
+        self.assertIn("`PATCH calculator-data` 165 requests", text)
+
+    async def test_the_alert_goes_out_when_the_api_does_not_answer(self):
+        text = await self._alert_with("down")
+        self.assertEqual([call for call in self.api.calls if call[0] == "health"], [("health", 5)])
+        self.assertIn("api HTTP 502", text)
+        self.assertNotIn("Busiest", text)
 
 
 class FakeDo:

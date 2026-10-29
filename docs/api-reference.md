@@ -1429,6 +1429,14 @@ saved in the last 7 days, active supporters, gallery posts / comments / reports 
 24 hours, and items with an open report. It reads the admin dashboard's cached report
 (`analytics/digest.py`), so reading it also keeps the day's analytics snapshot.
 
+**The health snapshot**: `GET bot/health?minutes=5` (1 to 10) returns what the API has been
+busy with, for Oguri Bot's health alert: `{minutes, in_flight, requests, payload_cached,
+routes: [{route, count, total_ms, max_ms, db_ms, queries}]}`, the eight routes with the most
+total time first. A route is its method and URL PATTERN (`PATCH calculator-data`, `GET
+plan/<str:public_id>`), never a path, so it carries no ids. `in_flight` leaves out the health
+request itself. It counts this process's requests (`calculatorapi/middleware.py`), which is
+all of them while production runs one gunicorn process. Aggregates only.
+
 **Announcements**: `GET bot/upcoming?days=14` (max 60) returns every banner and event
 moment due from 6 hours ago to `days` ahead (`announcements.py`), from the same
 `build_effective_date_maps` the Timeline uses: `{moments: [{key, kind, milestone, at,

@@ -59,7 +59,9 @@ repeated it.
   (`SITE_URL`, else `API_BASE_URL` minus `/api`), bad on an error, a timeout, a non-200,
   the wrong page or first byte over `PROBE_SLOW_SECONDS` (3). Three bad in a row post ONE
   alert, pinging `@Web Developer` (`DISCORD_TEAM_ROLE_ID`), with the API's CPU, memory and
-  restarts when DigitalOcean is configured; three good post ONE recovery line, no ping.
+  restarts when DigitalOcean is configured, and the API's five busiest routes from
+  `GET bot/health` when it answers (one try, no retry); three good post ONE recovery line,
+  no ping.
 - **Deploy news** in `#calc-dev-log` (`DISCORD_DEVLOG_CHANNEL_ID`): one line per finished
   deploy (live, failed, cancelled), polled every 2 minutes. Needs `DO_API_TOKEN` (a
   READ-ONLY token: custom scopes app read + monitoring read, never the admin's) and
