@@ -380,7 +380,8 @@ class LedgerTests(CalculatorTestCase):
         start = _dt(2025, 7, 8, 22)
         self.assertEqual(race_payouts.item_payout_instant('league_of_heroes', 'tickets', start, last), last)
         # A CM's come with the finals whatever the window.
-        self.assertEqual(race_payouts.item_payout_instant('champions_meeting', 'tickets', _dt(2025, 7, 1, 22), last), last)
+        cm_start = _dt(2025, 7, 1, 22)
+        self.assertEqual(race_payouts.item_payout_instant('champions_meeting', 'tickets', cm_start, last), last)
 
     def test_race_rows_carry_their_event_number(self):
         # The client caps the rank a few specific events pay at (League of
