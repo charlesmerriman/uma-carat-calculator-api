@@ -684,6 +684,9 @@ AXES_LOCKOUT_TEMPLATE = "admin/two_factor/lockout.html"
 AXES_ENABLE_ADMIN = False
 
 MIDDLEWARE = [
+    # First, so it counts every query a request runs (the session and auth
+    # lookups too) for gunicorn's access line: calculatorapi/middleware.py.
+    "calculatorapi.middleware.RequestStatsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
