@@ -11,33 +11,38 @@ This module is the ONE place that knows a kind's payout days, so the ledger
 (which dates them) and the models (which check a list's length) never keep
 copies that drift apart. The client only reads the instants and the amounts.
 
-THE DAYS (owner, 2026-10-22: race-rewards-daily-plan.md)
---------------------------------------------------------
-Every day pays at its END (start + N days): a day's points are certainly in
-hand at the reset that closes it. The LAST payout is always the row's own
-`date`, the instant the whole reward landed before this existed, so the total
-still arrives exactly when it did and only the earlier days move forward.
+THE DAYS (Daptrius and the owner, 2026-10-29: notes/v2-10-feedback-plan.md)
+---------------------------------------------------------------------------
+Every day pays at its START, the reset that opens it (start + N - 1 days):
+day 1 pays the day the event opens, and the last day pays 24 hours before
+the listed end. The LAST payout is always the row's own `date` (the end less
+ledger.RACE_REWARD_LEAD_TIME, the start of the last day), so the total lands
+with the final day.
 
   Champions Meeting  days 1-4 (Round 1 and Round 2), then the finals at the
                      row's date (start of finals day). Day 5 is the gap and
                      pays nothing. Five payouts.
   League of Heroes   main-stage days 1-6, second stage 1 on day 8, second
-                     stage 2 at the row's date (the end of day 9). Day 7 is
+                     stage 2 at the row's date (start of day 9). Day 7 is
                      ranking only. Eight payouts.
+
+Until 2026-10-29 the early days paid at their END (start + N days), one day
+late against the game, while the CM finals already paid at the start of
+their day: a CM showed its rounds a day late and its finals right.
 
 An earlier day is clamped to the last instant, so a short or odd window can
 never date a day after its own final payout.
 
-TICKETS AND SHARDS (Daptrius, 2026-10-22)
------------------------------------------
-A rank's gacha tickets and shards are not paid with the last day either:
+TICKETS AND SHARDS (Daptrius, 2026-10-22 and 2026-10-29)
+--------------------------------------------------------
+A rank's gacha tickets and shards are paid on one day each:
 
-  Champions Meeting  tickets and shards at the end of day 4
-  League of Heroes   shards at the end of day 3, tickets at the end of day 4
+  Champions Meeting  tickets and shards with the finals (the row's date)
+  League of Heroes   shards on day 3, tickets on day 4
 
-Each is dated the same way as a carat day (start + N days, clamped to the
-last instant), so it falls on one of `payouts`. The ledger row carries them
-as `tickets_at` / `shards_at`.
+Each is dated the same way as a carat day (clamped to the last instant), so
+it falls on one of `payouts`. The ledger row carries them as `tickets_at` /
+`shards_at`.
 """
 
 from datetime import timedelta
@@ -47,16 +52,18 @@ from django.db import models
 
 # Day offsets from the event's start for every payout but the last, keyed by
 # ledger row kind (ledger.KIND_*; spelled out here because ledger imports this).
+# Offset 0 is day 1: a day pays at the reset that opens it.
 EARLY_PAYOUT_DAYS = {
-    "champions_meeting": (1, 2, 3, 4),
-    "league_of_heroes": (1, 2, 3, 4, 5, 6, 8),
+    "champions_meeting": (0, 1, 2, 3),
+    "league_of_heroes": (0, 1, 2, 3, 4, 5, 7),
 }
 
 
-# The day a rank's tickets and shards arrive, keyed like EARLY_PAYOUT_DAYS.
+# The offset a rank's tickets and shards arrive at, keyed like
+# EARLY_PAYOUT_DAYS. None is the last payout: a CM's come with the finals.
 ITEM_PAYOUT_DAYS = {
-    "champions_meeting": {"tickets": 4, "shards": 4},
-    "league_of_heroes": {"tickets": 4, "shards": 3},
+    "champions_meeting": {"tickets": None, "shards": None},
+    "league_of_heroes": {"tickets": 3, "shards": 2},
 }
 
 
@@ -77,10 +84,11 @@ def payout_instants(kind, start, last):
 def item_payout_instant(kind, item, start, last):
     """When an event of this kind pays a rank's `item` ("tickets" or
     "shards"). Dated like a carat day, so it is one of payout_instants(); with
-    no start, at `last`."""
-    if start is None:
+    no start, or on the last day, at `last`."""
+    day = ITEM_PAYOUT_DAYS[kind][item]
+    if start is None or day is None:
         return last
-    return min(start + timedelta(days=ITEM_PAYOUT_DAYS[kind][item]), last)
+    return min(start + timedelta(days=day), last)
 
 
 def day_amounts_error(kind, day_amounts, total):

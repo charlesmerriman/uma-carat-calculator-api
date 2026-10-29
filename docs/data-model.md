@@ -487,9 +487,8 @@ anchor governs every income source uniformly.
 Placing a row is a judgement, though, and `RACE_REWARD_LEAD_TIME` is where that
 shows. A Champions Meeting's finals settle and pay out **24 hours before** its
 listed end, so its ledger row is dated `end_date - 24h` while its timeline card
-still shows the real window. League of Heroes carries a lead time of zero and is
-listed explicitly rather than omitted — CM and LoH are field-identical and
-handled identically everywhere else, so the one divergence has to read as
+still shows the real window. League of Heroes carries the same lead time since 2026-10-29 (its last day pays 24 hours
+before its end too); both kinds stay listed so a future divergence reads as
 deliberate. Because the ledger owns this, every consumer inherits it: the banner
 rows, the income tiles, and the uncap-crystals panel (which reads race payout
 instants from `income_ledger`, not from `champions_meeting_data`, for exactly

@@ -313,12 +313,15 @@ the instants its days pay (`calculatorapi/race_payouts.py`, the one place that k
 
 | Kind | Payouts | When |
 |---|---|---|
-| CM | 5 | days 1 to 4 at the end of each day (start + N days), the finals at the row's `date` |
-| LoH | 8 | main-stage days 1 to 6 at start + N days, second stage 1 at start + 8 days, second stage 2 at the row's `date` (the end) |
+| CM | 5 | days 1 to 4 at the start of each day (start + N - 1 days, so day 1 pays when the event opens), the finals at the row's `date` |
+| LoH | 8 | main-stage days 1 to 6 at the start of each day, second stage 1 at start + 7 days, second stage 2 at the row's `date` |
 
-The last payout is always the row's `date`, so an event's total still lands exactly when it
-did before; only the earlier days move forward. An event with no start date pays everything
-at `date`.
+Every day pays at the reset that OPENS it (Daptrius, 2026-10-29), so the last payout, the
+row's `date`, is 24 hours before the listed end for both kinds. Worked example, CM 22
+(11/21 22:00 UTC to 11/27 21:59:59): rounds on 11/21, 11/22, 11/23 and 11/24, nothing on
+the gap day, the finals with the tickets and shards on 11/26. Until 2026-10-29 the early
+days paid at the END of their day, one day late, and an LoH's last day at its listed end.
+An event with no start date pays everything at `date`.
 
 How much each day pays is data: `day_amounts`, a list with one amount per payout, on a rank
 (its own amount) and on each "from event #N" row. The admin refuses a list of the wrong
@@ -326,8 +329,8 @@ length or one that does not add up to that row's carats. Blank on a rank means e
 the last day (the behaviour before this existed); blank on a row means the rank's own split,
 scaled to the row's total by the client.
 
-A rank's tickets and shards come mid-event too (Daptrius, 2026-10-22): a CM's at the end of
-day 4, an LoH's shards at the end of day 3 and its tickets at the end of day 4. Each race row
+A rank's tickets and shards each come on one day (Daptrius, 2026-10-22 and 2026-10-29): a
+CM's with the finals, an LoH's shards on day 3 and its tickets on day 4. Each race row
 carries them as `tickets_at` / `shards_at` (`race_payouts.ITEM_PAYOUT_DAYS`), dated like a
 carat day, so each is one of `payouts`. With no start date they fall at `date`.
 
