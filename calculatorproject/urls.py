@@ -31,6 +31,7 @@ from calculatorapi.views.account_linking import (
 from calculatorapi.views.visits import site_visit
 from calculatorapi.views.bot_api import (
     bot_blocked_term,
+    bot_database,
     bot_digest,
     bot_health,
     bot_item,
@@ -179,6 +180,7 @@ urlpatterns = [
     path("bot/queue", bot_queue, name="bot-queue"),
     path("bot/digest", bot_digest, name="bot-digest"),
     path("bot/health", bot_health, name="bot-health"),
+    path("bot/database", bot_database, name="bot-database"),
     path("bot/upcoming", bot_upcoming, name="bot-upcoming"),
     path("bot/queue/sync", bot_queue_sync, name="bot-queue-sync"),
     path("bot/queue/<str:thread_id>", bot_queue_entry, name="bot-queue-entry"),

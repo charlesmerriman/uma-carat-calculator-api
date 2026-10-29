@@ -78,6 +78,45 @@ def render_digest(data, probe):
     return discord.Embed(title=f"Yesterday, {data['date']}", description="\n".join(lines), colour=0x3B82F6)
 
 
+def _megabytes(size_bytes):
+    return f"{size_bytes / 1_000_000:,.0f} MB"
+
+
+def render_database_week(data, today):
+    """The Monday post, from GET /bot/database: the database's size and running
+    totals, and the queries that took the most total time once
+    pg_stat_statements is installed (notes/server-diagnostics-plan.md, item 10)."""
+    overview, top = data.get("overview"), data.get("top_queries")
+    lines = []
+    if overview:
+        since = f"since {overview['since'][:10]}" if overview.get("since") else "since the statistics began"
+        lines.append(f"**Size** {_megabytes(overview['size_bytes'])}")
+        if overview.get("cache_hit_pct") is not None:
+            lines.append(f"**Reads served from memory** {overview['cache_hit_pct']}%, {since}")
+        lines.append(
+            f"**Deadlocks** {overview['deadlocks']:,}, **temp files** {overview['temp_files']:,} "
+            f"({_megabytes(overview['temp_bytes'])}), {since}"
+        )
+    else:
+        lines.append("The site sent no database numbers.")
+    if top is None:
+        lines += ["", "Query statistics are off: `pg_stat_statements` isn't installed on the database yet."]
+    elif not top.get("queries"):
+        lines += ["", "No query statistics yet."]
+    else:
+        since = f" since {top['since'][:10]}" if top.get("since") else ""
+        lines += ["", f"**Most time-consuming queries**{since}:"]
+        for number, query in enumerate(top["queries"], start=1):
+            # In backticks, so a backtick inside would end the code span early.
+            text = query["query"].replace("`", "'")
+            lines.append(f"{number}. `{text}`")
+            lines.append(
+                f"{_plural(query['calls'], 'call')}, {query['total_ms'] / 1000:,.0f} s in all, "
+                f"{query['mean_ms']} ms each"
+            )
+    return discord.Embed(title=f"The database, week of {today:%Y-%m-%d}", description="\n".join(lines), colour=0x3B82F6)
+
+
 def deploy_line(deployment, app_id):
     label = DEPLOY_LINES[deployment["phase"]]
     progress = deployment.get("progress") or {}
@@ -110,6 +149,8 @@ class Ops:
         # The UTC date whose digest is settled, so the retry loop stops asking.
         # In memory only: after a restart the site's claim answers instead.
         self.digest_done_for = None
+        # The same, for the Monday database post.
+        self.database_done_for = None
 
     # ── The daily digest ──
 
@@ -151,6 +192,41 @@ class Ops:
             raise
         await self._record(key, message.id)
         self.digest_done_for = today
+        return True
+
+    # ── The database, on Mondays ──
+
+    def database_due(self, now):
+        """Mondays from the digest hour on, until this Monday's post is settled.
+        Rides the digest's 5-minute loop, so a failed try is retried the same way."""
+        return now.weekday() == 0 and now.hour >= self.config.digest_hour_utc and self.database_done_for != now.date()
+
+    async def database_week(self, today):
+        """Post the database's numbers once a week. Returns whether it posted."""
+        key = f"database:{today:%Y%m%d}"
+        try:
+            claim = await self.api.claim(key, self.config.ops_channel_id)
+        except SiteUnavailable:
+            return False
+        if claim.status != 201:
+            self.database_done_for = today
+            return False
+        try:
+            answer = await self.api.database()
+        except SiteUnavailable:
+            answer = None
+        if answer is None or not answer.ok:
+            logger.warning("Database post for %s not posted: the site's numbers didn't arrive; will retry", today)
+            await self._release(key)
+            return False
+        ops = await self.get_channel(self.config.ops_channel_id)
+        try:
+            message = await ops.send(embed=render_database_week(answer.data, today), allowed_mentions=NO_MENTIONS)
+        except discord.HTTPException:
+            await self._release(key)
+            raise
+        await self._record(key, message.id)
+        self.database_done_for = today
         return True
 
     # ── The health probe ──

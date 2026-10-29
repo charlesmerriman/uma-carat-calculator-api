@@ -142,6 +142,11 @@ class SiteApi:
         an API that is the thing being slow."""
         return await self._request("GET", f"bot/health?minutes={minutes}")
 
+    async def database(self):
+        """The database's numbers for the Monday post: size, running totals,
+        and the queries that took the most time (aggregates and query shapes)."""
+        return await self._request("GET", "bot/database")
+
     # The team board's ordered queue (the site's team_queue.py).
 
     async def queue(self):
