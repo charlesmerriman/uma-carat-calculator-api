@@ -335,6 +335,21 @@ def user_context():
     return context
 
 
+def first_jp_date_maps():
+    """(uma_map, support_map), the selector-eligibility maps, from the cached
+    user_context() instead of two fresh aggregate queries.
+
+    Saves validate step-up picks and selector purchases against these maps, and
+    used to rebuild them every time: pg_stat_statements put those two queries
+    at the top of the database's total time for October (1,240,706 runs each,
+    ~6,100 s together), because every auto-save carries the step-up picks. They
+    read only catalogue tables, so the cached copy, dropped with the payload on
+    any catalogue edit, is exactly as fresh as what signed-in loads already use.
+    """
+    card_context = user_context()[2]
+    return card_context["uma_first_jp_dates"], card_context["support_first_jp_dates"]
+
+
 def planned_banners_in_order(rows, *, emap):
     """Planned rows in the order the planner renders them: resolved start
     date, then kind (_planned_banner_kind_rank). `rows` must select_related
@@ -881,8 +896,12 @@ class CalculatorViewSet(ViewSet):
         if request.data.get("user_step_up_selection_data") is not None:
             selection_context = {
                 "stored_pairs": _stored_selection_pairs(user),
-                "first_jp_dates": build_first_jp_date_maps(),
+                "first_jp_dates": first_jp_date_maps(),
             }
+        # Purchases check a selector's pick against the same maps.
+        purchase_context = None
+        if request.data.get("user_planned_purchase_data") is not None:
+            purchase_context = {"first_jp_dates": first_jp_date_maps()}
 
         # Banners are scoped to the plan; purchases to the stats block the
         # plan reads (the account's own, or its profile's); step-up selections
@@ -894,7 +913,7 @@ class CalculatorViewSet(ViewSet):
              UserPlannedBannerSerializer, "Banner not found", None,
              {"user": user, "plan": plan}),
             ("user_planned_purchase_data", UserPlannedPurchase,
-             UserPlannedPurchaseSerializer, "Purchase not found", None,
+             UserPlannedPurchaseSerializer, "Purchase not found", purchase_context,
              plans.purchase_scope(plan)),
             ("user_step_up_selection_data", UserStepUpSelection,
              UserStepUpSelectionSerializer, "Step-up selection not found",
