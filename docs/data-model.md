@@ -1448,8 +1448,8 @@ A batch of umas joining the **Daily Legend Races** (one race a day per uma, fore
 `calculatorapi/data/changelog.yaml` holds patch notes as text, and
 `manage.py sync_changelog` writes them into the table. Production runs that
 command in the service's `run_command`, right after `migrate` — a deploy is the
-only route to the production database, since the app's database is an App
-Platform *dev* database with no external endpoint.
+only route to the production database, since the app's database (a managed
+cluster since 2026-10-29) accepts connections from the app alone.
 
 The reason is that the changelog is the one piece of site content that describes
 the **code**: an entry is written in the same pull request as the work it
@@ -1926,7 +1926,7 @@ tokens.
 
 **`load()` seeds from `PATREON_ACCESS_TOKEN` / `PATREON_REFRESH_TOKEN` only when
 the row is empty.** That is what lets production bootstrap itself on the first
-sync — the production database has no external endpoint, so the only other route
+sync — the production database accepts connections from the app alone, so the only other route
 is the POST_DEPLOY job recipe in `.do/app.yaml`. Once a pair is stored, the
 environment is ignored: after the first refresh those values are stale, and
 honouring them would resurrect a spent token.
