@@ -13,7 +13,7 @@ from aiohttp.test_utils import TestServer
 from bot import health
 from bot.api import Answer
 from bot.config import load
-from bot.ops import Ops, deploy_line, render_digest
+from bot.ops import Ops, deploy_line, render_database_week, render_digest
 from tests.fakes import CONFIG, TEAM_ROLE, FakeApi
 from tests.test_config import GOOD
 
@@ -124,6 +124,17 @@ class TrackerTests(unittest.TestCase):
         self.assertNotIn("isn't cached", text)
         uncached = health.render_alert(tracker, None, {**ROUTES, "payload_cached": False}).description
         self.assertIn("The guest payload isn't cached", uncached)
+
+    def test_the_alert_names_the_database_side(self):
+        tracker = health.Tracker()
+        for n in range(3):
+            tracker.feed(SLOW_CHECK, minutes(n))
+        busy = {**ROUTES, "database": {"connections": {"idle": 1, "active": 4, "idle in transaction": 1},
+                                       "waiting_on_locks": 2}}
+        text = health.render_alert(tracker, None, busy).description
+        self.assertIn("Database: 6 connections (4 active, 1 idle, 1 idle in transaction), 2 waiting on a lock", text)
+        calm = {**ROUTES, "database": {"connections": {"idle": 4}, "waiting_on_locks": 0}}
+        self.assertIn("Database: 4 connections (4 idle)\n", health.render_alert(tracker, None, calm).description + "\n")
 
     def test_no_route_lines_without_an_answer(self):
         tracker = health.Tracker()
@@ -348,6 +359,71 @@ class AlertTests(OpsFixture):
         self.assertEqual([call for call in self.api.calls if call[0] == "health"], [("health", 5)])
         self.assertIn("api HTTP 502", text)
         self.assertNotIn("Busiest", text)
+
+
+# GET /bot/database's answer, the shape calculatorapi/database_stats.py sends.
+DATABASE = {
+    "overview": {"size_bytes": 604_567_219, "cache_hit_pct": 99.91, "deadlocks": 9, "temp_files": 1177,
+                 "temp_bytes": 10_856_422_710, "since": None},
+    "top_queries": {
+        "since": "2026-10-29T20:00:00+00:00",
+        "queries": [
+            {"query": 'UPDATE "calculatorapi_userplannedbanner" SET "plan_id" = $1 WHERE `x` = $2',
+             "calls": 12_345, "total_ms": 1_234_000, "mean_ms": 99.9, "rows": 12_345},
+        ],
+    },
+}
+MONDAY = datetime.date(2026, 10, 26)
+
+
+class DatabaseWeekTests(OpsFixture):
+
+    def test_render(self):
+        text = render_database_week(DATABASE, MONDAY).description
+        self.assertIn("**Size** 605 MB", text)
+        self.assertIn("**Reads served from memory** 99.91%, since the statistics began", text)
+        self.assertIn("**Deadlocks** 9, **temp files** 1,177 (10,856 MB), since the statistics began", text)
+        self.assertIn("**Most time-consuming queries** since 2026-10-29:", text)
+        # A backtick in the query can't end the code span early.
+        self.assertIn("1. `UPDATE \"calculatorapi_userplannedbanner\" SET \"plan_id\" = $1 WHERE 'x' = $2`", text)
+        self.assertIn("12,345 calls, 1,234 s in all, 99.9 ms each", text)
+        self.assertEqual(render_database_week(DATABASE, MONDAY).title, "The database, week of 2026-10-26")
+
+    def test_render_before_query_statistics(self):
+        off = render_database_week({**DATABASE, "top_queries": None}, MONDAY).description
+        self.assertIn("Query statistics are off: `pg_stat_statements` isn't installed", off)
+        empty = render_database_week({**DATABASE, "top_queries": {"since": None, "queries": []}}, MONDAY).description
+        self.assertIn("No query statistics yet.", empty)
+        self.assertIn("The site sent no database numbers.", render_database_week({}, MONDAY).description)
+
+    def test_due_on_mondays_from_the_digest_hour_until_settled(self):
+        ops = self.ops()
+
+        def at(day, hour):
+            return datetime.datetime.combine(day, datetime.time(hour), tzinfo=datetime.timezone.utc)
+
+        self.assertFalse(ops.database_due(at(MONDAY, OPS_CONFIG.digest_hour_utc - 1)))
+        self.assertTrue(ops.database_due(at(MONDAY, OPS_CONFIG.digest_hour_utc)))
+        self.assertFalse(ops.database_due(at(MONDAY + datetime.timedelta(days=1), 12)))
+        ops.database_done_for = MONDAY
+        self.assertFalse(ops.database_due(at(MONDAY, 12)))
+
+    async def test_posts_once_a_week(self):
+        ops = self.ops(Answer(201, {}), Answer(200, DATABASE), Answer(200, {}))
+        self.assertTrue(await ops.database_week(MONDAY))
+        self.assertEqual(self.api.calls[0], ("claim", "database:20261026", OPS_ID))
+        self.assertEqual(self.api.calls[1], ("database",))
+        self.assertEqual(self.channels[OPS_ID].sent[0][1]["embed"].title, "The database, week of 2026-10-26")
+        ops = self.ops(Answer(409, {"message_id": "1"}))
+        self.assertFalse(await ops.database_week(MONDAY))
+        self.assertEqual(ops.database_done_for, MONDAY)
+
+    async def test_a_failed_read_gives_the_week_back(self):
+        ops = self.ops(Answer(201, {}), "down", Answer(204, {}))
+        self.assertFalse(await ops.database_week(MONDAY))
+        self.assertEqual([call[0] for call in self.api.calls], ["claim", "database", "release"])
+        self.assertIsNone(ops.database_done_for)
+        self.assertEqual(self.channels[OPS_ID].sent, [])
 
 
 class FakeDo:

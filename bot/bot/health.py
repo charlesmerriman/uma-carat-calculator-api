@@ -246,9 +246,28 @@ def render_routes(routes):
                 f"`{row['route']}` {count}, {_seconds(row['total_ms'])} in all "
                 f"({_seconds(row['db_ms'])} database), slowest {_seconds(row['max_ms'])}"
             )
+    if routes.get("database"):
+        lines.append(database_line(routes["database"]))
     if routes.get("payload_cached") is False:
         lines.append("The guest payload isn't cached: every guest load is rebuilding it.")
     return lines
+
+
+def database_line(database):
+    """"Database: 5 connections (1 active, 4 idle), 2 waiting on a lock": the
+    database's side of a slow spell. Many active connections, or any waiting
+    on a lock, point at the database; few point back at the web server."""
+    connections = database.get("connections") or {}
+    total = sum(connections.values())
+    line = f"Database: {total} connection{'' if total == 1 else 's'}"
+    if connections:
+        # Active first: it's the number that matters in a slow spell.
+        ordered = sorted(connections.items(), key=lambda item: (item[0] != "active", item[0]))
+        line += " (" + ", ".join(f"{count} {state}" for state, count in ordered) + ")"
+    waiting = database.get("waiting_on_locks") or 0
+    if waiting:
+        line += f", {waiting} waiting on a lock"
+    return line
 
 
 def render_alert(tracker, peaks, routes=None):

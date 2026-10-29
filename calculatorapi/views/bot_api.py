@@ -52,6 +52,7 @@ from rest_framework.throttling import AnonRateThrottle
 
 from calculatorapi import (
     announcements,
+    database_stats,
     gallery_moderation,
     middleware,
     moderation_cards,
@@ -498,9 +499,10 @@ def bot_health(request):
     """GET /bot/health?minutes=5: what the API has been busy with, for the
     health alert. Per route PATTERN, never a raw path (so no plan or post ids),
     over the last `minutes` (1 to WINDOW_MINUTES): requests, total and slowest
-    time, database time and queries; plus how many requests are in progress
-    and whether the guest payload is cached. Aggregates only, and only this
-    process's (middleware.py says why that is the whole picture today)."""
+    time, database time and queries; plus how many requests are in progress,
+    whether the guest payload is cached, and the database's connections right
+    now (database_stats.activity). Aggregates only, and only this process's
+    (middleware.py says why that is the whole picture today)."""
     try:
         minutes = int(request.query_params.get("minutes", 5))
     except ValueError:
@@ -513,7 +515,18 @@ def bot_health(request):
     snapshot["in_flight"] = max(0, snapshot["in_flight"] - 1)
     snapshot["minutes"] = minutes
     snapshot["payload_cached"] = public_payload_cache.is_cached()
+    snapshot["database"] = database_stats.activity()
     return Response(snapshot)
+
+
+@bot_route(["GET"])
+def bot_database(request):  # pylint: disable=unused-argument
+    """GET /bot/database: the database's numbers for the weekly post in
+    #calc-ops: size, cache hit rate, deadlocks and temp files since the
+    statistics started, and the five queries that took the most total time
+    (None until pg_stat_statements is installed). Aggregates and query shapes
+    only (database_stats.py says why that holds no person's data)."""
+    return Response({"overview": database_stats.overview(), "top_queries": database_stats.top_queries()})
 
 
 # ── Announcements (announcements.py) ───────────────────────────────────────

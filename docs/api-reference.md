@@ -1431,11 +1431,20 @@ saved in the last 7 days, active supporters, gallery posts / comments / reports 
 
 **The health snapshot**: `GET bot/health?minutes=5` (1 to 10) returns what the API has been
 busy with, for Oguri Bot's health alert: `{minutes, in_flight, requests, payload_cached,
-routes: [{route, count, total_ms, max_ms, db_ms, queries}]}`, the eight routes with the most
+database, routes: [{route, count, total_ms, max_ms, db_ms, queries}]}`, the eight routes with the most
 total time first. A route is its method and URL PATTERN (`PATCH calculator-data`, `GET
 plan/<str:public_id>`), never a path, so it carries no ids. `in_flight` leaves out the health
 request itself. It counts this process's requests (`calculatorapi/middleware.py`), which is
 all of them while production runs one gunicorn process. Aggregates only.
+`database` is `{connections: {state: count}, waiting_on_locks}` from `pg_stat_activity`
+(`database_stats.activity`), or `null` off Postgres.
+
+**The database's week**: `GET bot/database` returns `{overview: {size_bytes, cache_hit_pct,
+deadlocks, temp_files, temp_bytes, since}, top_queries: {since, queries: [{query, calls,
+total_ms, mean_ms, rows}]}}` for the Monday post in `#calc-ops` (`database_stats.py`).
+`top_queries` is `null` until `pg_stat_statements` is installed, and both are `null` off
+Postgres. A query's text is its normalised SHAPE (every literal is `$1`, `$2`...), cut to 200
+characters: table and column names, never a value.
 
 **Announcements**: `GET bot/upcoming?days=14` (max 60) returns every banner and event
 moment due from 6 hours ago to `days` ahead (`announcements.py`), from the same
