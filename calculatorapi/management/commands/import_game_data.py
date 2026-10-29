@@ -35,8 +35,10 @@ written only while empty so an editor's correction sticks; a scenario's or a
 succession's base is the game's own. Unlock conditions are replaced as a set
 whenever they differ: global's English, UmaTL's, and the Japanese.
 
-`is_on_global` on Uma and SupportCard is set here: true exactly for the ids in
-the global snapshot. Global outfits and cards get global's skill links only;
+`is_on_global` on Uma and SupportCard is set here: true for the ids in the
+global snapshot whose `start_date` has passed (out_on_global; the client
+carries a few JP-only support cards dated 2099). Global outfits and cards get
+global's skill links only;
 JP's links go to the others, after a name check in English (jp_owner_links).
 
 WHAT IT WRITES, and what it leaves alone:
@@ -118,6 +120,7 @@ from pathlib import Path
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from django.utils import timezone
 
 from calculatorapi import public_payload_cache, pvp_catalogue_cache, skills_cache
 from calculatorapi.models import (
@@ -340,6 +343,21 @@ def support_values(card):
     }
 
 
+def out_on_global(card, now):
+    """
+    Whether a card in the global snapshot is out on global by `now`. Being in
+    the client's table is not enough: it carries four JP-only support cards
+    (30058 to 30061, Twin Turbo [Constellation of Stars] among them) dated
+    2099-01-01, its "not released here" mark, so a card whose `start_date` is
+    still ahead is not out (Daptrius, 2026-10-29: the Collection showed them).
+    A card the snapshot gives no date (every uma) is out. Compared with the
+    time the import runs, so a card dated ahead turns on at the first deploy
+    after its date.
+    """
+    start = card.get("start_date")
+    return start is None or start <= now.timestamp()
+
+
 def no_longer_on_global(by_game_id, cards):
     """
     (row, diff) pairs for the rows the global snapshot doesn't hold but which
@@ -497,6 +515,7 @@ class Command(BaseCommand):
         Python objects, so a dry run is as cheap as it looks.
         """
         by_game_id = {row.game_id: row for row in model.objects.exclude(game_id__isnull=True)}
+        now = timezone.now()
         changed, unchanged, missing, mismatched = [], 0, [], []
         distrusted = set()  # game_ids the name check rejected; junctions skip them too
 
@@ -512,9 +531,9 @@ class Command(BaseCommand):
                 )
                 distrusted.add(card["id"])
                 continue
-            # In the global snapshot, so in the game on global (the team
+            # In the global snapshot and dated, so out on global (the team
             # builder reads it for cards on no banner; see pvp_catalogue.py).
-            values = {**values_for(card), "is_on_global": True}
+            values = {**values_for(card), "is_on_global": out_on_global(card, now)}
             diff = {
                 column: value for column, value in values.items()
                 if getattr(row, column) != value
