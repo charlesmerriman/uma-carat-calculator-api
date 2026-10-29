@@ -64,14 +64,13 @@ KIND_LEAGUE_OF_HEROES = "league_of_heroes"
 # day after a banner was credited to it (it must not be — the rewards arrive a
 # minute after the banner closes).
 #
-# League of Heroes is listed explicitly at zero rather than omitted. CM and LoH
-# are field-identical and handled identically everywhere else (they even share
-# one timeline card), so a divergence between them has to read as deliberate at
-# the point it happens, not as a kind someone forgot to add. Giving LoH the same
-# lead time later is a one-line change here and nowhere else.
+# League of Heroes takes the same lead time since 2026-10-29 (Daptrius: its
+# last day pays 24 hours before the event ends, like a CM's finals). Until then
+# it was zero, dating the whole LoH at its listed end, a day late. Both kinds
+# stay listed so a future divergence reads as deliberate.
 RACE_REWARD_LEAD_TIME = {
     KIND_CHAMPIONS_MEETING: timedelta(hours=23, minutes=59, seconds=59),
-    KIND_LEAGUE_OF_HEROES: timedelta(0),
+    KIND_LEAGUE_OF_HEROES: timedelta(hours=23, minutes=59, seconds=59),
 }
 
 # The model field holding each race kind's own number (CM #12, LoH #3), so a
@@ -184,8 +183,7 @@ def _race_rows(events, emap, kind):
 
     Dated at the event's resolved END date, less that kind's
     RACE_REWARD_LEAD_TIME — the payout lands when the event's placements are
-    settled, which for a Champions Meeting is the daily reset a day before the
-    window closes.
+    settled, the daily reset a day before the window closes.
     Amounts stay zero: what a placement is worth depends on the user's rank row,
     which only the client knows.
 
