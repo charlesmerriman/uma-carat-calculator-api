@@ -32,6 +32,20 @@
 # module changed. Newest entry first is conventional here but not required — the
 # page sorts by date.
 
+- key: picture-fixes-reward-days
+  date: 2026-10-29
+  title: "Reward days, long plans in pictures, and one-tap CM Runs"
+  version: "v2.11"
+  changes:
+    - fixed: "Champions Meeting and League of Heroes rewards land on the right days now. Each day pays the day it starts, and a Champions Meeting's tickets and shards come with the finals. Your planner counts them on those same days."
+    - fixed: "iPhone and iPad share pictures keep their card art."
+    - changed: "Long plans fit in one picture. Every banner stays full size, and past 30 banners they sit in two columns."
+    - changed: "On iPhone and iPad, Save or share goes straight to Photos."
+    - added: "CM Runs: one tap puts your team on every ticket left, Finals included."
+    - changed: "Team pictures list running styles from Runaway to End, like the game. Plan pictures show Carat Est. above Paid Carat Est."
+    - fixed: "Every picture gets its own file name with your plan or team and the time, so saving two in a day keeps both."
+    - fixed: "The Collection no longer lists four Japan-only support cards."
+
 - key: share-pictures
   date: 2026-10-29
   title: "Share pictures, and a faster site at busy times"
