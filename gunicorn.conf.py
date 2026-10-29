@@ -36,9 +36,15 @@ timeout = 30
 # buildpack already turns it on (GUNICORN_CMD_ARGS="--access-logfile -"); saying
 # so here means it doesn't depend on that.
 accesslog = "-"
-# gunicorn's default line plus how long the request took, in milliseconds
-# ("... 200 39 "<referer>" "<agent>" 412ms"). Without it the log shows how many
-# requests a crowd sent but not which routes were slow, which is what an outage
-# needs (notes/server-diagnostics-plan.md). The time goes LAST so anything that
-# splits the old format still reads the same fields.
-access_log_format = '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s" %(M)sms'
+# gunicorn's default line plus the request's database share and how long it took,
+# in milliseconds ("... 200 39 "<referer>" "<agent>" db=14q/35ms 412ms"). Without
+# the time the log shows how many requests a crowd sent but not which routes were
+# slow, which is what an outage needs; without the database share it can't say
+# whether the slow part was Postgres or Python (notes/server-diagnostics-plan.md).
+# `db=` comes from calculatorapi/middleware.py through the WSGI environ, and reads
+# "-" for a request that never reached Django's middleware. The time stays LAST so
+# anything reading the trailing NNNms, or splitting the old fields from the front,
+# still works.
+access_log_format = (
+    '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s" %({calc_db}e)s %(M)sms'
+)
