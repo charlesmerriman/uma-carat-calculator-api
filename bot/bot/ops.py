@@ -62,6 +62,17 @@ def render_digest(data, probe):
     if probe:
         p95 = f", 95% of responses within {probe['p95_seconds']} s" if probe["p95_seconds"] is not None else ""
         lines.append(f"**Site health** {probe['uptime_pct']}% of {probe['checks']:,} checks good{p95}")
+        hour = probe.get("slowest_hour")
+        if hour:
+            within = (
+                f"95% of API responses within {hour['p95_seconds']} s"
+                if hour["p95_seconds"] is not None
+                else "no API response at all"
+            )
+            lines.append(
+                f"**Slowest hour** {hour['hour']:02d}:00 UTC, {within} "
+                f"({hour['good']:,} of {hour['checks']:,} checks good)"
+            )
     else:
         lines.append("**Site health** no full day of checks yet (the bot restarted)")
     return discord.Embed(title=f"Yesterday, {data['date']}", description="\n".join(lines), colour=0x3B82F6)
@@ -148,6 +159,7 @@ class Ops:
         """One probe; posts the alert or the recovery when the state flips.
         Returns the flip ("down", "up") or None."""
         readings = await health.probe(session, self.config.site_url, self.config.probe_slow_seconds)
+        logger.info("probe %s", health.log_line(readings))
         change = self.tracker.feed(readings, now)
         if change is None:
             return None

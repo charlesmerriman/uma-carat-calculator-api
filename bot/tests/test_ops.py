@@ -84,6 +84,35 @@ class TrackerTests(unittest.TestCase):
         tracker.feed(BAD_CHECK, minutes(3))
         self.assertEqual(health.render_alert(tracker, None).title, "The site looks down")
 
+    def test_the_slowest_hour_is_the_api_request_s(self):
+        tracker = health.Tracker()
+        fast = [health.Reading("api", True, 200, 0.2), health.Reading("home", True, 200, 9.0)]
+        slow = [health.Reading("api", True, 200, 2.5), health.Reading("home", True, 200, 0.1)]
+        for n in range(3):
+            tracker.feed(fast, T0.replace(hour=9) + datetime.timedelta(minutes=n))
+            tracker.feed(slow, T0.replace(hour=15) + datetime.timedelta(minutes=n))
+        # 15:00, not 09:00: the home page's 9 s doesn't count, it's a CDN file.
+        self.assertEqual(
+            tracker.summary(T0.date())["slowest_hour"],
+            {"hour": 15, "p95_seconds": 2.5, "checks": 3, "good": 3},
+        )
+
+    def test_an_hour_with_failures_beats_a_slow_one(self):
+        tracker = health.Tracker()
+        slow = [health.Reading("api", True, 200, 2.5), health.Reading("home", True, 200, 0.1)]
+        down = [health.Reading("api", False, problem="timed out"), health.Reading("home", True, 200, 0.1)]
+        tracker.feed(slow, T0.replace(hour=15))
+        tracker.feed(down, T0.replace(hour=16))
+        self.assertEqual(
+            tracker.summary(T0.date())["slowest_hour"],
+            {"hour": 16, "p95_seconds": None, "checks": 1, "good": 0},
+        )
+
+    def test_the_log_line(self):
+        self.assertEqual(health.log_line(GOOD_CHECK), "api 200 0.30s, home 200 0.10s")
+        timed_out = [health.Reading("api", False, problem="timed out"), GOOD_CHECK[1]]
+        self.assertEqual(health.log_line(timed_out), "api timed out, home 200 0.10s")
+
     def test_the_alert_quotes_the_busiest_routes(self):
         tracker = health.Tracker()
         for n in range(3):
@@ -200,7 +229,16 @@ class DigestTests(OpsFixture):
         self.assertIn("1 post, 3 comments, 0 reports", text)
         self.assertIn("**Waiting for a moderator** 2 items", text)
         self.assertIn("99.93% of 1,440 checks good, 95% of responses within 0.42 s", text)
+        self.assertNotIn("Slowest hour", text)
         self.assertIn("no full day of checks yet", render_digest(DIGEST, None).description)
+
+    def test_render_the_slowest_hour(self):
+        probe = {"checks": 1440, "uptime_pct": 97.5, "p95_seconds": 0.6,
+                 "slowest_hour": {"hour": 15, "p95_seconds": 4.2, "checks": 60, "good": 41}}
+        text = render_digest(DIGEST, probe).description
+        self.assertIn("**Slowest hour** 15:00 UTC, 95% of API responses within 4.2 s (41 of 60 checks good)", text)
+        down = {**probe, "slowest_hour": {"hour": 16, "p95_seconds": None, "checks": 60, "good": 0}}
+        self.assertIn("16:00 UTC, no API response at all (0 of 60", render_digest(DIGEST, down).description)
 
     async def test_posts_once_a_day(self):
         ops = self.ops(Answer(201, {}), Answer(200, DIGEST), Answer(200, {}))
@@ -284,6 +322,21 @@ class AlertTests(OpsFixture):
         finally:
             health.probe = original
         return self.channels[OPS_ID].sent[0][1]["embed"].description
+
+    async def test_every_check_writes_one_log_line(self):
+        ops = self.ops()
+        original = health.probe
+
+        async def fake_probe(*_args):
+            return GOOD_CHECK
+
+        health.probe = fake_probe
+        try:
+            with self.assertLogs("bot.ops", level="INFO") as logs:
+                await ops.check(None, minutes(0))
+        finally:
+            health.probe = original
+        self.assertEqual(logs.output, ["INFO:bot.ops:probe api 200 0.30s, home 200 0.10s"])
 
     async def test_the_alert_asks_the_api_once_for_its_routes(self):
         text = await self._alert_with(Answer(200, ROUTES))
