@@ -126,6 +126,29 @@ def get_owned_plan(user, plan_id):
         raise Plan.DoesNotExist from exc
 
 
+def lock_plan(plan):
+    """Hold `plan`'s row lock until the caller's transaction ends.
+
+    Saving a plan's rows and deleting the plan both touch the same two
+    tables, in opposite orders: the save writes the banner rows, then stamps
+    `plan.updated_at`; the delete takes the banner rows (CASCADE), then the
+    plan. On Postgres two requests doing that at once can each hold what the
+    other wants next, and Postgres kills one with "deadlock detected" (a 500
+    on an auto-save, 2026-10-28). Both paths call this FIRST, before any row
+    is written, so the second one waits for the first to finish instead.
+
+    Raises Plan.DoesNotExist when the plan is gone by the time the lock is
+    granted: the request waited on a delete. The caller treats it like any
+    other missing plan.
+
+    Must run inside transaction.atomic(). SQLite has no row locks, so there
+    (and in the test suite) this is only the existence check.
+    """
+    locked = Plan.objects.select_for_update().filter(pk=plan.pk).values_list("pk", flat=True)
+    if not list(locked):
+        raise Plan.DoesNotExist
+
+
 def get_shared_plan(public_id):
     """The plan behind a share link, or Plan.DoesNotExist.
 
@@ -447,6 +470,12 @@ def delete_plan(plan):
     user = plan.user
     profile = plan.income_profile
     with transaction.atomic():
+        try:
+            lock_plan(plan)
+        except Plan.DoesNotExist:
+            # Another delete of this plan finished while this one waited (a
+            # double click). Nothing is left to delete.
+            return get_active_plan(user)
         plan.delete()  # CASCADE takes its UserPlannedBanner rows
         _drop_profile_if_unused(profile)
         return get_active_plan(user)

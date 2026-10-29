@@ -747,6 +747,10 @@ class CalculatorViewSet(ViewSet):
                 plans.get_active_plan(user) if plan_id is None
                 else plans.get_owned_plan(user, plan_id)
             )
+            # Before anything is written, so a delete of this plan running at
+            # the same moment queues behind this save, or this save behind it
+            # (and then 404s). See plans.lock_plan.
+            plans.lock_plan(plan)
         except Plan.DoesNotExist:
             return Response({"error": "Plan not found"},
                             status=status.HTTP_404_NOT_FOUND)
