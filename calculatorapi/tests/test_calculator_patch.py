@@ -967,7 +967,7 @@ class UnchangedRowsTests(CalculatorTestCase):
 
     Auto-save sends the whole plan after every edit, so most rows of a typical
     save are unchanged. Validating and rewriting each cost four queries per
-    row; see _replace_user_rows and _row_is_unchanged in views/calculator.py.
+    row; see replace_user_rows and _row_is_unchanged in views/user_rows.py.
     """
 
     def setUp(self):
