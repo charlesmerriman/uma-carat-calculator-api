@@ -287,7 +287,12 @@ services:
     repo: charlesmerriman/uma-carat-calculator-api
   http_port: 8080
   instance_count: 1
-  instance_size_slug: apps-s-1vcpu-0.5gb
+  # Dedicated since 2026-10-29: the daily 15:00 UTC peak outgrew the $5 shared
+  # vCPU (CPU, not memory: memory peaked at 57% of 512 MB, so the 1 GB size
+  # buys nothing while this runs one process). Dedicated is also the first size
+  # that can autoscale, once the cache is shared (gunicorn.conf.py says why
+  # that comes first).
+  instance_size_slug: apps-d-1vcpu-0.5gb
   name: calculatorproject
   # Resource trouble reaches #calc-dev-log before anyone notices it on the
   # site (the 2026-10-14 outage was 512 MB running out). Any restart is a crash.

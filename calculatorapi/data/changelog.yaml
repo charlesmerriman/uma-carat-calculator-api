@@ -32,6 +32,23 @@
 # module changed. Newest entry first is conventional here but not required — the
 # page sorts by date.
 
+- key: share-pictures
+  date: 2026-10-29
+  title: "Share pictures, and a faster site at busy times"
+  version: "v2.10"
+  changes:
+    - added: "New: share your pull plan or your PvP team as a picture!"
+    - added: "Look for Share picture on the Plans bar (the New Banner row if you're a guest) and at the end of the My team bar. Your plan becomes a poster in your theme's colours, and your team sits over the event's art. Copy it, share it from your phone or download it. Your name, picture and veterans only go on if you tick them."
+    - added: "Duplicate a team on My team to try a variation."
+    - added: "Champions Meeting and League of Heroes cards on the Timeline now show what the event pays you at your usual finish, day by day, and when your tickets arrive."
+    - added: "The Timeline can show just Champions Meetings or League of Heroes. Your filter stays put while you move around the site."
+    - changed: "Event times are in your own time zone now, under each date on the PvP schedule and next to the dates on every Timeline card."
+    - changed: "Course details on the Timeline and the PvP page read as four pairs: racecourse, distance, surface and weather."
+    - changed: "The carat forecast no longer shows a Lowest point line. Short by still appears when a plan runs dry."
+    - fixed: "If the site crawled or wouldn't load for you around the busiest hour of the day, that should be over. It runs on a faster server now, and saving your plan does far less work."
+    - fixed: "CM Runs only marks a day Today while it's running. Before Round 1 the first day shows its start date, and once Round 2 ends it opens on the Finals."
+    - fixed: "Deleting the plan you have open while it's still saving works now."
+
 - key: rankings-placeholders
   date: 2026-10-28
   title: "Rankings for supporters, and placeholder cards"

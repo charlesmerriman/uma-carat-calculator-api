@@ -6,6 +6,8 @@ from rest_framework.decorators import action
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework import permissions, status
+from rest_framework.exceptions import ValidationError as DRFValidationError
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.db.models import Prefetch
 from django.http import HttpResponse
@@ -62,6 +64,89 @@ from calculatorapi.views.user_step_up_selection import UserStepUpSelectionSerial
 from calculatorapi.views.plan import PlanSerializer
 
 
+def _writable_columns(serializer_class, context):
+    """Pair each writable field of `serializer_class` with the column it writes.
+
+    Returns ({body key: (serializer field, model column)}, {writable keys that
+    write no single column}). _row_is_unchanged can only vouch for the first
+    kind; a key of the second kind always takes the full save path.
+
+    Built from a throwaway serializer once per collection per request rather
+    than cached at module scope: bound DRF fields are not meant to be shared
+    across threads, and building them costs well under a millisecond.
+    """
+    model = serializer_class.Meta.model
+    by_name = {column.name: column for column in model._meta.concrete_fields}
+    comparable, opaque = {}, set()
+    for key, field in serializer_class(context=context or {}).fields.items():
+        if field.read_only:
+            # `id`, and whatever the scope writes (`user`, `plan`): the
+            # serializer ignores these keys in a body, so they compare as equal.
+            continue
+        column = by_name.get(field.source)
+        if column is None:
+            opaque.add(key)
+        else:
+            comparable[key] = (field, column)
+    return comparable, opaque
+
+
+def _as_pk(model, value):
+    """`value` as `model`'s primary key, or None if it can't be one.
+
+    The stored rows are keyed by int, and a JSON body could carry "12". None
+    reads as "not found", the same 404 a foreign id gets (it used to be a 500).
+    """
+    try:
+        return model._meta.pk.to_python(value)
+    except (DjangoValidationError, TypeError, ValueError):
+        return None
+
+
+def _row_is_unchanged(instance, row, columns):
+    """Would saving `row` over `instance` write exactly what is stored?
+
+    Only keys the body carries are compared (the save is partial, so an absent
+    key leaves its column alone either way). A plain value is parsed the way
+    the serializer would parse it, validators included, so a malformed value
+    still reaches the serializer and gets its 400 even on a row that otherwise
+    looks untouched. A relation is compared by id WITHOUT the lookup the
+    serializer makes, which is the point: that lookup is a query per field
+    per row. An id that names a since-deleted target and is already stored
+    therefore passes, like any grandfathered value.
+
+    Anything this can't vouch for answers False, and False is always safe: the
+    row takes the same validate-and-save path every row took before.
+
+    Not run here: the serializer's validate() and validate_<field>() methods.
+    The banner and purchase serializers have no validate_<field>(), and their
+    validate() only checks (it never rewrites attrs), which is what makes
+    "equal to stored" mean "the save is a no-op". A serializer that grows a
+    transforming validate_<field>() or validate() must revisit this.
+    """
+    comparable, opaque = columns
+    for key, value in row.items():
+        if key in opaque:
+            return False
+        if key not in comparable:
+            continue
+        field, column = comparable[key]
+        try:
+            if column.is_relation:
+                # DRF's PrimaryKeyRelatedField refuses a boolean pk, and a null
+                # where the field disallows one.
+                if isinstance(value, bool) or (value is None and not field.allow_null):
+                    return False
+                incoming = None if value is None else column.target_field.to_python(value)
+            else:
+                incoming = field.run_validation(value)
+        except (DRFValidationError, DjangoValidationError, TypeError, ValueError):
+            return False
+        if incoming != getattr(instance, column.attname):
+            return False
+    return True
+
+
 def _replace_user_rows(rows, *, model, serializer_class, scope, missing_message,
                        context=None):
     # pylint: disable=too-many-arguments
@@ -106,6 +191,16 @@ def _replace_user_rows(rows, *, model, serializer_class, scope, missing_message,
     updates rows one at a time, so moving a value between two rows (a card from
     slot 3 to slot 4) transiently duplicates it and trips the constraint.
     UserStepUpSelection relies on the id-less form.
+
+    A row carrying an id that arrives EXACTLY as stored is skipped: no
+    validation, no write. Auto-save sends the whole plan after every edit, so
+    on a typical save every row but one is unchanged, and re-validating and
+    rewriting each cost four queries per row (133 for a 30-row plan, measured
+    2026-10-29, when this was ~45% of the server's time at the daily peak).
+    See _row_is_unchanged for what "exactly" means. Skipping an untouched
+    row's validation is the grandfathering every collection already wants:
+    a rule that tightened after the row was saved must not 400 a plan its
+    owner never touched (UserPlannedPurchaseSerializer._pairing_is_unchanged).
     """
     if rows is None:
         return None
@@ -113,16 +208,25 @@ def _replace_user_rows(rows, *, model, serializer_class, scope, missing_message,
     incoming_ids = [row["id"] for row in rows if "id" in row]
     model.objects.filter(**scope).exclude(id__in=incoming_ids).delete()
 
+    # What the delete left is exactly the rows this body names and owns:
+    # read them in ONE query, where looking each up cost one query per row.
+    # An id-less body (step-up selections) has nothing left to read.
+    stored, columns = {}, None
+    if incoming_ids:
+        stored = {instance.pk: instance for instance in model.objects.filter(**scope)}
+        columns = _writable_columns(serializer_class, context)
+
     for row in rows:
         row_id = row.get("id")
         if row_id:
-            try:
-                # An id from ANOTHER of this user's plans is "not found" too:
-                # a body is reconciled against one plan, never across them.
-                instance = model.objects.get(id=row_id, **scope)
-            except model.DoesNotExist:
+            # An id from ANOTHER of this user's plans is "not found" too:
+            # a body is reconciled against one plan, never across them.
+            instance = stored.get(_as_pk(model, row_id))
+            if instance is None:
                 return Response({"error": missing_message},
                                 status=status.HTTP_404_NOT_FOUND)
+            if _row_is_unchanged(instance, row, columns):
+                continue
             serializer = serializer_class(
                 instance, data=row, partial=True, context=context or {}
             )
@@ -747,6 +851,10 @@ class CalculatorViewSet(ViewSet):
                 plans.get_active_plan(user) if plan_id is None
                 else plans.get_owned_plan(user, plan_id)
             )
+            # Before anything is written, so a delete of this plan running at
+            # the same moment queues behind this save, or this save behind it
+            # (and then 404s). See plans.lock_plan.
+            plans.lock_plan(plan)
         except Plan.DoesNotExist:
             return Response({"error": "Plan not found"},
                             status=status.HTTP_404_NOT_FOUND)
