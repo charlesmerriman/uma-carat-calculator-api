@@ -65,6 +65,18 @@ def runs_for_event(user, kind, event_id):
     return PvpRun.objects.filter(user=user, **event).prefetch_related("runners", "races")
 
 
+def all_runs(user):
+    """Every run `user` logged, in every event, with runners and races: the
+    Collection's CM history. A player logs a few hundred a year at most, so
+    one unpaged list is fine. Grouped by event (by id, not by date: the client
+puts the events in date order from /calculator-data)."""
+    return (
+        PvpRun.objects.filter(user=user)
+        .prefetch_related("runners", "races")
+        .order_by("champions_meeting_id", "league_of_heroes_id", "stage", "day", "ticket")
+    )
+
+
 def write_run(user, kind, event_id, *, day=None, ticket=None, data):  # pylint: disable=too-many-arguments
     """Write one slot whole, creating the row on the first save. `data` is the
     view's validated body: runners, races, finals_group, placement, note,
