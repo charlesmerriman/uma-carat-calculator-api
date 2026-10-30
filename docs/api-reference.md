@@ -576,8 +576,8 @@ active plan promotes the oldest survivor.
 ## Share links
 
 A plan's owner can switch on a link, `/app/<public_id>`, that lets anyone take a **copy** of
-the plan. Nobody but the owner ever opens the plan itself: there is no read-only view, and
-neither route below writes to the source beyond its copy count. Code:
+the plan. Nobody but the owner ever opens the plan itself: the link's card lists what the plan
+holds and offers a copy, and neither route below writes to the source beyond its copy count. Code:
 `views/plan_public.py`.
 
 Both routes are public (`AllowAny`) and answer `404` unless the plan's `is_shared` is on,
@@ -602,16 +602,17 @@ preview or a crawler fetching it is harmless.
   "pull_count": 120,
   "step_count": 0,
   "rows": [
-    { "banner_uma": 31, "banner_support": null, "banner_step_up": null },
-    { "banner_uma": null, "banner_support": 18, "banner_step_up": null }
+    { "banner_uma": 31, "banner_support": null, "banner_step_up": null, "number_of_pulls": 120,
+      "reserved_copies": 0, "note": "Skip if the selector covers her", "...": "..." }
   ]
 }
 ```
 
-`rows` are catalogue ids in the order the owner's planner shows them; the client resolves
-names and art from the `/calculator-data` catalogue it already holds. Nothing else leaves the
-account here: no per-row counts, no notes, no stats, no plan id, no plan name, nothing about the
-owner. `share_stats` / `share_notes` say what a copy would bring besides the rows.
+`rows` are in the order the owner's planner shows them, in the same shape a guest copy takes
+(`SharedPlannedBannerSerializer`, the one whitelist): catalogue ids, counts and the row's
+choices, with `note` only under `share_notes`, and never `pulls_already_made`. The client
+resolves names and art from the `/calculator-data` catalogue it already holds. Nothing else
+leaves the account here: no stats, no plan id, no plan name, nothing about the owner. `share_stats` / `share_notes` say what a copy would bring besides the rows.
 `pull_count` sums the ordinary rows' pulls and `step_count` the step-up rows' steps (that
 column counts steps on a step-up row); neither is ever converted into the other.
 
