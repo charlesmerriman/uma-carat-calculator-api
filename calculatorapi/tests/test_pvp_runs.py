@@ -124,11 +124,14 @@ class WriteTests(PvpRunFixture):
     def test_loh_tickets_reach_day_six_ticket_five(self):
         self.assertEqual(self.put(self.ticket_url(day=6, ticket=5, kind="loh")).status_code, 200)
 
-    def test_the_loh_top_96_keeps_a_placement_and_a_note(self):
+    def test_the_loh_top_96_keeps_a_team_a_placement_and_a_note(self):
         url = self.final_url(kind="loh", event=self.loh.id)
         response = self.client.put(url, {"placement": 42, "note": "Best one yet"}, format="json")
         self.assertEqual(response.status_code, 200, response.content)
         self.assertEqual((response.json()["stage"], response.json()["placement"]), ("final", 42))
+        response = self.put(url, placement=42)
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(len(response.json()["runners"]), 3)
         self.assertEqual(self.client.put(url, {"placement": 97}, format="json").status_code, 400)
         self.assertEqual(
             self.client.put(url, {"placement": 1, "finals_group": "A"}, format="json").status_code, 400
