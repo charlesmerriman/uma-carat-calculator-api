@@ -1245,8 +1245,9 @@ lose FK integrity and cascades; tables per gallery would write this twice.
 - **`BlockedTerm`**: words refused in captions, comments and display names, stored
   normalised (NFKC, invisible characters removed, casefolded), matched as a whole word or
   anywhere. Staff edit it in the admin; PRIVATE, so a local database starts empty.
-- **`CustomUser`** gains `show_supporter_badge` (the person's switch for their tier name and
-  look on posts and comments) and `publishing_blocked` (admin only: no posting, commenting,
+- **`CustomUser`** gains `show_shared_plans_on_card` (`0125`, default off: the person's switch for
+  listing their shared plans on their profile card), `show_supporter_badge` (their switch for their
+  tier name and look on posts and comments) and `publishing_blocked` (admin only: no posting, commenting,
   voting or reporting, everything they posted hidden through the read filter
   `gallery.visible_posts()` without being deleted, and their votes stop counting).
 - **Views are counted without storing viewers**: a cache key per viewer per post per day in

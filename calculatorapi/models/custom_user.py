@@ -39,6 +39,13 @@ class CustomUser(GameStats, AbstractUser):
         default=True,
         help_text="The person's choice to show their supporter tier on gallery posts and comments.",
     )
+    # The person's switch for listing their shared plans on their profile card
+    # (views/profile_card.py). Off until they turn it on: sharing a plan said
+    # "anyone with the link", and a list that anyone can open says more.
+    show_shared_plans_on_card = models.BooleanField(
+        default=False,
+        help_text="The person's choice to list their shared plans on their profile card.",
+    )
     # Admin only, never settable through PATCH /account. Blocks posting,
     # commenting, voting and reporting, and hides everything they posted
     # through the gallery's read filter WITHOUT deleting it, so unblocking
