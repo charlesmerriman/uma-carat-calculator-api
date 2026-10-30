@@ -68,8 +68,8 @@ from calculatorapi.analytics.banners import (
 from calculatorapi.analytics.income_settings import income_settings, rank_distributions, selector_purchases
 from calculatorapi.analytics.people import engaged_subset, non_staff_users
 from calculatorapi.models import (
-    BannerTimeline, PvpDeckSlot, PvpGuide, PvpRunRace, PvpRunRunner, PvpTeamCard, PvpTeamMember,
-    PvpUmaRecommendation, Scenario, SupportCard, UserPlannedPurchase,
+    PVP_DECK_SIZE, PVP_TEAM_SIZE, BannerTimeline, PvpDeckSlot, PvpGuide, PvpRunRace, PvpRunRunner,
+    PvpTeamCard, PvpTeamMember, PvpUmaRecommendation, Scenario, SupportCard, UserPlannedPurchase,
 )
 from calculatorapi.predictions import build_effective_date_maps
 from calculatorapi.rankings_cache import cached_payload
@@ -193,16 +193,19 @@ def count_teams(teams):
         included (the owner's rule for the guides, kept here) and counted
         apart in `borrows`;
       - placeholder cards ("your best SSR Speed card") never: they are no
-        card to pull;
-      - a team with no member is no team.
+        card to pull, though one still fills its slot;
+      - only a team of three, and of its decks only the full ones: half-built
+        teams pulled every share down (owner, 2026-10-30). A posted team is
+        always complete, so the rule only ever drops saved ones.
 
     `teams` is every team counted (an uma's share is out of it), `decks`
-    every member (a card's share). Ties go to the lower id. One query.
+    every full deck in them (a card's share). Ties go to the lower id. One
+    query.
 
     `trios`: the exact three-uma teams built most, any styles, as sorted id
     triples, the top TOP_TRIOS (the redesign's "Trios players build most").
     """
-    teams = [team for team in teams if team]
+    teams = [team for team in teams if len(team) == PVP_TEAM_SIZE]
     card_ids = {card["support_card"] for team in teams for member in team for card in member["cards"]}
     placeholders = set(
         SupportCard.objects.filter(id__in=card_ids, is_placeholder=True).values_list("id", flat=True)
@@ -210,7 +213,7 @@ def count_teams(teams):
     umas, styles = Counter(), defaultdict(Counter)
     decks, borrows = Counter(), Counter()
     trios = Counter()
-    members = 0
+    full_decks = 0
     for team in teams:
         team_umas = {member["uma"] for member in team}
         for uma in team_umas:
@@ -218,8 +221,10 @@ def count_teams(teams):
         if len(team_umas) == 3:
             trios[tuple(sorted(team_umas))] += 1
         for member in team:
-            members += 1
             styles[member["uma"]][member["style"]] += 1
+            if len(member["cards"]) < PVP_DECK_SIZE:
+                continue
+            full_decks += 1
             for card in member["cards"]:
                 if card["support_card"] in placeholders:
                     continue
@@ -228,7 +233,7 @@ def count_teams(teams):
                     borrows[card["support_card"]] += 1
     return {
         "teams": len(teams),
-        "decks": members,
+        "decks": full_decks,
         "umas": [
             {"uma": uma, "teams": count, "styles": dict(styles[uma])}
             for uma, count in _most_first(umas)
@@ -369,7 +374,8 @@ MIN_RACES = 20
 
 
 def saved_teams(event):
-    """Every non-staff saved team for `event`, as count_teams() reads them.
+    """Every non-staff saved team for `event`, as count_teams() reads them
+    (which leaves the unfinished ones out).
     Saved, not only posted: what players BUILD (owner, 2026-10-27; the
     privacy policy says totals count saved teams). Two queries."""
     lookup = {f"team__{field}": value for field, value in event.items()}
@@ -429,7 +435,7 @@ def run_results(event):
 
 def pvp_payload(event):
     """The Rankings page's PvP tab for one event: what players build (every
-    saved team, count_teams) and what wins (CM Runs, run_results)."""
+    finished saved team, count_teams) and what wins (CM Runs, run_results)."""
     return {"built": count_teams(saved_teams(event)), "runs": run_results(event)}
 
 
