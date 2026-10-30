@@ -1,6 +1,6 @@
 """
-GET  /plans/public/<public_id>        what a shared plan holds, as catalogue ids
-                                      and counts: the landing card's summary.
+GET  /plans/public/<public_id>        what a shared plan holds, row by row: the
+                                      landing card's summary.
 POST /plans/public/<public_id>/copy   take a copy of it. Signed in: a new plan
                                       in the caller's account. Guest: the rows
                                       to keep on the device, plus the owner's
@@ -10,10 +10,10 @@ POST /plans/public/<public_id>/copy   take a copy of it. Signed in: a new plan
 Both AllowAny. Both answer 404 unless the plan's owner switched sharing on
 (plans.get_shared_plan), with the same body as an id that does not exist.
 
-A SHARED PLAN IS COPIED, NEVER VIEWED
--------------------------------------
-There is no "open someone's plan" here, read-only or otherwise. A plan is
-editable only by its owner (views/plan_routes.py, every id through
+A SHARED PLAN IS COPIED, NOT OPENED
+-----------------------------------
+The landing card shows what a plan holds and offers a copy; it is never the
+owner's plan opened in the calculator. A plan is editable only by its owner (views/plan_routes.py, every id through
 plans.get_owned_plan), and these routes have no path that writes to the source
 beyond bumping its copy count. That is why they live in their own module with
 their own serializer rather than as a flag on the owner's routes: one bad
@@ -21,19 +21,22 @@ branch in a shared view would turn "show me that plan" into "let me edit it".
 
 WHAT LEAVES THE ACCOUNT
 -----------------------
-The summary: catalogue ids, a row count, the plan's pull and step totals, the
-copy count, the last-updated date and the two share options. No per-row
-counts, no notes, no stats, no plan id, no plan name, nothing about the owner.
-The landing card resolves the ids against the catalogue the client already
-holds. (The totals arrived with the link preview, owner's call 2026-10-16:
-the same two numbers the preview at /plan/<id> states, views/plan_share.py.)
+The summary: the rows, a row count, the plan's pull and step totals, the copy
+count, the last-updated date and the two share options. No stats, no plan id,
+no plan name, nothing about the owner. The landing card resolves the rows'
+ids against the catalogue the client already holds. (The totals arrived with
+the link preview, owner's call 2026-10-16: the same two numbers the preview at
+/plan/<id> states, views/plan_share.py.)
 
-The guest copy is the ONE place full rows leave an account, and only for a
-plan its owner chose to share: the rows in the shape the device store keeps
-(catalogue ids and counts, no row id, no user, no plan), each `note` only
-when the owner turned share_notes on, and the owner's resources (the stats
-block and its planned purchases) only when the owner turned share_stats on AND
-the guest asked for them (`include_stats`). A guest's device holds one set of
+The rows are the same rows a guest copy takes, through one serializer
+(SharedPlannedBannerSerializer, owner's call 2026-10-30): the card shows each
+banner's pulls because anyone holding the link could already copy them. The
+shape is the one the device store keeps (catalogue ids and counts, no row id,
+no user, no plan), each `note` only when the owner turned share_notes on.
+
+The guest copy is the only place the owner's resources leave an account: the
+stats block and its planned purchases, only when the owner turned share_stats
+on AND the guest asked for them (`include_stats`). A guest's device holds one set of
 resources, so taking the owner's replaces their own; that has to be the
 guest's choice, never a side effect of the owner's. A signed-in copy never sends any of that back, it
 creates the plan server-side (plans.copy_shared_plan) and returns it the way
@@ -84,7 +87,7 @@ class PublicPlanCopyThrottle(UserRateThrottle):
 
 
 class SharedPlannedBannerSerializer(serializers.ModelSerializer):
-    """One row of a shared plan as a guest copy stores it.
+    """One row of a shared plan, on the landing card and in a guest copy.
 
     The device store's shape (frontend services/guestPlanStore.ts): catalogue
     ids and counts. Not UserPlannedBannerSerializer, which is the OWNER'S row:
@@ -176,16 +179,11 @@ def _summary(plan):
         "row_count": len(rows),
         "pull_count": pulls,
         "step_count": steps,
-        # Exactly one of the three is set on every row (the model's
+        # Exactly one banner id is set on every row (the model's
         # exactly_one_banner_target constraint).
-        "rows": [
-            {
-                "banner_uma": row.banner_uma_id,
-                "banner_support": row.banner_support_id,
-                "banner_step_up": row.banner_step_up_id,
-            }
-            for row in rows
-        ],
+        "rows": SharedPlannedBannerSerializer(
+            rows, many=True, context={"share_notes": plan.share_notes}
+        ).data,
     }
 
 

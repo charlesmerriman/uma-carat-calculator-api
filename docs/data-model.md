@@ -595,11 +595,13 @@ never deletes one, so lowering it later strands nobody's data.
 report demand from rows nobody intends. The admin's "Planned by" column counts distinct
 users for the same reason.
 
-#### Share links: a shared plan is copied, never viewed
+#### Share links: a shared plan is copied, not opened
 
 A plan is editable only by its owner. Anyone else sees it by taking a **copy** through its
-link, `/app/<public_id>`, and the copy is then theirs to change. There is no read-only view
-of somebody else's plan. Routes: `views/plan_public.py`, documented in
+link, `/app/<public_id>`, and the copy is then theirs to change. The link's card lists each
+banner with its pulls, and the owner's notes under `share_notes` (owner's call, 2026-10-30:
+a copy already gives anyone with the link those rows), but somebody else's plan never opens
+in the calculator. Routes: `views/plan_public.py`, documented in
 `api-reference.md` ("Share links"). The link the owner copies is `/plan/<public_id>`, a
 link-preview page (`views/plan_share.py`, 2026-10-16) that sends people on to the card. Its
 picture, `/plan/<public_id>/preview.jpg` (since 2026-10-19), is drawn by `plan_preview.py`: the
