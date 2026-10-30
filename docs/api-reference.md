@@ -1128,7 +1128,7 @@ auto-save is idempotent; every query is scoped to the caller.
 | `GET /pvp-runs` | | every run the caller logged in every event, grouped by event (the Collection's CM history); each run names its `kind` and `event` |
 | `GET /pvp-runs/<kind>/<event_id>` | | every run the caller logged for the event, days first, then the final |
 | `PUT /pvp-runs/<kind>/<event_id>/day/<d>/ticket/<t>` | `{runners?, races?, note?, skipped?}` | the run. Creates it on the first save; replaces its runners and races after |
-| `PUT /pvp-runs/<kind>/<event_id>/final` | `{runners?, races?, finals_group?, placement?, note?}` | the run (CM only) |
+| `PUT /pvp-runs/<kind>/<event_id>/final` | `{runners?, races?, finals_group?, placement?, note?}` | the run. On LoH this is the Top 96: `{placement?, note?}` only |
 | `DELETE` either path | | `204`, also when nothing was logged there |
 
 A run, out (a `PUT` body is the part the URL does not already say):
@@ -1147,8 +1147,8 @@ not in the list has not been run. `skipped: true` (a day's ticket only) is the p
 the races not in the list never will be: with none listed the ticket went unused, with some
 they stopped after those. A `PUT` without it un-skips, which is how a player who was only
 slow to type takes it back. Slots: CM days 1..4 with tickets 1..4, plus the final;
-LoH days 1..6 with tickets 1..5, no final yet (`PVP_RUN_DAYS` / `PVP_RUN_TICKETS`). An
-unknown kind, event, day or ticket, or a LoH final, is **`404`**. **`400 {"error": "<one
+LoH days 1..6 with tickets 1..5, plus the Top 96 (`PVP_RUN_DAYS` / `PVP_RUN_TICKETS`). An
+unknown kind, event, day or ticket is **`404`**. **`400 {"error": "<one
 sentence>"}`** for: more than 3 runners or two in one spot, the team rules on the lineup
 (the same uma twice, two outfits of one character, an unknown uma; shared through
 `pvp_teams.check_lineup`), more than 5 races (1 in a final) or the same race twice, a

@@ -50,9 +50,11 @@ PVP_FINAL_RACES = 1
 PVP_RUN_DAYS = {"cm": 4, "loh": 6}
 PVP_RUN_TICKETS = {"cm": 4, "loh": 5}
 
-# A Champions Meeting final is three trainers, placed 1st to 3rd. LoH has no
-# final the site knows the shape of yet, so pvp_runs.py refuses one.
+# A Champions Meeting final is three trainers, placed 1st to 3rd. LoH ends in
+# the Top 96: two 48-player brackets the player only watches (Daptrius,
+# 2026-10-28), so its "final" row holds a placement and a note, no lineup or race.
 PVP_FINAL_PLACEMENTS = 3
+PVP_LOH_TOP_PLACEMENTS = 96
 
 PVP_RUN_NOTE_MAX_LENGTH = 120
 
