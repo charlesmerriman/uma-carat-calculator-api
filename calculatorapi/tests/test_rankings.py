@@ -24,6 +24,13 @@ from calculatorapi.views.rankings import deck_tier, guides_payload
 URL = "/rankings/guides"
 
 
+def full_deck(filler, *cards, borrow=None):
+    """Six (slot, card) pairs: `cards` from slot 1, then `filler` (a placeholder
+    fills a slot and is never counted), `borrow` in slot 6."""
+    owned = [*cards, *[filler] * (5 - len(cards))]
+    return [*enumerate(owned, start=1), (6, borrow or filler)]
+
+
 class RankingsFixture(CalculatorTestCase):  # pylint: disable=too-many-instance-attributes
     def setUp(self):
         self.cm = make_champions_meeting(name="Aquarius Cup", cm_number=22)
@@ -187,16 +194,23 @@ class GalleryRankingsTests(CalculatorTestCase):  # pylint: disable=too-many-inst
         self.cm = make_champions_meeting(name="Libra Cup", cm_number=21)
         self.oguri = Uma.objects.create(name="Oguri Cap")
         self.maru = Uma.objects.create(name="Maruzensky")
+        self.haru = Uma.objects.create(name="Haru Urara")
+        self.rice = Uma.objects.create(name="Rice Shower")
         self.light = SupportCard.objects.create(name="Light Hello", card_type="friend", rarity=3)
         self.kitasan = SupportCard.objects.create(name="Kitasan Black", card_type="speed", rarity=3)
         self.any_speed = SupportCard.objects.create(
             name="SSR Speed", card_type="speed", rarity=3, is_placeholder=True,
         )
         self.post(make_user("a"), [
-            self.member(self.oguri, "pace", [(1, self.light), (2, self.any_speed), (6, self.kitasan)]),
-            self.member(self.maru, "front", [(1, self.light)]),
+            self.member(self.oguri, "pace", full_deck(self.any_speed, self.light, borrow=self.kitasan)),
+            self.member(self.maru, "front", full_deck(self.any_speed, self.light)),
+            self.member(self.haru, "late", full_deck(self.any_speed)),
         ])
-        self.post(make_user("b"), [self.member(self.oguri, "end", [(1, self.kitasan)])])
+        self.post(make_user("b"), [
+            self.member(self.oguri, "end", full_deck(self.any_speed, self.kitasan)),
+            self.member(self.rice, "pace", full_deck(self.any_speed)),
+            self.member(self.haru, "late", full_deck(self.any_speed)),
+        ])
         blocked = make_user("blocked")
         blocked.publishing_blocked = True
         blocked.save(update_fields=["publishing_blocked"])
@@ -217,15 +231,17 @@ class GalleryRankingsTests(CalculatorTestCase):  # pylint: disable=too-many-inst
     def test_visible_posts_umas_and_cards_as_shares(self):
         body = self.client.get(self.url).json()
         # Posts are public (the post page shows them), so their counts stay.
-        self.assertEqual((body["posts"], body["decks"]), (2, 3))
+        self.assertEqual((body["posts"], body["decks"]), (2, 6))
         self.assertEqual(body["umas"], [
             {"uma": self.oguri.id, "share": 1.0, "styles": {"pace": 0.5, "end": 0.5}},
+            {"uma": self.haru.id, "share": 1.0, "styles": {"late": 1.0}},
             {"uma": self.maru.id, "share": 0.5, "styles": {"front": 0.5}},
+            {"uma": self.rice.id, "share": 0.5, "styles": {"pace": 0.5}},
         ])
         # A borrow is a share of the card's own decks.
         self.assertEqual(body["cards"], [
-            {"card": self.light.id, "share": 0.67, "borrowed": 0},
-            {"card": self.kitasan.id, "share": 0.67, "borrowed": 0.5},
+            {"card": self.light.id, "share": 0.33, "borrowed": 0},
+            {"card": self.kitasan.id, "share": 0.33, "borrowed": 0.5},
         ])
         self.assertIn("generated_at", body)
 
@@ -239,7 +255,7 @@ class GalleryRankingsTests(CalculatorTestCase):  # pylint: disable=too-many-inst
         self.assertEqual([post["public_id"] for post in copied], [posts[1].public_id, posts[0].public_id])
         self.assertEqual(copied[1], {
             "public_id": posts[0].public_id, "caption": "Pace core", "copies": 3,
-            "umas": [self.oguri.id, self.maru.id],
+            "umas": [self.oguri.id, self.maru.id, self.haru.id],
         })
 
     def test_early_access_only_and_a_real_event(self):
@@ -323,10 +339,22 @@ class PvpRankingsTests(CalculatorTestCase):  # pylint: disable=too-many-instance
         self.cm = make_champions_meeting(name="Libra Cup", cm_number=21)
         self.oguri = Uma.objects.create(name="Oguri Cap")
         self.maru = Uma.objects.create(name="Maruzensky")
+        self.haru = Uma.objects.create(name="Haru Urara")
         self.light = SupportCard.objects.create(name="Light Hello", card_type="friend", rarity=3)
+        self.filler = SupportCard.objects.create(
+            name="SSR Speed", card_type="speed", rarity=3, is_placeholder=True,
+        )
         self.player = make_user("player")
-        self.team(self.player, [(self.oguri, "pace", [(1, self.light), (6, self.light)]), (self.maru, "front", [])])
-        self.team(make_user("other"), [(self.oguri, "end", [(1, self.light)])])
+        self.team(self.player, [
+            (self.oguri, "pace", full_deck(self.filler, self.light)),
+            (self.maru, "front", []),
+            (self.haru, "late", full_deck(self.filler, borrow=self.light)),
+        ])
+        self.team(make_user("other"), [
+            (self.oguri, "end", full_deck(self.filler, self.light)),
+            (self.maru, "pace", full_deck(self.filler)),
+            (self.haru, "late", full_deck(self.filler)),
+        ])
         self.team(make_user("empty"), [])
         self.team(make_user("staffer", is_staff=True), [(self.maru, "front", [(1, self.light)])])
         self.url = f"/rankings/pvp/cm/{self.cm.id}"
@@ -348,20 +376,41 @@ class PvpRankingsTests(CalculatorTestCase):  # pylint: disable=too-many-instance
         for race, winner in enumerate(winners, start=1):
             PvpRunRace.objects.create(run=run, race=race, winner=winner)
 
-    def test_every_saved_team_as_shares(self):
+    def test_every_finished_saved_team_as_shares(self):
         built = self.client.get(self.url).json()["built"]
-        # Two teams with a member, three member decks: never sent.
+        # Two teams of three, five full decks: never sent.
         self.assertFalse({"teams", "decks"} & set(built))
         self.assertEqual(built["umas"][0], {"uma": self.oguri.id, "share": 1.0, "styles": {"pace": 0.5, "end": 0.5}})
-        self.assertEqual(built["cards"], [{"card": self.light.id, "share": 1.0, "borrowed": 0.33}])
+        self.assertEqual(built["cards"], [{"card": self.light.id, "share": 0.6, "borrowed": 0.33}])
+
+    def test_half_built_teams_and_decks_stay_out(self):
+        kitasan = SupportCard.objects.create(name="Kitasan Black", card_type="speed", rarity=3)
+        rice = Uma.objects.create(name="Rice Shower")
+        # A full deck on a team of two: the whole team is out.
+        self.team(make_user("two"), [
+            (self.oguri, "end", full_deck(self.filler, kitasan)),
+            (rice, "late", full_deck(self.filler)),
+        ])
+        # A team of three counts its umas, but five cards are no full deck.
+        self.team(make_user("five"), [
+            (self.oguri, "end", full_deck(self.filler, kitasan)[:5]),
+            (self.maru, "pace", []),
+            (self.haru, "late", []),
+        ])
+        built = self.client.get(self.url).json()["built"]
+        self.assertNotIn(rice.id, [row["uma"] for row in built["umas"]])
+        self.assertEqual(built["umas"][1]["share"], 1.0)
+        self.assertEqual([row["card"] for row in built["cards"]], [self.light.id])
 
     def test_trios_count_exact_three_uma_teams_once_each(self):
         kitasan = Uma.objects.create(name="Kitasan Black")
         for name in ("t1", "t2"):
             self.team(make_user(name), [(self.oguri, "pace", []), (self.maru, "front", []), (kitasan, "end", [])])
         built = self.client.get(self.url).json()["built"]
-        # Two-uma teams make no trio.
-        self.assertEqual(built["trios"], [{"umas": sorted([self.oguri.id, self.maru.id, kitasan.id]), "share": 0.5}])
+        self.assertEqual(built["trios"], [
+            {"umas": sorted([self.oguri.id, self.maru.id, self.haru.id]), "share": 0.5},
+            {"umas": sorted([self.oguri.id, self.maru.id, kitasan.id]), "share": 0.5},
+        ])
 
     def test_win_rates_per_uma_and_strategy(self):
         # Five tickets of five races, 25 in all: Oguri wins 10, Maruzensky 5.
