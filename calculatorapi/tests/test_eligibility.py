@@ -3,6 +3,7 @@
 import datetime
 
 from django.utils import timezone
+from rest_framework.test import APIClient
 
 from calculatorapi.eligibility import (
     build_first_jp_date_maps,
@@ -13,6 +14,35 @@ from calculatorapi.eligibility import (
 from calculatorapi.models import Uma, SupportCard, UmasOnUmaBanner, SupportsOnSupportBanner
 from calculatorapi.tests.base import CalculatorTestCase
 from calculatorapi.tests.factories import make_timeline, make_uma_banner, make_support_banner
+
+
+class ReleaseDateStaysOutOfSelectorsTests(CalculatorTestCase):
+    """SupportCard.global_release_at dates cards on no banner for the Collection's
+    sort. Those cards stay out of selectors because their JP date is unknown, so
+    these fail if that date ever starts feeding eligibility."""
+
+    def setUp(self):
+        self.welfare = SupportCard.objects.create(
+            name="Welfare SSR", game_id=30500, image="support_cards/30500.png", is_on_global=True,
+            global_release_at=timezone.make_aware(datetime.datetime(2025, 8, 1)),
+        )
+        self.cutoff = datetime.date(2026, 1, 1)
+
+    def test_a_dated_card_on_no_banner_still_has_no_jp_date(self):
+        self.assertNotIn(self.welfare.id, build_first_jp_date_maps()[1])
+
+    def test_a_selector_refuses_it_under_a_real_cutoff(self):
+        self.assertIn(
+            "cannot be selected",
+            selection_refusal_reason(self.welfare, None, self.cutoff, "this selector"),
+        )
+
+    def test_the_payload_selectors_read_never_carries_it(self):
+        banner = make_support_banner()
+        SupportsOnSupportBanner.objects.create(support_card=self.welfare, banner_support=banner)
+        card = APIClient().get("/calculator-data").json()["banner_support_data"][0]["support_cards"][0]
+        self.assertEqual(card["id"], self.welfare.id)
+        self.assertFalse({"global_release_at", "released_at"} & set(card))
 
 
 class SelectorEligibilityTests(CalculatorTestCase):

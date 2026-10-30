@@ -137,10 +137,14 @@ def build_catalogue():
         # group_members: a group card's umas, by name, which the builder's
         # deck rules treat as that many cards. [] on every other card.
         .values("id", "name", "game_id", "image", "card_type", "rarity", "title", "group_members",
-                "is_on_global", "is_placeholder")
+                "is_on_global", "is_placeholder", "global_release_at")
     ):
         card["image"] = _url(card["image"])
         card["on_global"] = card.pop("is_on_global")
+        # The Collection's Release date sort, for cards on no banner. Selectors
+        # never read this: models/support_card.py says why.
+        released = card.pop("global_release_at")
+        card["released_at"] = released.isoformat() if released else None
         # A stand-in ("your best SSR Speed card"): always out, see SupportCard.
         card["placeholder"] = card.pop("is_placeholder")
         card["skills"] = card_skills.get(card["id"], [])

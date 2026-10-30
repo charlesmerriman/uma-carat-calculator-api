@@ -804,7 +804,7 @@ class SupportCardAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
     list_filter = ("card_type", "rarity", "is_placeholder", PURPOSE_FILTER)
     ordering = ("name",)
     search_fields = ("name", "=game_id")  # required: autocomplete source for banner inlines
-    readonly_fields = ("image_preview", "is_on_global")
+    readonly_fields = ("image_preview", "is_on_global", "global_release_at")
     # Explicit since purpose arrived: Django's every-field default form had
     # nowhere to say that one of these boxes is public.
     fieldsets = (
@@ -817,7 +817,7 @@ class SupportCardAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
                 "Filled by the game-data import and overwritten by the next one, "
                 "so edits here do not stick. Fix the source instead."
             ),
-            "fields": ("is_on_global", "title", "card_type", "rarity", "character_id",
+            "fields": ("is_on_global", "global_release_at", "title", "card_type", "rarity", "character_id",
                        "group_members"),
         }),
     )

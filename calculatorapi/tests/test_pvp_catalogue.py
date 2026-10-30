@@ -1,5 +1,6 @@
 """GET /pvp-catalogue: what it carries, what it leaves out, and its cache."""
 
+import datetime
 import importlib
 
 from django.apps import apps as django_apps
@@ -70,6 +71,14 @@ class CatalogueTests(CalculatorTestCase):
         self.assertEqual([card["name"] for card in body["support_cards"]], ["Kitasan Black"])
         self.assertEqual(body["support_cards"][0]["card_type"], "speed")
         self.assertEqual(body["support_cards"][0]["group_members"], [])
+
+    def test_a_card_says_when_it_came_out(self):
+        self.assertIsNone(self.fetch()["support_cards"][0]["released_at"])
+        SupportCard.objects.filter(pk=self.card.pk).update(
+            global_release_at=datetime.datetime(2026, 3, 12, tzinfo=datetime.timezone.utc)
+        )
+        pvp_catalogue_cache.invalidate()
+        self.assertEqual(self.fetch()["support_cards"][0]["released_at"], "2026-03-12T00:00:00+00:00")
 
     def test_a_placeholder_says_so(self):
         SupportCard.objects.create(
