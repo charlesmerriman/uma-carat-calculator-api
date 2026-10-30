@@ -1128,7 +1128,7 @@ auto-save is idempotent; every query is scoped to the caller.
 | `GET /pvp-runs` | | every run the caller logged in every event, grouped by event (the Collection's CM history); each run names its `kind` and `event` |
 | `GET /pvp-runs/<kind>/<event_id>` | | every run the caller logged for the event, days first, then the final |
 | `PUT /pvp-runs/<kind>/<event_id>/day/<d>/ticket/<t>` | `{runners?, races?, note?, skipped?}` | the run. Creates it on the first save; replaces its runners and races after |
-| `PUT /pvp-runs/<kind>/<event_id>/final` | `{runners?, races?, finals_group?, placement?, note?}` | the run. On LoH this is the Top 96: `{placement?, note?}` only |
+| `PUT /pvp-runs/<kind>/<event_id>/final` | `{runners?, races?, finals_group?, placement?, note?}` | the run. On LoH this is the Top 96: `{runners?, placement?, note?}`, no races |
 | `DELETE` either path | | `204`, also when nothing was logged there |
 
 A run, out (a `PUT` body is the part the URL does not already say):

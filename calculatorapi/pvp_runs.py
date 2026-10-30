@@ -97,8 +97,8 @@ def write_run(user, kind, event_id, *, day=None, ticket=None, data):  # pylint: 
         raise RunRefused("Only the final has a group and a placement.")
     placement = data.get("placement")
     if is_final and kind == "loh":
-        if runners or races or data.get("finals_group"):
-            raise RunRefused("The Top 96 keeps your placement and a note.")
+        if races or data.get("finals_group"):
+            raise RunRefused("The Top 96 keeps your team, your placement and a note.")
         if placement is not None and not 1 <= placement <= PVP_LOH_TOP_PLACEMENTS:
             raise RunRefused(f"The Top 96 places you 1st to {PVP_LOH_TOP_PLACEMENTS}th.")
     elif placement is not None and not 1 <= placement <= PVP_FINAL_PLACEMENTS:
