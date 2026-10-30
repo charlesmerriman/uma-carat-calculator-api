@@ -1148,7 +1148,8 @@ not in the list has not been run. `skipped: true` (a day's ticket only) is the p
 the races not in the list never will be: with none listed the ticket went unused, with some
 they stopped after those. A `PUT` without it un-skips, which is how a player who was only
 slow to type takes it back. Slots: CM days 1..4 with tickets 1..4, plus the final;
-LoH days 1..6 with tickets 1..5, plus the Top 96 (`PVP_RUN_DAYS` / `PVP_RUN_TICKETS`). An
+LoH days 1..6 with tickets 1..5, plus the Top 96 (`PVP_RUN_DAYS` / `PVP_RUN_TICKETS`). A LoH
+ticket can be saved for later, so its `day` only groups the 30 tickets. An
 unknown kind, event, day or ticket is **`404`**. **`400 {"error": "<one
 sentence>"}`** for: more than 3 runners or two in one spot, the team rules on the lineup
 (the same uma twice, two outfits of one character, an unknown uma; shared through

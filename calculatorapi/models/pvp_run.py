@@ -46,7 +46,9 @@ PVP_FINAL_RACES = 1
 # The highest day and ticket number per event kind ("cm" / "loh"), checked by
 # pvp_runs.py rather than the database so a game change is one line here.
 # CM: Round 1 is days 1-2 and Round 2 days 3-4, four attempts a day (GameTora,
-# Henry, 2026-10-26). LoH: five tickets a day for six days (Daptrius).
+# Henry, 2026-10-26). LoH: five tickets a day for six days (Daptrius). A LoH
+# ticket can be saved, up to ten at once, so its `day` only groups the 30
+# tickets: it says nothing about when one ran, and the client never shows it.
 PVP_RUN_DAYS = {"cm": 4, "loh": 6}
 PVP_RUN_TICKETS = {"cm": 4, "loh": 5}
 
