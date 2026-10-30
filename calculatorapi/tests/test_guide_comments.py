@@ -119,7 +119,8 @@ class CommentVoteTests(GalleryFixture):
     def test_a_thumbs_down_switches_and_floors_at_zero(self):
         voter = self.client_for(self.person())
         voter.put(self.vote_url)
-        self.assertEqual(voter.put(self.vote_url, {"value": "down"}, format="json").json(), {"score": 0, "my_vote": "down"})
+        down = voter.put(self.vote_url, {"value": "down"}, format="json")
+        self.assertEqual(down.json(), {"score": 0, "my_vote": "down"})
         self.assertEqual(GalleryCommentVote.objects.count(), 1)
 
     def test_a_downvoted_comment_moves_to_the_end(self):
