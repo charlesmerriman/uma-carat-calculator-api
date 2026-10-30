@@ -60,7 +60,7 @@ class CustomUser(GameStats, AbstractUser):
     # Staff-ness is far more than "let them try the PvP page": it opens the
     # admin login, bypasses every supporter ladder and drops the account from
     # analytics. This opens early access and NOTHING else a supporter gets: no
-    # extra favourite slots, no badge, no gallery look, no vote weight (owner,
+    # extra favourite slots, no badge, no gallery look (owner,
     # 2026-10-15). A plain switch with no end date: the admin history records
     # who granted it and when, and revoking it is unticking it.
     early_access = models.BooleanField(
