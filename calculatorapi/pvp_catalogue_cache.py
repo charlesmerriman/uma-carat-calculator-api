@@ -26,7 +26,7 @@ import threading
 from django.core.cache import cache
 
 # Bump the suffix when the payload's SHAPE changes.
-CACHE_KEY = "pvp_catalogue:v3"
+CACHE_KEY = "pvp_catalogue:v4"
 
 # Backstop only, as in public_payload_cache.py. Left at five minutes: this
 # rebuild is ~4MB, not ~47MB, and runs only while someone has the builder open.

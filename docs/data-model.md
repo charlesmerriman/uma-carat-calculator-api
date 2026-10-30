@@ -1667,6 +1667,13 @@ the skills players can see read in full (2026-10-23). The parser is
 `skill_conditions.py`, shared with "Fill track green skills". The Skill admin shows the
 result ("In plain English") with "Where it comes from".
 
+**`SupportCard.global_release_at`** is import-owned too: the game's `start_date`, Global's launch
+for a card the client dates before it (every launch card reads JP's 2021-02-24), NULL for a card
+not out on Global. It exists for the Collection's Release date sort, since 172 Global cards sit on
+no banner. **It is never selector eligibility**, which stays derived from JP banner dates
+(`eligibility.py`): a card on no banner staying unknown there is what keeps it out of selectors, so
+only `/pvp-catalogue` carries it, never `/calculator-data`.
+
 **`Uma.is_on_global` / `SupportCard.is_on_global`** are import-owned: true exactly for the
 ids in the global snapshot. The PvP catalogue's `on_global` reads them (it used to mean
 "has skill links", which JP-only outfits now have too), and ships skill links for on-global

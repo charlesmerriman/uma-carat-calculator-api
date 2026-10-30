@@ -909,7 +909,7 @@ English name, or no such id.
 ### `GET /pvp-catalogue`
 
 The team builder's catalogue (`views/pvp_catalogue.py`). Public, the same for everyone, and
-**cached** in `pvp_catalogue_cache.py` (key `pvp_catalogue:v3`, TTL 300, dropped by any
+**cached** in `pvp_catalogue_cache.py` (key `pvp_catalogue:v4`, TTL 300, dropped by any
 save or delete of an Uma, SupportCard, Skill, UmaSkill or SupportCardSkill; the same
 one-process caveat as `/calculator-data`). About 540 KB raw, 50 KB gzipped; the client
 fetches it once, when a picker first opens.
@@ -922,6 +922,7 @@ fetches it once, when a picker first opens.
             "skills": [{"skill": 210, "source": "unique", "level": 1}]}],
   "support_cards": [{"id": 302, "name": "Kitasan Black", "game_id": 30086, "image": "url", "card_type": "speed",
                      "rarity": 3, "title": "[Fire at My Heels]", "group_members": [], "on_global": true,
+                     "released_at": "2026-03-12T00:00:00+00:00",
                      "skills": [{"skill": 88, "source": "hint"}]}],
   "skills": [{"id": 88, "name": "Groundwork", "description": "string", "image": "url | null",
               "rarity": 1, "tier": 1, "group_id": 2001, "cost": 120,
@@ -929,7 +930,8 @@ fetches it once, when a picker first opens.
 ```
 
 `umas` is `Uma.pickable()` (with a picture, no `(All)`); `support_cards` is every card
-with art. `skills` holds skills on global only, and a uma's or card's skill link to any
+with art. `released_at` is `SupportCard.global_release_at`, null for a card not out on Global: the
+Collection's Release date sort reads it, and selectors never do. `skills` holds skills on global only, and a uma's or card's skill link to any
 other skill is left out. Aptitudes are 1..8 = G..S, `null` when not imported. A uma's
 `source` is `unique` / `innate` / `awakening` / `evolved` (`level` means different things
 per source, `models/uma_skill.py`); a card's is `hint` / `event`. `on_global`: the card is in the

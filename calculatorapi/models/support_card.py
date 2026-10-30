@@ -51,6 +51,24 @@ class SupportCard(models.Model):
             "the team builder reads it for a card on no banner."
         ),
     )
+    # When the card came out on Global, from the game's own table. Written by
+    # the import only. It exists for one thing, the Collection's Release date
+    # sort, because welfare SSRs, SRs and Rs never sit on a banner.
+    #
+    # NEVER SELECTOR ELIGIBILITY. A selector judges a card on its first JP
+    # banner (eligibility.py), and a card on no banner staying unknown there
+    # is what keeps these cards out of every selector. Filling that gap from
+    # this column would offer them. It stays off /calculator-data for the same
+    # reason: only GET /pvp-catalogue carries it.
+    global_release_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        editable=False,
+        help_text=(
+            "When the card came out on Global. Set by the game-data import only, "
+            "for the Collection's sort. Selectors never read it."
+        ),
+    )
     image = models.ImageField(upload_to="support_cards/", blank=True, null=True)
     admin_comments = models.TextField(blank=True, null=True, help_text="Notes for editors.")
     # Public, rendered as the Timeline tile's hover overlay -- the support-card

@@ -14,6 +14,10 @@ Three of those sit exactly on their cutoff and are listed as selectable, which i
 why the comparison is inclusive. Deriving rather than storing keeps this correct
 for free as banner data is added; a stored column would drift.
 
+`SupportCard.global_release_at` is NOT that column and must never feed this
+module. It dates cards on no banner for the Collection's sort. Those cards stay
+out of selectors because they have no date here, so reading it would offer them.
+
 Note this makes eligibility USUALLY BINDING, and that is correct: a campaign's
 cutoff falls before its own banners, so a selector can essentially never take the
 featured unit of the anniversary that granted it. Selectors are for older and

@@ -14,6 +14,7 @@ from django.core.management import call_command
 from django.utils import timezone
 
 from calculatorapi import support_backfill
+from calculatorapi.management.commands.import_game_data import GLOBAL_LAUNCH
 from calculatorapi.models import (
     Uma, SupportCard,
     BannerTimeline, BannerUma, BannerSupport,
@@ -606,6 +607,29 @@ class ImportGameDataSupportCardTests(CalculatorTestCase):
         self.assertEqual(self.card.character_id, 1006)
         self.assertEqual(self.card.title, "[Get Lots of Hugs for Me]")
         self.assertEqual(self.card.name, "Oguri Cap")
+
+    def _released(self, **overrides):
+        self._run(self._snapshot(**overrides))
+        self.card.refresh_from_db()
+        return self.card.global_release_at
+
+    def test_release_date_is_the_games_own(self):
+        # 2026-03-12 00:00 UTC.
+        self.assertEqual(
+            self._released(start_date=1773273600),
+            datetime.datetime(2026, 3, 12, tzinfo=datetime.timezone.utc),
+        )
+
+    def test_a_launch_card_is_dated_globals_launch_not_jps(self):
+        # 2021-02-24, the date the client gives every launch card.
+        self.assertEqual(self._released(start_date=1614124800), GLOBAL_LAUNCH)
+
+    def test_a_card_that_isnt_out_has_no_release_date(self):
+        # 2099-01-01, the client's "not released here" mark.
+        self.assertIsNone(self._released(start_date=4070908800))
+
+    def test_a_card_with_no_date_has_no_release_date(self):
+        self.assertIsNone(self._released())
 
     def test_rarity_is_read_off_the_game_id_on_save(self):
         # A card an editor adds by hand never meets the import (it may not be on
