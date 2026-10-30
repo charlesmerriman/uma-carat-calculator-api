@@ -18,7 +18,7 @@ WHAT A BLOCK HOLDS, AND WHY NOTHING ELSE
     gallery_style  the look key (benefits.GALLERY_STYLE_LADDER), or null
 
 Never the generated username, a user id, a Patreon handle, an email, a tier
-ORDER or a vote weight. The dict below is the field list, the role
+ORDER. The dict below is the field list, the role
 PatreonSupporterSerializer's explicit fields play for the supporter email.
 
 `tier_name` and `gallery_style` are both null when the person turned

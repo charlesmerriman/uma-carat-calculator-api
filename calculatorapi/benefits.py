@@ -215,8 +215,8 @@ def early_access_for(supporter, *, is_staff=False, granted=False):
     features without being made staff, which opens the admin login and every
     ladder in this module. Like `is_staff` it is CustomUser's own field, not a
     copy of Patreon's, so reading it creates no second truth to drift. And it
-    opens THIS and nothing else: not the oshi ladder, not the gallery look,
-    not the vote weight. Those stay with the pledge.
+    opens THIS and nothing else: not the oshi ladder, not the gallery look.
+    Those stay with the pledge.
 
     WHO, not WHAT: this says who is early, and the client decides which
     features are still early access (frontend `PVP_EARLY_ACCESS`, the PvP page
@@ -369,26 +369,3 @@ GALLERY_STYLE_LADDER = (
 def gallery_style_for(supporter):
     """The look key for an already-resolved supporter row, or None."""
     return _ladder_value(supporter, GALLERY_STYLE_LADDER, None)
-
-
-# ── Gallery vote weight ──────────────────────────────────────────────────────
-# How much one upvote counts in the gallery ranking (gallery_ranking.py), and
-# how big a head start a post gets from its own author. The second COUNTED
-# benefit after oshi slots, and the same rule applies with more force: a weight
-# NEVER leaves the server. It is not in GET /account and not in any gallery
-# payload; rows show the plain count of people who upvoted, and the FAQ says
-# supporter votes count extra.
-#
-# Derived from the pledge as it is when the gallery is RANKED, not when the vote
-# was cast, so a lapse takes the extra weight off every past vote at once.
-FREE_VOTE_WEIGHT = 1
-VOTE_WEIGHT_LADDER = (
-    (1, 4),
-    (2, 3),
-    (ANY_PAID_TIER, 2),
-)
-
-
-def vote_weight_for(supporter):
-    """How much a vote from an already-resolved supporter row counts."""
-    return _ladder_value(supporter, VOTE_WEIGHT_LADDER, FREE_VOTE_WEIGHT)

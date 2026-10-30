@@ -120,6 +120,7 @@ from .gallery import (
     GalleryReportReason,
     GalleryReportResolution,
     GalleryVote,
+    VoteValue,
     GALLERY_CAPTION_MAX_LENGTH,
     GALLERY_STRATEGY_MAX_LENGTH,
     GALLERY_COMMENT_MAX_LENGTH,
