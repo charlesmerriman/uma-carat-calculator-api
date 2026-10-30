@@ -82,6 +82,7 @@ from calculatorapi.views.gallery import (
     gallery_post_vote,
     gallery_report,
 )
+from calculatorapi.views.profile_card import profile_card_for_comment, profile_card_for_post
 from calculatorapi.views.pvp_gallery import pvp_gallery_feed, pvp_team_publish
 from calculatorapi.views.gallery_share import share_page, share_preview
 from calculatorapi.views.plan_share import share_page as plan_share_page
@@ -250,6 +251,9 @@ urlpatterns = [
     path("roster", roster_detail, name="roster"),
     path("roster/import", roster_import, name="roster-import"),
     path("roster/<str:kind>", roster_clear, name="roster-clear"),
+    # A person's card, reached through something they posted. → views/profile_card.py
+    path("profile-cards/post/<str:public_id>", profile_card_for_post, name="profile-card-post"),
+    path("profile-cards/comment/<int:comment_id>", profile_card_for_comment, name="profile-card-comment"),
     # The PvP gallery: posting a team and one event's ranked feed.
     # → views/pvp_gallery.py
     path("pvp-teams/<int:team_id>/publish", pvp_team_publish, name="pvp-team-publish"),

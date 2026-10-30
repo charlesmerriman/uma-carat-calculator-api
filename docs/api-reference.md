@@ -1304,6 +1304,26 @@ Throttles (all in the `gallery` cache): `gallery_read` 120/h, `gallery_vote` 120
 
 ---
 
+### Profile cards
+
+`GET /profile-cards/post/<public_id>` and `GET /profile-cards/comment/<id>`, both `AllowAny`
+(`views/profile_card.py`). Clicking a name on a post or comment opens the person's card, reached
+through what they posted because an account has no public id.
+
+```json
+{ "favorites": [{"uma": 41, "label": "Oguri Cap", "image": "url"}],
+  "posts": [{"public_id": "aB3dE5gH", "caption": "Pace core", "score": 12,
+             "event": {"kind": "cm", "id": 21, "label": "Capricorn Cup"}}],
+  "plans": [{"public_id": "cD4eF6hI", "row_count": 5, "pull_count": 1600, "step_count": 0}] }
+```
+
+`favorites` is every favorite the account's slots cover, in order. `posts` is their visible posts,
+newest 10. `plans` is empty until they turn `show_shared_plans_on_card` on, and then lists shared
+plans' totals, never a plan's name or id. The name, picture and tier aren't sent: the client
+already has them from the post or comment. A hidden post, a blocked author, a deleted or hidden
+comment, a comment on a hidden post or unpublished guide, and an unknown id all answer one `404`
+body. Throttled by `profile_card`.
+
 ## Telemetry
 
 ### `POST /visit`

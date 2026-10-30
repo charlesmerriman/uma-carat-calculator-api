@@ -278,7 +278,7 @@ class AccountEndpointTests(CalculatorTestCase):
         self.assertEqual(res.status_code, 200)
         self.assertEqual(
             set(res.data),
-            {'username', 'display_name', 'show_supporter_badge', 'avatar_url', 'oshis',
+            {'username', 'display_name', 'show_supporter_badge', 'show_shared_plans_on_card', 'avatar_url', 'oshis',
              'oshi_slots', 'oshi_uma_ids', 'oshi_variants', 'early_access', 'guide_editor',
              'linked_providers', 'supporter'},
         )
