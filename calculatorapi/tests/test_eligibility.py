@@ -23,7 +23,7 @@ class ReleaseDateStaysOutOfSelectorsTests(CalculatorTestCase):
 
     def setUp(self):
         self.welfare = SupportCard.objects.create(
-            name="Welfare SSR", game_id=30500, image="support_cards/30500.png", is_on_global=True,
+            name="Welfare SSR", game_id=30500, is_on_global=True,
             global_release_at=timezone.make_aware(datetime.datetime(2025, 8, 1)),
         )
         self.cutoff = datetime.date(2026, 1, 1)
