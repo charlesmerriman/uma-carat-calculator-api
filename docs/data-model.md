@@ -394,7 +394,7 @@ A plain boolean (`0093`, 2026-10-15), ticked in the admin and nowhere else:
 `PATCH /account`'s serializer field list is the whitelist and does not carry it.
 It is the **third way into `benefits.early_access_for`**, beside a live pledge
 and `is_staff`, and it opens ONLY that: not the oshi ladder, not the gallery
-look, not the vote weight, not `ad_free`. It exists so a tester or a friend can
+look, not `ad_free`. It exists so a tester or a friend can
 try features still in early access without being made staff, which used to be
 the habit: staff can sign in to the admin, bypass every supporter ladder, and
 are excluded from analytics. No end date: revoking it is unticking it, and the
@@ -595,11 +595,13 @@ never deletes one, so lowering it later strands nobody's data.
 report demand from rows nobody intends. The admin's "Planned by" column counts distinct
 users for the same reason.
 
-#### Share links: a shared plan is copied, never viewed
+#### Share links: a shared plan is copied, not opened
 
 A plan is editable only by its owner. Anyone else sees it by taking a **copy** through its
-link, `/app/<public_id>`, and the copy is then theirs to change. There is no read-only view
-of somebody else's plan. Routes: `views/plan_public.py`, documented in
+link, `/app/<public_id>`, and the copy is then theirs to change. The link's card lists each
+banner with its pulls, and the owner's notes under `share_notes` (owner's call, 2026-10-30:
+a copy already gives anyone with the link those rows), but somebody else's plan never opens
+in the calculator. Routes: `views/plan_public.py`, documented in
 `api-reference.md` ("Share links"). The link the owner copies is `/plan/<public_id>`, a
 link-preview page (`views/plan_share.py`, 2026-10-16) that sends people on to the card. Its
 picture, `/plan/<public_id>/preview.jpg` (since 2026-10-19), is drawn by `plan_preview.py`: the
@@ -1205,14 +1207,16 @@ lose FK integrity and cascades; tables per gallery would write this twice.
   `preview_version` hash (umas and styles; part of the preview image URL) and `source_team`
   (SET_NULL, never serialized). **One post per person per event** in the database
   (`one_gallery_post_per_author_cm` / `_loh`).
-- **A post is a FROZEN COPY.** With votes on it, a live team could collect votes and then
-  swap its cards. Posting again for the same event replaces the copy, keeps the `public_id`
-  and the comments (older ones read "On an earlier version"), and **clears the votes**. A
-  hidden post stays hidden when re-posted.
-- **`GalleryVote`**: `(post, user)` unique. **No weight column**: a vote's weight comes from
-  the voter's pledge when the gallery is ranked (`benefits.VOTE_WEIGHT_LADDER`: 1, then
-  2 / 3 / 4 by tier), so a lapse takes the extra weight off every past vote at once. A post
-  also starts with its author's own weight (the head start). Weights never leave the server.
+- **A post is a FROZEN COPY.** Posting again for the same event replaces the copy, keeps the
+  `public_id`, the comments (older ones read "On an earlier version") and **the votes**
+  (Henry, 2026-10-26; until `0123` a team change cleared them). The post reads "Edited" once
+  `content_updated_at` passes `published_at`, and the ranking ages it from `published_at`, so
+  a re-post is never a bump. A hidden post stays hidden when re-posted.
+- **`GalleryVote`**: `(post, user)` unique, `value` +1 or -1 (`VoteValue`, a check
+  constraint; `0123` made every earlier vote +1). Switching is an update of the one row.
+  **Every vote counts the same** (the owner, 2026-10-30, removing the supporter vote weight
+  and the author's head start). A post whose score reaches -10 tells `#calc-mod-queue` once
+  (`gallery.DOWNVOTE_ALERT_SCORE`, key `downvoted:post:<id>`), with the link and the split only.
 - **`GalleryComment`**: one level of replies (`parent`; a reply to a reply attaches to its top
   comment), `body` (500), `edited_at`, the hidden trio, and `is_deleted`: a comment deleted
   while it has replies keeps its place as "[deleted]" with no text and no author.
@@ -1222,8 +1226,9 @@ lose FK integrity and cascades; tables per gallery would write this twice.
   else a running style; always `""` on a post's). Anything that shows where a comment is asks
   the comment: `where()` for staff, `link_path()` for the site's link, so reports, moderation
   cards and `erase_users` need no branch of their own.
-- **`GalleryCommentVote`**: a thumbs-up, `(comment, user)` unique, no weight. Never on your
-  own comment; blocked accounts' votes don't count; who voted never leaves the server.
+- **`GalleryCommentVote`**: a thumbs-up or thumbs-down, `(comment, user)` unique, `value` as on
+  `GalleryVote`. Never on your own comment; blocked accounts' votes don't count; who voted
+  never leaves the server. A top comment below 0 is listed after the others (`gallery._thread`).
 - **`GalleryReport`**: exactly one of `post` / `comment` (`gallery_report_one_target`), a
   reason, an optional note, and `resolved_at` / `resolved_by` / `resolution` (`kept` /
   `removed` / `blocked`; `blocked` since migration `0101`, so an undo knows to lift the
@@ -1240,8 +1245,9 @@ lose FK integrity and cascades; tables per gallery would write this twice.
 - **`BlockedTerm`**: words refused in captions, comments and display names, stored
   normalised (NFKC, invisible characters removed, casefolded), matched as a whole word or
   anywhere. Staff edit it in the admin; PRIVATE, so a local database starts empty.
-- **`CustomUser`** gains `show_supporter_badge` (the person's switch for their tier name and
-  look on posts and comments) and `publishing_blocked` (admin only: no posting, commenting,
+- **`CustomUser`** gains `show_shared_plans_on_card` (`0125`, default off: the person's switch for
+  listing their shared plans on their profile card), `show_supporter_badge` (their switch for their
+  tier name and look on posts and comments) and `publishing_blocked` (admin only: no posting, commenting,
   voting or reporting, everything they posted hidden through the read filter
   `gallery.visible_posts()` without being deleted, and their votes stop counting).
 - **Views are counted without storing viewers**: a cache key per viewer per post per day in
@@ -1661,6 +1667,13 @@ English descriptions; anything else is returned as the game's code, flagged `raw
 the skills players can see read in full (2026-10-23). The parser is
 `skill_conditions.py`, shared with "Fill track green skills". The Skill admin shows the
 result ("In plain English") with "Where it comes from".
+
+**`SupportCard.global_release_at`** is import-owned too: the game's `start_date`, Global's launch
+for a card the client dates before it (every launch card reads JP's 2021-02-24), NULL for a card
+not out on Global. It exists for the Collection's Release date sort, since 172 Global cards sit on
+no banner. **It is never selector eligibility**, which stays derived from JP banner dates
+(`eligibility.py`): a card on no banner staying unknown there is what keeps it out of selectors, so
+only `/pvp-catalogue` carries it, never `/calculator-data`.
 
 **`Uma.is_on_global` / `SupportCard.is_on_global`** are import-owned: true exactly for the
 ids in the global snapshot. The PvP catalogue's `on_global` reads them (it used to mean

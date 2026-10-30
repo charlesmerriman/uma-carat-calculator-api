@@ -476,6 +476,8 @@ REST_FRAMEWORK = {
         # script inflating a count is capped here, not stopped, which is
         # acceptable for a number that is social proof.
         "public_plan_copy": "30/hour",
+        # A profile card, one per click on a name (views/profile_card.py).
+        "profile_card": "120/hour",
         # The gallery (views/gallery.py, views/pvp_gallery.py). Reads cover
         # feeds, posts and comments; a busy reader stays well under 120.
         "gallery_read": "120/hour",

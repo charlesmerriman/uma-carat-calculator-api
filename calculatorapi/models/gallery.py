@@ -19,11 +19,13 @@ constraint, the same XOR idiom PvpTeam and PvpGuide use for their event.
 A POST IS A FROZEN COPY
 -----------------------
 `team_snapshot` is copied from the player's team when they post, and editing
-the team afterwards never changes it. With votes on a post, a live team could
-be gamed: collect votes on a strong team, then swap the cards, and the votes
-now vouch for something else. Posting again for the same event replaces the
-copy and clears the votes (gallery.py does it), keeping the post's link and
-its comments, which then read "On an earlier version" by `content_updated_at`.
+the team afterwards never changes it. Posting again for the same event
+replaces the copy and KEEPS the votes (Henry, 2026-10-26; until then a team
+change cleared them, so votes collected on one team couldn't vouch for
+another). What stops that being gamed now: the post says "Edited" whenever
+`content_updated_at` is later than `published_at`, its comments read "On an
+earlier version", and the ranking ages a post from `published_at`, so a
+re-post is never a bump (gallery_ranking.py).
 
 PRIVATE, AND OFF THE CACHED ROUTE
 ---------------------------------
@@ -71,6 +73,14 @@ class GalleryHiddenReason(models.TextChoices):
     REPORTS = "reports", "Hidden by reports, waiting for review"
     # A moderator removed it.
     MODERATOR = "moderator", "Removed by a moderator"
+
+
+class VoteValue(models.IntegerChoices):
+    """A vote on a post or a comment (Henry, 2026-10-26). An integer so a
+    score is a Sum; one row per person, so switching is an update."""
+
+    UP = 1, "Up"
+    DOWN = -1, "Down"
 
 
 class GalleryReportReason(models.TextChoices):
@@ -235,22 +245,23 @@ class GalleryPost(models.Model):
 
 
 class GalleryVote(models.Model):
-    """One account's upvote on one post.
+    """One account's vote on one post, up or down.
 
-    No weight column: how much a vote counts comes from the voter's pledge at
-    the time the gallery is ranked (gallery_ranking.py), never from the time
-    they voted. A stored weight would keep counting extra after a lapse.
+    Every vote counts the same (the owner, 2026-10-30: supporters' votes no
+    longer count extra). Rows from before downvotes existed are all UP.
     """
 
     post = models.ForeignKey(GalleryPost, on_delete=models.CASCADE, related_name="votes")
     user = models.ForeignKey(
         CustomUser, on_delete=models.CASCADE, related_name="gallery_votes"
     )
+    value = models.SmallIntegerField(choices=VoteValue.choices, default=VoteValue.UP)
     created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=["post", "user"], name="one_gallery_vote_per_user"),
+            models.CheckConstraint(condition=Q(value__in=VoteValue.values), name="gallery_vote_up_or_down"),
         ]
 
     def __str__(self):
@@ -357,20 +368,22 @@ class GalleryComment(models.Model):
 
 
 class GalleryCommentVote(models.Model):
-    """One account's thumbs-up on one comment (Henry, board 2026-10-20).
+    """One account's thumbs-up or thumbs-down on one comment (Henry, board
+    2026-10-20 for the thumbs-up, 2026-10-26 for the thumbs-down).
 
-    A count, nothing more: no weight, no thumbs-down, never on your own
-    comment (gallery.vote_comment). The count is public; who voted is never
-    sent anywhere, not even to the comment's author.
+    Never on your own comment (gallery.vote_comment). The score is public;
+    who voted is never sent anywhere, not even to the comment's author.
     """
 
     comment = models.ForeignKey(GalleryComment, on_delete=models.CASCADE, related_name="votes")
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="gallery_comment_votes")
+    value = models.SmallIntegerField(choices=VoteValue.choices, default=VoteValue.UP)
     created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=["comment", "user"], name="one_comment_vote_per_user"),
+            models.CheckConstraint(condition=Q(value__in=VoteValue.values), name="comment_vote_up_or_down"),
         ]
 
     def __str__(self):

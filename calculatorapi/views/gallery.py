@@ -3,8 +3,8 @@ Everything about ONE gallery post, whatever gallery it is in.
 
 GET    /gallery/posts/<public_id>         the post in full            (anyone)
 DELETE /gallery/posts/<public_id>         take it down                (its author)
-PUT    /gallery/posts/<public_id>/vote    upvote it                   (signed in)
-DELETE /gallery/posts/<public_id>/vote    take the upvote back        (signed in)
+PUT    /gallery/posts/<public_id>/vote    vote it {"value": "up"|"down"} (signed in)
+DELETE /gallery/posts/<public_id>/vote    take the vote back          (signed in)
 POST   /gallery/posts/<public_id>/view    count a view                (anyone)
 POST   /gallery/posts/<public_id>/copy    the team, for "Copy to my teams" (anyone)
 GET    /gallery/my-posts                  the caller's own posts, hidden too (signed in)
@@ -21,8 +21,15 @@ WHAT A POST SENDS, AND WHAT IT NEVER DOES
 -----------------------------------------
 serialize_posts() is the field list: catalogue ids and styles for the team,
 the counts people see, and public_identity.poster_block for the author. Never
-a username, a user id, the team's name, notes or pin, a vote weight, a tier
-order, or who voted, viewed or reported. A test pins the exact keys.
+a username, a user id, the team's name, notes or pin, a tier order, or who
+voted, viewed or reported. A test pins the exact keys.
+
+VOTES ON THE WIRE (Henry, 2026-10-26)
+-------------------------------------
+`score` is ups minus downs, never below 0 for anyone; the ranking uses the
+real number. `my_vote` is "up", "down" or "none", null for a guest (who
+cannot vote). Staff also get `split`, {"up", "down"}, to spot a pile-on
+either way: how many, never who. vote_fields() builds all three.
 
 A hidden post, a post by a blocked account and a post that does not exist all
 answer the same 404, except to the post's own author, who sees theirs with
@@ -40,7 +47,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 
 from calculatorapi import gallery, gallery_ranking, public_identity, pvp_guide_editing
-from calculatorapi.models import GalleryComment, GalleryPost, GalleryVote, PvpGuide, SupportCard, Uma
+from calculatorapi.models import GalleryComment, GalleryPost, GalleryVote, PvpGuide, SupportCard, Uma, VoteValue
 from calculatorapi.models.pvp_guide import PvpStyle
 from calculatorapi.views.pvp_guide import EVENT_FIELD_FOR_KIND
 
@@ -132,14 +139,38 @@ def _comment_counts(posts):
     )
 
 
+_VOTE_NAMES = {VoteValue.UP: "up", VoteValue.DOWN: "down"}
+_VOTE_VALUES = {name: value for value, name in _VOTE_NAMES.items()}
+
+
+def vote_fields(ups, downs, mine, viewer):
+    """The score, the viewer's vote and (staff only) the split, for a post or
+    a comment. `mine` is the viewer's VoteValue, or None."""
+    signed_in = viewer is not None and viewer.is_authenticated
+    fields = {
+        "score": max(ups - downs, 0),
+        "my_vote": _VOTE_NAMES.get(mine, "none") if signed_in else None,
+    }
+    if signed_in and viewer.is_staff:
+        fields["split"] = {"up": ups, "down": downs}
+    return fields
+
+
+def vote_value(request):
+    """The PUT body's vote: {"value": "up"} or {"value": "down"}. No body
+    means up, so a tab still on the old page keeps working. None for
+    anything else."""
+    return _VOTE_VALUES.get(request.data.get("value", "up"))
+
+
 def serialize_posts(posts, viewer, *, full=False):
     """Posts on the wire, in the order given. `posts` must carry
-    `upvote_count` (gallery_ranking.with_points or ranked). `full` adds the
+    `ups` and `downs` (gallery_ranking.with_points or ranked). `full` adds the
     whole team, the copy count and the event, for the post panel."""
     signed_in = viewer is not None and viewer.is_authenticated
-    voted = set(
-        GalleryVote.objects.filter(user=viewer, post__in=posts).values_list("post_id", flat=True)
-    ) if signed_in else set()
+    voted = dict(
+        GalleryVote.objects.filter(user=viewer, post__in=posts).values_list("post_id", "value")
+    ) if signed_in else {}
     blocks = public_identity.poster_blocks([post.author for post in posts])
     comments = _comment_counts(posts)
     umas, cards = _known_ids(posts)
@@ -150,6 +181,7 @@ def serialize_posts(posts, viewer, *, full=False):
             for member in post.team_snapshot
             if member["uma"] in umas
         ]
+        votes = vote_fields(post.ups, post.downs, voted.get(post.pk), viewer)
         row = {
             "public_id": post.public_id,
             "caption": post.caption,
@@ -159,12 +191,13 @@ def serialize_posts(posts, viewer, *, full=False):
             "umas": [{"uma": member["uma"], "style": member["style"]} for member in team],
             "stats": {
                 "views": post.view_count,
-                "upvotes": post.upvote_count,
+                "score": votes["score"],
+                **({"split": votes["split"]} if "split" in votes else {}),
                 "comments": comments.get(post.pk, 0),
             },
             # null for a guest: "not voted" and "cannot vote" are different
             # things to draw.
-            "my_vote": (post.pk in voted) if signed_in else None,
+            "my_vote": votes["my_vote"],
             "poster": blocks[post.author_id],
         }
         if full:
@@ -225,17 +258,18 @@ def gallery_post_vote(request, public_id):
     post = _post_or_404(public_id, request.user)
     if post is None:
         return Response(NOT_FOUND, status=status.HTTP_404_NOT_FOUND)
+    value = vote_value(request)
+    if value is None:
+        return Response({"error": "A vote is up or down."}, status=status.HTTP_400_BAD_REQUEST)
     try:
         if request.method == "PUT":
-            gallery.vote(request.user, post)
+            gallery.vote(request.user, post, value)
         else:
             gallery.unvote(request.user, post)
     except gallery.GalleryRefused as refusal:
         return refused(refusal)
-    return Response({
-        "upvotes": gallery.upvote_count(post),
-        "my_vote": request.method == "PUT",
-    })
+    ups, downs = gallery.tally(post.votes)
+    return Response(vote_fields(ups, downs, value if request.method == "PUT" else None, request.user))
 
 
 @api_view(["POST"])
@@ -317,7 +351,8 @@ def _serialize_comment(comment, state, post, viewer, blocks, votes=None):  # pyl
     for a guide's comment, which has no author to mark and no re-post to be
     "earlier" than. `votes` is gallery.comment_votes() for the page."""
     shown = state in ("visible", "under_review")
-    counts, mine = votes or ({}, set())
+    tallies, mine = votes or ({}, {})
+    ups, downs = tallies.get(comment.pk, (0, 0)) if shown else (0, 0)
     return {
         "id": comment.pk,
         "state": state,
@@ -329,9 +364,8 @@ def _serialize_comment(comment, state, post, viewer, blocks, votes=None):  # pyl
         "is_author": shown and post is not None and comment.author_id == post.author_id,
         "is_mine": viewer is not None and viewer.is_authenticated and comment.author_id == viewer.pk,
         "poster": blocks.get(comment.author_id) if shown else None,
-        # Thumbs-up: the count, and whether the viewer gave one. Never who.
-        "upvotes": counts.get(comment.pk, 0) if shown else 0,
-        "my_vote": shown and comment.pk in mine,
+        # Thumbs up and down: the score, the viewer's vote. Never who.
+        **vote_fields(ups, downs, mine.get(comment.pk) if shown else None, viewer),
     }
 
 
@@ -449,20 +483,23 @@ def guide_comments(request, kind, event_id):
 @permission_classes([permissions.IsAuthenticated])
 @throttle_classes([GalleryVoteThrottle])
 def gallery_comment_vote(request, comment_id):
-    """PUT: thumbs-up a comment you can see. DELETE: take it back. Answers
-    the new count and your vote, like a post's upvote."""
+    """PUT {"value": "up"|"down"}: vote on a comment you can see. DELETE:
+    take it back. Answers the new score and your vote, like a post's vote."""
     comment = _visible_comment(comment_id, request.user)
     if comment is None:
         return Response({"error": "Comment not found"}, status=status.HTTP_404_NOT_FOUND)
+    value = vote_value(request)
+    if value is None:
+        return Response({"error": "A vote is up or down."}, status=status.HTTP_400_BAD_REQUEST)
     try:
         if request.method == "PUT":
-            gallery.vote_comment(request.user, comment)
+            gallery.vote_comment(request.user, comment, value)
         else:
             gallery.unvote_comment(request.user, comment)
     except gallery.GalleryRefused as refusal:
         return refused(refusal)
-    counts, _ = gallery.comment_votes([comment.pk])
-    return Response({"upvotes": counts.get(comment.pk, 0), "my_vote": request.method == "PUT"})
+    ups, downs = gallery.tally(comment.votes)
+    return Response(vote_fields(ups, downs, value if request.method == "PUT" else None, request.user))
 
 
 @api_view(["PATCH", "DELETE"])

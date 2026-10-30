@@ -20,7 +20,7 @@ from django.db import IntegrityError, transaction
 from django.db.models import Count, F
 from django.utils import timezone
 
-from calculatorapi import gallery_moderation, moderation_cards, visits
+from calculatorapi import discord_messages, gallery_moderation, moderation_cards, visits
 from calculatorapi.models import (
     GalleryComment,
     GalleryCommentVote,
@@ -29,6 +29,7 @@ from calculatorapi.models import (
     GalleryReport,
     GalleryReportReason,
     GalleryVote,
+    VoteValue,
     GALLERY_CAPTION_MAX_LENGTH,
     GALLERY_STRATEGY_MAX_LENGTH,
     GALLERY_COMMENT_MAX_LENGTH,
@@ -43,6 +44,11 @@ from calculatorapi.public_ids import generate_public_id
 # How long one viewer's view of one post is remembered, so opening it again
 # the same day is not a second view.
 VIEW_WINDOW_SECONDS = 24 * 60 * 60
+
+# A post whose score reaches this tells the moderators, once ever (Henry,
+# 2026-10-26: "notified if post goes below -10"; the owner, 2026-10-30: at -10
+# or lower, posts only).
+DOWNVOTE_ALERT_SCORE = -10
 
 
 class GalleryRefused(Exception):
@@ -165,10 +171,9 @@ def publish_team(user, team, *, caption="", strategy="", confirm_public_identity
     Returns (post, created). A replacement keeps the post's public id, so its
     link keeps working, and its comments. When the TEAM changed (any uma,
     style or card), the comments read "On an earlier version" from then on
-    and the votes are CLEARED, because they were for a different team. When
-    only the words changed (`caption`, `strategy`), the votes stay and the post
-    keeps its place: a typo fix is not a new team, and must not be a free
-    bump to the top of New either. `confirm_public_identity` must be
+    and the post reads "Edited". The votes stay either way (Henry,
+    2026-10-26), and the post keeps its place in every sort, which ages it
+    from `published_at` (gallery_ranking.py). `confirm_public_identity` must be
     literally True: it is the person's agreement, in the dialog, to show
     their name, picture and tier.
 
@@ -225,8 +230,6 @@ def publish_team(user, team, *, caption="", strategy="", confirm_public_identity
         for name, value in fields.items():
             setattr(post, name, value)
         post.save(update_fields=list(fields))
-        if not same_team:
-            post.votes.all().delete()
     # A reported post that is re-posted shows its new caption and strategy.
     moderation_cards.refresh(post)
     return post, False
@@ -269,56 +272,88 @@ def snapshot_for_display(snapshot):
 # ── Votes ───────────────────────────────────────────────────────────────────
 
 
-def upvote_count(post):
-    """The number shown on a post: people who upvoted, blocked accounts not
-    counted. Not the weighted points, which never leave the server."""
-    return post.votes.filter(user__publishing_blocked=False).count()
+def tally(votes):
+    """(ups, downs) of a vote queryset, blocked accounts left out."""
+    counts = dict(
+        votes.filter(user__publishing_blocked=False).values("value").annotate(n=Count("id")).values_list("value", "n")
+    )
+    return counts.get(VoteValue.UP, 0), counts.get(VoteValue.DOWN, 0)
 
 
-def vote(user, post):
-    """Upvote `post` as `user`. Idempotent: a second call changes nothing."""
-    if post.author_id == user.pk:
-        raise GalleryRefused("You can't upvote your own team.", status=403)
+def _check_may_vote(user, author_id, own_message):
+    if author_id == user.pk:
+        raise GalleryRefused(own_message, status=403)
     if user.publishing_blocked:
         raise GalleryRefused("Your account can't vote in the gallery.", status=403)
-    GalleryVote.objects.get_or_create(post=post, user=user)
+
+
+def vote(user, post, value=VoteValue.UP):
+    """Vote `post` up or down as `user`. One vote per person: a second call
+    switches it, or changes nothing if it is the same."""
+    _check_may_vote(user, post.author_id, "You can't vote on your own team.")
+    GalleryVote.objects.update_or_create(post=post, user=user, defaults={"value": value})
+    if value == VoteValue.DOWN:
+        _alert_if_sunk(post)
 
 
 def unvote(user, post):
-    """Take `user`'s upvote off `post`. Idempotent."""
+    """Take `user`'s vote off `post`, whichever way it was. Idempotent."""
     GalleryVote.objects.filter(post=post, user=user).delete()
 
 
-def vote_comment(user, comment):
-    """A thumbs-up on `comment` as `user`. Idempotent. Never on your own, and
-    never from a blocked account, the same rules as a post's upvote."""
-    if comment.author_id == user.pk:
-        raise GalleryRefused("You can't thumbs-up your own comment.", status=403)
-    if user.publishing_blocked:
-        raise GalleryRefused("Your account can't vote in the gallery.", status=403)
-    GalleryCommentVote.objects.get_or_create(comment=comment, user=user)
+def _alert_if_sunk(post):
+    """Tell #calc-mod-queue once a post's score reaches DOWNVOTE_ALERT_SCORE.
+
+    Once per post, ever (discord_messages' never-twice key), so a post that
+    climbs back and sinks again doesn't page anyone twice. The message holds
+    the link, the event and the split, never the caption or a name: Discord
+    keeps what it is sent (moderation_cards.py, "Why so little stays").
+    """
+    ups, downs = tally(post.votes)
+    if ups - downs > DOWNVOTE_ALERT_SCORE:
+        return
+    site = settings.FRONTEND_URL.rstrip("/")
+    discord_messages.send(
+        f"downvoted:post:{post.pk}",
+        settings.DISCORD_MOD_QUEUE_CHANNEL_ID,
+        content=(
+            f"A team on {post.event} is down to {ups - downs} ({ups} up, {downs} down): "
+            f"[View the post]({site}/post/{post.public_id})"
+        ),
+    )
+
+
+def vote_comment(user, comment, value=VoteValue.UP):
+    """A thumbs-up or thumbs-down on `comment` as `user`, switching any vote
+    they had. Never on your own, never from a blocked account."""
+    _check_may_vote(user, comment.author_id, "You can't vote on your own comment.")
+    GalleryCommentVote.objects.update_or_create(comment=comment, user=user, defaults={"value": value})
 
 
 def unvote_comment(user, comment):
-    """Take `user`'s thumbs-up off `comment`. Idempotent."""
+    """Take `user`'s vote off `comment`. Idempotent."""
     GalleryCommentVote.objects.filter(comment=comment, user=user).delete()
 
 
 def comment_votes(comment_ids, viewer=None):
-    """({comment id: thumbs-up count}, {ids the viewer thumbed up}) for a page
-    of comments, in two queries however long the page. Blocked accounts'
+    """({comment id: (ups, downs)}, {comment id: the viewer's VoteValue}) for a
+    page of comments, in two queries however long the page. Blocked accounts'
     votes don't count, as on posts."""
-    counts = dict(
+    tallies = {}
+    rows = (
         GalleryCommentVote.objects.filter(comment_id__in=comment_ids, user__publishing_blocked=False)
-        .values("comment_id").annotate(n=Count("id")).values_list("comment_id", "n")
+        .values("comment_id", "value").annotate(n=Count("id")).values_list("comment_id", "value", "n")
     )
-    mine = set()
+    for comment_id, value, count in rows:
+        ups, downs = tallies.get(comment_id, (0, 0))
+        tallies[comment_id] = (ups + count, downs) if value == VoteValue.UP else (ups, downs + count)
+    mine = {}
     if viewer is not None and viewer.is_authenticated:
-        mine = set(
+        mine = dict(
             GalleryCommentVote.objects.filter(comment_id__in=comment_ids, user=viewer)
-            .values_list("comment_id", flat=True)
+            .values_list("comment_id", "value")
         )
-    return counts, mine
+    return tallies, mine
 
 
 # ── Views and copies ────────────────────────────────────────────────────────
@@ -482,7 +517,8 @@ def _thread(queryset, viewer=None):
     by moderation or by its author's block) or "under_review" (the viewer's
     OWN hidden comment, so they know why nobody else sees it). A removed top
     comment with no visible replies is left out: the placeholder only exists
-    to keep a conversation's shape.
+    to keep a conversation's shape. A top comment with a negative score moves
+    to the end.
     """
     viewer_id = viewer.pk if viewer is not None and viewer.is_authenticated else None
     comments = list(queryset)
@@ -508,7 +544,16 @@ def _thread(queryset, viewer=None):
         if kind in ("removed", "deleted") and not under:
             continue
         result.append((comment, kind, under))
-    return result
+    # A top comment below 0 goes to the end, the others keep their order
+    # (owner, 2026-10-30). Sinks, never hidden; replies stay in order.
+    tallies, _ = comment_votes([comment.pk for comment, _, _ in result])
+    return sorted(result, key=lambda entry: _sinks(tallies.get(entry[0].pk)))
+
+
+def _sinks(votes):
+    """True for a (ups, downs) pair whose score is negative: the sort key above."""
+    ups, downs = votes or (0, 0)
+    return ups - downs < 0
 
 
 # ── Reports ─────────────────────────────────────────────────────────────────

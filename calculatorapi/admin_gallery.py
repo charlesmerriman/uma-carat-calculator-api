@@ -61,15 +61,16 @@ class _ModerationActions:
 
 
 class GalleryVoteInline(TabularInline):
-    """Who upvoted a post. Admin only, never on a public route: it is here to
-    spot a vote brigade (one batch of new accounts voting together)."""
+    """Who voted on a post, and which way. Admin only, never on a public
+    route: it is here to spot a vote brigade (one batch of new accounts
+    voting together, up or down)."""
 
     model = GalleryVote
-    fields = ("user", "created_at")
+    fields = ("user", "value", "created_at")
     readonly_fields = fields
     extra = 0
     can_delete = True
-    verbose_name_plural = "Upvotes (admin only)"
+    verbose_name_plural = "Votes (admin only)"
 
     def has_add_permission(self, request, obj=None):
         return False

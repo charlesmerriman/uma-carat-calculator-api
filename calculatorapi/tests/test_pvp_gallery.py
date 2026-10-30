@@ -134,7 +134,7 @@ class FeedTests(RouteFixture):
         self.assertEqual(set(row), ROW_KEYS)
         self.assertEqual(set(row["poster"]), POSTER_KEYS)
         self.assertEqual(row["poster"]["gallery_style"], "sr")
-        self.assertEqual(set(row["stats"]), {"views", "upvotes", "comments"})
+        self.assertEqual(set(row["stats"]), {"views", "score", "comments"})
         self.assertEqual(set(row["umas"][0]), {"uma", "style"})
         self.assertFalse(all_keys(response.data) & FORBIDDEN)
 
@@ -143,8 +143,8 @@ class FeedTests(RouteFixture):
         voter = self.person()
         GalleryVote.objects.create(post=post, user=voter)
         self.assertIsNone(self.feed().data["results"][0]["my_vote"])
-        self.assertTrue(self.feed(self.client_for(voter)).data["results"][0]["my_vote"])
-        self.assertFalse(self.feed(self.client_for(self.person())).data["results"][0]["my_vote"])
+        self.assertEqual(self.feed(self.client_for(voter)).data["results"][0]["my_vote"], "up")
+        self.assertEqual(self.feed(self.client_for(self.person())).data["results"][0]["my_vote"], "none")
 
     def test_one_event_only_and_hidden_or_blocked_left_out(self):
         shown = self.post(self.person())
@@ -237,7 +237,7 @@ class PostRouteTests(RouteFixture):
     def test_detail(self):
         response = APIClient().get(self.url)
         self.assertEqual(set(response.data), FULL_KEYS)
-        self.assertEqual(set(response.data["stats"]), {"views", "upvotes", "comments", "copies"})
+        self.assertEqual(set(response.data["stats"]), {"views", "score", "comments", "copies"})
         self.assertEqual(len(response.data["team"]), 3)
         self.assertFalse(all_keys(response.data) & FORBIDDEN)
 
@@ -257,9 +257,31 @@ class PostRouteTests(RouteFixture):
     def test_vote_and_take_it_back(self):
         voter = self.client_for(self.person())
         response = voter.put(f"{self.url}/vote")
-        self.assertEqual(response.data, {"upvotes": 1, "my_vote": True})
-        self.assertEqual(voter.put(f"{self.url}/vote").data["upvotes"], 1)
-        self.assertEqual(voter.delete(f"{self.url}/vote").data, {"upvotes": 0, "my_vote": False})
+        self.assertEqual(response.data, {"score": 1, "my_vote": "up"})
+        self.assertEqual(voter.put(f"{self.url}/vote", {"value": "up"}, format="json").data["score"], 1)
+        self.assertEqual(voter.delete(f"{self.url}/vote").data, {"score": 0, "my_vote": "none"})
+
+    def test_a_downvote_switches_and_the_score_never_shows_below_zero(self):
+        voter = self.client_for(self.person())
+        voter.put(f"{self.url}/vote", {"value": "up"}, format="json")
+        down = voter.put(f"{self.url}/vote", {"value": "down"}, format="json")
+        self.assertEqual(down.data, {"score": 0, "my_vote": "down"})
+        self.client_for(self.person()).put(f"{self.url}/vote", {"value": "down"}, format="json")
+        self.assertEqual(self.client_for(self.person()).get(self.url).data["stats"]["score"], 0)
+
+    def test_staff_see_the_split_and_nobody_else_does(self):
+        for value in ("up", "down", "down"):
+            self.client_for(self.person()).put(f"{self.url}/vote", {"value": value}, format="json")
+        staff = self.person()
+        staff.is_staff = True
+        staff.save()
+        self.assertEqual(self.client_for(staff).get(self.url).data["stats"]["split"], {"up": 1, "down": 2})
+        self.assertNotIn("split", self.client_for(self.person()).get(self.url).data["stats"])
+        self.assertNotIn("split", APIClient().get(self.url).data["stats"])
+
+    def test_a_vote_is_up_or_down(self):
+        response = self.client_for(self.person()).put(f"{self.url}/vote", {"value": "sideways"}, format="json")
+        self.assertEqual(response.status_code, 400)
 
     def test_vote_refusals(self):
         self.assertEqual(APIClient().put(f"{self.url}/vote").status_code, 401)
@@ -349,7 +371,7 @@ class CommentRouteTests(RouteFixture):
     def test_thread_shape(self):
         top = self.comment(self.commenter, "Nice").data
         self.assertEqual(set(top), {"id", "state", "body", "created_at", "edited", "earlier_version",
-                                    "is_author", "is_mine", "poster", "upvotes", "my_vote", "replies"})
+                                    "is_author", "is_mine", "poster", "score", "my_vote", "replies"})
         reply = self.comment(self.author, "Thanks", top["id"]).data
         self.assertTrue(reply["is_author"])
         thread = APIClient().get(self.url).data

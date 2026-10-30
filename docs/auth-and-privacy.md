@@ -231,6 +231,20 @@ over the first banner's art: the same facts as its tags, never the notes or the 
 Discord and X keep their own copies after a take-down, so the preview must not hold a name,
 a portrait of the poster or a caption.
 
+### The profile card: reached through a post, never an address
+
+Clicking a name on a post or comment opens a card (`views/profile_card.py`, 2026-10-30). **A person
+has no public id, and a card doesn't give them one**: the two routes take a post's `public_id` or a
+comment's id, so a card can't be bookmarked and reaches only what those threads already show.
+
+It adds three things to what sits beside a post: every favorite the slots cover
+(`public_identity.favorite_umas`, so a lapsed supporter's greyed-out picks stay private), their
+visible gallery posts, and their shared plans. **Plans are off by default**
+(`show_shared_plans_on_card`): sharing said "anyone with the link", and listing says more. A plan
+shows totals only, never its name or id. `gallery.visible_posts` is the read filter, so
+`publishing_blocked` and a hidden post close the card, and `gallery.erase_users` removes it with
+the account. The Privacy Policy and the post dialog both mention the card.
+
 ### Reports reach moderators in a private Discord channel, and leave it again
 
 Since 2026-10-20 a reported post or comment gets a card in `#calc-mod-queue`

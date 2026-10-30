@@ -576,8 +576,8 @@ active plan promotes the oldest survivor.
 ## Share links
 
 A plan's owner can switch on a link, `/app/<public_id>`, that lets anyone take a **copy** of
-the plan. Nobody but the owner ever opens the plan itself: there is no read-only view, and
-neither route below writes to the source beyond its copy count. Code:
+the plan. Nobody but the owner ever opens the plan itself: the link's card lists what the plan
+holds and offers a copy, and neither route below writes to the source beyond its copy count. Code:
 `views/plan_public.py`.
 
 Both routes are public (`AllowAny`) and answer `404` unless the plan's `is_shared` is on,
@@ -602,16 +602,17 @@ preview or a crawler fetching it is harmless.
   "pull_count": 120,
   "step_count": 0,
   "rows": [
-    { "banner_uma": 31, "banner_support": null, "banner_step_up": null },
-    { "banner_uma": null, "banner_support": 18, "banner_step_up": null }
+    { "banner_uma": 31, "banner_support": null, "banner_step_up": null, "number_of_pulls": 120,
+      "reserved_copies": 0, "note": "Skip if the selector covers her", "...": "..." }
   ]
 }
 ```
 
-`rows` are catalogue ids in the order the owner's planner shows them; the client resolves
-names and art from the `/calculator-data` catalogue it already holds. Nothing else leaves the
-account here: no per-row counts, no notes, no stats, no plan id, no plan name, nothing about the
-owner. `share_stats` / `share_notes` say what a copy would bring besides the rows.
+`rows` are in the order the owner's planner shows them, in the same shape a guest copy takes
+(`SharedPlannedBannerSerializer`, the one whitelist): catalogue ids, counts and the row's
+choices, with `note` only under `share_notes`, and never `pulls_already_made`. The client
+resolves names and art from the `/calculator-data` catalogue it already holds. Nothing else
+leaves the account here: no stats, no plan id, no plan name, nothing about the owner. `share_stats` / `share_notes` say what a copy would bring besides the rows.
 `pull_count` sums the ordinary rows' pulls and `step_count` the step-up rows' steps (that
 column counts steps on a step-up row); neither is ever converted into the other.
 
@@ -908,7 +909,7 @@ English name, or no such id.
 ### `GET /pvp-catalogue`
 
 The team builder's catalogue (`views/pvp_catalogue.py`). Public, the same for everyone, and
-**cached** in `pvp_catalogue_cache.py` (key `pvp_catalogue:v3`, TTL 300, dropped by any
+**cached** in `pvp_catalogue_cache.py` (key `pvp_catalogue:v4`, TTL 300, dropped by any
 save or delete of an Uma, SupportCard, Skill, UmaSkill or SupportCardSkill; the same
 one-process caveat as `/calculator-data`). About 540 KB raw, 50 KB gzipped; the client
 fetches it once, when a picker first opens.
@@ -921,6 +922,7 @@ fetches it once, when a picker first opens.
             "skills": [{"skill": 210, "source": "unique", "level": 1}]}],
   "support_cards": [{"id": 302, "name": "Kitasan Black", "game_id": 30086, "image": "url", "card_type": "speed",
                      "rarity": 3, "title": "[Fire at My Heels]", "group_members": [], "on_global": true,
+                     "released_at": "2026-03-12T00:00:00+00:00",
                      "skills": [{"skill": 88, "source": "hint"}]}],
   "skills": [{"id": 88, "name": "Groundwork", "description": "string", "image": "url | null",
               "rarity": 1, "tier": 1, "group_id": 2001, "cost": 120,
@@ -928,7 +930,8 @@ fetches it once, when a picker first opens.
 ```
 
 `umas` is `Uma.pickable()` (with a picture, no `(All)`); `support_cards` is every card
-with art. `skills` holds skills on global only, and a uma's or card's skill link to any
+with art. `released_at` is `SupportCard.global_release_at`, null for a card not out on Global: the
+Collection's Release date sort reads it, and selectors never do. `skills` holds skills on global only, and a uma's or card's skill link to any
 other skill is left out. Aptitudes are 1..8 = G..S, `null` when not imported. A uma's
 `source` is `unique` / `innate` / `awakening` / `evolved` (`level` means different things
 per source, `models/uma_skill.py`); a card's is `hint` / `event`. `on_global`: the card is in the
@@ -1125,9 +1128,10 @@ auto-save is idempotent; every query is scoped to the caller.
 
 | Route | Body | Returns |
 |---|---|---|
+| `GET /pvp-runs` | | every run the caller logged in every event, grouped by event (the Collection's CM history); each run names its `kind` and `event` |
 | `GET /pvp-runs/<kind>/<event_id>` | | every run the caller logged for the event, days first, then the final |
 | `PUT /pvp-runs/<kind>/<event_id>/day/<d>/ticket/<t>` | `{runners?, races?, note?, skipped?}` | the run. Creates it on the first save; replaces its runners and races after |
-| `PUT /pvp-runs/<kind>/<event_id>/final` | `{runners?, races?, finals_group?, placement?, note?}` | the run (CM only) |
+| `PUT /pvp-runs/<kind>/<event_id>/final` | `{runners?, races?, finals_group?, placement?, note?}` | the run. On LoH this is the Top 96: `{runners?, placement?, note?}`, no races |
 | `DELETE` either path | | `204`, also when nothing was logged there |
 
 A run, out (a `PUT` body is the part the URL does not already say):
@@ -1146,8 +1150,9 @@ not in the list has not been run. `skipped: true` (a day's ticket only) is the p
 the races not in the list never will be: with none listed the ticket went unused, with some
 they stopped after those. A `PUT` without it un-skips, which is how a player who was only
 slow to type takes it back. Slots: CM days 1..4 with tickets 1..4, plus the final;
-LoH days 1..6 with tickets 1..5, no final yet (`PVP_RUN_DAYS` / `PVP_RUN_TICKETS`). An
-unknown kind, event, day or ticket, or a LoH final, is **`404`**. **`400 {"error": "<one
+LoH days 1..6 with tickets 1..5, plus the Top 96 (`PVP_RUN_DAYS` / `PVP_RUN_TICKETS`). A LoH
+ticket can be saved for later, so its `day` only groups the 30 tickets. An
+unknown kind, event, day or ticket is **`404`**. **`400 {"error": "<one
 sentence>"}`** for: more than 3 runners or two in one spot, the team rules on the lineup
 (the same uma twice, two outfits of one character, an unknown uma; shared through
 `pvp_teams.check_lineup`), more than 5 races (1 in a final) or the same race twice, a
@@ -1232,18 +1237,18 @@ the post's own author.
 
 | Route | Who | Returns |
 |---|---|---|
-| `POST /pvp-teams/<id>/publish` `{confirm_public_identity: true, caption?, strategy?}` | owner | `201` a new post, `200` a re-post (link and comments kept; votes cleared only when the team itself changed, see below). Needs the flag literally `true`, a display name, three umas, eighteen cards, no repeated character, a caption (140) and strategy (2,000) that pass the filters. A refusal about one of the two texts carries `"field": "caption"` or `"strategy"` beside `error` |
+| `POST /pvp-teams/<id>/publish` `{confirm_public_identity: true, caption?, strategy?}` | owner | `201` a new post, `200` a re-post (link, comments and votes kept, see below). Needs the flag literally `true`, a display name, three umas, eighteen cards, no repeated character, a caption (140) and strategy (2,000) that pass the filters. A refusal about one of the two texts carries `"field": "caption"` or `"strategy"` beside `error` |
 | `GET /pvp-gallery/<kind>/<event_id>?sort=hot\|top\|new&uma=<id>&limit=N` | anyone | `{count, sort, limit, has_more, results: [row], umas: [{uma, count}]}`: the top `limit` rows (20 by default, at most 200) |
 | `GET /gallery/posts/<public_id>` | anyone | the full post |
 | `DELETE /gallery/posts/<public_id>` | author | `204`, the post with its votes, comments and reports |
-| `PUT` / `DELETE /gallery/posts/<public_id>/vote` | signed in | `{upvotes, my_vote}`; `403` on your own post |
+| `PUT` / `DELETE /gallery/posts/<public_id>/vote` | signed in | PUT takes `{value: "up" \| "down"}` (no body = up; a second PUT switches); answers `{score, my_vote}`, plus `split` for staff; `400` on another value, `403` on your own post |
 | `POST /gallery/posts/<public_id>/view` | anyone | always `204`; counted once per viewer per day |
 | `POST /gallery/posts/<public_id>/copy` | anyone | `{kind, event, members}`; the client adds the team through its own path |
 | `GET /gallery/my-posts` | signed in | the caller's posts, hidden ones too (`"hidden": true`) |
 | `GET /gallery/posts/<public_id>/comments?page=N` | anyone | `{count, page, has_more, results: [comment]}`, 50 top comments per page |
 | `POST /gallery/posts/<public_id>/comments` `{body, parent?}` | signed in, display name | `201` the comment |
 | `PATCH` / `DELETE /gallery/comments/<id>` `{body}` | its author | the comment / `204` |
-| `PUT` / `DELETE /gallery/comments/<id>/vote` | signed in | `{upvotes, my_vote}`; `403` on your own comment, `404` on one you can't see |
+| `PUT` / `DELETE /gallery/comments/<id>/vote` | signed in | the same body and answer as a post's vote; `403` on your own comment, `404` on one you can't see |
 | `GET /pvp-guides/<kind>/<event_id>/comments?section=<style>&page=N` | anyone who can read the guide | a guide section's thread, the same shape as a post's; no `section` = the whole guide |
 | `POST /pvp-guides/<kind>/<event_id>/comments` `{body, parent?, section}` | signed in, display name | `201` the comment; `400` for a section that isn't `""` or a running style |
 | `POST /gallery/reports` `{post: public_id}` or `{comment: id}`, `reason`, `note?` | signed in | `201`, no body; `409` on a repeat |
@@ -1252,17 +1257,18 @@ the post's own author.
 
 A feed row (the full post adds `strategy` (the long text, `""` when none; never on a row), `team`, `event` (`{kind, id, label}`, the label being the event's name), `hidden` and `stats.copies`):
 
-A re-post whose team is unchanged (same umas, styles and cards in the snapshot) only replaces
-the words: votes, `content_updated_at` and so the post's place in Hot and New all stay. Any
-change to the team is a new version: votes cleared, `content_updated_at` moved, older
-comments flagged `earlier_version`.
+A re-post keeps its votes and its place in Hot, Top and New, which rank from `published_at`
+(Henry, 2026-10-26). A re-post whose team is unchanged (same umas, styles and cards in the
+snapshot) only replaces the words. Any change to the team is a new version:
+`content_updated_at` moves (the page shows "Edited" when it is later than `published_at`) and
+older comments are flagged `earlier_version`.
 
 ```json
 { "public_id": "k3Df8aQ2", "caption": "Runaway blocker", "published_at": "ISO8601",
   "content_updated_at": "ISO8601", "is_mine": false,
   "umas": [{"uma": 41, "style": "runaway"}],
-  "stats": {"views": 212, "upvotes": 14, "comments": 5},
-  "my_vote": false,
+  "stats": {"views": 212, "score": 14, "comments": 5},
+  "my_vote": "up",
   "poster": {"display_name": "MooncakeMile", "portrait": "https://...png",
              "tier_name": "Senior Class", "gallery_style": "ssr"} }
 ```
@@ -1274,15 +1280,16 @@ non-number is ignored); `count` and `has_more` follow the filter, and `umas` is 
 event's tally either way (each uma once per post, most-used first, catalogue umas only), so
 the filter menu only offers umas that find something.
 
-`my_vote` is `null` for a guest. `poster` is `public_identity.poster_block`: `tier_name` and
-`gallery_style` (`ssr` / `sr` / `rose`) are `null` without a live pledge or with the badge
-off. `upvotes` counts people; the weighted points that rank the feed never leave the server.
-Never in any gallery payload: a username, a user id, the team's name, notes or pin, a vote
-weight, a tier order, who voted, viewed or reported.
+`my_vote` is `"up"`, `"down"` or `"none"`, and `null` for a guest. `score` is ups minus downs,
+blocked accounts not counted, and never below `0` for anyone; the ranking uses the real number
+(`gallery_ranking.py`). Staff also get `stats.split`, `{up, down}`. `poster` is
+`public_identity.poster_block`: `tier_name` and `gallery_style` (`ssr` / `sr` / `rose`) are
+`null` without a live pledge or with the badge off. Never in any gallery payload: a username,
+a user id, the team's name, notes or pin, a tier order, who voted, viewed or reported.
 
 A comment: `{id, state, body, created_at, edited, earlier_version, is_author, is_mine,
-poster, upvotes, my_vote, replies: [comment]}`. `upvotes` is its thumbs-up count (blocked
-accounts not counted) and `my_vote` the viewer's; who voted is never sent. On a guide's
+poster, score, my_vote, split?, replies: [comment]}`, the vote fields as on a post; who voted
+is never sent. A top comment with a negative score comes after the others. On a guide's
 comment `earlier_version` and `is_author` are always false. The guide payload
 (`GET /pvp-guides/<kind>/<event_id>`) carries `comment_counts`, `{section: visible
 comments}` with `""` for the whole guide. `state` is `visible`, `deleted` ("[deleted]"), `removed`
@@ -1296,6 +1303,26 @@ Throttles (all in the `gallery` cache): `gallery_read` 120/h, `gallery_vote` 120
 `gallery_share` 600/h.
 
 ---
+
+### Profile cards
+
+`GET /profile-cards/post/<public_id>` and `GET /profile-cards/comment/<id>`, both `AllowAny`
+(`views/profile_card.py`). Clicking a name on a post or comment opens the person's card, reached
+through what they posted because an account has no public id.
+
+```json
+{ "favorites": [{"uma": 41, "label": "Oguri Cap", "image": "url"}],
+  "posts": [{"public_id": "aB3dE5gH", "caption": "Pace core", "score": 12,
+             "event": {"kind": "cm", "id": 21, "label": "Capricorn Cup"}}],
+  "plans": [{"public_id": "cD4eF6hI", "row_count": 5, "pull_count": 1600, "step_count": 0}] }
+```
+
+`favorites` is every favorite the account's slots cover, in order. `posts` is their visible posts,
+newest 10. `plans` is empty until they turn `show_shared_plans_on_card` on, and then lists shared
+plans' totals, never a plan's name or id. The name, picture and tier aren't sent: the client
+already has them from the post or comment. A hidden post, a blocked author, a deleted or hidden
+comment, a comment on a hidden post or unpublished guide, and an unknown id all answer one `404`
+body. Throttled by `profile_card`.
 
 ## Telemetry
 

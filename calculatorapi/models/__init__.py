@@ -106,6 +106,7 @@ from .pvp_run import (
     PVP_RUN_DAYS,
     PVP_RUN_TICKETS,
     PVP_FINAL_PLACEMENTS,
+    PVP_LOH_TOP_PLACEMENTS,
     PVP_RUN_NOTE_MAX_LENGTH,
 )
 from .gallery import (
@@ -120,6 +121,7 @@ from .gallery import (
     GalleryReportReason,
     GalleryReportResolution,
     GalleryVote,
+    VoteValue,
     GALLERY_CAPTION_MAX_LENGTH,
     GALLERY_STRATEGY_MAX_LENGTH,
     GALLERY_COMMENT_MAX_LENGTH,

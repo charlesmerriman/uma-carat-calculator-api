@@ -35,6 +35,7 @@ from calculatorapi.tests.factories import (
     make_uma_banner,
     make_user,
 )
+from calculatorapi.views.plan_public import SharedPlannedBannerSerializer
 
 PUBLIC_ID = r"^[A-Za-z0-9]{8}$"
 SUMMARY_KEYS = {
@@ -161,7 +162,7 @@ class SummaryRouteTests(CalculatorTestCase):
 
         self.assertEqual(self._get().status_code, 404)
 
-    def test_the_summary_carries_ids_and_counts_only(self):
+    def test_the_summary_carries_what_a_copy_would_and_nothing_about_the_owner(self):
         uma_banner = make_uma_banner()
         support_banner = make_support_banner()
         _row(self.plan, pulls=42, banner=uma_banner, note="my secret")
@@ -175,24 +176,37 @@ class SummaryRouteTests(CalculatorTestCase):
 
         self.assertEqual(res.status_code, 200)
         # The whitelist, both ways: nothing about the owner, no plan id, no
-        # name, no per-row counts, no notes, no stats, even with both options on.
+        # name, no stats, even with both options on.
         self.assertEqual(set(res.data), SUMMARY_KEYS)
         self.assertEqual(res.data["public_id"], self.plan.public_id)
         self.assertEqual(res.data["row_count"], 2)
         self.assertEqual(res.data["pull_count"], 49)
         self.assertEqual(res.data["step_count"], 0)
         self.assertCountEqual(
-            res.data["rows"],
-            [
-                {"banner_uma": uma_banner.id, "banner_support": None, "banner_step_up": None},
-                {"banner_uma": None, "banner_support": support_banner.id, "banner_step_up": None},
-            ],
+            [(row["banner_uma"], row["banner_support"], row["number_of_pulls"]) for row in res.data["rows"]],
+            [(uma_banner.id, None, 42), (None, support_banner.id, 7)],
         )
+        self.assertEqual(set(res.data["rows"][0]), set(SharedPlannedBannerSerializer.Meta.fields))
         self.assertTrue(res.data["share_stats"])
         self.assertTrue(res.data["share_notes"])
         self.assertEqual(res.data["copy_count"], 0)
-        self.assertNotIn("my secret", str(res.content))
         self.assertNotIn(DEFAULT_PLAN_NAME, str(res.content))
+
+    def test_a_note_shows_only_when_the_owner_shares_notes(self):
+        _row(self.plan, pulls=42, note="my secret")
+        _share(self.plan)
+        self.assertNotIn("my secret", str(self._get().content))
+        self.assertNotIn("note", self._get().data["rows"][0])
+
+        _share(self.plan, share_notes=True)
+        self.assertEqual(self._get().data["rows"][0]["note"], "my secret")
+
+    def test_the_owners_pull_history_never_shows(self):
+        row = _row(self.plan, pulls=42)
+        row.pulls_already_made = 17
+        row.save()
+        _share(self.plan)
+        self.assertNotIn("pulls_already_made", self._get().data["rows"][0])
 
     def test_a_step_up_row_counts_steps_not_pulls(self):
         """number_of_pulls carries STEPS on a step-up row; the totals keep them apart."""

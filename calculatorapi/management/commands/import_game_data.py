@@ -115,6 +115,7 @@ Run against PRODUCTION with --dry-run first, read it, then --apply. The rows it
 touches are served by /calculator-data, so it drops that cache when done.
 """
 
+import datetime
 import json
 from pathlib import Path
 
@@ -340,7 +341,25 @@ def support_values(card):
         # Only group cards carry `members` in the snapshot; every other card
         # is written back to [] so a card that stops being one is cleared.
         "group_members": card.get("members", []),
+        "global_release_at": global_release(card, timezone.now()),
     }
+
+
+# Global's first banners opened here. The client dates every launch card
+# 2021-02-24, JP's launch day: 20 of 20 cards on a launch banner read that.
+GLOBAL_LAUNCH = datetime.datetime(2025, 6, 26, 22, 0, tzinfo=datetime.timezone.utc)
+
+
+def global_release(card, now):
+    """
+    When a card came out on Global, for the Collection's sort
+    (SupportCard.global_release_at): the game's own date, Global's launch for
+    a launch card, and None for a card that isn't out (out_on_global).
+    """
+    start = card.get("start_date")
+    if start is None or not out_on_global(card, now):
+        return None
+    return max(GLOBAL_LAUNCH, datetime.datetime.fromtimestamp(start, tz=datetime.timezone.utc))
 
 
 def out_on_global(card, now):

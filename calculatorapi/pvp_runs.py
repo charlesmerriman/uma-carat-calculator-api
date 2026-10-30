@@ -19,6 +19,7 @@ from calculatorapi import pvp_teams, trained_umas
 from calculatorapi.models import (
     PVP_FINAL_PLACEMENTS,
     PVP_FINAL_RACES,
+    PVP_LOH_TOP_PLACEMENTS,
     PVP_RUN_DAYS,
     PVP_RUN_RACES,
     PVP_RUN_TICKETS,
@@ -40,12 +41,10 @@ class NoSuchSlot(Exception):
 
 def check_slot(kind, day=None, ticket=None):
     """NoSuchSlot unless (day, ticket) exists for `kind`; both None means the
-    final, which only a Champions Meeting has so far."""
+    final (LoH's Top 96)."""
     if kind not in PVP_RUN_DAYS:
         raise NoSuchSlot()
     if day is None and ticket is None:
-        if kind != "cm":
-            raise NoSuchSlot()
         return
     if not 1 <= day <= PVP_RUN_DAYS[kind] or not 1 <= ticket <= PVP_RUN_TICKETS[kind]:
         raise NoSuchSlot()
@@ -63,6 +62,18 @@ def runs_for_event(user, kind, event_id):
     prefetches. TeamRefused for an event that does not exist."""
     event = pvp_teams.resolve_event(kind, event_id)
     return PvpRun.objects.filter(user=user, **event).prefetch_related("runners", "races")
+
+
+def all_runs(user):
+    """Every run `user` logged, in every event, with runners and races: the
+    Collection's CM history. A player logs a few hundred a year at most, so
+    one unpaged list is fine. Grouped by event (by id, not by date: the client
+puts the events in date order from /calculator-data)."""
+    return (
+        PvpRun.objects.filter(user=user)
+        .prefetch_related("runners", "races")
+        .order_by("champions_meeting_id", "league_of_heroes_id", "stage", "day", "ticket")
+    )
 
 
 def write_run(user, kind, event_id, *, day=None, ticket=None, data):  # pylint: disable=too-many-arguments
@@ -85,7 +96,12 @@ def write_run(user, kind, event_id, *, day=None, ticket=None, data):  # pylint: 
     if not is_final and (data.get("finals_group") or data.get("placement") is not None):
         raise RunRefused("Only the final has a group and a placement.")
     placement = data.get("placement")
-    if placement is not None and not 1 <= placement <= PVP_FINAL_PLACEMENTS:
+    if is_final and kind == "loh":
+        if races or data.get("finals_group"):
+            raise RunRefused("The Top 96 keeps your team, your placement and a note.")
+        if placement is not None and not 1 <= placement <= PVP_LOH_TOP_PLACEMENTS:
+            raise RunRefused(f"The Top 96 places you 1st to {PVP_LOH_TOP_PLACEMENTS}th.")
+    elif placement is not None and not 1 <= placement <= PVP_FINAL_PLACEMENTS:
         raise RunRefused("A final places you 1st, 2nd or 3rd.")
     # Skipped means "the races not listed were never run" (models/pvp_run.py),
     # so a ticket with every race listed has nothing left to skip. Un-skipping

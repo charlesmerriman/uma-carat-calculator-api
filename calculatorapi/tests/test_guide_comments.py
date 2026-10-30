@@ -106,15 +106,28 @@ class CommentVoteTests(GalleryFixture):
 
     def test_a_thumbs_up_counts_once_and_comes_back_off(self):
         voter = self.client_for(self.person())
-        self.assertEqual(voter.put(self.vote_url).json(), {"upvotes": 1, "my_vote": True})
-        self.assertEqual(voter.put(self.vote_url).json()["upvotes"], 1)
+        self.assertEqual(voter.put(self.vote_url).json(), {"score": 1, "my_vote": "up"})
+        self.assertEqual(voter.put(self.vote_url).json()["score"], 1)
         self.client_for(self.author).put(self.vote_url)
         top = voter.get(self.thread_url).json()["results"][0]
-        self.assertEqual((top["upvotes"], top["my_vote"]), (2, True))
-        # Strangers see the count, never their own vote, and never who voted.
+        self.assertEqual((top["score"], top["my_vote"]), (2, "up"))
+        # A guest sees the score, never who voted.
         stranger = APIClient().get(self.thread_url).json()["results"][0]
-        self.assertEqual((stranger["upvotes"], stranger["my_vote"]), (2, False))
-        self.assertEqual(voter.delete(self.vote_url).json(), {"upvotes": 1, "my_vote": False})
+        self.assertEqual((stranger["score"], stranger["my_vote"]), (2, None))
+        self.assertEqual(voter.delete(self.vote_url).json(), {"score": 1, "my_vote": "none"})
+
+    def test_a_thumbs_down_switches_and_floors_at_zero(self):
+        voter = self.client_for(self.person())
+        voter.put(self.vote_url)
+        down = voter.put(self.vote_url, {"value": "down"}, format="json")
+        self.assertEqual(down.json(), {"score": 0, "my_vote": "down"})
+        self.assertEqual(GalleryCommentVote.objects.count(), 1)
+
+    def test_a_downvoted_comment_moves_to_the_end(self):
+        later = gallery.add_comment(self.person(), self.post_row, "Second")
+        self.client_for(self.person()).put(self.vote_url, {"value": "down"}, format="json")
+        ids = [entry["id"] for entry in APIClient().get(self.thread_url).json()["results"]]
+        self.assertEqual(ids, [later.pk, self.comment.pk])
 
     def test_not_on_your_own_comment_and_not_signed_out(self):
         self.assertEqual(self.client_for(self.commenter).put(self.vote_url).status_code, 403)
@@ -129,6 +142,6 @@ class CommentVoteTests(GalleryFixture):
         self.client_for(voter).put(self.vote_url)
         voter.publishing_blocked = True
         voter.save()
-        self.assertEqual(APIClient().get(self.thread_url).json()["results"][0]["upvotes"], 0)
+        self.assertEqual(APIClient().get(self.thread_url).json()["results"][0]["score"], 0)
         gallery.erase_users([voter])
         self.assertFalse(GalleryCommentVote.objects.exists())

@@ -32,6 +32,32 @@
 # module changed. Newest entry first is conventional here but not required — the
 # page sorts by date.
 
+- key: profile-cards-site-search
+  date: 2026-10-30
+  title: "Profile cards, site search and League of Heroes runs"
+  version: "v2.12"
+  changes:
+    - added: "New: profile cards! Click a name on a gallery post or comment to see who's behind it."
+    - added: "A card shows their name, picture and tier, their favorite umas and their other gallery teams. Your shared plans stay off yours unless you turn them on from your Account page."
+    - added: "Press Ctrl+K (Cmd+K on a Mac) or the search button to jump to any uma, card, skill, event or page. Once umas, support cards and skills get their own pages, search will take you straight to them."
+    - added: "League of Heroes has its own runs tab. Log every ticket, then the team you entered in the Top 96 and where you finished."
+    - added: "The Collection has a CM history tab: every Champions Meeting and League of Heroes you've logged, and how each of your veterans does across all of them."
+    - added: "You can downvote teams and comments now. A downvoted one sinks down the list, and the number never shows below 0."
+    - added: "Shared plans show the pulls on each banner and what your own resources would cover, before you copy anything."
+    - added: "Drag support cards into your decks from Guide picks, or between slots."
+    - added: "The card picker can add a card to every deck on your team in one go. It also keeps your filters while you build, and the Borrow slot starts on the full list."
+    - changed: "Pages remember where you were. Scroll position and open panels stay put when you switch pages, until you reload."
+    - changed: "Updating your posted team keeps its votes, and the post says it was edited."
+    - changed: "Supporters' votes count the same as everyone's now."
+    - changed: "Hit your plan limit while copying a shared plan? You can delete one right there."
+    - changed: "Race details show the season above the weather."
+    - changed: "Rankings only count finished teams and full decks."
+    - changed: "On phones and tablets, themes moved into the gear menu. The site name fits in the top bar again."
+    - changed: "On a phone, Income & Resources starts open until you pick a rank."
+    - changed: "The heart is gone from My team. Favorites keep their rainbow frame."
+    - changed: "The Privacy Policy now covers profile cards and downvotes."
+    - fixed: "Sorting your Collection by release date works for every card now, welfare SSRs, SRs and Rs included."
+
 - key: picture-fixes-reward-days
   date: 2026-10-29
   title: "Reward days, long plans in pictures, and one-tap CM Runs"

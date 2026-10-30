@@ -201,7 +201,8 @@ class AccountPreferencesSerializer(serializers.ModelSerializer):
         model = CustomUser
         # show_supporter_badge: the person's switch for their tier and look
         # beside gallery posts and comments (public_identity.poster_block).
-        fields = ["display_name", "oshis", "show_supporter_badge"]
+        # show_shared_plans_on_card: the same, for their profile card.
+        fields = ["display_name", "oshis", "show_supporter_badge", "show_shared_plans_on_card"]
 
     def validate_oshis(self, umas):
         """Distinct, on offer, and never MORE than the person is entitled to hold.
@@ -401,6 +402,8 @@ def _account_summary(user):
         # Whether their tier and look show beside their gallery posts and
         # comments. Their own switch; the pledge itself is unaffected.
         "show_supporter_badge": user.show_supporter_badge,
+        # Whether their shared plans are listed on their profile card.
+        "show_shared_plans_on_card": user.show_shared_plans_on_card,
         # null, not "", when there is no picture: the client draws its own
         # fallback on null and would try to load "" as an image.
         "avatar_url": public_identity.current_avatar_url(oshis, slots),

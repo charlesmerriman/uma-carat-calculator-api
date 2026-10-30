@@ -67,7 +67,7 @@ from calculatorapi.views.rankings import (
 )
 from calculatorapi.views.skills import skill_detail, skill_list
 from calculatorapi.views.pvp_team import pvp_team_detail, pvp_team_list
-from calculatorapi.views.pvp_run import pvp_run_final, pvp_run_list, pvp_run_ticket
+from calculatorapi.views.pvp_run import pvp_run_final, pvp_run_history, pvp_run_list, pvp_run_ticket
 from calculatorapi.views.trained_uma import trained_uma_detail, trained_uma_import, trained_uma_list
 from calculatorapi.views.roster import roster_clear, roster_detail, roster_import
 from calculatorapi.views.gallery import (
@@ -82,6 +82,7 @@ from calculatorapi.views.gallery import (
     gallery_post_vote,
     gallery_report,
 )
+from calculatorapi.views.profile_card import profile_card_for_comment, profile_card_for_post
 from calculatorapi.views.pvp_gallery import pvp_gallery_feed, pvp_team_publish
 from calculatorapi.views.gallery_share import share_page, share_preview
 from calculatorapi.views.plan_share import share_page as plan_share_page
@@ -233,6 +234,7 @@ urlpatterns = [
     path("pvp-teams/<int:team_id>", pvp_team_detail, name="pvp-team-detail"),
     # A signed-in player's logged CM / LoH results, one row per ticket and one
     # for the final, addressed by slot. Account only. → views/pvp_run.py
+    path("pvp-runs", pvp_run_history, name="pvp-run-history"),
     path("pvp-runs/<str:kind>/<int:event_id>", pvp_run_list, name="pvp-run-list"),
     path(
         "pvp-runs/<str:kind>/<int:event_id>/day/<int:day>/ticket/<int:ticket>",
@@ -249,6 +251,9 @@ urlpatterns = [
     path("roster", roster_detail, name="roster"),
     path("roster/import", roster_import, name="roster-import"),
     path("roster/<str:kind>", roster_clear, name="roster-clear"),
+    # A person's card, reached through something they posted. → views/profile_card.py
+    path("profile-cards/post/<str:public_id>", profile_card_for_post, name="profile-card-post"),
+    path("profile-cards/comment/<int:comment_id>", profile_card_for_comment, name="profile-card-comment"),
     # The PvP gallery: posting a team and one event's ranked feed.
     # → views/pvp_gallery.py
     path("pvp-teams/<int:team_id>/publish", pvp_team_publish, name="pvp-team-publish"),

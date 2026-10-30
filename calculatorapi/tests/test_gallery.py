@@ -1,4 +1,4 @@
-"""The gallery layer: posts, the ranking and its supporter weights, the public
+"""The gallery layer: posts, the ranking, the public
 identity block, votes, views, copies and the text filters.
 
 The routes are tested in test_pvp_gallery.py; this module tests the rules the
@@ -8,6 +8,7 @@ gallery_moderation.py), so a rule is pinned once however many routes use it.
 
 import datetime
 from io import StringIO
+from unittest import mock
 
 from django.core.management import call_command
 from django.db import IntegrityError, transaction
@@ -33,6 +34,7 @@ from calculatorapi.models import (
     SupportCard,
     Uma,
     UserOshi,
+    VoteValue,
 )
 from calculatorapi.tests.base import CalculatorTestCase, PLAIN_TEST_STORAGES
 from calculatorapi.tests.factories import make_champions_meeting, make_league_of_heroes, make_user
@@ -153,41 +155,11 @@ class LadderTests(GalleryFixture):
     def supporter(self, tier, active=True):
         return PatreonSupporter(tier=self.tiers[tier], is_active=active)
 
-    def test_vote_weights_by_tier(self):
-        self.assertEqual(benefits.vote_weight_for(None), 1)
-        self.assertEqual(benefits.vote_weight_for(self.supporter(JUNIOR)), 2)
-        self.assertEqual(benefits.vote_weight_for(self.supporter(CLASSIC)), 3)
-        self.assertEqual(benefits.vote_weight_for(self.supporter(SENIOR)), 4)
-
     def test_gallery_looks_by_tier(self):
         self.assertIsNone(benefits.gallery_style_for(None))
         self.assertEqual(benefits.gallery_style_for(self.supporter(JUNIOR)), "rose")
         self.assertEqual(benefits.gallery_style_for(self.supporter(CLASSIC)), "sr")
         self.assertEqual(benefits.gallery_style_for(self.supporter(SENIOR)), "ssr")
-
-    def test_the_sql_weight_agrees_with_the_ladder(self):
-        """gallery_ranking builds its SQL from the ladder; a lapsed pledge, an
-        untiered row and no row at all must all read as the free weight."""
-        author = self.person()
-        post = self.post(author)
-        cases = {
-            "none": (self.person(), 1),
-            "junior": (self.person(JUNIOR), 2),
-            "classic": (self.person(CLASSIC), 3),
-            "senior": (self.person(SENIOR), 4),
-            "lapsed": (self.person(SENIOR, active=False), 1),
-        }
-        untiered = self.person()
-        PatreonSupporter.objects.create(display_name="untiered", linked_user=untiered, tier=None)
-        cases["untiered"] = (untiered, 1)
-        for label, (voter, weight) in cases.items():
-            with self.subTest(label):
-                GalleryVote.objects.all().delete()
-                GalleryVote.objects.create(post=post, user=voter)
-                ranked = gallery_ranking.ranked(GalleryPost.objects.all(), "top")
-                self.assertEqual(ranked[0].vote_points, weight)
-                entitled = benefits.entitled_supporter(voter)
-                self.assertEqual(benefits.vote_weight_for(entitled), weight)
 
 
 class RankingTests(GalleryFixture):
@@ -196,9 +168,9 @@ class RankingTests(GalleryFixture):
     def setUp(self):
         super().setUp()
         self.now = timezone.now()
-        free_voters = [self.person() for _ in range(12)]
-        classic_voter = self.person(CLASSIC)
-        senior_voter = self.person(SENIOR)
+        # Supporters among the voters: every vote counts the same now.
+        up_voters = [self.person() for _ in range(10)] + [self.person(CLASSIC), self.person(SENIOR)]
+        down_voters = [self.person() for _ in range(9)]
         loh = make_league_of_heroes()
         # One event per post so each author can post once; the ranking does
         # not care which event a post is on.
@@ -208,22 +180,23 @@ class RankingTests(GalleryFixture):
                                                        make_league_of_heroes("L4"))
         ]
         spec = {
-            # name: (author tier, posted on day, voters)
-            "A": (None, 1, free_voters[:12]),
-            "B": (SENIOR, 5, free_voters[:3] + [classic_voter]),
-            "C": (None, 6.5, free_voters[:4]),
-            "D": (JUNIOR, 7, []),
-            "E": (None, 2, free_voters[:5] + [senior_voter]),
+            # name: (author tier, posted on day, ups, downs)
+            "A": (None, 1, 12, 0),
+            "B": (SENIOR, 5, 4, 0),
+            "C": (None, 6.5, 4, 1),
+            "D": (JUNIOR, 7, 0, 0),
+            "E": (None, 2, 6, 9),
         }
         self.posts = {}
-        for (name, (tier, day, voters)), event in zip(spec.items(), events):
+        for (name, (tier, day, ups, downs)), event in zip(spec.items(), events):
             post = self.post(self.person(tier), event=event)
             when = self.now - datetime.timedelta(days=7 - day)
-            GalleryPost.objects.filter(pk=post.pk).update(
-                published_at=when, content_updated_at=when
-            )
-            for voter in voters:
+            # Edited today: the ranking still ages a post from when it went up.
+            GalleryPost.objects.filter(pk=post.pk).update(published_at=when, content_updated_at=self.now)
+            for voter in up_voters[:ups]:
                 GalleryVote.objects.create(post=post, user=voter)
+            for voter in down_voters[:downs]:
+                GalleryVote.objects.create(post=post, user=voter, value=VoteValue.DOWN)
             self.posts[post.pk] = name
 
     def order(self, sort):
@@ -232,28 +205,21 @@ class RankingTests(GalleryFixture):
 
     def test_hot(self):
         order, ranked = self.order("hot")
-        self.assertEqual(order, "BCAED")
+        self.assertEqual(order, "ACBDE")
         hot = {self.posts[post.pk]: round(post.hot, 2) for post in ranked}
-        self.assertEqual(hot, {"A": 3.25, "B": 6.30, "C": 4.45, "D": 2.0, "E": 3.15})
+        self.assertEqual(hot, {"A": 3.0, "B": 2.52, "C": 2.67, "D": 0.0, "E": -0.94})
 
-    def test_top_breaks_ties_by_the_newer_post(self):
+    def test_top_sinks_a_negative_post_below_zero(self):
         order, ranked = self.order("top")
-        self.assertEqual(order, "ABECD")
-        self.assertEqual([post.points for post in ranked], [13, 10, 10, 5, 2])
+        self.assertEqual(order, "ABCDE")
+        self.assertEqual([post.points for post in ranked], [12, 4, 3, 0, -3])
 
-    def test_new(self):
+    def test_new_is_by_first_posted(self):
         self.assertEqual(self.order("new")[0], "DCBEA")
 
-    def test_rows_count_people_not_points(self):
+    def test_a_supporter_author_gets_no_head_start(self):
         _, ranked = self.order("top")
-        counts = {self.posts[post.pk]: post.upvote_count for post in ranked}
-        self.assertEqual(counts, {"A": 12, "B": 4, "C": 4, "D": 0, "E": 6})
-
-    def test_a_lapse_takes_the_head_start_away(self):
-        b = GalleryPost.objects.get(pk=next(pk for pk, n in self.posts.items() if n == "B"))
-        PatreonSupporter.objects.filter(linked_user=b.author).update(is_active=False)
-        _, ranked = self.order("top")
-        self.assertEqual(next(p.points for p in ranked if p.pk == b.pk), 7)
+        self.assertEqual(next(post.points for post in ranked if self.posts[post.pk] == "D"), 0)
 
     def test_a_blocked_voter_does_not_count(self):
         a = next(pk for pk, n in self.posts.items() if n == "A")
@@ -262,7 +228,7 @@ class RankingTests(GalleryFixture):
         voter.save()
         _, ranked = self.order("top")
         row = next(post for post in ranked if post.pk == a)
-        self.assertEqual((row.points, row.upvote_count), (12, 11))
+        self.assertEqual((row.points, row.ups), (11, 11))
 
 
 # Picture URLs go through default_storage, which is Spaces unless told
@@ -383,11 +349,13 @@ class PublishTests(GalleryFixture):
         self.assertEqual((again.caption, again.strategy), ("New", "New plan"))
         self.assertEqual(again.votes.count(), 1)
         self.assertEqual(again.content_updated_at, before)
-        # One card is a different team: the votes were for the old one.
+        # One card is a different team: the votes stay (Henry, 2026-10-26),
+        # and the post is marked edited.
         PvpTeamCard.objects.filter(member__team=team, slot=6).update(support_card=self.cards[6])
         changed, _ = self.publish(user, team, caption="New", strategy="New plan")
-        self.assertEqual(changed.votes.count(), 0)
+        self.assertEqual(changed.votes.count(), 1)
         self.assertGreater(changed.content_updated_at, before)
+        self.assertGreater(changed.content_updated_at, changed.published_at)
 
     def test_the_snapshot_is_frozen(self):
         user = self.person()
@@ -401,7 +369,7 @@ class PublishTests(GalleryFixture):
         post.refresh_from_db()
         self.assertEqual(post.team_snapshot[2]["style"], "front")
 
-    def test_posting_again_replaces_the_copy_and_clears_the_votes(self):
+    def test_posting_again_replaces_the_copy_and_keeps_the_votes(self):
         user = self.person()
         post, _ = self.publish(user, self.team(user))
         GalleryVote.objects.create(post=post, user=self.person())
@@ -412,7 +380,7 @@ class PublishTests(GalleryFixture):
         self.assertFalse(created)
         self.assertEqual(again.public_id, post.public_id)
         self.assertEqual(GalleryPost.objects.count(), 1)
-        self.assertEqual(again.votes.count(), 0)
+        self.assertEqual(again.votes.count(), 1)
         self.assertGreater(again.content_updated_at, before)
         self.assertNotEqual(again.preview_version, version)
         self.assertEqual(again.source_team, other)
@@ -469,10 +437,43 @@ class VoteTests(GalleryFixture):
         voter = self.person()
         gallery.vote(voter, post)
         gallery.vote(voter, post)
-        self.assertEqual(gallery.upvote_count(post), 1)
+        self.assertEqual(gallery.tally(post.votes), (1, 0))
         gallery.unvote(voter, post)
         gallery.unvote(voter, post)
-        self.assertEqual(gallery.upvote_count(post), 0)
+        self.assertEqual(gallery.tally(post.votes), (0, 0))
+
+    def test_switching_keeps_one_vote(self):
+        post = self.post(self.person())
+        voter = self.person()
+        gallery.vote(voter, post, VoteValue.UP)
+        gallery.vote(voter, post, VoteValue.DOWN)
+        self.assertEqual(GalleryVote.objects.filter(post=post).count(), 1)
+        self.assertEqual(gallery.tally(post.votes), (0, 1))
+
+    def test_a_post_at_minus_ten_tells_the_moderators_once(self):
+        post = self.post(self.person())
+        voters = [self.person() for _ in range(11)]
+        with mock.patch.object(gallery.discord_messages, "send") as send:
+            for voter in voters[:9]:
+                gallery.vote(voter, post, VoteValue.DOWN)
+            send.assert_not_called()
+            gallery.vote(voters[9], post, VoteValue.DOWN)
+            send.assert_called_once()
+            key, _ = send.call_args.args
+            self.assertEqual(key, f"downvoted:post:{post.pk}")
+            content = send.call_args.kwargs["content"]
+            self.assertIn("down to -10 (0 up, 10 down)", content)
+            self.assertIn(f"/post/{post.public_id}", content)
+            self.assertNotIn(post.caption or "\0", content)
+            # Lower still: send() is asked again, and its key makes it a no-op.
+            gallery.vote(voters[10], post, VoteValue.DOWN)
+            self.assertEqual({call.args[0] for call in send.call_args_list}, {key})
+
+    def test_an_upvote_never_alerts(self):
+        post = self.post(self.person())
+        with mock.patch.object(gallery.discord_messages, "send") as send:
+            gallery.vote(self.person(), post, VoteValue.UP)
+        send.assert_not_called()
 
     def test_not_on_your_own_post_and_not_when_blocked(self):
         author = self.person()

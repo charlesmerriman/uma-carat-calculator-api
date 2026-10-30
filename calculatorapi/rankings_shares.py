@@ -40,7 +40,7 @@ def share(part, whole):
 
 def team_shares(counted):
     """A count_teams() result as shares: an uma (and each strategy she runs)
-    of every team, a card of every member's deck, a borrow of the card's own
+    of every team, a card of every full deck, a borrow of the card's own
     decks, a trio of every team."""
     teams, decks = counted["teams"], counted["decks"]
     return {

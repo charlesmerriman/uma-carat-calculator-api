@@ -46,13 +46,18 @@ PVP_FINAL_RACES = 1
 # The highest day and ticket number per event kind ("cm" / "loh"), checked by
 # pvp_runs.py rather than the database so a game change is one line here.
 # CM: Round 1 is days 1-2 and Round 2 days 3-4, four attempts a day (GameTora,
-# Henry, 2026-10-26). LoH: five tickets a day for six days (Daptrius).
+# Henry, 2026-10-26). LoH: five tickets a day for six days (Daptrius). A LoH
+# ticket can be saved, up to ten at once, so its `day` only groups the 30
+# tickets: it says nothing about when one ran, and the client never shows it.
 PVP_RUN_DAYS = {"cm": 4, "loh": 6}
 PVP_RUN_TICKETS = {"cm": 4, "loh": 5}
 
-# A Champions Meeting final is three trainers, placed 1st to 3rd. LoH has no
-# final the site knows the shape of yet, so pvp_runs.py refuses one.
+# A Champions Meeting final is three trainers, placed 1st to 3rd. LoH ends in
+# the Top 96: two 48-player brackets. The player picks one of the teams they
+# registered on days 1-6, then only watches (Daptrius, 2026-10-30), so its
+# "final" row holds a lineup, a placement and a note, no race.
 PVP_FINAL_PLACEMENTS = 3
+PVP_LOH_TOP_PLACEMENTS = 96
 
 PVP_RUN_NOTE_MAX_LENGTH = 120
 

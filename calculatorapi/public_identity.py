@@ -17,8 +17,11 @@ WHAT A BLOCK HOLDS, AND WHY NOTHING ELSE
     tier_name      their Patreon tier's NAME, or null
     gallery_style  the look key (benefits.GALLERY_STYLE_LADDER), or null
 
+A profile card adds the rest of their favorites (favorite_umas): choosing them
+is the person's own, and the Privacy Policy and the post dialog both say so.
+
 Never the generated username, a user id, a Patreon handle, an email, a tier
-ORDER or a vote weight. The dict below is the field list, the role
+ORDER. The dict below is the field list, the role
 PatreonSupporterSerializer's explicit fields play for the supporter email.
 
 `tier_name` and `gallery_style` are both null when the person turned
@@ -67,6 +70,19 @@ def current_avatar_url(oshis, slots):
     if slots < 1:
         return None
     return next((row["image"] for row in oshis if row["image"]), None)
+
+
+def favorite_umas(user):
+    """The favorites on a person's profile card (views/profile_card.py): every
+    one their slots cover, in their order, as {"uma", "label", "image"}. A pick
+    a lapsed pledge stopped covering stays private, like the account page's
+    greyed-out rows, and an uma with no art is left off.
+    """
+    return [
+        {"uma": row["id"], "label": row["name"], "image": row["image"]}
+        for row in oshi_rows(user)[:benefits.oshi_slots(user)]
+        if row["image"]
+    ]
 
 
 def _block(user, supporter, oshis):
