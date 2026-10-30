@@ -67,7 +67,7 @@ from calculatorapi.views.rankings import (
 )
 from calculatorapi.views.skills import skill_detail, skill_list
 from calculatorapi.views.pvp_team import pvp_team_detail, pvp_team_list
-from calculatorapi.views.pvp_run import pvp_run_final, pvp_run_list, pvp_run_ticket
+from calculatorapi.views.pvp_run import pvp_run_final, pvp_run_history, pvp_run_list, pvp_run_ticket
 from calculatorapi.views.trained_uma import trained_uma_detail, trained_uma_import, trained_uma_list
 from calculatorapi.views.roster import roster_clear, roster_detail, roster_import
 from calculatorapi.views.gallery import (
@@ -233,6 +233,7 @@ urlpatterns = [
     path("pvp-teams/<int:team_id>", pvp_team_detail, name="pvp-team-detail"),
     # A signed-in player's logged CM / LoH results, one row per ticket and one
     # for the final, addressed by slot. Account only. → views/pvp_run.py
+    path("pvp-runs", pvp_run_history, name="pvp-run-history"),
     path("pvp-runs/<str:kind>/<int:event_id>", pvp_run_list, name="pvp-run-list"),
     path(
         "pvp-runs/<str:kind>/<int:event_id>/day/<int:day>/ticket/<int:ticket>",

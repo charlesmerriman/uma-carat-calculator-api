@@ -241,6 +241,39 @@ class ReadAndClearTests(PvpRunFixture):
         self.assertEqual(PvpRun.objects.count(), 1)
 
 
+class HistoryTests(PvpRunFixture):
+    """GET /pvp-runs: every run the caller logged, across events."""
+
+    def test_every_event_and_the_final(self):
+        self.put(self.ticket_url(day=1, ticket=1), races=self.races(0))
+        self.put(self.final_url(), races=self.races(1), finals_group="A", placement=2)
+        self.put(self.ticket_url(day=6, ticket=5, kind="loh"), races=self.races(None))
+        response = self.client.get("/pvp-runs")
+        self.assertEqual(response.status_code, 200, response.content)
+        slots = {(run["kind"], run["event"], run["stage"]) for run in response.json()}
+        self.assertEqual(slots, {
+            ("cm", self.cm.id, "day"), ("cm", self.cm.id, "final"), ("loh", self.loh.id, "day"),
+        })
+        final = next(run for run in response.json() if run["stage"] == "final")
+        self.assertEqual((final["finals_group"], final["placement"]), ("A", 2))
+
+    def test_only_the_callers_runs(self):
+        other, _ = auth_client(make_user("rival"))
+        self.put(self.ticket_url(), client=other, races=self.races(0))
+        self.assertEqual(self.client.get("/pvp-runs").json(), [])
+
+    def test_runs_stay_grouped_by_event(self):
+        second = make_champions_meeting()
+        self.put(self.ticket_url(day=1, ticket=1), races=self.races(0))
+        self.put(self.ticket_url(day=1, ticket=1, event=second.id), races=self.races(0))
+        self.put(self.ticket_url(day=2, ticket=1), races=self.races(0))
+        events = [run["event"] for run in self.client.get("/pvp-runs").json()]
+        self.assertEqual(events, sorted(events))
+
+    def test_guests_are_refused(self):
+        self.assertEqual(APIClient().get("/pvp-runs").status_code, 401)
+
+
 # Picture URLs go through default_storage; see test_pvp_teams.LifecycleTests.
 @override_settings(STORAGES=PLAIN_TEST_STORAGES)
 class LifecycleTests(PvpRunFixture):

@@ -1,4 +1,5 @@
 """
+GET    /pvp-runs                                        every run the caller logged, in every event.
 GET    /pvp-runs/<kind>/<event_id>                      every run the caller logged for the event.
 PUT    /pvp-runs/<kind>/<event_id>/day/<d>/ticket/<t>   write one ticket whole (creates it).
 DELETE /pvp-runs/<kind>/<event_id>/day/<d>/ticket/<t>   clear it.
@@ -108,6 +109,13 @@ def serialize_run(run):
 
 
 # ── Routes ───────────────────────────────────────────────────────────────────
+
+@api_view(["GET"])
+@permission_classes([permissions.IsAuthenticated])
+def pvp_run_history(request):
+    """The Collection's CM history: each run says its own kind and event."""
+    return Response([serialize_run(run) for run in pvp_runs.all_runs(request.user)])
+
 
 @api_view(["GET"])
 @permission_classes([permissions.IsAuthenticated])
