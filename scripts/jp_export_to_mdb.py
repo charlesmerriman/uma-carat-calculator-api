@@ -24,6 +24,14 @@ The export is someone else's file, so it is treated as data: table and column
 names must look like the game's (lower-case words and digits) before they go
 into any SQL, and nothing in the folder is ever executed.
 
+A LATER EXPORT WITHOUT THE TYPES FILE. The 2026-10-26 export (JP game data of
+that day) came without masterdata_schema_and_previews.json. It was rebuilt
+with the 2026-10-23 export's file copied in beside it, plus the columns added
+since: skill_data's third slot typed like its slot-2 twins, and four columns
+in tables the extractor never reads as INTEGER. A column the file doesn't
+know stops the rebuild ("has columns the schema doesn't"), so nothing is
+guessed silently.
+
 Run from backend/ (the output path is required: the rebuilt file is ~35 MB and
 belongs in a scratch folder, never in the repo or next to the export):
     python scripts/jp_export_to_mdb.py /path/to/export /tmp/jp/master.mdb

@@ -1,16 +1,16 @@
 {
  "region": "jp",
- "extracted_at": "2026-10-23T18:27:56+00:00",
- "mdb_size_bytes": 34856960,
- "mdb_modified_at": "2026-10-23T18:27:49+00:00",
+ "extracted_at": "2026-11-02T19:58:53+00:00",
+ "mdb_size_bytes": 35319808,
+ "mdb_modified_at": "2026-11-02T19:58:46+00:00",
  "counts": {
-  "skills": 2194,
-  "cards": 270,
-  "card_skills": 2194,
-  "support_cards": 563,
-  "support_hints": 4015,
-  "evolutions_outfit": 631,
-  "evolutions_scenario": 47,
+  "skills": 2223,
+  "cards": 272,
+  "card_skills": 2210,
+  "support_cards": 566,
+  "support_hints": 4029,
+  "evolutions_outfit": 636,
+  "evolutions_scenario": 53,
   "evolutions_succession": 3
  }
 }
