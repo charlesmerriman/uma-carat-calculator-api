@@ -60,8 +60,9 @@ class Migration(migrations.Migration):
             field=models.BooleanField(default=False, editable=False),
         ),
         migrations.RunPython(fill_visibility, back_to_is_published),
-        migrations.AddConstraint(
-            model_name='pvpguide',
-            constraint=models.CheckConstraint(condition=models.Q(('tools_public', False), ('visibility', 'public'), _connector='OR'), name='tools_public_only_when_public', violation_error_message='My team and the Gallery can only be opened on a Public guide.'),
-        ),
+        # The tools_public constraint is 0127, in its own transaction: the update
+        # above writes CM 21's row twice, which on PostgreSQL leaves deferred
+        # foreign-key checks pending until commit, and PostgreSQL refuses to
+        # ALTER a table with pending trigger events (the 2026-11-02 deploy
+        # failed on exactly that).
     ]
