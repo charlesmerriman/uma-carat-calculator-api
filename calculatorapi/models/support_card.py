@@ -70,6 +70,25 @@ class SupportCard(models.Model):
         ),
     )
     image = models.ImageField(upload_to="support_cards/", blank=True, null=True)
+    # The card's twin of Uma.image_borderless: the game's own card art with no
+    # rarity border and no type icon (the game's texture), which the site
+    # frames itself (frontend FramedCard, from Daptrius's overlays). Attached
+    # to the row (matched on game_id) by `manage.py link_borderless_art
+    # --kind cards`. Its own folder in the Space, so the image picker lists the
+    # two sets apart.
+    #
+    # Unlike an uma there is no `portrait` fallback to `image`: the bordered
+    # picture already carries a frame and icon, so it can't go inside the
+    # site's. The API sends this field as it is (null when missing: a
+    # placeholder, or a new card before its texture is uploaded), and the
+    # frontend draws `image` unframed for those.
+    image_borderless = models.ImageField(
+        upload_to="support_cards_borderless/",
+        blank=True,
+        null=True,
+        verbose_name="borderless image",
+        help_text="The same art without the rarity border and type icon. Optional.",
+    )
     admin_comments = models.TextField(blank=True, null=True, help_text="Notes for editors.")
     # Public, rendered as the Timeline tile's hover overlay -- the support-card
     # twin of Uma.purpose; see the note there for the cap and the "" default.
