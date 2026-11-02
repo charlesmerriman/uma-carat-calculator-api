@@ -76,6 +76,26 @@ def describe(row):
     return f"{row.deck.guide} / {row.deck.label} / slot {row.slot}"
 
 
+def apply(changes):
+    """Write the plan: each card's limit break, each note's rest (a row left
+    empty is deleted), then one revision per guide. One transaction."""
+    with transaction.atomic():
+        for guide, rows in changes.items():
+            for note_row, card_row, limit_break, rest in rows:
+                card_row.limit_break = limit_break
+                if note_row.pk == card_row.pk:
+                    card_row.note = rest
+                    card_row.save(update_fields=["limit_break", "note"])
+                    continue
+                card_row.save(update_fields=["limit_break"])
+                if rest:
+                    note_row.note = rest
+                    note_row.save(update_fields=["note"])
+                else:
+                    note_row.delete()
+            pvp_guide_revisions.record(guide, None, PvpGuideRevisionSource.LIMIT_BREAKS)
+
+
 class Command(BaseCommand):
     help = "Move the diamond limit-break notes onto their cards' limit_break, once."
 
@@ -90,6 +110,16 @@ class Command(BaseCommand):
         total = sum(len(rows) for rows in changes.values())
         verb = "Would convert" if options["dry_run"] else "Converting"
         self.stdout.write(f"{verb} {total} note(s) in {len(changes)} guide(s).")
+        self.report(changes, skipped)
+
+        if options["dry_run"] or not changes:
+            return
+
+        apply(changes)
+        self.stdout.write(self.style.SUCCESS(f"Converted {total} note(s) in {len(changes)} guide(s)."))
+
+    def report(self, changes, skipped):
+        """Each guide's conversions, then the notes left alone and why."""
         for guide, rows in changes.items():
             self.stdout.write(f"  {guide}: {len(rows)}")
             for note_row, card_row, limit_break, rest in rows:
@@ -99,23 +129,3 @@ class Command(BaseCommand):
                 )
         for row, why in skipped:
             self.stdout.write(self.style.WARNING(f'Left alone ({why}): {describe(row)} "{row.note}"'))
-
-        if options["dry_run"] or not changes:
-            return
-
-        with transaction.atomic():
-            for guide, rows in changes.items():
-                for note_row, card_row, limit_break, rest in rows:
-                    card_row.limit_break = limit_break
-                    if note_row.pk == card_row.pk:
-                        card_row.note = rest
-                        card_row.save(update_fields=["limit_break", "note"])
-                        continue
-                    card_row.save(update_fields=["limit_break"])
-                    if rest:
-                        note_row.note = rest
-                        note_row.save(update_fields=["note"])
-                    else:
-                        note_row.delete()
-                pvp_guide_revisions.record(guide, None, PvpGuideRevisionSource.LIMIT_BREAKS)
-        self.stdout.write(self.style.SUCCESS(f"Converted {total} note(s) in {len(changes)} guide(s)."))
