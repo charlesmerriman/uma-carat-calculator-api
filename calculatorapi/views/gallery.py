@@ -46,7 +46,7 @@ from rest_framework.decorators import api_view, permission_classes, throttle_cla
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 
-from calculatorapi import gallery, gallery_ranking, public_identity, pvp_guide_editing
+from calculatorapi import gallery, gallery_ranking, guide_access, public_identity
 from calculatorapi.models import GalleryComment, GalleryPost, GalleryVote, PvpGuide, SupportCard, Uma, VoteValue
 from calculatorapi.models.pvp_guide import PvpStyle
 from calculatorapi.views.pvp_guide import EVENT_FIELD_FOR_KIND
@@ -449,13 +449,15 @@ GUIDE_SECTIONS = frozenset({""} | {style.value for style in PvpStyle if style !=
 
 
 def _visible_guide(kind, event_id, viewer):
-    """The event's guide if the viewer may read it (published, or a draft its
-    editors preview), else None: the rule the guide's own route keeps."""
+    """The event's guide if the viewer may read it (guide_access.can_read:
+    its visibility, or a draft its editors preview), else None: the rule the
+    guide's own route keeps, so a Supporters guide's comments are closed to
+    a reader without early access too."""
     field = EVENT_FIELD_FOR_KIND.get(kind)
     if field is None:
         return None
     guide = PvpGuide.objects.filter(**{field: event_id}).first()
-    if guide is None or not (guide.is_published or pvp_guide_editing.can_edit(viewer, guide)):
+    if guide is None or not guide_access.can_read(viewer, guide):
         return None
     return guide
 
@@ -573,6 +575,6 @@ def _visible_comment(comment_id, viewer):
         return None
     if comment.guide_id:
         guide = comment.guide
-        visible = guide.is_published or pvp_guide_editing.can_edit(viewer, guide)
+        visible = guide_access.can_read(viewer, guide)
         return comment if visible else None
     return comment if _post_or_404(comment.post.public_id, viewer) else None

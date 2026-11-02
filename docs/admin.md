@@ -512,8 +512,10 @@ child are inline-only (`test_join_models_not_registered_top_level`).
   guide names in any version,
   reports event fields it can't read instead of guessing; racecourse ids come from the
   racecourse skills' own names, so there is no id table). Bulk
-  publish / unpublish actions call `public_payload_cache.invalidate()` because
-  `queryset.update()` raises no signals and the Timeline's `has_guide` is cached.
+  "Make selected guides Public / Supporters only / Private" actions go through
+  `pvp_guide_editing.set_visibility`, which calls `public_payload_cache.invalidate()`
+  because `queryset.update()` raises no signals and the Timeline's `has_guide` is cached.
+  Public keeps each guide's My team and Gallery switch; the other two clear it.
 - **The list** orders by the event's global start (`get_ordering`, an annotation, so not
   in `ordering` which the checks read), shows the JP date marked "(JP)" when global is not
   confirmed, and "Filled" chips from five `.only("style")` prefetches rather than
@@ -523,8 +525,9 @@ child are inline-only (`test_join_models_not_registered_top_level`).
   tag, the API and the tests read one definition.
 - **The site has an editor of its own since 2026-10-21** (`views/pvp_guide_editor.py`,
   `data-model.md` "The site's guide editor"). Both write the same rows. This page's every
-  save, the list's Published checkbox and the bulk publish actions record a
-  `PvpGuideRevision` (`save_related`; the actions call `pvp_guide_editing.publish`), so the
+  save, the list's Visibility and "My team and Gallery" columns and the bulk visibility
+  actions record a `PvpGuideRevision` (`save_related`; the actions call
+  `pvp_guide_editing.set_visibility`), so the
   history the site's editor shows includes what was done here, and a save here bumps
   `PvpGuide.version`, so an editor with the guide open on the site is told before they
   overwrite it.

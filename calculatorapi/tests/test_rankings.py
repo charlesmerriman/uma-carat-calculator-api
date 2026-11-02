@@ -49,7 +49,7 @@ class RankingsFixture(CalculatorTestCase):  # pylint: disable=too-many-instance-
         )
         self.maru = Uma.objects.create(name="Maruzensky")
 
-        self.guide = PvpGuide.objects.create(champions_meeting=self.cm, scenario=self.newer, is_published=True)
+        self.guide = PvpGuide.objects.create(champions_meeting=self.cm, scenario=self.newer, visibility="public")
         deck = PvpDeck.objects.create(guide=self.guide, style="front", label=" whale ")
         PvpDeckSlot.objects.create(deck=deck, slot=1, support_card=self.kitasan)
         PvpDeckSlot.objects.create(deck=deck, slot=1, order=1, support_card=self.fine)
@@ -65,11 +65,11 @@ class RankingsFixture(CalculatorTestCase):  # pylint: disable=too-many-instance-
         self.one_off = one_off
         PvpUmaRecommendation.objects.create(guide=self.guide, style="front", uma=self.maru, stars=3)
 
-        older = PvpGuide.objects.create(league_of_heroes=self.loh, scenario=self.older, is_published=True)
+        older = PvpGuide.objects.create(league_of_heroes=self.loh, scenario=self.older, visibility="public")
         PvpUmaRecommendation.objects.create(guide=older, style="end", uma=self.maru, stars=1)
 
         draft = PvpGuide.objects.create(
-            champions_meeting=make_champions_meeting(name="Draft Cup", cm_number=23), is_published=False,
+            champions_meeting=make_champions_meeting(name="Draft Cup", cm_number=23), visibility="private",
         )
         hidden = PvpDeck.objects.create(guide=draft, style="front", label="Standard")
         PvpDeckSlot.objects.create(deck=hidden, slot=1, support_card=self.kitasan)
@@ -162,7 +162,7 @@ class PayloadTests(RankingsFixture):
 
         before = count()
         cm = make_champions_meeting(name="Piscis Cup", cm_number=24)
-        guide = PvpGuide.objects.create(champions_meeting=cm, scenario=self.older, is_published=True)
+        guide = PvpGuide.objects.create(champions_meeting=cm, scenario=self.older, visibility="public")
         deck = PvpDeck.objects.create(guide=guide, style="end", label="Beginner")
         PvpDeckSlot.objects.create(deck=deck, slot=1, support_card=self.kitasan)
         PvpUmaRecommendation.objects.create(guide=guide, style="end", uma=self.maru, stars=1)

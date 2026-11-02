@@ -143,10 +143,10 @@ meaning anything instead of rendering a signed-in shell around nothing.
   to this account: `true` for a supporter on any paid tier, for staff, and for an
   account the owner granted it in the admin (`CustomUser.early_access`, which
   opens nothing else a supporter gets) (`benefits.early_access_for`). It says
-  WHO; the client knows WHICH features are
-  still early access (the PvP page from 2026-10-14, `PVP_EARLY_ACCESS` in
-  `frontend/src/hooks/usePvpAccess.ts`). A client gate only: the PvP API itself
-  stays open.
+  WHO; each PvP guide says WHAT is still early (`PvpGuide.visibility`, sent per event as
+  `guide_visibility` / `guide_tools_public`, since 2026-11-02). A Supporters guide and its
+  comments are refused on the server to an account without it (`guide_access.can_read`);
+  My team and the Gallery stay page-only gates.
 - **`guide_editor`** is whether the PvP page offers this account the guide
   editor: `true` for a staff account and nobody else (`pvp_guide_editing.can_edit`;
   the content-editor permission alone does not count). The client draws the Edit
@@ -717,9 +717,13 @@ throttle. `kind` is `cm` or `loh`; `event_id` is the event's database id, the `i
 `champions_meeting_data` / `league_of_heroes_event_data`.
 
 **`404`** `{"error": "Guide not found"}` for an unknown kind, an unknown event, an event
-with no guide, **and an unpublished guide** — the same body for all four, so the response
-never reveals that a draft exists. **Staff** (`pvp_guide_editing.can_edit`, by token)
-get a draft with `is_published: false`, so an editor can preview it on the site.
+with no guide, **and a Private guide**: the same body for all four, so the response
+never reveals that a draft exists. **`403`** `{"error": "This guide is for supporters for
+now.", "supporters_only": true}` for a **Supporters** guide to a reader without early
+access (`guide_access.can_read`; the payload's `guide_visibility` already says the guide
+exists, and a page loaded before the guide closed draws the early-access card from it).
+**Staff** (`pvp_guide_editing.can_edit`, by token) get any guide, a draft with
+`visibility: "private"`, so an editor can preview it on the site.
 
 Every section is optional and may be an empty array. Rows come sorted: by style in the
 order everyone, runaway, front, pace, late, end; then stat rows and decks by the editor's
@@ -755,7 +759,8 @@ markdown (`short_description`, `meta_analysis`, style note `body`) or one-line n
 may hold `==highlight==` spans the client renders red.
 
 ```json
-{ "event_type": "champions_meeting", "event": 12, "is_published": true, "updated_at": "ISO8601",
+{ "event_type": "champions_meeting", "event": 12, "visibility": "public", "tools_public": false,
+  "is_published": true, "updated_at": "ISO8601",
   "scenario": {"id": 3, "name": "Grand Live", "image": "url | null"},
   "style_ranking": "Front >> Runaway >= End > Late > Pace",
   "short_description": "markdown", "meta_analysis": "markdown", "under_construction": false,
@@ -806,14 +811,13 @@ ingress rule in `.do/app.yaml`, exactly as `/post` and `/plan`; a browser lands 
 both addresses; anything else is dropped. Code: `views/guide_share.py`, template
 `share/link_preview.html`.
 
-- **A published guide everyone may read today** (`pvp_gate.guide_is_open`): title "Capricorn
+- **A Public guide** (`guide_access.open_to_everyone`): title "Capricorn
   Cup PvP guide"; description the facts only, the ranking ("Pace ≫ End > Late > Front"), the
   stats (the `everyone` row, else the first, "and N more stat rows"), the course. Never the
   guide's prose, an editor or a comment.
-- **A guide the early-access gate holds back, a draft, or no guide:** the event alone, its
-  name, course and dates. `pvp_gate.py` mirrors the frontend's `usePvpAccess.ts`
-  (`PVP_EARLY_ACCESS`, `PVP_OPEN_CM_NUMBER`, the free guide being the event running now,
-  else the next); flip both together.
+- **A Supporters guide, a Private one, or no guide:** the event alone, its name, course
+  and dates. The guide's own setting decides (guide-visibility-plan.md, 2026-11-02); the
+  calendar no longer opens a guide by itself.
 - **An address naming no event:** the site's own tags, a **200**.
 
 Opening it creates and counts nothing. Throttled per address at `guide_share` (600/hour),
@@ -843,11 +847,11 @@ and the actions.
 
 | Route | Body | Answer |
 |---|---|---|
-| `GET /pvp-guides/editable` | | `{guides: [{id, kind, event, name, is_published, version, updated_at, filled: [styles]}], events: [{kind, event, name}]}`: every guide, newest edit first, and the events with no guide yet |
+| `GET /pvp-guides/editable` | | `{guides: [{id, kind, event, name, visibility, tools_public, version, updated_at, filled: [styles]}], events: [{kind, event, name}]}`: every guide, newest edit first, and the events with no guide yet |
 | `POST /pvp-guides` | `{kind, event, scenario?, copy_from?}` | `201` the document of a new draft; with `copy_from` every section of that guide is copied in. `400` for an event with a guide, an unknown event or source |
 | `GET /pvp-guides/<id>/document` | | the document |
 | `PUT /pvp-guides/<id>/document` | `{version, ...document}` | `{document, guide}`: the saved document and the public route's shape, so the client primes the page's cache. `400 {error, errors: [{path, message}]}`; `409 {error, current}` when `version` is behind the guide's (someone else saved) |
-| `PATCH /pvp-guides/<id>` | `{is_published}` | the document; drops the public payload (`has_guide`) |
+| `PATCH /pvp-guides/<id>` | `{visibility: "private" \| "supporters" \| "public", tools_public?}` | the document; drops the public payload (`has_guide`, `guide_visibility`, `guide_tools_public`). `tools_public: true` with anything but `"public"` is a 400 on `tools_public` |
 | `DELETE /pvp-guides/<id>` | | `204`; `400` for a published guide (unpublish first) |
 | `GET /pvp-guides/<id>/revisions` | | `[{number, saved_at, by, is_you, source, counts}]`, newest first; `by` is the author's handle (never a display name) or `null` |
 | `GET /pvp-guides/<id>/revisions/<n>` | | `{number, source, saved_at, document}` |
@@ -862,7 +866,7 @@ client flushes its autosave first and replaces its copy with the answer.
 
 ```json
 { "id": 7, "version": 12, "event_type": "champions_meeting", "event": 20,
-  "is_published": false, "updated_at": "…", "scenario": 3,
+  "visibility": "private", "tools_public": false, "updated_at": "…", "scenario": 3,
   "style_ranking": "Front >> End", "short_description": "markdown", "meta_analysis": "markdown",
   "under_construction": false, "admin_comments": "never public",
   "stat_configs": [{"style": "everyone", "label": "", "speed": "1100+", "stamina": "578*",
@@ -876,7 +880,7 @@ client flushes its autosave first and replaces its copy with the answer.
                        {"slot": 1, "order": 1, "is_borrow": false, "support_card": null, "note": "or any speed"}]}] }
 ```
 
-On a `PUT`, `id`, `event_type`, `event`, `is_published` and `updated_at` are ignored;
+On a `PUT`, `id`, `event_type`, `event`, `visibility`, `tools_public` and `updated_at` are ignored;
 every section key is required (a missing one is a `400`, never a wiped section); **order is
 the array position** (the client never sends `order`, except a slot's, which says card or
 alternative); leaf rows are replaced and a deck keeps its `id` when the body names one of
@@ -2198,7 +2202,7 @@ Same **resolved-date** contract as `BannerTimeline`: `start_date`/`end_date` are
 
 **Course details.** `track` through `direction` are hand-entered in the admin and unknown until a meeting is announced. The columns are non-null, so "unknown" is a **sentinel, not a null**: `"TBD"`. Clients should treat it as "not announced" rather than displaying it raw.
 
-**`has_guide`**: whether the event has a PUBLISHED PvP guide (`GET /pvp-guides/cm/<id>`); a draft counts as none. An `Exists` annotation (`views.pvp_guide.annotate_has_guide`), so publishing or unpublishing a guide drops the cached payload. The five `*_recommendation` stat fields left the wire with the PvP guide (2026-10); the guide's `stat_configs` replace them.
+**`has_guide`**: whether the event has a PvP guide out of draft, Supporters or Public (`GET /pvp-guides/cm/<id>`); a Private guide counts as none. **`guide_visibility`**: `"supporters"`, `"public"`, or `null` (no guide, or a Private one). **`guide_tools_public`**: whether My team and the Gallery open to everyone with it (only ever on a Public guide). The page decides what a reader without early access may open from these two. Annotations (`views.pvp_guide.annotate_has_guide`), so changing who may read a guide drops the cached payload. The five `*_recommendation` stat fields left the wire with the PvP guide (2026-10); the guide's `stat_configs` replace them.
 
 ```json
 {
@@ -2218,7 +2222,9 @@ Same **resolved-date** contract as `BannerTimeline`: `start_date`/`end_date` are
   "image": "url | null",
   "track": "string", "surface_type": "string", "distance": "string", "length": "string",
   "track_condition": "string", "season": "string", "weather": "string", "direction": "string",
-  "has_guide": false
+  "has_guide": false,
+  "guide_visibility": null,
+  "guide_tools_public": false
 }
 ```
 
@@ -2246,6 +2252,8 @@ Same resolved-date contract as above, with its own anchor set (schedule offsets 
   "image": "url | null",
   "track": "string", "surface_type": "string", "distance": "string", "length": "string",
   "track_condition": "string", "season": "string", "weather": "string", "direction": "string",
-  "has_guide": false
+  "has_guide": false,
+  "guide_visibility": null,
+  "guide_tools_public": false
 }
 ```

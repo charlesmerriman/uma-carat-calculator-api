@@ -44,7 +44,7 @@ class SkillsShelvedTests(CalculatorTestCase):
 
     def test_a_guide_shows_a_player_global_skills_only(self):
         cm = make_champions_meeting()
-        guide = PvpGuide.objects.create(champions_meeting=cm, is_published=True,
+        guide = PvpGuide.objects.create(champions_meeting=cm, visibility="public",
                                         short_description="[[Fan Skill]] and [[Gourmand]]")
         fan = make(200999, name="", translated_name="Fan Skill", availability="jp")
         gourmand = make(201351, name="Gourmand")
@@ -158,7 +158,7 @@ class GuideSkillFieldsTests(CalculatorTestCase):
 
     def test_a_jp_only_skill_reaches_the_guide_tagged_and_credited(self):
         cm = make_champions_meeting()
-        guide = PvpGuide.objects.create(champions_meeting=cm, is_published=True)
+        guide = PvpGuide.objects.create(champions_meeting=cm, visibility="public")
         fan = make(200999, name="", description="", translated_name="Fan Skill",
                    translated_description="Fan text.", availability="jp", effects=SPEED)
         week = Uma.objects.create(name="Special Week (New)", game_id=100105)

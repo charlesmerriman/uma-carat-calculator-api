@@ -7,8 +7,9 @@ WHAT IT SHOWS (owner, 2026-10-24, guide-visuals-plan-2.md release D)
 The event's own art as the backdrop, blurred and shaded, the brand strip with
 "CM 21" at its end, then "PvP guide", the cup's name and the course. An open
 guide adds its style ranking (each style in its colour) and its stat targets;
-a locked one (pvp_gate.py), a draft or an event with no guide adds the dates
-instead, so the picture never shows what the gate holds back.
+a Supporters or Private one (guide_access.open_to_everyone) or an event with
+no guide adds the dates instead, so the picture never shows what is kept for
+supporters.
 
 guide_share.py decides what goes on it, as a Card: the guide's own facts,
 never its prose, and nothing about who wrote it.

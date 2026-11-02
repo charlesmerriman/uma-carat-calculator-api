@@ -17,7 +17,7 @@ from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from rest_framework.test import APIClient
 
-from calculatorapi import public_payload_cache, pvp_guide_document, pvp_guide_revisions, pvp_sheet
+from calculatorapi import public_payload_cache, pvp_guide_document, pvp_guide_editing, pvp_guide_revisions, pvp_sheet
 from calculatorapi.models import (
     PvpDeck,
     PvpDeckSlot,
@@ -58,12 +58,12 @@ def content_editor_client(username="henry"):
     return client, user
 
 
-def build_guide(published=False):
+def build_guide(visibility="private"):
     """A guide with one row in every section, the way test_full_shape builds one."""
     cm = make_champions_meeting(name="Aquarius Cup", cm_number=10)
     scenario = make_scenario(name="Grand Live")
     guide = PvpGuide.objects.create(
-        champions_meeting=cm, scenario=scenario, is_published=published,
+        champions_meeting=cm, scenario=scenario, visibility=visibility,
         style_ranking="Front >> End", short_description="Mile on turf.",
         meta_analysis="Go early.", admin_comments="private",
     )
@@ -95,7 +95,7 @@ def put_body(document, **changes):
     """A PUT body from a GET's document: the version it carries, the fields
     the server takes, and `changes` on top."""
     body = {key: copy.deepcopy(value) for key, value in document.items()
-            if key not in ("id", "event_type", "event", "is_published", "updated_at")}
+            if key not in ("id", "event_type", "event", "visibility", "tools_public", "updated_at")}
     body.update(changes)
     return body
 
@@ -190,7 +190,7 @@ class DocumentRoundTripTests(CalculatorTestCase):
     def test_the_document_shape(self):
         body = self.client.get(doc_url(self.guide)).json()
         self.assertEqual(set(body), {
-            "id", "version", "event_type", "event", "is_published", "updated_at", "scenario",
+            "id", "version", "event_type", "event", "visibility", "tools_public", "updated_at", "scenario",
             "style_ranking", "short_description", "meta_analysis", "under_construction",
             "admin_comments", "stat_configs", "team_comps", "uma_recommendations", "skill_recommendations",
             "style_notes", "decks",
@@ -320,8 +320,8 @@ class DocumentRoundTripTests(CalculatorTestCase):
         body = res.json()
         self.assertEqual([g["id"] for g in body["guides"]], [self.guide.id])
         row = body["guides"][0]
-        self.assertEqual((row["kind"], row["event"], row["is_published"], row["version"]),
-                         ("cm", self.fixture.cm.id, False, 0))
+        self.assertEqual((row["kind"], row["event"], row["visibility"], row["tools_public"], row["version"]),
+                         ("cm", self.fixture.cm.id, "private", False, 0))
         self.assertEqual(row["filled"], ["front"])
         self.assertEqual(body["events"], [{"kind": "loh", "event": loh.id, "name": str(loh)}])
 
@@ -336,8 +336,8 @@ class CreateAndDeleteTests(CalculatorTestCase):
         self.assertEqual(res.status_code, 201, res.content)
         body = res.json()
         guide = PvpGuide.objects.get(league_of_heroes=self.loh)
-        self.assertEqual((body["id"], body["event_type"], body["event"], body["is_published"]),
-                         (guide.id, "league_of_heroes", self.loh.id, False))
+        self.assertEqual((body["id"], body["event_type"], body["event"], body["visibility"]),
+                         (guide.id, "league_of_heroes", self.loh.id, "private"))
         self.assertEqual(body["version"], 1)
         self.assertEqual(guide.revisions.get().source, "site")
 
@@ -369,11 +369,11 @@ class CreateAndDeleteTests(CalculatorTestCase):
         self.assertEqual(res.json()["errors"][0]["path"], "kind")
 
     def test_delete_a_draft_but_never_a_published_guide(self):
-        guide = PvpGuide.objects.create(league_of_heroes=self.loh, is_published=True)
+        guide = PvpGuide.objects.create(league_of_heroes=self.loh, visibility="supporters")
         res = self.client.delete(f"/pvp-guides/{guide.pk}")
         self.assertEqual(res.status_code, 400)
-        self.assertIn("Unpublish", res.json()["error"])
-        guide.is_published = False
+        self.assertEqual(res.json()["error"], "Make the guide private before deleting it.")
+        guide.visibility = "private"
         guide.save()
         self.assertEqual(self.client.delete(f"/pvp-guides/{guide.pk}").status_code, 204)
         self.assertFalse(PvpGuide.objects.filter(pk=guide.pk).exists())
@@ -547,31 +547,56 @@ class PublishTests(CalculatorTestCase):
         self.fixture = build_guide()
         self.guide = self.fixture.guide
 
-    def test_publish_and_unpublish(self):
+    def patch(self, **body):
+        return self.client.patch(f"/pvp-guides/{self.guide.pk}", body, format="json")
+
+    def test_private_supporters_public_and_back(self):
         visitor = APIClient()
         public = f"/pvp-guides/cm/{self.fixture.cm.id}"
         visitor.get("/calculator-data")
         self.assertEqual(visitor.get(public).status_code, 404)
 
-        res = self.client.patch(f"/pvp-guides/{self.guide.pk}", {"is_published": True}, format="json")
+        res = self.patch(visibility="supporters")
         self.assertEqual(res.status_code, 200, res.content)
-        self.assertIs(res.json()["is_published"], True)
+        self.assertEqual((res.json()["visibility"], res.json()["tools_public"]), ("supporters", False))
         self.assertEqual(res.json()["version"], 1)
-        self.assertIsNone(public_payload_cache.read(), "publishing kept a stale has_guide")
-        self.assertEqual(visitor.get(public).status_code, 200)
-        self.assertEqual(self.guide.revisions.get().source, "publish")
+        self.assertIsNone(public_payload_cache.read(), "a new setting kept a stale payload")
+        self.assertEqual(visitor.get(public).status_code, 403)
+        self.guide.refresh_from_db()
+        self.assertTrue(self.guide.is_published)  # TRANSITIONAL: kept in step
 
         visitor.get("/calculator-data")
-        res = self.client.patch(f"/pvp-guides/{self.guide.pk}", {"is_published": False}, format="json")
-        self.assertEqual(res.status_code, 200)
+        res = self.patch(visibility="public", tools_public=True)
+        self.assertEqual((res.json()["visibility"], res.json()["tools_public"]), ("public", True))
         self.assertIsNone(public_payload_cache.read())
+        self.assertEqual(visitor.get(public).status_code, 200)
+
+        res = self.patch(visibility="private")
+        self.assertEqual((res.json()["visibility"], res.json()["tools_public"]), ("private", False))
         self.assertEqual(visitor.get(public).status_code, 404)
-        self.assertEqual(list(self.guide.revisions.values_list("source", flat=True)), ["unpublish", "publish"])
+        self.guide.refresh_from_db()
+        self.assertFalse(self.guide.is_published)
+        self.assertEqual(
+            list(self.guide.revisions.values_list("source", flat=True)), ["unpublish", "publish", "publish"],
+        )
 
     def test_the_body_is_checked(self):
-        res = self.client.patch(f"/pvp-guides/{self.guide.pk}", {"is_published": "maybe"}, format="json")
-        self.assertEqual(res.status_code, 400)
-        self.assertEqual(res.json()["errors"][0]["path"], "is_published")
+        for body, path in (
+            ({"visibility": "maybe"}, "visibility"),
+            ({}, "visibility"),
+            ({"is_published": True}, "visibility"),
+            ({"visibility": "supporters", "tools_public": True}, "tools_public"),
+        ):
+            with self.subTest(body=body):
+                res = self.patch(**body)
+                self.assertEqual(res.status_code, 400)
+                self.assertEqual(res.json()["errors"][0]["path"], path)
+        self.guide.refresh_from_db()
+        self.assertEqual((self.guide.visibility, self.guide.version), ("private", 0))
+
+    def test_the_switch_is_refused_off_public_in_the_service_too(self):
+        with self.assertRaises(pvp_guide_editing.GuideRefused):
+            pvp_guide_editing.set_visibility(self.guide, self.user, "supporters", tools_public=True)
 
 
 # ── Revisions ────────────────────────────────────────────────────────────────
@@ -627,7 +652,7 @@ class RevisionTests(CalculatorTestCase):
     def test_pruning_keeps_the_last_rows_and_every_publish(self):
         with patch.object(pvp_guide_revisions, "KEEP", 2):
             self.save(self.client, style_ranking="One")
-            self.client.patch(f"/pvp-guides/{self.guide.pk}", {"is_published": True}, format="json")
+            self.client.patch(f"/pvp-guides/{self.guide.pk}", {"visibility": "supporters"}, format="json")
             for label in ("Two", "Three", "Four"):
                 self.save(self.other, style_ranking=label)
                 self.save(self.client, style_ranking=label + "!")
@@ -666,10 +691,19 @@ class RevisionTests(CalculatorTestCase):
                          ("admin", admin.id, "From the admin"))
         self.guide.refresh_from_db()
         self.assertEqual(self.guide.version, 1)
-        # Ticking Published on the page is recorded as a publish.
-        data["is_published"] = "on"
+        # The switch on a Supporters guide is a form error, and nothing is saved.
+        data["visibility"] = "supporters"
+        data["tools_public"] = "on"
+        res = self.client.post(change_url, data)
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "My team and the Gallery can only be opened on a Public guide.")
+        self.assertEqual(self.guide.revisions.count(), 1)
+        # Out of Private on the page is recorded as a publish, the old column kept in step.
+        del data["tools_public"]
         self.client.post(change_url, data)
         self.assertEqual(self.guide.revisions.order_by("-number").first().source, "publish")
+        self.guide.refresh_from_db()
+        self.assertEqual((self.guide.visibility, self.guide.is_published), ("supporters", True))
 
     def test_the_admin_bulk_action_publishes_through_the_same_path(self):
         admin = make_user(username="admin", is_staff=True)
@@ -680,11 +714,11 @@ class RevisionTests(CalculatorTestCase):
         APIClient().get("/calculator-data")
         res = self.client.post(
             reverse("admin:calculatorapi_pvpguide_changelist"),
-            {"action": "publish_selected", "_selected_action": [self.guide.pk]},
+            {"action": "make_supporters_selected", "_selected_action": [self.guide.pk]},
         )
         self.assertEqual(res.status_code, 302)
         self.guide.refresh_from_db()
-        self.assertTrue(self.guide.is_published)
+        self.assertEqual((self.guide.visibility, self.guide.is_published), ("supporters", True))
         self.assertEqual(self.guide.revisions.get().source, "publish")
         self.assertIsNone(public_payload_cache.read())
 

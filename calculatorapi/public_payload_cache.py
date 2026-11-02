@@ -223,9 +223,9 @@ _IRRELEVANT_MODELS = frozenset({
     "faqcategory",
     "faqitem",
     # The PvP guide's children: served by GET /pvp-guides, never here. NOT the
-    # guide itself, whose is_published feeds has_guide on both race arrays, so
-    # publishing or unpublishing a guide must drop the payload. A few rebuilds
-    # per event is fine.
+    # guide itself, whose visibility feeds has_guide, guide_visibility and
+    # guide_tools_public on both race arrays, so changing who may read a guide
+    # must drop the payload. A few rebuilds per event is fine.
     "pvpstatconfig",
     "pvpumarecommendation",
     "pvpskillrecommendation",

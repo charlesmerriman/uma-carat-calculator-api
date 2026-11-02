@@ -28,10 +28,13 @@ revisions comparable deck by deck.
 
 NO SIGNAL ON A SAVE. The guide row is written with update(), not save(): the
 site autosaves every couple of seconds while someone types, and PvpGuide is
-NOT in public_payload_cache._IRRELEVANT_MODELS (its is_published feeds
-has_guide), so a save() would drop the whole /calculator-data payload on every
-autosave, the 2026-09-23 outage's shape. Publishing, which is the one change
-the payload cares about, invalidates on purpose (pvp_guide_editing.publish).
+NOT in public_payload_cache._IRRELEVANT_MODELS (its visibility feeds
+has_guide and guide_visibility), so a save() would drop the whole
+/calculator-data payload on every autosave, the 2026-09-23 outage's shape.
+Who may read it, the one change the payload cares about, invalidates on
+purpose (pvp_guide_editing.set_visibility). The document carries visibility
+and tools_public to show them; a save never writes them (DocumentPut has
+neither), only PATCH /pvp-guides/<id> does.
 
 NO full_clean() PER ROW. The admin's lesson (admin.md, "A save validates
 what changed"): five queries a row. The checks below cost one query per
@@ -346,7 +349,8 @@ def serialize(guide):
         "version": guide.version,
         "event_type": guide.event_type,
         "event": guide.champions_meeting_id or guide.league_of_heroes_id,
-        "is_published": guide.is_published,
+        "visibility": guide.visibility,
+        "tools_public": guide.tools_public,
         "updated_at": serializers.DateTimeField().to_representation(guide.updated_at),
         "scenario": guide.scenario_id,
         "style_ranking": guide.style_ranking,

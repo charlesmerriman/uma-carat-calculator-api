@@ -160,7 +160,7 @@ class ProfileCardTests(CalculatorTestCase):  # pylint: disable=too-many-public-m
         self.assertEqual([row["caption"] for row in posts], ["Writer's team"])
 
     def test_a_comment_on_a_guide_opens_a_card(self):
-        guide = PvpGuide.objects.create(champions_meeting=self.cm, is_published=True)
+        guide = PvpGuide.objects.create(champions_meeting=self.cm, visibility="public")
         comment = GalleryComment.objects.create(guide=guide, author=self.author, body="Thanks")
         self.assertEqual(self.comment_card(comment).status_code, 200)
 
@@ -179,7 +179,7 @@ class ProfileCardTests(CalculatorTestCase):  # pylint: disable=too-many-public-m
         self.assertEqual(self.comment_card(comment).status_code, 404)
 
     def test_a_comment_on_an_unpublished_guide_has_no_card(self):
-        guide = PvpGuide.objects.create(champions_meeting=self.cm, is_published=False)
+        guide = PvpGuide.objects.create(champions_meeting=self.cm, visibility="private")
         comment = GalleryComment.objects.create(guide=guide, author=self.author, body="Draft")
         self.assertEqual(self.comment_card(comment).status_code, 404)
 
