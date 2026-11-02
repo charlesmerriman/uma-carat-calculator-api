@@ -275,9 +275,16 @@ class DocumentRoundTripTests(CalculatorTestCase):
         self.assertEqual(decks[1], (self.fixture.deck.id, "Renamed", "front", 1))
         self.assertEqual(decks[0][1:], ("Whale", "pace", 0))
         self.assertEqual(PvpDeckSlot.objects.filter(deck_id=self.fixture.deck.id).count(), 1)
-        # The new deck's defaults: order 0, no borrow, a card with no note.
+        # The new deck's defaults: order 0, no borrow, a card with no note, no limit break.
         slot = PvpDeckSlot.objects.get(deck_id=decks[0][0])
-        self.assertEqual((slot.slot, slot.order, slot.is_borrow, slot.note), (2, 0, False, ""))
+        self.assertEqual((slot.slot, slot.order, slot.is_borrow, slot.note, slot.limit_break), (2, 0, False, "", None))
+        # A limit break goes in and comes back out.
+        document = res.json()["document"]
+        document["decks"][0]["slots"][0]["limit_break"] = 3
+        res = self.client.put(doc_url(self.guide), put_body(document), format="json")
+        self.assertEqual(res.status_code, 200, res.content)
+        self.assertEqual(res.json()["document"]["decks"][0]["slots"][0]["limit_break"], 3)
+        self.assertEqual(PvpDeckSlot.objects.get(deck_id=decks[0][0]).limit_break, 3)
         # Omitting every deck deletes them all.
         document = res.json()["document"]
         res = self.client.put(doc_url(self.guide), put_body(document, decks=[]), format="json")
@@ -467,6 +474,10 @@ class ValidationTests(CalculatorTestCase):
         unlabelled = [{"id": None, "style": "front", "label": "", "note": "", "slots": []}]
         paths = {p for p, _ in self.refuse(decks=unlabelled)}
         self.assertIn("decks[0].label", paths)
+        errors = self.refuse(decks=deck([{"slot": 1, "support_card": None, "note": "Any Wit", "limit_break": 2}]))
+        self.assertIn(("decks[0].slots[0].limit_break", pvp_guide_document.LIMIT_BREAK_NEEDS_CARD), errors)
+        paths = {p for p, _ in self.refuse(decks=deck([{"slot": 1, "support_card": card, "limit_break": 5}]))}
+        self.assertIn("decks[0].slots[0].limit_break", paths)
         # A borrowed slot and its "or" alternative are one borrow.
         ok = deck([{"slot": 6, "support_card": card, "is_borrow": True},
                    {"slot": 6, "order": 1, "note": "or any speed", "is_borrow": True}])

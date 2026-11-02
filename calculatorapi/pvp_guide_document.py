@@ -90,6 +90,7 @@ NOT_IN_CATALOGUE = "Pick one from the list."
 SKILL_NOT_SHOWN = "That skill has no English name yet."
 SLOT_NEEDS_SOMETHING = 'Pick a card, or write a note like "or any speed".'
 ONE_BORROW = "Only one slot can be the borrowed card."
+LIMIT_BREAK_NEEDS_CARD = "A limit break needs a card."
 DUPLICATE_SLOT = "Two rows share slot {slot}."
 
 
@@ -150,6 +151,8 @@ class _SlotInput(serializers.Serializer):
     is_borrow = serializers.BooleanField(required=False, default=False)
     support_card = serializers.IntegerField(min_value=1, allow_null=True, required=False, default=None)
     note = _text(PvpDeckSlot, "note")
+    # Optional, so a revision saved before the field existed restores with none.
+    limit_break = serializers.IntegerField(min_value=0, max_value=4, allow_null=True, required=False, default=None)
 
 
 class _DeckInput(serializers.Serializer):
@@ -312,9 +315,10 @@ def errors(data):  # pylint: disable=too-many-locals
 
 
 def _deck_errors(decks, add):
-    """The deck rules: a known card, a card or a note, one row per slot and
-    order, one borrowed SLOT (a borrowed card and its "or" alternative are
-    the same borrow, as DeckSlotFormSet.clean counts them)."""
+    """The deck rules: a known card, a card or a note, a limit break only on a
+    card, one row per slot and order, one borrowed SLOT (a borrowed card and
+    its "or" alternative are the same borrow, as DeckSlotFormSet.clean counts
+    them)."""
     card_ids = {slot["support_card"] for deck in decks for slot in deck["slots"]} - {None}
     known_cards = set(SupportCard.objects.filter(id__in=card_ids).values_list("id", flat=True))
     for i, deck in enumerate(decks):
@@ -327,6 +331,8 @@ def _deck_errors(decks, add):
                 add(f"{path}.support_card", NOT_IN_CATALOGUE)
             if card is None and not slot["note"].strip():
                 add(path, SLOT_NEEDS_SOMETHING)
+            if card is None and slot["limit_break"] is not None:
+                add(f"{path}.limit_break", LIMIT_BREAK_NEEDS_CARD)
             slots_seen[(slot["slot"], slot["order"])] += 1
             if slot["is_borrow"]:
                 borrowed.add(slot["slot"])
@@ -395,6 +401,7 @@ def serialize(guide):
                     {
                         "slot": slot.slot, "order": slot.order, "is_borrow": slot.is_borrow,
                         "support_card": slot.support_card_id, "note": slot.note,
+                        "limit_break": slot.limit_break,
                     }
                     for slot in sorted(deck.slots.all(), key=lambda s: (s.slot, s.order, s.id))
                 ],
@@ -503,6 +510,7 @@ def _write_decks(guide, decks):
             slots.append(PvpDeckSlot(
                 deck=row, slot=slot["slot"], order=slot["order"], is_borrow=slot["is_borrow"],
                 support_card_id=slot["support_card"], note=slot["note"],
+                limit_break=slot["limit_break"],
             ))
     PvpDeckSlot.objects.bulk_create(slots)
 

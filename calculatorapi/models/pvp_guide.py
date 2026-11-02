@@ -635,6 +635,19 @@ class PvpDeckSlot(SkillMentionsMixin, models.Model):
         blank=True,
         help_text="Why this card: \"2SP\", \"Gold + Link\", or \"or any speed\" with no card.",
     )
+    # The LEAST limit break the guide recommends for this row's card, 0 to 4
+    # (4 is MLB); null when the guide doesn't say. Drawn as the game's diamonds
+    # on the deck's card (frontend FramedCard). It replaces the sheet-era
+    # diamond notes ("◆◆◆◇ + or spd" on an "or" row: this card at 3 LB or
+    # better), which `convert_deck_limit_breaks` moves here once
+    # (notes/support-card-art-plan.md, PRs 3 and 4). Only a row with a card can
+    # carry one (`limit_break_needs_a_card`).
+    limit_break = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        validators=[MaxValueValidator(4)],
+        help_text="The least limit break the guide recommends, 0 to 4 (4 is MLB). Blank: not said.",
+    )
 
     class Meta:
         ordering = ("slot", "order", "id")
@@ -649,6 +662,11 @@ class PvpDeckSlot(SkillMentionsMixin, models.Model):
                 name="slot_has_card_or_note",
             ),
             models.CheckConstraint(
+                condition=models.Q(limit_break__isnull=True)
+                | models.Q(support_card__isnull=False, limit_break__lte=4),
+                name="limit_break_needs_a_card",
+            ),
+            models.CheckConstraint(
                 condition=models.Q(slot__gte=1, slot__lte=6),
                 name="pvp_deck_slot_1_to_6",
             ),
@@ -657,6 +675,8 @@ class PvpDeckSlot(SkillMentionsMixin, models.Model):
     def clean(self):
         if self.support_card_id is None and not self.note.strip():
             raise ValidationError("Pick a card, or write a note like \"or any speed\".")
+        if self.support_card_id is None and self.limit_break is not None:
+            raise ValidationError({"limit_break": "A limit break needs a card."})
         super().clean()
 
     def __str__(self):

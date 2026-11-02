@@ -89,8 +89,10 @@ result depends on which tests ran before it.
 | `merge_duplicate_support_cards` | The same merge for support cards (it subclasses the uma command): folds "Daiichi Ruby (Rerun)", which has no `game_id` and so can never be reached by the import, into the card with the same image id. `--dry-run` first |
 | `merge_duplicate_umas` | Folds a `(Rerun)` copy of an uma into the original by image id, re-pointing every row that referenced it. Run before any migration that makes uma ids unique; `--dry-run` first |
 
-Four more are one-off data repairs, kept for the record: `classify_banner_categories`,
-`backfill_race_prep_supports`, `fix_support_card_variants` and `repair_launch_banner`.
+Five more are one-off data repairs, kept for the record: `classify_banner_categories`,
+`backfill_race_prep_supports`, `fix_support_card_variants`, `repair_launch_banner` and
+`convert_deck_limit_breaks` (the sheet-era diamond notes into `PvpDeckSlot.limit_break`,
+one revision per guide; `--dry-run` first, run on prod on the owner's go).
 
 ## Deployment
 

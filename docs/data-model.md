@@ -985,7 +985,13 @@ erDiagram
   - `PvpStyleNote`: one markdown block per style, unique `(guide, style)`.
   - `PvpDeck` → `PvpDeckSlot`: slot 1..6, `is_borrow`, `order` 0 = the card and 1+ =
     alternatives for the same slot, unique `(deck, slot, order)`; `support_card` is
-    nullable but `slot_has_card_or_note` requires a card or a note.
+    nullable but `slot_has_card_or_note` requires a card or a note. `limit_break` (`0129`,
+    0..4, null = the guide doesn't say) is the LEAST limit break the guide recommends for
+    the row's card, drawn as the game's diamonds on the deck card; only a row with a card
+    holds one (`limit_break_needs_a_card`). It replaces the sheet's diamond notes ("◆◆◆◇ +
+    or spd" on the "or" row): the sheet loader reads them into the field, and
+    `convert_deck_limit_breaks` moved the ones already stored, once. Only the diamond part
+    is read; the rest of a note stays as written (`deck_limit_breaks.py`, owner 2026-11-02).
   - There is no honorable-mentions table (dropped in `0092`): a guide that wants that row
     adds a deck labelled "Honorable mentions", and the sheet import skips the block.
     `PvpDeck.is_highlighted` ("Gold box", `0105`) draws any deck in a gold box to set it
