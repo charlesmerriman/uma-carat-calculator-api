@@ -778,10 +778,10 @@ may hold `==highlight==` spans the client renders red.
                               "rarity": 2, "tier": 2, "version": "◎ gold", "is_evolved": false}]}}],
   "style_notes": [{"style": "front", "body": "markdown"}],
   "decks": [{"id": 7, "style": "front", "label": "Standard", "note": "", "is_highlighted": false,
-      "slots": [{"slot": 1, "order": 0, "is_borrow": false, "note": "Gold + Link",
+      "slots": [{"slot": 1, "order": 0, "is_borrow": false, "note": "Gold + Link", "limit_break": 3,
                  "support_card": {"id": 302, "name": "Kitasan Black", "image": "url | null",
                                   "image_borderless": "url | null", "card_type": "speed", "rarity": 3}},
-                {"slot": 1, "order": 1, "is_borrow": false, "note": "or any speed", "support_card": null}]}],
+                {"slot": 1, "order": 1, "is_borrow": false, "note": "or any speed", "limit_break": null, "support_card": null}]}],
   "skill_mentions": {"groundwork": {"id": 88, "name": "Groundwork", "description": "string", "image": "url | null",
                                      "rarity": 2, "unique_of": null, "version": "◎ gold", "tier": 2,
                                      "is_evolved": false, "versions": []}} }
@@ -876,7 +876,8 @@ client flushes its autosave first and replaces its copy with the answer.
   "skill_recommendations": [{"style": "front", "category": "acceleration", "tier": 0, "skill": 88, "note": ""}],
   "style_notes": [{"style": "front", "body": "markdown"}],
   "decks": [{"id": 90, "style": "front", "label": "Standard", "note": "", "is_highlighted": false,
-             "slots": [{"slot": 1, "order": 0, "is_borrow": false, "support_card": 302, "note": "2SP"},
+             "slots": [{"slot": 1, "order": 0, "is_borrow": false, "support_card": 302, "note": "2SP",
+                        "limit_break": 3},
                        {"slot": 1, "order": 1, "is_borrow": false, "support_card": null, "note": "or any speed"}]}] }
 ```
 

@@ -233,7 +233,9 @@ class _DeckSlotSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PvpDeckSlot
-        fields = ("slot", "order", "is_borrow", "note", "support_card")
+        # limit_break: the least the guide recommends, 0..4, null when unsaid;
+        # the deck draws it as the game's diamonds on the card.
+        fields = ("slot", "order", "is_borrow", "note", "limit_break", "support_card")
 
 
 class _DeckSerializer(serializers.ModelSerializer):
