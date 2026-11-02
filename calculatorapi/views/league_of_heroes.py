@@ -9,6 +9,10 @@ from .pvp_guide import annotate_has_guide
 class LeagueOfHeroesSerializer(EventTypeMixin, EffectiveDateMixin, serializers.ModelSerializer):
     # Whether the event has a published PvP guide (views/pvp_guide.py).
     has_guide = serializers.SerializerMethodField()
+    # Who may read that guide, and whether My team and the Gallery open with it
+    # (annotate_has_guide; guide-visibility-plan.md).
+    guide_visibility = serializers.SerializerMethodField()
+    guide_tools_public = serializers.SerializerMethodField()
     event_type_value = "league_of_heroes"
 
     class Meta:
@@ -23,13 +27,19 @@ class LeagueOfHeroesSerializer(EventTypeMixin, EffectiveDateMixin, serializers.M
             "image",
             "track", "surface_type", "distance", "length",
             "track_condition", "season", "weather", "direction",
-            "has_guide",
+            "has_guide", "guide_visibility", "guide_tools_public",
         )
 
     def get_has_guide(self, obj):
         # Annotated by views.pvp_guide.annotate_has_guide where the queryset is
         # built; an unannotated row has no published guide as far as we know.
         return getattr(obj, "has_guide", False)
+
+    def get_guide_visibility(self, obj):
+        return getattr(obj, "guide_visibility", None)
+
+    def get_guide_tools_public(self, obj):
+        return bool(getattr(obj, "guide_tools_public", False))
 
 
 class LeagueOfHeroesViewSet(ViewSet):

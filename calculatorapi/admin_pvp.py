@@ -104,6 +104,7 @@ from .models import (
     PvpDeck,
     PvpDeckSlot,
     PvpGuide,
+    PvpGuideVisibility,
     PvpSkillRecommendation,
     PvpStatConfig,
     PvpStyleNote,
@@ -806,7 +807,7 @@ class PvpGuideForm(MentionAwareForm):
     class Meta:
         model = PvpGuide
         fields = (
-            "scenario", "is_published", "under_construction", "style_ranking",
+            "scenario", "visibility", "tools_public", "under_construction", "style_ranking",
             "short_description", "meta_analysis", "admin_comments",
         )
 
@@ -894,20 +895,22 @@ class PvpGuideAdmin(ModelAdmin):
 
     list_display = (
         "event_name", "kind", "starts", "scenario", "filled", "deck_count",
-        "is_published", "updated_at",
+        "visibility", "tools_public", "updated_at",
     )
     list_display_links = ("event_name",)
-    list_editable = ("is_published",)
-    list_filter = ("is_published", EventKindFilter, "scenario")
+    # The model's constraint is checked on these too: ticking My team and
+    # Gallery on a Supporters row is a form error, not a database one.
+    list_editable = ("visibility", "tools_public")
+    list_filter = ("visibility", EventKindFilter, "scenario")
     list_select_related = ("champions_meeting", "league_of_heroes", "scenario")
     search_fields = ("champions_meeting__name", "league_of_heroes__name")
     autocomplete_fields = ("scenario",)
-    actions = ("publish_selected", "unpublish_selected")
+    actions = ("make_public_selected", "make_supporters_selected", "make_private_selected")
     actions_detail = ("open_on_site", "copy_from_guide", "load_from_sheet", "fill_track_greens")
     readonly_fields = ("site_link", "updated_at")
     fieldsets = (
         (None, {
-            "fields": ("event", "scenario", "is_published", "under_construction", "site_link"),
+            "fields": ("event", "scenario", "visibility", "tools_public", "under_construction", "site_link"),
         }),
         ("Overview", {
             "fields": ("style_ranking", "short_description", "meta_analysis"),
@@ -998,11 +1001,14 @@ class PvpGuideAdmin(ModelAdmin):
     def site_link(self, obj):
         if obj is None or obj.pk is None:
             return "Save the guide first. Then it can be opened on the site."
-        state = (
-            "Published, everyone sees it."
-            if obj.is_published
-            else "Draft: only signed-in staff see it on the site."
-        )
+        state = {
+            PvpGuideVisibility.PUBLIC: (
+                "Public, everyone sees it, My team and Gallery too." if obj.tools_public
+                else "Public, everyone sees it."
+            ),
+            PvpGuideVisibility.SUPPORTERS: "Supporters: Patreon supporters and early access see it.",
+            PvpGuideVisibility.PRIVATE: "Private: only signed-in staff see it on the site.",
+        }[obj.visibility]
         return format_html(
             '{} <a href="{}" target="_blank" rel="noopener">Open on the site</a>',
             state, site_url(obj),
@@ -1032,15 +1038,16 @@ class PvpGuideAdmin(ModelAdmin):
         return response
 
     def save_related(self, request, form, formsets, change):
-        """Every admin save (the page, and the list's Published checkbox,
+        """Every admin save (the page, and the list's visibility columns,
         which Django routes here too with no formsets) records a revision,
         so the site's editor and this page share one history
-        (pvp_guide_revisions.py). A flip of Published is recorded as such."""
+        (pvp_guide_revisions.py). A change of who sees it is recorded as a
+        publish or an unpublish, as pvp_guide_editing.set_visibility does."""
         super().save_related(request, form, formsets, change)
         guide = form.instance
-        if "is_published" in form.changed_data:
+        if {"visibility", "tools_public"} & set(form.changed_data):
             source = (
-                PvpGuideRevisionSource.PUBLISH if guide.is_published
+                PvpGuideRevisionSource.PUBLISH if guide.is_out_of_draft
                 else PvpGuideRevisionSource.UNPUBLISH
             )
         else:
@@ -1055,21 +1062,27 @@ class PvpGuideAdmin(ModelAdmin):
 
     # ── Bulk actions ──
 
-    @admin.action(description="Publish selected guides")
-    def publish_selected(self, request, queryset):
+    def _set_visibility(self, request, queryset, visibility, label):
         count = 0
         for guide in queryset:
-            pvp_guide_editing.publish(guide, request.user, True)
+            # Public keeps each guide's My team and Gallery switch; the other
+            # two clear it (it only exists on a Public guide).
+            tools = guide.tools_public and visibility == PvpGuideVisibility.PUBLIC
+            pvp_guide_editing.set_visibility(guide, request.user, visibility, tools)
             count += 1
-        self.message_user(request, f"Published {count} guide(s).", messages.SUCCESS)
+        self.message_user(request, f"{count} guide(s) set to {label}.", messages.SUCCESS)
 
-    @admin.action(description="Unpublish selected guides (back to draft)")
-    def unpublish_selected(self, request, queryset):
-        count = 0
-        for guide in queryset:
-            pvp_guide_editing.publish(guide, request.user, False)
-            count += 1
-        self.message_user(request, f"Unpublished {count} guide(s).", messages.SUCCESS)
+    @admin.action(description="Make selected guides Public")
+    def make_public_selected(self, request, queryset):
+        self._set_visibility(request, queryset, PvpGuideVisibility.PUBLIC, "Public")
+
+    @admin.action(description="Make selected guides Supporters only")
+    def make_supporters_selected(self, request, queryset):
+        self._set_visibility(request, queryset, PvpGuideVisibility.SUPPORTERS, "Supporters")
+
+    @admin.action(description="Make selected guides Private (back to draft)")
+    def make_private_selected(self, request, queryset):
+        self._set_visibility(request, queryset, PvpGuideVisibility.PRIVATE, "Private")
 
     # ── Detail actions (the buttons at the top of the page) ──
 
@@ -1259,7 +1272,7 @@ class PvpGuideLinkMixin:  # pylint: disable=too-few-public-methods
             return format_html(
                 '<a href="{}">Open the guide</a> ({})',
                 reverse("admin:calculatorapi_pvpguide_change", args=(guide.pk,)),
-                "published" if guide.is_published else "draft, staff only",
+                guide.get_visibility_display().lower(),
             )
         kind = "cm" if isinstance(obj, ChampionsMeeting) else "loh"
         return format_html(

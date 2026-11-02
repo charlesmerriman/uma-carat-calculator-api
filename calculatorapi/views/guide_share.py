@@ -14,13 +14,13 @@ older /app/pvp?event=… link still works, with the plain preview.
 
 WHAT THE PREVIEW SAYS (owner, 2026-10-24, guide-visuals-plan-2.md release D)
 ---------------------------------------------------------------------------
-- A published guide everyone may read today (pvp_gate.guide_is_open): the
-  facts only, never the guide's prose. Its style ranking, its stat targets
+- A Public guide (guide_access.open_to_everyone): the facts only, never the
+  guide's prose. Its style ranking, its stat targets
   (the "everyone" row, else the first) and the course; the picture says the
   same over the event's art.
-- A guide the early-access gate still holds back, a draft, or an event with
-  no guide yet: the event alone (its name, course and dates), so a pasted
-  link never gives away what the gate keeps for supporters.
+- A Supporters guide, a Private one, or an event with no guide yet: the
+  event alone (its name, course and dates), so a pasted link never gives
+  away what is kept for supporters (guide-visibility-plan.md).
 - An address that names no event: the site's own tags, a 200 (like /plan).
 Never an editor's name, a comment, or anything else about a person.
 
@@ -33,7 +33,7 @@ from django.conf import settings
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 
-from calculatorapi import guide_preview, pvp_gate
+from calculatorapi import guide_access, guide_preview, pvp_guide_editing
 from calculatorapi.models import PvpGuide
 from calculatorapi.predictions import build_effective_date_maps
 from calculatorapi.share_card import HEIGHT, WIDTH
@@ -42,6 +42,8 @@ from calculatorapi.views.gallery_share import IMMUTABLE, SITE_DESCRIPTION, SITE_
 from calculatorapi.views.pvp_guide import EVENT_FIELD_FOR_KIND
 
 REF = re.compile(r"^(cm|loh)-(\d+)$")
+# The URL's kind -> the event model, as GET /pvp-guides/<kind>/<id> reads it.
+EVENT_MODELS = {kind: model for kind, (model, _) in pvp_guide_editing.EVENT_FOR_KIND.items()}
 # What ?style= may carry through to the page: its running styles and "all".
 STYLES = ("runaway", "front", "pace", "late", "end", "all")
 OPEN_LABEL = "Open this guide on Uma Musume Carat Calculator"
@@ -98,7 +100,7 @@ def _lookup(ref):
     if not match:
         return None
     kind, event_id = match.group(1), int(match.group(2))
-    event = pvp_gate.EVENT_MODELS[kind].objects.filter(pk=event_id).first()
+    event = EVENT_MODELS[kind].objects.filter(pk=event_id).first()
     return (kind, event) if event else None
 
 
@@ -188,16 +190,16 @@ def _day(moment):
 
 def _dates(maps, kind, event):
     """ "2026/10/31 through 2026/11/6", the effective dates, or ""."""
-    dates = maps[pvp_gate.EVENT_MODELS[kind]].get(event.id) or {}
+    dates = maps[EVENT_MODELS[kind]].get(event.id) or {}
     start, end = dates.get("start_date"), dates.get("end_date")
     if not start:
         return ""
     return f"{_day(start)} through {_day(end)}" if end else _day(start)
 
 
-def _published_guide(kind, event):
+def _guide(kind, event):
     return (
-        PvpGuide.objects.filter(is_published=True, **{EVENT_FIELD_FOR_KIND[kind]: event.id})
+        PvpGuide.objects.filter(**{EVENT_FIELD_FOR_KIND[kind]: event.id})
         .prefetch_related("stat_configs")
         .first()
     )
@@ -207,8 +209,8 @@ def _facts(kind, event):
     """Everything the page and the picture say, decided once: (open guide or
     None, card)."""
     maps = build_effective_date_maps()
-    guide = _published_guide(kind, event)
-    if guide is not None and not pvp_gate.guide_is_open(kind, event, maps=maps):
+    guide = _guide(kind, event)
+    if guide is not None and not guide_access.open_to_everyone(guide):
         guide = None
     _, title = split_event_name(event.name)
     art = event.image or None

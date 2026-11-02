@@ -22,7 +22,7 @@ from django.utils import timezone
 
 from calculatorapi import public_payload_cache, pvp_sheet
 from calculatorapi.content_snapshot import require_local_database
-from calculatorapi.models import PvpGuide
+from calculatorapi.models import PvpGuide, PvpGuideVisibility
 # Re-exported for the tests, which read the parser through this module.
 from calculatorapi.pvp_sheet import (  # noqa: F401  pylint: disable=unused-import
     IMPORT_TAB,
@@ -83,7 +83,8 @@ class Command(BaseCommand):
             return False
         if existing:
             existing.delete()
-        guide = PvpGuide.objects.create(**{field_name: event}, is_published=True)
+        # Supporters, as every published guide was before guide-visibility-plan.md.
+        guide = PvpGuide.objects.create(**{field_name: event}, visibility=PvpGuideVisibility.SUPPORTERS)
         importer.write(
             parsed, guide,
             note=(

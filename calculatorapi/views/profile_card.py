@@ -108,7 +108,7 @@ def _comment_author(comment_id):
         return None
     if comment.post_id and not gallery.visible_posts().filter(pk=comment.post_id).exists():
         return None
-    if comment.guide_id and not comment.guide.is_published:
+    if comment.guide_id and not comment.guide.is_out_of_draft:
         return None
     return comment.author
 

@@ -23,7 +23,7 @@ eight guide tables and nothing else.
 from django.db import IntegrityError, transaction
 
 from . import public_payload_cache, pvp_guide_document, pvp_guide_revisions, pvp_guides
-from .models import ChampionsMeeting, LeagueOfHeroes, PvpGuide, PvpGuideRevisionSource
+from .models import ChampionsMeeting, LeagueOfHeroes, PvpGuide, PvpGuideRevisionSource, PvpGuideVisibility
 
 # The URL's / body's kind -> the guide's FK to that event (pvp_teams' idiom).
 EVENT_FOR_KIND = {
@@ -104,12 +104,30 @@ def save_document(guide, user, data, source=PvpGuideRevisionSource.SITE):
     pvp_guide_revisions.record(guide, user, source)
 
 
-def publish(guide, user, is_published):
-    """Flip the switch. The one write the public payload cares about
-    (has_guide on both race arrays), so it invalidates by hand: update()
-    raises no signal."""
-    PvpGuide.objects.filter(pk=guide.pk).update(is_published=is_published)
-    guide.is_published = is_published
+def set_visibility(guide, user, visibility, tools_public=False):
+    """Who may read the guide, and whether My team and the Gallery open to
+    everyone with it (owner, 2026-11-02, guide-visibility-plan.md).
+
+    The switch is refused on anything but Public, never quietly dropped, so a
+    client that sends it there learns its mistake. The one write the public
+    payload cares about (has_guide, guide_visibility and guide_tools_public
+    on both race arrays), so it invalidates by hand: update() raises no
+    signal.
+
+    The revision says PUBLISH when the guide ends up out of draft and
+    UNPUBLISH when it goes back to Private, so "changed since it was
+    published" keeps comparing against the last time it went out."""
+    if visibility not in PvpGuideVisibility.values:
+        raise GuideRefused("Pick Private, Supporters or Public.")
+    if tools_public and visibility != PvpGuideVisibility.PUBLIC:
+        raise GuideRefused("My team and the Gallery can only be opened on a Public guide.")
+    is_published = visibility != PvpGuideVisibility.PRIVATE
+    # is_published is TRANSITIONAL (models/pvp_guide.py): kept in step until
+    # the column goes.
+    PvpGuide.objects.filter(pk=guide.pk).update(
+        visibility=visibility, tools_public=tools_public, is_published=is_published,
+    )
+    guide.visibility, guide.tools_public, guide.is_published = visibility, tools_public, is_published
     pvp_guide_revisions.record(
         guide, user,
         PvpGuideRevisionSource.PUBLISH if is_published else PvpGuideRevisionSource.UNPUBLISH,
@@ -118,14 +136,14 @@ def publish(guide, user, is_published):
 
 
 def delete_guide(guide):
-    """Delete a DRAFT. A published guide is refused: unpublish first, so a
-    live guide never vanishes on one click."""
-    if guide.is_published:
-        raise GuideRefused("Unpublish the guide before deleting it.")
+    """Delete a DRAFT. A guide anyone but staff can read is refused: make it
+    Private first, so a live guide never vanishes on one click."""
+    if guide.is_out_of_draft:
+        raise GuideRefused("Make the guide private before deleting it.")
     guide.delete()
 
 
 __all__ = [
     "EVENT_FOR_KIND", "GuideRefused", "can_edit", "resolve_event",
-    "create_guide", "save_document", "publish", "delete_guide",
+    "create_guide", "save_document", "set_visibility", "delete_guide",
 ]

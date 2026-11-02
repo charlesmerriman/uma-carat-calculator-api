@@ -993,7 +993,7 @@ erDiagram
   - `PvpGuide.under_construction` (`0120`, Henry 2026-10-24) puts a banner on the reader
     saying the guide is still being updated. A document field like `style_ranking` (it
     autosaves and a revision restores it; optional on input, so an older revision restores
-    it off), and in the admin beside "published".
+    it off), and in the admin beside the visibility.
   - `PvpTeamComp`: free text ("2 Front + 1 Pace") and a note.
 - **`[[Skill name]]` mentions** may appear in any guide text field. `SkillMentionsMixin`
   (`MENTION_FIELDS` per model) refuses a save whose mention matches no skill on global,
@@ -1002,9 +1002,20 @@ erDiagram
   skills a page of their own; `0088` deleted it once the admin became one page per guide
   with a tab per style (`admin_pvp.py`, `admin.md` "PvP guides"). `0089` keeps the
   "(All)" placeholder uma out of `PvpUmaRecommendation.uma` (`limit_choices_to`).
-- **`has_guide`** on both race serializers is an `Exists` over published guides
-  (`views.pvp_guide.annotate_has_guide`). That is why `PvpGuide` is NOT in
-  `public_payload_cache._IRRELEVANT_MODELS` while its eight children are.
+- **Who may read a guide is `PvpGuide.visibility`** (`0126`, owner 2026-11-02,
+  `notes/guide-visibility-plan.md`): `private` (staff only), `supporters` (early access),
+  `public`. `tools_public` opens My team and the Gallery for the event to everyone, and the
+  `tools_public_only_when_public` constraint keeps it on Public guides only.
+  `guide_access.py` is the one place the API decides (`can_read`, `open_to_everyone`); it
+  replaced `pvp_gate.py`, a hand-kept copy of the frontend's old rule (the rolling free
+  guide, `PVP_OPEN_CM_NUMBER`). `PvpGuide.objects.published()` and
+  `PUBLISHED_VISIBILITIES` are "out of draft", what `is_published=True` meant.
+  **`is_published` is TRANSITIONAL**: `save()` and `set_visibility` keep it equal to
+  "not Private" for the old code during the deploy; release 2 drops it.
+- **`has_guide`, `guide_visibility`, `guide_tools_public`** on both race serializers are
+  annotations over the guide (`views.pvp_guide.annotate_has_guide`). That is why
+  `PvpGuide` is NOT in `public_payload_cache._IRRELEVANT_MODELS` while its eight children
+  are.
 - **`merge_duplicate_umas` / `_support_cards`** re-point the uma and card FKs here like
   any other; a re-point that would collide with one of the unique constraints is dropped,
   as the command does everywhere.
@@ -1016,7 +1027,7 @@ erDiagram
 - **Test content:** `manage.py load_sheet_pvp_guides` (LOCAL SQLite only, refuses any
   other database) reads the community sheet's `PvP ImportRange` tab (CM #14 onward, LoH #1
   onward, cards keyed by game id) and the per-cup tabs (`Virgo Cup`, `Capricorn Cup`,
-  `Aquarius Cup`) and writes published guides, listing whatever it could not match. It
+  `Aquarius Cup`) and writes Supporters guides, listing whatever it could not match. It
   wraps whole skill names found in the sheet's prose as `[[...]]` (one-word names only in
   their exact capitals, minus a stoplist of ordinary words like "Runaway" and
   "Acceleration") and turns each "Rec. Accel" line into ordered acceleration picks.
@@ -1037,9 +1048,11 @@ rows. Two things ride on it:
   `pvp_guide_revisions.record`. The editor sends the version its document started from and a
   save over a newer one is a `409` with the current document, so two editors never silently
   overwrite each other. The guide row is written with `update()`, never `save()`: `PvpGuide`
-  is not in `public_payload_cache._IRRELEVANT_MODELS` (its `is_published` feeds `has_guide`),
+  is not in `public_payload_cache._IRRELEVANT_MODELS` (its `visibility` feeds `has_guide`),
   and a `save()` on every autosave would drop the whole payload, the 2026-09-23 shape.
-  Publishing (`pvp_guide_editing.publish`) invalidates by hand.
+  A new visibility (`pvp_guide_editing.set_visibility`) invalidates by hand; it records a
+  `publish` revision when the guide ends up out of draft and `unpublish` when it goes
+  back to Private.
 - **`PvpGuideRevision`** (`models/pvp_guide_revision.py`): one row per save, `document`
   (the same JSON), `author` (SET_NULL; the handle is all the editor shows), `source`
   (`site`, `admin`, `sheet`, `copy`, `track_greens`, `restore`, `publish`, `unpublish`),
