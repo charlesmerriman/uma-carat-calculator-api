@@ -791,6 +791,13 @@ Each guide uma carries `apt`, its ten aptitudes as `/pvp-catalogue` sends them (
 G..S, null when not imported). The guide draws this course's distance and the row's style
 as letters on the tile.
 
+`course_shape` is the event's course path for the course map's track view, or `null` when
+the event has no course, its map is hidden, or the course has no path file (a straight
+course; the client draws the schematic then): 1,001 `[x, y]` points in metres, point i at
+i / 1000 of the race, already in screen axes (y down, finish along the bottom; see
+`RaceCourse.shape` in `data-model.md`). It is here and nowhere else (owner, 2026-10-29):
+about 10 KB the Timeline never needs, so `/calculator-data` stays small.
+
 `skill_mentions` resolves every `[[Skill name]]` written in the guide's text: `{lower-case
 name: skill object}` (the same shape as `skill` above), skills on global only, matched
 ignoring case. The client renders a mention it finds here as a skill chip and any other as

@@ -38,7 +38,7 @@ from calculatorapi.course_shapes import (
     to_screen,
     trim_at_finish,
 )
-from calculatorapi.models import ChampionsMeeting, RaceCourse
+from calculatorapi.models import ChampionsMeeting, PvpGuide, RaceCourse
 from calculatorapi.tests.base import PLAIN_TEST_STORAGES, CalculatorTestCase
 from calculatorapi.tests.factories import (
     make_champions_meeting,
@@ -512,3 +512,31 @@ class RaceCourseAdminPageTests(CalculatorTestCase):
                                 {"bundle": SimpleUploadedFile("x.json", b"nope"), "dry_run": "on"})
         self.assertContains(page, "doesn&#x27;t read as JSON")
 
+
+
+class GuideCourseShapeTests(CalculatorTestCase):
+    """The guide payload carries the course's real shape, and nothing else does (PR 3)."""
+
+    def setUp(self):
+        make_ranks()
+        self.cm = make_champions_meeting(cm_number=21)
+        PvpGuide.objects.create(champions_meeting=self.cm, visibility="public")
+
+    def shape(self):
+        return APIClient().get(f"/pvp-guides/cm/{self.cm.id}").json()["course_shape"]
+
+    def test_a_linked_course_sends_its_1001_point_shape(self):
+        self.cm.course = make_course(10701)
+        self.cm.save()
+        shape = self.shape()
+        self.assertEqual(len(shape), 1001)
+        # Screen axes, finish at the bottom: the last point sits below the middle.
+        self.assertGreater(shape[-1][1], sum(y for _, y in shape) / len(shape))
+
+    def test_no_course_a_hidden_map_or_no_path_sends_null(self):
+        self.assertIsNone(self.shape())
+        self.cm.course = make_course(10701, show_map=False)
+        self.cm.save()
+        self.assertIsNone(self.shape())
+        RaceCourse.objects.filter(pk=self.cm.course_id).update(show_map=True, shape=None)
+        self.assertIsNone(self.shape())

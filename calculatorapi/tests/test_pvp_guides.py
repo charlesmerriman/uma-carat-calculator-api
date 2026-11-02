@@ -226,7 +226,7 @@ class GuideEndpointTests(CalculatorTestCase):
             "style_ranking",
             "short_description", "meta_analysis", "under_construction", "team_comps",
             "stat_configs", "uma_recommendations", "skill_recommendations", "style_notes",
-            "decks", "skill_mentions", "comment_counts",
+            "decks", "skill_mentions", "comment_counts", "course_shape",
         })
         self.assertNotIn("admin_comments", body)
         self.assertEqual(body["event_type"], "champions_meeting")
