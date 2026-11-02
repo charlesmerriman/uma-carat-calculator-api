@@ -1,6 +1,6 @@
 {
  "region": "jp",
- "extracted_at": "2026-11-02T19:58:53+00:00",
+ "extracted_at": "2026-11-02T22:17:08+00:00",
  "mdb_size_bytes": 35319808,
  "mdb_modified_at": "2026-11-02T19:58:46+00:00",
  "counts": {
@@ -11,6 +11,8 @@
   "support_hints": 4029,
   "evolutions_outfit": 636,
   "evolutions_scenario": 53,
-  "evolutions_succession": 3
+  "evolutions_succession": 3,
+  "race_links_champions": 50,
+  "race_links_heroes": 16
  }
 }

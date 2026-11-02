@@ -89,6 +89,18 @@ result depends on which tests ran before it.
 | `merge_duplicate_support_cards` | The same merge for support cards (it subclasses the uma command): folds "Daiichi Ruby (Rerun)", which has no `game_id` and so can never be reached by the import, into the card with the same image id. `--dry-run` first |
 | `merge_duplicate_umas` | Folds a `(Rerun)` copy of an uma into the original by image id, re-pointing every row that referenced it. Run before any migration that makes uma ids unique; `--dry-run` first |
 
+**The course map's data** (notes/course-map-plan.md) is two scripts and two admin buttons,
+never a deploy step:
+
+- `scripts/build_course_bundle.py <Data-*.zip ...> --out <scratch>/course_bundle_jp.json`
+  turns Daptrius's Drive zips into the bundle an editor uploads on Race courses ("Import
+  courses"). It reads the zips directly (the unzipped folders miss files), takes English
+  racecourse names from the Global client's `master.mdb`, and prints what it cleaned up; run
+  `--report-only` first. `--out` must be outside the workspace.
+- `scripts/extract_master_snapshot.py --region jp` also writes `jp_snapshot/race_links.json`
+  (each CM's and LoH's course), which "Link courses" reads. A JP snapshot refresh is what
+  brings a new event's course.
+
 Four more are one-off data repairs, kept for the record: `classify_banner_categories`,
 `backfill_race_prep_supports`, `fix_support_card_variants` and `repair_launch_banner`.
 

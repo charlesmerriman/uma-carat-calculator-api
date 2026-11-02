@@ -2202,6 +2202,20 @@ Same **resolved-date** contract as `BannerTimeline`: `start_date`/`end_date` are
 
 **Course details.** `track` through `direction` are hand-entered in the admin and unknown until a meeting is announced. The columns are non-null, so "unknown" is a **sentinel, not a null**: `"TBD"`. Clients should treat it as "not announced" rather than displaying it raw.
 
+**`course`**: the course the map draws, from the game's own files (`RaceCourse`, `views/race_course.py`), or `null` when the event has none yet or an editor hid its map. Every number is metres from the gate; a stretch in none of `corners`, `straights` and `slopes` is a gap the game leaves. `corners[].number` is the game's own (counted back from the finish in fours, so the final corner is 4; -1 is a normal corner the game numbers oddly). `straights[].front` is the game's straight type. `slopes[].slope` is percent times 10,000 (20000 is a 2% climb, negative is downhill). `surface_changes` lists where the ground changes, e.g. a dirt course that starts on turf. `later_laps` (`inside` / `outside`) is how a course over one lap draws its later laps. The real shape is not here: it travels on the guide payload only. About 0.5 to 1.3 KB an event (2 KB gzipped for every event together).
+
+```json
+"course": {
+  "id": 1, "region": "jp", "game_id": 10701, "racecourse": "Chukyo",
+  "surface": "turf", "distance": 1200, "variant": "", "direction": "left",
+  "corners": [{"start": 300, "length": 250, "number": 3}, {"start": 550, "length": 238, "number": 4}],
+  "straights": [{"start": 0, "length": 300, "front": 2}, {"start": 788, "length": 412, "front": 1}],
+  "slopes": [{"start": 100, "length": 775, "slope": -10000}, {"start": 875, "length": 100, "slope": 20000}],
+  "surface_changes": [],
+  "later_laps": "inside"
+}
+```
+
 **`has_guide`**: whether the event has a PvP guide out of draft, Supporters or Public (`GET /pvp-guides/cm/<id>`); a Private guide counts as none. **`guide_visibility`**: `"supporters"`, `"public"`, or `null` (no guide, or a Private one). **`guide_tools_public`**: whether My team and the Gallery open to everyone with it (only ever on a Public guide). The page decides what a reader without early access may open from these two. Annotations (`views.pvp_guide.annotate_has_guide`), so changing who may read a guide drops the cached payload. The five `*_recommendation` stat fields left the wire with the PvP guide (2026-10); the guide's `stat_configs` replace them.
 
 ```json
@@ -2222,6 +2236,7 @@ Same **resolved-date** contract as `BannerTimeline`: `start_date`/`end_date` are
   "image": "url | null",
   "track": "string", "surface_type": "string", "distance": "string", "length": "string",
   "track_condition": "string", "season": "string", "weather": "string", "direction": "string",
+  "course": "RaceCourse (above) | null",
   "has_guide": false,
   "guide_visibility": null,
   "guide_tools_public": false
@@ -2232,7 +2247,7 @@ Same **resolved-date** contract as `BannerTimeline`: `start_date`/`end_date` are
 
 Same resolved-date contract as above, with its own anchor set (schedule offsets excepted — those cascade across all three content types). Note the standalone `GET /leagueofheroes` route serves raw confirmed dates only (`is_predicted` is always `false` and `applied_offset_days` always 0 there); predictions and offsets are emitted only via `GET /calculator-data`.
 
-**Identical to `ChampionsMeeting` apart from `event_type` and `loh_number`** — same course details, same `"TBD"` sentinel, same `has_guide` — because the two render through one shared timeline card. Treat them as one shape with two tags: a field added to one belongs on the other.
+**Identical to `ChampionsMeeting` apart from `event_type` and `loh_number`** — same course details, same `"TBD"` sentinel, same `course`, same `has_guide` — because the two render through one shared timeline card. Treat them as one shape with two tags: a field added to one belongs on the other.
 
 ```json
 {
@@ -2252,6 +2267,7 @@ Same resolved-date contract as above, with its own anchor set (schedule offsets 
   "image": "url | null",
   "track": "string", "surface_type": "string", "distance": "string", "length": "string",
   "track_condition": "string", "season": "string", "weather": "string", "direction": "string",
+  "course": "RaceCourse (above) | null",
   "has_guide": false,
   "guide_visibility": null,
   "guide_tools_public": false

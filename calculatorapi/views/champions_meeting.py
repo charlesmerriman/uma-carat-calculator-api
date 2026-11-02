@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from calculatorapi.models import ChampionsMeeting
 from .mixins import EffectiveDateMixin, EventTypeMixin
+from .race_course import course_payload
 
 
 class ChampionsMeetingSerializer(EventTypeMixin, EffectiveDateMixin, serializers.ModelSerializer):
@@ -10,6 +11,8 @@ class ChampionsMeetingSerializer(EventTypeMixin, EffectiveDateMixin, serializers
     # (annotate_has_guide; guide-visibility-plan.md).
     guide_visibility = serializers.SerializerMethodField()
     guide_tools_public = serializers.SerializerMethodField()
+    # The course the map draws, or null (views/race_course.py).
+    course = serializers.SerializerMethodField()
     event_type_value = "champions_meeting"
 
     class Meta:
@@ -24,6 +27,7 @@ class ChampionsMeetingSerializer(EventTypeMixin, EffectiveDateMixin, serializers
             "image",
             "track", "surface_type", "distance", "length",
             "track_condition", "season", "weather", "direction",
+            "course",
             "has_guide", "guide_visibility", "guide_tools_public",
         )
 
@@ -37,3 +41,6 @@ class ChampionsMeetingSerializer(EventTypeMixin, EffectiveDateMixin, serializers
 
     def get_guide_tools_public(self, obj):
         return bool(getattr(obj, "guide_tools_public", False))
+
+    def get_course(self, obj):
+        return course_payload(obj)
