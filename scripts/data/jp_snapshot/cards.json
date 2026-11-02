@@ -2682,6 +2682,114 @@
   ]
  },
  {
+  "id": 100903,
+  "chara_id": 1009,
+  "chara_name": "ダイワスカーレット",
+  "name": "[陣風の花紺青]ダイワスカーレット",
+  "title": "[陣風の花紺青]",
+  "default_rarity": 3,
+  "running_style": "front",
+  "growth": {
+   "speed": 0,
+   "stamina": 5,
+   "power": 10,
+   "guts": 0,
+   "wit": 15
+  },
+  "stars": [
+   {
+    "star": 3,
+    "unique_skill_id": 120091,
+    "stats": {
+     "speed": 82,
+     "stamina": 102,
+     "power": 72,
+     "guts": 102,
+     "wit": 92
+    },
+    "max_stats": {
+     "speed": 1200,
+     "stamina": 1200,
+     "power": 1200,
+     "guts": 1200,
+     "wit": 1200
+    },
+    "aptitude": {
+     "turf": 7,
+     "dirt": 1,
+     "short": 2,
+     "mile": 6,
+     "medium": 7,
+     "long": 7,
+     "front": 7,
+     "pace": 7,
+     "late": 3,
+     "end": 1
+    }
+   },
+   {
+    "star": 4,
+    "unique_skill_id": 120091,
+    "stats": {
+     "speed": 91,
+     "stamina": 114,
+     "power": 80,
+     "guts": 114,
+     "wit": 101
+    },
+    "max_stats": {
+     "speed": 1200,
+     "stamina": 1200,
+     "power": 1200,
+     "guts": 1200,
+     "wit": 1200
+    },
+    "aptitude": {
+     "turf": 7,
+     "dirt": 1,
+     "short": 2,
+     "mile": 6,
+     "medium": 7,
+     "long": 7,
+     "front": 7,
+     "pace": 7,
+     "late": 3,
+     "end": 1
+    }
+   },
+   {
+    "star": 5,
+    "unique_skill_id": 120091,
+    "stats": {
+     "speed": 100,
+     "stamina": 125,
+     "power": 88,
+     "guts": 125,
+     "wit": 112
+    },
+    "max_stats": {
+     "speed": 1200,
+     "stamina": 1200,
+     "power": 1200,
+     "guts": 1200,
+     "wit": 1200
+    },
+    "aptitude": {
+     "turf": 7,
+     "dirt": 1,
+     "short": 2,
+     "mile": 6,
+     "medium": 7,
+     "long": 7,
+     "front": 7,
+     "pace": 7,
+     "late": 3,
+     "end": 1
+    }
+   }
+  ]
+ },
+ {
   "id": 101001,
   "chara_id": 1010,
   "chara_name": "タイキシャトル",
@@ -26070,6 +26178,114 @@
      "power": 116,
      "guts": 104,
      "wit": 104
+    },
+    "max_stats": {
+     "speed": 1200,
+     "stamina": 1200,
+     "power": 1200,
+     "guts": 1200,
+     "wit": 1200
+    },
+    "aptitude": {
+     "turf": 7,
+     "dirt": 1,
+     "short": 1,
+     "mile": 7,
+     "medium": 7,
+     "long": 5,
+     "front": 1,
+     "pace": 5,
+     "late": 7,
+     "end": 7
+    }
+   }
+  ]
+ },
+ {
+  "id": 110802,
+  "chara_id": 1108,
+  "chara_name": "ドゥラメンテ",
+  "name": "[Claret Nosferatu]ドゥラメンテ",
+  "title": "[Claret Nosferatu]",
+  "default_rarity": 3,
+  "running_style": "late",
+  "growth": {
+   "speed": 8,
+   "stamina": 0,
+   "power": 0,
+   "guts": 8,
+   "wit": 14
+  },
+  "stars": [
+   {
+    "star": 3,
+    "unique_skill_id": 111081,
+    "stats": {
+     "speed": 101,
+     "stamina": 105,
+     "power": 91,
+     "guts": 75,
+     "wit": 78
+    },
+    "max_stats": {
+     "speed": 1200,
+     "stamina": 1200,
+     "power": 1200,
+     "guts": 1200,
+     "wit": 1200
+    },
+    "aptitude": {
+     "turf": 7,
+     "dirt": 1,
+     "short": 1,
+     "mile": 7,
+     "medium": 7,
+     "long": 5,
+     "front": 1,
+     "pace": 5,
+     "late": 7,
+     "end": 7
+    }
+   },
+   {
+    "star": 4,
+    "unique_skill_id": 111081,
+    "stats": {
+     "speed": 112,
+     "stamina": 117,
+     "power": 101,
+     "guts": 84,
+     "wit": 86
+    },
+    "max_stats": {
+     "speed": 1200,
+     "stamina": 1200,
+     "power": 1200,
+     "guts": 1200,
+     "wit": 1200
+    },
+    "aptitude": {
+     "turf": 7,
+     "dirt": 1,
+     "short": 1,
+     "mile": 7,
+     "medium": 7,
+     "long": 5,
+     "front": 1,
+     "pace": 5,
+     "late": 7,
+     "end": 7
+    }
+   },
+   {
+    "star": 5,
+    "unique_skill_id": 111081,
+    "stats": {
+     "speed": 123,
+     "stamina": 129,
+     "power": 111,
+     "guts": 92,
+     "wit": 95
     },
     "max_stats": {
      "speed": 1200,

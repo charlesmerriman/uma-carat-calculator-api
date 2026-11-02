@@ -11450,6 +11450,56 @@
   ]
  },
  {
+  "id": 111081,
+  "name": "かくて宿りし血は目覚め",
+  "description": "終盤が迫ったどこかで中団だと\\n少しの間速度がすごく上がる\\n中距離レースなら少しの間\\nものすごく上がる",
+  "rarity": 5,
+  "group_id": 11108,
+  "group_rate": 1,
+  "icon_id": 0,
+  "skill_category": 5,
+  "cost": null,
+  "precondition_1": "",
+  "condition_1": "phase_laterhalf_random==1&order_rate<=90&order_rate>=30&distance_type==3",
+  "precondition_2": "",
+  "condition_2": "phase_laterhalf_random==1&order_rate<=90&order_rate>=30",
+  "activate_lot": 0,
+  "effects": [
+   {
+    "duration": 40000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 27,
+      "value": 5500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   },
+   {
+    "duration": 40000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 27,
+      "value": 4500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
   "id": 111091,
   "name": "ずっとずっと輝いて",
   "description": "トリプルティアラのコースだと終盤\\n以降のコーナーで少しの間少し前に出る\\nさらにそこが下り坂なら\\n加速力がわずかに上がる",
@@ -12166,6 +12216,56 @@
      {
       "type": 27,
       "value": 3500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": 120091,
+  "name": "究竟の弓勢",
+  "description": "中盤始めのどこかで先団だと速度を\\n上げ続ける、長距離レースならその後\\n全開スパート中どこかで3番手以内だと\\n短い間少し伸びを見せる＜逃げ・芝＞",
+  "rarity": 5,
+  "group_id": 12009,
+  "group_rate": 1,
+  "icon_id": 0,
+  "skill_category": 5,
+  "cost": null,
+  "precondition_1": "",
+  "condition_1": "running_style==1&ground_type==1&phase_firsthalf_random==1&order_rate<=40",
+  "precondition_2": "",
+  "condition_2": "is_activate_other_skill_detail==1&run_at_full_speed_random==1&order<=3&distance_type==4",
+  "activate_lot": 0,
+  "effects": [
+   {
+    "duration": 60000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 27,
+      "value": 3500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   },
+   {
+    "duration": 20000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 48,
+      "value": 3000,
       "value_usage": 1,
       "value_level_usage": 1,
       "additional_activate_type": 0,
@@ -44714,6 +44814,244 @@
   ]
  },
  {
+  "id": 204731,
+  "name": "機転",
+  "description": "レース後半に\\n追い抜こうとするか近寄られると\\nしばらくの間速度が少し上がる\\n＜中距離＞",
+  "rarity": 2,
+  "group_id": 20473,
+  "group_rate": 2,
+  "icon_id": 0,
+  "skill_category": 4,
+  "cost": 180,
+  "precondition_1": "",
+  "condition_1": "distance_type==3&distance_rate>=50&is_overtake==1@distance_type==3&distance_rate>=50&overtake_target_time>=1",
+  "precondition_2": "",
+  "condition_2": "",
+  "activate_lot": 1,
+  "effects": [
+   {
+    "duration": 40000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 27,
+      "value": 2500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": 204732,
+  "name": "如才なし",
+  "description": "レース後半に\\n追い抜こうとするか近寄られると\\nしばらくの間速度がちょっと上がる\\n＜中距離＞",
+  "rarity": 1,
+  "group_id": 20473,
+  "group_rate": 1,
+  "icon_id": 0,
+  "skill_category": 4,
+  "cost": 180,
+  "precondition_1": "",
+  "condition_1": "distance_type==3&distance_rate>=50&is_overtake==1@distance_type==3&distance_rate>=50&overtake_target_time>=1",
+  "precondition_2": "",
+  "condition_2": "",
+  "activate_lot": 1,
+  "effects": [
+   {
+    "duration": 40000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 27,
+      "value": 500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": 204741,
+  "name": "希代の才覚",
+  "description": "レース序盤または中盤に\\n追い抜かれるか競り合うと\\n前に出る＜長距離＞",
+  "rarity": 2,
+  "group_id": 20474,
+  "group_rate": 2,
+  "icon_id": 0,
+  "skill_category": 4,
+  "cost": 180,
+  "precondition_1": "",
+  "condition_1": "distance_type==4&phase<=1&change_order_onetime>0&accumulatetime>=5@distance_type==4&phase<=1&blocked_side_continuetime>=2&accumulatetime>=5",
+  "precondition_2": "",
+  "condition_2": "",
+  "activate_lot": 1,
+  "effects": [
+   {
+    "duration": 30000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 22,
+      "value": 3500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": 204742,
+  "name": "直感力",
+  "description": "レース序盤または中盤に\\n追い抜かれるか競り合うと\\nわずかに前に出る＜長距離＞",
+  "rarity": 1,
+  "group_id": 20474,
+  "group_rate": 1,
+  "icon_id": 0,
+  "skill_category": 4,
+  "cost": 180,
+  "precondition_1": "",
+  "condition_1": "distance_type==4&phase<=1&change_order_onetime>0&accumulatetime>=5@distance_type==4&phase<=1&blocked_side_continuetime>=2&accumulatetime>=5",
+  "precondition_2": "",
+  "condition_2": "",
+  "activate_lot": 1,
+  "effects": [
+   {
+    "duration": 30000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 22,
+      "value": 1500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": 204751,
+  "name": "アドバンテージ",
+  "description": "レース中盤が迫ったどこかで前方だと\\n速度が上がる",
+  "rarity": 2,
+  "group_id": 20475,
+  "group_rate": 2,
+  "icon_id": 0,
+  "skill_category": 1,
+  "cost": 180,
+  "precondition_1": "",
+  "condition_1": "phase_laterhalf_random==0&order_rate<=50",
+  "precondition_2": "",
+  "condition_2": "",
+  "activate_lot": 1,
+  "effects": [
+   {
+    "duration": 24000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 27,
+      "value": 3500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": 204752,
+  "name": "主導権",
+  "description": "レース中盤が迫ったどこかで前方だと\\n速度がわずかに上がる",
+  "rarity": 1,
+  "group_id": 20475,
+  "group_rate": 1,
+  "icon_id": 0,
+  "skill_category": 1,
+  "cost": 180,
+  "precondition_1": "",
+  "condition_1": "phase_laterhalf_random==0&order_rate<=50",
+  "precondition_2": "",
+  "condition_2": "",
+  "activate_lot": 1,
+  "effects": [
+   {
+    "duration": 24000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 27,
+      "value": 1500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": 204762,
+  "name": "死力を尽くして",
+  "description": "全開スパート中どこかで\\nわずかに伸びを見せる＜長距離＞",
+  "rarity": 1,
+  "group_id": 20476,
+  "group_rate": 1,
+  "icon_id": 0,
+  "skill_category": 3,
+  "cost": 180,
+  "precondition_1": "",
+  "condition_1": "run_at_full_speed_random==1&distance_type==4",
+  "precondition_2": "",
+  "condition_2": "",
+  "activate_lot": 1,
+  "effects": [
+   {
+    "duration": 20000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 48,
+      "value": 2000,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
   "id": 204792,
   "name": "遊び心",
   "description": "スピードが十二分に高いとスピードが\\nわずかに上がる、賢さも十二分なら\\n少し上がる＜中距離/長距離＞",
@@ -44753,6 +45091,192 @@
      {
       "type": 1,
       "value": 200000,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": 204801,
+  "name": "抜山蓋世",
+  "description": "レース中盤に追い抜くと\\n前に出る＜作戦・追込＞",
+  "rarity": 2,
+  "group_id": 20480,
+  "group_rate": 2,
+  "icon_id": 0,
+  "skill_category": 2,
+  "cost": 190,
+  "precondition_1": "",
+  "condition_1": "running_style==4&phase==1&change_order_onetime<0",
+  "precondition_2": "",
+  "condition_2": "",
+  "activate_lot": 1,
+  "effects": [
+   {
+    "duration": 30000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 22,
+      "value": 3500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": 204802,
+  "name": "規格外",
+  "description": "レース中盤に追い抜くと\\nわずかに前に出る＜作戦・追込＞",
+  "rarity": 1,
+  "group_id": 20480,
+  "group_rate": 1,
+  "icon_id": 0,
+  "skill_category": 2,
+  "cost": 190,
+  "precondition_1": "",
+  "condition_1": "running_style==4&phase==1&change_order_onetime<0",
+  "precondition_2": "",
+  "condition_2": "",
+  "activate_lot": 1,
+  "effects": [
+   {
+    "duration": 30000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 22,
+      "value": 1500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": 204811,
+  "name": "螺旋のエキスパート",
+  "description": "いずれかのコーナーのどこかで\\n速度が上がる",
+  "rarity": 2,
+  "group_id": 20481,
+  "group_rate": 2,
+  "icon_id": 0,
+  "skill_category": 4,
+  "cost": 160,
+  "precondition_1": "",
+  "condition_1": "all_corner_random==1",
+  "precondition_2": "",
+  "condition_2": "",
+  "activate_lot": 1,
+  "effects": [
+   {
+    "duration": 24000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 27,
+      "value": 3500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": 204812,
+  "name": "弧を描いて",
+  "description": "いずれかのコーナーのどこかで\\n速度がわずかに上がる",
+  "rarity": 1,
+  "group_id": 20481,
+  "group_rate": 1,
+  "icon_id": 0,
+  "skill_category": 4,
+  "cost": 160,
+  "precondition_1": "",
+  "condition_1": "all_corner_random==1",
+  "precondition_2": "",
+  "condition_2": "",
+  "activate_lot": 1,
+  "effects": [
+   {
+    "duration": 24000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 27,
+      "value": 1500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": 204892,
+  "name": "直情",
+  "description": "レース中盤のどこかで速度が\\nわずかに上がる、出遅れていない場合\\n速度が少し上がる＜作戦・逃げ＞",
+  "rarity": 1,
+  "group_id": 20489,
+  "group_rate": 1,
+  "icon_id": 0,
+  "skill_category": 2,
+  "cost": 190,
+  "precondition_1": "",
+  "condition_1": "running_style==1&phase_random==1&is_badstart==0",
+  "precondition_2": "",
+  "condition_2": "running_style==1&phase_random==1",
+  "activate_lot": 1,
+  "effects": [
+   {
+    "duration": 30000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 27,
+      "value": 2500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   },
+   {
+    "duration": 30000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 27,
+      "value": 1500,
       "value_usage": 1,
       "value_level_usage": 1,
       "additional_activate_type": 0,
@@ -46518,6 +47042,74 @@
   "group_id": 21039,
   "group_rate": 1,
   "icon_id": 20361,
+  "skill_category": 3,
+  "cost": 200,
+  "precondition_1": "",
+  "condition_1": "is_lastspurt==1&phase_firsthalf_random==3",
+  "precondition_2": "",
+  "condition_2": "",
+  "activate_lot": 1,
+  "effects": [
+   {
+    "duration": 24000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 27,
+      "value": 1500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": 210401,
+  "name": "名にし負う夢",
+  "description": "レース最終盤始めのどこかで\\nラストスパートの最中なら速度が上がる\\n合計演目Lvが30以上なら効果が増える",
+  "rarity": 2,
+  "group_id": 21040,
+  "group_rate": 2,
+  "icon_id": 20382,
+  "skill_category": 3,
+  "cost": 200,
+  "precondition_1": "",
+  "condition_1": "is_lastspurt==1&phase_firsthalf_random==3",
+  "precondition_2": "",
+  "condition_2": "",
+  "activate_lot": 1,
+  "effects": [
+   {
+    "duration": 24000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 27,
+      "value": 3500,
+      "value_usage": 41,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": 210402,
+  "name": "彼方の呼び声",
+  "description": "レース最終盤始めのどこかで\\nラストスパートの最中なら\\n速度がわずかに上がる",
+  "rarity": 1,
+  "group_id": 21040,
+  "group_rate": 1,
+  "icon_id": 20381,
   "skill_category": 3,
   "cost": 200,
   "precondition_1": "",
@@ -48511,7 +49103,7 @@
  {
   "id": 413021,
   "name": "新しい夢への旅路",
-  "description": "レース中盤に追い抜くか先頭だと\\n速度が上がる、その後最終盤始めの方で\\nラストスパートの最中なら\\n速度がわずかに上がる",
+  "description": "レース中盤に追い抜くか先頭だと\\n速度が上がる、その後最終盤始めの\\nどこかでラストスパートの最中なら\\n速度がわずかに上がる",
   "rarity": 6,
   "group_id": 41302,
   "group_rate": 1,
@@ -48873,6 +49465,235 @@
   "effects": [
    {
     "duration": 30000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 27,
+      "value": 4500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": 415011,
+  "name": "急之舞",
+  "description": "レース後半のどこかですごく前に出て\\n持久力をわずかに回復する",
+  "rarity": 6,
+  "group_id": 41501,
+  "group_rate": 1,
+  "icon_id": 20386,
+  "skill_category": 4,
+  "cost": null,
+  "precondition_1": "",
+  "condition_1": "distance_rate_after_random==50",
+  "precondition_2": "",
+  "condition_2": "",
+  "activate_lot": 1,
+  "effects": [
+   {
+    "duration": 30000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 22,
+      "value": 4500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     },
+     {
+      "type": 9,
+      "value": 150,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": 415021,
+  "name": "吉兆の駆け手",
+  "description": "レース中盤のどこかで\\nしばらくの間前に出る",
+  "rarity": 6,
+  "group_id": 41502,
+  "group_rate": 1,
+  "icon_id": 20386,
+  "skill_category": 2,
+  "cost": null,
+  "precondition_1": "",
+  "condition_1": "phase_random==1",
+  "precondition_2": "",
+  "condition_2": "",
+  "activate_lot": 1,
+  "effects": [
+   {
+    "duration": 40000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 22,
+      "value": 3500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": 415031,
+  "name": "満願成就",
+  "description": "レース中盤のコーナーのどこかで\\nしばらくの間速度が少し上がる\\nその後最終盤始めのどこかで\\nわずかに前に出る",
+  "rarity": 6,
+  "group_id": 41503,
+  "group_rate": 1,
+  "icon_id": 20386,
+  "skill_category": 2,
+  "cost": null,
+  "precondition_1": "",
+  "condition_1": "phase_corner_random==1",
+  "precondition_2": "",
+  "condition_2": "is_activate_other_skill_detail==1&phase_firsthalf_random==3",
+  "activate_lot": 1,
+  "effects": [
+   {
+    "duration": 40000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 27,
+      "value": 2500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   },
+   {
+    "duration": 24000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 22,
+      "value": 1500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": 415041,
+  "name": "捧ぐる願い",
+  "description": "レース最終盤始めのどこかで\\nラストスパートの最中なら\\n速度がすごく上がる",
+  "rarity": 6,
+  "group_id": 41504,
+  "group_rate": 1,
+  "icon_id": 20386,
+  "skill_category": 3,
+  "cost": null,
+  "precondition_1": "",
+  "condition_1": "is_lastspurt==1&phase_firsthalf_random==3",
+  "precondition_2": "",
+  "condition_2": "",
+  "activate_lot": 1,
+  "effects": [
+   {
+    "duration": 24000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 27,
+      "value": 4500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": 415051,
+  "name": "祈りの篝火",
+  "description": "レース終盤始めのどこかで\\nすごく前に出る＜マイル/中距離＞",
+  "rarity": 6,
+  "group_id": 41505,
+  "group_rate": 1,
+  "icon_id": 20386,
+  "skill_category": 3,
+  "cost": null,
+  "precondition_1": "",
+  "condition_1": "distance_type==2&phase_firsthalf_random==2@distance_type==3&phase_firsthalf_random==2",
+  "precondition_2": "",
+  "condition_2": "",
+  "activate_lot": 1,
+  "effects": [
+   {
+    "duration": 24000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 22,
+      "value": 4500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": 415061,
+  "name": "常磐なる誓い",
+  "description": "レース終盤が迫ったどこかで\\n中団以降だと速度がすごく上がる\\n＜短距離＞",
+  "rarity": 6,
+  "group_id": 41506,
+  "group_rate": 1,
+  "icon_id": 20386,
+  "skill_category": 2,
+  "cost": null,
+  "precondition_1": "",
+  "condition_1": "distance_type==1&phase_laterhalf_random==1&order_rate>=40",
+  "precondition_2": "",
+  "condition_2": "",
+  "activate_lot": 1,
+  "effects": [
+   {
+    "duration": 24000,
     "duration_usage": 1,
     "cooldown": 5000000,
     "abilities": [
@@ -58801,6 +59622,40 @@
   ]
  },
  {
+  "id": 911081,
+  "name": "かくて宿りし血は目覚め",
+  "description": "終盤が迫ったどこかで中団だと\\n少しの間速度が少し上がる",
+  "rarity": 1,
+  "group_id": 91108,
+  "group_rate": 2,
+  "icon_id": 0,
+  "skill_category": 5,
+  "cost": 200,
+  "precondition_1": "",
+  "condition_1": "phase_laterhalf_random==1&order_rate<=90&order_rate>=30",
+  "precondition_2": "",
+  "condition_2": "",
+  "activate_lot": 1,
+  "effects": [
+   {
+    "duration": 24000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 27,
+      "value": 2500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
   "id": 911091,
   "name": "ずっとずっと輝いて",
   "description": "トリプルティアラのコースだと\\n終盤以降のコーナーで少しの間\\nちょっと前に出る",
@@ -59381,6 +60236,40 @@
    },
    {
     "duration": 30000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 27,
+      "value": 1500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": 920091,
+  "name": "究竟の弓勢",
+  "description": "中盤始めのどこかで先団だと\\n速度をわずかに上げ続ける\\n＜逃げ・芝＞",
+  "rarity": 1,
+  "group_id": 92009,
+  "group_rate": 2,
+  "icon_id": 0,
+  "skill_category": 5,
+  "cost": 200,
+  "precondition_1": "",
+  "condition_1": "running_style==1&ground_type==1&phase_firsthalf_random==1&order_rate<=40",
+  "precondition_2": "",
+  "condition_2": "",
+  "activate_lot": 1,
+  "effects": [
+   {
+    "duration": 36000,
     "duration_usage": 1,
     "cooldown": 5000000,
     "abilities": [
@@ -64190,6 +65079,90 @@
      {
       "type": 27,
       "value": 5500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": 100903111,
+  "name": "神代も聞かず、この御業",
+  "description": "中盤のどこかで前方だとしばらくの間\\n速度が少し上がる、出遅れていない場合\\nその後最終直線に入ったとき3番手以内\\nだと速度が上がる＜中距離/長距離＞",
+  "rarity": 6,
+  "group_id": 10090311,
+  "group_rate": 1,
+  "icon_id": 0,
+  "skill_category": 2,
+  "cost": null,
+  "precondition_1": "distance_type==3@distance_type==4",
+  "condition_1": "phase_random==1&order_rate<=50",
+  "precondition_2": "",
+  "condition_2": "is_badstart==0&is_activate_other_skill_detail==1&is_last_straight_onetime==1&order<=3",
+  "activate_lot": 1,
+  "effects": [
+   {
+    "duration": 40000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 27,
+      "value": 2500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   },
+   {
+    "duration": 24000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 27,
+      "value": 3500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": 100903211,
+  "name": "御覧じろ、緋色の疾風",
+  "description": "2000m以上のレースなら\\nラストスパートの最中に加速力が上がる\\n＜逃げ・芝＞",
+  "rarity": 6,
+  "group_id": 10090321,
+  "group_rate": 1,
+  "icon_id": 0,
+  "skill_category": 3,
+  "cost": null,
+  "precondition_1": "",
+  "condition_1": "running_style==1&ground_type==1&course_distance>=2000&is_lastspurt==1",
+  "precondition_2": "",
+  "condition_2": "",
+  "activate_lot": 1,
+  "effects": [
+   {
+    "duration": 9000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 31,
+      "value": 4000,
       "value_usage": 1,
       "value_level_usage": 1,
       "additional_activate_type": 0,
@@ -72890,6 +73863,40 @@
      {
       "type": 27,
       "value": 4500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": 104503121,
+  "name": "淀にて大河となりて",
+  "description": "京都レース場なら中盤の直線のどこかで\\n速度がものすごく上がる\\n＜先行・長距離＞",
+  "rarity": 6,
+  "group_id": 10450312,
+  "group_rate": 1,
+  "icon_id": 0,
+  "skill_category": 2,
+  "cost": null,
+  "precondition_1": "",
+  "condition_1": "distance_type==4&running_style==2&track_id==10008&phase_straight_random==1",
+  "precondition_2": "",
+  "condition_2": "",
+  "activate_lot": 1,
+  "effects": [
+   {
+    "duration": 24000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 27,
+      "value": 5500,
       "value_usage": 1,
       "value_level_usage": 1,
       "additional_activate_type": 0,
@@ -84855,6 +85862,115 @@
      {
       "type": 27,
       "value": 1500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": 110802111,
+  "name": "魔の刻、来たれり",
+  "description": "レース中盤のどこかで前に出る\\n中距離レースでスキル発動時\\n中団以降だとものすごく前に出る\\n＜差し/追込＞",
+  "rarity": 6,
+  "group_id": 11080211,
+  "group_rate": 1,
+  "icon_id": 0,
+  "skill_category": 2,
+  "cost": null,
+  "precondition_1": "running_style==3@running_style==4",
+  "condition_1": "phase_random==1&order_rate>=40&distance_type==3",
+  "precondition_2": "running_style==3@running_style==4",
+  "condition_2": "phase_random==1",
+  "activate_lot": 1,
+  "effects": [
+   {
+    "duration": 24000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 22,
+      "value": 5500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   },
+   {
+    "duration": 24000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 22,
+      "value": 3500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": 110802211,
+  "name": "喰らえども、喰らえども",
+  "description": "レース中盤に追い抜くと前に出る\\nさらに中距離レースなら加えて\\nわずかに前に出る＜差し/追込＞",
+  "rarity": 6,
+  "group_id": 11080221,
+  "group_rate": 1,
+  "icon_id": 0,
+  "skill_category": 2,
+  "cost": null,
+  "precondition_1": "running_style==3@running_style==4",
+  "condition_1": "phase==1&change_order_onetime<0&distance_type==3",
+  "precondition_2": "running_style==3@running_style==4",
+  "condition_2": "phase==1&change_order_onetime<0",
+  "activate_lot": 1,
+  "effects": [
+   {
+    "duration": 30000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 22,
+      "value": 3500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     },
+     {
+      "type": 22,
+      "value": 1500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   },
+   {
+    "duration": 30000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 22,
+      "value": 3500,
       "value_usage": 1,
       "value_level_usage": 1,
       "additional_activate_type": 0,
