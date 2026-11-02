@@ -332,7 +332,9 @@ class HasGuideTests(CalculatorTestCase):
             "Supporters": (True, "supporters", False),
         })
         loh = body["league_of_heroes_event_data"][0]
-        self.assertEqual((loh["has_guide"], loh["guide_visibility"], loh["guide_tools_public"]), (True, "public", False))
+        self.assertEqual(
+            (loh["has_guide"], loh["guide_visibility"], loh["guide_tools_public"]), (True, "public", False),
+        )
 
     def test_the_five_recommendation_keys_are_gone(self):
         body = self.client.get("/calculator-data").json()
