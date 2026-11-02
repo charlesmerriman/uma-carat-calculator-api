@@ -804,11 +804,12 @@ class SupportCardAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
     list_filter = ("card_type", "rarity", "is_placeholder", PURPOSE_FILTER)
     ordering = ("name",)
     search_fields = ("name", "=game_id")  # required: autocomplete source for banner inlines
-    readonly_fields = ("image_preview", "is_on_global", "global_release_at")
+    readonly_fields = ("image_preview", "borderless_preview", "is_on_global", "global_release_at")
     # Explicit since purpose arrived: Django's every-field default form had
     # nowhere to say that one of these boxes is public.
     fieldsets = (
-        (None, {"fields": ("name", "game_id", "image", "image_preview", "is_placeholder",
+        (None, {"fields": ("name", "game_id", "image", "image_preview",
+                           "image_borderless", "borderless_preview", "is_placeholder",
                            "admin_comments")}),
         PURPOSE_FIELDSET,
         ("Game data", {
@@ -821,6 +822,16 @@ class SupportCardAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
                        "group_members"),
         }),
     )
+
+    @admin.display(description="Borderless preview")
+    def borderless_preview(self, obj):
+        # A 3:4 card, so the same 48px height as the bordered preview.
+        if obj.image_borderless:
+            return format_html(
+                '<img src="{}" style="height: 48px; border-radius: 4px;" />',
+                obj.image_borderless.url,
+            )
+        return "—"
 
 
 @admin.register(GameEvent)

@@ -96,7 +96,7 @@ erDiagram
         string name
         int game_id "unique, nullable; the game's card id, e.g. 102001 = character 1020 outfit 01. The join key for imported game data; the image filename starts with it"
         string image
-        string image_borderless "the same art without the rarity border; umas_borderless/ in the Space; nothing renders it yet"
+        string image_borderless "the same art without the rarity border; umas_borderless/ in the Space; drawn through Uma.portrait"
         string admin_comments
         string purpose "PUBLIC, max 100, never null; the Timeline tile's hover overlay"
         bool is_time_limited
@@ -153,6 +153,7 @@ erDiagram
         string title "IMPORTED: the card's [Title]"
         json group_members "IMPORTED: a group card's umas by name (support_card_group); [] for every other card"
         string image
+        string image_borderless "the game's texture: no frame, no type icon; support_cards_borderless/ in the Space; the site frames it (FramedCard); no fallback to image"
         string admin_comments
         string purpose "PUBLIC, max 100, never null; the Timeline tile's hover overlay"
     }

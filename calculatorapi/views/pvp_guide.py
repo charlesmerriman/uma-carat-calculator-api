@@ -119,9 +119,11 @@ class _UmaSerializer(serializers.ModelSerializer):
 
 
 class _SupportCardSerializer(serializers.ModelSerializer):
+    # `image_borderless` is the texture the deck frames itself (FramedCard),
+    # null when there is none; the deck then draws the bordered `image`.
     class Meta:
         model = SupportCard
-        fields = ("id", "name", "image", "card_type", "rarity")
+        fields = ("id", "name", "image", "image_borderless", "card_type", "rarity")
 
 
 class _SkillVersionSerializer(serializers.ModelSerializer):

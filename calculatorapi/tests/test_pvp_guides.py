@@ -248,6 +248,8 @@ class GuideEndpointTests(CalculatorTestCase):
         slots = body["decks"][0]["slots"]
         self.assertEqual([(s["slot"], s["order"]) for s in slots], [(1, 0), (1, 1), (6, 0)])
         self.assertEqual(slots[0]["support_card"]["card_type"], "speed")
+        # The texture the deck frames itself; none uploaded here, so null.
+        self.assertIsNone(slots[0]["support_card"]["image_borderless"])
         self.assertIsNone(slots[1]["support_card"])
         self.assertEqual(slots[1]["note"], "or any speed")
         self.assertIs(slots[2]["is_borrow"], True)

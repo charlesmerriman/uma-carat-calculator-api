@@ -8,9 +8,10 @@ Fetched once by the builder the first time a picker opens, never on /app load.
                    running_style, character_id, is_variant, on_global, apt
                    ({turf, dirt, ..., end}, 1..8 = G..S, null when unknown)
                    and skills [{skill, source, level}]
-    support_cards  every card with art: id, name, image, card_type, rarity,
-                   title, group_members (a group card's umas, by name; [] on
-                   any other card), on_global and skills [{skill, source}]
+    support_cards  every card with art: id, name, image, image_borderless
+                   (the frameless texture, null until uploaded), card_type,
+                   rarity, title, group_members (a group card's umas, by name;
+                   [] on any other card), on_global and skills [{skill, source}]
     skills         skills ON GLOBAL only: id, name, description, image,
                    rarity, tier, group_id, cost, game_id, version (the
                    label "○ white" / "◎ gold" / ..., for the guide editor)
@@ -136,10 +137,13 @@ def build_catalogue():
         .order_by("name", "id")
         # group_members: a group card's umas, by name, which the builder's
         # deck rules treat as that many cards. [] on every other card.
-        .values("id", "name", "game_id", "image", "card_type", "rarity", "title", "group_members",
-                "is_on_global", "is_placeholder", "global_release_at")
+        .values("id", "name", "game_id", "image", "image_borderless", "card_type", "rarity", "title",
+                "group_members", "is_on_global", "is_placeholder", "global_release_at")
     ):
         card["image"] = _url(card["image"])
+        # The texture the site frames itself (FramedCard), null when there is
+        # none: never a fallback to `image`, which has a frame of its own.
+        card["image_borderless"] = _url(card["image_borderless"])
         card["on_global"] = card.pop("is_on_global")
         # The Collection's Release date sort, for cards on no banner. Selectors
         # never read this: models/support_card.py says why.
