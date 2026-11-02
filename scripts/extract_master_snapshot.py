@@ -156,6 +156,13 @@ def extract_skills(conn):
 
     skills = []
     for row in conn.execute("SELECT * FROM skill_data ORDER BY id"):
+        # JP's skill_data grew a third slot (condition_3 and its abilities,
+        # first seen in the 2026-10-26 export) that no skill fills yet. Stop
+        # the day one does, rather than drop it: effect_slots reads two.
+        if "condition_3" in row.keys() and (row["condition_3"] or row["ability_type_3_1"]):
+            raise SystemExit(
+                f"skill {row['id']} uses skill_data's third slot; extend effect_slots before extracting"
+            )
         skills.append({
             "id": row["id"],
             "name": names.get(row["id"], ""),

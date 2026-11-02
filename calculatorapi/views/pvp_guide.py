@@ -10,23 +10,27 @@ fetched when someone opens the PvP page or follows a Timeline link, never on
 /app load. If it ever runs hot, R2's catalogue cache module is the shape to
 copy. No throttle: editorial content, nothing about a person.
 
-DRAFTS. An unpublished guide is a 404 with the same body as an unknown event,
-so the response never says whether a draft exists. A signed-in editor (staff:
-pvp_guide_editing.can_edit) gets the draft,
-flagged `is_published: false`, so they can preview it on the site. The editor
-itself reads and writes guides through views/pvp_guide_editor.py.
+WHO MAY READ IT is guide_access.can_read (PvpGuide.visibility, owner
+2026-11-02). A Private guide is a 404 with the same body as an unknown event,
+so the response never says whether a draft exists; a signed-in editor (staff:
+pvp_guide_editing.can_edit) gets it, `visibility: "private"`, to preview on
+the site. A Supporters guide is a 403 with `supporters_only: true` to a reader
+without early access: the page already knows the guide exists (the payload's
+guide_visibility), and a page loaded before the guide was closed draws the
+early-access card from it. The editor itself reads and writes guides through
+views/pvp_guide_editor.py.
 
 Umas, cards and skills are embedded as small objects rather than ids: the
 client's banner data only knows cards that were on a banner, and skills are not
 on the client at all yet.
 """
 
-from django.db.models import Count, Exists, OuterRef
+from django.db.models import Count, Exists, OuterRef, Subquery
 from rest_framework import permissions, serializers
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
-from calculatorapi import pvp_guide_editing, skill_text
+from calculatorapi import guide_access, pvp_guide_editing, skill_text
 from calculatorapi.pvp_guides import guide_queryset
 from calculatorapi.models import (
     GalleryComment,
@@ -34,6 +38,7 @@ from calculatorapi.models import (
     PvpDeck,
     PvpDeckSlot,
     PvpGuide,
+    PvpGuideVisibility,
     PvpSkillRecommendation,
     PvpStatConfig,
     PvpStyleNote,
@@ -58,20 +63,33 @@ EVENT_FIELD_FOR_KIND = {
 }
 
 NOT_FOUND = {"error": "Guide not found"}
+SUPPORTERS_ONLY = {"error": "This guide is for supporters for now.", "supporters_only": True}
 
 
 def annotate_has_guide(queryset):
-    """Add `has_guide` to a ChampionsMeeting or LeagueOfHeroes queryset: does
-    the event have a PUBLISHED guide? Drives the Timeline card's "PvP guide"
-    link and the PvP page's dropdown star. A draft counts as no guide.
+    """Add the event's guide, as the page needs it before fetching one, to a
+    ChampionsMeeting or LeagueOfHeroes queryset:
 
-    One EXISTS subquery, so it costs no extra round trip. The race serializers
-    read it with getattr(..., False), so an unannotated queryset says False
-    rather than raising.
+    - `has_guide`: is there a guide out of draft (Supporters or Public)?
+      Drives the Timeline card's "PvP guide" link and the PvP page's dropdown
+      star. A Private guide counts as no guide.
+    - `guide_visibility`: "supporters", "public", or None (no guide, or a
+      Private one, so a draft's existence never reaches the payload).
+    - `guide_tools_public`: whether My team and the Gallery open to everyone
+      with it (only ever on a Public guide).
+
+    The page decides what a reader without early access may open from these
+    (frontend hooks/usePvpAccess.ts). Subqueries on the one guide row, so no
+    extra round trip. The race serializers read them with getattr defaults,
+    so an unannotated queryset says "no guide" rather than raising.
     """
     field = "champions_meeting" if queryset.model is ChampionsMeeting else "league_of_heroes"
-    published = PvpGuide.objects.filter(is_published=True, **{field: OuterRef("pk")})
-    return queryset.annotate(has_guide=Exists(published))
+    guide = PvpGuide.objects.published().filter(**{field: OuterRef("pk")})
+    return queryset.annotate(
+        has_guide=Exists(guide),
+        guide_visibility=Subquery(guide.values("visibility")[:1]),
+        guide_tools_public=Subquery(guide.values("tools_public")[:1]),
+    )
 
 
 # ── Embedded catalogue objects ───────────────────────────────────────────────
@@ -380,7 +398,11 @@ def serialize_guide(guide, request=None):
     return {
         "event_type": guide.event_type,
         "event": event_id,
-        "is_published": guide.is_published,
+        "visibility": guide.visibility,
+        "tools_public": guide.tools_public,
+        # TRANSITIONAL (guide-visibility-plan.md, PR 3 drops it): what the web
+        # build from before `visibility` reads to draw its draft banner.
+        "is_published": guide.is_out_of_draft,
         "updated_at": serializers.DateTimeField().to_representation(guide.updated_at),
         "scenario": (
             _ScenarioSerializer(guide.scenario, context=context).data
@@ -430,9 +452,13 @@ def pvp_guide_detail(request, kind, event_id):
         return Response(NOT_FOUND, status=404)
 
     guide = guide_queryset().filter(**{field: event_id}).first()
-    # A draft answers exactly like a missing guide unless the caller may edit
-    # it (staff: pvp_guide_editing.can_edit).
-    if guide is None or (not guide.is_published and not pvp_guide_editing.can_edit(request.user, guide)):
+    if guide is None:
+        return Response(NOT_FOUND, status=404)
+    if not guide_access.can_read(request.user, guide):
+        # A Private guide answers exactly like a missing one; a Supporters
+        # guide says so, since the payload already told the page it exists.
+        if guide.visibility == PvpGuideVisibility.SUPPORTERS:
+            return Response(SUPPORTERS_ONLY, status=403)
         return Response(NOT_FOUND, status=404)
 
     return Response(serialize_guide(guide, request))

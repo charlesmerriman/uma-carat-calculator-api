@@ -1,23 +1,20 @@
 """A guide's link (/guide/<kind>-<id>): the link-preview page and its picture.
 
 Pins what a preview may say, because Discord and X keep their own copy of it:
-an open guide's facts (ranking, stats, course) and never its prose; the event
-alone while the early-access gate holds the guide back (pvp_gate.py), for a
-draft, or with no guide; the site's own tags for an address naming no event.
+a Public guide's facts (ranking, stats, course) and never its prose; the event
+alone for a Supporters guide, a Private one, or no guide (guide_access.py,
+guide-visibility-plan.md); the site's own tags for an address naming no event.
 """
 
 import datetime
 import re
 import shutil
 import tempfile
-from unittest import mock
 
 from django.test import override_settings
 from django.utils import timezone
 
-from calculatorapi import pvp_gate
 from calculatorapi.models import PvpGuide, PvpStatConfig
-from calculatorapi.predictions import build_effective_date_maps
 from calculatorapi.tests.base import PLAIN_TEST_STORAGES, CalculatorTestCase
 from calculatorapi.tests.factories import make_champions_meeting, make_league_of_heroes
 
@@ -43,17 +40,17 @@ class GuideSharePageTests(CalculatorTestCase):
         super().tearDownClass()
 
     def setUp(self):
-        # CM 21 is open in full while PvP is early (pvp_gate.PVP_OPEN_CM_NUMBER).
+        # A Public guide's event.
         self.open_cm = make_champions_meeting(
             name="Champions Meeting 21 Capricorn Cup", cm_number=21,
             global_start_date=days(30), global_end_date=days(36),
         )
-        # Running now: the free guide.
+        # Running now: no longer free by the calendar, only by its setting.
         self.running = make_champions_meeting(
             name="Champions Meeting 20 Sagittarius Cup", cm_number=20,
             global_start_date=days(-2), global_end_date=days(4),
         )
-        # Over, and not CM 21: locked.
+        # Over.
         self.past = make_champions_meeting(
             name="Champions Meeting 19 Scorpio Cup", cm_number=19,
             global_start_date=days(-40), global_end_date=days(-34),
@@ -66,9 +63,9 @@ class GuideSharePageTests(CalculatorTestCase):
         PvpStatConfig.objects.create(guide=self.open_guide, style="pace", label="Monster", speed="1700")
 
     @staticmethod
-    def guide(event, ranking="", **fields):
+    def guide(event, ranking="", visibility="public", **fields):
         return PvpGuide.objects.create(
-            champions_meeting=event, style_ranking=ranking, is_published=True,
+            champions_meeting=event, style_ranking=ranking, visibility=visibility,
             meta_analysis="Henry's private reasoning, never in a preview.", **fields,
         )
 
@@ -105,30 +102,26 @@ class GuideSharePageTests(CalculatorTestCase):
         html = self.page(f"/guide/cm-{self.open_cm.id}?style=%3Cscript%3E")
         self.assertEqual(meta(html, "property", "og:url"), f"https://site.example/guide/cm-{self.open_cm.id}")
 
-    def test_the_free_guide_is_open_while_the_rest_are_locked(self):
-        self.guide(self.running, "End>Front")
+    def test_a_supporters_guide_shows_the_event_alone_whatever_the_calendar(self):
+        """The setting is the only rule (owner, 2026-11-02): the running
+        event's guide is no longer free by itself, and an old Public one is."""
+        self.guide(self.running, "End>Front", visibility="supporters")
         self.guide(self.past, "Front>End")
 
-        running = self.page(f"/guide/cm-{self.running.id}")
-        self.assertEqual(meta(running, "property", "og:title"), "Sagittarius Cup PvP guide")
-
-        locked = self.page(f"/guide/cm-{self.past.id}")
-        self.assertEqual(meta(locked, "property", "og:title"), "Champions Meeting 19 Scorpio Cup")
+        locked = self.page(f"/guide/cm-{self.running.id}")
+        self.assertEqual(meta(locked, "property", "og:title"), "Champions Meeting 20 Sagittarius Cup")
         description = meta(locked, "property", "og:description")
         self.assertNotIn("Front", description)
         self.assertNotIn("Speed", description)
         self.assertIn("Tokyo 2400m Long, Turf, Right.", description)
         self.assertIn(" through ", description)
 
-    def test_the_gate_off_opens_every_guide(self):
-        self.guide(self.past, "Front>End")
-        with mock.patch.object(pvp_gate, "PVP_EARLY_ACCESS", False):
-            html = self.page(f"/guide/cm-{self.past.id}")
-        self.assertEqual(meta(html, "property", "og:title"), "Scorpio Cup PvP guide")
-        self.assertIn("Front &gt; End.", meta(html, "property", "og:description"))
+        past = self.page(f"/guide/cm-{self.past.id}")
+        self.assertEqual(meta(past, "property", "og:title"), "Scorpio Cup PvP guide")
+        self.assertIn("Front &gt; End.", meta(past, "property", "og:description"))
 
     def test_a_draft_or_no_guide_shows_the_event_alone(self):
-        self.open_guide.is_published = False
+        self.open_guide.visibility = "private"
         self.open_guide.save()
         html = self.page(f"/guide/cm-{self.open_cm.id}")
         self.assertEqual(meta(html, "property", "og:title"), "Champions Meeting 21 Capricorn Cup")
@@ -167,32 +160,3 @@ class GuideSharePageTests(CalculatorTestCase):
         self.page(f"/guide/cm-{self.open_cm.id}")
         self.client.get(f"/guide/cm-{self.open_cm.id}/preview.jpg")
         self.assertEqual((PvpGuide.objects.count(), PvpStatConfig.objects.count()), before)
-
-
-class FreeEventTests(CalculatorTestCase):
-    """pvp_gate.free_event mirrors the frontend's defaultPvpEvent."""
-
-    def free(self):
-        return pvp_gate.free_event(maps=build_effective_date_maps())
-
-    def test_the_running_event_wins_then_the_next_then_the_last(self):
-        old = make_champions_meeting(cm_number=1, global_start_date=days(-30), global_end_date=days(-24))
-        later = make_league_of_heroes(loh_number=2, global_start_date=days(20), global_end_date=days(26))
-        sooner = make_champions_meeting(cm_number=3, global_start_date=days(10), global_end_date=days(16))
-        self.assertEqual(self.free(), ("cm", sooner.id))
-
-        running = make_league_of_heroes(loh_number=4, global_start_date=days(-1), global_end_date=days(5))
-        self.assertEqual(self.free(), ("loh", running.id))
-
-        for row in (later, sooner, running):
-            row.delete()
-        self.assertEqual(self.free(), ("cm", old.id))
-
-    def test_a_cm_comes_first_on_a_tie(self):
-        start, end = days(10), days(16)
-        make_league_of_heroes(loh_number=5, global_start_date=start, global_end_date=end)
-        cm = make_champions_meeting(cm_number=6, global_start_date=start, global_end_date=end)
-        self.assertEqual(self.free(), ("cm", cm.id))
-
-    def test_no_events_no_free_guide(self):
-        self.assertIsNone(self.free())

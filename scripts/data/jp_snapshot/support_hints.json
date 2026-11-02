@@ -20073,5 +20073,75 @@
   "support_card_id": 30321,
   "skill_id": 204182,
   "hint_group": 8
+ },
+ {
+  "support_card_id": 30322,
+  "skill_id": 200062,
+  "hint_group": 1
+ },
+ {
+  "support_card_id": 30322,
+  "skill_id": 200362,
+  "hint_group": 2
+ },
+ {
+  "support_card_id": 30322,
+  "skill_id": 201601,
+  "hint_group": 3
+ },
+ {
+  "support_card_id": 30322,
+  "skill_id": 203242,
+  "hint_group": 4
+ },
+ {
+  "support_card_id": 30322,
+  "skill_id": 203502,
+  "hint_group": 5
+ },
+ {
+  "support_card_id": 30322,
+  "skill_id": 203652,
+  "hint_group": 6
+ },
+ {
+  "support_card_id": 30322,
+  "skill_id": 203852,
+  "hint_group": 7
+ },
+ {
+  "support_card_id": 30322,
+  "skill_id": 204072,
+  "hint_group": 8
+ },
+ {
+  "support_card_id": 30322,
+  "skill_id": 204182,
+  "hint_group": 9
+ },
+ {
+  "support_card_id": 30322,
+  "skill_id": 204512,
+  "hint_group": 10
+ },
+ {
+  "support_card_id": 30322,
+  "skill_id": 204732,
+  "hint_group": 11
+ },
+ {
+  "support_card_id": 30322,
+  "skill_id": 204742,
+  "hint_group": 12
+ },
+ {
+  "support_card_id": 30322,
+  "skill_id": 204752,
+  "hint_group": 13
+ },
+ {
+  "support_card_id": 30322,
+  "skill_id": 204762,
+  "hint_group": 14
  }
 ]

@@ -30,6 +30,8 @@ from .league_of_heroes import LeagueOfHeroes
 from .race_rank_reward import ChampionsMeetingRankReward, LeagueOfHeroesRankReward
 from .pvp_guide import (
     PvpGuide,
+    PvpGuideVisibility,
+    PUBLISHED_VISIBILITIES,
     PvpStatConfig,
     PvpUmaRecommendation,
     PvpSkillRecommendation,

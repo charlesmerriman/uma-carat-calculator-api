@@ -17,7 +17,7 @@ class GuideCommentTests(GalleryFixture):
 
     def setUp(self):
         super().setUp()
-        self.guide = PvpGuide.objects.create(champions_meeting=self.cm, is_published=True)
+        self.guide = PvpGuide.objects.create(champions_meeting=self.cm, visibility="public")
         self.url = f"/pvp-guides/cm/{self.cm.id}/comments"
         self.reader = self.person()
 
@@ -55,11 +55,22 @@ class GuideCommentTests(GalleryFixture):
         self.assertEqual(self.say(self.reader, "Runaway?", "runaway").status_code, 201)
 
     def test_a_draft_or_missing_guide_has_no_comments(self):
-        PvpGuide.objects.filter(pk=self.guide.pk).update(is_published=False)
+        PvpGuide.objects.filter(pk=self.guide.pk).update(visibility="private")
         self.assertEqual(APIClient().get(self.url).status_code, 404)
         self.assertEqual(self.say(self.reader, "Hi").status_code, 404)
         self.assertEqual(APIClient().get("/pvp-guides/loh/999/comments").status_code, 404)
         self.assertEqual(APIClient().get(f"/pvp-guides/xx/{self.cm.id}/comments").status_code, 404)
+
+    def test_a_supporters_guide_keeps_its_comments_to_early_access(self):
+        """The guide's own rule (guide_access.can_read), so its threads can't
+        be read around the 403 the guide answers."""
+        PvpGuide.objects.filter(pk=self.guide.pk).update(visibility="supporters")
+        self.assertEqual(APIClient().get(self.url).status_code, 404)
+        self.assertEqual(self.say(self.reader, "Hi").status_code, 404)
+        self.reader.early_access = True
+        self.reader.save()
+        self.assertEqual(self.say(self.reader, "Hi").status_code, 201)
+        self.assertEqual(self.client_for(self.reader).get(self.url).json()["results"][0]["body"], "Hi")
 
     def test_commenting_needs_what_the_gallery_needs(self):
         self.assertEqual(APIClient().post(self.url, {"body": "Hi"}, format="json").status_code, 401)

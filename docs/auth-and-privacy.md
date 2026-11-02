@@ -70,6 +70,12 @@ look at early-access features: that is `CustomUser.early_access`, an admin-only
 switch that opens early access and nothing else (→ [data-model.md](data-model.md),
 "`CustomUser.early_access`"). Staff-ness opens the admin login.
 
+What early access opens on the PvP page is each guide's own setting since 2026-11-02
+(`PvpGuide.visibility`: Private, Supporters, Public). A Supporters guide and its comment
+threads are refused **on the server** to anyone without early access
+(`guide_access.can_read`, the 403 on `GET /pvp-guides/<kind>/<id>`), as Rankings already
+was. My team and the Gallery remain page-only gates, opened per event by `tools_public`.
+
 ---
 
 ## The OAuth2 flow

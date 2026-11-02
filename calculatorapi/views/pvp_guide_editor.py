@@ -8,8 +8,10 @@ GET    /pvp-guides/<id>/document              the document (pvp_guide_document.s
 PUT    /pvp-guides/<id>/document              {version, ...document} -> {document, guide}
                                                400 {error, errors: [{path, message}]}
                                                409 {error, current} when the guide moved on
-PATCH  /pvp-guides/<id>                       {is_published} -> the document
-DELETE /pvp-guides/<id>                       204; a published guide is refused (400)
+PATCH  /pvp-guides/<id>                       {visibility, tools_public?} -> the document
+                                               (guide-visibility-plan.md; tools_public
+                                               only with "public", else 400)
+DELETE /pvp-guides/<id>                       204; a guide out of draft is refused (400)
 GET    /pvp-guides/<id>/revisions             [{number, saved_at, by, is_you, source, counts}]
 GET    /pvp-guides/<id>/revisions/<n>         {number, source, saved_at, document}
 POST   /pvp-guides/<id>/actions/copy-from     {source, sections?, preview?}
@@ -50,6 +52,7 @@ from calculatorapi.models import (
     PvpGuide,
     PvpGuideRevision,
     PvpGuideRevisionSource,
+    PvpGuideVisibility,
 )
 from calculatorapi.views.pvp_catalogue import image_url
 from calculatorapi.views.pvp_guide import NOT_FOUND, guide_queryset, serialize_guide
@@ -138,7 +141,8 @@ def pvp_guide_editable(request):
                 "kind": "cm" if guide.champions_meeting_id else "loh",
                 "event": guide.champions_meeting_id or guide.league_of_heroes_id,
                 "name": str(guide),
-                "is_published": guide.is_published,
+                "visibility": guide.visibility,
+                "tools_public": guide.tools_public,
                 "version": guide.version,
                 "updated_at": guide.updated_at,
                 "filled": pvp_guides.styles_with_content(guide),
@@ -223,8 +227,17 @@ def pvp_guide_document_view(request, guide_id):
     return _save(request, guide)
 
 
-class _PublishInput(serializers.Serializer):  # pylint: disable=abstract-method
-    is_published = serializers.BooleanField()
+class _VisibilityInput(serializers.Serializer):  # pylint: disable=abstract-method
+    visibility = serializers.ChoiceField(choices=PvpGuideVisibility.choices)
+    tools_public = serializers.BooleanField(required=False, default=False)
+
+    def validate(self, attrs):
+        # Said on the field, so the editor can show it beside the switch.
+        if attrs["tools_public"] and attrs["visibility"] != PvpGuideVisibility.PUBLIC:
+            raise serializers.ValidationError(
+                {"tools_public": "My team and the Gallery can only be opened on a Public guide."}
+            )
+        return attrs
 
 
 @api_view(["PATCH", "DELETE"])
@@ -239,10 +252,14 @@ def pvp_guide_editor_detail(request, guide_id):
         except pvp_guide_editing.GuideRefused as refusal:
             return _refused(str(refusal))
         return Response(status=status.HTTP_204_NO_CONTENT)
-    payload = _PublishInput(data=request.data)
+    payload = _VisibilityInput(data=request.data)
     if not payload.is_valid():
         return _invalid(pvp_guide_document.flatten_errors(payload.errors))
-    pvp_guide_editing.publish(guide, request.user, payload.validated_data["is_published"])
+    data = payload.validated_data
+    try:
+        pvp_guide_editing.set_visibility(guide, request.user, data["visibility"], data["tools_public"])
+    except pvp_guide_editing.GuideRefused as refusal:
+        return _refused(str(refusal))
     return Response(pvp_guide_document.serialize(pvp_guide_revisions.fresh(guide)))
 
 

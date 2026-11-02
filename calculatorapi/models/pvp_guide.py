@@ -188,6 +188,32 @@ class PvpSkillCategory(models.TextChoices):
     OTHER = "other", "Other"
 
 
+class PvpGuideVisibility(models.TextChoices):
+    """
+    Who may read a guide on the site (owner, 2026-11-02,
+    notes/guide-visibility-plan.md). One setting per guide, chosen in the
+    site's editor or the admin, and the only rule: nothing in code decides
+    which guide is free any more. guide_access.py reads it.
+    """
+    PRIVATE = "private", "Private (staff only)"
+    SUPPORTERS = "supporters", "Supporters"
+    PUBLIC = "public", "Public"
+
+
+# Out of draft: readable by someone besides staff. What `is_published=True`
+# meant before; a lookup through a related row filters on it
+# (`guide__visibility__in=PUBLISHED_VISIBILITIES`).
+PUBLISHED_VISIBILITIES = (PvpGuideVisibility.SUPPORTERS, PvpGuideVisibility.PUBLIC)
+
+
+class PvpGuideQuerySet(models.QuerySet):
+    def published(self):
+        """Out of draft: Supporters or Public. What a draft was before
+        (has_guide, Rankings, a comment's profile card) reads this, so "a
+        guide exists" keeps one meaning for either audience."""
+        return self.filter(visibility__in=PUBLISHED_VISIBILITIES)
+
+
 def _style_field(allow_everyone=True, **kwargs):
     """The `style` column every child carries.
 
@@ -250,14 +276,29 @@ class PvpGuide(SkillMentionsMixin, models.Model):
     )
     short_description = models.TextField(blank=True, help_text=MARKDOWN_HELP)
     meta_analysis = models.TextField(blank=True, help_text=MARKDOWN_HELP)
-    is_published = models.BooleanField(
-        default=False,
-        verbose_name="published",
+    visibility = models.CharField(
+        max_length=10,
+        choices=PvpGuideVisibility.choices,
+        default=PvpGuideVisibility.PRIVATE,
         help_text=(
-            "Visitors only see the guide once this is ticked. Until then it is a "
-            "draft that only signed-in staff can see on the site."
+            "Private: only signed-in staff see it. Supporters: Patreon supporters "
+            "and anyone with early access. Public: everyone."
         ),
     )
+    # My team and the Gallery for this event, and later the guide maker
+    # (pvp-guide-builder-plan.md release D), opened to readers without early
+    # access. Only on a Public guide (the constraint below): supporters have
+    # them anyway, so the switch means nothing on a Supporters guide.
+    tools_public = models.BooleanField(
+        default=False,
+        verbose_name="My team and Gallery open to everyone",
+        help_text="Public guides only. Supporters always have them.",
+    )
+    # TRANSITIONAL (guide-visibility-plan.md, PR 3 drops it): the column the
+    # code before `visibility` reads. save() and pvp_guide_editing.set_visibility
+    # keep it equal to "not Private", so the old code still serving during the
+    # deploy, and a rollback, see the same drafts. Nothing new reads it.
+    is_published = models.BooleanField(default=False, editable=False)
     # Henry, 2026-10-24: a guide published early, before its author has
     # updated it for the event, says so in a banner instead of passing off
     # last event's picks as this one's. Part of the document, so it autosaves
@@ -283,10 +324,20 @@ class PvpGuide(SkillMentionsMixin, models.Model):
     version = models.PositiveIntegerField(default=0, editable=False)
     updated_at = models.DateTimeField(auto_now=True)
 
+    objects = PvpGuideQuerySet.as_manager()
+
     class Meta:
         verbose_name = "PvP guide"
         verbose_name_plural = "PvP guides"
         constraints = [
+            # The switch exists only on a Public guide. Leaving Public clears
+            # it (pvp_guide_editing.set_visibility); a stored tick that silently did
+            # nothing would only confuse the next person reading the admin.
+            models.CheckConstraint(
+                condition=models.Q(tools_public=False) | models.Q(visibility="public"),
+                name="tools_public_only_when_public",
+                violation_error_message="My team and the Gallery can only be opened on a Public guide.",
+            ),
             models.CheckConstraint(
                 condition=(
                     models.Q(champions_meeting__isnull=False, league_of_heroes__isnull=True)
@@ -305,6 +356,18 @@ class PvpGuide(SkillMentionsMixin, models.Model):
     def event_type(self):
         """The same tag EventTypeMixin puts on the event itself."""
         return "champions_meeting" if self.champions_meeting_id else "league_of_heroes"
+
+    @property
+    def is_out_of_draft(self):
+        return self.visibility != PvpGuideVisibility.PRIVATE
+
+    def save(self, *args, **kwargs):
+        # TRANSITIONAL: the old column follows the new one (see is_published).
+        self.is_published = self.is_out_of_draft
+        update_fields = kwargs.get("update_fields")
+        if update_fields is not None and "visibility" in update_fields:
+            kwargs["update_fields"] = {*update_fields, "is_published"}
+        super().save(*args, **kwargs)
 
     def clean(self):
         # The constraint again, as a form error an editor can read instead of a

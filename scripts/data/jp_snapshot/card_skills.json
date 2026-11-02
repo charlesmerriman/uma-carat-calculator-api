@@ -1206,6 +1206,54 @@
   "level": 5
  },
  {
+  "card_id": 100903,
+  "skill_id": 120091,
+  "source": "unique",
+  "level": 3
+ },
+ {
+  "card_id": 100903,
+  "skill_id": 203202,
+  "source": "innate",
+  "level": null
+ },
+ {
+  "card_id": 100903,
+  "skill_id": 203382,
+  "source": "innate",
+  "level": null
+ },
+ {
+  "card_id": 100903,
+  "skill_id": 204892,
+  "source": "innate",
+  "level": null
+ },
+ {
+  "card_id": 100903,
+  "skill_id": 204552,
+  "source": "awakening",
+  "level": 2
+ },
+ {
+  "card_id": 100903,
+  "skill_id": 203201,
+  "source": "awakening",
+  "level": 3
+ },
+ {
+  "card_id": 100903,
+  "skill_id": 203212,
+  "source": "awakening",
+  "level": 4
+ },
+ {
+  "card_id": 100903,
+  "skill_id": 203381,
+  "source": "awakening",
+  "level": 5
+ },
+ {
   "card_id": 101001,
   "skill_id": 100101,
   "source": "unique",
@@ -11384,6 +11432,54 @@
  {
   "card_id": 110801,
   "skill_id": 202871,
+  "source": "awakening",
+  "level": 5
+ },
+ {
+  "card_id": 110802,
+  "skill_id": 111081,
+  "source": "unique",
+  "level": 3
+ },
+ {
+  "card_id": 110802,
+  "skill_id": 203672,
+  "source": "innate",
+  "level": null
+ },
+ {
+  "card_id": 110802,
+  "skill_id": 203852,
+  "source": "innate",
+  "level": null
+ },
+ {
+  "card_id": 110802,
+  "skill_id": 204802,
+  "source": "innate",
+  "level": null
+ },
+ {
+  "card_id": 110802,
+  "skill_id": 201651,
+  "source": "awakening",
+  "level": 2
+ },
+ {
+  "card_id": 110802,
+  "skill_id": 203671,
+  "source": "awakening",
+  "level": 3
+ },
+ {
+  "card_id": 110802,
+  "skill_id": 202552,
+  "source": "awakening",
+  "level": 4
+ },
+ {
+  "card_id": 110802,
+  "skill_id": 204801,
   "source": "awakening",
   "level": 5
  },

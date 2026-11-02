@@ -5,12 +5,14 @@ and the track green filler."""
 # pylint: disable=too-many-lines
 
 import csv
+import importlib
 import tempfile
 from html.parser import HTMLParser
 from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
 
+from django.apps import apps as django_apps
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 from django.core.management import call_command
@@ -129,7 +131,7 @@ class GuideEndpointTests(CalculatorTestCase):
             scenario=make_scenario(name="Grand Live"),
             style_ranking="Front >> Runaway >= End > Late > Pace",
             short_description="Mile on turf. ==Stamina 500 is enough==.",
-            is_published=True,
+            visibility="public",
             admin_comments="private",
         )
 
@@ -141,7 +143,7 @@ class GuideEndpointTests(CalculatorTestCase):
                 self.assertEqual(res.json(), {"error": "Guide not found"})
 
     def test_a_draft_is_404_for_a_visitor_with_the_same_body(self):
-        self.guide.is_published = False
+        self.guide.visibility = "private"
         self.guide.save()
         missing = self.client.get(url("cm", self.cm.id + 999))
         draft = self.client.get(url("cm", self.cm.id))
@@ -152,16 +154,47 @@ class GuideEndpointTests(CalculatorTestCase):
         self.assertEqual(self.client.get(url("cm", self.cm.id)).status_code, 404)
 
     def test_staff_see_a_draft_flagged_as_one(self):
-        self.guide.is_published = False
+        self.guide.visibility = "private"
         self.guide.save()
         self.client.force_authenticate(make_user(is_staff=True))
         res = self.client.get(url("cm", self.cm.id))
         self.assertEqual(res.status_code, 200)
-        self.assertIs(res.json()["is_published"], False)
+        self.assertEqual(res.json()["visibility"], "private")
+        self.assertIs(res.json()["is_published"], False)  # TRANSITIONAL alias
+
+    def test_a_supporters_guide_is_refused_without_early_access(self):
+        """Enforced on the server (owner, 2026-11-02): a 403 that says so,
+        since the payload already told the page the guide exists."""
+        self.guide.visibility = "supporters"
+        self.guide.save()
+        guest = self.client.get(url("cm", self.cm.id))
+        self.assertEqual(guest.status_code, 403)
+        self.assertEqual(guest.json(), {"error": "This guide is for supporters for now.", "supporters_only": True})
+        self.client.force_authenticate(make_user("plain"))
+        self.assertEqual(self.client.get(url("cm", self.cm.id)).status_code, 403)
+
+    def test_a_supporters_guide_reads_for_early_access_and_staff(self):
+        self.guide.visibility = "supporters"
+        self.guide.save()
+        tester = make_user("tester")
+        tester.early_access = True  # the admin's grant, one of early access's three ways in
+        tester.save()
+        for user in (tester, make_user("staff", is_staff=True)):
+            with self.subTest(user=user.username):
+                self.client.force_authenticate(user)
+                res = self.client.get(url("cm", self.cm.id))
+                self.assertEqual(res.status_code, 200)
+                self.assertEqual(res.json()["visibility"], "supporters")
+
+    def test_a_public_guide_reads_for_a_guest_with_its_switch(self):
+        self.guide.tools_public = True
+        self.guide.save()
+        body = self.client.get(url("cm", self.cm.id)).json()
+        self.assertEqual((body["visibility"], body["tools_public"], body["is_published"]), ("public", True, True))
 
     def test_league_of_heroes_guides_answer_on_loh(self):
         loh = make_league_of_heroes()
-        PvpGuide.objects.create(league_of_heroes=loh, is_published=True)
+        PvpGuide.objects.create(league_of_heroes=loh, visibility="public")
         body = self.client.get(url("loh", loh.id)).json()
         self.assertEqual(body["event_type"], "league_of_heroes")
         self.assertEqual(body["event"], loh.id)
@@ -187,7 +220,8 @@ class GuideEndpointTests(CalculatorTestCase):
         body = self.client.get(url("cm", self.cm.id)).json()
 
         self.assertEqual(set(body), {
-            "event_type", "event", "is_published", "updated_at", "scenario", "style_ranking",
+            "event_type", "event", "visibility", "tools_public", "is_published", "updated_at", "scenario",
+            "style_ranking",
             "short_description", "meta_analysis", "under_construction", "team_comps",
             "stat_configs", "uma_recommendations", "skill_recommendations", "style_notes",
             "decks", "skill_mentions", "comment_counts",
@@ -269,23 +303,38 @@ class GuideEndpointTests(CalculatorTestCase):
 
 
 class HasGuideTests(CalculatorTestCase):
-    """has_guide on both race arrays: true only for a PUBLISHED guide."""
+    """The guide on both race arrays: has_guide for a guide out of draft, and
+    who may read it (guide_visibility, guide_tools_public), never a Private
+    guide's existence."""
 
     def setUp(self):
         self.client = APIClient()
         self.cm_published = make_champions_meeting(name="Published", cm_number=1)
         self.cm_draft = make_champions_meeting(name="Draft", cm_number=2)
         self.cm_none = make_champions_meeting(name="None", cm_number=3)
+        self.cm_supporters = make_champions_meeting(name="Supporters", cm_number=4)
         self.loh = make_league_of_heroes()
-        PvpGuide.objects.create(champions_meeting=self.cm_published, is_published=True)
+        PvpGuide.objects.create(champions_meeting=self.cm_published, visibility="public", tools_public=True)
         PvpGuide.objects.create(champions_meeting=self.cm_draft)
-        PvpGuide.objects.create(league_of_heroes=self.loh, is_published=True)
+        PvpGuide.objects.create(champions_meeting=self.cm_supporters, visibility="supporters")
+        PvpGuide.objects.create(league_of_heroes=self.loh, visibility="public")
 
     def test_calculator_data_carries_has_guide(self):
         body = self.client.get("/calculator-data").json()
-        flags = {cm["name"]: cm["has_guide"] for cm in body["champions_meeting_data"]}
-        self.assertEqual(flags, {"Published": True, "Draft": False, "None": False})
-        self.assertIs(body["league_of_heroes_event_data"][0]["has_guide"], True)
+        flags = {
+            cm["name"]: (cm["has_guide"], cm["guide_visibility"], cm["guide_tools_public"])
+            for cm in body["champions_meeting_data"]
+        }
+        self.assertEqual(flags, {
+            "Published": (True, "public", True),
+            "Draft": (False, None, False),
+            "None": (False, None, False),
+            "Supporters": (True, "supporters", False),
+        })
+        loh = body["league_of_heroes_event_data"][0]
+        self.assertEqual(
+            (loh["has_guide"], loh["guide_visibility"], loh["guide_tools_public"]), (True, "public", False),
+        )
 
     def test_the_five_recommendation_keys_are_gone(self):
         body = self.client.get("/calculator-data").json()
@@ -307,12 +356,45 @@ class HasGuideTests(CalculatorTestCase):
         PvpTeamComp.objects.create(guide=guide, text="3 Front")
         self.assertIsNotNone(public_payload_cache.read(), "a guide child dropped the cache")
 
-        guide.is_published = False
+        guide.visibility = "private"
+        guide.tools_public = False
         guide.save()
         self.assertIsNone(public_payload_cache.read(), "unpublishing kept a stale has_guide")
         flags = {cm["name"]: cm["has_guide"]
                  for cm in self.client.get("/calculator-data").json()["champions_meeting_data"]}
         self.assertIs(flags["Published"], False)
+
+
+class VisibilityMigrationTests(CalculatorTestCase):
+    """0126 carries each guide's access over as it was the moment before the
+    deploy (guide-visibility-plan.md): a draft is Private, a published guide
+    Supporters, and CM 21, which the old code opened in full, Public with My
+    team and the Gallery."""
+
+    def guide(self, published, **event):
+        guide = PvpGuide.objects.create(**event)
+        # The state before the migration: the old column set, the new one at
+        # its default (update(), since save() keeps the old column in step).
+        PvpGuide.objects.filter(pk=guide.pk).update(is_published=published, visibility="private")
+        return guide
+
+    def test_the_mapping(self):
+        migration = importlib.import_module("calculatorapi.migrations.0126_pvp_guide_visibility")
+        open_cm = self.guide(True, champions_meeting=make_champions_meeting(
+            name="Champions Meeting 21 Capricorn Cup", cm_number=21))
+        renamed = self.guide(True, champions_meeting=make_champions_meeting(name="Champions Meeting 21", cm_number=21))
+        published = self.guide(True, champions_meeting=make_champions_meeting(name="CM 20", cm_number=20))
+        draft = self.guide(False, champions_meeting=make_champions_meeting(name="CM 19", cm_number=19))
+        loh = self.guide(True, league_of_heroes=make_league_of_heroes())
+
+        migration.fill_visibility(django_apps, None)
+
+        rows = dict(PvpGuide.objects.values_list("pk", "visibility"))
+        self.assertEqual(
+            [rows[g.pk] for g in (open_cm, renamed, published, draft, loh)],
+            ["public", "supporters", "supporters", "private", "supporters"],
+        )
+        self.assertEqual(list(PvpGuide.objects.filter(tools_public=True).values_list("pk", flat=True)), [open_cm.pk])
 
 
 class MilestoneConstantsTests(CalculatorTestCase):
@@ -334,7 +416,7 @@ class GuideAdminTests(CalculatorTestCase):
         admin.save()
         self.client.force_login(admin)
         cm = make_champions_meeting()
-        self.guide = PvpGuide.objects.create(champions_meeting=cm, is_published=True)
+        self.guide = PvpGuide.objects.create(champions_meeting=cm, visibility="public")
         card = SupportCard.objects.create(name="Kitasan Black")
         PvpStatConfig.objects.create(guide=self.guide, style="everyone", speed="1100+")
         PvpUmaRecommendation.objects.create(guide=self.guide, style="front",
@@ -490,7 +572,7 @@ class SheetLoaderTests(CalculatorTestCase):
     def test_reads_an_import_range_block(self):
         self.load()
         guide = PvpGuide.objects.get(champions_meeting=self.cm14)
-        self.assertTrue(guide.is_published)
+        self.assertEqual(guide.visibility, "supporters")
         self.assertEqual(guide.style_ranking, "End >= Front")
         self.assertEqual(guide.stat_configs.get().stamina, "578*")
         uma = guide.uma_recommendations.get()
@@ -565,7 +647,7 @@ class SkillMentionTests(CalculatorTestCase):
         skill = Skill.objects.get(game_id=900002)
         SkillAlias.objects.create(skill=skill, name="Older Name")
         guide = PvpGuide.objects.create(
-            champions_meeting=self.cm, is_published=True, short_description="Try [[older name]].",
+            champions_meeting=self.cm, visibility="public", short_description="Try [[older name]].",
         )
         # A guide editor's view: JP-only skills are shelved for everyone else.
         client = APIClient()
@@ -574,14 +656,14 @@ class SkillMentionTests(CalculatorTestCase):
         mention = body["skill_mentions"]["older name"]
         self.assertEqual((mention["id"], mention["name"], mention["availability"]),
                          (skill.id, "Not Yet", "jp"))
-        self.assertTrue(guide.is_published)
+        self.assertEqual(guide.visibility, "public")
 
     def test_known_mentions_pass_ignoring_case(self):
         PvpGuide(champions_meeting=self.cm, short_description="[[groundwork]] then [[Final Push]]").clean()
 
     def test_the_api_resolves_every_mention_once(self):
         guide = PvpGuide.objects.create(
-            champions_meeting=self.cm, is_published=True,
+            champions_meeting=self.cm, visibility="public",
             short_description="[[Groundwork]] first.",
         )
         PvpStyleNote.objects.create(guide=guide, style="front", body="Then [[final push]].")
@@ -593,7 +675,7 @@ class SkillMentionTests(CalculatorTestCase):
         self.assertEqual(body["skill_mentions"]["groundwork"]["description"], "Does a thing.")
 
     def test_a_mention_that_went_stale_is_left_out(self):
-        guide = PvpGuide.objects.create(champions_meeting=self.cm, is_published=True,
+        guide = PvpGuide.objects.create(champions_meeting=self.cm, visibility="public",
                                         short_description="[[Gone Skill]]")
         self.assertEqual(guide.short_description, "[[Gone Skill]]")
         body = APIClient().get(url("cm", self.cm.id)).json()
@@ -889,7 +971,7 @@ class GuideEventFieldTests(CalculatorTestCase):
 
     def test_adding_sets_the_right_fk(self):
         res = self.client.post(self.add_url(), {
-            "event": f"loh-{self.loh.pk}", "scenario": "", "style_ranking": "",
+            "event": f"loh-{self.loh.pk}", "scenario": "", "visibility": "private", "style_ranking": "",
             "short_description": "", "meta_analysis": "", "admin_comments": "",
             "_continue": "1",
         })
@@ -1027,7 +1109,7 @@ class LoadFromSheetButtonTests(CalculatorTestCase):
         self.assertEqual(self.guide.style_ranking, "End >= Front")
         self.assertEqual(self.guide.stat_configs.get().stamina, "578*")
         self.assertEqual(self.guide.decks.count(), 1)
-        self.assertFalse(self.guide.is_published)  # the switch is the editor's
+        self.assertEqual(self.guide.visibility, "private")  # the setting is the editor's
 
     def test_an_event_the_sheet_lacks_is_a_form_error(self):
         other = PvpGuide.objects.create(champions_meeting=make_champions_meeting(name="X", cm_number=77))
@@ -1237,7 +1319,7 @@ class SkillFamilyTests(CalculatorTestCase):
 
     def test_the_api_carries_every_version_on_rows_and_mentions(self):
         cm = make_champions_meeting()
-        guide = PvpGuide.objects.create(champions_meeting=cm, is_published=True,
+        guide = PvpGuide.objects.create(champions_meeting=cm, visibility="public",
                                         short_description="Take [[Corner Virtuoso]] when you can.")
         PvpSkillRecommendation.objects.create(guide=guide, style="front", category="speed",
                                               skill=self.white, tier=1)

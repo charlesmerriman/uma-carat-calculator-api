@@ -335,8 +335,8 @@ empty parts.
 Heroes) and press **Write a guide for this event** at the bottom, or press **Add
 PvP guide** on the PvP guides list and pick the event from the dropdown. Each
 event has one guide, so events that already have one are not offered. Pick the
-**scenario**, leave **Published** off for now, and press **Save and continue
-editing**. The tabs appear.
+**scenario**, leave **Visibility** on Private for now, and press **Save and
+continue editing**. The tabs appear.
 
 **The tabs.** The page has a row of tabs at the top:
 
@@ -393,7 +393,7 @@ else the ImportRange block) and writes it into this guide. Press **Read the
 sheet** with **Preview only** ticked first: the report says what would be
 written and which names in the sheet matched nothing here. Untick it and read
 again to apply. Applying replaces every section of this guide with the sheet's;
-Published or draft stays as you set it.
+who can see it stays as you set it.
 
 **Filling in the track skills.** **Fill track green skills** at the top of
 the page adds the green skills this event's track calls for (racecourse,
@@ -406,10 +406,21 @@ that don't depend on the track (Maverick, post proficiency and so on) are
 still yours to add.
 
 **Preview, then publish.** **Open on the site** at the top of the page shows
-the guide as a visitor will see it. A draft shows with a bar saying only staff
-can see it. When it looks right, tick **Published** (on the guide's page, or
-straight from the PvP guides list) and save. The event's card on the Timeline
-then gets a "PvP guide" link.
+the guide as a visitor will see it. A Private guide shows with a bar saying only
+staff can see it. When it looks right, set **Visibility** (on the guide's page,
+or straight from the PvP guides list) and save:
+
+- **Private**: only staff. Use it while you're still writing.
+- **Supporters**: Patreon supporters and anyone with early access. Everyone else
+  gets an invite to support us.
+- **Public**: everyone, signed in or not. Tick **My team and Gallery open to
+  everyone** as well to open the team builder and the gallery for this event to
+  everyone too. Supporters always have both, so the box only works on a Public
+  guide.
+
+Nothing opens by itself any more: a guide stays on its setting until someone
+changes it, even when its event starts. Out of Private, the event's card on the
+Timeline gets a "PvP guide" link.
 
 **Deleting.** An event that has a guide cannot be deleted. Delete the guide
 first if you really mean to.
@@ -507,11 +518,13 @@ skills). Each shows what it would do before it does it.
 **Seeing it as a visitor.** **View as visitor** switches to the Recommendations tab with
 your latest save. Come back with **Edit guide**.
 
-**Publishing.** Press **Publish**; the box lists what the guide still lacks and asks
-once. From then on visitors see the guide and the event's Timeline card links to it, and
-every save goes live as it lands. **Unpublish** takes it back to a draft. A published
-guide cannot be deleted; unpublish it first. **Delete this guide** is under Actions for a
-draft.
+**Publishing.** Press **Publish** (it reads **Visibility** once the guide is out of
+Private) and pick who can see it: Private, Supporters or Public, and under Public, whether
+My team and the Gallery open to everyone too. Leaving Private, the box lists what the
+guide still lacks. From then on readers see the guide and the event's Timeline card links
+to it, and every save goes live as it lands. A guide anyone but staff can see cannot be
+deleted; make it Private first. **Delete this guide** is under Actions for a Private
+guide.
 
 **The key dates** (registration, round 2, finals) come from the site owner's
 settings, the same for every event, so there is nothing to fill in for them.

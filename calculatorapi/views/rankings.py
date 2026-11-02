@@ -68,8 +68,8 @@ from calculatorapi.analytics.banners import (
 from calculatorapi.analytics.income_settings import income_settings, rank_distributions, selector_purchases
 from calculatorapi.analytics.people import engaged_subset, non_staff_users
 from calculatorapi.models import (
-    PVP_DECK_SIZE, PVP_TEAM_SIZE, BannerTimeline, PvpDeckSlot, PvpGuide, PvpRunRace, PvpRunRunner,
-    PvpTeamCard, PvpTeamMember, PvpUmaRecommendation, Scenario, SupportCard, UserPlannedPurchase,
+    PUBLISHED_VISIBILITIES, PVP_DECK_SIZE, PVP_TEAM_SIZE, BannerTimeline, PvpDeckSlot, PvpGuide, PvpRunRace,
+    PvpRunRunner, PvpTeamCard, PvpTeamMember, PvpUmaRecommendation, Scenario, SupportCard, UserPlannedPurchase,
 )
 from calculatorapi.predictions import build_effective_date_maps
 from calculatorapi.rankings_cache import cached_payload
@@ -113,7 +113,7 @@ def guides_payload():
     sheet's filter lists them); the guides in no particular order. Four
     queries whatever the guide count."""
     guides = {}
-    for guide_id, cm_id, loh_id, scenario_id in PvpGuide.objects.filter(is_published=True).values_list(
+    for guide_id, cm_id, loh_id, scenario_id in PvpGuide.objects.published().values_list(
         "id", "champions_meeting_id", "league_of_heroes_id", "scenario_id"
     ):
         guides[guide_id] = {
@@ -131,7 +131,7 @@ def guides_payload():
 def _add_cards(guides):
     slots = (
         PvpDeckSlot.objects.filter(
-            deck__guide__is_published=True,
+            deck__guide__visibility__in=PUBLISHED_VISIBILITIES,
             support_card__isnull=False,
             support_card__is_placeholder=False,
         )
@@ -152,7 +152,7 @@ def _add_cards(guides):
 
 def _add_umas(guides):
     umas = (
-        PvpUmaRecommendation.objects.filter(guide__is_published=True)
+        PvpUmaRecommendation.objects.filter(guide__visibility__in=PUBLISHED_VISIBILITIES)
         .order_by("guide_id", "order", "id")
         .values_list("guide_id", "style", "uma_id", "stars")
     )
