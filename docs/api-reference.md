@@ -791,13 +791,6 @@ Each guide uma carries `apt`, its ten aptitudes as `/pvp-catalogue` sends them (
 G..S, null when not imported). The guide draws this course's distance and the row's style
 as letters on the tile.
 
-`course_shape` is the event's course path for the course map's track view, or `null` when
-the event has no course, its map is hidden, or the course has no path file (a straight
-course; the client draws the schematic then): 1,001 `[x, y]` points in metres, point i at
-i / 1000 of the race, already in screen axes (y down, finish along the bottom; see
-`RaceCourse.shape` in `data-model.md`). It is here and nowhere else (owner, 2026-10-29):
-about 10 KB the Timeline never needs, so `/calculator-data` stays small.
-
 `skill_mentions` resolves every `[[Skill name]]` written in the guide's text: `{lower-case
 name: skill object}` (the same shape as `skill` above), skills on global only, matched
 ignoring case. The client renders a mention it finds here as a skill chip and any other as
@@ -2214,7 +2207,9 @@ Same **resolved-date** contract as `BannerTimeline`: `start_date`/`end_date` are
 
 **Course details.** `track` through `direction` are hand-entered in the admin and unknown until a meeting is announced. The columns are non-null, so "unknown" is a **sentinel, not a null**: `"TBD"`. Clients should treat it as "not announced" rather than displaying it raw.
 
-**`course`**: the course the map draws, from the game's own files (`RaceCourse`, `views/race_course.py`), or `null` when the event has none yet or an editor hid its map. Every number is metres from the gate; a stretch in none of `corners`, `straights` and `slopes` is a gap the game leaves. `corners[].number` is the game's own (counted back from the finish in fours, so the final corner is 4; -1 is a normal corner the game numbers oddly). `straights[].front` is the game's straight type. `slopes[].slope` is percent times 10,000 (20000 is a 2% climb, negative is downhill). `surface_changes` lists where the ground changes, e.g. a dirt course that starts on turf. `later_laps` (`inside` / `outside`) is how a course over one lap draws its later laps. The real shape is not here: it travels on the guide payload only. About 0.5 to 1.3 KB an event (2 KB gzipped for every event together).
+**`course`**: the course the map draws, from the game's own files (`RaceCourse`, `views/race_course.py`), or `null` when the event has none yet or an editor hid its map. Every number is metres from the gate; a stretch in none of `corners`, `straights` and `slopes` is a gap the game leaves. `corners[].number` is the game's own (counted back from the finish in fours, so the final corner is 4; -1 is a normal corner the game numbers oddly). `straights[].front` is the game's straight type. `slopes[].slope` is percent times 10,000 (20000 is a 2% climb, negative is downhill). `surface_changes` lists where the ground changes, e.g. a dirt course that starts on turf. `later_laps` (`inside` / `outside`) is how a course over one lap draws its later laps. The real shape is not here: it has its own endpoint, below. About 0.5 to 1.3 KB an event (2 KB gzipped for every event together).
+
+**`GET /race-courses/<course id>/shape`** (public; 404 for a missing course or a hidden map): `{"shape": [[x, y], ...]}`, the course path the map's track view draws, fetched when a map is drawn (the guide's track view, the Timeline card's drawer). 1,001 points in metres, point i at i / 1000 of the race, already in screen axes (y down, finish along the bottom; see `RaceCourse.shape` in `data-model.md`). `shape` is `null` for a course with no path file; the guide then draws the schematic. About 10 KB, so it never rides `/calculator-data`. It is game data, so it is public whoever may read the event's guide.
 
 ```json
 "course": {

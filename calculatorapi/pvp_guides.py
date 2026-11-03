@@ -62,13 +62,6 @@ def guide_queryset():
     however many rows each section has."""
     return PvpGuide.objects.select_related(
         "champions_meeting", "league_of_heroes", "scenario",
-        # The event's course: the guide payload carries its real shape
-        # (views/pvp_guide.py, course_shape). Its two big admin-only columns
-        # stay in the database.
-        "champions_meeting__course", "league_of_heroes__course",
-    ).defer(
-        "champions_meeting__course__source_data", "champions_meeting__course__path_candidates",
-        "league_of_heroes__course__source_data", "league_of_heroes__course__path_candidates",
     ).prefetch_related(
         "stat_configs",
         Prefetch(

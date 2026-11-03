@@ -434,23 +434,7 @@ def serialize_guide(guide, request=None):
         # {section: visible comments}, "" for the whole guide, so the tabs can
         # show counts without fetching every thread (views/gallery.py).
         "comment_counts": _comment_counts(guide),
-        # The course map's real shape (notes/course-map-plan.md, PR 3): here
-        # and nowhere else (owner, 2026-10-29), ~10 KB the Timeline never needs.
-        "course_shape": _course_shape(guide),
     }
-
-
-def _course_shape(guide):
-    """The event's course path, screen-ready (models/race_course.py), or None.
-
-    None when the event has no course, its map is hidden, or the course has
-    no path (a straight course; the track view draws the schematic then).
-    """
-    event = guide.champions_meeting or guide.league_of_heroes
-    course = event.course if event is not None else None
-    if course is None or not course.show_map:
-        return None
-    return course.shape
 
 
 def _comment_counts(guide):
