@@ -778,10 +778,10 @@ may hold `==highlight==` spans the client renders red.
                               "rarity": 2, "tier": 2, "version": "◎ gold", "is_evolved": false}]}}],
   "style_notes": [{"style": "front", "body": "markdown"}],
   "decks": [{"id": 7, "style": "front", "label": "Standard", "note": "", "is_highlighted": false,
-      "slots": [{"slot": 1, "order": 0, "is_borrow": false, "note": "Gold + Link",
+      "slots": [{"slot": 1, "order": 0, "is_borrow": false, "note": "Gold + Link", "limit_break": 3,
                  "support_card": {"id": 302, "name": "Kitasan Black", "image": "url | null",
-                                  "card_type": "speed", "rarity": 3}},
-                {"slot": 1, "order": 1, "is_borrow": false, "note": "or any speed", "support_card": null}]}],
+                                  "image_borderless": "url | null", "card_type": "speed", "rarity": 3}},
+                {"slot": 1, "order": 1, "is_borrow": false, "note": "or any speed", "limit_break": null, "support_card": null}]}],
   "skill_mentions": {"groundwork": {"id": 88, "name": "Groundwork", "description": "string", "image": "url | null",
                                      "rarity": 2, "unique_of": null, "version": "◎ gold", "tier": 2,
                                      "is_evolved": false, "versions": []}} }
@@ -876,7 +876,8 @@ client flushes its autosave first and replaces its copy with the answer.
   "skill_recommendations": [{"style": "front", "category": "acceleration", "tier": 0, "skill": 88, "note": ""}],
   "style_notes": [{"style": "front", "body": "markdown"}],
   "decks": [{"id": 90, "style": "front", "label": "Standard", "note": "", "is_highlighted": false,
-             "slots": [{"slot": 1, "order": 0, "is_borrow": false, "support_card": 302, "note": "2SP"},
+             "slots": [{"slot": 1, "order": 0, "is_borrow": false, "support_card": 302, "note": "2SP",
+                        "limit_break": 3},
                        {"slot": 1, "order": 1, "is_borrow": false, "support_card": null, "note": "or any speed"}]}] }
 ```
 
@@ -924,7 +925,8 @@ fetches it once, when a picker first opens.
             "apt": {"turf": 8, "dirt": 1, "short": 6, "mile": 8, "medium": 7, "long": 4,
                     "front": 8, "pace": 5, "late": 2, "end": 1},
             "skills": [{"skill": 210, "source": "unique", "level": 1}]}],
-  "support_cards": [{"id": 302, "name": "Kitasan Black", "game_id": 30086, "image": "url", "card_type": "speed",
+  "support_cards": [{"id": 302, "name": "Kitasan Black", "game_id": 30086, "image": "url",
+                     "image_borderless": "url | null", "card_type": "speed",
                      "rarity": 3, "title": "[Fire at My Heels]", "group_members": [], "on_global": true,
                      "released_at": "2026-03-12T00:00:00+00:00",
                      "skills": [{"skill": 88, "source": "hint"}]}],
@@ -942,7 +944,10 @@ per source, `models/uma_skill.py`); a card's is `hint` / `event`. `on_global`: t
 global game today, i.e. it has any skill link (the import writes links only for cards in the global
 snapshot). The builder uses it for cards on no banner, which have no release date.
 `group_members` names the umas a group card stands for (`[]` on any other card); the
-builder's deck rules count it as a card of each of them. `game_id` (all three) and a
+builder's deck rules count it as a card of each of them. A card's `image_borderless` is the
+game's texture with no frame or type icon (`support_cards_borderless/`), which the site frames
+itself (`FramedCard`); it is `null` until uploaded and never falls back to `image`, whose
+picture has a frame of its own. The guide's deck cards (`GET /pvp-guides/<id>`) carry it too. `game_id` (all three) and a
 skill's `version` label (`○ white`, `◎ white`, `◎ gold`, `evolved`: `Skill.version_label`)
 are for the guide editor's pickers and its paste-from-the-sheet matching (2026-10-21).
 

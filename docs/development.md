@@ -85,12 +85,14 @@ result depends on which tests ran before it.
 | `import_game_data` | Fills the game-data columns on Uma and SupportCard and creates or updates every Skill and Spark from `scripts/data/master_snapshot/`, then the JP-only skills, evolutions, JP outfits' and cards' links and JP-only cards' types from `jp_snapshot/` and UmaTL's English from `umatl/` (global always wins; `--global-only` skips both). `--dry-run` first; `--gametora skills.json` adds the detailed descriptions |
 | `import_game_data` also reads `support_events.json`, written by `scripts/fetch_support_events.py` from gametora (the game has no clean table for support card event skills) |
 | `link_skill_images` | Points every Skill without an image at `skills/<icon_id>.png` in the Space, after `scripts/fetch_skill_icons.py --upload` put the files there |
-| `link_borderless_umas` | Points every Uma without a borderless image at the file in `umas_borderless/` whose name starts with its `game_id`, after `scripts/upload_borderless_umas.py <export.zip> --upload` put the files there. Reports files with no uma and umas with no file; `--dry-run` first |
+| `link_borderless_art --kind umas\|cards` | Points every Uma (six-digit ids, `umas_borderless/`) or SupportCard (five-digit ids, `support_cards_borderless/`) without a borderless image at the file whose name starts with its `game_id`, after `scripts/upload_borderless_umas.py <export.zip> --upload` or `scripts/upload_borderless_cards.py <the Data zips> --upload` put the files there. Never touches a hand pick; reports files with no row and rows with no file; `--dry-run` first. `--kind cards` runs on every deploy (a Space it can't list skips the link, never the deploy). `link_borderless_umas` is the older name for `--kind umas` |
 | `merge_duplicate_support_cards` | The same merge for support cards (it subclasses the uma command): folds "Daiichi Ruby (Rerun)", which has no `game_id` and so can never be reached by the import, into the card with the same image id. `--dry-run` first |
 | `merge_duplicate_umas` | Folds a `(Rerun)` copy of an uma into the original by image id, re-pointing every row that referenced it. Run before any migration that makes uma ids unique; `--dry-run` first |
 
-Four more are one-off data repairs, kept for the record: `classify_banner_categories`,
-`backfill_race_prep_supports`, `fix_support_card_variants` and `repair_launch_banner`.
+Five more are one-off data repairs, kept for the record: `classify_banner_categories`,
+`backfill_race_prep_supports`, `fix_support_card_variants`, `repair_launch_banner` and
+`convert_deck_limit_breaks` (the sheet-era diamond notes into `PvpDeckSlot.limit_break`,
+one revision per guide; `--dry-run` first, run on prod on the owner's go).
 
 ## Deployment
 

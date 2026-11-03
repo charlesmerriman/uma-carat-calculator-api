@@ -40,6 +40,9 @@ class PvpGuideRevisionSource(models.TextChoices):
     SHEET = "sheet", "Load from the sheet"
     COPY = "copy", "Copy from another guide"
     TRACK_GREENS = "track_greens", "Fill track green skills"
+    # convert_deck_limit_breaks: the sheet-era diamond notes moved to the
+    # deck slots' limit_break field, once (2026-11-02).
+    LIMIT_BREAKS = "limit_breaks", "Limit breaks from the notes"
     RESTORE = "restore", "Restore of an earlier revision"
     PUBLISH = "publish", "Published"
     UNPUBLISH = "unpublish", "Unpublished"

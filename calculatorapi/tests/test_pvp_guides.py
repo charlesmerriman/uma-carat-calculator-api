@@ -24,6 +24,7 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 
 from calculatorapi import public_payload_cache, pvp_guides, pvp_sheet, pvp_track_skills
+from calculatorapi.deck_limit_breaks import split_limit_break
 from calculatorapi.management.commands import load_sheet_pvp_guides as loader
 from calculatorapi.models.skill import skill_families
 from calculatorapi.models import (
@@ -32,6 +33,7 @@ from calculatorapi.models import (
     PvpDeck,
     PvpDeckSlot,
     PvpGuide,
+    PvpGuideRevision,
     PvpSkillRecommendation,
     PvpStatConfig,
     PvpStyleNote,
@@ -248,6 +250,10 @@ class GuideEndpointTests(CalculatorTestCase):
         slots = body["decks"][0]["slots"]
         self.assertEqual([(s["slot"], s["order"]) for s in slots], [(1, 0), (1, 1), (6, 0)])
         self.assertEqual(slots[0]["support_card"]["card_type"], "speed")
+        # The texture the deck frames itself; none uploaded here, so null.
+        self.assertIsNone(slots[0]["support_card"]["image_borderless"])
+        # The guide says nothing about a limit break here.
+        self.assertIsNone(slots[0]["limit_break"])
         self.assertIsNone(slots[1]["support_card"])
         self.assertEqual(slots[1]["note"], "or any speed")
         self.assertIs(slots[2]["is_borrow"], True)
@@ -583,6 +589,19 @@ class SheetLoaderTests(CalculatorTestCase):
         self.assertEqual(slots[0].note, "==Stats + FCM*==")
         self.assertEqual((slots[1].slot, slots[1].order, slots[1].note), (1, 1, "or any spd"))
         self.assertEqual((slots[2].slot, slots[2].support_card, slots[2].note), (4, None, "Any Wit"))
+
+    def test_reads_a_limit_break_off_the_or_row(self):
+        rows = self.import_block()
+        rows[16][1] = "◆◆◆◇ + or spd"
+        self.write(loader.IMPORT_TAB, rows)
+        self.write("Aquarius Cup", self.cup_tab())
+        with patch.object(pvp_sheet, "CUP_TABS", ("Aquarius Cup",)):
+            call_command("load_sheet_pvp_guides", "--from-dir", self.tmp.name, stdout=StringIO())
+        guide = PvpGuide.objects.get(champions_meeting=self.cm14)
+        slots = list(guide.decks.get().slots.order_by("slot", "order"))
+        self.assertEqual(slots[0].limit_break, 3)
+        # Only the diamond part moved; the rest of the note stays.
+        self.assertEqual((slots[1].slot, slots[1].order, slots[1].note), (1, 1, "or spd"))
 
     def test_reads_a_per_cup_tab(self):
         self.load()
@@ -1377,3 +1396,71 @@ class ProseLinkerTests(CalculatorTestCase):
         linker = loader.ProseLinker()
         self.assertEqual(linker.link("[[Final Push]] first"), "[[Final Push]] first")
         self.assertEqual(linker.link("Final Push", max_length=8), "Final Push")
+
+
+class DeckLimitBreakTests(CalculatorTestCase):
+    """PvpDeckSlot.limit_break: the diamonds read off a note, the one-off
+    conversion of the sheet-era notes, and the field's own rules."""
+
+    def setUp(self):
+        self.guide = PvpGuide.objects.create(champions_meeting=make_champions_meeting(30))
+        self.deck = PvpDeck.objects.create(guide=self.guide, style="front", label="Beginner")
+        self.card = SupportCard.objects.create(name="Kitasan Black", card_type="speed", rarity=3)
+
+    def run_command(self, *flags):
+        out = StringIO()
+        call_command("convert_deck_limit_breaks", *flags, stdout=out)
+        return out.getvalue()
+
+    def test_only_the_diamond_part_is_read(self):
+        self.assertEqual(split_limit_break("◆◆◆◇ + or spd"), (3, "or spd"))
+        self.assertEqual(split_limit_break("◇◇◇◇ + or R"), (0, "or R"))
+        self.assertEqual(split_limit_break("◇◇◇◇++"), (0, ""))
+        self.assertEqual(split_limit_break("◆◇◇◇ +"), (1, ""))
+        # Anywhere in the note, the rest kept as written.
+        self.assertEqual(split_limit_break("Gold ◆◆◆◆+ Link"), (4, "Gold Link"))
+        self.assertEqual(split_limit_break("or any speed"), (None, "or any speed"))
+        self.assertEqual(split_limit_break("◆◆ two"), (None, "◆◆ two"))
+
+    def test_converts_each_shape_and_keeps_the_rest_of_the_note(self):
+        other = SupportCard.objects.create(name="Light Hello", card_type="friend", rarity=3)
+        tachyon = PvpDeckSlot.objects.create(deck=self.deck, slot=1, support_card=self.card, note="2SP")
+        PvpDeckSlot.objects.create(deck=self.deck, slot=1, order=1, note="◆◆◆◇ + or spd")
+        hello = PvpDeckSlot.objects.create(deck=self.deck, slot=2, support_card=other)
+        PvpDeckSlot.objects.create(deck=self.deck, slot=2, order=1, note="◆◇◇◇ +")
+        version = self.guide.version
+
+        dry = self.run_command("--dry-run")
+        self.assertIn("Would convert 2 note(s) in 1 guide(s).", dry)
+        tachyon.refresh_from_db()
+        self.assertIsNone(tachyon.limit_break)
+
+        self.run_command()
+        tachyon.refresh_from_db()
+        hello.refresh_from_db()
+        self.assertEqual((tachyon.limit_break, tachyon.note), (3, "2SP"))
+        self.assertEqual(hello.limit_break, 1)
+        rows = list(self.deck.slots.order_by("slot", "order").values_list("slot", "order", "note"))
+        # "or spd" stays as written; the bare diamonds' row is gone.
+        self.assertEqual(rows, [(1, 0, "2SP"), (1, 1, "or spd"), (2, 0, "")])
+        self.guide.refresh_from_db()
+        self.assertEqual(self.guide.version, version + 1)
+        revision = PvpGuideRevision.objects.filter(guide=self.guide).latest("number")
+        self.assertEqual((revision.source, revision.author), ("limit_breaks", None))
+        # A second run finds nothing.
+        self.assertIn("Converting 0 note(s) in 0 guide(s).", self.run_command())
+
+    def test_leaves_a_slot_with_no_card_alone(self):
+        PvpDeckSlot.objects.create(deck=self.deck, slot=4, note="Any Wit")
+        orphan = PvpDeckSlot.objects.create(deck=self.deck, slot=4, order=1, note="◆◆◇◇ +")
+
+        out = self.run_command()
+
+        self.assertIn("Left alone (no card in this slot)", out)
+        orphan.refresh_from_db()
+        self.assertEqual(orphan.note, "◆◆◇◇ +")
+
+    def test_a_limit_break_needs_a_card(self):
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            PvpDeckSlot.objects.create(deck=self.deck, slot=3, note="Any Wit", limit_break=2)
+        PvpDeckSlot.objects.create(deck=self.deck, slot=3, support_card=self.card, limit_break=4)

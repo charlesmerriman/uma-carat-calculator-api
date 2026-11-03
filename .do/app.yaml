@@ -349,7 +349,7 @@ services:
   # page's history even in a week nobody opened the admin. A no-op when a staff
   # visit already wrote today's, and it exits 0 even if the report fails to
   # build: a reporting query must never stop the API booting.
-  run_command: python manage.py migrate && python manage.py create_content_editor_group && python manage.py sync_changelog && python manage.py import_game_data --no-input && python manage.py link_skill_images && python manage.py prune_visitor_hashes && python manage.py snapshot_analytics && gunicorn calculatorproject.wsgi:application --bind 0.0.0.0:8080
+  run_command: python manage.py migrate && python manage.py create_content_editor_group && python manage.py sync_changelog && python manage.py import_game_data --no-input && python manage.py link_skill_images && python manage.py link_borderless_art --kind cards && python manage.py prune_visitor_hashes && python manage.py snapshot_analytics && gunicorn calculatorproject.wsgi:application --bind 0.0.0.0:8080
   source_dir: /
 static_sites:
 - build_command: npm install && npm run build
