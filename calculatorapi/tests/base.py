@@ -5,6 +5,13 @@ from django.test import Client, TestCase
 from django_otp import DEVICE_ID_SESSION_KEY
 from django_otp.plugins.otp_static.models import StaticDevice
 
+from calculatorapi import rankings_cache
+
+# A Rankings rebuild runs in a background thread in production; here it runs
+# inline, since a test's rows sit in an uncommitted transaction that a
+# thread's own connection can't see (rankings_cache.py).
+rankings_cache.run_rebuild = rankings_cache.run_inline
+
 
 class VerifiedClient(Client):
     """Django's test client with a force_login that also passes the admin's
