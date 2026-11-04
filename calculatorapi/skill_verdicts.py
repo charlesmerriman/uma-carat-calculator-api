@@ -22,6 +22,7 @@ THE FIELDS, each present only when it says something:
                   adds, m/s)
     before_spurt  a heal's share of triggers landing before the late-race start
     carry         a speed skill's share that carries its speed into the late race
+                  (absent when no part of its trigger lies before the late-race start)
     carry_window  [first, last) metres it must fire in to do so (the band drawn)
     repeats       how many times a 30 s cooldown skill can fire here (2 or more)
     needs         what else must hold, in words (placing, timers, skills used)
@@ -230,7 +231,10 @@ def needs_for(parsed, context):
     words = [item["text"] for item in described["all"] if not item["raw"]]
     choices = [alternative for alternative in described["any"] if not any(item["raw"] for item in alternative)]
     if choices:
-        readable = [" and ".join(item["text"] for item in alternative) for alternative in choices]
+        # "In the lead and the runner behind within 1 length": only the first
+        # phrase of a joined alternative keeps its capital.
+        readable = [" and ".join([texts[0]] + [text[:1].lower() + text[1:] for text in texts[1:]])
+                    for texts in ([item["text"] for item in alternative] for alternative in choices)]
         words.append(", or ".join([readable[0]] + [text[:1].lower() + text[1:] for text in readable[1:]]))
     if any(item["raw"] for item in phrases):
         words.append("Plus a condition we can't read yet")
@@ -405,9 +409,12 @@ def _timing(parsed, kinds, effects, course, entry):  # pylint: disable=too-many-
         out["before_spurt"] = round(share((0, late)), 2)
     window = carry_window(effects, course.distance, styles) if "speed" in kinds else None
     if window is not None:
-        # The band the map draws, and the share landing in it.
+        # The band the map draws, and the share landing in it. A trigger wholly
+        # at or after the late-race start has nothing to carry into it (the
+        # skill pass, bug A2): no share, so the client says nothing about carry.
         out["carry_window"] = [round(window[0]), round(window[1])]
-        if share(window) is not None:
+        first_metre = fires_at if fires_at is not None else spread[0]
+        if first_metre < late and share(window) is not None:
             out["carry"] = round(share(window), 2)
     repeats = repeats_for(parsed, effects, facts, styles)
     if repeats and repeats > 1:

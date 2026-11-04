@@ -2249,7 +2249,7 @@ field only when it says something: `effects` (`accel`, `speed`, `heal` for the r
 `debuff` for others), `fires_at` (a fixed zone's first metre), `spread` (`[first, last]` metre
 of a random trigger), `spurt` (`{"from", "to"}` metres from the late-race start, negative
 before it, plus for an accel `odds`, the share landing well: still running 0.5 s into the late race, at most 50 m after its start, and `useful`, a ranking score: that share times the speed it adds), `before_spurt` (a heal's share
-landing before the late-race start), `carry` (a speed skill's share that carries its speed into the late race; a target-speed-only one must fire early enough to reach its speed first) and `carry_window` (the metres it must fire in for that),
+landing before the late-race start), `carry` (a speed skill's share that carries its speed into the late race; a target-speed-only one must fire early enough to reach its speed first; absent when no part of the trigger lies before the late-race start) and `carry_window` (the metres it must fire in for that),
 `repeats` (how many times a short-cooldown skill can fire here), `needs` (what else must hold,
 in words), `unreadable` (`true`: a clause isn't confirmed yet, so no timing fields), and `chain`
 (`{"counts": "heal", "at_least": 3}`, set off by other skills). `repeats` is absent
