@@ -157,7 +157,8 @@ class ConditionTextTests(CalculatorTestCase):
             "running_style_temptation_opponent_count_nige>=1": "With a rushed Front Runner in the race",
             "activate_count_end_after>=3": "After using 3 or more skills late-race",
             "activate_count_later_half>=2": "After using 2 or more skills in the second half",
-            "remain_distance_viewer_id>=800&remain_distance_viewer_id<=850": "When that runner has between 800 and 850 m to go",
+            "remain_distance_viewer_id>=800&remain_distance_viewer_id<=850":
+                "When that runner has between 800 and 850 m to go",
             "is_other_character_activate_advantage_skill==9": "When a runner uses a recovery skill",
         }
         for condition, expected in cases.items():

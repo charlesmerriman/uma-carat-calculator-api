@@ -165,7 +165,9 @@ class CourseFacts:
         # The course record's `front`: 1 the home straight (the stand side), 2
         # the backstretch; `straight_front_type==2` is the backstretch (Global:
         # Victory Cheer!, Break It Down!, "on the backstretch").
-        self.backstretches = sorted((s["start"], s["start"] + s["length"]) for s in course.straights if s.get("front") == 2)
+        self.backstretches = sorted(
+            (s["start"], s["start"] + s["length"]) for s in course.straights if s.get("front") == 2
+        )
         self.uphills = [(s["start"], s["start"] + s["length"]) for s in course.slopes if s["slope"] > 0]
         self.downhills = [(s["start"], s["start"] + s["length"]) for s in course.slopes if s["slope"] < 0]
 

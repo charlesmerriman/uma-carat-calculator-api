@@ -91,11 +91,14 @@ class SpurtVerdictTests(CalculatorTestCase):
         # 0.2 m/s² for 3 s, 0.6 m/s.
         final_push = verdict("running_style==1&is_finalcorner_random==1&order==1", ACCEL)
         self.assertEqual(final_push["spread"], [550, 788])
-        self.assertEqual(final_push["spurt"], {"from": -250, "to": -12, "odds": 0.22, "useful": 0.129, "accel": 0.129, "carry": 0.0})
+        self.assertEqual(
+            final_push["spurt"], {"from": -250, "to": -12, "odds": 0.22, "useful": 0.129, "accel": 0.129, "carry": 0.0}
+        )
         self.assertEqual(final_push["needs"], ["In the lead"])
 
         nsm = verdict("infront_near_lane_time>=1&is_lastspurt==1&hp_per>=1", ACCEL)
-        self.assertEqual((nsm["fires_at"], nsm["spurt"]), (800, {"from": 0, "to": 0, "odds": 1.0, "useful": 0.6, "accel": 0.6, "carry": 0.0}))
+        self.assertEqual(nsm["fires_at"], 800)
+        self.assertEqual(nsm["spurt"], {"from": 0, "to": 0, "odds": 1.0, "useful": 0.6, "accel": 0.6, "carry": 0.0})
 
         # 800 to 900 m, and only the first 50 m land well.
         neck = verdict("running_style==2&phase_firsthalf_random==2&order_rate<=50", ACCEL)
@@ -136,7 +139,8 @@ class SpurtVerdictTests(CalculatorTestCase):
         # Kyoto 3200's second backstretch runs 1,850 to 2,300 m; the late race
         # starts at 2,133 m on it. Chukyo's only backstretch is its first 300 m.
         cheer = verdict("phase==2&straight_front_type==2&order<=2", ACCEL, KYOTO_3200)
-        self.assertEqual((cheer["fires_at"], cheer["spurt"]["from"], cheer["needs"]), (2133, 0, ["In 2nd place or better"]))
+        self.assertEqual((cheer["fires_at"], cheer["spurt"]["from"]), (2133, 0))
+        self.assertEqual(cheer["needs"], ["In 2nd place or better"])
         self.assertEqual(verdict("phase==2&straight_front_type==2&order<=2", ACCEL)["kind"], "never")
 
 
@@ -204,12 +208,17 @@ class PathTests(CalculatorTestCase):
         ])
         self.assertEqual([path["fires_at"] for path in tamamo["paths"]], [788, 788])
         # The summary: the stretch the paths cover, the best path's rank, no odds.
-        self.assertEqual((tamamo["spread"], tamamo["spurt"]), ([788, 788], {"from": -12, "to": -12, "useful": 0.6, "accel": 0.6, "carry": 0.0}))
+        self.assertEqual(tamamo["spread"], [788, 788])
+        self.assertEqual(tamamo["spurt"], {"from": -12, "to": -12, "useful": 0.6, "accel": 0.6, "carry": 0.0})
         self.assertNotIn("fires_at", tamamo)
 
     def test_ways_needing_the_same_things_stay_one_verdict(self):
         # Lightning Surge: a Sprint way and a Mile way, both the same otherwise.
-        surge = verdict("distance_type==1&phase>=2&order_rate>=50&is_overtake==1@distance_type==2&phase>=2&order_rate>=50&is_overtake==1", ACCEL)
+        surge = verdict(
+            "distance_type==1&phase>=2&order_rate>=50&is_overtake==1"
+            "@distance_type==2&phase>=2&order_rate>=50&is_overtake==1",
+            ACCEL,
+        )
         self.assertNotIn("paths", surge)
         self.assertEqual(surge["fires_at"], 800)
         self.assertNotIn("paths", verdict(MAESTRO, HEAL))
@@ -218,7 +227,11 @@ class PathTests(CalculatorTestCase):
         # Moving Past, and Beyond's second way needs the final corner in the
         # mid race: on Chukyo the final corner is in the late race, so only
         # the first way is live and the verdict is one.
-        moving = verdict("phase>=2&corner!=0&is_finalcorner==0&order_rate>=50@phase==1&corner!=0&is_finalcorner==1&order_rate>=50&temptation_count==0", ACCEL)
+        moving = verdict(
+            "phase>=2&corner!=0&is_finalcorner==0&order_rate>=50"
+            "@phase==1&corner!=0&is_finalcorner==1&order_rate>=50&temptation_count==0",
+            ACCEL,
+        )
         self.assertNotIn("paths", moving)
 
 
@@ -356,7 +369,8 @@ class WordsTests(CalculatorTestCase):
             "distance_rate>=50&order==1&bashin_diff_behind<=1@distance_rate>=50&order==2&overtake_target_time>=1"
         ), TextContext())
         self.assertEqual(needs, [
-            "In the lead and the runner behind within 1 length, or in 2nd place and trying to pass a runner for 1 s or more",
+            "In the lead and the runner behind within 1 length, "
+            "or in 2nd place and trying to pass a runner for 1 s or more",
         ])
 
     def test_a_clause_without_verified_words_is_a_plain_note(self):

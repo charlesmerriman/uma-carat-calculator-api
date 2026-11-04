@@ -402,7 +402,8 @@ def pass_text(variable, clauses):  # pylint: disable=too-many-return-statements,
         if low is not None and low >= 75 and high is None:
             return "Around the very back"  # Defeatist
         return None
-    if variable in ("change_order_up_end_after", "change_order_up_finalcorner_after") and low is not None and high is None:
+    after_a_point = variable in ("change_order_up_end_after", "change_order_up_finalcorner_after")
+    if after_a_point and low is not None and high is None:
         times = "once" if low == 1 else f"{low} times"
         where = "late-race" if variable == "change_order_up_end_after" else "on the final corner or later"
         return f"After passing another runner {times} {where}"  # Behold Thine Emperor's Divine Might; Guten Appetit ♪

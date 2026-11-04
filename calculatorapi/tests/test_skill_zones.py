@@ -8,13 +8,12 @@ variable the global skills use is classified, and the endpoint with its cache.
 import json
 import re
 from pathlib import Path
+from unittest import mock
 
 from rest_framework.test import APIClient
 
-from calculatorapi.models import RaceCourse, Skill
-from unittest import mock
-
 from calculatorapi import skill_zones
+from calculatorapi.models import RaceCourse, Skill
 from calculatorapi.skill_zones import classify, zones_for
 from calculatorapi.tests.base import CalculatorTestCase
 

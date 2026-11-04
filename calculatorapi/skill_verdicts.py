@@ -221,7 +221,7 @@ def _corner_point_cdf(zones, metre):
     return sum(min(1.0, max(0.0, (metre - start) / (end - start))) for start, end in zones) / len(zones)
 
 
-def share_between(entry, variable, facts, low, high, once=True):
+def share_between(entry, variable, facts, low, high, once=True):  # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals,too-many-return-statements
     """The share of a random trigger landing in [low, high), by rule 2, or None."""
     zones = entry["zones"]
     if variable == "corner_random" and len(zones) > 1:
@@ -256,7 +256,7 @@ def share_between(entry, variable, facts, low, high, once=True):
     return None
 
 
-def _share(entry, fires_at, variable, facts, window, once=True):
+def _share(entry, fires_at, variable, facts, window, once=True):  # pylint: disable=too-many-arguments,too-many-positional-arguments
     """A fixed trigger's share of [low, high) is 1 or 0; a random one's by rule 2."""
     low, high = window
     if fires_at is not None:
@@ -264,7 +264,7 @@ def _share(entry, fires_at, variable, facts, window, once=True):
     return share_between(entry, variable, facts, low, high, once) if variable else None
 
 
-def is_settled(variable, op, value, zone_start, distance, styles):
+def is_settled(variable, op, value, zone_start, distance, styles):  # pylint: disable=too-many-arguments,too-many-positional-arguments
     """Whether a not-a-place clause holds for certain by a zone's start."""
     if variable in SETTLED or variable.startswith(SETTLED_FAMILIES):
         return True
@@ -494,8 +494,9 @@ def _summary(paths, course):
     """The top-level fields over the paths: the whole stretch they cover, the
     best path's rank; no odds or shares, since those differ by path."""
     out = {}
-    firsts = [path["fires_at"] if "fires_at" in path else path["spread"][0] for path in paths if "fires_at" in path or "spread" in path]
-    lasts = [path["fires_at"] if "fires_at" in path else path["spread"][1] for path in paths if "fires_at" in path or "spread" in path]
+    placed = [path for path in paths if "fires_at" in path or "spread" in path]
+    firsts = [path["fires_at"] if "fires_at" in path else path["spread"][0] for path in placed]
+    lasts = [path["fires_at"] if "fires_at" in path else path["spread"][1] for path in placed]
     if firsts:
         out["spread"] = [min(firsts), max(lasts)]
         late = late_race_start(course.distance)
