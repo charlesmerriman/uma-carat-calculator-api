@@ -2223,6 +2223,25 @@ Same **resolved-date** contract as `BannerTimeline`: `start_date`/`end_date` are
 }
 ```
 
+**`GET /race-courses/<course id>/skill-zones`** (public; 404 for a missing course or a
+hidden map): where every global skill can fire on that course, from its condition
+(`skill_zones.py`), keyed by the skill's `id`. One map per course, built on the first
+request and cached in its own `course-zones` cache until a course or a skill is saved. About
+60 KB, 4 KB gzipped.
+
+```json
+{"88": {"kind": "place", "zones": [{"start": 550, "end": 788, "kind": "random"}], "styles": ["front"]},
+ "91": {"kind": "anywhere", "zones": [], "styles": null}}
+```
+
+`kind`: `place` (it fires in `zones`), `anywhere` (an alternative no place narrows: by
+position, HP, a timer, or a variable whose meaning isn't verified), `passive` (an
+alternative of course or event gates only, which hold here: a track green), or `never` (a
+course gate fails: another racecourse's skill). A zone's `kind` is `fixed` (fires there),
+`random` (at one random point in it) or `point` (one spot; `start` equals `end`). `styles` is
+the runner gate as the guide's style keys (`front`, `pace`, `late`, `end`), or `null` for
+every style. Event gates (season, weather, ground) narrow nothing.
+
 **`has_guide`**: whether the event has a PvP guide out of draft, Supporters or Public (`GET /pvp-guides/cm/<id>`); a Private guide counts as none. **`guide_visibility`**: `"supporters"`, `"public"`, or `null` (no guide, or a Private one). **`guide_tools_public`**: whether My team and the Gallery open to everyone with it (only ever on a Public guide). The page decides what a reader without early access may open from these two. Annotations (`views.pvp_guide.annotate_has_guide`), so changing who may read a guide drops the cached payload. The five `*_recommendation` stat fields left the wire with the PvP guide (2026-10); the guide's `stat_configs` replace them.
 
 ```json

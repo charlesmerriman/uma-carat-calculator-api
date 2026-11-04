@@ -123,7 +123,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils import timezone
 
-from calculatorapi import public_payload_cache, pvp_catalogue_cache, skills_cache
+from calculatorapi import course_zones_cache, public_payload_cache, pvp_catalogue_cache, skills_cache
 from calculatorapi.models import (
     Skill, SkillAlias, SkillEvolutionCondition, Spark, SparkKind, SupportCard, SupportCardSkill,
     Uma, UmaSkill,
@@ -885,6 +885,8 @@ class Command(BaseCommand):
         public_payload_cache.invalidate()
         pvp_catalogue_cache.invalidate()
         skills_cache.invalidate()
+        # A skill's condition places its zones on every course map.
+        course_zones_cache.invalidate()
         return written
 
     def _report_skill_notes(self, plan):
