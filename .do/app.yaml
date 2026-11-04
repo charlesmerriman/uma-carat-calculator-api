@@ -131,6 +131,20 @@ ingress:
     redirect:
       authority: umacaratcalculator.com
       redirect_code: 301
+  # /ads.txt is Raptive's, the ad partner: they host the file so the bidder
+  # list stays current without a deploy, and advertisers follow the 301 to it.
+  # The site ships no ads.txt of its own since 2026-11-04 (the static file was
+  # deleted with the head tag, notes/raptive-install-plan.md), so removing this
+  # rule 404s /ads.txt and cuts ad revenue; it does not bring a file back.
+  # Prefix is the only match App Platform offers, and nothing else here starts
+  # with /ads.txt. The site id is public by design (it is in index.html too).
+  - match:
+      path:
+        prefix: /ads.txt
+    redirect:
+      authority: ads.adthrive.com
+      redirect_code: 301
+      uri: /sites/6ac93b25e6e9a91f14516ba1/ads.txt
   - component:
       name: calculatorproject
     match:
