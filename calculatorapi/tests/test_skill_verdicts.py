@@ -227,7 +227,8 @@ class ChainBoundTests(CalculatorTestCase):
         # Lightning Flare: two mid-race skills first, so from the mid-race start.
         flare = verdict("activate_count_middle>=2", SPEED)
         self.assertEqual((flare["kind"], flare["zones"]), ("place", [{"start": 200, "end": 1200, "kind": "fixed"}]))
-        self.assertEqual((flare["fires_at"], flare["chain"]), (200, {"counts": "middle", "at_least": 2}))
+        self.assertEqual(flare["fires_at"], 200)
+        self.assertEqual(flare["chain"], {"counts": "middle", "at_least": 2})
         self.assertEqual(verdict("activate_count_later_half>=2", SPEED)["fires_at"], 600)
         # Counts without a phase stay unbound.
         self.assertEqual(verdict("activate_count_heal>=3", SPEED)["kind"], "anywhere")
