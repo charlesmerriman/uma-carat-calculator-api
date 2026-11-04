@@ -91,15 +91,15 @@ class SpurtVerdictTests(CalculatorTestCase):
         # 0.2 m/s² for 3 s, 0.6 m/s.
         final_push = verdict("running_style==1&is_finalcorner_random==1&order==1", ACCEL)
         self.assertEqual(final_push["spread"], [550, 788])
-        self.assertEqual(final_push["spurt"], {"from": -250, "to": -12, "odds": 0.22, "useful": 0.129})
+        self.assertEqual(final_push["spurt"], {"from": -250, "to": -12, "odds": 0.22, "useful": 0.129, "accel": 0.129, "carry": 0.0})
         self.assertEqual(final_push["needs"], ["In the lead"])
 
         nsm = verdict("infront_near_lane_time>=1&is_lastspurt==1&hp_per>=1", ACCEL)
-        self.assertEqual((nsm["fires_at"], nsm["spurt"]), (800, {"from": 0, "to": 0, "odds": 1.0, "useful": 0.6}))
+        self.assertEqual((nsm["fires_at"], nsm["spurt"]), (800, {"from": 0, "to": 0, "odds": 1.0, "useful": 0.6, "accel": 0.6, "carry": 0.0}))
 
         # 800 to 900 m, and only the first 50 m land well.
         neck = verdict("running_style==2&phase_firsthalf_random==2&order_rate<=50", ACCEL)
-        self.assertEqual(neck["spurt"], {"from": 0, "to": 100, "odds": 0.5, "useful": 0.3})
+        self.assertEqual(neck["spurt"], {"from": 0, "to": 100, "odds": 0.5, "useful": 0.3, "accel": 0.3, "carry": 0.0})
 
         # Rule 1: a fixed zone fires at its start, 250 m early here: no use.
         red_shift = verdict("is_finalcorner==1&order<=5&order_rate<=50", ACCEL)
@@ -149,7 +149,7 @@ class GatedZoneTests(CalculatorTestCase):
         # No Stopping Me!: a runner close ahead is unpredictable, but the zone
         # opens at the late-race start, so if it fires it fires perfectly.
         nsm = verdict("infront_near_lane_time>=1&is_lastspurt==1&hp_per>=1", ACCEL)
-        self.assertEqual(nsm["spurt"], {"from": 0, "to": 0, "odds": 1.0, "useful": 0.6})
+        self.assertEqual(nsm["spurt"], {"from": 0, "to": 0, "odds": 1.0, "useful": 0.6, "accel": 0.6, "carry": 0.0})
 
     def test_a_zone_opening_before_the_window_loses_the_early_metres(self):
         # Red Shift from the final corner at 550 m: 114 of the 300 m up to the
@@ -204,7 +204,7 @@ class PathTests(CalculatorTestCase):
         ])
         self.assertEqual([path["fires_at"] for path in tamamo["paths"]], [788, 788])
         # The summary: the stretch the paths cover, the best path's rank, no odds.
-        self.assertEqual((tamamo["spread"], tamamo["spurt"]), ([788, 788], {"from": -12, "to": -12, "useful": 0.6}))
+        self.assertEqual((tamamo["spread"], tamamo["spurt"]), ([788, 788], {"from": -12, "to": -12, "useful": 0.6, "accel": 0.6, "carry": 0.0}))
         self.assertNotIn("fires_at", tamamo)
 
     def test_ways_needing_the_same_things_stay_one_verdict(self):
@@ -299,6 +299,9 @@ class CarryOverTests(CalculatorTestCase):
         self.assertEqual((round(start), round(end)), (740, 791))
         carried = verdict("remain_distance<=455&remain_distance>=445", SPEED)
         self.assertEqual((carried["carry"], carried["carry_window"]), (1.0, [740, 791]))
+        # What it carries, for the accels column's words: 0.2 m/s for 2.4 s
+        # stretched to Chukyo's 1200 m.
+        self.assertEqual((carried["carry_speed"], carried["carry_seconds"]), (0.2, 2.9))
 
     def test_a_trigger_in_the_late_race_has_nothing_to_carry(self):
         # Lights of Vaudeville fires with 300 m to go, 100 m into Chukyo's late
