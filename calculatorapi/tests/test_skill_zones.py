@@ -43,8 +43,8 @@ class ZoneTableTests(CalculatorTestCase):
             "corner==0": [(0, 300, "fixed"), (788, 1200, "fixed")],
             "corner!=0": [(300, 788, "fixed")],
             "all_corner_random==1": [(300, 788, "random")],
-            # Corner skills: a random point on any corner with that number
-            # (owner, 2026-11-03). Swinging Maestro lists all four.
+            # Corner skills: a random point on the last corner with that
+            # number (Daptrius, 2026-11-03). Swinging Maestro lists all four.
             "corner_random==3": [(300, 550, "random")],
             "corner_random==1@corner_random==2@corner_random==3@corner_random==4": [(300, 788, "random")],
             "is_finalcorner==1": [(550, 1200, "fixed")],
@@ -156,14 +156,14 @@ class SkillZonesEndpointTests(CalculatorTestCase):
 
 
 class CornerSkillsOverLapsTests(CalculatorTestCase):
-    def test_a_corner_skill_can_fire_on_that_corner_on_every_lap(self):
+    def test_a_corner_skill_uses_the_last_lap_s_corner(self):
         # A two-lap course numbers its corners 1 to 4 twice (Nakayama 3600):
-        # corner_random==1 is a random point on both corner 1s; on a long
-        # course the cooldown can let it fire on each (owner, 2026-11-03).
+        # corner_random==1 is a random point on the second corner 1, "the
+        # last time a corner appears in the race" (Daptrius, 2026-11-03).
         two_laps = RaceCourse(
             region="jp", game_id=10507, racecourse="Nakayama", track_id=10005, surface="turf",
             distance=3600, direction="right",
             corners=[{"start": 290, "length": 250, "number": 1}, {"start": 1975, "length": 250, "number": 1}],
             straights=[], slopes=[],
         )
-        self.assertEqual(stretches("corner_random==1", two_laps), [(290, 540, "random"), (1975, 2225, "random")])
+        self.assertEqual(stretches("corner_random==1", two_laps), [(1975, 2225, "random")])

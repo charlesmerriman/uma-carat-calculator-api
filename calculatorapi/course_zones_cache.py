@@ -20,7 +20,8 @@ from django.core.cache import caches
 CACHE_ALIAS = "course-zones"
 GENERATION_KEY = "course-zones:generation"
 # Bump the suffix when the payload's SHAPE changes.
-ZONES_KEY = "course-zones:v1:{generation}:{course_id}"
+# v2: the verdict fields (skill_verdicts.py); v3: an accel's `useful`.
+ZONES_KEY = "course-zones:v3:{generation}:{course_id}"
 CACHE_TTL_SECONDS = 1800
 
 _RELEVANT_MODELS = frozenset({"racecourse", "skill"})
