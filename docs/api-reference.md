@@ -731,7 +731,10 @@ order everyone, runaway, front, pace, late, end; then stat rows and decks by the
 and skills are embedded small objects, since the client's banner data only knows cards that
 were on a banner. `skill_recommendations` and `skill_mentions` hold any skill with an English
 name (`Skill.objects.shown()`, since 2026-10-23), JP-only ones included; `unique_of` names
-the outfit whose unique the skill is, or `null`. Every skill object also carries:
+the outfit whose unique the skill is, or `null`; the other way round, each recommended uma's
+`unique` is her unique skill as `{id, name, image}` (a ★1/★2 character's level-3 form), or
+`null`, so the course map lights it from her tile without the catalogue. Every skill object
+also carries:
 `name` / `description` as a player reads them (global's, else UmaTL's);
 `availability` (`"global"`, `"announced"`, `"jp"`: the site tags `"jp"` as "JP only");
 `uses_translation` (true when the name or description shown is UmaTL's: the site credits
@@ -770,7 +773,8 @@ may hold `==highlight==` spans the client renders red.
   "uma_recommendations": [{"style": "front", "stars": 5, "role": "", "note": "Use as runaway",
                            "uma": {"id": 41, "name": "Maruzensky", "image": "url | null", "portrait": "url | null",
                                    "apt": {"turf": 7, "dirt": 1, "short": 5, "mile": 7, "medium": 6, "long": 3,
-                                           "front": 8, "pace": 6, "late": 2, "end": 1}}}],
+                                           "front": 8, "pace": 6, "late": 2, "end": 1},
+                                   "unique": {"id": 210, "name": "Lead the Pack", "image": "url | null"}}}],
   "skill_recommendations": [{"style": "front", "category": "acceleration", "tier": 0, "order": 0, "note": "",
       "skill": {"id": 210, "name": "Lead the Pack", "description": "string", "image": "url | null",
                 "rarity": 5, "unique_of": "Maruzensky", "version": "○ white", "tier": 1, "is_evolved": false,

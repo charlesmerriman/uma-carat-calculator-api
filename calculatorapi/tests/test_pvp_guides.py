@@ -240,6 +240,11 @@ class GuideEndpointTests(CalculatorTestCase):
         apt = body["uma_recommendations"][0]["uma"]["apt"]
         self.assertEqual((apt["short"], apt["front"], apt["dirt"]), (2, 8, None))
         self.assertEqual(len(apt), 10)
+        # Her unique rides along too: the course map lights it from her tile.
+        self.assertEqual(
+            body["uma_recommendations"][0]["uma"]["unique"],
+            {"id": skill.id, "name": "Lead the Pack", "image": None},
+        )
         self.assertEqual(body["uma_recommendations"][0]["note"], "Use as runaway")
         rec = body["skill_recommendations"][0]
         self.assertEqual(rec["skill"]["name"], "Lead the Pack")
