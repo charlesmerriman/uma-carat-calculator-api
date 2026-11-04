@@ -82,6 +82,17 @@ class PatreonEntitlementTests(CalculatorTestCase):
         self._supporter(linked_user=self.user, tier=self.tier)
         self.assertTrue(benefits.has_benefit(self.user, benefits.AD_FREE))
 
+    def test_ad_free_for_is_any_paid_tier_or_staff(self):
+        """The resolved answer GET /account sends: a pledge or the staff flag,
+        and a lapse ends it like every other benefit."""
+        self.assertFalse(benefits.ad_free_for(None))
+        self.assertTrue(benefits.ad_free_for(None, is_staff=True))
+        supporter = self._supporter(linked_user=self.user, tier=self.tier)
+        self.assertTrue(benefits.ad_free_for(supporter))
+        supporter.is_active = False
+        supporter.save()
+        self.assertFalse(benefits.ad_free_for(benefits.entitled_supporter(self.user)))
+
     def test_a_tier_gated_benefit_reads_order_as_a_threshold(self):
         """Lower order = higher tier, so the check is `<=`. Asserted through a
         temporary entry rather than a real one, so this keeps testing the
@@ -182,6 +193,25 @@ class SupporterAccountEndpointTests(CalculatorTestCase):
         self.assertTrue(block["is_supporter"])
         self.assertEqual(block["tier"], "Junior Class")
         self.assertIn(benefits.AD_FREE, block["benefits"])
+
+    def test_ad_free_is_resolved_on_the_summary_for_supporters_and_staff(self):
+        """Top-level, like oshi_variants: the client reads one boolean and
+        adds the body class Raptive's ad layout honours. Staff get it from
+        their own flag, with no supporter block at all."""
+        self.assertFalse(self.client.get("/account").data["ad_free"])
+        PatreonSupporter.objects.create(
+            display_name="Rhondal", patreon_user_id="7", tier=self.tier,
+            is_active=True, linked_user=self.user)
+        self.assertTrue(self.client.get("/account").data["ad_free"])
+
+        staff = CustomUser.objects.create_user(
+            username="staffer", password="x", is_staff=True)
+        staff_client = APIClient()
+        staff_client.credentials(
+            HTTP_AUTHORIZATION=f"Token {Token.objects.create(user=staff).key}")
+        data = staff_client.get("/account").data
+        self.assertTrue(data["ad_free"])
+        self.assertEqual(data["supporter"], {"is_supporter": False})
 
     def test_the_block_never_carries_supporter_identifiers(self):
         """The same field-list discipline the linked providers are under: the

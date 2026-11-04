@@ -421,6 +421,10 @@ def _account_summary(user):
         # count (supporter or staff), so the picker locks the right tiles
         # without a second copy of the rule.
         "oshi_variants": benefits.oshi_variants_for(supporter, is_staff=user.is_staff),
+        # Whether the ad script should show this account no ads (supporter or
+        # staff). The client adds a body class on true and Raptive's layout
+        # honours it; nothing here changes what the API serves.
+        "ad_free": benefits.ad_free_for(supporter, is_staff=user.is_staff),
         # Whether features still in early access open for them (supporter,
         # staff, or granted in the admin); the client knows which features
         # those are.
