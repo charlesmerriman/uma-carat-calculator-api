@@ -502,9 +502,13 @@ def _summary(paths, course):
         spurts = [path["spurt"] for path in paths if "spurt" in path]
         if spurts:
             out["spurt"] = {"from": round(min(firsts) - late), "to": round(max(lasts) - late)}
-            useful = [spurt["useful"] for spurt in spurts if "useful" in spurt]
-            if useful:
-                out["spurt"]["useful"] = max(useful)
+            ranked = [spurt for spurt in spurts if "useful" in spurt]
+            if ranked:
+                best = max(ranked, key=lambda spurt: spurt["useful"])
+                out["spurt"]["useful"] = best["useful"]
+                for part in ("accel", "carry"):
+                    if part in best:
+                        out["spurt"][part] = best[part]
     if all(path.get("unreadable") for path in paths):
         out["unreadable"] = True
     return out
@@ -547,6 +551,10 @@ def _timing(parsed, kinds, effects, course, entry):  # pylint: disable=too-many-
         # at or after the late-race start has nothing to carry into it (the
         # skill pass, bug A2): no share, so the client says nothing about carry.
         out["carry_window"] = [round(window[0]), round(window[1])]
+        # What it carries, for the accels column's words: the target speed it
+        # adds and how long it runs here (owner, 2026-11-04).
+        out["carry_speed"] = round(speed_added(effects), 2)
+        out["carry_seconds"] = round((_seconds(effects, "speed") or 0) * stretch(course.distance), 1)
         first_metre = fires_at if fires_at is not None else spread[0]
         if first_metre < late:
             if share(window) is not None:
@@ -564,8 +572,12 @@ def _timing(parsed, kinds, effects, course, entry):  # pylint: disable=too-many-
             # well times the speed its acceleration adds, plus the share its
             # speed carries into the late race times that speed (the owner,
             # 2026-11-03: carry-over is prized, Tamamo's unique does both).
-            useful = (landing_share(window) or 0) * accel_strength(effects) + carry_rank * speed_added(effects)
-            out["spurt"]["useful"] = round(useful, 3)
+            accel_part = (landing_share(window) or 0) * accel_strength(effects)
+            carry_part = carry_rank * speed_added(effects)
+            out["spurt"]["useful"] = round(accel_part + carry_part, 3)
+            # The two parts, shown as chips on the accels column (owner, 2026-11-04).
+            out["spurt"]["accel"] = round(accel_part, 3)
+            out["spurt"]["carry"] = round(carry_part, 3)
     if "heal" in kinds and share((0, late)) is not None:
         out["before_spurt"] = round(share((0, late)), 2)
     repeats = repeats_for(parsed, effects, facts, styles)
