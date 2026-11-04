@@ -101,6 +101,7 @@ meaning anything instead of rendering a signed-in shell around nothing.
   "oshi_slots": 1,
   "oshi_uma_ids": [42, 57],
   "oshi_variants": true,
+  "ad_free": true,
   "early_access": true,
   "guide_editor": false,
   "linked_providers": [
@@ -139,6 +140,11 @@ meaning anything instead of rendering a signed-in shell around nothing.
 - **`oshi_variants`** is whether a costume variant (`is_variant` on `GET /umas`)
   may be *added*: `true` for a supporter on any paid tier and for staff. The
   picker locks those tiles on `false`; the rule itself is in the `PATCH` check.
+- **`ad_free`** is whether the ad script should show this account no ads:
+  `true` for a supporter on any paid tier (the `ad_free` benefit key) and for
+  staff (`benefits.ad_free_for`). The client adds the `ad-free-member` body
+  class on `true`, which Raptive's ad layout is configured to honour
+  (`notes/raptive-install-plan.md`); the API serves the same content either way.
 - **`early_access`** is whether features that open to supporters first are open
   to this account: `true` for a supporter on any paid tier, for staff, and for an
   account the owner granted it in the admin (`CustomUser.early_access`, which

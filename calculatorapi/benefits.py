@@ -205,6 +205,20 @@ def oshi_variants(user):
     return oshi_variants_for(entitled_supporter(user), is_staff=user.is_staff)
 
 
+def ad_free_for(supporter, *, is_staff=False):
+    """Whether the ad script should load no ads for this account: a supporter
+    on any paid tier (the AD_FREE key) or staff.
+
+    Staff is the same bypass as oshi_variants_for and early_access_for: their
+    own CustomUser flag, not a second copy of the pledge. Sent as `ad_free` on
+    GET /account; the client turns it into a body class that Raptive's ad
+    layout is configured to honour (notes/raptive-install-plan.md). A client
+    gate, and so spoofable, which is fine: the worst a spoof buys is fewer
+    ads for the spoofer.
+    """
+    return is_staff or _meets(supporter, BENEFITS[AD_FREE])
+
+
 def early_access_for(supporter, *, is_staff=False, granted=False):
     """Whether an already-resolved supporter row, staff, or an account the
     owner granted it gets the features that open to supporters first: any
