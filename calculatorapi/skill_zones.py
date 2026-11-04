@@ -92,6 +92,7 @@ NOT_A_PLACE = frozenset({
     "same_skill_horse_count", "is_other_character_activate_advantage_skill",
     "remain_distance_viewer_id", "motivation", "running_style_equal_popularity_one",
     "is_used_skill_id", "behind_near_lane_time_set1", "overtake_target_no_order_up_time",
+    "visiblehorse",  # an announced skill's (Magical☆Marvelous★World): runners in view
 })
 NOT_A_PLACE_FAMILIES = (
     "activate_count_", "base_", "order_rate_in", "order_rate_out", "running_style_count_",

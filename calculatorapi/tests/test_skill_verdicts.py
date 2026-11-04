@@ -175,6 +175,17 @@ class CarryOverTests(CalculatorTestCase):
         carried = verdict("remain_distance<=455&remain_distance>=445", SPEED)
         self.assertEqual((carried["carry"], carried["carry_window"]), (1.0, [740, 791]))
 
+    def test_a_trigger_in_the_late_race_has_nothing_to_carry(self):
+        # Lights of Vaudeville fires with 300 m to go, 100 m into Chukyo's late
+        # race: the band still draws, but there is no share to word.
+        late = verdict("remain_distance<=300", SPEED)
+        self.assertEqual((late["fires_at"], late["carry_window"]), (900, [740, 791]))
+        self.assertNotIn("carry", late)
+        # A random point wholly in the late race, the same.
+        self.assertNotIn("carry", verdict("phase_random==2", SPEED))
+        # One that straddles the start keeps its share, even a small one.
+        self.assertIn("carry", verdict("distance_rate_after_random==50", SPEED))
+
     def test_one_that_also_adds_current_speed_helps_up_to_the_late_race(self):
         mixed = [{"duration": 24000, "cooldown": 5_000_000, "abilities": [
             {"type": 27, "value": 2000, "target_type": 1}, {"type": 22, "value": 1000, "target_type": 1},
@@ -208,6 +219,15 @@ class WordsTests(CalculatorTestCase):
         ), TextContext())
         self.assertEqual(needs, [
             "After 5 s of racing", "Just after being passed, or blocked at the side for 2 s or more",
+        ])
+
+    def test_a_joined_alternative_keeps_one_capital(self):
+        # Red Ace: in the lead with a runner close behind, or 2nd and trying to pass.
+        needs = needs_for(parse_condition(
+            "distance_rate>=50&order==1&bashin_diff_behind<=1@distance_rate>=50&order==2&overtake_target_time>=1"
+        ), TextContext())
+        self.assertEqual(needs, [
+            "In the lead and the runner behind within 1 length, or in 2nd place and trying to pass a runner for 1 s or more",
         ])
 
     def test_a_clause_without_verified_words_is_a_plain_note(self):

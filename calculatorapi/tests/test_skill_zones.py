@@ -113,6 +113,13 @@ class NoGuessingTests(CalculatorTestCase):
     def test_an_unconfirmed_clause_beside_a_place_narrows_nothing(self):
         self.assertEqual(stretches("phase==2&straight_front_type==2"), [(800, 1000, "fixed")])
 
+    def test_an_announced_skill_s_variable_is_classified_too(self):
+        # The snapshot above holds Global's skills only; an announced skill
+        # (Magical☆Marvelous★World) brought `visiblehorse`, which the skill
+        # pass found unclassified. It is race state, never a place.
+        self.assertEqual(classify("visiblehorse"), "not-a-place")
+        self.assertEqual(stretches("distance_rate>=40&distance_rate<=50&visiblehorse>=4"), [(480, 600, "fixed")])
+
     def test_every_variable_the_global_skills_use_is_classified(self):
         # A skills import that brings a new variable (JP's is_last_straight,
         # say) fails here before a player sees a zone built on a guess.
