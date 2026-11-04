@@ -23,6 +23,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.management.base import BaseCommand
 
 from calculatorapi.models import (
+    RaceCourse,
     Uma, SupportCard, Skill,
     BannerTimeline, BannerUma, BannerSupport, BannerStepUp,
     UmasOnUmaBanner, SupportsOnSupportBanner,
@@ -51,6 +52,9 @@ CONTENT_MODELS = [
     BannerTimeline, BannerUma, BannerSupport, BannerStepUp,
     UmasOnUmaBanner, SupportsOnSupportBanner,
     GameEvent,
+    # The course map's records: an editor imports them and links the events
+    # to them (both buttons are on the Race courses page).
+    RaceCourse,
     ChampionsMeeting,
     LeagueOfHeroes,
     PvpGuide, PvpStatConfig, PvpUmaRecommendation, PvpSkillRecommendation,

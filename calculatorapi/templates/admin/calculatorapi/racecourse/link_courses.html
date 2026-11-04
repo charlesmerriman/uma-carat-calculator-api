@@ -1,0 +1,97 @@
+{% extends "admin/base_site.html" %}
+{% comment %}
+"Link courses": link every Champions Meeting and League of Heroes to the course
+the game names, from the JP snapshot's race links (admin_course_import.py). Also
+lists the typed course details that disagree with the game; it never edits them.
+{% endcomment %}
+
+{% block content %}
+{% include "admin/calculatorapi/racecourse/_styles.html" %}
+
+<div class="course-import">
+  <h1>Link courses</h1>
+
+  <div class="module">
+    <p>
+      Links every Champions Meeting and League of Heroes event to the course the game says it
+      runs on. The links come from the JP game data in the site's code, so a new event appears
+      here once that data is refreshed.
+    </p>
+    <p>
+      An event already linked to a different course keeps it unless you tick <em>Replace</em>.
+      The preview also lists the <strong>typed course details</strong> (the text on each event's
+      page) that disagree with the game. This page never changes that text: fix it on the
+      event's page.
+    </p>
+  </div>
+
+  {% if error %}<div class="error-box">{{ error }}</div>{% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    {% for field in form %}
+      <div class="field">
+        {{ field.errors }}
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}<span class="helptext">{{ field.help_text }}</span>{% endif %}
+      </div>
+    {% endfor %}
+    <div class="actions">
+      <button type="submit" class="button default">Link</button>
+      <a href="{% url 'admin:calculatorapi_racecourse_changelist' %}">Back to race courses</a>
+    </div>
+  </form>
+
+  {% if summary %}
+    <h2>{% if was_dry_run %}Preview: nothing was saved{% else %}Done{% endif %}</h2>
+    <div class="module">
+      <ul>
+        <li><strong>{{ summary.linked|length }}</strong> event(s) linked
+          {% if summary.linked %}<ul class="names">{% for e in summary.linked %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+        </li>
+        {% if summary.replaced %}
+          <li><strong>{{ summary.replaced|length }}</strong> link(s) replaced
+            <ul class="names">{% for e in summary.replaced %}<li>{{ e }}</li>{% endfor %}</ul>
+          </li>
+        {% endif %}
+        {% if summary.kept_different %}
+          <li><strong>{{ summary.kept_different|length }}</strong> kept a different course (tick Replace to change them)
+            <ul class="names">{% for e in summary.kept_different %}<li>{{ e }}</li>{% endfor %}</ul>
+          </li>
+        {% endif %}
+        <li><strong>{{ summary.already }}</strong> already linked</li>
+        {% if summary.unlinked %}
+          <li><strong>{{ summary.unlinked|length }}</strong> left without a course
+            <ul class="names">{% for e in summary.unlinked %}<li>{{ e }}</li>{% endfor %}</ul>
+          </li>
+        {% endif %}
+        {% if summary.hidden %}
+          <li><strong>{{ summary.hidden|length }}</strong> linked to a course whose map is hidden
+            <ul class="names">{% for e in summary.hidden %}<li>{{ e }}</li>{% endfor %}</ul>
+          </li>
+        {% endif %}
+      </ul>
+    </div>
+
+    {% if summary.disagreements %}
+      <h2>Typed details that disagree with the game ({{ summary.disagreements|length }} event(s))</h2>
+      <div class="module">
+        <ul>
+          {% for item in summary.disagreements %}
+            <li>{{ item.event }}
+              <ul class="names">
+                {% for label, typed, game in item.fields %}
+                  <li>{{ label }}: typed &ldquo;{{ typed }}&rdquo;, the game says &ldquo;{{ game }}&rdquo;</li>
+                {% endfor %}
+              </ul>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+    {% if was_dry_run %}<p>Untick <em>Preview only</em> and run again to apply.</p>{% endif %}
+  {% endif %}
+</div>
+{% endblock %}

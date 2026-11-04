@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework import serializers, permissions
 from calculatorapi.models import LeagueOfHeroes
 from .mixins import EffectiveDateMixin, EventTypeMixin
+from .race_course import course_payload
 from .pvp_guide import annotate_has_guide
 
 
@@ -13,6 +14,8 @@ class LeagueOfHeroesSerializer(EventTypeMixin, EffectiveDateMixin, serializers.M
     # (annotate_has_guide; guide-visibility-plan.md).
     guide_visibility = serializers.SerializerMethodField()
     guide_tools_public = serializers.SerializerMethodField()
+    # The course the map draws, or null (views/race_course.py).
+    course = serializers.SerializerMethodField()
     event_type_value = "league_of_heroes"
 
     class Meta:
@@ -27,6 +30,7 @@ class LeagueOfHeroesSerializer(EventTypeMixin, EffectiveDateMixin, serializers.M
             "image",
             "track", "surface_type", "distance", "length",
             "track_condition", "season", "weather", "direction",
+            "course",
             "has_guide", "guide_visibility", "guide_tools_public",
         )
 
@@ -41,6 +45,9 @@ class LeagueOfHeroesSerializer(EventTypeMixin, EffectiveDateMixin, serializers.M
     def get_guide_tools_public(self, obj):
         return bool(getattr(obj, "guide_tools_public", False))
 
+    def get_course(self, obj):
+        return course_payload(obj)
+
 
 class LeagueOfHeroesViewSet(ViewSet):
     # Pure reference data — readable by guests (was inheriting the global
@@ -52,6 +59,8 @@ class LeagueOfHeroesViewSet(ViewSet):
         # global_* fields with is_predicted=False); only /calculator-data injects
         # the prediction map. Order by global_start_date since the old start_date
         # column is gone.
-        events = annotate_has_guide(LeagueOfHeroes.objects.all()).order_by("global_start_date")
+        events = annotate_has_guide(
+            LeagueOfHeroes.objects.select_related("course")
+        ).order_by("global_start_date")
         serializer = LeagueOfHeroesSerializer(events, many=True)
         return Response(serializer.data)

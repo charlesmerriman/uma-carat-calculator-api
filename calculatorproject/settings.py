@@ -198,6 +198,12 @@ UNFOLD = {
                         "link": reverse_lazy("admin:calculatorapi_leagueofheroes_changelist"),
                     },
                     {
+                        # The course map's records and its two buttons.
+                        "title": _("Race courses"),
+                        "icon": "route",
+                        "link": reverse_lazy("admin:calculatorapi_racecourse_changelist"),
+                    },
+                    {
                         "title": _("PvP guides"),
                         "icon": "menu_book",
                         "link": reverse_lazy("admin:calculatorapi_pvpguide_changelist"),

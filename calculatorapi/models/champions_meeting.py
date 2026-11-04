@@ -34,6 +34,14 @@ class ChampionsMeeting(models.Model):
     season = models.CharField(max_length=255)
     weather = models.CharField(max_length=255)
     direction = models.CharField(max_length=255)
+    # The course the map draws (models/race_course.py), set by the admin's
+    # "Link courses" from the game's own race tables. Empty until then, and an
+    # event without one simply shows no map. The text columns above stay until
+    # every event has a course. PROTECT: a course an event uses can't be deleted.
+    course = models.ForeignKey(
+        "RaceCourse", null=True, blank=True, on_delete=models.PROTECT,
+        related_name="champions_meetings", verbose_name="course (the map)",
+    )
     # Never rendered, and replaced by the PvP guide's stat rows
     # (models/pvp_guide.py, PvpStatConfig). Off the admin form and the API
     # since the guide shipped; the columns drop in the team-builder release once

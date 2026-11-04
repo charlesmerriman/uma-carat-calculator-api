@@ -323,6 +323,32 @@ order; set their proper order on the Patreon tiers page afterwards.
 - **League of Heroes events**: the same page as Champions Meetings, section for
   section.
 
+### Course maps (Race courses)
+
+Each event's guide draws its course from **Course (the map)** in Track details. You don't
+pick it by hand: the **Race courses** page in the sidebar fills it for you.
+
+1. **Import courses** (only when new course data arrives, which Claude prepares as a
+   file): upload it with *Preview only* ticked, read the list, then untick and run again.
+   It adds and updates courses, and keeps anything you changed on a course.
+2. **Link courses** (whenever a new Champions Meeting or League of Heroes event is added,
+   once its game data is in the site; ask Claude if an event shows "not in the JP snapshot
+   yet"): run the preview, then untick *Preview only*. Every event gets the course the game
+   says it runs on.
+
+The preview also lists **typed details that disagree with the game**, like a season and a
+weather swapped. Those are the words on the event's page; fix them there. The link never
+changes them for you.
+
+On a course's own page you can:
+
+- **Untick Show map** to hide a course's map everywhere, for example while its data is
+  being checked.
+- **Set Later laps** on a course that runs more than one lap: whether lap two is drawn
+  inside or outside lap one.
+- **Change Path file** where there were two to choose from. They're the same track a few
+  metres apart, so the default is almost always fine.
+
 ## PvP guides
 
 The site's PvP tab shows a guide for each Champions Meeting and League of

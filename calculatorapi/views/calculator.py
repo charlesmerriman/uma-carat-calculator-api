@@ -559,11 +559,13 @@ class CalculatorViewSet(ViewSet):
             key=lambda ge: effective_sort_key(game_event_emap.get(ge.id)),
         )
         champions_meeting_data = sorted(
-            annotate_has_guide(ChampionsMeeting.objects.all()),
+            # select_related: each event sends its course (views/race_course.py).
+            annotate_has_guide(ChampionsMeeting.objects.select_related("course")),
             key=lambda cm: effective_sort_key(cm_emap.get(cm.id)),
         )
         league_of_heroes_event_data = sorted(
-            annotate_has_guide(LeagueOfHeroes.objects.all()),
+            # select_related: each event sends its course (views/race_course.py).
+            annotate_has_guide(LeagueOfHeroes.objects.select_related("course")),
             key=lambda loh: effective_sort_key(loh_emap.get(loh.id)),
         )
         banner_timeline_data = sorted(
