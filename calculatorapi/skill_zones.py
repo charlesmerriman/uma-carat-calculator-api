@@ -26,8 +26,8 @@ on, plus corner numbers, settled with Daptrius on 2026-11-02 (counted back
 from the finish in fours), and `corner_random`, a random point on the LAST
 corner with that number (Daptrius, 2026-11-03: "the last time a corner
 appears in the race").
-Anything else, `straight_front_type` among them, narrows nothing, so an
-alternative made of nothing else reads `anywhere`. A variable this module has never seen is
+Anything else narrows nothing, so an alternative made of nothing else reads
+`anywhere`. A variable this module has never seen is
 caught by the test that classifies every variable in the global skills,
 before a player sees a wrong zone.
 
@@ -70,15 +70,18 @@ PLACE_VARIABLES = frozenset({
     "is_finalcorner_random", "is_finalcorner_laterhalf", "straight_random",
     "is_last_straight", "is_last_straight_onetime", "last_straight_random", "is_lastspurt",
     "distance_rate", "distance_rate_after_random", "remain_distance", "slope",
-    "up_slope_random", "down_slope_random", "always",
+    "up_slope_random", "down_slope_random", "always", "straight_front_type",
 })
 COURSE_GATES = frozenset({
     "track_id", "rotation", "ground_type", "distance_type", "is_basis_distance", "course_distance",
 })
 EVENT_GATES = frozenset({"ground_condition", "weather", "season"})
 RUNNER_GATE = "running_style"
-# Place-like, but their meaning is not verified: they narrow nothing.
-UNCONFIRMED = frozenset({"straight_front_type", "lastspurt"})
+# Place-like, but their meaning is not verified: they narrow nothing. Empty
+# since the skill pass (2026-11-03) confirmed `straight_front_type==2` as the
+# backstretch and `lastspurt==2` as "still going strong" (a state) from
+# Global's own descriptions; the mechanism stays for the next new variable.
+UNCONFIRMED = frozenset()
 # Who, when and how, never where.
 NOT_A_PLACE = frozenset({
     "order", "order_rate", "accumulatetime", "change_order_onetime", "bashin_diff_behind",
@@ -93,6 +96,7 @@ NOT_A_PLACE = frozenset({
     "remain_distance_viewer_id", "motivation", "running_style_equal_popularity_one",
     "is_used_skill_id", "behind_near_lane_time_set1", "overtake_target_no_order_up_time",
     "visiblehorse",  # an announced skill's (Magical☆Marvelous★World): runners in view
+    "lastspurt",  # ==2: "still going strong", a state the late race decides
 })
 NOT_A_PLACE_FAMILIES = (
     "activate_count_", "base_", "order_rate_in", "order_rate_out", "running_style_count_",
@@ -100,19 +104,21 @@ NOT_A_PLACE_FAMILIES = (
 )
 
 
-_KINDS = (
-    ("place", PLACE_VARIABLES),
-    ("course", COURSE_GATES),
-    ("runner", frozenset({RUNNER_GATE})),
-    ("event", EVENT_GATES),
-    ("unconfirmed", UNCONFIRMED),
-    ("not-a-place", NOT_A_PLACE),
-)
+def _kinds():
+    # Read at call time, so a test can stand in a variable for UNCONFIRMED.
+    return (
+        ("place", PLACE_VARIABLES),
+        ("course", COURSE_GATES),
+        ("runner", frozenset({RUNNER_GATE})),
+        ("event", EVENT_GATES),
+        ("unconfirmed", UNCONFIRMED),
+        ("not-a-place", NOT_A_PLACE),
+    )
 
 
 def classify(variable):
     """Which of the module's kinds a condition variable is, or None if unknown."""
-    for kind, variables in _KINDS:
+    for kind, variables in _kinds():
         if variable in variables:
             return kind
     return "not-a-place" if variable.startswith(NOT_A_PLACE_FAMILIES) else None
@@ -156,6 +162,10 @@ class CourseFacts:
         self.distance = course.distance
         self.corners = sorted((c["start"], c["start"] + c["length"], c["number"]) for c in course.corners)
         self.straights = sorted((s["start"], s["start"] + s["length"]) for s in course.straights)
+        # The course record's `front`: 1 the home straight (the stand side), 2
+        # the backstretch; `straight_front_type==2` is the backstretch (Global:
+        # Victory Cheer!, Break It Down!, "on the backstretch").
+        self.backstretches = sorted((s["start"], s["start"] + s["length"]) for s in course.straights if s.get("front") == 2)
         self.uphills = [(s["start"], s["start"] + s["length"]) for s in course.slopes if s["slope"] > 0]
         self.downhills = [(s["start"], s["start"] + s["length"]) for s in course.slopes if s["slope"] < 0]
 
@@ -214,6 +224,7 @@ def _flag_clause(facts, variable, value):
         ("slope", 2): (facts.downhills, "fixed"),
         ("slope", 0): (_complement(facts.uphills + facts.downhills, facts.distance), "fixed"),
         ("always", 1): ([(0, 0)], "point"),
+        ("straight_front_type", 2): (facts.backstretches, "fixed"),  # ==1 is unused by Global: no rule
     }
     if final_corner:
         rules.update({

@@ -2248,12 +2248,20 @@ Each entry also carries its verdict (`skill_verdicts.py`; notes/course-map-plan-
 field only when it says something: `effects` (`accel`, `speed`, `heal` for the runner,
 `debuff` for others), `fires_at` (a fixed zone's first metre), `spread` (`[first, last]` metre
 of a random trigger), `spurt` (`{"from", "to"}` metres from the late-race start, negative
-before it, plus for an accel `odds`, the share landing well: still running 0.5 s into the late race, at most 50 m after its start, and `useful`, a ranking score: that share times the speed it adds), `before_spurt` (a heal's share
+before it, plus for an accel `odds`, the share landing well: still running 0.5 s into the late race, at most 50 m after its start, and `useful`, a ranking score: that share times the speed its acceleration adds, plus the share its speed carries into the late race times that speed; a fixed zone gated by a clause the map can't predict, a placing or an event, counts the zone's metres before the window as chances to fire early, so its share is the window's share of the zone clipped to [zone start, window end]), `before_spurt` (a heal's share
 landing before the late-race start), `carry` (a speed skill's share that carries its speed into the late race; a target-speed-only one must fire early enough to reach its speed first; absent when no part of the trigger lies before the late-race start) and `carry_window` (the metres it must fire in for that),
 `repeats` (how many times a short-cooldown skill can fire here), `needs` (what else must hold,
 in words), `unreadable` (`true`: a clause isn't confirmed yet, so no timing fields), and `chain`
-(`{"counts": "heal", "at_least": 3}`, set off by other skills). `repeats` is absent
-for `straight_random`, since how many points it places is unknown.
+(`{"counts": "heal" | "all" | "start" | "middle" | "end_after" | "later_half", "at_least": 3}`, set off by other skills;
+`middle`, `end_after` and `later_half` bound where it fires, from the mid-race start, the
+late-race start or half-way, so such a skill with no place of its own gets that fixed zone).
+`repeats` is absent for `straight_random`, since how many points it places is unknown.
+`paths` appears when the skill's ways of firing need different things: one entry per way
+that can fire here, each with `zones`, `fires_at` or `spread`, `spurt`, `before_spurt`,
+`carry`, `carry_window`, `needs` and `unreadable` as above; the top-level fields then
+summarise them (`zones` merged, `spread` the whole stretch, `spurt.useful` the best path's,
+no odds or shares). `straight_front_type==2` is a place (the course's `front: 2` straights,
+the backstretch); `lastspurt==2` ("still going strong") is a state, worded in `needs`.
 
 **`has_guide`**: whether the event has a PvP guide out of draft, Supporters or Public (`GET /pvp-guides/cm/<id>`); a Private guide counts as none. **`guide_visibility`**: `"supporters"`, `"public"`, or `null` (no guide, or a Private one). **`guide_tools_public`**: whether My team and the Gallery open to everyone with it (only ever on a Public guide). The page decides what a reader without early access may open from these two. Annotations (`views.pvp_guide.annotate_has_guide`), so changing who may read a guide drops the cached payload. The five `*_recommendation` stat fields left the wire with the PvP guide (2026-10); the guide's `stat_configs` replace them.
 
