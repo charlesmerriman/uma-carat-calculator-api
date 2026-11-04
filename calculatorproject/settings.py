@@ -911,6 +911,14 @@ CACHES = {
         "LOCATION": "rankings",
         "OPTIONS": {"MAX_ENTRIES": 200},
     },
+    # The course map's skill zones (calculatorapi/course_zones_cache.py): one
+    # map per course, tens of KB each, built on first request. Its own alias so
+    # they never crowd "default". Same single-process caveat.
+    "course-zones": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "course-zones",
+        "OPTIONS": {"MAX_ENTRIES": 200},
+    },
 }
 
 # Log all Django errors to stdout so DigitalOcean runtime logs capture tracebacks.

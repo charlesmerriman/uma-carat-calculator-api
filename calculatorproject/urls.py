@@ -62,7 +62,7 @@ from calculatorapi.views.pvp_guide_editor import (
     pvp_guide_track_greens,
 )
 from calculatorapi.views.pvp_catalogue import pvp_catalogue
-from calculatorapi.views.race_course import race_course_shape
+from calculatorapi.views.race_course import race_course_shape, race_course_skill_zones
 from calculatorapi.views.rankings import (
     rankings_gallery, rankings_guides, rankings_players, rankings_pull_plans, rankings_pvp,
 )
@@ -195,8 +195,10 @@ urlpatterns = [
     # unknown kind gets the same JSON 404 as an unknown event. Drafts 404 for
     # everyone but staff. → views/pvp_guide.py
     path("pvp-guides/<str:kind>/<int:event_id>", pvp_guide_detail, name="pvp-guide"),
-    # The course map's real shape, fetched when a map is drawn. → views/race_course.py
+    # The course map's real shape, fetched when a map is drawn, and its skill
+    # zones, one map per course. → views/race_course.py
     path("race-courses/<int:course_id>/shape", race_course_shape, name="race-course-shape"),
+    path("race-courses/<int:course_id>/skill-zones", race_course_skill_zones, name="race-course-skill-zones"),
     # A guide's comments, one thread per section (guide-comments-plan.md). → views/gallery.py
     path("pvp-guides/<str:kind>/<int:event_id>/comments", guide_comments, name="pvp-guide-comments"),
     # The site's guide editor: a guide as one document, by guide id. Editors
