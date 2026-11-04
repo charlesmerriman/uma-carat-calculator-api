@@ -319,6 +319,33 @@ two, so adding a name to `MEMBER_FIELDS` is the review point.
 
 ---
 
+## Race courses: Import courses, then Link courses
+
+`RaceCourseAdmin` lives in `admin_race_course.py` (imported by `admin.py` for the
+registration, like `admin_gallery`). Its changelist carries two buttons, both following
+the Patreon pattern above: views under the model's URL namespace (so `admin_view()` and the
+second factor gate them), **Preview only** ticked by default, and a preview that runs the
+real writes and rolls them back (`admin_course_import.py`).
+
+- **Import courses** takes the bundle `scripts/build_course_bundle.py` builds locally from
+  Daptrius's zips (~3 MB; the raw ~50 MB never reaches the server). It creates and updates
+  courses, keeps an editor's swapped path, `later_laps` and `show_map` (an import may only
+  turn a map OFF), never deletes a course, and never links an event. Gated on the
+  `add_racecourse` permission; there is no hand "Add" (`has_add_permission` is False),
+  because a course typed by hand would have no record behind it.
+- **Link courses** links every CM and LoH to the course the game names, read from
+  `scripts/data/jp_snapshot/race_links.json` on disk. An event already linked to a
+  different course keeps it unless **Replace** is ticked. The preview also lists every
+  event whose typed course details disagree with the game (the words come from the game's
+  codes: `SEASONS`, `WEATHERS`, `GROUNDS`); it never rewrites the text. Gated on change
+  permission for both event models.
+
+A course's page shows the drawn shape (an inline SVG, finish in red), the events using
+it, and the import's notes. Where the import had two path files, **Path file** swaps them
+(`RaceCourseForm.save` trades the shapes, so swapping back is the same choice). The game's
+facts are read-only except to a superuser. The events' **Course (the map)** field is an
+autocomplete over `search_fields = ("racecourse",)`.
+
 ## Gallery moderation
 
 `admin_gallery.py`, under "Users & access": **Gallery reports** (the queue), **Gallery

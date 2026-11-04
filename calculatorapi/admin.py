@@ -73,6 +73,7 @@ from .admin_image_picker import SpacesImagePickerMixin
 from .admin_pvp import PVP_GUIDE_FIELDSET, PicturePickersMixin, PvpGuideLinkMixin
 # Importing admin_gallery registers the gallery's moderation pages.
 from . import admin_gallery  # noqa: F401  pylint: disable=unused-import
+from . import admin_race_course  # noqa: F401  pylint: disable=unused-import
 from . import digitalocean_api, patreon_api, skill_text
 from .admin_patreon_import import (
     PatreonCsvImportForm,
@@ -1051,6 +1052,7 @@ class ChampionsMeetingAdmin(PvpGuideLinkMixin, GlobalDatesStatusMixin, ScheduleO
     ordering = ("-global_start_date",)
     search_fields = ("name",)
     readonly_fields = ("image_preview", "pvp_guide_link")
+    autocomplete_fields = ("course",)  # 139 courses: a search, not a dropdown
     # Editors always fill the JP dates; global dates only once the meeting is
     # confirmed (they're left blank until then, and the app predicts them).
     fieldsets = (
@@ -1065,7 +1067,10 @@ class ChampionsMeetingAdmin(PvpGuideLinkMixin, GlobalDatesStatusMixin, ScheduleO
         }),
         SCHEDULE_OFFSET_FIELDSET,
         ("Track details", {
-            "fields": ("track", "surface_type", "distance", "length",
+            # "course" is the map's record (Race courses), set by "Link courses";
+            # the text below is what the timeline card shows until every event
+            # has one.
+            "fields": ("course", "track", "surface_type", "distance", "length",
                        "track_condition", "season", "weather", "direction"),
         }),
         PVP_GUIDE_FIELDSET,
@@ -1112,6 +1117,7 @@ class LeagueOfHeroesAdmin(PvpGuideLinkMixin, GlobalDatesStatusMixin, ScheduleOff
     ordering = ("-global_start_date",)
     search_fields = ("name",)
     readonly_fields = ("image_preview", "pvp_guide_link")
+    autocomplete_fields = ("course",)
     # Mirrors ChampionsMeetingAdmin above section for section — the two content
     # types now hold the same data and render through the same timeline card, so
     # they should be the same page to edit. (This previously omitted the schedule
@@ -1132,7 +1138,10 @@ class LeagueOfHeroesAdmin(PvpGuideLinkMixin, GlobalDatesStatusMixin, ScheduleOff
         }),
         SCHEDULE_OFFSET_FIELDSET,
         ("Track details", {
-            "fields": ("track", "surface_type", "distance", "length",
+            # "course" is the map's record (Race courses), set by "Link courses";
+            # the text below is what the timeline card shows until every event
+            # has one.
+            "fields": ("course", "track", "surface_type", "distance", "length",
                        "track_condition", "season", "weather", "direction"),
         }),
         PVP_GUIDE_FIELDSET,

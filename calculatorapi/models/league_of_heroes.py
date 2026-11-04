@@ -51,6 +51,11 @@ class LeagueOfHeroes(models.Model):
     season = models.CharField(max_length=255, default="TBD")
     weather = models.CharField(max_length=255, default="TBD")
     direction = models.CharField(max_length=255, default="TBD")
+    # The course the map draws: see the note on ChampionsMeeting.course.
+    course = models.ForeignKey(
+        "RaceCourse", null=True, blank=True, on_delete=models.PROTECT,
+        related_name="league_of_heroes_events", verbose_name="course (the map)",
+    )
     # The five recommendations: see the note on ChampionsMeeting. Unused, and
     # dropped in the team-builder release.
     speed_recommendation = models.IntegerField(default=0)

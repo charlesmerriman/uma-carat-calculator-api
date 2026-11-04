@@ -1,0 +1,94 @@
+{% extends "admin/base_site.html" %}
+{% comment %}
+"Import courses": upload the bundle scripts/build_course_bundle.py builds from
+Daptrius's zips (admin_course_import.py). Creates and updates courses; never
+links an event and never deletes a course.
+{% endcomment %}
+
+{% block content %}
+{% include "admin/calculatorapi/racecourse/_styles.html" %}
+
+<div class="course-import">
+  <h1>Import courses</h1>
+
+  <div class="module">
+    <p>
+      Upload the <strong>course bundle</strong>: one JSON file holding every course's corners,
+      straights, hills and shape, built from Daptrius's game files. It adds new courses and
+      updates the ones already here.
+    </p>
+    <p>
+      It keeps your choices: a path you swapped, a map you hid and the lap layout stay as
+      they are. It never deletes a course, and it doesn't link events. That's the
+      <a href="{% url 'admin:calculatorapi_racecourse_link_courses' %}">Link courses</a> page, next.
+    </p>
+  </div>
+
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    {% for field in form %}
+      <div class="field">
+        {{ field.errors }}
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}<span class="helptext">{{ field.help_text }}</span>{% endif %}
+      </div>
+    {% endfor %}
+    <div class="actions">
+      <button type="submit" class="button default">Run import</button>
+      <a href="{% url 'admin:calculatorapi_racecourse_changelist' %}">Back to race courses</a>
+    </div>
+  </form>
+
+  {% if summary %}
+    <h2>{% if was_dry_run %}Preview: nothing was saved{% else %}Done{% endif %}</h2>
+    <div class="module">
+      <ul>
+        <li><strong>{{ summary.created|length }}</strong> course(s) added
+          {% if summary.created %}<ul class="names">{% for c in summary.created %}<li>{{ c }}</li>{% endfor %}</ul>{% endif %}
+        </li>
+        <li><strong>{{ summary.updated|length }}</strong> updated
+          {% if summary.updated %}<ul class="names">{% for c in summary.updated %}<li>{{ c }}</li>{% endfor %}</ul>{% endif %}
+        </li>
+        <li><strong>{{ summary.unchanged }}</strong> unchanged</li>
+        {% if summary.kept_choices %}
+          <li><strong>{{ summary.kept_choices|length }}</strong> kept the path you chose
+            <ul class="names">{% for c in summary.kept_choices %}<li>{{ c }}</li>{% endfor %}</ul>
+          </li>
+        {% endif %}
+        {% if summary.hidden_now %}
+          <li class="errornote"><strong>{{ summary.hidden_now|length }}</strong> map(s) hidden by this import:
+            their record has a problem the bundle couldn't fix
+            <ul class="names">{% for c in summary.hidden_now %}<li>{{ c }}</li>{% endfor %}</ul>
+          </li>
+        {% endif %}
+        {% if summary.hidden %}
+          <li><strong>{{ summary.hidden|length }}</strong> course(s) arrive with their map hidden
+            <ul class="names">{% for c in summary.hidden %}<li>{{ c }}</li>{% endfor %}</ul>
+          </li>
+        {% endif %}
+        {% if summary.not_in_bundle %}
+          <li><strong>{{ summary.not_in_bundle|length }}</strong> course(s) here aren't in this bundle (left alone)
+            <ul class="names">{% for c in summary.not_in_bundle %}<li>{{ c }}</li>{% endfor %}</ul>
+          </li>
+        {% endif %}
+      </ul>
+    </div>
+
+    {% if summary.flagged %}
+      <h2>What the import cleaned up ({{ summary.flagged|length }} course(s))</h2>
+      <div class="module">
+        <ul>
+          {% for item in summary.flagged %}
+            <li>{{ item.course }}
+              <ul class="names">{% for flag in item.flags %}<li>{{ flag }}</li>{% endfor %}</ul>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+    {% if was_dry_run %}<p>Untick <em>Preview only</em> and run again to apply.</p>{% endif %}
+  {% endif %}
+</div>
+{% endblock %}

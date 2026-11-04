@@ -109,9 +109,10 @@ class ConditionTextTests(CalculatorTestCase):
             self.assertEqual(texts(when(condition)["all"]), [expected], condition)
 
     def test_what_is_not_verified_stays_the_games_code(self):
-        described = when("is_overtake==1&order==2")
+        # straight_front_type's value 1 is used by no Global skill, so it has no words.
+        described = when("straight_front_type==1&order==2")
         self.assertEqual(described["all"], [
-            {"text": "is_overtake==1", "raw": True}, {"text": "In 2nd place", "raw": False},
+            {"text": "straight_front_type==1", "raw": True}, {"text": "In 2nd place", "raw": False},
         ])
         # A racecourse global has no skill for, so no name: raw too.
         self.assertTrue(when("track_id==10999")["all"][0]["raw"])
@@ -119,6 +120,50 @@ class ConditionTextTests(CalculatorTestCase):
         self.assertEqual(when("phase==1&order>>2"), {
             "all": [{"text": "phase==1&order>>2", "raw": True}], "any": [],
         })
+
+    def test_the_skill_pass_phrases(self):
+        # notes/course-map-skill-pass.md, B5: each from Global's own description.
+        cases = {
+            "is_overtake==1": "While trying to pass another runner",
+            "straight_front_type==2": "On the backstretch",
+            "lastspurt==2": "While still going strong",
+            "distance_diff_top<=10": "Within 4 lengths of the lead",
+            "distance_diff_top<=5": "Within 2 lengths of the lead",
+            "distance_diff_top>=7": "2.8 lengths or more behind the lead",
+            "distance_diff_rate<=10": "Close to the lead",
+            "distance_diff_rate<=50": "Toward the front of the field",
+            "distance_diff_rate>=75": "Around the very back",
+            "change_order_up_end_after>=3": "After passing another runner 3 times late-race",
+            "change_order_up_end_after>=1": "After passing another runner once late-race",
+            "change_order_up_finalcorner_after>=2": "After passing another runner 2 times on the final corner or later",
+            "corner==3": "On corner 3",
+            "corner_random==3": "At a random moment on corner 3",
+            "is_behind_in==1": "On the outside",
+            "grade==100": "In a G1 or similarly major race",
+            "motivation==5": "In great mood",
+            "motivation>=4": "In good or great mood",
+            "order_rate_in20_continue==1": "Having stayed in the front 20% so far",
+            "order_rate_out40_continue==1": "Having stayed behind the front 40% so far",
+            "visiblehorse>=4": "With 4 or more runners in view",
+            "is_activate_any_skill==1": "Just as another skill activates",
+            "random_lot==30": "30% chance, rolled before the race",
+            "running_style_count_same<=1": "With no other runner on the same strategy",
+            "running_style_count_same_rate>=40": "With many runners on the same strategy",
+            "same_skill_horse_count==1": "As the only runner with this skill",
+            "same_skill_horse_count>=5": "With 5 or more runners carrying this skill",
+            "is_dirtgrade==1": "In a collaborative graded race",
+            "running_style_equal_popularity_one==1": "When the favorite runs the same strategy",
+            "temptation_opponent_count_behind>=1": "With a rushed runner behind",
+            "running_style_temptation_opponent_count_nige>=1": "With a rushed Front Runner in the race",
+            "activate_count_end_after>=3": "After using 3 or more skills late-race",
+            "activate_count_later_half>=2": "After using 2 or more skills in the second half",
+            "remain_distance_viewer_id>=800&remain_distance_viewer_id<=850":
+                "When that runner has between 800 and 850 m to go",
+            "is_other_character_activate_advantage_skill==9": "When a runner uses a recovery skill",
+        }
+        for condition, expected in cases.items():
+            with self.subTest(condition=condition):
+                self.assertEqual(texts(when(condition)["all"]), [expected])
 
     def test_a_precondition_reads_as_only_after(self):
         # V Is for Victory!

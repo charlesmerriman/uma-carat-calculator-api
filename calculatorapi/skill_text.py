@@ -10,11 +10,12 @@ example: all 62 single-condition skills with `phase_random==1` say
 "mid-race", every `ability_type` 31 says "acceleration"), or is the meaning
 the track-green matcher already relies on (pvp_track_skills.py). Anything
 else comes back as the game's own code, flagged `raw`, for the page to show
-as code. Known unknowns on 2026-10-23: `distance_diff_top` (units),
-`distance_diff_rate`, `is_overtake`, `lastspurt==2`, `is_behind_in`,
-`straight_front_type`, a corner's number, `grade`, the `order_rate_*_continue`
-family, and several JP-only variables. Adding one is adding a line here, with
-the skills that confirm it named in the commit.
+as code. The skill pass of 2026-11-03 (notes/course-map-skill-pass.md, B5)
+gave the last Global unknowns their phrases (`is_overtake`, `distance_diff_top`
+in metres, `lastspurt==2`, `straight_front_type==2`, a corner's number, the
+`order_rate_*_continue` family, ...), each sourced from Global's descriptions
+and named at its line. Adding one is adding a line here, with the skills that
+confirm it named in the commit.
 
 THE SHAPE, per effect slot (a skill has one or two):
 
@@ -86,6 +87,23 @@ FLAGS = {
     ("time", 4): "At night",
     ("is_basis_distance", 1): "At a standard distance (a multiple of 400 m)",
     ("is_basis_distance", 0): "At a non-standard distance",
+    # The skill pass, 2026-11-03 (notes/course-map-skill-pass.md, B5): each
+    # from Global's descriptions of the skills that use it.
+    ("is_overtake", 1): "While trying to pass another runner",  # Hard Worker, Lightning Surge, Hot Pursuit
+    ("straight_front_type", 2): "On the backstretch",  # Victory Cheer!, Break It Down!
+    ("lastspurt", 2): "While still going strong",  # The Duty of Dignity Calls, In One Fell Swoop
+    ("is_behind_in", 1): "On the outside",  # Shadow Break, Rising Dragon ("passing ... on the outside")
+    ("grade", 100): "In a G1 or similarly major race",  # Raise My Soul's Blade!, G1 Averseness
+    ("motivation", 5): "In great mood",  # Us Girlies Keep Winnin'! ♪
+    ("is_activate_any_skill", 1): "Just as another skill activates",  # Dreams Donned with Pride!
+    ("is_dirtgrade", 1): "In a collaborative graded race",  # Collaborative Graded Races
+    ("running_style_equal_popularity_one", 1): "When the favorite runs the same strategy",  # Target in Sight
+    ("same_skill_horse_count", 1): "As the only runner with this skill",  # Lone Wolf
+    ("is_other_character_activate_advantage_skill", 9): "When a runner uses a recovery skill",  # Catch 'Em Off Guard
+    ("order_rate_in20_continue", 1): "Having stayed in the front 20% so far",  # G00 1st. F∞;, Keep Pushing Ahead
+    ("order_rate_in50_continue", 1): "Having stayed in the front 50% so far",  # Presents from X
+    ("order_rate_in80_continue", 1): "Having stayed in the front 80% so far",  # Schwarzes Schwert
+    ("order_rate_out40_continue", 1): "Having stayed behind the front 40% so far",  # Schwarzes Schwert
 }
 
 # variable >= N reads as "... N s or more", for the timers.
@@ -104,7 +122,11 @@ SKILL_COUNTS = {
     "activate_count_heal": "recovery skills",
     "activate_count_start": "skills early-race",
     "activate_count_middle": "skills mid-race",
+    "activate_count_end_after": "skills late-race",  # Shake It Out
+    "activate_count_later_half": "skills in the second half",  # Racing Spirit: Wit
 }
+# A rushed runner of a style, in the game's style words (the Frenzied family).
+RUSHED_STYLES = {"nige": "Front Runner", "senko": "Pace Chaser", "sashi": "Late Surger", "oikomi": "End Closer"}
 
 BASE_STATS = {"base_speed": "Speed", "base_stamina": "Stamina", "base_power": "Power",
               "base_guts": "Guts", "base_wiz": "Wit"}
@@ -351,7 +373,60 @@ def clause_text(variable, clauses, context):  # pylint: disable=too-many-return-
     if variable == "course_distance":
         return ranged(clauses, "On a course of {n} m or less", "On a course of {n} m or more",
                       "On a course of {lo} to {hi} m", "On a {n} m course")
-    return counted_text(variable, clauses)
+    text = pass_text(variable, clauses)
+    return text if text is not None else counted_text(variable, clauses)
+
+
+def pass_text(variable, clauses):  # pylint: disable=too-many-return-statements,too-many-branches
+    """The phrases the skill pass added (notes/course-map-skill-pass.md, B5),
+    each sourced from Global's descriptions of the skills that use it."""
+    single = clauses[0] if len(clauses) == 1 else None
+    low, high, equal, not_equal = bounds(clauses)
+    if not_equal is not None:
+        return None
+    if variable == "corner" and single and single[0] == "==" and single[1] > 0:
+        return f"On corner {single[1]}"  # Ahead of the Horizon, "on the third corner"
+    if variable == "corner_random" and single and single[0] == "==":
+        return f"At a random moment on corner {single[1]}"  # Beautiful Form
+    if variable == "distance_diff_top":
+        # Metres behind the leader, 2.5 m to a length: <=10 "within 4 lengths"
+        # (Top Gear, Solid Strike), <=5 "within 2 lengths" (Ambitious Breeze).
+        if high is not None and low is None and equal is None:
+            return f"Within {lengths(high * 0.4)} of the lead"
+        if low is not None and high is None and equal is None:
+            return f"{lengths(low * 0.4)} or more behind the lead"  # 114th Time's the Charm, "far from the lead"
+        return None
+    if variable == "distance_diff_rate":
+        if high is not None and low is None and equal is None:
+            return "Close to the lead" if high <= 10 else "Toward the front of the field"  # α-star*; Sunny Breeze
+        if low is not None and low >= 75 and high is None:
+            return "Around the very back"  # Defeatist
+        return None
+    after_a_point = variable in ("change_order_up_end_after", "change_order_up_finalcorner_after")
+    if after_a_point and low is not None and high is None:
+        times = "once" if low == 1 else f"{low} times"
+        where = "late-race" if variable == "change_order_up_end_after" else "on the final corner or later"
+        return f"After passing another runner {times} {where}"  # Behold Thine Emperor's Divine Might; Guten Appetit ♪
+    if variable == "motivation" and low is not None and low >= 4 and high is None and equal is None:
+        return "In good or great mood"  # Racing Spirit: Mood
+    if variable == "visiblehorse" and low is not None and high is None and equal is None:
+        return f"With {low} or more runners in view"  # Magical☆Marvelous★World
+    if variable == "random_lot" and equal is not None:
+        return f"{equal}% chance, rolled before the race"  # Risk-Taker (15), Risk-Maker (30), Lucky Seven (50)
+    if variable == "running_style_count_same" and high is not None and high <= 1 and low is None:
+        return "With no other runner on the same strategy"  # Maverick
+    if variable == "running_style_count_same_rate" and low is not None and high is None:
+        return "With many runners on the same strategy"  # Competitive Spirit
+    if variable == "same_skill_horse_count" and low is not None and high is None and equal is None:
+        return f"With {low} or more runners carrying this skill"  # Sympathy
+    if variable in ("temptation_opponent_count_behind", "temptation_opponent_count_infront") and low is not None:
+        return "With a rushed runner " + ("behind" if variable.endswith("behind") else "ahead")  # Trick
+    if variable.startswith("running_style_temptation_opponent_count_") and low is not None:
+        style = RUSHED_STYLES.get(variable.rsplit("_", 1)[1])
+        return f"With a rushed {style} in the race" if style else None  # Frenzied Front Runners
+    if variable == "remain_distance_viewer_id" and low is not None and high is not None:
+        return f"When that runner has between {number(low)} and {number(high)} m to go"  # Cheers of a Fellow Dreamer
+    return None
 
 
 def counted_text(variable, clauses):  # pylint: disable=too-many-return-statements

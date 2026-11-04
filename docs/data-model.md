@@ -938,6 +938,48 @@ The five `*_recommendation` int columns are still on both tables but off the adm
 API and the client since the PvP guide shipped; they drop in the team-builder release
 (R2 of the PvP plan) once production confirms they are all zero.
 
+Both carry a nullable `course` FK to `RaceCourse` (below), `on_delete=PROTECT`, set by the
+admin's "Link courses". The typed course columns stay beside it until every event has a
+course; a later release can retire them.
+
+### `RaceCourse`: the course map's record
+
+`models/race_course.py`, one row per game course set (a racecourse, a surface, a distance
+and a variant, e.g. Kyoto's outer course), from Daptrius's scraper output of the game's
+course parameters. The plan: `notes/course-map-plan.md`. **Content**
+(`content_snapshot.CONTENT_MODELS`, listed before the events that point at it), edited by
+the "Content editors" group.
+
+- **`region` + `game_id` are unique together.** Every row is `jp` today: no difference was
+  found on the courses global's early events (before League of Heroes 3) use, so every event
+  links to the JP row (owner, 2026-11-02). If one turns up, that course gains a `global` row
+  and its early events are re-linked; nothing that reads a course asks which version applies.
+- **The game's numbers, verbatim**: `corners` `{start, length, number}` (the game's number,
+  counted back from the finish in fours; -1 is a normal corner), `straights` `{start,
+  length, front}`, `slopes` `{start, length, slope}` (percent times 10,000), and
+  `surface_changes` `{start, surface}`. All metres from the gate; a stretch in none of them
+  is a gap, never filled in. The only clean-ups (`course_shapes.py`, each written to
+  `flags`): straights re-paired in race order (the scraper's pairing broke three records),
+  corner 90 on 10613 dropped (not a corner, Daptrius), a part past the finish cut at the line.
+- **`shape`** is the game's 1,001-point path in SCREEN axes: point i at i / 1000 of the
+  distance, z flipped into SVG's downward y (the game's z points up, so an unflipped path is
+  mirrored), turned so the home straight runs along the bottom, metres, 0.1 m. Null for a
+  straight course or one with no path file. `path_source` names the file; `path_candidates`
+  holds the other file where the name codes left two (rail variants a few metres apart),
+  for the admin's swap.
+- **`later_laps`** (inside / outside) and **`show_map`** are the editor's: a re-import
+  never changes them, except that it may turn `show_map` OFF for a record it couldn't make
+  whole. `flags` and `source_data` (the scraper's whole record, for a later layer that needs
+  a field nobody modelled) are admin-only and never serialized.
+- **The event's link comes from the game**, never from matching the typed columns:
+  `scripts/data/jp_snapshot/race_links.json` (`extract_master_snapshot.py --region jp`)
+  maps each CM and LoH number to its course set through `champions_race_condition` /
+  `heroes_race_condition`, `race_instance` and `race`. JP's tables are used because they
+  know every event global will run; global's stop at the events it has run.
+
+The rows and the links are an editor's two admin imports (`admin.md`, "Race courses"),
+never a deploy step. A course reaches the client nested on its events (`api-reference.md`).
+
 ### `PvpGuide`: what to build for one CM or LoH
 
 `models/pvp_guide.py`. Written by the sheet's authors in the admin, served by

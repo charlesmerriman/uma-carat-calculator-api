@@ -48,6 +48,8 @@ CONTENT_MODELS = (
     "BannerStepUp",
     "UmasOnUmaBanner",
     "SupportsOnSupportBanner",
+    # Before the events, which point at it (models/race_course.py).
+    "RaceCourse",
     "ChampionsMeeting",
     "LeagueOfHeroes",
     # The PvP guide and its children (models/pvp_guide.py)

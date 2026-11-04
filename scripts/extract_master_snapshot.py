@@ -37,6 +37,9 @@ What comes out, one file per concern (all sorted by id, so re-runs diff cleanly)
                       names, this text ships before global has the conditions
   sparks.json         global only: every spark (the game's "factor"), what a
                       veteran's export lists by id: kind, stars and name
+  race_links.json     jp only: each CM's and LoH's course id and race
+                      conditions, by number, which the admin's "Link courses"
+                      reads (see extract_race_links)
 
 What the ids encode, because the import asserts on it:
 
@@ -428,6 +431,64 @@ def has_table(conn, name):
     ).fetchone() is not None
 
 
+def extract_race_links(conn):
+    """Which course each Champions Meeting and League of Heroes runs on, by number.
+
+    The game names it: a CM round (`champions_race_condition`) or a LoH stage
+    (`heroes_race_condition`) points at a race instance, the instance at a race,
+    the race at its course set. The admin's "Link courses" reads this file to
+    link events to RaceCourse rows (notes/course-map-plan.md), so a snapshot
+    refresh is what brings a new event's course.
+
+    Every round of one event has run on one course so far. If a future event
+    ever doesn't, its `course` is null and `courses` lists them all, for an
+    editor to pick by hand. The conditions are round 0's / stage 0's, as the
+    game codes them (0 is random); "Link courses" turns them into words.
+    """
+    if not has_table(conn, "champions_race_condition"):
+        return {"champions": {}, "heroes": {}}
+    course_of = dict(conn.execute(
+        "SELECT race_instance.id, race.course_set FROM race_instance"
+        " JOIN race ON race.id = race_instance.race_id"
+    ).fetchall())
+
+    def entry(courses, season, weather, ground):
+        courses = sorted(set(courses))
+        found = {"course": courses[0] if len(courses) == 1 else None,
+                 "season": season, "weather": weather, "ground": ground}
+        if len(courses) != 1:
+            found["courses"] = courses
+        return found
+
+    champions = {}
+    rounds = conn.execute(
+        "SELECT champions_id, round_id, race_instance_id, race_condition_id"
+        " FROM champions_race_condition ORDER BY champions_id, round_id"
+    ).fetchall()
+    for number in sorted({row["champions_id"] for row in rounds}):
+        own = [row for row in rounds if row["champions_id"] == number]
+        condition = conn.execute(
+            "SELECT season, weather, ground FROM race_condition WHERE id = ?",
+            (own[0]["race_condition_id"],),
+        ).fetchone()
+        champions[str(number)] = entry(
+            [course_of[row["race_instance_id"]] for row in own], *condition,
+        )
+
+    heroes = {}
+    stages = conn.execute(
+        "SELECT heroes_id, stage, race_instance_id, season, weather, ground"
+        " FROM heroes_race_condition ORDER BY heroes_id, stage"
+    ).fetchall()
+    for number in sorted({row["heroes_id"] for row in stages}):
+        own = [row for row in stages if row["heroes_id"] == number]
+        heroes[str(number)] = entry(
+            [course_of[row["race_instance_id"]] for row in own],
+            own[0]["season"], own[0]["weather"], own[0]["ground"],
+        )
+    return {"champions": champions, "heroes": heroes}
+
+
 def extract_evolutions(conn):
     """
     Evolved skills: whose, from what, and how they unlock. Three kinds:
@@ -501,9 +562,9 @@ def extract(mdb_path, region="global"):
         # Text ahead of definitions is a global thing: JP defines what it
         # names, and global's English is the text worth having early. So are
         # the spark names: global's English is what a veteran card shows.
-        global_only = {}
+        region_only = {}
         if region == "global":
-            global_only = {
+            region_only = {
                 "skill_text_ahead.json": extract_skill_text_ahead(conn, skills),
                 "evolution_condition_text.json": {
                     str(condition_id): text
@@ -512,6 +573,10 @@ def extract(mdb_path, region="global"):
                 },
                 "sparks.json": extract_sparks(conn),
             }
+        # The course links come from JP's tables: they know every event
+        # global will run, while global's stop at the events it has run.
+        if region == "jp":
+            region_only = {"race_links.json": extract_race_links(conn)}
     finally:
         conn.close()
 
@@ -534,8 +599,12 @@ def extract(mdb_path, region="global"):
         "support_hints.json": support_hints,
         "evolutions.json": evolutions,
     }
-    counts.update({name.removesuffix(".json"): len(payload) for name, payload in global_only.items()})
-    files.update(global_only)
+    if region == "jp":
+        counts.update({f"race_links_{kind}": len(region_only["race_links.json"][kind])
+                       for kind in ("champions", "heroes")})
+    else:
+        counts.update({name.removesuffix(".json"): len(payload) for name, payload in region_only.items()})
+    files.update(region_only)
     meta = {
         "region": region,
         "extracted_at": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"),

@@ -1,0 +1,27 @@
+{% comment %}
+Scoped styles for the two course pages, after the Patreon import's
+(patreonsupporter/_import_styles.html): unfold ships Tailwind's reset, so the
+stock admin form styling isn't there to inherit, and color-mix on currentColor
+follows unfold's theme.
+{% endcomment %}
+<style>
+  .course-import { max-width: 80ch; }
+  .course-import h1 { font-size: 1.5rem; font-weight: 600; margin: 0 0 0.75rem; }
+  .course-import h2 { font-size: 1.05rem; font-weight: 600; margin: 1.25rem 0 0.5rem; }
+  .course-import p, .course-import li { margin: 0 0 0.5rem; line-height: 1.5; }
+  .course-import ul { padding-left: 1.25rem; list-style: disc; }
+  .course-import ul ul { list-style: circle; margin-top: 0.25rem; }
+  .course-import .module {
+    border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .course-import .field { margin-bottom: 1rem; }
+  .course-import label { font-weight: 600; display: inline-block; margin-bottom: 0.25rem; }
+  .course-import .helptext { display: block; font-size: 0.85rem; opacity: 0.75; margin-top: 0.25rem; }
+  .course-import .errorlist { color: #dc2626; list-style: none; padding: 0; }
+  .course-import .error-box { border: 1px solid #dc2626; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1.5rem; }
+  .course-import .names { font-size: 0.9rem; opacity: 0.85; word-break: break-word; }
+  .course-import .actions { display: flex; gap: 0.75rem; align-items: center; }
+</style>

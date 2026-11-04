@@ -198,6 +198,12 @@ UNFOLD = {
                         "link": reverse_lazy("admin:calculatorapi_leagueofheroes_changelist"),
                     },
                     {
+                        # The course map's records and its two buttons.
+                        "title": _("Race courses"),
+                        "icon": "route",
+                        "link": reverse_lazy("admin:calculatorapi_racecourse_changelist"),
+                    },
+                    {
                         "title": _("PvP guides"),
                         "icon": "menu_book",
                         "link": reverse_lazy("admin:calculatorapi_pvpguide_changelist"),
@@ -903,6 +909,14 @@ CACHES = {
     "rankings": {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
         "LOCATION": "rankings",
+        "OPTIONS": {"MAX_ENTRIES": 200},
+    },
+    # The course map's skill zones (calculatorapi/course_zones_cache.py): one
+    # map per course, tens of KB each, built on first request. Its own alias so
+    # they never crowd "default". Same single-process caveat.
+    "course-zones": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "course-zones",
         "OPTIONS": {"MAX_ENTRIES": 200},
     },
 }

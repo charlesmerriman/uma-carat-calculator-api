@@ -32,6 +32,21 @@
 # module changed. Newest entry first is conventional here but not required — the
 # page sorts by date.
 
+- key: course-map-ads
+  date: 2026-11-04
+  title: "The course map, and ads"
+  version: "v2.13"
+  changes:
+    - added: "Introducing the course map! Every Champions Meeting and League of Heroes guide now shows the course it runs on, and each one's Timeline card gets a slide-out with a mini version."
+    - added: "The strip lays out the corners, straights, hills and phases in the game's own words. The track view draws the course's real shape (or a tidy schematic), marks exactly where the last spurt starts and what is left of the course after it, and Walk the course runs a marker round it."
+    - added: "Open a skill in My team, or tap one in the guide, and the map lights where it can fire, says whether it lands as the spurt starts, and grades it with the odds. The Layers menu adds your own veterans' skills in their team colours. The Accels column lists every accel that can fire for a style, nearest the spurt first."
+    - added: "Ads. The site now shows ads from Raptive, which pay for hosting. Patreon supporters and staff see none once they sign in. If you still see ads as a supporter, Raptive is currently fixing this."
+    - added: "Support cards in PvP guides, My team and your Collection now look like the game's cards, and your owned cards show their limit breaks the way the game does."
+    - added: "Guide decks show the limit break each card should have."
+    - changed: "PvP guides can be free for everyone one at a time now, and some events open My team and the Gallery to everyone too."
+    - changed: "In Europe a consent dialog asks before any ad loads. In the US, a Do not sell or share link in the footer turns personalised ads off. Our own cookie prompt is gone, and the Privacy Policy has the details."
+    - changed: "A guide's All tab lists the running styles in the same order as the tabs: Front, Pace, Late, End."
+    - fixed: "Hovering an uma or a skill in a PvP guide opens one popup, above everything else, with any skills its note mentions listed at the bottom."
 - key: profile-cards-site-search
   date: 2026-10-30
   title: "Profile cards, site search and League of Heroes runs"

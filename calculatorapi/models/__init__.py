@@ -16,6 +16,7 @@ from .skill_evolution_condition import SkillEvolutionCondition
 from .spark import Spark, SparkKind
 from .uma_skill import UmaSkill, UmaSkillSource
 from .support_card_skill import SupportCardSkill, SupportCardSkillSource
+from .race_course import RaceCourse
 from .champions_meeting import ChampionsMeeting
 from .banner_uma import BannerUma
 from .banner_support import BannerSupport

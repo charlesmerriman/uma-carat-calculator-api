@@ -101,6 +101,7 @@ meaning anything instead of rendering a signed-in shell around nothing.
   "oshi_slots": 1,
   "oshi_uma_ids": [42, 57],
   "oshi_variants": true,
+  "ad_free": true,
   "early_access": true,
   "guide_editor": false,
   "linked_providers": [
@@ -139,6 +140,11 @@ meaning anything instead of rendering a signed-in shell around nothing.
 - **`oshi_variants`** is whether a costume variant (`is_variant` on `GET /umas`)
   may be *added*: `true` for a supporter on any paid tier and for staff. The
   picker locks those tiles on `false`; the rule itself is in the `PATCH` check.
+- **`ad_free`** is whether the ad script should show this account no ads:
+  `true` for a supporter on any paid tier (the `ad_free` benefit key) and for
+  staff (`benefits.ad_free_for`). The client adds the `ad-free-member` body
+  class on `true`, which Raptive's ad layout is configured to honour
+  (`notes/raptive-install-plan.md`); the API serves the same content either way.
 - **`early_access`** is whether features that open to supporters first are open
   to this account: `true` for a supporter on any paid tier, for staff, and for an
   account the owner granted it in the admin (`CustomUser.early_access`, which
@@ -731,7 +737,10 @@ order everyone, runaway, front, pace, late, end; then stat rows and decks by the
 and skills are embedded small objects, since the client's banner data only knows cards that
 were on a banner. `skill_recommendations` and `skill_mentions` hold any skill with an English
 name (`Skill.objects.shown()`, since 2026-10-23), JP-only ones included; `unique_of` names
-the outfit whose unique the skill is, or `null`. Every skill object also carries:
+the outfit whose unique the skill is, or `null`; the other way round, each recommended uma's
+`unique` is her unique skill as `{id, name, image}` (a ★1/★2 character's level-3 form), or
+`null`, so the course map lights it from her tile without the catalogue. Every skill object
+also carries:
 `name` / `description` as a player reads them (global's, else UmaTL's);
 `availability` (`"global"`, `"announced"`, `"jp"`: the site tags `"jp"` as "JP only");
 `uses_translation` (true when the name or description shown is UmaTL's: the site credits
@@ -770,7 +779,8 @@ may hold `==highlight==` spans the client renders red.
   "uma_recommendations": [{"style": "front", "stars": 5, "role": "", "note": "Use as runaway",
                            "uma": {"id": 41, "name": "Maruzensky", "image": "url | null", "portrait": "url | null",
                                    "apt": {"turf": 7, "dirt": 1, "short": 5, "mile": 7, "medium": 6, "long": 3,
-                                           "front": 8, "pace": 6, "late": 2, "end": 1}}}],
+                                           "front": 8, "pace": 6, "late": 2, "end": 1},
+                                   "unique": {"id": 210, "name": "Lead the Pack", "image": "url | null"}}}],
   "skill_recommendations": [{"style": "front", "category": "acceleration", "tier": 0, "order": 0, "note": "",
       "skill": {"id": 210, "name": "Lead the Pack", "description": "string", "image": "url | null",
                 "rarity": 5, "unique_of": "Maruzensky", "version": "○ white", "tier": 1, "is_evolved": false,
@@ -2207,6 +2217,62 @@ Same **resolved-date** contract as `BannerTimeline`: `start_date`/`end_date` are
 
 **Course details.** `track` through `direction` are hand-entered in the admin and unknown until a meeting is announced. The columns are non-null, so "unknown" is a **sentinel, not a null**: `"TBD"`. Clients should treat it as "not announced" rather than displaying it raw.
 
+**`course`**: the course the map draws, from the game's own files (`RaceCourse`, `views/race_course.py`), or `null` when the event has none yet or an editor hid its map. Every number is metres from the gate; a stretch in none of `corners`, `straights` and `slopes` is a gap the game leaves. `corners[].number` is the game's own (counted back from the finish in fours, so the final corner is 4; -1 is a normal corner the game numbers oddly). `straights[].front` is the game's straight type. `slopes[].slope` is percent times 10,000 (20000 is a 2% climb, negative is downhill). `surface_changes` lists where the ground changes, e.g. a dirt course that starts on turf. `later_laps` (`inside` / `outside`) is how a course over one lap draws its later laps. The real shape is not here: it has its own endpoint, below. About 0.5 to 1.3 KB an event (2 KB gzipped for every event together).
+
+**`GET /race-courses/<course id>/shape`** (public; 404 for a missing course or a hidden map): `{"shape": [[x, y], ...]}`, the course path the map's track view draws, fetched when a map is drawn (the guide's track view, the Timeline card's drawer). 1,001 points in metres, point i at i / 1000 of the race, already in screen axes (y down, finish along the bottom; see `RaceCourse.shape` in `data-model.md`). `shape` is `null` for a course with no path file; the guide then draws the schematic. About 10 KB, so it never rides `/calculator-data`. It is game data, so it is public whoever may read the event's guide.
+
+```json
+"course": {
+  "id": 1, "region": "jp", "game_id": 10701, "racecourse": "Chukyo",
+  "surface": "turf", "distance": 1200, "variant": "", "direction": "left",
+  "corners": [{"start": 300, "length": 250, "number": 3}, {"start": 550, "length": 238, "number": 4}],
+  "straights": [{"start": 0, "length": 300, "front": 2}, {"start": 788, "length": 412, "front": 1}],
+  "slopes": [{"start": 100, "length": 775, "slope": -10000}, {"start": 875, "length": 100, "slope": 20000}],
+  "surface_changes": [],
+  "later_laps": "inside"
+}
+```
+
+**`GET /race-courses/<course id>/skill-zones`** (public; 404 for a missing course or a
+hidden map): where every global skill can fire on that course, from its condition
+(`skill_zones.py`), keyed by the skill's `id`. One map per course, built on the first
+request and cached in its own `course-zones` cache until a course or a skill is saved. About
+130 KB, 9 KB gzipped, with the verdicts below.
+
+```json
+{"88": {"kind": "place", "zones": [{"start": 550, "end": 788, "kind": "random"}], "styles": ["front"]},
+ "91": {"kind": "anywhere", "zones": [], "styles": null}}
+```
+
+`kind`: `place` (it fires in `zones`), `anywhere` (an alternative no place narrows: by
+position, HP, a timer, or a variable whose meaning isn't verified), `passive` (an
+alternative of course or event gates only, which hold here: a track green), or `never` (a
+course gate fails: another racecourse's skill). A zone's `kind` is `fixed` (fires there),
+`random` (at one random point in it) or `point` (one spot; `start` equals `end`). `styles` is
+the runner gate as the guide's style keys (`front`, `pace`, `late`, `end`), or `null` for
+every style. Event gates (season, weather, ground) narrow nothing. A skill that fires once a
+race and whose alternatives are only random points fires at the first one reached, so its zones
+stop where the earliest alternative's last metre is (Swinging Maestro: its first numbered corner).
+
+Each entry also carries its verdict (`skill_verdicts.py`; notes/course-map-plan-2.md), every
+field only when it says something: `effects` (`accel`, `speed`, `heal` for the runner,
+`debuff` for others), `fires_at` (a fixed zone's first metre), `spread` (`[first, last]` metre
+of a random trigger), `spurt` (`{"from", "to"}` metres from the late-race start, negative
+before it, plus for an accel `odds`, the share landing well: still running 0.5 s into the late race, at most 50 m after its start, and `useful`, a ranking score: that share times the speed its acceleration adds, plus the share its speed carries into the late race times that speed, the two parts also given as `accel` and `carry` for the accels column's chips; a fixed zone gated by a clause the map can't predict, a placing or an event, counts the zone's metres before the window as chances to fire early, so its share is the window's share of the zone clipped to [zone start, window end]), `before_spurt` (a heal's share
+landing before the late-race start), `carry` (a speed skill's share that carries its speed into the late race; a target-speed-only one must fire early enough to reach its speed first; absent when no part of the trigger lies before the late-race start) and `carry_window` (the metres it must fire in for that), with `carry_speed` (the target speed it adds, m/s) and `carry_seconds` (how long it runs on this course) whenever the window exists,
+`repeats` (how many times a short-cooldown skill can fire here), `needs` (what else must hold,
+in words), `unreadable` (`true`: a clause isn't confirmed yet, so no timing fields), and `chain`
+(`{"counts": "heal" | "all" | "start" | "middle" | "end_after" | "later_half", "at_least": 3}`, set off by other skills;
+`middle`, `end_after` and `later_half` bound where it fires, from the mid-race start, the
+late-race start or half-way, so such a skill with no place of its own gets that fixed zone).
+`repeats` is absent for `straight_random`, since how many points it places is unknown.
+`paths` appears when the skill's ways of firing need different things: one entry per way
+that can fire here, each with `zones`, `fires_at` or `spread`, `spurt`, `before_spurt`,
+`carry`, `carry_window`, `needs` and `unreadable` as above; the top-level fields then
+summarise them (`zones` merged, `spread` the whole stretch, `spurt.useful` the best path's,
+no odds or shares). `straight_front_type==2` is a place (the course's `front: 2` straights,
+the backstretch); `lastspurt==2` ("still going strong") is a state, worded in `needs`.
+
 **`has_guide`**: whether the event has a PvP guide out of draft, Supporters or Public (`GET /pvp-guides/cm/<id>`); a Private guide counts as none. **`guide_visibility`**: `"supporters"`, `"public"`, or `null` (no guide, or a Private one). **`guide_tools_public`**: whether My team and the Gallery open to everyone with it (only ever on a Public guide). The page decides what a reader without early access may open from these two. Annotations (`views.pvp_guide.annotate_has_guide`), so changing who may read a guide drops the cached payload. The five `*_recommendation` stat fields left the wire with the PvP guide (2026-10); the guide's `stat_configs` replace them.
 
 ```json
@@ -2227,6 +2293,7 @@ Same **resolved-date** contract as `BannerTimeline`: `start_date`/`end_date` are
   "image": "url | null",
   "track": "string", "surface_type": "string", "distance": "string", "length": "string",
   "track_condition": "string", "season": "string", "weather": "string", "direction": "string",
+  "course": "RaceCourse (above) | null",
   "has_guide": false,
   "guide_visibility": null,
   "guide_tools_public": false
@@ -2237,7 +2304,7 @@ Same **resolved-date** contract as `BannerTimeline`: `start_date`/`end_date` are
 
 Same resolved-date contract as above, with its own anchor set (schedule offsets excepted — those cascade across all three content types). Note the standalone `GET /leagueofheroes` route serves raw confirmed dates only (`is_predicted` is always `false` and `applied_offset_days` always 0 there); predictions and offsets are emitted only via `GET /calculator-data`.
 
-**Identical to `ChampionsMeeting` apart from `event_type` and `loh_number`** — same course details, same `"TBD"` sentinel, same `has_guide` — because the two render through one shared timeline card. Treat them as one shape with two tags: a field added to one belongs on the other.
+**Identical to `ChampionsMeeting` apart from `event_type` and `loh_number`** — same course details, same `"TBD"` sentinel, same `course`, same `has_guide` — because the two render through one shared timeline card. Treat them as one shape with two tags: a field added to one belongs on the other.
 
 ```json
 {
@@ -2257,6 +2324,7 @@ Same resolved-date contract as above, with its own anchor set (schedule offsets 
   "image": "url | null",
   "track": "string", "surface_type": "string", "distance": "string", "length": "string",
   "track_condition": "string", "season": "string", "weather": "string", "direction": "string",
+  "course": "RaceCourse (above) | null",
   "has_guide": false,
   "guide_visibility": null,
   "guide_tools_public": false
