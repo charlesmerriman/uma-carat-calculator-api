@@ -25,7 +25,7 @@ client's banner data only knows cards that were on a banner, and skills are not
 on the client at all yet.
 """
 
-from django.db.models import Count, Exists, OuterRef, Subquery
+from django.db.models import Count, Exists, F, OuterRef, Subquery
 from rest_framework import permissions, serializers
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -100,10 +100,25 @@ class _ScenarioSerializer(serializers.ModelSerializer):
         fields = ("id", "name", "image")
 
 
+class _UniqueSkillSerializer(serializers.ModelSerializer):
+    """An uma's unique, as much as the course map needs to light it: the
+    hover on her tile lights her unique's zones without a catalogue fetch
+    (course-map-plan-2.md, "Left for later", 1)."""
+
+    name = serializers.CharField(source="shown_name")
+
+    class Meta:
+        model = Skill
+        fields = ("id", "name", "image")
+
+
 class _UmaSerializer(serializers.ModelSerializer):
     # The borderless cut (Uma.portrait): the site draws every uma inside a
     # frame of its own (frontend FramedUma). `image` stays the bordered art.
     portrait = serializers.ImageField(read_only=True)
+    # Her unique skill, or null: read from a dict the view builds in one query
+    # (context["unique_skill_of_uma"]), the way `unique_of` is on a skill.
+    unique = serializers.SerializerMethodField()
     # The ten aptitude columns, 1..8 (G..S) or None, as /pvp-catalogue sends
     # them: the guide draws this course's distance and the row's style as
     # letters on each uma, so an author no longer types "Sprint F" as a role
@@ -112,10 +127,14 @@ class _UmaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Uma
-        fields = ("id", "name", "image", "portrait", "apt")
+        fields = ("id", "name", "image", "portrait", "apt", "unique")
 
     def get_apt(self, uma):
         return {key: getattr(uma, f"apt_{key}") for key in APTITUDE_FIELDS}
+
+    def get_unique(self, uma):
+        skill = self.context.get("unique_skill_of_uma", {}).get(uma.id)
+        return _UniqueSkillSerializer(skill, context=self.context).data if skill else None
 
 
 class _SupportCardSerializer(serializers.ModelSerializer):
@@ -297,6 +316,24 @@ def _unique_of(skill_ids):
     return owners
 
 
+def _unique_skill_of_uma(uma_ids):
+    """{uma id: her unique skill} for the recommended umas, one query.
+
+    A ★1/★2 character has two `unique` rows (the weaker one she starts with
+    at level 1, the one that replaces it at level 3); the higher level wins,
+    the form a built runner has. Either form reads the same conditions.
+    """
+    rows = (
+        UmaSkill.objects.filter(uma_id__in=uma_ids, source=UmaSkillSource.UNIQUE)
+        .select_related("skill")
+        .order_by("uma_id", F("level").desc(nulls_last=True), "skill_id")
+    )
+    uniques = {}
+    for row in rows:
+        uniques.setdefault(row.uma_id, row.skill)
+    return uniques
+
+
 def _guide_texts(guide):
     """Every editor-written text in the guide: where [[skill]] mentions live."""
     yield guide.short_description
@@ -384,6 +421,9 @@ def serialize_guide(guide, request=None):
     context = {
         "request": request,
         "unique_of": _unique_of(skill_ids),
+        "unique_skill_of_uma": _unique_skill_of_uma(
+            [row.uma_id for row in guide.uma_recommendations.all()]
+        ),
         "versions": skill_families(skills),
         "text": skill_text.context_from_database(),
         "sources": _sources(skill_ids),
