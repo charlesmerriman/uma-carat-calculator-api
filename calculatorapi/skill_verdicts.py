@@ -18,8 +18,9 @@ THE FIELDS, each present only when it says something:
     spurt         {"from", "to"[, "odds"][, "useful"]}: an accel or speed
                   skill's trigger in metres from the late-race start (negative
                   is before); `odds`, an accel's share landing well (rule 5);
-                  `useful`, its ranking score (that share times the speed it
-                  adds, m/s)
+                  `useful`, its ranking score: that share times the speed its
+                  acceleration adds, plus the share its speed carries into the
+                  late race times that speed (m/s both)
     before_spurt  a heal's share of triggers landing before the late-race start
     carry         a speed skill's share that carries its speed into the late race
                   (absent when no part of its trigger lies before the late-race start)
@@ -28,10 +29,20 @@ THE FIELDS, each present only when it says something:
     needs         what else must hold, in words (placing, timers, skills used)
     unreadable    true: a clause the map can't read yet, so no timing at all
     chain         {"counts": "heal", "at_least": 3}: set off by other skills
+    paths         one entry per way the skill can fire here, when its ways need
+                  different things (each with zones, fires_at or spread, spurt,
+                  before_spurt, carry, carry_window, needs, unreadable); the
+                  top-level fields then summarise them, `useful` the best path's
 
 THE RULES (each a test in tests/test_skill_verdicts.py):
 
-1. A fixed zone fires at its start, when its other clauses hold then.
+1. A fixed zone fires at its start, when its other clauses hold then. A
+   clause the map can't predict (a placing, an event, HP, skills used) means
+   it fires at the first metre of the zone where that holds; the words still
+   read from the zone's start, and the RANK (`useful`) counts the zone's
+   metres before the window as chances to fire early and be used up (the
+   owner, 2026-11-03: a zone opening at the spurt, No Stopping Me!, keeps its
+   full rank; one opening on an earlier straight, Tamamo's, loses it).
 2. A random trigger is one 10 m point picked before the race (the community
    mechanics doc), by length within its stretch, or equal per stretch first
    for `straight_random` and the slopes (Daptrius, 2026-11-03). A share is given only where that is known and the
@@ -44,13 +55,20 @@ THE RULES (each a test in tests/test_skill_verdicts.py):
    cooldowns stretch by distance / 1000, and seconds become metres at the
    mid-race speed of the skill's styles (Daptrius's answers, below).
 6. Every verdict assumes the skill passes its Wit check (`activate_lot`).
+7. A skill whose ways of firing need different things gets a verdict per way
+   (`paths`), and a skill set off by other skills with no place of its own
+   fires from the phase those skills live in (`activate_count_middle` from the
+   mid-race start).
+8. `all_corner_random` places four points, each picking a corner (equal) then
+   a metre along it; a once-a-race skill fires at the first point reached, a
+   short-cooldown one at any of them (Daptrius, 2026-11-03).
 """
 
 import math
 
 from .skill_conditions import parse_condition
 from .skill_text import ONCE_PER_RACE, SKILL_COUNTS, describe_condition
-from .skill_zones import PHASE_STARTS, CourseFacts, classify
+from .skill_zones import PHASE_STARTS, CourseFacts, classify, zones_for
 
 # ── Daptrius's answers (2026-11-03, messages 1567150957861671044,
 # 1567167972005388289 and 1567219956226199664; notes/course-map-plan-2.md,
@@ -67,6 +85,19 @@ PROC_LATE_EDGE = 50
 # places 4, each choosing its corner on its own; straight_random can fire
 # again over several laps, but how many points it places is unknown, so None.
 TRIGGER_POINTS = {"all_corner_random": 4, "straight_random": None}
+# Not-a-place clauses settled before the race or by the start (rule 1): the
+# zone then fires at its first metre for certain. Every other not-a-place
+# clause is a state the map can't predict (a placing, an event, HP, skills
+# used). `accumulatetime` is settled once its seconds fall before the zone.
+SETTLED = frozenset({
+    "popularity", "post_number", "grade", "motivation", "random_lot", "running_style_count_same",
+    "running_style_count_same_rate", "running_style_equal_popularity_one", "is_badstart", "is_exist_chara_id",
+    "same_skill_horse_count", "is_dirtgrade", "time",
+})
+SETTLED_FAMILIES = ("base_", "running_style_count_")
+# The phase a counted skill lives in: where a skill set off by N of them can
+# fire from (rule 7). Others are unbounded.
+CHAIN_BOUNDS = {"middle": PHASE_STARTS[1], "end_after": PHASE_STARTS[2], "later_half": 0.5}
 
 # The stats a verdict assumes where the game's numbers need one: 1200 Wit for
 # the section randomness (Daptrius), 1200 Power to match, A aptitudes.
@@ -184,11 +215,28 @@ def _overlap(start, end, low, high):
     return max(0.0, min(end, high) - max(start, low))
 
 
-def share_between(entry, variable, facts, low, high):
+def _corner_point_cdf(zones, metre):
+    """The share of one all_corner_random point before `metre`: a corner
+    picked at random, then a metre along it (rule 8)."""
+    return sum(min(1.0, max(0.0, (metre - start) / (end - start))) for start, end in zones) / len(zones)
+
+
+def share_between(entry, variable, facts, low, high, once=True):
     """The share of a random trigger landing in [low, high), by rule 2, or None."""
     zones = entry["zones"]
     if variable == "corner_random" and len(zones) > 1:
         return None  # several corners, one point each: not one stretch by length
+    if variable == "all_corner_random":
+        corners = [(zone["start"], zone["end"]) for zone in zones if zone["end"] > zone["start"]]
+        if not corners:
+            return None
+        points = TRIGGER_POINTS[variable]
+        if once:
+            # The first of the four points: none may fall before `low`, and at
+            # least one before `high`.
+            return (1 - _corner_point_cdf(corners, low)) ** points - (1 - _corner_point_cdf(corners, high)) ** points
+        one = _corner_point_cdf(corners, high) - _corner_point_cdf(corners, low)
+        return 1 - (1 - one) ** points
     if variable in BY_LENGTH:
         total = sum(zone["end"] - zone["start"] for zone in zones)
         if total <= 0:
@@ -208,12 +256,42 @@ def share_between(entry, variable, facts, low, high):
     return None
 
 
-def _share(entry, fires_at, variable, facts, window):
+def _share(entry, fires_at, variable, facts, window, once=True):
     """A fixed trigger's share of [low, high) is 1 or 0; a random one's by rule 2."""
     low, high = window
     if fires_at is not None:
         return 1.0 if low <= fires_at < high else 0.0
-    return share_between(entry, variable, facts, low, high) if variable else None
+    return share_between(entry, variable, facts, low, high, once) if variable else None
+
+
+def is_settled(variable, op, value, zone_start, distance, styles):
+    """Whether a not-a-place clause holds for certain by a zone's start."""
+    if variable in SETTLED or variable.startswith(SETTLED_FAMILIES):
+        return True
+    if variable == "temptation_count" and op == "==" and value == 0:
+        return True  # "not rushed so far": holds from the start unless it ever fails
+    if variable == "accumulatetime" and op in (">=", ">"):
+        return value * mid_race_speed(distance, styles) <= zone_start
+    return False
+
+
+def is_gated(parsed, zone_start, distance, styles):
+    """Whether any alternative has a clause the map can't predict by the zone's start."""
+    return any(
+        classify(variable) == "not-a-place" and not is_settled(variable, op, value, zone_start, distance, styles)
+        for clauses in parsed for variable, op, value in clauses
+    )
+
+
+def _gated_share(entry, low, high):
+    """A gated fixed zone's rank share: the window's by-length share of the zone
+    clipped to [its start, the window's end), since every metre before the
+    window is a chance to fire early and be used up (rule 1)."""
+    start = min(zone["start"] for zone in entry["zones"])
+    considered = sum(_overlap(zone["start"], zone["end"], start, high) for zone in entry["zones"])
+    if considered <= 0:
+        return 0.0
+    return sum(_overlap(zone["start"], zone["end"], low, high) for zone in entry["zones"]) / considered
 
 
 def needs_for(parsed, context):
@@ -270,6 +348,11 @@ def accel_strength(effects):
             if ability.get("type") == ACCELERATION and ability.get("target_type", SELF) == SELF:
                 return ability.get("value", 0) / TENTHS_OF_A_MS * seconds
     return 0.0
+
+
+def speed_added(effects):
+    """The target speed a skill adds to its own runner, m/s (0.35 for most golds)."""
+    return _self_value(effects, VELOCITY) / TENTHS_OF_A_MS
 
 
 def _share_by_length(entry, low, high):
@@ -364,10 +447,66 @@ def verdict_for(condition, effects, course, entry, context):
     chain = chain_for(parsed)
     if chain:
         out["chain"] = chain
+        bound = CHAIN_BOUNDS.get(chain["counts"])
+        if entry["kind"] == "anywhere" and bound is not None:
+            # Rule 7: set off by skills of one phase, so it can't fire before it.
+            entry = {**entry, "kind": "place",
+                     "zones": [{"start": round(bound * course.distance, 1), "end": course.distance, "kind": "fixed"}]}
+            out.update(kind=entry["kind"], zones=entry["zones"])
     if any(classify(variable) == "unconfirmed" for clauses in parsed for variable, _, _ in clauses):
         out["unreadable"] = True
         return out
+    paths = _paths(parsed, kinds, effects, course, context)
+    if paths is not None:
+        out["paths"] = paths
+        out.update(_summary(paths, course))
+        return out
     out.update(_timing(parsed, kinds, effects, course, entry))
+    return out
+
+
+def _paths(parsed, kinds, effects, course, context):
+    """Rule 7: one verdict per way of firing, when the live ways need different
+    things; None when they don't (then one merged verdict stands)."""
+    if len(parsed) < 2:
+        return None
+    paths = []
+    for clauses in parsed:
+        alone = "&".join(f"{variable}{op}{value}" for variable, op, value in clauses)
+        entry = zones_for(alone, course)
+        if entry["kind"] == "never":
+            continue
+        path = {"zones": entry["zones"]}
+        needs = needs_for([clauses], context)
+        if needs:
+            path["needs"] = needs
+        if any(classify(variable) == "unconfirmed" for variable, _, _ in clauses):
+            path["unreadable"] = True
+        else:
+            path.update(_timing([clauses], kinds, effects, course, entry))
+        paths.append(path)
+    if len(paths) < 2 or len({tuple(path.get("needs", [])) for path in paths}) < 2:
+        return None
+    return paths
+
+
+def _summary(paths, course):
+    """The top-level fields over the paths: the whole stretch they cover, the
+    best path's rank; no odds or shares, since those differ by path."""
+    out = {}
+    firsts = [path["fires_at"] if "fires_at" in path else path["spread"][0] for path in paths if "fires_at" in path or "spread" in path]
+    lasts = [path["fires_at"] if "fires_at" in path else path["spread"][1] for path in paths if "fires_at" in path or "spread" in path]
+    if firsts:
+        out["spread"] = [min(firsts), max(lasts)]
+        late = late_race_start(course.distance)
+        spurts = [path["spurt"] for path in paths if "spurt" in path]
+        if spurts:
+            out["spurt"] = {"from": round(min(firsts) - late), "to": round(max(lasts) - late)}
+            useful = [spurt["useful"] for spurt in spurts if "useful" in spurt]
+            if useful:
+                out["spurt"]["useful"] = max(useful)
+    if all(path.get("unreadable") for path in paths):
+        out["unreadable"] = True
     return out
 
 
@@ -385,11 +524,34 @@ def _timing(parsed, kinds, effects, course, entry):  # pylint: disable=too-many-
     facts = CourseFacts(course)
     late = late_race_start(course.distance)
     variable = _random_variable(parsed)
+    once = is_once_per_race(effects)
+    styles = entry.get("styles")
+    gated = fires_at is not None and is_gated(parsed, fires_at, course.distance, styles)
 
     def share(window):
-        return _share(entry, fires_at, variable, facts, window)
+        return _share(entry, fires_at, variable, facts, window, once)
 
-    styles = entry.get("styles")
+    def landing_share(window):
+        """The share of the trigger landing in a window, for ranking: a gated
+        fixed zone by rule 1's clipped share; by length where a random
+        variable's weighting isn't known, so every skill still gets an order."""
+        if gated:
+            return _gated_share(entry, *window)
+        known = share(window)
+        return known if known is not None or fires_at is not None else _share_by_length(entry, *window)
+
+    carry_rank = 0.0
+    window = carry_window(effects, course.distance, styles) if "speed" in kinds else None
+    if window is not None:
+        # The band the map draws, and the share landing in it. A trigger wholly
+        # at or after the late-race start has nothing to carry into it (the
+        # skill pass, bug A2): no share, so the client says nothing about carry.
+        out["carry_window"] = [round(window[0]), round(window[1])]
+        first_metre = fires_at if fires_at is not None else spread[0]
+        if first_metre < late:
+            if share(window) is not None:
+                out["carry"] = round(share(window), 2)
+            carry_rank = landing_share(window) or 0.0
     if "accel" in kinds or "speed" in kinds:
         first, last = (fires_at, fires_at) if fires_at is not None else spread
         out["spurt"] = {"from": round(first - late), "to": round(last - late)}
@@ -399,23 +561,13 @@ def _timing(parsed, kinds, effects, course, entry):  # pylint: disable=too-many-
             if odds is not None:
                 out["spurt"]["odds"] = round(odds, 2)
             # How useful at the spurt start, for ordering: the share landing
-            # well times the speed it adds; by length where the weighting
-            # isn't known, so every accel still gets an order.
-            landing = odds
-            if landing is None and fires_at is None:
-                landing = _share_by_length(entry, *window)
-            out["spurt"]["useful"] = round((landing or 0) * accel_strength(effects), 3)
+            # well times the speed its acceleration adds, plus the share its
+            # speed carries into the late race times that speed (the owner,
+            # 2026-11-03: carry-over is prized, Tamamo's unique does both).
+            useful = (landing_share(window) or 0) * accel_strength(effects) + carry_rank * speed_added(effects)
+            out["spurt"]["useful"] = round(useful, 3)
     if "heal" in kinds and share((0, late)) is not None:
         out["before_spurt"] = round(share((0, late)), 2)
-    window = carry_window(effects, course.distance, styles) if "speed" in kinds else None
-    if window is not None:
-        # The band the map draws, and the share landing in it. A trigger wholly
-        # at or after the late-race start has nothing to carry into it (the
-        # skill pass, bug A2): no share, so the client says nothing about carry.
-        out["carry_window"] = [round(window[0]), round(window[1])]
-        first_metre = fires_at if fires_at is not None else spread[0]
-        if first_metre < late and share(window) is not None:
-            out["carry"] = round(share(window), 2)
     repeats = repeats_for(parsed, effects, facts, styles)
     if repeats and repeats > 1:
         out["repeats"] = repeats

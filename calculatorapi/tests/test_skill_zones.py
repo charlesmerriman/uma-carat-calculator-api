@@ -12,6 +12,9 @@ from pathlib import Path
 from rest_framework.test import APIClient
 
 from calculatorapi.models import RaceCourse, Skill
+from unittest import mock
+
+from calculatorapi import skill_zones
 from calculatorapi.skill_zones import classify, zones_for
 from calculatorapi.tests.base import CalculatorTestCase
 
@@ -106,12 +109,22 @@ class GateTests(CalculatorTestCase):
 
 class NoGuessingTests(CalculatorTestCase):
     def test_what_is_not_a_place_or_not_confirmed_reads_anywhere(self):
-        for condition in ("order>=3", "straight_front_type==2", "hp_per<=50", "not a condition"):
+        for condition in ("order>=3", "straight_front_type==1", "hp_per<=50", "not a condition"):
             with self.subTest(condition=condition):
                 self.assertEqual(zones_for(condition, CHUKYO)["kind"], "anywhere")
 
     def test_an_unconfirmed_clause_beside_a_place_narrows_nothing(self):
-        self.assertEqual(stretches("phase==2&straight_front_type==2"), [(800, 1000, "fixed")])
+        with mock.patch.object(skill_zones, "UNCONFIRMED", frozenset({"mystery_place"})):
+            self.assertEqual(stretches("phase==2&mystery_place==2"), [(800, 1000, "fixed")])
+
+    def test_the_backstretch_is_a_place(self):
+        # Victory Cheer! ("on the backstretch late-race"): Chukyo's opening
+        # straight is its backstretch (`front` 2), which the late race never
+        # reaches; its home straight is not one. ==1 has no rule (Global
+        # never uses it), so it narrows nothing.
+        self.assertEqual(stretches("straight_front_type==2"), [(0, 300, "fixed")])
+        self.assertEqual(zones_for("phase==2&straight_front_type==2", CHUKYO)["kind"], "never")
+        self.assertEqual(zones_for("straight_front_type==1", CHUKYO)["kind"], "anywhere")
 
     def test_an_announced_skill_s_variable_is_classified_too(self):
         # The snapshot above holds Global's skills only; an announced skill

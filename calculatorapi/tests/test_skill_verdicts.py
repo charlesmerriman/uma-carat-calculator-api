@@ -6,9 +6,11 @@ answers of 2026-11-03 in the numbers.
 """
 
 
+from unittest import mock
+
 from rest_framework.test import APIClient
 
-from calculatorapi import skill_verdicts
+from calculatorapi import skill_verdicts, skill_zones
 from calculatorapi.models import RaceCourse, Skill
 from calculatorapi.skill_conditions import parse_condition
 from calculatorapi.skill_text import TextContext
@@ -102,7 +104,8 @@ class SpurtVerdictTests(CalculatorTestCase):
         # Rule 1: a fixed zone fires at its start, 250 m early here: no use.
         red_shift = verdict("is_finalcorner==1&order<=5&order_rate<=50", ACCEL)
         spurt = red_shift["spurt"]
-        self.assertEqual((red_shift["fires_at"], spurt["from"], spurt["odds"], spurt["useful"]), (550, -250, 0.0, 0))
+        self.assertEqual((red_shift["fires_at"], spurt["from"], spurt["odds"]), (550, -250, 0.0))
+        self.assertAlmostEqual(spurt["useful"], 0.228, places=2)  # GatedZoneTests
 
     def test_usefulness_weighs_the_speed_added(self):
         gold = [slot(31, value=4000, duration=30000)]
@@ -121,10 +124,132 @@ class SpurtVerdictTests(CalculatorTestCase):
         self.assertNotIn("odds", verdict("is_lastspurt==1", SPEED)["spurt"])
 
     def test_an_unconfirmed_clause_blocks_every_timing(self):
-        cheer = verdict("phase==2&straight_front_type==2&order<=2", ACCEL)
+        # Nothing is unconfirmed since the skill pass; the guard stays for the
+        # next new variable, so a test stands one in.
+        with mock.patch.object(skill_zones, "UNCONFIRMED", frozenset({"mystery_place"})):
+            cheer = verdict("phase==2&mystery_place==2&order<=2", ACCEL)
         self.assertTrue(cheer["unreadable"])
         for field in ("fires_at", "spread", "spurt"):
             self.assertNotIn(field, cheer)
+
+    def test_victory_cheer_fires_on_a_late_race_backstretch(self):
+        # Kyoto 3200's second backstretch runs 1,850 to 2,300 m; the late race
+        # starts at 2,133 m on it. Chukyo's only backstretch is its first 300 m.
+        cheer = verdict("phase==2&straight_front_type==2&order<=2", ACCEL, KYOTO_3200)
+        self.assertEqual((cheer["fires_at"], cheer["spurt"]["from"], cheer["needs"]), (2133, 0, ["In 2nd place or better"]))
+        self.assertEqual(verdict("phase==2&straight_front_type==2&order<=2", ACCEL)["kind"], "never")
+
+
+class GatedZoneTests(CalculatorTestCase):
+    """Rule 1 for a fixed zone with a clause the map can't predict (the
+    owner, 2026-11-03): the words read from the zone's start, the rank counts
+    the zone's metres before the window as chances to fire early."""
+
+    def test_a_zone_opening_at_the_spurt_keeps_its_full_rank(self):
+        # No Stopping Me!: a runner close ahead is unpredictable, but the zone
+        # opens at the late-race start, so if it fires it fires perfectly.
+        nsm = verdict("infront_near_lane_time>=1&is_lastspurt==1&hp_per>=1", ACCEL)
+        self.assertEqual(nsm["spurt"], {"from": 0, "to": 0, "odds": 1.0, "useful": 0.6})
+
+    def test_a_zone_opening_before_the_window_loses_the_early_metres(self):
+        # Red Shift from the final corner at 550 m: 114 of the 300 m up to the
+        # window's end land well; firing in the first 186 m uses it up.
+        red_shift = verdict("is_finalcorner==1&order<=5&order_rate<=50", ACCEL)
+        self.assertEqual(red_shift["fires_at"], 550)
+        self.assertEqual(red_shift["spurt"]["odds"], 0.0)
+        self.assertAlmostEqual(red_shift["spurt"]["useful"], 0.6 * 114.06 / 300, places=2)
+        # A settled clause (a pre-race fact) leaves rule 1 whole: the rank is the odds.
+        self.assertEqual(verdict("is_finalcorner==1&popularity>=4", ACCEL)["spurt"]["useful"], 0.0)
+
+    def test_a_timer_counts_as_settled_once_its_seconds_have_passed(self):
+        # 10 s at 20.7 m/s is 207 m: settled for a zone from 300 m, not from 100 m.
+        self.assertTrue(skill_verdicts.is_settled("accumulatetime", ">=", 10, 300, 1200, None))
+        self.assertFalse(skill_verdicts.is_settled("accumulatetime", ">=", 10, 100, 1200, None))
+        self.assertTrue(skill_verdicts.is_settled("temptation_count", "==", 0, 0, 1200, None))
+        self.assertFalse(skill_verdicts.is_settled("order_rate", "<=", 40, 800, 1200, None))
+
+    def test_tamamo_s_earlier_straight_uses_her_unique_up(self):
+        # Kyoto 3200: the straights after half-way run 1,850 to 2,300 m and
+        # 2,797 m on. A 3 s accel stretches to 9.6 s there, so the window is
+        # 1,963 to 2,183 m: 220 of the 333 m up to its end land well, and
+        # firing in the first 113 m of the backstretch uses her unique up.
+        tamamo = verdict("distance_rate>=50&corner==0&order_rate<=30&order_rate>=20", ACCEL, KYOTO_3200)
+        self.assertEqual(tamamo["fires_at"], 1850)
+        self.assertAlmostEqual(tamamo["spurt"]["useful"], 0.6 * 220 / 333.3, places=2)
+
+    def test_speed_carried_into_the_late_race_counts_toward_the_rank(self):
+        # Tamamo's unique adds 0.2 m/s² and 0.35 m/s for 3 s (the owner: carry-over
+        # is prized). On Chukyo it opens 12 m before the late race: the accel
+        # lands (0.6) and the speed carries (0.35), so 0.95; a 6 s one with its
+        # speed only in the late race scores its acceleration alone.
+        both = [{"duration": 30000, "cooldown": 5_000_000, "abilities": [
+            {"type": 31, "value": 2000, "target_type": 1}, {"type": 27, "value": 3500, "target_type": 1},
+        ]}]
+        tamamo = verdict("distance_rate>=50&corner==0&order_rate<=30&order_rate>=20", both)
+        self.assertEqual((tamamo["fires_at"], tamamo["carry"], tamamo["spurt"]["useful"]), (788, 1.0, 0.95))
+        self.assertEqual(verdict("is_lastspurt==1", both)["spurt"]["useful"], 0.6)
+
+
+class PathTests(CalculatorTestCase):
+    """Rule 7: one verdict per way of firing, when the ways need different things."""
+
+    TAMAMO = ("distance_rate>=50&corner==0&order_rate>=70&order_rate<=75&is_overtake==1"
+              "@distance_rate>=50&corner==0&order_rate<=30&order_rate>=20")
+
+    def test_each_way_words_its_own_needs(self):
+        tamamo = verdict(self.TAMAMO, ACCEL)
+        self.assertEqual([path["needs"] for path in tamamo["paths"]], [
+            ["Between 70% and 75% back in the field", "While trying to pass another runner"],
+            ["Between 20% and 30% back in the field"],
+        ])
+        self.assertEqual([path["fires_at"] for path in tamamo["paths"]], [788, 788])
+        # The summary: the stretch the paths cover, the best path's rank, no odds.
+        self.assertEqual((tamamo["spread"], tamamo["spurt"]), ([788, 788], {"from": -12, "to": -12, "useful": 0.6}))
+        self.assertNotIn("fires_at", tamamo)
+
+    def test_ways_needing_the_same_things_stay_one_verdict(self):
+        # Lightning Surge: a Sprint way and a Mile way, both the same otherwise.
+        surge = verdict("distance_type==1&phase>=2&order_rate>=50&is_overtake==1@distance_type==2&phase>=2&order_rate>=50&is_overtake==1", ACCEL)
+        self.assertNotIn("paths", surge)
+        self.assertEqual(surge["fires_at"], 800)
+        self.assertNotIn("paths", verdict(MAESTRO, HEAL))
+
+    def test_a_way_that_can_t_fire_here_is_left_out(self):
+        # Moving Past, and Beyond's second way needs the final corner in the
+        # mid race: on Chukyo the final corner is in the late race, so only
+        # the first way is live and the verdict is one.
+        moving = verdict("phase>=2&corner!=0&is_finalcorner==0&order_rate>=50@phase==1&corner!=0&is_finalcorner==1&order_rate>=50&temptation_count==0", ACCEL)
+        self.assertNotIn("paths", moving)
+
+
+class ChainBoundTests(CalculatorTestCase):
+    def test_a_chained_skill_with_no_place_fires_from_its_skills_phase(self):
+        # Lightning Flare: two mid-race skills first, so from the mid-race start.
+        flare = verdict("activate_count_middle>=2", SPEED)
+        self.assertEqual((flare["kind"], flare["zones"]), ("place", [{"start": 200, "end": 1200, "kind": "fixed"}]))
+        self.assertEqual((flare["fires_at"], flare["chain"]), (200, {"counts": "middle", "at_least": 2}))
+        self.assertEqual(verdict("activate_count_later_half>=2", SPEED)["fires_at"], 600)
+        # Counts without a phase stay unbound.
+        self.assertEqual(verdict("activate_count_heal>=3", SPEED)["kind"], "anywhere")
+
+
+class CornerPointTests(CalculatorTestCase):
+    """Rule 8: all_corner_random's four points."""
+
+    def test_a_short_cooldown_accel_lands_at_any_of_its_points(self):
+        # Corner Connoisseur on Chukyo: one corner, 300 to 788 m; 52 of its 488 m
+        # land in the window, so one point lands 10.7% of the time, four 36%.
+        gold = [slot(31, value=4000, duration=30000, cooldown=300000)]
+        connoisseur = verdict("all_corner_random==1", gold)
+        self.assertEqual(connoisseur["spurt"]["odds"], 0.36)
+        self.assertAlmostEqual(connoisseur["spurt"]["useful"], 0.363 * 1.2, places=2)
+
+    def test_a_once_a_race_speed_skill_fires_at_its_first_point(self):
+        # Sprint Corners: the first of four points is almost never in the last
+        # 50 m of the corner, so the carry share is nil.
+        corners = verdict("distance_type==1&all_corner_random==1", SPEED)
+        self.assertLess(corners["carry"], 0.01)
+        self.assertEqual(corners["carry_window"], [740, 791])
 
 
 class FirstPointWinsTests(CalculatorTestCase):
@@ -231,7 +356,7 @@ class WordsTests(CalculatorTestCase):
         ])
 
     def test_a_clause_without_verified_words_is_a_plain_note(self):
-        self.assertEqual(needs_for(parse_condition("phase==2&is_overtake==1"), TextContext()),
+        self.assertEqual(needs_for(parse_condition("phase==2&behind_near_lane_time_set1>=1"), TextContext()),
                          ["Plus a condition we can't read yet"])
 
     def test_an_alternative_needing_nothing_needs_nothing(self):
@@ -242,7 +367,7 @@ class WordsTests(CalculatorTestCase):
                          {"counts": "heal", "at_least": 3})
         self.assertEqual(chain_for(parse_condition("activate_count_middle>2")), {"counts": "middle", "at_least": 3})
         # Not verified (skill_text.SKILL_COUNTS): no chain.
-        self.assertIsNone(chain_for(parse_condition("activate_count_later_half>=1")))
+        self.assertIsNone(chain_for(parse_condition("is_activate_any_skill==1")))
 
 
 class EndpointTests(CalculatorTestCase):
