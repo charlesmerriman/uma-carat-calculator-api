@@ -2227,7 +2227,7 @@ Same **resolved-date** contract as `BannerTimeline`: `start_date`/`end_date` are
 hidden map): where every global skill can fire on that course, from its condition
 (`skill_zones.py`), keyed by the skill's `id`. One map per course, built on the first
 request and cached in its own `course-zones` cache until a course or a skill is saved. About
-60 KB, 4 KB gzipped.
+130 KB, 9 KB gzipped, with the verdicts below.
 
 ```json
 {"88": {"kind": "place", "zones": [{"start": 550, "end": 788, "kind": "random"}], "styles": ["front"]},
@@ -2240,7 +2240,20 @@ alternative of course or event gates only, which hold here: a track green), or `
 course gate fails: another racecourse's skill). A zone's `kind` is `fixed` (fires there),
 `random` (at one random point in it) or `point` (one spot; `start` equals `end`). `styles` is
 the runner gate as the guide's style keys (`front`, `pace`, `late`, `end`), or `null` for
-every style. Event gates (season, weather, ground) narrow nothing.
+every style. Event gates (season, weather, ground) narrow nothing. A skill that fires once a
+race and whose alternatives are only random points fires at the first one reached, so its zones
+stop where the earliest alternative's last metre is (Swinging Maestro: its first numbered corner).
+
+Each entry also carries its verdict (`skill_verdicts.py`; notes/course-map-plan-2.md), every
+field only when it says something: `effects` (`accel`, `speed`, `heal` for the runner,
+`debuff` for others), `fires_at` (a fixed zone's first metre), `spread` (`[first, last]` metre
+of a random trigger), `spurt` (`{"from", "to"}` metres from the late-race start, negative
+before it, plus for an accel `odds`, the share landing well: still running 0.5 s into the late race, at most 50 m after its start, and `useful`, a ranking score: that share times the speed it adds), `before_spurt` (a heal's share
+landing before the late-race start), `carry` (a speed skill's share that carries its speed into the late race; a target-speed-only one must fire early enough to reach its speed first) and `carry_window` (the metres it must fire in for that),
+`repeats` (how many times a short-cooldown skill can fire here), `needs` (what else must hold,
+in words), `unreadable` (`true`: a clause isn't confirmed yet, so no timing fields), and `chain`
+(`{"counts": "heal", "at_least": 3}`, set off by other skills). `repeats` is absent
+for `straight_random`, since how many points it places is unknown.
 
 **`has_guide`**: whether the event has a PvP guide out of draft, Supporters or Public (`GET /pvp-guides/cm/<id>`); a Private guide counts as none. **`guide_visibility`**: `"supporters"`, `"public"`, or `null` (no guide, or a Private one). **`guide_tools_public`**: whether My team and the Gallery open to everyone with it (only ever on a Public guide). The page decides what a reader without early access may open from these two. Annotations (`views.pvp_guide.annotate_has_guide`), so changing who may read a guide drops the cached payload. The five `*_recommendation` stat fields left the wire with the PvP guide (2026-10); the guide's `stat_configs` replace them.
 

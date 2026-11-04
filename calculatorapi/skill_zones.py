@@ -23,8 +23,9 @@ WHAT A CLAUSE CAN DO
 NO GUESSING (standing rule, 2026-10-16): a place variable gets a stretch only
 where its meaning is verified, the same list skill_text.py's phrases are built
 on, plus corner numbers, settled with Daptrius on 2026-11-02 (counted back
-from the finish in fours), and `corner_random`, the owner's game fact of
-2026-11-03 (a random point on any corner with that number, every lap).
+from the finish in fours), and `corner_random`, a random point on the LAST
+corner with that number (Daptrius, 2026-11-03: "the last time a corner
+appears in the race").
 Anything else, `straight_front_type` among them, narrows nothing, so an
 alternative made of nothing else reads `anywhere`. A variable this module has never seen is
 caught by the test that classifies every variable in the global skills,
@@ -40,6 +41,14 @@ WHAT A SKILL COMES OUT AS
 `anywhere` (an alternative no place narrows) win over places, because then
 the skill can fire anywhere; their zones are empty. The precondition (what
 must have held EARLIER) is not a place and is not read here.
+
+ONCE A RACE, FIRST POINT WINS (notes/course-map-plan-2.md, section 2): a skill
+that fires once a race, whose alternatives are each a random point and nothing
+else, fires at whichever point the runner reaches first. So it can't fire after
+the earliest of the alternatives' last metres: Swinging Maestro's four corner
+points mean its first numbered corner. `zones_for(..., once_per_race=True)`
+clips the zones there; any other clause keeps the union, since a later
+alternative can fire when an earlier one's other clause fails.
 """
 
 from .skill_conditions import parse_condition
@@ -229,11 +238,10 @@ def place_clause(facts, variable, op, value):
     if variable == "corner":
         return _corner_clause(facts, op, value)
     if variable == "corner_random":
-        # A random point on each corner with that number, every lap (owner,
-        # 2026-11-03: corner skills can fire on any such corner, at random;
-        # on a long course their cooldown can let one fire more than once).
+        # A random point on the last corner with that number: on a course
+        # over one lap, the final lap's (Daptrius, 2026-11-03).
         numbered = [(start, end) for start, end, number in facts.corners if number == value]
-        return (numbered, "random") if op == "==" else None
+        return (sorted(numbered)[-1:], "random") if op == "==" else None
     if variable in ("distance_rate", "remain_distance", "distance_rate_after_random"):
         return _distance_clause(facts.distance, variable, op, value)
     if op == "==":
@@ -288,7 +296,8 @@ def course_gate_holds(course, variable, op, value):
 
 
 def _alternative(facts, course, clauses):
-    """One alternative as (kind, stretches, stretch kind, styles)."""
+    """One alternative as (kind, stretches, stretch kind, styles, has_other),
+    `has_other` saying a clause that isn't a place or a gate was there."""
     stretches = [(0, facts.distance)]
     stretch_kind = None
     styles = None
@@ -297,7 +306,7 @@ def _alternative(facts, course, clauses):
         kind = classify(variable)
         if kind == "course":
             if course_gate_holds(course, variable, op, value) is False:
-                return "never", [], None, None
+                return "never", [], None, None, False
         elif kind == "runner":
             allowed = {value} if op == "==" else set(STYLE_KEYS) - {value} if op == "!=" else set(STYLE_KEYS)
             styles = allowed if styles is None else styles & allowed
@@ -320,13 +329,24 @@ def _alternative(facts, course, clauses):
         # Event gates narrow nothing and say nothing.
     if stretch_kind is not None:
         if not stretches:
-            return "never", [], None, None
-        return "place", stretches, stretch_kind, styles
-    return ("anywhere" if has_other else "passive"), [], None, styles
+            return "never", [], None, None, False
+        return "place", stretches, stretch_kind, styles, has_other
+    return ("anywhere" if has_other else "passive"), [], None, styles, has_other
 
 
-def zones_for(condition, course):
-    """A skill's condition on a course, in the module docstring's shape."""
+def _first_point_wins(live):
+    """The live alternatives' stretches, clipped where a once-a-race skill made
+    only of random points must already have fired; None when the rule doesn't
+    apply (the module docstring)."""
+    if len(live) < 2 or any(alt[0] != "place" or alt[2] != "random" or alt[4] for alt in live):
+        return None
+    bound = min(max(end for _, end in alt[1]) for alt in live)
+    return [(start, min(end, bound)) for alt in live for start, end in alt[1] if start < bound]
+
+
+def zones_for(condition, course, once_per_race=False):
+    """A skill's condition on a course, in the module docstring's shape.
+    `once_per_race`: the skill's cooldown outlasts the race (most skills)."""
     parsed = parse_condition(condition) if condition else None
     if not parsed:
         return {"kind": "anywhere", "zones": [], "styles": None}
@@ -336,16 +356,8 @@ def zones_for(condition, course):
     if not live:
         return {"kind": "never", "zones": [], "styles": None}
 
-    # Styles: the union over the alternatives that can fire; one with no
-    # style clause means every style can.
-    styles = set()
-    for _, _, _, alt_styles in live:
-        if alt_styles is None:
-            styles = None
-            break
-        styles |= alt_styles
-    # In the game's order (front first), as the guide's tabs run.
-    style_keys = [STYLE_KEYS[style] for style in sorted(styles)] if styles is not None else None
+    style_keys = _style_keys(live)
+    clipped = _first_point_wins(live) if once_per_race else None
 
     kinds = {alt[0] for alt in live}
     for summary in ("passive", "anywhere"):
@@ -353,9 +365,25 @@ def zones_for(condition, course):
             return {"kind": summary, "zones": [], "styles": style_keys}
 
     zones = []
-    for _, stretches, stretch_kind, _ in live:
-        zones += [{"start": round(start, 1), "end": round(end, 1), "kind": stretch_kind} for start, end in stretches]
+    if clipped is not None:
+        zones = [{"start": round(start, 1), "end": round(end, 1), "kind": "random"} for start, end in clipped]
+    else:
+        for _, stretches, stretch_kind, _, _ in live:
+            zones += [{"start": round(start, 1), "end": round(end, 1), "kind": stretch_kind}
+                      for start, end in stretches]
     return {"kind": "place", "zones": _merge(zones), "styles": style_keys}
+
+
+def _style_keys(live):
+    """The union of the styles of the alternatives that can fire, in the game's
+    order (front first, as the guide's tabs run); None when one has no style
+    clause, since then every style can."""
+    styles = set()
+    for _, _, _, alt_styles, _ in live:
+        if alt_styles is None:
+            return None
+        styles |= alt_styles
+    return [STYLE_KEYS[style] for style in sorted(styles)]
 
 
 def _merge(zones):

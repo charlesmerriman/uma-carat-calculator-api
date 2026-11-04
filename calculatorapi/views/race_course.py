@@ -17,6 +17,8 @@ from rest_framework.response import Response
 
 from calculatorapi import course_zones_cache
 from calculatorapi.models import RaceCourse, Skill
+from calculatorapi.skill_text import context_from_database
+from calculatorapi.skill_verdicts import is_once_per_race, verdict_for
 from calculatorapi.skill_zones import zones_for
 
 
@@ -61,12 +63,14 @@ def race_course_shape(request, course_id):  # pylint: disable=unused-argument
 @api_view(["GET"])
 @permission_classes([permissions.AllowAny])
 def race_course_skill_zones(request, course_id):  # pylint: disable=unused-argument
-    """Where every global skill can fire on one course (skill_zones.py).
+    """Where every global skill can fire on one course (skill_zones.py), and
+    its verdict there (skill_verdicts.py).
 
-    `{skill id: {kind, zones, styles}}`, one map per course, which the guide's
-    skills and the veterans' layer both read (notes/course-map-plan.md, "The
-    layer menu"). Public like the guide; a hidden map is a 404 like a missing
-    one. Built once per course and cached (course_zones_cache.py).
+    `{skill id: {kind, zones, styles, ...verdict fields}}`, one map per course,
+    which the guide's skills and the veterans' layer both read
+    (notes/course-map-plan.md, "The layer menu"; notes/course-map-plan-2.md).
+    Public like the guide; a hidden map is a 404 like a missing one. Built
+    once per course and cached (course_zones_cache.py).
     """
     course = RaceCourse.objects.filter(pk=course_id, show_map=True).only(
         "id", "distance", "track_id", "direction", "surface", "corners", "straights", "slopes",
@@ -75,10 +79,12 @@ def race_course_skill_zones(request, course_id):  # pylint: disable=unused-argum
         return Response({"detail": "Not found."}, status=404)
     cached = course_zones_cache.read(course.id)
     if cached is None:
-        zones = {
-            str(skill_id): zones_for(condition, course)
-            for skill_id, condition in Skill.objects.on_global().values_list("id", "condition")
-        }
+        context = context_from_database()
+        zones = {}
+        for skill_id, condition, effects in Skill.objects.on_global().values_list("id", "condition", "effects"):
+            entry = zones_for(condition, course, once_per_race=is_once_per_race(effects))
+            entry.update(verdict_for(condition, effects, course, entry, context))
+            zones[str(skill_id)] = entry
         cached = json.dumps(zones, separators=(",", ":")).encode()
         course_zones_cache.store(course.id, cached)
     # Cached bytes, served as they are (views/skills.py does the same).
