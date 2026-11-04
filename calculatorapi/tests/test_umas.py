@@ -6,6 +6,7 @@ from contextlib import redirect_stdout
 from importlib import import_module
 from io import StringIO
 from pathlib import Path
+from unittest.mock import patch
 
 from django.apps import apps
 from django.core.files.base import ContentFile
@@ -607,3 +608,79 @@ class LinkBorderlessUmasTests(CalculatorTestCase):
         out = self._run()
 
         self.assertIn("Linking 0 uma(s) from 0 file(s)", out)
+
+    def test_the_new_name_links_umas_too(self):
+        call_command("link_borderless_art", "--kind", "umas", stdout=StringIO())
+
+        self.with_file.refresh_from_db()
+        self.assertEqual(self.with_file.image_borderless.name, "umas_borderless/114901-Phalaenopsis.png")
+
+
+@override_settings(STORAGES=PLAIN_TEST_STORAGES)
+class LinkBorderlessCardsTests(CalculatorTestCase):
+    """`link_borderless_art --kind cards`, which runs on every deploy."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()  # pylint: disable=consider-using-with
+        self.addCleanup(self.tmp.cleanup)
+        self.override = override_settings(MEDIA_ROOT=self.tmp.name)
+        self.override.enable()
+        self.addCleanup(self.override.disable)
+        self.oguri = SupportCard.objects.create(name="Oguri Cap", game_id=30024)
+        self.kitasan = SupportCard.objects.create(name="Kitasan Black", game_id=30028)
+        # A stand-in with a made-up id: never has a file, never reported.
+        SupportCard.objects.create(name="SSR Speed", game_id=31000, is_placeholder=True)
+        default_storage.save("support_cards_borderless/30024-Oguri-Cap-pwr.webp", ContentFile(b"webp"))
+        # A six-digit uma file in the wrong folder is not a card's.
+        default_storage.save("support_cards_borderless/114901-Phalaenopsis.png", ContentFile(b"png"))
+
+    def _run(self, *flags):
+        out = StringIO()
+        call_command("link_borderless_art", "--kind", "cards", *flags, stdout=out)
+        return out.getvalue()
+
+    def test_links_the_card_whose_game_id_starts_the_filename(self):
+        out = self._run()
+
+        self.oguri.refresh_from_db()
+        self.kitasan.refresh_from_db()
+        self.assertEqual(self.oguri.image_borderless.name, "support_cards_borderless/30024-Oguri-Cap-pwr.webp")
+        self.assertFalse(self.kitasan.image_borderless)
+        self.assertIn("Kitasan Black (30028)", out)
+        self.assertNotIn("SSR Speed", out)
+        self.assertNotIn("114901", out)
+        self.assertIn("Linked 1 card(s).", out)
+
+    def test_leaves_a_hand_picked_image_alone(self):
+        self.oguri.image_borderless = "support_cards_borderless/custom.webp"
+        self.oguri.save()
+
+        self._run()
+
+        self.oguri.refresh_from_db()
+        self.assertEqual(self.oguri.image_borderless.name, "support_cards_borderless/custom.webp")
+
+    def test_dry_run_writes_nothing(self):
+        out = self._run("--dry-run")
+
+        self.oguri.refresh_from_db()
+        self.assertFalse(self.oguri.image_borderless)
+        self.assertIn("Would link 1 card(s)", out)
+
+    def test_a_space_that_cannot_be_listed_skips_the_link_not_the_deploy(self):
+        with patch("calculatorapi.management.commands.link_borderless_art.default_storage") as storage:
+            storage.listdir.side_effect = ConnectionError("Space down")
+            out = self._run()
+
+        self.oguri.refresh_from_db()
+        self.assertFalse(self.oguri.image_borderless)
+        self.assertIn("Link skipped", out)
+
+    def test_a_long_report_is_cut_short(self):
+        for game_id in range(30100, 30130):
+            SupportCard.objects.create(name=f"Card {game_id}", game_id=game_id)
+
+        out = self._run("--dry-run")
+
+        self.assertIn("31 card(s) have no borderless file", out)
+        self.assertIn("and 11 more", out)

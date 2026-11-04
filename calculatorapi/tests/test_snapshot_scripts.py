@@ -1,6 +1,7 @@
 """
 The game-data scripts under scripts/: rebuilding a JP mdb from a CSV export,
-the extractor's effects and evolutions, and the UmaTL slice.
+the extractor's effects and evolutions, the UmaTL slice, and the borderless
+card upload's file picking, naming and resize.
 
 The scripts are not a package, so each is loaded from its path. Everything
 runs against tiny made-up databases in a temp folder; no game file is needed.
@@ -8,10 +9,14 @@ runs against tiny made-up databases in a temp folder; no game file is needed.
 
 import csv
 import importlib.util
+import io
 import json
 import sqlite3
 import tempfile
+import zipfile
 from pathlib import Path
+
+from PIL import Image
 
 from .base import CalculatorTestCase
 
@@ -28,6 +33,7 @@ def load_script(name):
 rebuild_script = load_script("jp_export_to_mdb")
 extractor = load_script("extract_master_snapshot")
 umatl = load_script("fetch_umatl")
+card_upload = load_script("upload_borderless_cards")
 
 
 def write_export(root, tables, counts=None):
@@ -211,3 +217,71 @@ class UmaTLSliceTests(CalculatorTestCase):
         self.assertEqual(text["skill_descriptions"], {"3": "Does a thing"})
         self.assertEqual(text["evolution_conditions"], {"10010101": "Reach 600 Stamina"})
         self.assertEqual(set(text), {"skill_names", "skill_descriptions", "evolution_conditions"})
+
+
+class UploadBorderlessCardsTests(CalculatorTestCase):
+    """scripts/upload_borderless_cards.py, short of the upload itself: which
+    files it takes from Daptrius's download, what it names them, and the resize.
+    Tiny made-up PNGs; no game file and no Space."""
+
+    @staticmethod
+    def png(size=(12, 16), colour=(200, 40, 40)):
+        out = io.BytesIO()
+        Image.new("RGB", size, colour).save(out, "PNG")
+        return out.getvalue()
+
+    def write_zip(self, path, entries):
+        with zipfile.ZipFile(path, "w") as archive:
+            for name, data in entries.items():
+                archive.writestr(name, data)
+
+    def test_takes_card_textures_only_and_each_card_once(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            textures = "Data/jp/scraper/Game Images/support_cards/"
+            self.write_zip(root / "one.zip", {
+                f"{textures}tex_support_card_30024__tex_support_card_30024__Texture2D__-1.png": self.png(),
+                # Not a card texture: an uma's, a six-digit id, a stray file.
+                f"{textures}tex_chara_100101__x.png": self.png(),
+                f"{textures}tex_support_card_300240__x.png": self.png(),
+                "Data/jp/notes.txt": b"hello",
+                "Data/shared/support_cards.json": json.dumps([
+                    {"id": 10089, "name_en": "Jungle Pocket"},
+                ]),
+            })
+            # The same card unzipped beside its zip, plus one more.
+            folder = root / "one" / "Data" / "jp" / "scraper" / "Game Images" / "support_cards"
+            folder.mkdir(parents=True)
+            (folder / "tex_support_card_30024__tex_support_card_30024__Texture2D__-1.png").write_bytes(self.png())
+            (folder / "tex_support_card_10089__tex_support_card_10089__Texture2D__7.png").write_bytes(self.png())
+
+            found, names = card_upload.read_sources([root / "one.zip", root / "one"])
+
+        self.assertEqual(sorted(found), [10089, 30024])
+        self.assertEqual(names, {10089: "Jungle Pocket"})
+
+    def test_names_follow_the_bordered_pictures(self):
+        global_cards = {30024: {"chara_name": "Oguri Cap", "card_type": "power"}}
+        jp_cards = {
+            30024: {"chara_name": "オグリキャップ", "card_type": "power"},
+            10089: {"chara_name": "ジャングルポケット", "card_type": "speed"},
+            30081: {"chara_name": "チームシリウス", "card_type": "group"},
+            10094: {"chara_name": "佐岳メイ", "card_type": "friend"},
+        }
+        daptrius = {30024: "Should Lose", 10089: "Jungle Pocket", 10094: "Mei Satake"}
+
+        def name(game_id):
+            return card_upload.file_name(game_id, global_cards, jp_cards, daptrius)
+
+        # Global's name wins; a JP-only card takes Daptrius's English.
+        self.assertEqual(name(30024), "30024-Oguri-Cap-pwr.webp")
+        self.assertEqual(name(10089), "10089-Jungle-Pocket-spd.webp")
+        self.assertEqual(name(10094), "10094-Mei-Satake-pls.webp")
+        # No English name anywhere: the id and the type, never the Japanese.
+        self.assertEqual(name(30081), "30081-grp.webp")
+
+    def test_shrinks_to_the_sites_card_size_as_webp(self):
+        webp = card_upload.to_webp(self.png(size=(1536, 2048)))
+
+        with Image.open(io.BytesIO(webp)) as image:
+            self.assertEqual((image.format, image.size), ("WEBP", (450, 600)))

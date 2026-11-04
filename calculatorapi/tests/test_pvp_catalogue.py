@@ -80,6 +80,18 @@ class CatalogueTests(CalculatorTestCase):
         pvp_catalogue_cache.invalidate()
         self.assertEqual(self.fetch()["support_cards"][0]["released_at"], "2026-03-12T00:00:00+00:00")
 
+    def test_a_card_sends_its_borderless_art_or_null(self):
+        # Never a fallback to `image`: the bordered picture has a frame of its
+        # own, and the deck draws it unframed (models/support_card.py).
+        self.assertIsNone(self.fetch()["support_cards"][0]["image_borderless"])
+        SupportCard.objects.filter(pk=self.card.pk).update(
+            image_borderless="support_cards_borderless/30028-Kitasan-Black-spd.webp"
+        )
+        pvp_catalogue_cache.invalidate()
+        card = self.fetch()["support_cards"][0]
+        self.assertTrue(card["image_borderless"].endswith("support_cards_borderless/30028-Kitasan-Black-spd.webp"))
+        self.assertTrue(card["image"].endswith("support_cards/30028.png"))
+
     def test_a_placeholder_says_so(self):
         SupportCard.objects.create(
             name="SSR Speed", game_id=31000, image="support_cards/31000.png",

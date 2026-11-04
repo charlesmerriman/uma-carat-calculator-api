@@ -662,7 +662,7 @@ class DeckSlotInline(PicturePickersMixin, TabularInline):
     hide_title = True
     form = DeckSlotForm
     formset = DeckSlotFormSet
-    fields = ("slot", "order", "support_card", "is_borrow", "note")
+    fields = ("slot", "order", "support_card", "limit_break", "is_borrow", "note")
     autocomplete_fields = ("support_card",)
     ordering = ("slot", "order", "id")
     verbose_name = "card"

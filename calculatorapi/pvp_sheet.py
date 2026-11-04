@@ -58,6 +58,7 @@ from django.db import transaction
 from django.utils import timezone
 from unfold.widgets import UnfoldBooleanWidget
 
+from calculatorapi.deck_limit_breaks import split_limit_break
 from calculatorapi.models import (
     ChampionsMeeting,
     LeagueOfHeroes,
@@ -713,14 +714,21 @@ class SheetImporter:
                     note_text = note_text or f"Card {slot['game_id']}"
                 if card is None and not note_text:
                     continue
+                # The sheet's diamonds on the "or" row ("◆◆◆◇ + or spd") are the
+                # card's limit break: the number goes on the card's row and the
+                # rest of the note stays (deck_limit_breaks.py). A slot with no
+                # card can't hold one, so its note is kept whole.
+                alt, limit_break = slot["alt"], None
+                if card is not None:
+                    limit_break, alt = split_limit_break(alt)
                 PvpDeckSlot.objects.create(
                     deck=row, slot=slot["slot"], order=0, is_borrow=slot["slot"] == 6,
-                    support_card=card, note=link(note_text[:120], 120),
+                    support_card=card, note=link(note_text[:120], 120), limit_break=limit_break,
                 )
-                if slot["alt"]:
+                if alt:
                     PvpDeckSlot.objects.create(
                         deck=row, slot=slot["slot"], order=1, is_borrow=slot["slot"] == 6,
-                        note=link(slot["alt"][:120], 120),
+                        note=link(alt[:120], 120),
                     )
         counts["decks"] = len(parsed.decks)
 

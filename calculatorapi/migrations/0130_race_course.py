@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('calculatorapi', '0127_pvp_guide_tools_public_constraint'),
+        ('calculatorapi', '0129_pvp_deck_slot_limit_break'),
     ]
 
     operations = [

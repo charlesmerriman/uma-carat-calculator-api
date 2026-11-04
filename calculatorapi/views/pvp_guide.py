@@ -119,9 +119,11 @@ class _UmaSerializer(serializers.ModelSerializer):
 
 
 class _SupportCardSerializer(serializers.ModelSerializer):
+    # `image_borderless` is the texture the deck frames itself (FramedCard),
+    # null when there is none; the deck then draws the bordered `image`.
     class Meta:
         model = SupportCard
-        fields = ("id", "name", "image", "card_type", "rarity")
+        fields = ("id", "name", "image", "image_borderless", "card_type", "rarity")
 
 
 class _SkillVersionSerializer(serializers.ModelSerializer):
@@ -231,7 +233,9 @@ class _DeckSlotSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PvpDeckSlot
-        fields = ("slot", "order", "is_borrow", "note", "support_card")
+        # limit_break: the least the guide recommends, 0..4, null when unsaid;
+        # the deck draws it as the game's diamonds on the card.
+        fields = ("slot", "order", "is_borrow", "note", "limit_break", "support_card")
 
 
 class _DeckSerializer(serializers.ModelSerializer):
