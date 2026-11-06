@@ -18,21 +18,39 @@ THE FIELDS, each present only when it says something:
     spurt         {"from", "to"[, "odds"][, "useful"]}: an accel or speed
                   skill's trigger in metres from the late-race start (negative
                   is before); `odds`, an accel's share landing well (rule 5);
-                  `useful`, its ranking score: that share times the speed its
-                  acceleration adds, plus the share its speed carries into the
-                  late race times that speed (m/s both)
+                  `useful`, an accel's ranking score: that share times the
+                  speed its acceleration adds, plus the share its speed carries
+                  into the late race times that speed (m/s both), with the two
+                  parts as `accel` and `carry`
+    speed_kind    "target" (raises the speed cap, most of them) or "current"
+                  (raises the speed itself), for a speed skill (rule 9)
+    speed_rank    {"useful", "speed", "carry"[, "accelerating"]}: a speed
+                  skill's ranking score for the Speed list (rule 9), its two
+                  parts, and the share of a target-speed trigger landing while
+                  the runner is still speeding up (absent when nil). A skill
+                  with no place on the course ("anywhere") ranks at its full
+                  strength: the map can't place it, so nothing cuts it
     before_spurt  a heal's share of triggers landing before the late-race start
     carry         a speed skill's share that carries its speed into the late race
                   (absent when no part of its trigger lies before the late-race start)
     carry_window  [first, last) metres it must fire in to do so (the band drawn)
     repeats       how many times a 30 s cooldown skill can fire here (2 or more)
     needs         what else must hold, in words (placing, timers, skills used)
+    placing       [{"order": [first, last]}, {"rate": [low, high]}, ...]: where
+                  in the field it must be, one band per way it can fire here;
+                  `order` in places (`last` null when open: the field size is
+                  the event's, so the client converts), `rate` in percent back
+                  (`order_rate`, and the `order_rate_in/outNN_continue`
+                  family); both when both bound it. Absent when any way is
+                  free of a place clause (as `needs` reads). The accels
+                  column's style pills check it (course-map-feedback-plan.md, A)
     unreadable    true: a clause the map can't read yet, so no timing at all
     chain         {"counts": "heal", "at_least": 3}: set off by other skills
     paths         one entry per way the skill can fire here, when its ways need
                   different things (each with zones, fires_at or spread, spurt,
-                  before_spurt, carry, carry_window, needs, unreadable); the
-                  top-level fields then summarise them, `useful` the best path's
+                  before_spurt, carry, carry_window, needs, placing, unreadable,
+                  speed_rank); the top-level fields then summarise them, `useful`
+                  and `speed_rank` the best path's
 
 THE RULES (each a test in tests/test_skill_verdicts.py):
 
@@ -62,12 +80,25 @@ THE RULES (each a test in tests/test_skill_verdicts.py):
 8. `all_corner_random` places four points, each picking a corner (equal) then
    a metre along it; a once-a-race skill fires at the first point reached, a
    short-cooldown one at any of them (Daptrius, 2026-11-03).
+9. A speed skill ranks by the speed it adds, times its repeats, times the
+   share of its trigger NOT landing while the runner is still speeding up,
+   plus the carry part an accel gets (the owner, 2026-11-06, verbatim in
+   notes/course-map-feedback-plan.md: a target speed raise "doesn't matter if
+   an uma doesn't have time to accelerate to that new speed"). Only a
+   target-speed skill takes the cut; one raising current speed doesn't. The
+   speeding-up stretches are the late race's first metres (spurt_ramp) and,
+   for a front-runner-only skill, the race start (start_ramp): a pace, late
+   or end runner's early speed skill blocks position keep's Pace Down, a
+   prized edge (the owner on Uma Stan; GameTora's race mechanics: "Any active
+   speed-raising skill buffs will also prevent this mode from activating").
+   Ease of firing (fewer `needs`) is the client's tie-break, no weight here.
 """
 
 import math
+import re
 
 from .skill_conditions import parse_condition
-from .skill_text import ONCE_PER_RACE, SKILL_COUNTS, describe_condition
+from .skill_text import ONCE_PER_RACE, SKILL_COUNTS, bounds, describe_condition
 from .skill_zones import PHASE_STARTS, CourseFacts, classify, zones_for
 
 # ── Daptrius's answers (2026-11-03, messages 1567150957861671044,
@@ -137,6 +168,90 @@ def mid_race_speed(distance, styles=None):
 def mid_race_accel(power=ASSUMED_POWER):
     """m/s² while speeding up in the mid race, on the flat, at A aptitudes."""
     return BASE_ACCEL * math.sqrt(500 * power)
+
+
+# ── The two stretches a runner spends speeding up (rule 9; the owner's
+# choices of 2026-11-06: physics, per style, with one accel at the spurt).
+# uma-skill-tools' RaceSolver.ts formulas as quoted in notes/course-map-
+# later.md ("What the formulas say"), which marks them "to confirm" with
+# Daptrius: a correction from him replaces these numbers. GameTora's race
+# mechanics agrees on the shape: 3 m/s at the gate, about 11 s from 20 to
+# 25 m/s for a 1200 Power runner with no skills. ──
+
+ASSUMED_SPEED = 1200
+ASSUMED_GUTS = 1200
+# Target speed per style in the early race and the late race (the mid race's
+# is MID_RACE_COEFFICIENT), and acceleration per style in each.
+EARLY_RACE_COEFFICIENT = {"front": 1.0, "pace": 0.978, "late": 0.938, "end": 0.931}
+LATE_RACE_COEFFICIENT = {"front": 0.962, "pace": 0.975, "late": 0.994, "end": 1.0}
+EARLY_ACCEL_COEFFICIENT = {"front": 1.0, "pace": 0.985, "late": 0.975, "end": 0.945}
+LATE_ACCEL_COEFFICIENT = {"front": 0.996, "pace": 0.996, "late": 1.0, "end": 0.997}
+# The gate: 3 m/s, and +24 m/s² of start dash until 85% of base speed.
+START_SPEED = 3.0
+START_DASH_ACCEL = 24.0
+START_DASH_UNTIL = 0.85
+# One gold accel landing as the spurt starts, the PvP norm (the owner chose
+# "one accel"): 0.4 m/s² for 3 s, stretched by the course like any duration.
+SPURT_ACCEL = (0.4, 3.0)
+STEP_SECONDS = 0.01
+
+
+def _mean(table, styles):
+    values = [table[style] for style in styles or table]
+    return sum(values) / len(values)
+
+
+def last_spurt_speed(distance, styles=None):
+    """The m/s a runner spurts at: the late race's target plus a little, plus
+    Speed and Guts terms, at 1200 stats and A aptitudes."""
+    base = base_speed(distance)
+    from_speed = math.sqrt(500 * ASSUMED_SPEED) * 0.002
+    late_target = base * _mean(LATE_RACE_COEFFICIENT, styles) + from_speed
+    return (late_target + 0.01 * base) * 1.05 + from_speed + (450 * ASSUMED_GUTS) ** 0.597 * 0.0001
+
+
+def _ramp_metres(speed, goal, accel_at):
+    """Metres run while speeding up from `speed` to `goal`, stepping time;
+    `accel_at(seconds, speed)` is the m/s² at each step."""
+    seconds = metres = 0.0
+    while speed < goal and seconds < 60:  # 60 s: a guard, never reached
+        speed = min(goal, speed + accel_at(seconds, speed) * STEP_SECONDS)
+        metres += speed * STEP_SECONDS
+        seconds += STEP_SECONDS
+    return metres
+
+
+def spurt_ramp(distance, styles=None):
+    """Metres from the late-race start until the runner reaches spurt speed,
+    with one gold accel (SPURT_ACCEL) firing as it starts. About 140 m on
+    Chukyo 1200; about 220 m with no accel."""
+    accel = mid_race_accel() * _mean(LATE_ACCEL_COEFFICIENT, styles)
+    boost, seconds = SPURT_ACCEL
+    lasts = seconds * stretch(distance)
+    return _ramp_metres(mid_race_speed(distance, styles), last_spurt_speed(distance, styles),
+                        lambda elapsed, _speed: accel + (boost if elapsed < lasts else 0))
+
+
+def start_ramp(distance, styles=None):
+    """Metres from the gate until the runner reaches the early race's pace:
+    the start dash to 85% of base speed, then the usual acceleration."""
+    base = base_speed(distance)
+    accel = mid_race_accel() * _mean(EARLY_ACCEL_COEFFICIENT, styles)
+    dash_until = START_DASH_UNTIL * base
+    return _ramp_metres(START_SPEED, base * _mean(EARLY_RACE_COEFFICIENT, styles),
+                        lambda _elapsed, speed: accel + (START_DASH_ACCEL if speed < dash_until else 0))
+
+
+def accelerating_windows(distance, styles=None):
+    """[(first, last)] metres where a runner is still speeding up (rule 9):
+    the late race's ramp, and the start's for a front-runner-only skill. Any
+    other style's early speed skill keeps it out of Pace Down, so the start
+    costs it nothing."""
+    late = late_race_start(distance)
+    windows = [(late, late + spurt_ramp(distance, styles))]
+    if styles and set(styles) == {"front"}:
+        windows.append((0.0, start_ramp(distance, styles)))
+    return windows
 
 
 # ── The game's numbers ──────────────────────────────────────────────────────
@@ -319,6 +434,68 @@ def needs_for(parsed, context):
     return words
 
 
+# `order_rate_in20_continue==1`, "having stayed in the front 20% so far", and
+# its `out` mirror, "behind the front 40%": a place band like `order_rate`'s.
+_CONTINUE_PLACING = re.compile(r"order_rate_(in|out)(\d+)_continue")
+
+
+def _band(low, high, floor, ceiling):
+    """[low, high] with the open ends filled, or None when it bounds nothing."""
+    low = floor if low is None or low < floor else low
+    high = None if high is None or (ceiling is not None and high >= ceiling) else high
+    if low == floor and high is None:
+        return None
+    return [low, high if high is not None else ceiling]
+
+
+def _placing_of(clauses):
+    """One alternative's place bounds: {"order": [first, last]} in places
+    (`last` None when open, since the field size is the event's, not the
+    course's) and/or {"rate": [low, high]} in percent back in the field. None
+    when no clause bounds the place."""
+    order, rate = [], []
+    for variable, op, value in clauses:
+        if variable == "order":
+            order.append((op, value))
+        elif variable == "order_rate":
+            rate.append((op, value))
+        elif (match := _CONTINUE_PLACING.fullmatch(variable)) and op == "==" and value == 1:
+            share = int(match.group(2))
+            rate.extend([("<=", share)] if match.group(1) == "in" else [(">=", share)])
+    placing = {}
+    if order:
+        low, high, equal, _ = bounds(order)  # `!=` bounds nothing: left free
+        band = [equal, equal] if equal is not None else _band(low, high, 1, None)
+        if band:
+            placing["order"] = band
+    if rate:
+        low, high, equal, _ = bounds(rate)
+        band = [equal, equal] if equal is not None else _band(low, high, 0, 100)
+        if band:
+            placing["rate"] = band
+    return placing or None
+
+
+def placing_for(parsed, course=None):
+    """Where in the field the skill must be, one band per way it can fire here
+    (deduplicated), for the accels column's style pills (notes/course-map-
+    feedback-plan.md, lane A). None when any live way has no place clause: then
+    it can fire from anywhere in the field, the rule `needs_for` follows. With
+    `course`, a way that can't fire on it (zones_for "never") is left out."""
+    bands = []
+    for clauses in parsed:
+        if course is not None and len(parsed) > 1:
+            alone = "&".join(f"{variable}{op}{value}" for variable, op, value in clauses)
+            if zones_for(alone, course)["kind"] == "never":
+                continue
+        placing = _placing_of(clauses)
+        if placing is None:
+            return None
+        if placing not in bands:
+            bands.append(placing)
+    return bands or None
+
+
 def chain_for(parsed):
     """A verified "after using N skills" clause as {"counts", "at_least"}, or None."""
     for clauses in parsed:
@@ -353,6 +530,22 @@ def accel_strength(effects):
 def speed_added(effects):
     """The target speed a skill adds to its own runner, m/s (0.35 for most golds)."""
     return _self_value(effects, VELOCITY) / TENTHS_OF_A_MS
+
+
+def speed_kind(effects):
+    """"current" when a skill raises its runner's current speed (type 22,
+    "Current speed" in skill_text), "target" when it only raises the speed
+    cap (type 27, "Velocity"), None for neither. A skill doing both counts as
+    current: it speeds the runner up even while she's accelerating."""
+    if _self_value(effects, CURRENT_SPEED_UP) > 0:
+        return "current"
+    return "target" if _self_value(effects, VELOCITY) > 0 else None
+
+
+def speed_strength(effects):
+    """How much a speed skill raises speed, m/s: its target speed, or its
+    current speed when it raises no target speed."""
+    return speed_added(effects) or _self_value(effects, CURRENT_SPEED_UP) / TENTHS_OF_A_MS
 
 
 def _share_by_length(entry, low, high):
@@ -438,12 +631,17 @@ def verdict_for(condition, effects, course, entry, context):
     kinds = effect_kinds(effects)
     if kinds:
         out["effects"] = kinds
+    if "speed" in kinds:
+        out["speed_kind"] = speed_kind(effects)
     parsed = parse_condition(condition) if condition else None
     if not parsed:
         return out
     needs = needs_for(parsed, context)
     if needs:
         out["needs"] = needs
+    placing = placing_for(parsed, course)
+    if placing:
+        out["placing"] = placing
     chain = chain_for(parsed)
     if chain:
         out["chain"] = chain
@@ -462,6 +660,11 @@ def verdict_for(condition, effects, course, entry, context):
         out.update(_summary(paths, course))
         return out
     out.update(_timing(parsed, kinds, effects, course, entry))
+    if "speed" in kinds and entry["kind"] == "anywhere":
+        # Rule 9: no place, so no share to cut (Uma Stan: near 3 runners
+        # after 5 s, which for most of the field is the early race).
+        strength = round(speed_strength(effects), 3)
+        out["speed_rank"] = {"useful": strength, "speed": strength, "carry": 0.0}
     return out
 
 
@@ -480,6 +683,9 @@ def _paths(parsed, kinds, effects, course, context):
         needs = needs_for([clauses], context)
         if needs:
             path["needs"] = needs
+        placing = placing_for([clauses])
+        if placing:
+            path["placing"] = placing
         if any(classify(variable) == "unconfirmed" for variable, _, _ in clauses):
             path["unreadable"] = True
         else:
@@ -510,6 +716,9 @@ def _summary(paths, course):
                 for part in ("accel", "carry"):
                     if part in best:
                         out["spurt"][part] = best[part]
+    speed_ranks = [path["speed_rank"] for path in paths if "speed_rank" in path]
+    if speed_ranks:
+        out["speed_rank"] = max(speed_ranks, key=lambda rank: rank["useful"])
     if all(path.get("unreadable") for path in paths):
         out["unreadable"] = True
     return out
@@ -545,22 +754,27 @@ def _timing(parsed, kinds, effects, course, entry):  # pylint: disable=too-many-
         known = share(window)
         return known if known is not None or fires_at is not None else _share_by_length(entry, *window)
 
+    repeats = repeats_for(parsed, effects, facts, styles)
+    if repeats and repeats > 1:
+        out["repeats"] = repeats
     carry_rank = 0.0
     window = carry_window(effects, course.distance, styles) if "speed" in kinds else None
-    if window is not None:
+    first_metre = fires_at if fires_at is not None else spread[0]
+    # A trigger wholly at or after the late-race start has nothing to carry
+    # into it (the skill pass, bug A2): no band, no share, no carry words.
+    # Drawing the band anyway put a "Carry-over window" under every
+    # final-straight unique (Victoria por plancha, board 2026-11-05).
+    if window is not None and first_metre < late:
         # The band the map draws, and the share landing in it. A trigger wholly
-        # at or after the late-race start has nothing to carry into it (the
-        # skill pass, bug A2): no share, so the client says nothing about carry.
+        # before the band keeps it: the client words that "Ends before the late race".
         out["carry_window"] = [round(window[0]), round(window[1])]
         # What it carries, for the accels column's words: the target speed it
         # adds and how long it runs here (owner, 2026-11-04).
         out["carry_speed"] = round(speed_added(effects), 2)
         out["carry_seconds"] = round((_seconds(effects, "speed") or 0) * stretch(course.distance), 1)
-        first_metre = fires_at if fires_at is not None else spread[0]
-        if first_metre < late:
-            if share(window) is not None:
-                out["carry"] = round(share(window), 2)
-            carry_rank = landing_share(window) or 0.0
+        if share(window) is not None:
+            out["carry"] = round(share(window), 2)
+        carry_rank = landing_share(window) or 0.0
     if "accel" in kinds or "speed" in kinds:
         first, last = (fires_at, fires_at) if fires_at is not None else spread
         out["spurt"] = {"from": round(first - late), "to": round(last - late)}
@@ -579,9 +793,24 @@ def _timing(parsed, kinds, effects, course, entry):  # pylint: disable=too-many-
             # The two parts, shown as chips on the accels column (owner, 2026-11-04).
             out["spurt"]["accel"] = round(accel_part, 3)
             out["spurt"]["carry"] = round(carry_part, 3)
+    if "speed" in kinds:
+        out["speed_rank"] = _speed_rank(effects, course.distance, styles, landing_share, carry_rank, repeats)
     if "heal" in kinds and share((0, late)) is not None:
         out["before_spurt"] = round(share((0, late)), 2)
-    repeats = repeats_for(parsed, effects, facts, styles)
-    if repeats and repeats > 1:
-        out["repeats"] = repeats
+    return out
+
+
+def _speed_rank(effects, distance, styles, landing_share, carry_rank, repeats):  # pylint: disable=too-many-arguments,too-many-positional-arguments
+    """Rule 9's score and its parts. The speed part is the speed added, times
+    its repeats, cut by the share landing while the runner is speeding up (a
+    target-speed skill only); the carry part is the accel's, uncut, since a
+    trigger in the carry window lies before the late race's ramp."""
+    accelerating = 0.0
+    if speed_kind(effects) == "target":
+        accelerating = min(1.0, sum(landing_share(window) or 0 for window in accelerating_windows(distance, styles)))
+    speed_part = speed_strength(effects) * (repeats or 1) * (1 - accelerating)
+    carry_part = carry_rank * speed_added(effects)
+    out = {"useful": round(speed_part + carry_part, 3), "speed": round(speed_part, 3), "carry": round(carry_part, 3)}
+    if accelerating > 0:
+        out["accelerating"] = round(accelerating, 2)
     return out

@@ -32,6 +32,24 @@
 # module changed. Newest entry first is conventional here but not required — the
 # page sorts by date.
 
+- key: course-map-polish
+  date: 2026-11-06
+  title: "Banner announcements, course map polish and iPhone fixes"
+  version: "v2.14"
+  changes:
+    - added: "Our Discord has a new banner announcement channel. Oguri Bot posts there when a banner, Champions Meeting, League of Heroes, campaign or batch of legend races goes live, with a heads-up the day before. Anyone with the Carat Calc Ping role gets pinged when something starts."
+    - added: "You can search the course map's accels list by skill or uma. A new Speed switch lists every speed skill, ranked by how much of it lands once your runner is up to speed."
+    - changed: "The accels list's style buttons now drop skills a style can't reach from where it runs in the field."
+    - changed: "Corner and straight icons point the way the track runs."
+    - changed: "On phones, the strip scrolls sideways at full size, or runs down the page if you pick Down. The small track above it keeps its icons and shows the words when you tap it."
+    - changed: "No more glow at the spurt line."
+    - fixed: "Courses of more than one lap read properly now. The schematic's laps don't cross, a hill or straight you pass on every lap gets one label, and no label sits on the track."
+    - fixed: "Lighting a different skill no longer makes the track jump."
+    - fixed: "On the light themes, a lit skill's name is readable again. On Pearl it had nearly vanished."
+    - fixed: "Final-straight skills don't show a carry-over window any more."
+    - fixed: "On iPhone, tapping a text box or dropdown doesn't zoom the page, and the rank lists open the phone's own picker."
+    - fixed: "The Timeline's toolbar is back to its normal height."
+
 - key: course-map-ads
   date: 2026-11-04
   title: "The course map, and ads"

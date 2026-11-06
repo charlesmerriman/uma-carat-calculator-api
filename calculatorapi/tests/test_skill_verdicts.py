@@ -15,7 +15,8 @@ from calculatorapi.models import RaceCourse, Skill
 from calculatorapi.skill_conditions import parse_condition
 from calculatorapi.skill_text import TextContext
 from calculatorapi.skill_verdicts import (
-    carry_window, chain_for, effect_kinds, mid_race_speed, needs_for, proc_window, repeats_for, verdict_for,
+    accelerating_windows, carry_window, chain_for, effect_kinds, mid_race_speed, needs_for, placing_for, proc_window,
+    repeats_for, speed_kind, spurt_ramp, start_ramp, verdict_for,
 )
 from calculatorapi.skill_zones import CourseFacts, zones_for
 from calculatorapi.tests.base import CalculatorTestCase
@@ -235,6 +236,73 @@ class PathTests(CalculatorTestCase):
         self.assertNotIn("paths", moving)
 
 
+class PlacingTests(CalculatorTestCase):
+    """`placing`: where in the field a skill must be, for the accels column's
+    style pills (course-map-feedback-plan.md, lane A). The owner's three
+    examples (2026-11-06) are the first three tests."""
+
+    def test_pump_some_iron_is_a_rate_band(self):
+        iron = verdict("phase>=2&corner!=0&order_rate>=65&order_rate<=70", ACCEL)
+        self.assertEqual(iron["placing"], [{"rate": [65, 70]}])
+
+    def test_moving_past_and_beyond_reads_one_band_from_both_ways(self):
+        # Both of its ways need the same 50-70%, so one band, not two.
+        moving = verdict(
+            "phase>=2&corner!=0&is_finalcorner==0&temptation_count==0&order_rate>=50&order_rate<=70"
+            "@phase==1&corner!=0&is_finalcorner==1&temptation_count==0&order_rate>=50&order_rate<=70",
+            ACCEL,
+        )
+        self.assertEqual(moving["placing"], [{"rate": [50, 70]}])
+
+    def test_angling_and_scheming_is_a_place(self):
+        # A place, left in places: the field size is the event's (9 in a CM),
+        # so the client turns it into a percentage.
+        angling = verdict("phase>=2&corner!=0&order==1", ACCEL)
+        self.assertEqual(angling["placing"], [{"order": [1, 1]}])
+
+    def test_a_place_and_a_rate_together(self):
+        # Budding Blossom: 3rd or lower AND in the front 40%. The open end of
+        # the place is null, since the server doesn't know the field size.
+        blossom = verdict("phase>=2&is_finalcorner==1&corner==0&order>=3&order_rate<=40", ACCEL)
+        self.assertEqual(blossom["placing"], [{"order": [3, None], "rate": [0, 40]}])
+
+    def test_an_or_between_two_placings_keeps_both(self):
+        tamamo = verdict(PathTests.TAMAMO, ACCEL)
+        self.assertEqual(tamamo["placing"], [{"rate": [70, 75]}, {"rate": [20, 30]}])
+        # ...and each path carries its own.
+        self.assertEqual([path["placing"] for path in tamamo["paths"]], [[{"rate": [70, 75]}], [{"rate": [20, 30]}]])
+
+    def test_no_place_clause_means_no_placing(self):
+        self.assertNotIn("placing", verdict("phase>=2&corner!=0", ACCEL))
+        # A way with no place clause frees the whole skill, as `needs` reads.
+        self.assertIsNone(placing_for(parse_condition("phase==2&order==1@phase==3")))
+        # Clauses that bound nothing: 1st or lower is every place; != is left free.
+        self.assertIsNone(placing_for(parse_condition("phase>=2&order>=1")))
+        self.assertIsNone(placing_for(parse_condition("phase>=2&order!=1")))
+
+    def test_the_continue_family_is_a_rate_band(self):
+        # Keep Pushing Ahead: stayed in the front 20%. Schwarzes Schwert: in
+        # the front 80% and behind the front 40%, so 40-80%, and 3rd or lower.
+        self.assertEqual(placing_for(parse_condition("distance_rate>=50&order_rate_in20_continue==1")),
+                         [{"rate": [0, 20]}])
+        self.assertEqual(
+            placing_for(parse_condition(
+                "temptation_count==0&order>=3&is_finalcorner==1&corner==0"
+                "&order_rate_in80_continue==1&order_rate_out40_continue==1"
+            )),
+            [{"order": [3, None], "rate": [40, 80]}],
+        )
+
+    def test_a_way_that_can_t_fire_here_brings_no_band(self):
+        # The second way needs the final corner in the early race, which
+        # Chukyo's (from 550 m) never is: only the first way's 20-30% counts.
+        self.assertEqual(
+            placing_for(parse_condition("phase>=2&order_rate>=20&order_rate<=30@phase==0&is_finalcorner==1&order==1"),
+                        CHUKYO),
+            [{"rate": [20, 30]}],
+        )
+
+
 class ChainBoundTests(CalculatorTestCase):
     def test_a_chained_skill_with_no_place_fires_from_its_skills_phase(self):
         # Lightning Flare: two mid-race skills first, so from the mid-race start.
@@ -319,12 +387,16 @@ class CarryOverTests(CalculatorTestCase):
 
     def test_a_trigger_in_the_late_race_has_nothing_to_carry(self):
         # Lights of Vaudeville fires with 300 m to go, 100 m into Chukyo's late
-        # race: the band still draws, but there is no share to word.
+        # race: no band to draw and no share to word (a final-straight unique
+        # drew a "Carry-over window" it can never fire in).
         late = verdict("remain_distance<=300", SPEED)
-        self.assertEqual((late["fires_at"], late["carry_window"]), (900, [740, 791]))
-        self.assertNotIn("carry", late)
+        self.assertEqual(late["fires_at"], 900)
+        for field in ("carry", "carry_window", "carry_speed", "carry_seconds"):
+            self.assertNotIn(field, late)
         # A random point wholly in the late race, the same.
-        self.assertNotIn("carry", verdict("phase_random==2", SPEED))
+        self.assertNotIn("carry_window", verdict("phase_random==2", SPEED))
+        # One wholly before the band keeps it, for "Ends before the late race".
+        self.assertEqual(verdict("phase==0", SPEED).get("carry_window"), [740, 791])
         # One that straddles the start keeps its share, even a small one.
         self.assertIn("carry", verdict("distance_rate_after_random==50", SPEED))
 
@@ -351,6 +423,80 @@ class RepeatsTests(CalculatorTestCase):
         # beyond the description, so no count.
         straight_speed = [slot(27, duration=24000, cooldown=300000)]
         self.assertIsNone(repeats_for(parse_condition("straight_random==1"), straight_speed, CourseFacts(KYOTO_3200)))
+
+
+class SpeedRankTests(CalculatorTestCase):
+    """Rule 9, the owner's rule of 2026-11-06 (course-map-feedback-plan.md,
+    lane B): a target-speed skill is worth less the more often it fires while
+    the runner is still speeding up, unless it carries into the late race.
+    SPEED adds 0.2 m/s; Chukyo's late race starts at 800 m."""
+
+    CURRENT = [slot(22, duration=24000)]
+
+    def test_target_or_current_speed(self):
+        self.assertEqual(speed_kind(SPEED), "target")
+        self.assertEqual(speed_kind(self.CURRENT), "current")
+        # Both: it speeds the runner up even mid-acceleration.
+        self.assertEqual(speed_kind([slot(27), slot(22)]), "current")
+        self.assertIsNone(speed_kind(ACCEL))
+        self.assertEqual(verdict("is_lastspurt==1", self.CURRENT)["speed_kind"], "current")
+
+    def test_the_two_ramps(self):
+        # From mid-race speed (20.67 m/s, any style) to spurt speed (25.12),
+        # 0.465 m/s² plus one gold accel's 0.4 for 3.6 s: about 151 m.
+        self.assertEqual(round(spurt_ramp(1200)), 151)
+        with mock.patch.object(skill_verdicts, "SPURT_ACCEL", (0, 3.0)):
+            self.assertEqual(round(spurt_ramp(1200)), 220)
+        # From the gate at 3 m/s to the early race's pace: a front runner's
+        # 20.8 m/s takes about 126 m, an end closer's slower 19.4 about 68.
+        self.assertEqual((round(start_ramp(1200, ["front"])), round(start_ramp(1200, ["end"]))), (126, 68))
+
+    def test_the_start_counts_only_for_a_front_runner(self):
+        # Any other style's early speed skill keeps it out of Pace Down (the
+        # owner on Uma Stan), so the start costs it nothing.
+        self.assertEqual(len(accelerating_windows(1200, ["front"])), 2)
+        self.assertEqual(len(accelerating_windows(1200, ["end"])), 1)
+        self.assertEqual(len(accelerating_windows(1200)), 1)
+        self.assertEqual(verdict("running_style==1&phase==0", SPEED)["speed_rank"],
+                         {"useful": 0.0, "speed": 0.0, "carry": 0.0, "accelerating": 1.0})
+        self.assertEqual(verdict("running_style==4&phase==0", SPEED)["speed_rank"]["useful"], 0.2)
+
+    def test_the_plan_s_table(self):
+        # Mid race, 200 to 800 m: never while speeding up. 51 of its 600 m
+        # also carry into the late race (the 740 to 791 m window).
+        self.assertEqual(verdict("phase_random==1", SPEED)["speed_rank"],
+                         {"useful": 0.217, "speed": 0.2, "carry": 0.017})
+        # The final straight, 788 to 1,200 m: 151 of its 412 m are the ramp.
+        final = verdict("last_straight_random==1", SPEED)["speed_rank"]
+        self.assertEqual((final["accelerating"], final["speed"]), (0.37, 0.127))
+        # Right at the late-race start: always while speeding up, so nothing...
+        self.assertEqual(verdict("is_lastspurt==1", SPEED)["speed_rank"]["useful"], 0.0)
+        # ...unless it raises current speed.
+        self.assertEqual(verdict("is_lastspurt==1", self.CURRENT)["speed_rank"],
+                         {"useful": 0.2, "speed": 0.2, "carry": 0.0})
+        # In the carry window: its speed, plus the carry part, uncut.
+        self.assertEqual(verdict("remain_distance<=455&remain_distance>=445", SPEED)["speed_rank"],
+                         {"useful": 0.4, "speed": 0.2, "carry": 0.2})
+
+    def test_repeats_multiply_the_speed(self):
+        corner_speed = [slot(27, duration=24000, cooldown=300000)]
+        self.assertEqual(verdict("all_corner_random==1", corner_speed, KYOTO_3200)["speed_rank"]["speed"], 0.4)
+
+    def test_a_skill_with_no_place_ranks_at_full_strength(self):
+        # Uma Stan: near 3 runners after 5 s. The map can't place it.
+        stan = verdict("near_count>=3&accumulatetime>=5", [slot(27, value=1500)])
+        self.assertEqual(stan["kind"], "anywhere")
+        self.assertNotIn("spurt", stan)
+        self.assertEqual(stan["speed_rank"], {"useful": 0.15, "speed": 0.15, "carry": 0.0})
+
+    def test_ways_of_firing_rank_by_the_best(self):
+        tamamo = verdict(PathTests.TAMAMO, SPEED)
+        self.assertIn("paths", tamamo)
+        best = max((path["speed_rank"] for path in tamamo["paths"]), key=lambda rank: rank["useful"])
+        self.assertEqual(tamamo["speed_rank"], best)
+
+    def test_an_accel_gets_no_speed_rank(self):
+        self.assertNotIn("speed_rank", verdict("is_lastspurt==1", ACCEL))
 
 
 class WordsTests(CalculatorTestCase):
