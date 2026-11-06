@@ -319,12 +319,16 @@ class CarryOverTests(CalculatorTestCase):
 
     def test_a_trigger_in_the_late_race_has_nothing_to_carry(self):
         # Lights of Vaudeville fires with 300 m to go, 100 m into Chukyo's late
-        # race: the band still draws, but there is no share to word.
+        # race: no band to draw and no share to word (a final-straight unique
+        # drew a "Carry-over window" it can never fire in).
         late = verdict("remain_distance<=300", SPEED)
-        self.assertEqual((late["fires_at"], late["carry_window"]), (900, [740, 791]))
-        self.assertNotIn("carry", late)
+        self.assertEqual(late["fires_at"], 900)
+        for field in ("carry", "carry_window", "carry_speed", "carry_seconds"):
+            self.assertNotIn(field, late)
         # A random point wholly in the late race, the same.
-        self.assertNotIn("carry", verdict("phase_random==2", SPEED))
+        self.assertNotIn("carry_window", verdict("phase_random==2", SPEED))
+        # One wholly before the band keeps it, for "Ends before the late race".
+        self.assertEqual(verdict("phase==0", SPEED).get("carry_window"), [740, 791])
         # One that straddles the start keeps its share, even a small one.
         self.assertIn("carry", verdict("distance_rate_after_random==50", SPEED))
 

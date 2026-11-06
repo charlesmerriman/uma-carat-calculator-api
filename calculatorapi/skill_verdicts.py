@@ -547,20 +547,22 @@ def _timing(parsed, kinds, effects, course, entry):  # pylint: disable=too-many-
 
     carry_rank = 0.0
     window = carry_window(effects, course.distance, styles) if "speed" in kinds else None
-    if window is not None:
+    first_metre = fires_at if fires_at is not None else spread[0]
+    # A trigger wholly at or after the late-race start has nothing to carry
+    # into it (the skill pass, bug A2): no band, no share, no carry words.
+    # Drawing the band anyway put a "Carry-over window" under every
+    # final-straight unique (Victoria por plancha, board 2026-11-05).
+    if window is not None and first_metre < late:
         # The band the map draws, and the share landing in it. A trigger wholly
-        # at or after the late-race start has nothing to carry into it (the
-        # skill pass, bug A2): no share, so the client says nothing about carry.
+        # before the band keeps it: the client words that "Ends before the late race".
         out["carry_window"] = [round(window[0]), round(window[1])]
         # What it carries, for the accels column's words: the target speed it
         # adds and how long it runs here (owner, 2026-11-04).
         out["carry_speed"] = round(speed_added(effects), 2)
         out["carry_seconds"] = round((_seconds(effects, "speed") or 0) * stretch(course.distance), 1)
-        first_metre = fires_at if fires_at is not None else spread[0]
-        if first_metre < late:
-            if share(window) is not None:
-                out["carry"] = round(share(window), 2)
-            carry_rank = landing_share(window) or 0.0
+        if share(window) is not None:
+            out["carry"] = round(share(window), 2)
+        carry_rank = landing_share(window) or 0.0
     if "accel" in kinds or "speed" in kinds:
         first, last = (fires_at, fires_at) if fires_at is not None else spread
         out["spurt"] = {"from": round(first - late), "to": round(last - late)}
