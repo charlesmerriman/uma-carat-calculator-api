@@ -2260,6 +2260,7 @@ field only when it says something: `effects` (`accel`, `speed`, `heal` for the r
 of a random trigger), `spurt` (`{"from", "to"}` metres from the late-race start, negative
 before it, plus for an accel `odds`, the share landing well: still running 0.5 s into the late race, at most 50 m after its start, and `useful`, a ranking score: that share times the speed its acceleration adds, plus the share its speed carries into the late race times that speed, the two parts also given as `accel` and `carry` for the accels column's chips; a fixed zone gated by a clause the map can't predict, a placing or an event, counts the zone's metres before the window as chances to fire early, so its share is the window's share of the zone clipped to [zone start, window end]), `before_spurt` (a heal's share
 landing before the late-race start), `carry` (a speed skill's share that carries its speed into the late race; a target-speed-only one must fire early enough to reach its speed first; absent when no part of the trigger lies before the late-race start) and `carry_window` (the metres it must fire in for that; absent too when the whole trigger is in the late race, so the map draws no band), with `carry_speed` (the target speed it adds, m/s) and `carry_seconds` (how long it runs on this course) whenever the window exists,
+`speed_kind` (a speed skill's `"target"`, raising the speed cap, or `"current"`, raising the speed itself), `speed_rank` (a speed skill's ranking score for the course map's Speed list: `{"useful", "speed", "carry"[, "accelerating"]}`, the speed added times its repeats, cut by `accelerating`, the share of a target-speed trigger landing while the runner is still speeding up (the late race's first metres, and the race start for a front-runner-only skill), plus the accel's carry part, uncut; a skill with no place on the course ranks at its full strength; rule 9 in `skill_verdicts.py`),
 `repeats` (how many times a short-cooldown skill can fire here), `needs` (what else must hold,
 in words), `placing` (where in the field it must be, one band per way it can fire here:
 `{"order": [first, last]}` in places, `last` null when open since the field size is the
@@ -2272,8 +2273,8 @@ late-race start or half-way, so such a skill with no place of its own gets that 
 `repeats` is absent for `straight_random`, since how many points it places is unknown.
 `paths` appears when the skill's ways of firing need different things: one entry per way
 that can fire here, each with `zones`, `fires_at` or `spread`, `spurt`, `before_spurt`,
-`carry`, `carry_window`, `needs`, `placing` and `unreadable` as above; the top-level fields then
-summarise them (`zones` merged, `spread` the whole stretch, `spurt.useful` the best path's,
+`carry`, `carry_window`, `needs`, `placing`, `unreadable` and `speed_rank` as above; the top-level fields then
+summarise them (`zones` merged, `spread` the whole stretch, `spurt.useful` and `speed_rank` the best path's,
 no odds or shares). `straight_front_type==2` is a place (the course's `front: 2` straights,
 the backstretch); `lastspurt==2` ("still going strong") is a state, worded in `needs`.
 
