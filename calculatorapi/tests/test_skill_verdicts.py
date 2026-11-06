@@ -15,8 +15,8 @@ from calculatorapi.models import RaceCourse, Skill
 from calculatorapi.skill_conditions import parse_condition
 from calculatorapi.skill_text import TextContext
 from calculatorapi.skill_verdicts import (
-    carry_window, chain_for, effect_kinds, mid_race_speed, needs_for, placing_for, proc_window, repeats_for,
-    verdict_for,
+    accelerating_windows, carry_window, chain_for, effect_kinds, mid_race_speed, needs_for, placing_for, proc_window,
+    repeats_for, speed_kind, spurt_ramp, start_ramp, verdict_for,
 )
 from calculatorapi.skill_zones import CourseFacts, zones_for
 from calculatorapi.tests.base import CalculatorTestCase
@@ -423,6 +423,80 @@ class RepeatsTests(CalculatorTestCase):
         # beyond the description, so no count.
         straight_speed = [slot(27, duration=24000, cooldown=300000)]
         self.assertIsNone(repeats_for(parse_condition("straight_random==1"), straight_speed, CourseFacts(KYOTO_3200)))
+
+
+class SpeedRankTests(CalculatorTestCase):
+    """Rule 9, the owner's rule of 2026-11-06 (course-map-feedback-plan.md,
+    lane B): a target-speed skill is worth less the more often it fires while
+    the runner is still speeding up, unless it carries into the late race.
+    SPEED adds 0.2 m/s; Chukyo's late race starts at 800 m."""
+
+    CURRENT = [slot(22, duration=24000)]
+
+    def test_target_or_current_speed(self):
+        self.assertEqual(speed_kind(SPEED), "target")
+        self.assertEqual(speed_kind(self.CURRENT), "current")
+        # Both: it speeds the runner up even mid-acceleration.
+        self.assertEqual(speed_kind([slot(27), slot(22)]), "current")
+        self.assertIsNone(speed_kind(ACCEL))
+        self.assertEqual(verdict("is_lastspurt==1", self.CURRENT)["speed_kind"], "current")
+
+    def test_the_two_ramps(self):
+        # From mid-race speed (20.67 m/s, any style) to spurt speed (25.12),
+        # 0.465 m/s² plus one gold accel's 0.4 for 3.6 s: about 151 m.
+        self.assertEqual(round(spurt_ramp(1200)), 151)
+        with mock.patch.object(skill_verdicts, "SPURT_ACCEL", (0, 3.0)):
+            self.assertEqual(round(spurt_ramp(1200)), 220)
+        # From the gate at 3 m/s to the early race's pace: a front runner's
+        # 20.8 m/s takes about 126 m, an end closer's slower 19.4 about 68.
+        self.assertEqual((round(start_ramp(1200, ["front"])), round(start_ramp(1200, ["end"]))), (126, 68))
+
+    def test_the_start_counts_only_for_a_front_runner(self):
+        # Any other style's early speed skill keeps it out of Pace Down (the
+        # owner on Uma Stan), so the start costs it nothing.
+        self.assertEqual(len(accelerating_windows(1200, ["front"])), 2)
+        self.assertEqual(len(accelerating_windows(1200, ["end"])), 1)
+        self.assertEqual(len(accelerating_windows(1200)), 1)
+        self.assertEqual(verdict("running_style==1&phase==0", SPEED)["speed_rank"],
+                         {"useful": 0.0, "speed": 0.0, "carry": 0.0, "accelerating": 1.0})
+        self.assertEqual(verdict("running_style==4&phase==0", SPEED)["speed_rank"]["useful"], 0.2)
+
+    def test_the_plan_s_table(self):
+        # Mid race, 200 to 800 m: never while speeding up. 51 of its 600 m
+        # also carry into the late race (the 740 to 791 m window).
+        self.assertEqual(verdict("phase_random==1", SPEED)["speed_rank"],
+                         {"useful": 0.217, "speed": 0.2, "carry": 0.017})
+        # The final straight, 788 to 1,200 m: 151 of its 412 m are the ramp.
+        final = verdict("last_straight_random==1", SPEED)["speed_rank"]
+        self.assertEqual((final["accelerating"], final["speed"]), (0.37, 0.127))
+        # Right at the late-race start: always while speeding up, so nothing...
+        self.assertEqual(verdict("is_lastspurt==1", SPEED)["speed_rank"]["useful"], 0.0)
+        # ...unless it raises current speed.
+        self.assertEqual(verdict("is_lastspurt==1", self.CURRENT)["speed_rank"],
+                         {"useful": 0.2, "speed": 0.2, "carry": 0.0})
+        # In the carry window: its speed, plus the carry part, uncut.
+        self.assertEqual(verdict("remain_distance<=455&remain_distance>=445", SPEED)["speed_rank"],
+                         {"useful": 0.4, "speed": 0.2, "carry": 0.2})
+
+    def test_repeats_multiply_the_speed(self):
+        corner_speed = [slot(27, duration=24000, cooldown=300000)]
+        self.assertEqual(verdict("all_corner_random==1", corner_speed, KYOTO_3200)["speed_rank"]["speed"], 0.4)
+
+    def test_a_skill_with_no_place_ranks_at_full_strength(self):
+        # Uma Stan: near 3 runners after 5 s. The map can't place it.
+        stan = verdict("near_count>=3&accumulatetime>=5", [slot(27, value=1500)])
+        self.assertEqual(stan["kind"], "anywhere")
+        self.assertNotIn("spurt", stan)
+        self.assertEqual(stan["speed_rank"], {"useful": 0.15, "speed": 0.15, "carry": 0.0})
+
+    def test_ways_of_firing_rank_by_the_best(self):
+        tamamo = verdict(PathTests.TAMAMO, SPEED)
+        self.assertIn("paths", tamamo)
+        best = max((path["speed_rank"] for path in tamamo["paths"]), key=lambda rank: rank["useful"])
+        self.assertEqual(tamamo["speed_rank"], best)
+
+    def test_an_accel_gets_no_speed_rank(self):
+        self.assertNotIn("speed_rank", verdict("is_lastspurt==1", ACCEL))
 
 
 class WordsTests(CalculatorTestCase):
