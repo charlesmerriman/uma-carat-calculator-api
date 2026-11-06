@@ -15,7 +15,8 @@ from calculatorapi.models import RaceCourse, Skill
 from calculatorapi.skill_conditions import parse_condition
 from calculatorapi.skill_text import TextContext
 from calculatorapi.skill_verdicts import (
-    carry_window, chain_for, effect_kinds, mid_race_speed, needs_for, proc_window, repeats_for, verdict_for,
+    carry_window, chain_for, effect_kinds, mid_race_speed, needs_for, placing_for, proc_window, repeats_for,
+    verdict_for,
 )
 from calculatorapi.skill_zones import CourseFacts, zones_for
 from calculatorapi.tests.base import CalculatorTestCase
@@ -233,6 +234,73 @@ class PathTests(CalculatorTestCase):
             ACCEL,
         )
         self.assertNotIn("paths", moving)
+
+
+class PlacingTests(CalculatorTestCase):
+    """`placing`: where in the field a skill must be, for the accels column's
+    style pills (course-map-feedback-plan.md, lane A). The owner's three
+    examples (2026-11-06) are the first three tests."""
+
+    def test_pump_some_iron_is_a_rate_band(self):
+        iron = verdict("phase>=2&corner!=0&order_rate>=65&order_rate<=70", ACCEL)
+        self.assertEqual(iron["placing"], [{"rate": [65, 70]}])
+
+    def test_moving_past_and_beyond_reads_one_band_from_both_ways(self):
+        # Both of its ways need the same 50-70%, so one band, not two.
+        moving = verdict(
+            "phase>=2&corner!=0&is_finalcorner==0&temptation_count==0&order_rate>=50&order_rate<=70"
+            "@phase==1&corner!=0&is_finalcorner==1&temptation_count==0&order_rate>=50&order_rate<=70",
+            ACCEL,
+        )
+        self.assertEqual(moving["placing"], [{"rate": [50, 70]}])
+
+    def test_angling_and_scheming_is_a_place(self):
+        # A place, left in places: the field size is the event's (9 in a CM),
+        # so the client turns it into a percentage.
+        angling = verdict("phase>=2&corner!=0&order==1", ACCEL)
+        self.assertEqual(angling["placing"], [{"order": [1, 1]}])
+
+    def test_a_place_and_a_rate_together(self):
+        # Budding Blossom: 3rd or lower AND in the front 40%. The open end of
+        # the place is null, since the server doesn't know the field size.
+        blossom = verdict("phase>=2&is_finalcorner==1&corner==0&order>=3&order_rate<=40", ACCEL)
+        self.assertEqual(blossom["placing"], [{"order": [3, None], "rate": [0, 40]}])
+
+    def test_an_or_between_two_placings_keeps_both(self):
+        tamamo = verdict(PathTests.TAMAMO, ACCEL)
+        self.assertEqual(tamamo["placing"], [{"rate": [70, 75]}, {"rate": [20, 30]}])
+        # ...and each path carries its own.
+        self.assertEqual([path["placing"] for path in tamamo["paths"]], [[{"rate": [70, 75]}], [{"rate": [20, 30]}]])
+
+    def test_no_place_clause_means_no_placing(self):
+        self.assertNotIn("placing", verdict("phase>=2&corner!=0", ACCEL))
+        # A way with no place clause frees the whole skill, as `needs` reads.
+        self.assertIsNone(placing_for(parse_condition("phase==2&order==1@phase==3")))
+        # Clauses that bound nothing: 1st or lower is every place; != is left free.
+        self.assertIsNone(placing_for(parse_condition("phase>=2&order>=1")))
+        self.assertIsNone(placing_for(parse_condition("phase>=2&order!=1")))
+
+    def test_the_continue_family_is_a_rate_band(self):
+        # Keep Pushing Ahead: stayed in the front 20%. Schwarzes Schwert: in
+        # the front 80% and behind the front 40%, so 40-80%, and 3rd or lower.
+        self.assertEqual(placing_for(parse_condition("distance_rate>=50&order_rate_in20_continue==1")),
+                         [{"rate": [0, 20]}])
+        self.assertEqual(
+            placing_for(parse_condition(
+                "temptation_count==0&order>=3&is_finalcorner==1&corner==0"
+                "&order_rate_in80_continue==1&order_rate_out40_continue==1"
+            )),
+            [{"order": [3, None], "rate": [40, 80]}],
+        )
+
+    def test_a_way_that_can_t_fire_here_brings_no_band(self):
+        # The second way needs the final corner in the early race, which
+        # Chukyo's (from 550 m) never is: only the first way's 20-30% counts.
+        self.assertEqual(
+            placing_for(parse_condition("phase>=2&order_rate>=20&order_rate<=30@phase==0&is_finalcorner==1&order==1"),
+                        CHUKYO),
+            [{"rate": [20, 30]}],
+        )
 
 
 class ChainBoundTests(CalculatorTestCase):

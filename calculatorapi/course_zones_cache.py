@@ -21,8 +21,9 @@ CACHE_ALIAS = "course-zones"
 GENERATION_KEY = "course-zones:generation"
 # Bump the suffix when the payload's SHAPE changes.
 # v2: the verdict fields (skill_verdicts.py); v3: an accel's `useful`;
-# v4: `paths`, the chain bound and the backstretch (the skill pass).
-ZONES_KEY = "course-zones:v4:{generation}:{course_id}"
+# v4: `paths`, the chain bound and the backstretch (the skill pass);
+# v5: `placing` (course-map-feedback-plan.md, lane A).
+ZONES_KEY = "course-zones:v5:{generation}:{course_id}"
 CACHE_TTL_SECONDS = 1800
 
 _RELEVANT_MODELS = frozenset({"racecourse", "skill"})

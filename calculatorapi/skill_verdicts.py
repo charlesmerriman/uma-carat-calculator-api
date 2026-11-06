@@ -27,11 +27,19 @@ THE FIELDS, each present only when it says something:
     carry_window  [first, last) metres it must fire in to do so (the band drawn)
     repeats       how many times a 30 s cooldown skill can fire here (2 or more)
     needs         what else must hold, in words (placing, timers, skills used)
+    placing       [{"order": [first, last]}, {"rate": [low, high]}, ...]: where
+                  in the field it must be, one band per way it can fire here;
+                  `order` in places (`last` null when open: the field size is
+                  the event's, so the client converts), `rate` in percent back
+                  (`order_rate`, and the `order_rate_in/outNN_continue`
+                  family); both when both bound it. Absent when any way is
+                  free of a place clause (as `needs` reads). The accels
+                  column's style pills check it (course-map-feedback-plan.md, A)
     unreadable    true: a clause the map can't read yet, so no timing at all
     chain         {"counts": "heal", "at_least": 3}: set off by other skills
     paths         one entry per way the skill can fire here, when its ways need
                   different things (each with zones, fires_at or spread, spurt,
-                  before_spurt, carry, carry_window, needs, unreadable); the
+                  before_spurt, carry, carry_window, needs, placing, unreadable); the
                   top-level fields then summarise them, `useful` the best path's
 
 THE RULES (each a test in tests/test_skill_verdicts.py):
@@ -65,9 +73,10 @@ THE RULES (each a test in tests/test_skill_verdicts.py):
 """
 
 import math
+import re
 
 from .skill_conditions import parse_condition
-from .skill_text import ONCE_PER_RACE, SKILL_COUNTS, describe_condition
+from .skill_text import ONCE_PER_RACE, SKILL_COUNTS, bounds, describe_condition
 from .skill_zones import PHASE_STARTS, CourseFacts, classify, zones_for
 
 # ── Daptrius's answers (2026-11-03, messages 1567150957861671044,
@@ -319,6 +328,68 @@ def needs_for(parsed, context):
     return words
 
 
+# `order_rate_in20_continue==1`, "having stayed in the front 20% so far", and
+# its `out` mirror, "behind the front 40%": a place band like `order_rate`'s.
+_CONTINUE_PLACING = re.compile(r"order_rate_(in|out)(\d+)_continue")
+
+
+def _band(low, high, floor, ceiling):
+    """[low, high] with the open ends filled, or None when it bounds nothing."""
+    low = floor if low is None or low < floor else low
+    high = None if high is None or (ceiling is not None and high >= ceiling) else high
+    if low == floor and high is None:
+        return None
+    return [low, high if high is not None else ceiling]
+
+
+def _placing_of(clauses):
+    """One alternative's place bounds: {"order": [first, last]} in places
+    (`last` None when open, since the field size is the event's, not the
+    course's) and/or {"rate": [low, high]} in percent back in the field. None
+    when no clause bounds the place."""
+    order, rate = [], []
+    for variable, op, value in clauses:
+        if variable == "order":
+            order.append((op, value))
+        elif variable == "order_rate":
+            rate.append((op, value))
+        elif (match := _CONTINUE_PLACING.fullmatch(variable)) and op == "==" and value == 1:
+            share = int(match.group(2))
+            rate.extend([("<=", share)] if match.group(1) == "in" else [(">=", share)])
+    placing = {}
+    if order:
+        low, high, equal, _ = bounds(order)  # `!=` bounds nothing: left free
+        band = [equal, equal] if equal is not None else _band(low, high, 1, None)
+        if band:
+            placing["order"] = band
+    if rate:
+        low, high, equal, _ = bounds(rate)
+        band = [equal, equal] if equal is not None else _band(low, high, 0, 100)
+        if band:
+            placing["rate"] = band
+    return placing or None
+
+
+def placing_for(parsed, course=None):
+    """Where in the field the skill must be, one band per way it can fire here
+    (deduplicated), for the accels column's style pills (notes/course-map-
+    feedback-plan.md, lane A). None when any live way has no place clause: then
+    it can fire from anywhere in the field, the rule `needs_for` follows. With
+    `course`, a way that can't fire on it (zones_for "never") is left out."""
+    bands = []
+    for clauses in parsed:
+        if course is not None and len(parsed) > 1:
+            alone = "&".join(f"{variable}{op}{value}" for variable, op, value in clauses)
+            if zones_for(alone, course)["kind"] == "never":
+                continue
+        placing = _placing_of(clauses)
+        if placing is None:
+            return None
+        if placing not in bands:
+            bands.append(placing)
+    return bands or None
+
+
 def chain_for(parsed):
     """A verified "after using N skills" clause as {"counts", "at_least"}, or None."""
     for clauses in parsed:
@@ -444,6 +515,9 @@ def verdict_for(condition, effects, course, entry, context):
     needs = needs_for(parsed, context)
     if needs:
         out["needs"] = needs
+    placing = placing_for(parsed, course)
+    if placing:
+        out["placing"] = placing
     chain = chain_for(parsed)
     if chain:
         out["chain"] = chain
@@ -480,6 +554,9 @@ def _paths(parsed, kinds, effects, course, context):
         needs = needs_for([clauses], context)
         if needs:
             path["needs"] = needs
+        placing = placing_for([clauses])
+        if placing:
+            path["placing"] = placing
         if any(classify(variable) == "unconfirmed" for variable, _, _ in clauses):
             path["unreadable"] = True
         else:
