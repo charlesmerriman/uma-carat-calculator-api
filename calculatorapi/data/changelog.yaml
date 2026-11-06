@@ -37,7 +37,7 @@
   title: "Banner announcements, course map polish and iPhone fixes"
   version: "v2.14"
   changes:
-    - added: "Our Discord has a new banner announcement channel. Oguri Bot posts there when a banner, Champions Meeting, League of Heroes, campaign or batch of legend races goes live, with a heads-up the day before. Anyone with the Carat Calc Ping role gets pinged when something starts."
+    - added: "Our Discord has a new banner announcement channel. Oguri Bot posts there when a banner, Champions Meeting, League of Heroes, campaign or batch of legend races goes live, with a heads-up the day before. Anyone with the Banner Notification role gets pinged when something starts."
     - added: "You can search the course map's accels list by skill or uma. A new Speed switch lists every speed skill, ranked by how much of it lands once your runner is up to speed."
     - changed: "The accels list's style buttons now drop skills a style can't reach from where it runs in the field."
     - changed: "Corner and straight icons point the way the track runs."
