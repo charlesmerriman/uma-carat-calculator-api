@@ -250,6 +250,8 @@ class GuideEndpointTests(CalculatorTestCase):
         self.assertEqual(rec["skill"]["name"], "Lead the Pack")
         self.assertEqual(rec["skill"]["description"], "Does a thing.")
         self.assertEqual(rec["skill"]["unique_of"], "Maruzensky")
+        # Her own unique, not an inherited copy: the copy is a separate white.
+        self.assertFalse(rec["skill"]["is_inherited"])
         self.assertEqual(body["style_notes"], [{"style": "front", "body": "**Go early.**"}])
 
         slots = body["decks"][0]["slots"]

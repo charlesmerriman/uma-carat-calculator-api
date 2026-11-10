@@ -191,11 +191,15 @@ class _SkillSerializer(serializers.ModelSerializer):
     # both built for the whole guide at once (context["text"], ["sources"]).
     readable = serializers.SerializerMethodField()
     sources = serializers.SerializerMethodField()
+    # A unique's inherited copy (Skill.is_inherited_unique): a white by rarity,
+    # framed in the unique's purple on the site. Not `unique_of`, which names
+    # the outfit whose OWN unique a skill is and stays null on the copy.
+    is_inherited = serializers.BooleanField(source="is_inherited_unique", read_only=True)
 
     class Meta:
         model = Skill
         fields = (
-            "id", "name", "description", "image", "rarity", "unique_of",
+            "id", "name", "description", "image", "rarity", "unique_of", "is_inherited",
             "version", "tier", "is_evolved", "versions",
             "availability", "uses_translation", "readable", "sources",
         )
