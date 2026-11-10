@@ -1316,7 +1316,9 @@ comments}` with `""` for the whole guide. `state` is `visible`, `deleted` ("[del
 `under_review` carry `body` and `poster`. `reason` is `spam`, `harassment`,
 `sexual_or_violent`, `personal_info` or `other`.
 
-Throttles (all in the `gallery` cache): `gallery_read` 120/h, `gallery_vote` 120/h,
+Throttles (all in the `gallery` cache): reads (feed, post, comment thread GET) spend
+`gallery_read` 120/h per IP for a guest, `gallery_read_account` 600/h per account once signed
+in (`views/gallery.py` `read_scope`); `gallery_vote` 120/h,
 `gallery_view` 300/h (dropped quietly), `gallery_copy` 30/h, `gallery_publish` 20/h,
 `gallery_comment` 20/h (5/h for accounts younger than a day), `gallery_report` 20/day,
 `gallery_share` 600/h.
