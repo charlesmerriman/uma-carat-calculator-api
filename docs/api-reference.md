@@ -737,7 +737,9 @@ order everyone, runaway, front, pace, late, end; then stat rows and decks by the
 and skills are embedded small objects, since the client's banner data only knows cards that
 were on a banner. `skill_recommendations` and `skill_mentions` hold any skill with an English
 name (`Skill.objects.shown()`, since 2026-10-23), JP-only ones included; `unique_of` names
-the outfit whose unique the skill is, or `null`; the other way round, each recommended uma's
+the outfit whose unique the skill is, or `null`; `is_inherited` is true on a unique's
+inherited copy (a white, game id 9 then five digits), which the site frames in the unique's
+purple; the other way round, each recommended uma's
 `unique` is her unique skill as `{id, name, image}` (a ★1/★2 character's level-3 form), or
 `null`, so the course map lights it from her tile without the catalogue. Every skill object
 also carries:
@@ -783,7 +785,7 @@ may hold `==highlight==` spans the client renders red.
                                    "unique": {"id": 210, "name": "Lead the Pack", "image": "url | null"}}}],
   "skill_recommendations": [{"style": "front", "category": "acceleration", "tier": 0, "order": 0, "note": "",
       "skill": {"id": 210, "name": "Lead the Pack", "description": "string", "image": "url | null",
-                "rarity": 5, "unique_of": "Maruzensky", "version": "○ white", "tier": 1, "is_evolved": false,
+                "rarity": 5, "unique_of": "Maruzensky", "is_inherited": false, "version": "○ white", "tier": 1, "is_evolved": false,
                 "versions": [{"id": 211, "name": "Lead the Pack ◎", "description": "string", "image": "url | null",
                               "rarity": 2, "tier": 2, "version": "◎ gold", "is_evolved": false}]}}],
   "style_notes": [{"style": "front", "body": "markdown"}],
@@ -1316,7 +1318,9 @@ comments}` with `""` for the whole guide. `state` is `visible`, `deleted` ("[del
 `under_review` carry `body` and `poster`. `reason` is `spam`, `harassment`,
 `sexual_or_violent`, `personal_info` or `other`.
 
-Throttles (all in the `gallery` cache): `gallery_read` 120/h, `gallery_vote` 120/h,
+Throttles (all in the `gallery` cache): reads (feed, post, comment thread GET) spend
+`gallery_read` 120/h per IP for a guest, `gallery_read_account` 600/h per account once signed
+in (`views/gallery.py` `read_scope`); `gallery_vote` 120/h,
 `gallery_view` 300/h (dropped quietly), `gallery_copy` 30/h, `gallery_publish` 20/h,
 `gallery_comment` 20/h (5/h for accounts younger than a day), `gallery_report` 20/day,
 `gallery_share` 600/h.

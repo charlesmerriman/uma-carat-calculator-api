@@ -67,6 +67,12 @@ repeated it.
   configured, and the five busiest routes and the database's connections from
   `GET bot/health` when the API answers (one try, no retry); three good post ONE recovery
   line, no ping.
+- **Resource warnings** every 2 minutes (`bot/resources.py`, needs the DigitalOcean token): the
+  API's memory, CPU and restarts against the same lines as the owner's DigitalOcean emails (80%
+  for 5 minutes, any restart). ONE post per episode with the likely reason (a fast jump, a
+  creep since the last restart and its biggest climb, the daily peak or a busier-than-yesterday
+  rush, out of memory before a restart), and ONE line when it's back under 75% memory / 70% CPU,
+  so a number hovering at 80% posts once. Only a crash pings `@Web Developer`.
 - **Deploy news** in `#calc-dev-log` (`DISCORD_DEVLOG_CHANNEL_ID`): one line per finished
   deploy (live, failed, cancelled), polled every 2 minutes. Needs `DO_API_TOKEN` (a
   READ-ONLY token: custom scopes app read + monitoring read, never the admin's) and

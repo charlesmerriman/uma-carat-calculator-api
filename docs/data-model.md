@@ -874,9 +874,11 @@ This gate is **independent of the cutoff and bites even when the cutoff is `null
 the temporal gate waves through. That is why neither serializer backstop may early-return
 on a null cutoff — the old `if cutoff is None: return` admitted exactly these units.
 
-`SupportCard` has no equivalent: ★3 is an uma-side concept (supports are SSR/SR), so a
-support card is only ever gated on its date. Both predicates read the flags defensively
-(absent ⇒ unrestricted), so a support card passes the intrinsic gate unconditionally.
+`SupportCard`'s gate is its `rarity`: a support selector grants only an SSR, so an SR or R
+card is refused (a null rarity, a card with no game id, counts as SSR). It used to have no
+gate at all, because SR and R cards sat on no banner and their missing release date kept them
+out; once the timeline listed them on banners, that stopped holding (2026-11-10). Both
+predicates read the uma flags defensively (absent ⇒ unrestricted).
 
 Like the cutoff, both flags are **grandfathered against a user's stored picks**. An editor
 flagging a unit must not `400` the plan of everyone who already picked it — that rejection

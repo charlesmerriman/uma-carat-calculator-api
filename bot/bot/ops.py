@@ -6,7 +6,8 @@ Each of the three posts once however often the worker restarts: the digest
 claims `digest:<yyyymmdd>` and each deploy `deploy:<uuid>` on the site before
 posting, the same never-twice records as everything else the bot writes. A
 health alert needs no claim: the state machine in health.py fires once per
-change, and a restart starts it healthy, which at worst repeats one alert.
+change, and a restart starts it healthy, which at worst repeats one alert. The
+resource warnings (resources.py) work the same way.
 """
 
 import datetime
@@ -14,7 +15,7 @@ import logging
 
 import discord
 
-from bot import health
+from bot import health, resources
 from bot.api import SiteUnavailable
 
 logger = logging.getLogger(__name__)
@@ -26,6 +27,8 @@ DEPLOY_LINES = {"ACTIVE": "✅ Live", "ERROR": "❌ Failed", "CANCELED": "⏹️
 # A deploy older than the worker by more than this is history, not news: the
 # first poll after a restart must not repost the last five deploys.
 DEPLOY_GRACE = datetime.timedelta(minutes=15)
+# A restart this close to a deploy's start or finish is put down to the deploy.
+DEPLOY_SLACK = datetime.timedelta(minutes=5)
 
 
 def _arrow(now, before):
@@ -151,6 +154,10 @@ class Ops:
         self.digest_done_for = None
         # The same, for the Monday database post.
         self.database_done_for = None
+        # The resource warnings' state: the same lines as DigitalOcean's emails.
+        self.memory = resources.Gauge(resources.MEMORY_HIGH, resources.MEMORY_CLEAR)
+        self.cpu = resources.Gauge(resources.CPU_HIGH, resources.CPU_CLEAR)
+        self.restarts = resources.RestartWatch()
 
     # ── The daily digest ──
 
@@ -243,18 +250,98 @@ class Ops:
         if change == "down":
             peaks = await self.do.peaks() if self.do else None
             routes = await self._busiest_routes()
-            role = self.config.team_role_id
-            await ops.send(
-                content=f"<@&{role}>" if role else None,
-                embed=health.render_alert(self.tracker, peaks, routes),
-                # The one ping the bot makes: @Web Developer on trouble, by the
-                # owner's choice; never anyone else, never on recovery.
-                allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=[discord.Object(role)])
-                if role else NO_MENTIONS,
-            )
+            await ops.send(embed=health.render_alert(self.tracker, peaks, routes), **self._team_ping())
         else:
             await ops.send(health.render_recovery(self.tracker, now), allowed_mentions=NO_MENTIONS)
         return change
+
+    def _team_ping(self):
+        """The one ping the bot makes: @Web Developer when the site is in
+        trouble (down, slow, or crashed), by the owner's choice; never anyone
+        else, never on a recovery or a warning."""
+        role = self.config.team_role_id
+        if not role:
+            return {"content": None, "allowed_mentions": NO_MENTIONS}
+        return {
+            "content": f"<@&{role}>",
+            "allowed_mentions": discord.AllowedMentions(everyone=False, users=False, roles=[discord.Object(role)]),
+        }
+
+    # ── Resource warnings ──
+
+    async def resources(self, now):
+        """Memory, CPU and restarts against the lines DigitalOcean emails on
+        (resources.py): a warning with the likely reason when one goes over, a
+        line when it's back to normal. Returns what it posted, e.g.
+        ["restart", "memory high", "cpu clear"]."""
+        recent = {
+            metric: await self.do.series(metric, resources.RECENT_MINUTES) or []
+            for metric in ("memory_percentage", "cpu_percentage", "restart_count")
+        }
+        now_ts = now.timestamp()
+        changes = {
+            "memory": self.memory.feed(recent["memory_percentage"], now_ts),
+            "cpu": self.cpu.feed(recent["cpu_percentage"], now_ts),
+        }
+        restart_ts = self.restarts.feed(recent["restart_count"])
+        if restart_ts is None and not any(changes.values()):
+            return []
+
+        # The reasons read the last day; a failed read falls back to the 30 minutes in hand.
+        history = {}
+        if restart_ts is not None or "high" in changes.values():
+            for metric in ("memory_percentage", "cpu_percentage"):
+                history[metric] = await self.do.series(metric, resources.HISTORY_MINUTES) or recent[metric]
+        ops = await self.get_channel(self.config.ops_channel_id)
+        posted = []
+        if restart_ts is not None:
+            await self._post_restart(ops, history, restart_ts)
+            posted.append("restart")
+        if changes["memory"] == "high":
+            await self._post_memory(ops, history)
+        if changes["cpu"] == "high":
+            await self._post_cpu(ops, history, now)
+        for name, change in changes.items():
+            if change == "clear":
+                value = recent[f"{name}_percentage"][-1][1]
+                label = "memory" if name == "memory" else "CPU"
+                await ops.send(resources.render_clear(label, value), allowed_mentions=NO_MENTIONS)
+            if change:
+                posted.append(f"{name} {change}")
+        return posted
+
+    async def _post_restart(self, ops, history, restart_ts):
+        during_deploy = await self._deploy_near(restart_ts)
+        embed = resources.render_restart(
+            history["memory_percentage"], history["cpu_percentage"], restart_ts, during_deploy,
+        )
+        # A crash took the site down for a moment: ping. A deploy is news, not trouble.
+        ping = {"allowed_mentions": NO_MENTIONS} if during_deploy else self._team_ping()
+        await ops.send(embed=embed, **ping)
+
+    async def _post_memory(self, ops, history):
+        memory = history["memory_percentage"]
+        # The routes are the last 5 minutes: they explain a jump, not a day's creep.
+        routes = await self._busiest_routes() if resources.is_fast_jump(memory) else None
+        route_lines = health.render_routes(routes) if routes else []
+        embed = resources.render_memory(memory, history["cpu_percentage"], route_lines)
+        await ops.send(embed=embed, allowed_mentions=NO_MENTIONS)
+
+    async def _post_cpu(self, ops, history, now):
+        routes = await self._busiest_routes()
+        route_lines = health.render_routes(routes) if routes else []
+        embed = resources.render_cpu(history["cpu_percentage"], now.timestamp(), now.hour, route_lines)
+        await ops.send(embed=embed, allowed_mentions=NO_MENTIONS)
+
+    async def _deploy_near(self, restart_ts):
+        """Whether a deploy was rolling out around `restart_ts` (unix seconds)."""
+        when = datetime.datetime.fromtimestamp(restart_ts, datetime.timezone.utc)
+        for deployment in await self.do.deployments() or []:
+            started = _parse_time(deployment.get("created_at"))
+            finished = _parse_time(deployment.get("updated_at")) or started
+            if started and started - DEPLOY_SLACK <= when <= finished + DEPLOY_SLACK:
+                return True
+        return False
 
     async def _busiest_routes(self):
         """GET bot/health's snapshot for the alert, or None. ONE try, no retry:

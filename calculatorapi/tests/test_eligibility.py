@@ -133,12 +133,28 @@ class IntrinsicSelectorGateTests(CalculatorTestCase):
         uma = Uma.objects.create(name='Three Star', rarity=3)
         self.assertTrue(is_intrinsically_selectable(uma))
 
-    def test_support_cards_have_no_intrinsic_gate(self):
-        # Neither gate exists on SupportCard; absent must read as unrestricted
-        # rather than as "not a ★3". An R card makes the point: SupportCard has
-        # a `rarity` of its own, and the gate must not start reading it.
-        card = SupportCard.objects.create(name='Any R', game_id=10001)
-        self.assertEqual(card.rarity, 1)
+    def test_an_ssr_support_card_is_selectable(self):
+        # SupportCard has neither uma flag; absent must read as unrestricted
+        # rather than as "not a ★3".
+        card = SupportCard.objects.create(name='Any SSR', game_id=30001)
+        self.assertEqual(card.rarity, 3)
+        self.assertTrue(is_intrinsically_selectable(card))
+
+    def test_sr_and_r_support_cards_are_never_selectable(self):
+        # A support selector grants only an SSR. SR and R cards now sit on
+        # timeline banners, so they have a release date and only rarity bars
+        # them (board post 1569565668334899271).
+        for game_id in (10001, 20001):
+            card = SupportCard.objects.create(name=f'Card {game_id}', game_id=game_id)
+            self.assertFalse(is_intrinsically_selectable(card))
+            reason = selection_refusal_reason(card, None, None, 'this selector')
+            self.assertIn('only SSR', reason)
+
+    def test_a_support_card_with_no_rarity_is_selectable(self):
+        # No game id, so no rarity: the same "unknown counts as the top" default
+        # an uma gets.
+        card = SupportCard.objects.create(name='Unknown')
+        self.assertIsNone(card.rarity)
         self.assertTrue(is_intrinsically_selectable(card))
 
     def test_intrinsic_gate_bites_under_a_null_cutoff(self):

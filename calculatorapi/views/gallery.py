@@ -62,12 +62,38 @@ class GalleryThrottle(UserRateThrottle):
     cache = caches["gallery"]
 
 
+def read_scope(request):
+    """The read budget this request spends: a signed-in reader's own, larger
+    one, or a guest's, shared by everyone behind their IP.
+
+    Opening one team is two reads (the post and its comments), so 120/hour
+    stopped a signed-in player reading one event's gallery about 60 teams
+    in, on every device at once, since UserRateThrottle counts by account
+    (2026-11-10). An account is the cheaper thing to rate-limit generously:
+    making one costs a Google, Discord or Patreon sign-in."""
+    return "gallery_read_account" if request.user.is_authenticated else "gallery_read"
+
+
+def use_scope(throttle, scope):
+    """Point a throttle at another scope for this request. SimpleRateThrottle
+    reads its rate from `scope` once, in __init__, so switching the scope
+    alone would keep the old rate."""
+    throttle.scope = scope
+    throttle.rate = throttle.get_rate()
+    throttle.num_requests, throttle.duration = throttle.parse_rate(throttle.rate)
+
+
 class GalleryReadThrottle(GalleryThrottle):
-    """Feeds, posts and comments. A page of posts is one ranking query plus a
-    few lookups; 120/hour is a busy reader with room to spare, and stops a
-    script walking the id space."""
+    """Feeds and posts (and comment threads, through GalleryCommentThrottle).
+    A page of posts is one ranking query plus a few lookups. The guest rate
+    stops a script walking the id space; the account rate is a reader going
+    through a whole event's gallery with room to spare."""
 
     scope = "gallery_read"
+
+    def allow_request(self, request, view):
+        use_scope(self, read_scope(request))
+        return super().allow_request(request, view)
 
 
 class GalleryVoteThrottle(GalleryThrottle):
@@ -329,15 +355,16 @@ class GalleryCommentThrottle(GalleryThrottle):
 
     def allow_request(self, request, view):
         if request.method == "GET":
-            self.scope = "gallery_read"
+            # The same budget as the feed and the post, so opening a team
+            # spends one budget, not two.
+            scope = read_scope(request)
         elif request.user.is_authenticated and (
             request.user.date_joined > timezone.now() - NEW_ACCOUNT_AGE
         ):
-            self.scope = "gallery_comment_new"
+            scope = "gallery_comment_new"
         else:
-            self.scope = "gallery_comment"
-        self.rate = self.get_rate()
-        self.num_requests, self.duration = self.parse_rate(self.rate)
+            scope = "gallery_comment"
+        use_scope(self, scope)
         return super().allow_request(request, view)
 
 

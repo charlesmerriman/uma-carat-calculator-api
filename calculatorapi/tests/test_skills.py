@@ -664,3 +664,23 @@ class SupportCardSkillImportTests(CalculatorTestCase):
             SupportCard.objects.exclude(skills__source="hint").distinct().count(),
             len(hintless),
         )
+
+
+class InheritedUniqueTests(CalculatorTestCase):
+    """Skill.is_inherited_unique: the white copy of a unique a runner inherits."""
+
+    def test_a_nine_then_five_digit_white_is_an_inherited_unique(self):
+        skill = Skill.objects.create(game_id=900011, name="Lead the Pack", rarity=1, group_id=90001, tier=2)
+        self.assertTrue(skill.is_inherited_unique)
+
+    def test_an_ordinary_white_a_unique_and_an_evolved_skill_are_not(self):
+        cases = [
+            (200012, 1),  # an ordinary ○ white
+            (100011, 5),  # an outfit's own unique
+            (900011001, 6),  # an evolved skill: nine digits, not six
+        ]
+        for game_id, rarity in cases:
+            skill = Skill.objects.create(
+                game_id=game_id, name=f"Skill {game_id}", rarity=rarity, group_id=game_id // 10, tier=1,
+            )
+            self.assertFalse(skill.is_inherited_unique, game_id)

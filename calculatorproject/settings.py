@@ -485,8 +485,12 @@ REST_FRAMEWORK = {
         # A profile card, one per click on a name (views/profile_card.py).
         "profile_card": "120/hour",
         # The gallery (views/gallery.py, views/pvp_gallery.py). Reads cover
-        # feeds, posts and comments; a busy reader stays well under 120.
+        # feeds, posts and comment threads, and opening one team is two of
+        # them. A guest's budget is per IP; a signed-in reader's is per
+        # account and larger, so reading a whole event's gallery (100+ teams)
+        # fits (views/gallery.py read_scope).
         "gallery_read": "120/hour",
+        "gallery_read_account": "600/hour",
         # Every upvote and take-back. Generous: clicking around a feed is
         # honest use; a script running votes up is capped.
         "gallery_vote": "120/hour",

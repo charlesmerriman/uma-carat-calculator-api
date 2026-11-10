@@ -352,6 +352,19 @@ class Skill(models.Model):
         return self.description or self.translated_description
 
     @property
+    def is_inherited_unique(self):
+        """Is this a unique's inherited copy, the white another runner learns
+        from a parent? The game marks one by its id, 9 then five digits
+        (import_game_data's id table: "9xxxx1 a unique's inherited copy"), and
+        it is always a white. The guide frames it in the unique's purple, so a
+        reader can tell it from an ordinary white."""
+        return (
+            self.rarity == SkillRarity.WHITE
+            and self.game_id is not None
+            and 900000 <= self.game_id <= 999999
+        )
+
+    @property
     def admin_label(self):
         """The admin's name for a row: the shown name, else the Japanese one."""
         return self.shown_name or self.jp_name or f"skill {self.game_id}"

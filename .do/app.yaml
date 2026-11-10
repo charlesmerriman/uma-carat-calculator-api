@@ -305,6 +305,15 @@ services:
     scope: RUN_TIME
     type: SECRET
     value: ""
+  # Since 2026-11-10. glibc gives each thread its own malloc arena (up to 8 per
+  # core), and memory freed inside an arena is rarely handed back to the OS, so
+  # gunicorn's 4 threads ratcheted RSS up after every busy spell (45% after a
+  # deploy, 80% a day later: three MEM_UTILIZATION emails). Two arenas trade a
+  # little lock contention for far less fragmentation; this is the standard
+  # setting for threaded Python servers.
+  - key: MALLOC_ARENA_MAX
+    scope: RUN_TIME
+    value: "2"
   github:
     branch: master
     deploy_on_push: true
