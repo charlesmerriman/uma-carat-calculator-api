@@ -93,12 +93,22 @@ def is_eligible(first_jp_date, cutoff_date):
 def is_intrinsically_selectable(card):
     """Can a selector EVER take this card, at any cutoff?
 
-    Support cards carry no such restriction, so anything without the flags is
-    selectable -- absent means "no restriction exists for this kind of card",
-    which is also what an uma with nothing set reads as (not time-limited, and
-    an unknown rarity counts as ★3).
+    Absent flags mean "no restriction exists for this kind of card", which is
+    also what an uma with nothing set reads as (not time-limited, and an
+    unknown rarity counts as ★3).
+
+    Both card types carry `rarity` (an uma's stars, a support card's R / SR /
+    SSR, each as 1 / 2 / 3), and anything below 3 is refused. For an uma that
+    repeats `is_three_star`; for a support card it is the whole gate. A support
+    selector only ever grants an SSR, and once SR and R cards were listed on
+    timeline banners they gained a release date, so the date gate (which used
+    to keep them out by having none) no longer did. Kept in step with
+    `isCardSelectable` in the frontend's utils/selectorTickets.ts.
     """
     if getattr(card, "is_time_limited", False):
+        return False
+    rarity = getattr(card, "rarity", None)
+    if rarity is not None and rarity < 3:
         return False
     return getattr(card, "is_three_star", True)
 
@@ -116,6 +126,8 @@ def selection_refusal_reason(card, first_jp_date, cutoff_date, subject):
     rejecting an untouched pick 400s the whole atomic PATCH.
     """
     if not is_intrinsically_selectable(card):
+        if isinstance(card, SupportCard):
+            return f"{card.name} is not available to selectors -- only SSR cards are."
         return (
             f"{card.name} is not available to selectors -- it is either "
             f"time-limited or not a ★3."
