@@ -79,6 +79,8 @@ class SiteBot(discord.Client):
             self.daily_digest.start()
         if self.deploy_news:
             self.deploy_watch.start()
+        if self.ops is not None and self.do is not None:
+            self.resource_watch.start()
         if self.announcer is not None:
             self.announce_watch.start()
 
@@ -115,6 +117,16 @@ class SiteBot(discord.Client):
                 await self.ops.database_week(now.date())
         except discord.HTTPException:
             logger.warning("Daily digest or database post failed; retrying in 5 minutes", exc_info=True)
+
+    @tasks.loop(minutes=2)
+    async def resource_watch(self):
+        """The API's memory, CPU and restarts, against the lines DigitalOcean
+        emails the owner on (bot/resources.py). Every 2 minutes: DigitalOcean
+        samples about that often, so a faster loop would only re-read."""
+        try:
+            await self.ops.resources(discord.utils.utcnow())
+        except discord.HTTPException:
+            logger.warning("Resource warning failed", exc_info=True)
 
     @tasks.loop(minutes=2)
     async def deploy_watch(self):

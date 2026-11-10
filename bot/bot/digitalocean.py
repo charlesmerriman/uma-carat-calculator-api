@@ -58,16 +58,26 @@ class DigitalOcean:
     async def peaks(self, minutes=5):
         """The API component's highest CPU % and memory % and its restart count
         over the last `minutes`, as {metric: number}. Missing ones are left out."""
-        end = int(time.time())
-        params = {"app_id": self.app_id, "app_component": API_COMPONENT, "start": end - minutes * 60, "end": end}
         found = {}
         for metric in METRICS:
-            body = await self._get(f"/monitoring/metrics/apps/{metric}", params)
-            values = [
-                float(value)
-                for series in ((body or {}).get("data") or {}).get("result") or []
-                for _, value in series.get("values") or []
-            ]
-            if values:
-                found[metric] = max(values)
+            points = await self.series(metric, minutes)
+            if points:
+                found[metric] = max(value for _, value in points)
         return found
+
+    async def series(self, metric, minutes):
+        """One of METRICS for the API component over the last `minutes`, as
+        [(unix seconds, value)] oldest first (DigitalOcean samples about every
+        2 minutes). With more than one instance, each moment keeps the highest
+        value, the one that would trip an alert. None when the call fails, so
+        a caller can tell "no answer" from "no samples" ([])."""
+        end = int(time.time())
+        params = {"app_id": self.app_id, "app_component": API_COMPONENT, "start": end - minutes * 60, "end": end}
+        body = await self._get(f"/monitoring/metrics/apps/{metric}", params)
+        if body is None:
+            return None
+        merged = {}
+        for series in (body.get("data") or {}).get("result") or []:
+            for stamp, value in series.get("values") or []:
+                merged[int(stamp)] = max(merged.get(int(stamp), float("-inf")), float(value))
+        return sorted(merged.items())
