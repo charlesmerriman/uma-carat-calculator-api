@@ -235,7 +235,10 @@ def _climb_line(climb, cpu):
     averaged 26% (a usual moment is 10%)": when the floor rose, and whether
     the server was busy then."""
     (from_ts, from_value), (to_ts, to_value) = climb
-    line = f"The biggest climb was {from_value:.0f}% to {to_value:.0f}% between {_when(from_ts, 'f')} and {_when(to_ts, 'f')}"
+    line = (
+        f"The biggest climb was {from_value:.0f}% to {to_value:.0f}% "
+        f"between {_when(from_ts, 'f')} and {_when(to_ts, 'f')}"
+    )
     busy = _average(between(cpu, from_ts, to_ts))
     if busy is not None and cpu:
         usual = statistics.median(value for _, value in cpu)
