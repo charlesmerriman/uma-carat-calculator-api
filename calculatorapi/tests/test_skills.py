@@ -680,5 +680,7 @@ class InheritedUniqueTests(CalculatorTestCase):
             (900011001, 6),  # an evolved skill: nine digits, not six
         ]
         for game_id, rarity in cases:
-            skill = Skill.objects.create(game_id=game_id, name=f"Skill {game_id}", rarity=rarity, group_id=game_id // 10, tier=1)
+            skill = Skill.objects.create(
+                game_id=game_id, name=f"Skill {game_id}", rarity=rarity, group_id=game_id // 10, tier=1,
+            )
             self.assertFalse(skill.is_inherited_unique, game_id)
