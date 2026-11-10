@@ -5,6 +5,7 @@ The rules behind them are tested in test_gallery.py; this module checks the
 routes apply them and send exactly the fields they should.
 """
 
+from django.conf import settings
 from django.test import override_settings
 from django.urls import reverse
 from rest_framework.test import APIClient
@@ -319,6 +320,45 @@ class PostRouteTests(RouteFixture):
         self.assertEqual(GalleryVoteThrottle.scope, "gallery_vote")
         self.assertEqual(GalleryCopyThrottle.scope, "gallery_copy")
         self.assertEqual(GalleryPublishThrottle.scope, "gallery_publish")
+
+
+class ReadThrottleTests(RouteFixture):
+    """Reads are throttled per IP for a guest and per account, at a higher
+    rate, once signed in. Asserted because a signed-in player reading one
+    event's gallery ran out at 120 (2026-11-10). Against an unknown post, so
+    each request is cheap: the throttle runs before the view."""
+
+    POST = "/gallery/posts/unknown1"
+
+    def test_both_read_scopes_have_a_rate(self):
+        rates = settings.REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"]
+        self.assertEqual(rates["gallery_read"], "120/hour")
+        self.assertEqual(rates["gallery_read_account"], "600/hour")
+
+    def test_a_guest_runs_out_at_the_guest_rate(self):
+        guest = APIClient()
+        for _ in range(120):
+            guest.get(self.POST)
+        self.assertEqual(guest.get(self.POST).status_code, 429)
+
+    def test_a_signed_in_reader_reads_past_the_guest_rate(self):
+        reader = self.client_for(self.person())
+        for _ in range(120):
+            reader.get(self.POST)
+        self.assertEqual(reader.get(self.POST).status_code, 404)
+
+    def test_comment_threads_spend_the_same_read_budget(self):
+        # Half posts, half threads: one budget, so the guest is out at 120.
+        guest = APIClient()
+        for _ in range(60):
+            guest.get(self.POST)
+            guest.get(f"{self.POST}/comments")
+        self.assertEqual(guest.get(f"{self.POST}/comments").status_code, 429)
+        reader = self.client_for(self.person())
+        for _ in range(60):
+            reader.get(self.POST)
+            reader.get(f"{self.POST}/comments")
+        self.assertNotEqual(reader.get(f"{self.POST}/comments").status_code, 429)
 
 
 class AccountPreferenceTests(RouteFixture):
