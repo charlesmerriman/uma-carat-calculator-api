@@ -627,6 +627,67 @@ class AnniversaryEventApiTests(CalculatorTestCase):
         self.assertEqual(event['main_start_date'], _iso(part2.global_start_date))
         self.assertEqual(event['end_date'], _iso(part2.global_end_date))
 
+    def _add_parts_2_and_3(self):
+        part2 = make_timeline(
+            name='3rd Anniv Part 2', global_start_date=self.timeline.global_end_date,
+            global_end_date=self.timeline.global_end_date + datetime.timedelta(days=20),
+        )
+        part3 = make_timeline(
+            name='3rd Anniv Part 3', global_start_date=part2.global_start_date + datetime.timedelta(days=14),
+            global_end_date=part2.global_end_date + datetime.timedelta(days=14),
+        )
+        for number, timeline in ((2, part2), (3, part3)):
+            AnniversaryEventBanner.objects.create(
+                anniversary_event=self.event, banner_timeline=timeline, part_number=number,
+            )
+        return part2, part3
+
+    def test_a_product_opens_with_its_part_or_the_main_part(self):
+        """`opens_at` is when its carats credit: Part 3's start for a 1500 pack
+        set to Part 3, the main part (Part 2) for the rest, and the main part
+        again when the part it names isn't linked (an editor's typo)."""
+        part2, part3 = self._add_parts_2_and_3()
+        AnniversaryEventProduct.objects.create(
+            anniversary_event=self.event, product_type='carat_pack', name='1500 Carat Pack',
+            usd_cost=14, paid_carat_amount=1500, opens_with_part=3,
+        )
+        AnniversaryEventProduct.objects.create(
+            anniversary_event=self.event, product_type='carat_pack', name='Spark Enhancement',
+            usd_cost=21, paid_carat_amount=1500, opens_with_part=9,
+        )
+        event = self.client.get('/calculator-data').json()['anniversary_event_data'][0]
+        opens = {p['name']: (p['opens_with_part'], p['opens_at']) for p in event['products']}
+        self.assertEqual(opens['1500 Carat Pack'], (3, _iso(part3.global_start_date)))
+        self.assertEqual(opens['7500 Carat Pack'], (None, _iso(part2.global_start_date)))
+        self.assertEqual(opens['Spark Enhancement'], (9, _iso(part2.global_start_date)))
+
+    def test_the_1500_packs_move_to_part_3_on_deploy(self):
+        """Migration 0132: anniversaries with a Part 3 only, blanks only."""
+        import importlib  # pylint: disable=import-outside-toplevel
+        from django.apps import apps as django_apps  # pylint: disable=import-outside-toplevel
+        set_part_3 = importlib.import_module(
+            'calculatorapi.migrations.0132_anniversary_1500_packs_open_in_part_3'
+        ).set_part_3
+        self._add_parts_2_and_3()
+        pack = AnniversaryEventProduct.objects.create(
+            anniversary_event=self.event, product_type='carat_pack', name='1500 Carat Pack',
+            usd_cost=14, paid_carat_amount=1500,
+        )
+        new_year = make_anniversary_event(
+            name='New Years', event_type='new_year', parts=[make_timeline(), make_timeline(), make_timeline()],
+            products=[{'product_type': 'carat_pack', 'name': '1500 Carat Pack', 'usd_cost': 14, 'paid_carat_amount': 1500}],
+        )
+        no_part_3 = make_anniversary_event(
+            name='1.5th Anniversary', parts=[make_timeline(), make_timeline()],
+            products=[{'product_type': 'carat_pack', 'name': '1500 Carat Pack', 'usd_cost': 14, 'paid_carat_amount': 1500}],
+        )
+        set_part_3(django_apps, None)
+        pack.refresh_from_db()
+        self.assertEqual(pack.opens_with_part, 3)
+        self.assertIsNone(new_year.products.get().opens_with_part)
+        self.assertIsNone(no_part_3.products.get().opens_with_part)
+        self.assertIsNone(self.event.products.get(name='7500 Carat Pack').opens_with_part)
+
     def test_banner_carries_its_campaign_and_part_number(self):
         res = self.client.get('/calculator-data')
         timeline = next(

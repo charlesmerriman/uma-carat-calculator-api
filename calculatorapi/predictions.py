@@ -596,7 +596,7 @@ def anniversary_event_effective_dates(anniversary_event, banner_timeline_emap):
 
     if not parts:
         return {"start_date": None, "main_start_date": None, "end_date": None,
-                "is_predicted": False, "applied_offset_days": 0}
+                "is_predicted": False, "applied_offset_days": 0, "part_starts": {}}
 
     main = _main_part(anniversary_event, parts)
     return {
@@ -609,6 +609,10 @@ def anniversary_event_effective_dates(anniversary_event, banner_timeline_emap):
         # reason; reporting max() across the parts would describe some other
         # part's shift, not the one the projection actually uses.
         "applied_offset_days": main["applied_offset_days"],
+        # {part_number: start}, so a product that opens with a later part
+        # (AnniversaryEventProduct.opens_with_part) can be dated without a
+        # second pass over the links.
+        "part_starts": {number: entry["start_date"] for number, entry in parts},
     }
 
 

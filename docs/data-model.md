@@ -848,6 +848,13 @@ narrows on tag fields elsewhere (see `event_type` on the timeline union).
 Real-money prices live in the database, never in code, so they can be corrected without
 a deploy when the store changes.
 
+`opens_with_part` (nullable; `0131`): the campaign part the product goes on sale with.
+Blank = the main part (`predictions._main_part`). An anniversary's 1500 Carat Pack opens
+with Part 3 (Daptrius, 2026-11-12), filled by the fill-blanks migration `0132`; an editor
+clears it for the anniversaries that are exceptions. A part, not a date, because campaign
+dates are predicted and move. The API resolves it to `opens_at`
+(`notes/campaign-purchase-parts-plan.md`).
+
 ### Selector eligibility: a derived gate and a stored one
 
 Two independent gates decide whether a selector may take a card. The **temporal** one is
