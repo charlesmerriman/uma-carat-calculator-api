@@ -305,10 +305,32 @@ class PullPlansTests(CalculatorTestCase):
     def test_spread_is_shares_and_steps_keep_their_own_buckets(self):
         body = self.editor.get(self.URL).json()
         uma = next(row for row in body["banners"] if row["type"] == "uma")
-        # a 100, b 150, c 1000: the 100 to 199 bucket holds two of three, 300 and up one.
-        self.assertEqual(uma["spread"], {"edges": [0, 50, 100, 200, 300], "shares": [0, 0, 0.67, 0, 0.33]})
+        # a 100, b 150, c 1000: one each in "100 to 132", "134 to 199" and "201+".
+        self.assertEqual(
+            uma["spread"], {"edges": [0, 100, 133, 134, 200, 201], "shares": [0, 0.33, 0, 0.33, 0, 0.33]},
+        )
+        # d plans 4 steps: under one round of five.
         step_up = next(row for row in body["banners"] if row["type"] == "step_up")
-        self.assertEqual(step_up["spread"], {"edges": [0, 2, 3, 4, 5], "shares": [0, 0, 0, 1.0, 0]})
+        self.assertEqual(step_up["spread"], {"edges": [0, 5, 6, 10, 11, 15], "shares": [1.0, 0, 0, 0, 0, 0]})
+
+    def test_the_spikes_are_buckets_of_their_own(self):
+        """133 and 200 on an uma banner, 200 / 400 / 600 on a support banner and
+        5 / 10 / 15 steps each land in a bucket one wide, never a range."""
+        support = make_support_banner(name="Kitasan Black")
+        for name, pulls in (("s1", 200), ("s2", 400), ("s3", 600), ("s4", 250)):
+            UserPlannedBanner.objects.create(user=make_user(name), banner_support=support, number_of_pulls=pulls)
+        for name, pulls in (("u1", 133), ("u2", 200)):
+            UserPlannedBanner.objects.create(user=make_user(name), banner_uma=self.uma, number_of_pulls=pulls)
+        for name, steps in (("t1", 5), ("t2", 10), ("t3", 15)):
+            UserPlannedBanner.objects.create(user=make_user(name), banner_step_up=self.step_up, number_of_pulls=steps)
+        body = self.editor.get(self.URL).json()
+        rows = {row["type"]: row for row in body["banners"]}
+        self.assertEqual(rows["support"]["spread"]["edges"], [0, 200, 201, 400, 401, 600])
+        self.assertEqual(rows["support"]["spread"]["shares"], [0, 0.25, 0.25, 0.25, 0, 0.25])
+        # a 100, b 150, c 1000, u1 133, u2 200: a fifth in each of five buckets.
+        self.assertEqual(rows["uma"]["spread"]["shares"], [0, 0.2, 0.2, 0.2, 0.2, 0.2])
+        # d 4, t1 5, t2 10, t3 15.
+        self.assertEqual(rows["step_up"]["spread"]["shares"], [0.25, 0.25, 0, 0.25, 0, 0.25])
 
     def test_also_planning_lists_the_other_banners_never_the_banner_itself(self):
         support = make_support_banner(name="Kitasan Black")
