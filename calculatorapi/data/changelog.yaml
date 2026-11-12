@@ -32,6 +32,30 @@
 # module changed. Newest entry first is conventional here but not required — the
 # page sorts by date.
 
+- key: runs-teams-rankings
+  date: 2026-11-12
+  title: "Team buttons in CM Runs, sharper pull plan rankings, and a pile of fixes"
+  version: "v2.15"
+  changes:
+    - added: "CM Runs got faster to fill in. Every team you've made has its own button on a ticket, and one tap puts a team on a whole day, or on every ticket you haven't raced yet. Clearing them works the same way, with Undo."
+    - changed: "A CM Runs ticket always comes from one of your teams now. \"Same three as Ticket 2\" is gone."
+    - added: "Drag an uma from Guide picks straight onto a spot in My team."
+    - changed: "Pull plan rankings group plans around the numbers people actually pick: 133 or 200 pulls on an uma banner, 200, 400 or 600 on a support banner, and 5, 10 or 15 steps on a step-up."
+    - changed: "When the pulls fall due now shows the next six months, then the year after by quarter."
+    - changed: "Selectors: a campaign's dates start when its purchases go on sale, not on the Part 1 run-up."
+    - added: "Skill search finds a skill by any of its names, including the ones other community sites use. A skill with no English name yet shows its Japanese one."
+    - changed: "The course map's labels keep clear of the track, phones show the hills, and longer courses no longer draw their laps on top of each other. You can also color the track by corners and straights."
+    - fixed: "Dirt courses that start on grass no longer mark the turf start. It never mattered in a race."
+    - fixed: "Support selectors only offer SSR cards."
+    - fixed: "Casual outfits and NPCs stay out of the uma picker for teams. They can still be your favorite."
+    - changed: "No veteran is the first choice in the veteran list."
+    - added: "The My team window's pickers have an Owned only switch."
+    - fixed: "Inherited uniques get their purple frame in PvP guides."
+    - fixed: "Golden Week banners always sit under their main banner on the Timeline."
+    - changed: "Show past events moved to the far left of the PvP bar, well away from Previous."
+    - changed: "On the Selectors page, Hide sits where Show is, and a hidden campaign stays hidden when you switch pages."
+    - fixed: "Open too many gallery posts too fast and the gallery now says so, and how long to wait."
+
 - key: course-map-polish
   date: 2026-11-06
   title: "Banner announcements, course map polish and iPhone fixes"
