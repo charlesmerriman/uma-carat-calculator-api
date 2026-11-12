@@ -68,6 +68,21 @@ class AnniversaryEventProduct(models.Model):
         verbose_name="JP cutoff date override",
         help_text="Leave blank to inherit the campaign's cutoff.",
     )
+    # The campaign part this goes on sale with. Blank: the campaign's main part
+    # (Part 2 of an anniversary, predictions._main_part), which is every product
+    # but the anniversaries' 1500 Carat Packs (Part 3, Daptrius 2026-11-12). A
+    # part number rather than a date because campaign dates are predicted and
+    # move with the timeline; a part follows them. The purchase's paid carats
+    # credit at that part's start (AnniversaryEventSerializer, `opens_at`).
+    opens_with_part = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        verbose_name="opens with part",
+        help_text=(
+            "Leave blank: it goes on sale with the campaign's main part (Part 2 of "
+            "an anniversary). Set 3 for a product that only goes on sale with Part 3."
+        ),
+    )
     order = models.PositiveIntegerField(default=0)
 
     class Meta:

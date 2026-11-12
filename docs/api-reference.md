@@ -1807,6 +1807,8 @@ never on which fields happen to be set.
   "max_quantity": 10,
   "jp_cutoff_date": "2024-01-31",
   "jp_cutoff_date_override": null,
+  "opens_with_part": null,
+  "opens_at": "2026-12-01T22:00:00Z",
   "order": 1
 }
 ```
@@ -1817,6 +1819,10 @@ Decimal-as-string, so the client can do arithmetic on them directly.
 `jp_cutoff_date` is already resolved against the campaign's — the client never has to
 reimplement the fallback. `jp_cutoff_date_override` exposes the product's own value and
 is `null` when the cutoff came from the campaign.
+
+`opens_at` is the instant the product's paid carats credit: the start of part
+`opens_with_part` when that part is linked and dated, else the campaign's
+`main_start_date`. `opens_with_part` is the editor's raw value (`null` = the main part).
 
 ### `UserPlannedPurchase` (from `user_planned_purchase_data`)
 

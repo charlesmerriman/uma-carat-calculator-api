@@ -485,8 +485,12 @@ budget a step-up is allowed to spend. `purchaseCarats()`
 by both the Selectors page totals and the per-banner projection. It derives the bonus as
 `total - paid` so the halves always re-sum to the same rounded total.
 
-**When it lands.** At the campaign's resolved **start** — packs go on sale when the
-campaign opens. That instant is absolute, which is what keeps the banner windows tiling;
+**When it lands.** At the product's `opens_at`: the start of the part it goes on sale
+with. That is the campaign's main part (`main_start_date`: Part 2 of an anniversary, since
+Part 1 is a run-up that sells nothing) unless the product names a later one
+(`opens_with_part`; an anniversary's 1500 Carat Pack opens with Part 3, Daptrius
+2026-11-12, set by migration `0132`). The API resolves the date, falling back to the main
+part when the named part isn't linked. That instant is absolute, which is what keeps the banner windows tiling;
 counting purchases per-window instead would inflate totals as soon as a user split their
 plan across more banners. A campaign with no resolved date (no linked banner parts) is
 skipped rather than credited at a made-up fallback.

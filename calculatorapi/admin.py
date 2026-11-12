@@ -266,7 +266,7 @@ class AnniversaryEventProductInline(TabularInline):
     model = AnniversaryEventProduct
     fields = (
         "order", "product_type", "name", "usd_cost", "paid_carat_amount",
-        "webstore_multiplier", "max_quantity", "jp_cutoff_date",
+        "webstore_multiplier", "max_quantity", "jp_cutoff_date", "opens_with_part",
     )
     ordering = ("order",)
     extra = 1
