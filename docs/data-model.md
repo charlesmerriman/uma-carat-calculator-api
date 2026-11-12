@@ -106,6 +106,9 @@ erDiagram
         int apt_turf "ten apt_* grades on the game's 1..8 scale (G..S): turf dirt short mile medium long front pace late end"
         int base_speed "five base_* stats at the initial star count"
         int growth_speed "five growth_* bonuses in percent"
+        json star_stats "the five stats at every star level, lowest first: [{star, speed, stamina, power, guts, wit}]"
+        string jp_name "the JP client's name; from the JP snapshot for every outfit it holds"
+        string jp_title "the JP client's [Title]"
     }
 
     Skill {
@@ -152,6 +155,8 @@ erDiagram
         int character_id "IMPORTED: the game's character id, a number not a FK"
         string title "IMPORTED: the card's [Title]"
         json group_members "IMPORTED: a group card's umas by name (support_card_group); [] for every other card"
+        string jp_name "IMPORTED: the JP client's name (a group card's is the group's)"
+        string jp_title "IMPORTED: the JP client's [Title]"
         string image
         string image_borderless "the game's texture: no frame, no type icon; support_cards_borderless/ in the Space; the site frames it (FramedCard); no fallback to image"
         string admin_comments
@@ -1850,6 +1855,15 @@ python scripts/fetch_gametora_skill_names.py                            # any ti
   already answer to it. **The site never displays GameTora's text** (owner and Daptrius,
   2026-11-12: their loc files read as meant for projects that don't compete with GameTora),
   so only the names are kept, and only for search.
+
+**What the JP snapshot gives an outfit or card global doesn't have** (since 2026-11-12, for
+the Encyclopedia): an outfit takes its running style, aptitudes, base stats, growth and
+`star_stats`; a card its `card_type` and `character_id`. Each only after the same English
+name check as its skill links, and never once the id is in global's snapshot. **Never
+`Uma.rarity`** (it feeds `is_three_star`, so selectors and rate-up odds: an unreleased
+uma's stays blank or hand-set) **and never the English `title`**. Every outfit and card the
+JP snapshot holds, global ones included, takes `jp_name` and `jp_title`. The pages mark the
+JP-only facts as the JP game's, liable to change on global.
 
 ## `PatreonTier` / `PatreonSupporter`
 

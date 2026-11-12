@@ -158,6 +158,16 @@ class SupportCard(models.Model):
         blank=True,
         help_text="The umas a group card stands for, e.g. Team Sirius's six. Empty for every other card.",
     )
+    # The JP client's name and title, as on Uma. A group card's name is the
+    # group's (チーム＜シリウス＞), since the JP snapshot names it that way.
+    jp_name = models.CharField(
+        max_length=100, blank=True, default="", verbose_name="JP name",
+        help_text="The card's name in the JP client.",
+    )
+    jp_title = models.CharField(
+        max_length=100, blank=True, default="", verbose_name="JP title",
+        help_text="The card's title in the JP client.",
+    )
 
     def save(self, *args, **kwargs):
         # A card an editor adds by hand, e.g. one that is not on global yet,

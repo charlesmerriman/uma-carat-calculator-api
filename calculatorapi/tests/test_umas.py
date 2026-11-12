@@ -393,6 +393,11 @@ class ImportGameDataUmaTests(CalculatorTestCase):
         self.assertEqual(self.uma.growth_power, 20)
         self.assertEqual(self.uma.growth_speed, 0)
         self.assertEqual(self.uma.character_id, 1027)
+        # Every star level the game lists, lowest first, for the Encyclopedia.
+        self.assertEqual(self.uma.star_stats, [
+            {"star": star, "speed": speed, "stamina": 90, "power": 100, "guts": 80, "wit": 70}
+            for star, speed in ((1, 87), (2, 93), (3, 98))
+        ])
 
     def test_a_one_star_import_leaves_the_selector_pickers(self):
         # The pickers read is_three_star, which is derived from the rarity the
