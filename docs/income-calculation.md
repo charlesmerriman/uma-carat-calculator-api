@@ -489,7 +489,7 @@ by both the Selectors page totals and the per-banner projection. It derives the 
 with. That is the campaign's main part (`main_start_date`: Part 2 of an anniversary, since
 Part 1 is a run-up that sells nothing) unless the product names a later one
 (`opens_with_part`; an anniversary's 1500 Carat Pack opens with Part 3, Daptrius
-2026-11-12, set by migration `0132`). The API resolves the date, falling back to the main
+2026-11-12, set by migration `0132`; the 2.5th Anniversary's is the exception). The API resolves the date, falling back to the main
 part when the named part isn't linked. That instant is absolute, which is what keeps the banner windows tiling;
 counting purchases per-window instead would inflate totals as soon as a user split their
 plan across more banners. A campaign with no resolved date (no linked banner parts) is

@@ -681,9 +681,15 @@ class AnniversaryEventApiTests(CalculatorTestCase):
             name='1.5th Anniversary', parts=[make_timeline(), make_timeline()],
             products=[{'product_type': 'carat_pack', 'name': '1500 Carat Pack', 'usd_cost': 14, 'paid_carat_amount': 1500}],
         )
+        exception = make_anniversary_event(
+            name='2.5th Anniversary', parts=[make_timeline(), make_timeline(), make_timeline()],
+            products=[{'product_type': 'carat_pack', 'name': '1500 Carat Pack', 'usd_cost': 14, 'paid_carat_amount': 1500}],
+        )
         set_part_3(django_apps, None)
         pack.refresh_from_db()
         self.assertEqual(pack.opens_with_part, 3)
+        # Daptrius's one exception sells it with Part 2.
+        self.assertIsNone(exception.products.get().opens_with_part)
         self.assertIsNone(new_year.products.get().opens_with_part)
         self.assertIsNone(no_part_3.products.get().opens_with_part)
         self.assertIsNone(self.event.products.get(name='7500 Carat Pack').opens_with_part)
