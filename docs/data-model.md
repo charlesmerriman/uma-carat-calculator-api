@@ -1708,7 +1708,10 @@ global's English, `translated_name` / `translated_description` UmaTL's, `jp_name
 `jp_description` the JP client's (admin only). A player reads `shown_name` /
 `shown_description` (global's text if any, else the translation, each field on its own);
 the admin labels a row `admin_label` (the shown name, else the Japanese). `SkillAlias`
-keeps a skill's older names so a `[[mention]]` that used one still resolves.
+keeps every other name a skill answers to: its older names, so a `[[mention]]` that used
+one still resolves, and **GameTora's name** for it, so search finds a skill by the name
+players know it by (owner and Daptrius, 2026-11-12). Aliases are searched, never shown,
+and the import only ever adds them.
 `effects` holds the game's raw effect numbers (see the snapshot section).
 
 **Evolutions.** An evolved skill (rarity 6) points at its base through `evolves_from`. An
@@ -1815,6 +1818,7 @@ the first, received 2026-10-23, holds JP game data of 2026-10-02). Three steps, 
 python scripts/jp_export_to_mdb.py <export folder> /tmp/jp/master.mdb   # rebuild the SQLite file
 python scripts/extract_master_snapshot.py --region jp --mdb /tmp/jp/master.mdb
 python scripts/fetch_umatl.py                                           # after the JP snapshot
+python scripts/fetch_gametora_skill_names.py                            # any time
 ```
 
 - `jp_export_to_mdb.py` recreates every table with its declared column types (from the
@@ -1838,6 +1842,12 @@ python scripts/fetch_umatl.py                                           # after 
   to `scripts/data/umatl/` with the pinned commit (`meta.json`) and `ATTRIBUTION.md`. UmaTL
   is not openly licensed: attributed use only, credited wherever its text shows. Its text
   ranks below global's official English, always.
+- `fetch_gametora_skill_names.py` saves **GameTora's English skill names** (from
+  `gametora.com/loc/umamusume/skills.json`, `id` and `name_en` only) to
+  `scripts/data/gametora/`. The import makes each one a `SkillAlias` when the skill doesn't
+  already answer to it. **The site never displays GameTora's text** (owner and Daptrius,
+  2026-11-12: their loc files read as meant for projects that don't compete with GameTora),
+  so only the names are kept, and only for search.
 
 ## `PatreonTier` / `PatreonSupporter`
 
