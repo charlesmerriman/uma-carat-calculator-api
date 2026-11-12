@@ -130,8 +130,14 @@ def sources(skill):
     ]
     cards = [
         {"id": row.support_card_id, "name": row.support_card.name,
+         # A card's name is its character's, shared by all her cards; the title tells them apart.
+         "title": row.support_card.title,
          "game_id": row.support_card.game_id,
          "image": image_url(row.support_card.image.name if row.support_card.image else ""),
+         # The frameless texture for FramedCard; None until it is uploaded.
+         "image_borderless": image_url(
+             row.support_card.image_borderless.name if row.support_card.image_borderless else ""
+         ),
          "source": row.source, "on_global": row.support_card.is_on_global,
          # For "Hide R" / "Hide SR" (Daptrius's item 3) and the type icon.
          "rarity": row.support_card.rarity, "card_type": row.support_card.card_type}

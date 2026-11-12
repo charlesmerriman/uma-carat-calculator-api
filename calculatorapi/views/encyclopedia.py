@@ -88,7 +88,11 @@ def _outfit_row(uma):
 def _card_row(card):
     return {
         "id": card.id, "game_id": card.game_id, "name": card.name, "title": card.title,
-        "image": _file_url(card.image), "card_type": card.card_type, "rarity": card.rarity,
+        "image": _file_url(card.image),
+        # The frameless texture, so the page draws the card in the site's own
+        # frame (FramedCard) as the Collection does; None until it is uploaded.
+        "image_borderless": _file_url(card.image_borderless),
+        "card_type": card.card_type, "rarity": card.rarity,
         "on_global": card.is_on_global,
     }
 

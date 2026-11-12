@@ -928,7 +928,8 @@ GameTora's names, the Japanese name when it isn't the shown one), for search.
 `GET /skills/<game_id>` is one skill in full: the list fields (with `pair` as a list row
 instead of an id) plus `description`, `readable`
 (as on a guide), `sources` (every outfit and card: `id`, `name`, `game_id`, `image`,
-`source`, `level` for an outfit, `rarity` and `card_type` for a card, `on_global`;
+`source`, `level` for an outfit, `title`, `image_borderless`, `rarity` and `card_type` for a
+card, `on_global`;
 on-global first), `evolution` (`from` and `into` as list rows, each `into` row with the
 `owners` that evolve it, `conditions` as `[{"text", "uses_translation", "is_japanese"}]`,
 `scenario`), and `versions` (its forms on global, as on a guide). 404 for a skill with no
@@ -949,7 +950,8 @@ sent so it can find them there and in the Collection. Never `admin_comments`.
   `grade` G1 to OP or null, `need` "Win" / "Top 5" / "Run it"; career.py) and `objectives_hidden`
   (goals of kinds not decoded yet), `skills` (the `/skills` list row plus `source`, `level`, `cost`,
   `evolves_from` as a game id; unique, innate, awakening, evolved), `outfits` (the
-  character's other outfits), `cards` (her own cards and every group card listing her).
+  character's other outfits), `cards` (her own cards and every group card listing her; each
+  row carries `image_borderless` beside `image`, so the page frames the card itself).
 - **Card** (404 for a placeholder): `id`, `game_id`, `name`, `title`, `jp_name`,
   `jp_title`, `image`, `image_borderless`, `card_type`, `rarity`, `character_id`,
   `on_global`, `released_at`, `group_members`, `purpose`, `skills` (hints, then events),

@@ -93,6 +93,8 @@ class UmaPageTests(EncyclopediaFixture):
         self.assertEqual([row["game_id"] for row in body["outfits"]], [SPECIAL_WEEK_SUMMER])
         # Her own two cards and the group card that lists her; never the placeholder.
         self.assertEqual([row["game_id"] for row in body["cards"]], [SPE_SR, SPE_CARD, SIRIUS])
+        # Each card row has the frameless art's slot, so the page can frame it (None until uploaded).
+        self.assertTrue(all("image_borderless" in row for row in body["cards"]))
 
     def test_an_alternate_outfit_finds_the_same_cards(self):
         body = self.client.get(f"/encyclopedia/umas/{SPECIAL_WEEK_SUMMER}").json()
