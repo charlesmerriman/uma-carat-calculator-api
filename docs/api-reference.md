@@ -784,7 +784,7 @@ may hold `==highlight==` spans the client renders red.
                                            "front": 8, "pace": 6, "late": 2, "end": 1},
                                    "unique": {"id": 210, "name": "Lead the Pack", "image": "url | null"}}}],
   "skill_recommendations": [{"style": "front", "category": "acceleration", "tier": 0, "order": 0, "note": "",
-      "skill": {"id": 210, "name": "Lead the Pack", "description": "string", "image": "url | null",
+      "skill": {"id": 210, "game_id": 100021, "name": "Lead the Pack", "description": "string", "image": "url | null",
                 "rarity": 5, "unique_of": "Maruzensky", "is_inherited": false, "version": "○ white", "tier": 1, "is_evolved": false,
                 "versions": [{"id": 211, "name": "Lead the Pack ◎", "description": "string", "image": "url | null",
                               "rarity": 2, "tier": 2, "version": "◎ gold", "is_evolved": false}]}}],
