@@ -32,7 +32,7 @@ GENERATION_KEY = "skills:generation"
 LIST_KEY = "skills:list:v2:{generation}"
 DETAIL_KEY = "skills:detail:v2:{generation}:{game_id}"
 # An Encyclopedia page: `kind` is "uma" or "card" (views/encyclopedia.py).
-PAGE_KEY = "skills:page:v2:{generation}:{kind}:{game_id}"
+PAGE_KEY = "skills:page:v3:{generation}:{kind}:{game_id}"
 
 # Backstop only, as in pvp_catalogue_cache.py.
 CACHE_TTL_SECONDS = 300

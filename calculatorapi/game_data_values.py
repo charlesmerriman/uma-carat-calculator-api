@@ -75,6 +75,22 @@ def jp_uma_values(card):
     return values
 
 
+def objective_values(objectives, uma_game_ids):
+    """
+    {outfit game id: {"career_objectives": goals}} from objectives.json, for
+    every outfit whose character has a route. The game keys goals by
+    character (game id // 100), so each outfit of one character gets the same
+    list. From the GLOBAL client only: its race names are Global's English,
+    which is why an outfit not yet out on global may take them too.
+    """
+    by_character = {row["chara_id"]: row["goals"] for row in objectives}
+    return {
+        game_id: {"career_objectives": by_character[game_id // 100]}
+        for game_id in uma_game_ids
+        if game_id // 100 in by_character
+    }
+
+
 def merged(*sources):
     """{game id: {column: value}} dicts combined per id, later ones adding columns."""
     result = {}

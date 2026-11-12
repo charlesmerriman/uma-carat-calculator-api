@@ -141,7 +141,7 @@ from calculatorapi.models import (
 from calculatorapi.game_data_sources import (
     SecondarySources, jp_names, jp_owner_links, name_matches, plan_evolutions, plan_gametora_aliases,
 )
-from calculatorapi.game_data_values import jp_uma_values, merged, uma_values
+from calculatorapi.game_data_values import jp_uma_values, merged, objective_values, uma_values
 from calculatorapi.models.skill import SkillAvailability, SkillRarity, SkillTier
 
 CONFIRM_PHRASE = "import"
@@ -162,8 +162,8 @@ def load_snapshot(directory):
         files[name] = json.loads(path.read_text(encoding="utf-8"))
     # Optional: event skills come from gametora, not the game, a snapshot
     # from before 2026-10-16 has no text-ahead file, and one from before
-    # 2026-10-27 no sparks.
-    for name in ("support_events", "skill_text_ahead", "sparks"):
+    # 2026-10-27 no sparks, and one from before 2026-11-12 no career objectives.
+    for name in ("support_events", "skill_text_ahead", "sparks", "objectives"):
         path = directory / f"{name}.json"
         files[name] = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else []
     # Global's English for evolution conditions, keyed by condition id; a
@@ -459,9 +459,12 @@ class Command(BaseCommand):
             uma_plan["distrusted"] | jp_links["uma_distrusted"],
             support_plan["distrusted"] | jp_links["card_distrusted"],
         )
+        trusted_umas = set(Uma.objects.exclude(game_id=None).values_list("game_id", flat=True)) - (
+            uma_plan["distrusted"] | jp_links["uma_distrusted"])
         self._add_values(uma_plan, Uma, merged(
             uma_names,
             {game_id: jp_uma_values(card) for game_id, card in jp_links["uma_cards"].items()},
+            objective_values(snapshot["objectives"], trusted_umas),
         ))
         self._add_values(support_plan, SupportCard, merged(card_names, jp_links["card_facts"]))
         known_skills = (
