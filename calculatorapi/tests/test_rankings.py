@@ -313,6 +313,15 @@ class PullPlansTests(CalculatorTestCase):
         step_up = next(row for row in body["banners"] if row["type"] == "step_up")
         self.assertEqual(step_up["spread"], {"edges": [0, 5, 6, 10, 11, 15], "shares": [1.0, 0, 0, 0, 0, 0]})
 
+    def test_demand_lists_eighteen_months_before_later(self):
+        """Players plan a year ahead, so a banner ten months out is its own
+        month, not Later (the client groups the far months into quarters)."""
+        now = timezone.now()
+        far = make_timeline(global_start_date=now + timedelta(days=290), global_end_date=now + timedelta(days=300))
+        UserPlannedBanner.objects.create(user=self.users["a"], banner_uma=make_uma_banner(far), number_of_pulls=200)
+        months = [row["month"] for row in self.editor.get(self.URL).json()["demand"]]
+        self.assertIn(f"{(now + timedelta(days=300)):%Y-%m}", months)
+
     def test_the_spikes_are_buckets_of_their_own(self):
         """133 and 200 on an uma banner, 200 / 400 / 600 on a support banner and
         5 / 10 / 15 steps each land in a bucket one wide, never a range."""
