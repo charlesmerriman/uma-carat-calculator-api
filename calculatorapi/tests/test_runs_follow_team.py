@@ -56,6 +56,12 @@ class FollowTeamTests(PvpRunFixture):
         now = [self.oguri_xmas.id, self.maruzensky.id, self.gold_ship.id]
         self.assertEqual([self.lineup(n) for n in (1, 2, 3, 4)], [ran, ran, now, now])
 
+    def test_a_save_that_changes_no_lineup_reports_nothing(self):
+        """A card swap autosaves the team too: no ticket changes, so no toast."""
+        self.fill(1)
+        response = self.edit_team(self.oguri, self.maruzensky, self.gold_ship)
+        self.assertEqual(response.json()["tickets_followed"], 0)
+
     def test_another_teams_tickets_are_left_alone(self):
         other = self.make_team("Plan B", self.gold_ship, self.maruzensky)
         self.fill(1, team=other)

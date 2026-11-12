@@ -133,16 +133,24 @@ def sync_followers(team, exclude_run=None):
     style and veteran per spot; no deck). Returns how many it rewrote, for the
     client's toast. A raced follower keeps the lineup it ran with.
 
-    Delete-then-create on the runners, like write_run: the lineup is the
-    team's, whole. A spot the team has emptied empties on the tickets too.
+    Only a ticket whose lineup differs is touched, so the count is what
+    changed: the team autosaves on every edit, a card swap included, and the
+    client toasts a non-zero count. Delete-then-create on the runners, like
+    write_run: the lineup is the team's, whole. A spot the team has emptied
+    empties on the tickets too.
     """
-    ids = list(
+    members = list(team.members.all())
+    wanted = sorted((m.position, m.uma_id, m.style, m.trained_uma_id) for m in members)
+    followers = (
         unraced_runs().filter(team=team).exclude(id=getattr(exclude_run, "id", None))
-        .values_list("id", flat=True).distinct()
+        .distinct().prefetch_related("runners")
     )
+    ids = [
+        run.id for run in followers
+        if sorted((r.position, r.uma_id, r.style, r.trained_uma_id) for r in run.runners.all()) != wanted
+    ]
     if not ids:
         return 0
-    members = list(team.members.all())
     PvpRunRunner.objects.filter(run_id__in=ids).delete()
     PvpRunRunner.objects.bulk_create(
         PvpRunRunner(
