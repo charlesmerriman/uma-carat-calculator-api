@@ -11,6 +11,9 @@ THE SOURCES, in order of authority (since 2026-10-23):
      skill links of outfits and cards global doesn't have.
   3. scripts/data/umatl/text.json, UmaTL's English, only ever into the
      `translated_*` columns, which a player reads only while global's are blank.
+  4. scripts/data/gametora/names.json, GameTora's skill names, only ever as
+     SkillAlias rows: search finds a skill by them, the site never shows them
+     (owner and Daptrius, 2026-11-12; scripts/fetch_gametora_skill_names.py).
 
   The two extra sources are read from beside master_snapshot/ (or from
   --jp-snapshot / --umatl); either may be missing, and --global-only ignores
@@ -27,7 +30,9 @@ PER SKILL (matched on game_id), the first path that applies:
                             and text if the client shipped them (a bonus
                             skill), otherwise the editor's are left alone
   every path                `jp_*` from JP and `translated_*` from UmaTL when
-                            loaded; a name this run replaces becomes a SkillAlias
+                            loaded; a name this run replaces becomes a SkillAlias,
+                            and so does GameTora's name when the skill doesn't
+                            already answer to it (aliases are only ever added)
 
 EVOLUTIONS (JP): an outfit's evolution is an `evolved` UmaSkill row; its base
 (`evolves_from`) comes from the rank rule (game_data_sources.evolution_base),
@@ -129,7 +134,7 @@ from calculatorapi.models import (
     Uma, UmaSkill,
 )
 from calculatorapi.game_data_sources import (
-    SecondarySources, jp_owner_links, name_matches, plan_evolutions,
+    SecondarySources, jp_owner_links, name_matches, plan_evolutions, plan_gametora_aliases,
 )
 from calculatorapi.models.skill import SkillAvailability, SkillRarity, SkillTier
 
@@ -443,8 +448,12 @@ class Command(BaseCommand):
             help="The UmaTL slice directory (default: umatl/ beside --snapshot, if there).",
         )
         parser.add_argument(
+            "--gametora-names", default=None,
+            help="GameTora's skill names directory (default: gametora/ beside --snapshot, if there).",
+        )
+        parser.add_argument(
             "--global-only", action="store_true",
-            help="Ignore the JP snapshot and UmaTL: the import as it was before 2026-10-23.",
+            help="Ignore the JP snapshot, UmaTL and GameTora's names: the import as it was before 2026-10-23.",
         )
         parser.add_argument(
             "--dry-run", action="store_true",
@@ -460,7 +469,9 @@ class Command(BaseCommand):
         detailed = load_gametora(options["gametora"])
         sources = (
             SecondarySources.empty() if options["global_only"]
-            else SecondarySources(options["snapshot"], options["jp_snapshot"], options["umatl"])
+            else SecondarySources(
+                options["snapshot"], options["jp_snapshot"], options["umatl"], options["gametora_names"],
+            )
         )
         evolutions = plan_evolutions(sources, snapshot["evolution_condition_text"])
         jp_links = jp_owner_links(sources, snapshot)
@@ -509,6 +520,7 @@ class Command(BaseCommand):
 
         if not any(
             plan["changed"] or plan.get("created") or plan.get("conditions") or plan.get("aliases")
+            or plan.get("gametora_aliases")
             for plan in plans
         ):
             self.stdout.write(self.style.SUCCESS("\nNothing to write."))
@@ -601,7 +613,8 @@ class Command(BaseCommand):
           3. JP only: JP's structure; global's name and text if the client
              shipped them, else the editor's are left alone.
         Every path also takes the JP and UmaTL text slots, and a name the
-        import replaces is kept as an alias (`aliases`).
+        import replaces is kept as an alias (`aliases`), and so is a new
+        GameTora name (`gametora_aliases`, plan_gametora_aliases).
         """
         sources = sources or SecondarySources.empty()
         evolutions = evolutions or plan_evolutions(sources, {})
@@ -661,10 +674,14 @@ class Command(BaseCommand):
             if text is not None:  # global shipped its English (a bonus skill, say)
                 values.update(name=text["name"], description=text["description"])
             plan_row(game_id, values, {})
+        gametora_aliases, gametora_clashes = plan_gametora_aliases(
+            sources.gametora_names, by_game_id.values(), changed, created, aliases,
+        )
         return {
             "label": "skill", "changed": changed, "created": created, "aliases": aliases,
             "unchanged": unchanged, "missing": [], "mismatched": [], "ahead": len(taken),
-            "jp_only": jp_only,
+            "jp_only": jp_only, "gametora_aliases": gametora_aliases,
+            "gametora_clashes": gametora_clashes,
         }
 
     @staticmethod
@@ -871,7 +888,7 @@ class Command(BaseCommand):
                 written += len(new_rows)
                 # Old names, now that every skill row exists. A name already
                 # kept is skipped by the unique constraint.
-                aliases = plan.get("aliases", [])
+                aliases = plan.get("aliases", []) + plan.get("gametora_aliases", [])
                 if aliases:
                     pks = dict(Skill.objects.filter(
                         game_id__in={game_id for game_id, _ in aliases},
@@ -900,6 +917,16 @@ class Command(BaseCommand):
             self.stdout.write(f"    {plan['jp_only']} are JP-only skills, hidden from players")
         if plan.get("aliases"):
             self.stdout.write(f"    {len(plan['aliases'])} replaced name(s) kept as aliases")
+        if plan.get("gametora_aliases"):
+            self.stdout.write(
+                f"    {len(plan['gametora_aliases'])} GameTora name(s) added as search aliases"
+            )
+        for game_id, name, other in plan.get("gametora_clashes", []):
+            # Still added: resolve_names ranks shown names before aliases, so
+            # the other skill keeps the name. Listed so a person can look.
+            self.stdout.write(self.style.WARNING(
+                f"    GameTora's name for {game_id}, {name!r}, is also skill {other}'s name"
+            ))
 
     def _report_jp_plan(self, plan, verb, dry_run):
         """Report the JP pass's two plan kinds; False for any other plan."""

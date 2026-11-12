@@ -1,10 +1,11 @@
 """
-The game data's second and third sources, beside the global snapshot: the JP
-snapshot (scripts/data/jp_snapshot/) and the UmaTL slice (scripts/data/umatl/).
+The game data's other sources, beside the global snapshot: the JP snapshot
+(scripts/data/jp_snapshot/), the UmaTL slice (scripts/data/umatl/) and
+GameTora's skill names (scripts/data/gametora/, search aliases only).
 
 Read by `manage.py import_game_data`, which keeps the planning and writing;
-this module only knows what the two sources say. Global's own data always
-outranks both (the command's docstring has the order).
+this module only knows what the sources say. Global's own data always
+outranks them (the command's docstring has the order).
 """
 
 import json
@@ -12,7 +13,7 @@ from pathlib import Path
 
 from django.core.management.base import CommandError
 
-from .models import SupportCard, Uma
+from .models import SkillAlias, SupportCard, Uma
 from .models.skill import SkillRarity
 
 
@@ -28,16 +29,22 @@ def name_matches(row_name, chara_name):
 
 class SecondarySources:
     """
-    The JP snapshot and the UmaTL slice, either of which may be absent.
+    The JP snapshot, the UmaTL slice and GameTora's skill names, any of which
+    may be absent.
 
-    Both sit beside the global snapshot (scripts/data/jp_snapshot/ and
-    scripts/data/umatl/) unless given on the command line. A missing one is
-    not an error: a test's temporary snapshot has neither, and an import
-    without them behaves exactly as it did before 2026-10-23. A path given
-    explicitly must exist.
+    All sit beside the global snapshot (scripts/data/jp_snapshot/,
+    scripts/data/umatl/, scripts/data/gametora/) unless given on the command
+    line. A missing one is not an error: a test's temporary snapshot has none,
+    and an import without them behaves exactly as it did before 2026-10-23. A
+    path given explicitly must exist.
+
+    GameTora's names are never shown on the site (owner and Daptrius,
+    2026-11-12): the import makes them SkillAlias rows, so search finds a
+    skill by the name players know it by. scripts/fetch_gametora_skill_names.py
+    has the why.
     """
 
-    def __init__(self, global_dir, jp_dir=None, umatl_dir=None):
+    def __init__(self, global_dir, jp_dir=None, umatl_dir=None, gametora_dir=None):
         # The siblings are found only beside the real snapshot folder: beside
         # a test's temporary one they would be /tmp/jp_snapshot, which is
         # nobody's.
@@ -45,15 +52,20 @@ class SecondarySources:
         beside = global_dir.parent if global_dir.name == "master_snapshot" else None
         jp_path = Path(jp_dir) if jp_dir else (beside / "jp_snapshot" if beside else None)
         umatl_path = Path(umatl_dir) if umatl_dir else (beside / "umatl" if beside else None)
+        gametora_path = Path(gametora_dir) if gametora_dir else (beside / "gametora" if beside else None)
         self.jp = self._load_jp(jp_path, required=bool(jp_dir)) if jp_path else None
         self.umatl = self._load_umatl(umatl_path, required=bool(umatl_dir)) if umatl_path else None
         self.jp_skills = {skill["id"]: skill for skill in self.jp["skills"]} if self.jp else {}
+        # {game id: GameTora's English name}; {} when the file isn't there.
+        self.gametora_names = (
+            self._load_gametora_names(gametora_path, required=bool(gametora_dir)) if gametora_path else {}
+        )
 
     @classmethod
     def empty(cls):
         """Neither source: the import as it was before the JP snapshot."""
         sources = cls.__new__(cls)
-        sources.jp, sources.umatl, sources.jp_skills = None, None, {}
+        sources.jp, sources.umatl, sources.jp_skills, sources.gametora_names = None, None, {}, {}
         return sources
 
     @staticmethod
@@ -79,6 +91,16 @@ class SecondarySources:
             return None
         return json.loads(path.read_text(encoding="utf-8"))
 
+    @staticmethod
+    def _load_gametora_names(directory, required):
+        path = directory / "names.json"
+        if not path.is_file():
+            if required:
+                raise CommandError(f"GameTora names not found: {path}")
+            return {}
+        names = json.loads(path.read_text(encoding="utf-8"))
+        return {int(game_id): name for game_id, name in names.items() if name.strip()}
+
     def text_slots(self, game_id):
         """
         The translated and Japanese text for one skill. Each source is written
@@ -101,6 +123,61 @@ class SecondarySources:
         if self.umatl is None:
             return ""
         return self.umatl.get("evolution_conditions", {}).get(str(condition_id), "")
+
+
+# The columns that hold a name a player can search: global's, UmaTL's, the JP one.
+NAME_COLUMNS = ("name", "translated_name", "jp_name")
+
+
+def plan_gametora_aliases(gametora_names, rows, changed, created, replaced):  # pylint: disable=too-many-locals
+    """
+    ([(game id, name)] to add as aliases, [(game id, name, other game id)]
+    clashes to report) for GameTora's names. `rows` are the skills in the
+    database, `changed` / `created` / `replaced` the skill plan's lists, so
+    the names compared are the ones each skill will have after this run.
+
+    A name becomes an alias only when the skill doesn't already answer to it,
+    ignoring case: not its global, UmaTL or JP name after this run, not an
+    alias it already has, not a replaced name this run keeps. Aliases are only
+    ever added, so a name GameTora later revises stays findable, which is what
+    the table is for. A GameTora id with no skill row is skipped.
+
+    A clash is a GameTora name that is ANOTHER skill's global or UmaTL name. It
+    is still added: resolve_names ranks shown names before aliases, so a
+    `[[mention]]` of it keeps meaning the other skill.
+    """
+    if not gametora_names:
+        return [], []
+    # {game id: {column: value}}: the database's names, then this run's.
+    final_names = {row.game_id: {column: getattr(row, column) for column in NAME_COLUMNS}
+                   for row in rows}
+    for row, diff in changed:
+        final_names[row.game_id].update({column: diff[column] for column in NAME_COLUMNS if column in diff})
+    for row in created:
+        final_names[row.game_id] = {column: getattr(row, column) for column in NAME_COLUMNS}
+    known = {
+        game_id: {value.lower() for value in names.values() if value}
+        for game_id, names in final_names.items()
+    }
+    for game_id, name in SkillAlias.objects.values_list("skill__game_id", "name"):
+        known.setdefault(game_id, set()).add(name.lower())
+    for game_id, name in replaced:
+        known.setdefault(game_id, set()).add(name.lower())
+    shown_by = {}
+    for game_id, names in final_names.items():
+        for column in ("name", "translated_name"):
+            if names[column]:
+                shown_by.setdefault(names[column].lower(), set()).add(game_id)
+
+    added, clashes = [], []
+    for game_id, name in sorted(gametora_names.items()):
+        if game_id not in final_names or name.lower() in known[game_id]:
+            continue
+        added.append((game_id, name))
+        others = sorted(shown_by.get(name.lower(), set()) - {game_id})
+        if others:
+            clashes.append((game_id, name, others[0]))
+    return added, clashes
 
 
 def evolution_base(evolution, gold_awakening):

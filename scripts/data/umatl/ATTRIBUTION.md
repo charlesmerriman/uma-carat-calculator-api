@@ -5,7 +5,7 @@ Umamusume: Pretty Derby JP client: skill names, skill descriptions and skill
 evolution conditions.
 
 - Source: https://github.com/UmaTL/hachimi-tl-en (`localized_data/text_data_dict.json`)
-- Commit: `0dc0cdc680891e4411b3cfb9964500fa1b008598` (2026-10-23T18:08:11Z)
+- Commit: `97b61b6cd05ba3fad232b079f9764e0785e02df8` (2026-10-31T08:49:36Z)
 - Credits: https://github.com/UmaTL/hachimi-tl-en/wiki/Translation-Progress
 
 UmaTL is a fan community project. It is **not** released under an open licence:

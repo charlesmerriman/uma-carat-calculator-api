@@ -83,6 +83,8 @@ class JpImportTests(CalculatorTestCase):  # pylint: disable=too-many-instance-at
             "evolution_conditions": {"10010101": "Reach 600 Stamina."},
         }
         self.condition_text = {"10010101": "Attain at least 600 Stamina"}
+        # GameTora's names, by game id: search aliases only, never shown.
+        self.gametora = {}
 
     def run_import(self, *flags, extra_global=None):
         """Write the three sources and import. `extra_global` replaces whole
@@ -100,6 +102,12 @@ class JpImportTests(CalculatorTestCase):  # pylint: disable=too-many-instance-at
         umatl_dir = self.root / "umatl"
         umatl_dir.mkdir(exist_ok=True)
         (umatl_dir / "text.json").write_text(json.dumps(self.umatl), encoding="utf-8")
+        gametora_dir = self.root / "gametora"
+        gametora_dir.mkdir(exist_ok=True)
+        (gametora_dir / "names.json").write_text(
+            json.dumps({str(game_id): name for game_id, name in self.gametora.items()}),
+            encoding="utf-8",
+        )
         out = StringIO()
         call_command("import_game_data", "--no-input", "--snapshot", str(self.global_dir),
                      *flags, stdout=out)
@@ -249,10 +257,54 @@ class JpImportTests(CalculatorTestCase):  # pylint: disable=too-many-instance-at
         wrong.refresh_from_db()
         self.assertEqual(wrong.card_type, "")
 
+    def test_a_gametora_name_becomes_a_search_alias_and_is_never_shown(self):
+        self.gametora = {
+            FAN_SKILL: "Fan Favourite",   # new: an alias
+            GOURMAND: "GOURMAND",         # global's name, any case: nothing
+            BANQUET: "宴だ",               # the JP name: nothing
+            999999: "No Such Skill",      # no row: skipped
+        }
+        out = self.run_import()
+
+        self.assertEqual(
+            list(SkillAlias.objects.values_list("skill__game_id", "name")),
+            [(FAN_SKILL, "Fan Favourite")],
+        )
+        # Never shown: the translation is still what a player reads.
+        self.assertEqual(self.skill(FAN_SKILL).shown_name, "Fan Skill")
+        # But a lookup by it finds the skill.
+        self.assertEqual(
+            Skill.objects.resolve_names(["fan favourite"])["fan favourite"].game_id, FAN_SKILL,
+        )
+        self.assertIn("1 GameTora name(s) added as search aliases", out)
+        # Aliases are only ever added, so a rerun has nothing to do.
+        self.assertIn("Nothing to write.", self.run_import())
+
+    def test_a_revised_gametora_name_keeps_the_old_one(self):
+        self.gametora = {FAN_SKILL: "Fan Favourite"}
+        self.run_import()
+        self.gametora = {FAN_SKILL: "Fan's Favourite"}
+        self.run_import()
+        self.assertCountEqual(
+            self.skill(FAN_SKILL).aliases.values_list("name", flat=True),
+            ["Fan Favourite", "Fan's Favourite"],
+        )
+
+    def test_a_gametora_name_that_is_another_skills_name_keeps_meaning_that_skill(self):
+        # GameTora calls the JP skill "Gourmand", which is global's name for another.
+        self.gametora = {FAN_SKILL: "Gourmand"}
+        out = self.run_import()
+        self.assertTrue(SkillAlias.objects.filter(skill__game_id=FAN_SKILL, name="Gourmand").exists())
+        self.assertIn(f"GameTora's name for {FAN_SKILL}, 'Gourmand', is also skill {GOURMAND}'s name", out)
+        # A [[mention]] ranks shown names before aliases.
+        self.assertEqual(Skill.objects.resolve_names(["Gourmand"])["gourmand"].game_id, GOURMAND)
+
     def test_global_only_ignores_both(self):
+        self.gametora = {GOURMAND: "Big Eater"}
         self.run_import("--global-only")
         self.assertFalse(Skill.objects.filter(game_id=FAN_SKILL).exists())
         self.assertEqual(self.skill(GOURMAND).jp_name, "")
+        self.assertFalse(SkillAlias.objects.exists())
 
 
 class CommittedJpSnapshotTests(CalculatorTestCase):
@@ -283,6 +335,11 @@ class CommittedJpSnapshotTests(CalculatorTestCase):
             Skill.objects.filter(game_id__in=evolved_ids, evolves_from__isnull=False).count(),
             len(evolved_ids),
         )
+        # GameTora's names arrive as aliases, and none repeats its skill's own name.
+        self.assertTrue(SkillAlias.objects.exists())
+        for skill in Skill.objects.filter(aliases__isnull=False).prefetch_related("aliases"):
+            own = {name.lower() for name in (skill.name, skill.translated_name, skill.jp_name) if name}
+            self.assertFalse(own & {alias.name.lower() for alias in skill.aliases.all()}, skill.game_id)
 
         out = StringIO()
         call_command("import_game_data", "--no-input", "--snapshot", str(SNAPSHOT_DIR), stdout=out)
