@@ -54,6 +54,7 @@ from calculatorapi.models import (
 )
 from calculatorapi.models.pvp_guide import STYLE_RANK, find_skill_mentions
 from calculatorapi.models.skill import skill_families
+from calculatorapi.skill_types import skill_type
 from calculatorapi.views.pvp_catalogue import APTITUDE_FIELDS
 
 # The URL's kind -> the guide's FK to that event.
@@ -195,6 +196,11 @@ class _SkillSerializer(serializers.ModelSerializer):
     # framed in the unique's purple on the site. `unique_of` names the outfit
     # on both the unique and its copy (_unique_of); this tells them apart.
     is_inherited = serializers.BooleanField(source="is_inherited_unique", read_only=True)
+    # The Skills list's type key ("velocity", skill_types.py), for the hover
+    # card's header, beside `cost` (skill points; null for a unique). The same
+    # two facts GET /skills sends, so the card reads alike on a guide and in
+    # the Encyclopedia.
+    type = serializers.SerializerMethodField()
 
     class Meta:
         model = Skill
@@ -204,7 +210,11 @@ class _SkillSerializer(serializers.ModelSerializer):
             "id", "game_id", "name", "description", "image", "rarity", "unique_of", "is_inherited",
             "version", "tier", "is_evolved", "versions",
             "availability", "uses_translation", "readable", "sources",
+            "cost", "type",
         )
+
+    def get_type(self, obj):
+        return skill_type(obj.icon_id)
 
     def get_readable(self, obj):
         return skill_text.describe(obj, self.context["text"])
