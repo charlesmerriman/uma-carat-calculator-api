@@ -8,8 +8,9 @@ or UmaTL's (models/skill.py, shown_q). A JP-only skill is included and says so
 the site credits. One with only a Japanese name is left out.
 
 THE LIST is small rows for searching and filtering (~2,000, a few hundred KB
-raw): the shown name, every other name the skill answers to (the translation,
-old names, the Japanese one), colour, version and where it is. THE DETAIL is
+raw): the shown name, every other name the skill answers to
+(Skill.search_names: the translation, aliases, the Japanese one), colour,
+version and where it is. THE DETAIL is
 one skill in full: its text, when it fires and what it does
 (skill_text.describe), every outfit and card that gives it, what it evolves
 from and into, and what unlocks an evolution.
@@ -55,19 +56,9 @@ def summary(skill):
     }
 
 
-def other_names(skill):
-    """Every name besides the shown one, for search: the translation when
-    global's name is shown, old names kept as aliases, the Japanese name."""
-    names = [skill.translated_name] if skill.name and skill.translated_name else []
-    names += [alias.name for alias in skill.aliases.all()]
-    names.append(skill.jp_name)
-    shown = skill.shown_name
-    return list(dict.fromkeys(name for name in names if name and name != shown))
-
-
 def build_list():
     return [
-        {**summary(skill), "other_names": other_names(skill)}
+        {**summary(skill), "other_names": skill.search_names}
         for skill in _shown().prefetch_related("aliases").by_shown_name()
     ]
 
@@ -118,7 +109,7 @@ def evolution(skill):
 def build_detail(skill):
     return {
         **summary(skill),
-        "other_names": other_names(skill),
+        "other_names": skill.search_names,
         "description": skill.shown_description,
         "readable": skill_text.describe(skill, skill_text.context_from_database()),
         "sources": sources(skill),

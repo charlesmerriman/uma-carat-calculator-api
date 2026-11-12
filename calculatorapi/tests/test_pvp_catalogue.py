@@ -13,6 +13,7 @@ from calculatorapi import pvp_catalogue_cache
 from calculatorapi.models import (
     Plan,
     Skill,
+    SkillAlias,
     SupportCard,
     SupportCardSkill,
     Uma,
@@ -164,6 +165,14 @@ class CatalogueTests(CalculatorTestCase):
             [{"skill": self.on_global.id, "source": "hint"}],
         )
 
+    def test_a_skill_carries_every_other_name_for_search(self):
+        Skill.objects.filter(pk=self.on_global.pk).update(translated_name="Ground Work", jp_name="下準備")
+        SkillAlias.objects.create(skill=self.on_global, name="Foundations")  # GameTora's, say
+        SkillAlias.objects.create(skill=self.on_global, name="Groundwork")  # its shown name: left out
+        [skill] = self.fetch()["skills"]
+        self.assertEqual(skill["name"], "Groundwork")
+        self.assertEqual(skill["other_names"], ["Ground Work", "Foundations", "下準備"])
+
     def test_a_second_fetch_is_served_from_the_cache(self):
         self.fetch()
         self.assertIsNotNone(pvp_catalogue_cache.read())
@@ -177,6 +186,7 @@ class CatalogueTests(CalculatorTestCase):
             lambda: self.uma.save(update_fields=["name"]),
             self.card.save,
             lambda: UmaSkill.objects.filter(source="innate").delete(),
+            lambda: SkillAlias.objects.create(skill=self.on_global, name="Another Name"),
         ):
             self.fetch()
             write()
