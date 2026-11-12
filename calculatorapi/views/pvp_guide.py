@@ -199,7 +199,9 @@ class _SkillSerializer(serializers.ModelSerializer):
     class Meta:
         model = Skill
         fields = (
-            "id", "name", "description", "image", "rarity", "unique_of", "is_inherited",
+            # game_id: the skill's Encyclopedia page (/app/skills/<game_id>), which the
+            # hover card links for early access.
+            "id", "game_id", "name", "description", "image", "rarity", "unique_of", "is_inherited",
             "version", "tier", "is_evolved", "versions",
             "availability", "uses_translation", "readable", "sources",
         )
