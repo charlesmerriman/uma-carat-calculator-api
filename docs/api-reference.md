@@ -1057,7 +1057,8 @@ edges depend on the banner's kind and sit on what people plan: uma `[0, 100, 133
 (`rankings_figures.EDGES`). `also` is the three running or upcoming
 banners most often in the same plans, as a share of this banner's planners
 (`rankings_figures.PlanFigures`). `demand` is each month's share of every planned pull,
-by the month a banner ends.
+by the month a banner ends: this month and the next seventeen one by one, then `Later`
+(`PULL_PLAN_DEMAND_MONTHS`). The client draws six months, then quarters, then Later.
 
 ### `GET /rankings/pvp/<kind>/<event_id>`
 

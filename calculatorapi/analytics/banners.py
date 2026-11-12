@@ -390,10 +390,13 @@ class DemandTally:  # pylint: disable=too-few-public-methods
     there, the people (each once per month), the sane pulls, the rows over
     SANE_MAX_PULLS, and the people planning a step-up there."""
 
-    def __init__(self, timeline_dates, timelines=None):
+    def __init__(self, timeline_dates, timelines=None, months=DEMAND_MONTHS):
+        # `months`: how many calendar months to list one by one before
+        # "Later". The admin report keeps DEMAND_MONTHS; Rankings asks for
+        # more and groups the far ones into quarters itself (views/rankings.py).
         self.now = timezone.now()
         self.months = [_month_start(self.now)]
-        while len(self.months) < DEMAND_MONTHS:
+        while len(self.months) < months:
             self.months.append(_next_month(self.months[-1]))
         self.timeline_dates = timeline_dates
         self.timelines = banner_timelines() if timelines is None else timelines
