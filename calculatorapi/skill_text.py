@@ -23,7 +23,7 @@ THE SHAPE, per effect slot (a skill has one or two):
      "when":  condition,              # the condition itself
      "effects": [phrase, ...],
      "duration": "2.4 s" | "Whole race" | None,
-     "cooldown": "Once per race" | "30 s" | None}
+     "cooldown": "Once per race" | "30 s per 1,000 m" | None}
 
 where a condition is {"all": [phrase, ...], "any": [[phrase, ...], ...]}
 (see describe_condition) and a phrase is {"text": str, "raw": bool}. `describe()` adds `wit_check`
@@ -35,6 +35,13 @@ cooldowns are ten-thousandths of a second; speeds, accelerations, stats and
 recovery are the value ÷ 10,000 (m/s, m/s², stat points, share of max
 endurance). A duration is the game's base value; the game stretches it on
 longer courses.
+
+THE WORDING (Daptrius's list and Henry, for the Encyclopedia, 2026-11-12):
+a flat stat reads "+40 Power", number first; NO UNIT is shown but seconds
+(Henry, 2026-10-23: "Velocity +0.35", never "+0.35 m/s"); and a cooldown
+that can repeat is stated against the race's length, because the game scales
+it by length ÷ 1,000 m (a 30 s cooldown is 60 s on a 2,000 m race). The
+cooldown wording is ours until Daptrius confirms it.
 """
 
 from dataclasses import dataclass, field
@@ -582,13 +589,13 @@ def ability_text(ability, context):  # pylint: disable=too-many-return-statement
         return phrase(f"{text} ({target})" if target else text)
     stats = {1: "Speed", 2: "Stamina", 3: "Power", 4: "Guts", 5: "Wit"}
     if kind in stats:
-        return done(f"{stats[kind]} {signed(value)}")
+        return done(f"{signed(value)} {stats[kind]}")
     if kind == 27:
-        return done(f"Velocity {signed(value)} m/s")
+        return done(f"Velocity {signed(value)}")
     if kind in (21, 22):
-        return done(f"Current speed {signed(value)} m/s")
+        return done(f"Current speed {signed(value)}")
     if kind == 31:
-        return done(f"Acceleration {signed(value)} m/s²")
+        return done(f"Acceleration {signed(value)}")
     if kind == 9:
         share = number(abs(value) * 100)
         return done(f"Recovers {share}% endurance" if value >= 0 else f"Drains {share}% endurance")
@@ -621,7 +628,7 @@ def describe_slot(slot, context):
         "effects": [ability_text(ability, context) for ability in slot.get("abilities", [])],
         "duration": "Whole race" if duration < 0 else (seconds(duration) if duration > 0 else None),
         "cooldown": ("Once per race" if cooldown >= ONCE_PER_RACE
-                     else seconds(cooldown) if cooldown > 0 else None),
+                     else f"{seconds(cooldown)} per 1,000 m" if cooldown > 0 else None),
     }
 
 

@@ -223,10 +223,55 @@ class GuideSkillFieldsTests(CalculatorTestCase):
         skill = row["skill"]
         self.assertEqual((skill["name"], skill["description"]), ("Fan Skill", "Fan text."))
         self.assertEqual((skill["availability"], skill["uses_translation"]), ("jp", True))
-        self.assertEqual(skill["readable"]["slots"][0]["effects"][0]["text"], "Velocity +0.15 m/s")
+        self.assertEqual(skill["readable"]["slots"][0]["effects"][0]["text"], "Velocity +0.15")
         self.assertEqual(skill["sources"], {
             "umas": [{"name": "Special Week (New)", "source": "unique", "level": 3, "on_global": False}],
             "uma_count": 1, "cards": [], "card_count": 0,
         })
         # A JP outfit's unique is named now that the site labels JP content.
         self.assertEqual(skill["unique_of"], "Special Week (New)")
+
+
+class SkillOwnersAndTypeTests(CalculatorTestCase):
+    """Cost, type, owners and the unique / inherited pair (encyclopedia PR 3)."""
+
+    def setUp(self):
+        self.client = editor_client()
+        spe = Uma.objects.create(name="Special Week", game_id=100101)
+        unique = make(100011, name="Shooting Star", rarity=5, icon_id=0, cost=None)
+        make(900011, name="Shooting Star", rarity=1, icon_id=20013, cost=200)
+        self.gold = make(200011, name="Gold Skill", rarity=2, icon_id=20012, cost=180)
+        evolved = make(100101111, name="Evolved Star", rarity=6, icon_id=20016, evolves_from=self.gold)
+        make(200501, name="Passive", icon_id=10011, cost=70)
+        make(200601, name="Odd", icon_id=99991)
+        UmaSkill.objects.create(uma=spe, skill=unique, source="unique")
+        UmaSkill.objects.create(uma=spe, skill=evolved, source="evolved", level=3)
+
+    def rows(self):
+        return {row["game_id"]: row for row in self.client.get("/skills").json()}
+
+    def test_cost_and_type_from_the_icon_family(self):
+        rows = self.rows()
+        self.assertEqual((rows[200011]["cost"], rows[200011]["type"]), (180, "velocity"))
+        self.assertEqual((rows[100011]["cost"], rows[100011]["type"]), (None, "unique"))
+        self.assertEqual(rows[200501]["type"], "stat")
+        # A family nobody placed is "other", never a guess.
+        self.assertEqual(rows[200601]["type"], "other")
+
+    def test_a_unique_and_its_copy_name_their_uma_and_each_other(self):
+        rows = self.rows()
+        self.assertEqual((rows[100011]["owners"], rows[100011]["pair"]), (["Special Week"], 900011))
+        self.assertEqual((rows[900011]["owners"], rows[900011]["pair"]), (["Special Week"], 100011))
+        self.assertEqual((rows[200011]["owners"], rows[200011]["pair"]), ([], None))
+        self.assertEqual(self.client.get("/skills/900011").json()["pair"]["game_id"], 100011)
+
+    def test_an_evolution_names_its_uma(self):
+        detail = self.client.get("/skills/200011").json()
+        self.assertEqual([(row["name"], row["owners"]) for row in detail["evolution"]["into"]],
+                         [("Evolved Star", ["Special Week"])])
+
+    def test_a_cards_rarity_and_type_for_hide_r(self):
+        card = SupportCard.objects.create(name="Kitasan Black", game_id=10028, rarity=1, card_type="speed")
+        SupportCardSkill.objects.create(support_card=card, skill=self.gold, source="hint")
+        [row] = self.client.get("/skills/200011").json()["sources"]["cards"]
+        self.assertEqual((row["rarity"], row["card_type"]), (1, "speed"))
