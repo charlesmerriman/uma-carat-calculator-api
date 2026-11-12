@@ -36,6 +36,7 @@ from rest_framework import permissions
 from rest_framework.decorators import api_view, permission_classes
 
 from calculatorapi import skills_cache
+from calculatorapi.career import shown_goals
 from calculatorapi.models import Skill, SupportCard, SupportCardSkill, Uma, UmaSkill
 from calculatorapi.views.pvp_catalogue import image_url
 from calculatorapi.views.skills import _bytes, _json, refused, summary
@@ -121,6 +122,8 @@ def build_uma(uma):
         .select_related("skill__evolves_from")
     )
     character = uma.character_id
+    # Race goals worded (career.py); goals of other kinds are counted, never guessed at.
+    objectives, objectives_hidden = shown_goals(uma.career_objectives)
     return {
         "id": uma.id,
         "game_id": uma.game_id,
@@ -138,6 +141,8 @@ def build_uma(uma):
         "base": {key: getattr(uma, f"base_{key}") for key in STAT_KEYS},
         "growth": {key: getattr(uma, f"growth_{key}") for key in STAT_KEYS},
         "star_stats": uma.star_stats,
+        "objectives": objectives,
+        "objectives_hidden": objectives_hidden,
         "skills": sorted(
             _skill_rows(skills),
             key=lambda row: (UMA_SKILL_ORDER.get(row["source"], 9), row["level"] or 0, row["name"]),

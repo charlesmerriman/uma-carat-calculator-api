@@ -576,7 +576,7 @@ class UmaAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
     # The Encyclopedia's import-only columns are read-only: nothing an editor
     # types there would survive the next deploy's import.
     readonly_fields = ("image_preview", "borderless_preview", "is_on_global",
-                       "jp_name", "jp_title", "star_stats")
+                       "jp_name", "jp_title", "star_stats", "career_objectives")
     fieldsets = (
         (None, {"fields": (
             "name", "game_id", "image", "image_preview",
@@ -608,7 +608,7 @@ class UmaAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
                 ("apt_front", "apt_pace", "apt_late", "apt_end"),
                 ("base_speed", "base_stamina", "base_power", "base_guts", "base_wit"),
                 ("growth_speed", "growth_stamina", "growth_power", "growth_guts", "growth_wit"),
-                "star_stats",
+                "star_stats", "career_objectives",
             ),
         }),
     )

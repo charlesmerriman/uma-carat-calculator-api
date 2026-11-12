@@ -1,0 +1,5026 @@
+[
+ {
+  "chara_id": 1001,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 27,
+    "kind": 1,
+    "race": "Kisaragi Sho",
+    "grade": 300,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Tokyo Yushun (Japanese Derby)",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Kikuka Sho",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "Tenno Sho (Spring)",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "Japan Cup",
+    "grade": 100,
+    "top": 2
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1002,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 27,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 5000,
+    "value_2": 0
+   },
+   {
+    "turn": 29,
+    "kind": 1,
+    "race": "Yayoi Sho",
+    "grade": 200,
+    "top": 5
+   },
+   {
+    "turn": 42,
+    "kind": 1,
+    "race": "Kobe Shimbun Hai",
+    "grade": 200,
+    "top": 3
+   },
+   {
+    "turn": 53,
+    "kind": 1,
+    "race": "Kinko Sho",
+    "grade": 200,
+    "top": 1
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "Takarazuka Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 67,
+    "kind": 1,
+    "race": "Mainichi Okan",
+    "grade": 200,
+    "top": 1
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "Tenno Sho (Autumn)",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1003,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 26,
+    "kind": 1,
+    "race": "Wakagoma Stakes",
+    "grade": 400,
+    "top": 3
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "Satsuki Sho",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Tokyo Yushun (Japanese Derby)",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Kikuka Sho",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "Tenno Sho (Spring)",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "Japan Cup",
+    "grade": 100,
+    "top": 2
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1004,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "Asahi Hai Futurity Stakes",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 30,
+    "kind": 1,
+    "race": "Spring Stakes",
+    "grade": 200,
+    "top": 3
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "Satsuki Sho",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Tokyo Yushun (Japanese Derby)",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 0
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "Osaka Hai",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 59,
+    "kind": 1,
+    "race": "Yasuda Kinen",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "Tenno Sho (Autumn)",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1005,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "Asahi Hai Futurity Stakes",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 29,
+    "kind": 1,
+    "race": "Yayoi Sho",
+    "grade": 200,
+    "top": 5
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "Satsuki Sho",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 33,
+    "kind": 1,
+    "race": "NHK Mile Cup",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Tokyo Yushun (Japanese Derby)",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Kikuka Sho",
+    "grade": 100,
+    "top": 0
+   },
+   {
+    "turn": 46,
+    "kind": 1,
+    "race": "Mile Championship",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "Takamatsunomiya Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 59,
+    "kind": 1,
+    "race": "Yasuda Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "Tenno Sho (Autumn)",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 0
+   }
+  ]
+ },
+ {
+  "chara_id": 1006,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 24,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 3000,
+    "value_2": 0
+   },
+   {
+    "turn": 33,
+    "kind": 1,
+    "race": "NHK Mile Cup",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 46,
+    "kind": 1,
+    "race": "Mile Championship",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 60,
+    "kind": 2,
+    "condition_id": 100,
+    "value_1": 3,
+    "value_2": 2
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "Tenno Sho (Autumn)",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1007,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 24,
+    "kind": 1,
+    "race": "Hopeful Stakes",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "Satsuki Sho",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Kikuka Sho",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "Tenno Sho (Spring)",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "Takarazuka Kinen",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "Tenno Sho (Autumn)",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1008,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "Hanshin Juvenile Fillies",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 29,
+    "kind": 1,
+    "race": "Tulip Sho",
+    "grade": 200,
+    "top": 5
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "Oka Sho",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Tokyo Yushun (Japanese Derby)",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Shuka Sho",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 0
+   },
+   {
+    "turn": 57,
+    "kind": 1,
+    "race": "Victoria Mile",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 59,
+    "kind": 1,
+    "race": "Yasuda Kinen",
+    "grade": 100,
+    "top": 2
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "Tenno Sho (Autumn)",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1009,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 29,
+    "kind": 1,
+    "race": "Tulip Sho",
+    "grade": 200,
+    "top": 5
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "Oka Sho",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Japanese Oaks",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Tokyo Yushun (Japanese Derby)",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Shuka Sho",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 45,
+    "kind": 1,
+    "race": "Queen Elizabeth II Cup",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "Osaka Hai",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "Tenno Sho (Autumn)",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1010,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 25,
+    "kind": 1,
+    "race": "Shinzan Kinen",
+    "grade": 300,
+    "top": 5
+   },
+   {
+    "turn": 33,
+    "kind": 1,
+    "race": "NHK Mile Cup",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 36,
+    "kind": 1,
+    "race": "Unicorn Stakes",
+    "grade": 300,
+    "top": 5
+   },
+   {
+    "turn": 46,
+    "kind": 1,
+    "race": "Mile Championship",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 59,
+    "kind": 1,
+    "race": "Yasuda Kinen",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 66,
+    "kind": 1,
+    "race": "Sprinters Stakes",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "Mile Championship",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1011,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "Asahi Hai Futurity Stakes",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Tokyo Yushun (Japanese Derby)",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 46,
+    "kind": 1,
+    "race": "Japan Cup",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "Takarazuka Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 67,
+    "kind": 1,
+    "race": "Mainichi Okan",
+    "grade": 200,
+    "top": 1
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1012,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "Hanshin Juvenile Fillies",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "Oka Sho",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Japanese Oaks",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Shuka Sho",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "Osaka Hai",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 59,
+    "kind": 1,
+    "race": "Yasuda Kinen",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "Japan Cup",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1013,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 24,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 3000,
+    "value_2": 0
+   },
+   {
+    "turn": 42,
+    "kind": 1,
+    "race": "Kobe Shimbun Hai",
+    "grade": 200,
+    "top": 3
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Kikuka Sho",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "Tenno Sho (Spring)",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "Takarazuka Kinen",
+    "grade": 100,
+    "top": 2
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "Tenno Sho (Autumn)",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1014,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 27,
+    "kind": 1,
+    "race": "Kyodo News Hai",
+    "grade": 300,
+    "top": 5
+   },
+   {
+    "turn": 33,
+    "kind": 1,
+    "race": "NHK Mile Cup",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Tokyo Yushun (Japanese Derby)",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 43,
+    "kind": 1,
+    "race": "Mainichi Okan",
+    "grade": 200,
+    "top": 3
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "Takarazuka Kinen",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "Japan Cup",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1015,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 28,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 5000,
+    "value_2": 0
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "Satsuki Sho",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Tokyo Yushun (Japanese Derby)",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "Tenno Sho (Spring)",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "Takarazuka Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "Japan Cup",
+    "grade": 100,
+    "top": 2
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1016,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "Asahi Hai Futurity Stakes",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "Satsuki Sho",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Tokyo Yushun (Japanese Derby)",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Kikuka Sho",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "Hanshin Daishoten",
+    "grade": 200,
+    "top": 1
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "Tenno Sho (Spring)",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "Tenno Sho (Spring)",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "Tenno Sho (Autumn)",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "Tenno Sho (Autumn)",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "Japan Cup",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "Japan Cup",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1017,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 19,
+    "kind": 1,
+    "race": "Saudi Arabia Royal Cup",
+    "grade": 300,
+    "top": 5
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "Satsuki Sho",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Tokyo Yushun (Japanese Derby)",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Kikuka Sho",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "Tenno Sho (Spring)",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "Japan Cup",
+    "grade": 100,
+    "top": 2
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1018,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "Hanshin Juvenile Fillies",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "Oka Sho",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Japanese Oaks",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Shuka Sho",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "Osaka Hai",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "Takarazuka Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 64,
+    "kind": 1,
+    "race": "Sapporo Kinen",
+    "grade": 200,
+    "top": 1
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "Tenno Sho (Autumn)",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1019,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 28,
+    "kind": 1,
+    "race": "Hyacinth Stakes",
+    "grade": 400,
+    "top": 3
+   },
+   {
+    "turn": 33,
+    "kind": 1,
+    "race": "NHK Mile Cup",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 37,
+    "kind": 1,
+    "race": "Japan Dirt Derby",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 46,
+    "kind": 1,
+    "race": "Mile Championship",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 60,
+    "kind": 2,
+    "condition_id": 100,
+    "value_1": 3,
+    "value_2": 3
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "Tenno Sho (Autumn)",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1020,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 25,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 3000,
+    "value_2": 0
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "Satsuki Sho",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Tokyo Yushun (Japanese Derby)",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Kikuka Sho",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "Tenno Sho (Spring)",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "Takarazuka Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "Tenno Sho (Autumn)",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1021,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 29,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 5000,
+    "value_2": 0
+   },
+   {
+    "turn": 49,
+    "kind": 2,
+    "condition_id": 300,
+    "value_1": 3,
+    "value_2": 4
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "Hanshin Daishoten",
+    "grade": 200,
+    "top": 3
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "Tenno Sho (Spring)",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "Takarazuka Kinen",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "Tenno Sho (Autumn)",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1022,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 24,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 3000,
+    "value_2": 0
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "Oka Sho",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Japanese Oaks",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Shuka Sho",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 45,
+    "kind": 1,
+    "race": "Queen Elizabeth II Cup",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "Osaka Hai",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "Takarazuka Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 64,
+    "kind": 1,
+    "race": "Sapporo Kinen",
+    "grade": 200,
+    "top": 3
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "Tenno Sho (Autumn)",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 69,
+    "kind": 1,
+    "race": "Queen Elizabeth II Cup",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "Mile Championship",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1023,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "Asahi Hai Futurity Stakes",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "Satsuki Sho",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Tokyo Yushun (Japanese Derby)",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Kikuka Sho",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "Tenno Sho (Spring)",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "Takarazuka Kinen",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "Tenno Sho (Autumn)",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1024,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 37,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 10000,
+    "value_2": 0
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Kikuka Sho",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "Hanshin Daishoten",
+    "grade": 200,
+    "top": 2
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "Tenno Sho (Spring)",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "Takarazuka Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "Tenno Sho (Autumn)",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1025,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 26,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 4000,
+    "value_2": 0
+   },
+   {
+    "turn": 29,
+    "kind": 1,
+    "race": "Yayoi Sho",
+    "grade": 200,
+    "top": 5
+   },
+   {
+    "turn": 42,
+    "kind": 1,
+    "race": "St. Lite Kinen",
+    "grade": 200,
+    "top": 3
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Kikuka Sho",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "Tenno Sho (Spring)",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "Takarazuka Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "Japan Cup",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1026,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "Asahi Hai Futurity Stakes",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 30,
+    "kind": 1,
+    "race": "Spring Stakes",
+    "grade": 200,
+    "top": 5
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "Satsuki Sho",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Tokyo Yushun (Japanese Derby)",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Kikuka Sho",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "Tenno Sho (Spring)",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "Japan Cup",
+    "grade": 100,
+    "top": 2
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1027,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 25,
+    "kind": 1,
+    "race": "Junior Cup",
+    "grade": 400,
+    "top": 3
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "Satsuki Sho",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Tokyo Yushun (Japanese Derby)",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Kikuka Sho",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "Tenno Sho (Spring)",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "Takarazuka Kinen",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1028,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 23,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 3000,
+    "value_2": 0
+   },
+   {
+    "turn": 37,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 10000,
+    "value_2": 0
+   },
+   {
+    "turn": 42,
+    "kind": 1,
+    "race": "Sprinters Stakes",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Swan Stakes",
+    "grade": 200,
+    "top": 3
+   },
+   {
+    "turn": 46,
+    "kind": 1,
+    "race": "Mile Championship",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "Takamatsunomiya Kinen",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 59,
+    "kind": 1,
+    "race": "Yasuda Kinen",
+    "grade": 100,
+    "top": 2
+   },
+   {
+    "turn": 66,
+    "kind": 1,
+    "race": "Sprinters Stakes",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "Mile Championship",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1029,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "Hanshin Juvenile Fillies",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "Oka Sho",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Japanese Oaks",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 38,
+    "kind": 1,
+    "race": "Queen Stakes",
+    "grade": 300,
+    "top": 1
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Shuka Sho",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "Osaka Hai",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 57,
+    "kind": 1,
+    "race": "Victoria Mile",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 69,
+    "kind": 1,
+    "race": "Queen Elizabeth II Cup",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "Japan Cup",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1030,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 30,
+    "kind": 1,
+    "race": "Spring Stakes",
+    "grade": 200,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Tokyo Yushun (Japanese Derby)",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Kikuka Sho",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "Nikkei Sho",
+    "grade": 200,
+    "top": 3
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "Tenno Sho (Spring)",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "Takarazuka Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1031,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "Asahi Hai Futurity Stakes",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "Satsuki Sho",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Tokyo Yushun (Japanese Derby)",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Kikuka Sho",
+    "grade": 100,
+    "top": 0
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "Osaka Hai",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "Takarazuka Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "Tenno Sho (Autumn)",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "Japan Cup",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1032,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 29,
+    "kind": 1,
+    "race": "Yayoi Sho",
+    "grade": 200,
+    "top": 5
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "Satsuki Sho",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Tokyo Yushun (Japanese Derby)",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 33,
+    "kind": 1,
+    "race": "NHK Mile Cup",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Kikuka Sho",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "Osaka Hai",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "Takarazuka Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "Tenno Sho (Autumn)",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1033,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 24,
+    "kind": 1,
+    "race": "Hopeful Stakes",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "Satsuki Sho",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Tokyo Yushun (Japanese Derby)",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Kikuka Sho",
+    "grade": 100,
+    "top": 0
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "Takarazuka Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "Tenno Sho (Autumn)",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "Japan Cup",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1034,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 24,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 3000,
+    "value_2": 0
+   },
+   {
+    "turn": 37,
+    "kind": 1,
+    "race": "Japan Dirt Derby",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "Tokyo Daishoten",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "Tenno Sho (Spring)",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "Takarazuka Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 67,
+    "kind": 1,
+    "race": "Mainichi Okan",
+    "grade": 200,
+    "top": 2
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "Tenno Sho (Autumn)",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1035,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 24,
+    "kind": 1,
+    "race": "Hopeful Stakes",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 29,
+    "kind": 1,
+    "race": "Yayoi Sho",
+    "grade": 200,
+    "top": 5
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "Satsuki Sho",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Tokyo Yushun (Japanese Derby)",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Kikuka Sho",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "Osaka Hai",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "Takarazuka Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1036,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 24,
+    "kind": 1,
+    "race": "Hopeful Stakes",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "Satsuki Sho",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Tokyo Yushun (Japanese Derby)",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Kikuka Sho",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 46,
+    "kind": 1,
+    "race": "Japan Cup",
+    "grade": 100,
+    "top": 0
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "Tenno Sho (Spring)",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "Takarazuka Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "Tenno Sho (Autumn)",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1037,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 25,
+    "kind": 1,
+    "race": "Keisei Hai",
+    "grade": 300,
+    "top": 5
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "Satsuki Sho",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Tokyo Yushun (Japanese Derby)",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 46,
+    "kind": 1,
+    "race": "Japan Cup",
+    "grade": 100,
+    "top": 0
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 0
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "Osaka Hai",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "Tenno Sho (Spring)",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "Tenno Sho (Autumn)",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1038,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 23,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 3000,
+    "value_2": 0
+   },
+   {
+    "turn": 29,
+    "kind": 1,
+    "race": "Fillies' Revue",
+    "grade": 200,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Aoi Stakes",
+    "grade": 300,
+    "top": 5
+   },
+   {
+    "turn": 36,
+    "kind": 1,
+    "race": "Hakodate Sprint Stakes",
+    "grade": 300,
+    "top": 3
+   },
+   {
+    "turn": 42,
+    "kind": 1,
+    "race": "Sprinters Stakes",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 53,
+    "kind": 1,
+    "race": "Ocean Stakes",
+    "grade": 300,
+    "top": 3
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "Takamatsunomiya Kinen",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 66,
+    "kind": 1,
+    "race": "Sprinters Stakes",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1039,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 31,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 7000,
+    "value_2": 0
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Japanese Oaks",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Shuka Sho",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 45,
+    "kind": 1,
+    "race": "Queen Elizabeth II Cup",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 53,
+    "kind": 1,
+    "race": "Kinko Sho",
+    "grade": 200,
+    "top": 3
+   },
+   {
+    "turn": 57,
+    "kind": 1,
+    "race": "Victoria Mile",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "Takarazuka Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 69,
+    "kind": 1,
+    "race": "Queen Elizabeth II Cup",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1040,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "Hanshin Juvenile Fillies",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "Satsuki Sho",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Tokyo Yushun (Japanese Derby)",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Kikuka Sho",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "Osaka Hai",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "Tenno Sho (Spring)",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "Takarazuka Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "Japan Cup",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1041,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 21,
+    "kind": 1,
+    "race": "Keio Hai Junior Stakes",
+    "grade": 200,
+    "top": 5
+   },
+   {
+    "turn": 30,
+    "kind": 1,
+    "race": "Spring Stakes",
+    "grade": 200,
+    "top": 0
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Aoi Stakes",
+    "grade": 300,
+    "top": 5
+   },
+   {
+    "turn": 42,
+    "kind": 1,
+    "race": "Sprinters Stakes",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "Takamatsunomiya Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "Hakodate Sprint Stakes",
+    "grade": 300,
+    "top": 1
+   },
+   {
+    "turn": 61,
+    "kind": 1,
+    "race": "CBC Sho",
+    "grade": 300,
+    "top": 1
+   },
+   {
+    "turn": 65,
+    "kind": 1,
+    "race": "Centaur Stakes",
+    "grade": 200,
+    "top": 1
+   },
+   {
+    "turn": 66,
+    "kind": 1,
+    "race": "Sprinters Stakes",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "Mile Championship",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1042,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 21,
+    "kind": 1,
+    "race": "Daily Hai Junior Stakes",
+    "grade": 200,
+    "top": 5
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "Hanshin Juvenile Fillies",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "Oka Sho",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 33,
+    "kind": 1,
+    "race": "NHK Mile Cup",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 41,
+    "kind": 1,
+    "race": "Rose Stakes",
+    "grade": 200,
+    "top": 3
+   },
+   {
+    "turn": 46,
+    "kind": 1,
+    "race": "Mile Championship",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "Takamatsunomiya Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 59,
+    "kind": 1,
+    "race": "Yasuda Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 66,
+    "kind": 1,
+    "race": "Sprinters Stakes",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "Mile Championship",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1044,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "Hanshin Juvenile Fillies",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "Oka Sho",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Japanese Oaks",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Shuka Sho",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 45,
+    "kind": 1,
+    "race": "Queen Elizabeth II Cup",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 59,
+    "kind": 1,
+    "race": "Yasuda Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "Takarazuka Kinen",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "Tenno Sho (Autumn)",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 69,
+    "kind": 1,
+    "race": "Queen Elizabeth II Cup",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1045,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 28,
+    "kind": 1,
+    "race": "Sumire Stakes",
+    "grade": 400,
+    "top": 3
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Kikuka Sho",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "Osaka Hai",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "Tenno Sho (Spring)",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "Tenno Sho (Autumn)",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1046,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 25,
+    "kind": 2,
+    "condition_id": 700,
+    "value_1": 1,
+    "value_2": 2
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "Satsuki Sho",
+    "grade": 100,
+    "top": 0
+   },
+   {
+    "turn": 37,
+    "kind": 1,
+    "race": "Japan Dirt Derby",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 45,
+    "kind": 1,
+    "race": "JBC Classic",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "Tokyo Daishoten",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 52,
+    "kind": 1,
+    "race": "February Stakes",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "Teio Sho",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 69,
+    "kind": 1,
+    "race": "JBC Classic",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 71,
+    "kind": 1,
+    "race": "Champions Cup",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Tokyo Daishoten",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1047,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 27,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 5000,
+    "value_2": 0
+   },
+   {
+    "turn": 32,
+    "kind": 1,
+    "race": "Aoba Sho",
+    "grade": 200,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Tokyo Yushun (Japanese Derby)",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Kikuka Sho",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "Tenno Sho (Spring)",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "Takarazuka Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "Tenno Sho (Autumn)",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "Japan Cup",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1048,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 24,
+    "kind": 1,
+    "race": "Hopeful Stakes",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "Satsuki Sho",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 45,
+    "kind": 1,
+    "race": "Copa Republica Argentina",
+    "grade": 200,
+    "top": 3
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 0
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "Osaka Hai",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "Tenno Sho (Spring)",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "Takarazuka Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "Tenno Sho (Autumn)",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1049,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 25,
+    "kind": 1,
+    "race": "Keisei Hai",
+    "grade": 300,
+    "top": 5
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "Satsuki Sho",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Tokyo Yushun (Japanese Derby)",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Kikuka Sho",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 47,
+    "kind": 1,
+    "race": "Chunichi Shimbun Hai",
+    "grade": 300,
+    "top": 1
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "Takarazuka Kinen",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "Japan Cup",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1050,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 24,
+    "kind": 1,
+    "race": "Hopeful Stakes",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "Satsuki Sho",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Tokyo Yushun (Japanese Derby)",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Kikuka Sho",
+    "grade": 100,
+    "top": 0
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "Nikkei Sho",
+    "grade": 200,
+    "top": 1
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "Tenno Sho (Spring)",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "Tenno Sho (Autumn)",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1051,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "Hanshin Juvenile Fillies",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "Oka Sho",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Japanese Oaks",
+    "grade": 100,
+    "top": 0
+   },
+   {
+    "turn": 42,
+    "kind": 1,
+    "race": "Sprinters Stakes",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "Takamatsunomiya Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "Milers Cup",
+    "grade": 200,
+    "top": 3
+   },
+   {
+    "turn": 59,
+    "kind": 1,
+    "race": "Yasuda Kinen",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 66,
+    "kind": 1,
+    "race": "Sprinters Stakes",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1052,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 37,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 5000,
+    "value_2": 0
+   },
+   {
+    "turn": 45,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 9000,
+    "value_2": 0
+   },
+   {
+    "turn": 48,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 12000,
+    "value_2": 0
+   },
+   {
+    "turn": 50,
+    "kind": 1,
+    "race": "Negishi Stakes",
+    "grade": 300,
+    "top": 5
+   },
+   {
+    "turn": 52,
+    "kind": 1,
+    "race": "February Stakes",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 63,
+    "kind": 1,
+    "race": "Elm Stakes",
+    "grade": 300,
+    "top": 5
+   },
+   {
+    "turn": 69,
+    "kind": 1,
+    "condition_id": 20002,
+    "value_1": 1,
+    "value_2": 0
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 0
+   }
+  ]
+ },
+ {
+  "chara_id": 1053,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 24,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 3000,
+    "value_2": 0
+   },
+   {
+    "turn": 29,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 6000,
+    "value_2": 0
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Swan Stakes",
+    "grade": 200,
+    "top": 3
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "Takamatsunomiya Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 59,
+    "kind": 1,
+    "race": "Yasuda Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "Takarazuka Kinen",
+    "grade": 100,
+    "top": 0
+   },
+   {
+    "turn": 66,
+    "kind": 1,
+    "race": "Sprinters Stakes",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "Mile Championship",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1056,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 29,
+    "kind": 1,
+    "race": "Yayoi Sho",
+    "grade": 200,
+    "top": 5
+   },
+   {
+    "turn": 30,
+    "kind": 1,
+    "race": "Spring Stakes",
+    "grade": 200,
+    "top": 5
+   },
+   {
+    "turn": 30,
+    "kind": 1,
+    "race": "Mainichi Hai",
+    "grade": 300,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Tokyo Yushun (Japanese Derby)",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Kikuka Sho",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 53,
+    "kind": 1,
+    "race": "Kinko Sho",
+    "grade": 200,
+    "top": 3
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "Takarazuka Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 63,
+    "kind": 1,
+    "race": "Kokura Kinen",
+    "grade": 300,
+    "top": 2
+   },
+   {
+    "turn": 61,
+    "kind": 1,
+    "race": "Hakodate Kinen",
+    "grade": 300,
+    "top": 2
+   },
+   {
+    "turn": 64,
+    "kind": 1,
+    "race": "Sapporo Kinen",
+    "grade": 200,
+    "top": 2
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1058,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 31,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 6000,
+    "value_2": 0
+   },
+   {
+    "turn": 44,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 15000,
+    "value_2": 0
+   },
+   {
+    "turn": 49,
+    "kind": 1,
+    "race": "Nikkei Shinshun Hai",
+    "grade": 200,
+    "top": 3
+   },
+   {
+    "turn": 53,
+    "kind": 1,
+    "race": "Kinko Sho",
+    "grade": 200,
+    "top": 1
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "Takarazuka Kinen",
+    "grade": 100,
+    "top": 2
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "Tenno Sho (Autumn)",
+    "grade": 100,
+    "top": 2
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "Japan Cup",
+    "grade": 100,
+    "top": 2
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1059,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "Hanshin Juvenile Fillies",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "Oka Sho",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Japanese Oaks",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Shuka Sho",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 0
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "Osaka Hai",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "Takarazuka Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 67,
+    "kind": 1,
+    "race": "Fuchu Umamusume Stakes",
+    "grade": 200,
+    "top": 1
+   },
+   {
+    "turn": 69,
+    "kind": 1,
+    "race": "Queen Elizabeth II Cup",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1060,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 26,
+    "kind": 1,
+    "race": "Wakagoma Stakes",
+    "grade": 400,
+    "top": 3
+   },
+   {
+    "turn": 39,
+    "kind": 1,
+    "race": "Kokura Kinen",
+    "grade": 300,
+    "top": 3
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Kikuka Sho",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "Takarazuka Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "Tenno Sho (Autumn)",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 71,
+    "kind": 1,
+    "race": "Chunichi Shimbun Hai",
+    "grade": 300,
+    "top": 1
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1061,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 24,
+    "kind": 1,
+    "race": "Hopeful Stakes",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "Satsuki Sho",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Tokyo Yushun (Japanese Derby)",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Kikuka Sho",
+    "grade": 100,
+    "top": 0
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "Takamatsunomiya Kinen",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 59,
+    "kind": 1,
+    "race": "Yasuda Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 66,
+    "kind": 1,
+    "race": "Sprinters Stakes",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "Tenno Sho (Autumn)",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1062,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 24,
+    "kind": 2,
+    "condition_id": 100,
+    "value_1": 5,
+    "value_2": 1
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "Satsuki Sho",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Tokyo Yushun (Japanese Derby)",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Kikuka Sho",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 52,
+    "kind": 1,
+    "race": "Diamond Stakes",
+    "grade": 300,
+    "top": 3
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "Tenno Sho (Spring)",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "Takarazuka Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "Japan Cup",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1064,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 35,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 9000,
+    "value_2": 0
+   },
+   {
+    "turn": 37,
+    "kind": 1,
+    "race": "Hakodate Kinen",
+    "grade": 300,
+    "top": 3
+   },
+   {
+    "turn": 49,
+    "kind": 1,
+    "race": "Nikkei Shinshun Hai",
+    "grade": 200,
+    "top": 3
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "Tenno Sho (Spring)",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "Takarazuka Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "Tenno Sho (Autumn)",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1065,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "Hanshin Juvenile Fillies",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Aoi Stakes",
+    "grade": 300,
+    "top": 5
+   },
+   {
+    "turn": 46,
+    "kind": 1,
+    "race": "Mile Championship",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "Takamatsunomiya Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "Milers Cup",
+    "grade": 200,
+    "top": 3
+   },
+   {
+    "turn": 59,
+    "kind": 1,
+    "race": "Yasuda Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "Mile Championship",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 0
+   }
+  ]
+ },
+ {
+  "chara_id": 1067,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "Satsuki Sho",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Tokyo Yushun (Japanese Derby)",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Kikuka Sho",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "Osaka Hai",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "Tenno Sho (Spring)",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 67,
+    "kind": 1,
+    "race": "Kyoto Daishoten",
+    "grade": 200,
+    "top": 1
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "Tenno Sho (Autumn)",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1068,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 30,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 5000,
+    "value_2": 0
+   },
+   {
+    "turn": 42,
+    "kind": 1,
+    "race": "St. Lite Kinen",
+    "grade": 200,
+    "top": 3
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Kikuka Sho",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "Osaka Hai",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "Tenno Sho (Spring)",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "Takarazuka Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "Tenno Sho (Autumn)",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "Japan Cup",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1069,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "Asahi Hai Futurity Stakes",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "Satsuki Sho",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Tokyo Yushun (Japanese Derby)",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Tenno Sho (Autumn)",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 59,
+    "kind": 1,
+    "race": "Yasuda Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "Takarazuka Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "Tenno Sho (Autumn)",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "Japan Cup",
+    "grade": 100,
+    "top": 2
+   }
+  ]
+ },
+ {
+  "chara_id": 1071,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 30,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 6000,
+    "value_2": 0
+   },
+   {
+    "turn": 32,
+    "kind": 1,
+    "race": "Aoba Sho",
+    "grade": 200,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Tokyo Yushun (Japanese Derby)",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Kikuka Sho",
+    "grade": 100,
+    "top": 0
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Tenno Sho (Autumn)",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "Osaka Hai",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "Takarazuka Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 67,
+    "kind": 1,
+    "race": "Mainichi Okan",
+    "grade": 200,
+    "top": 3
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "Tenno Sho (Autumn)",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "Tenno Sho (Autumn)",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1072,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 30,
+    "kind": 1,
+    "race": "Mainichi Hai",
+    "grade": 300,
+    "top": 5
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "Satsuki Sho",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Tokyo Yushun (Japanese Derby)",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Kikuka Sho",
+    "grade": 100,
+    "top": 0
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "Osaka Hai",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 59,
+    "kind": 1,
+    "race": "Yasuda Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "Takarazuka Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "Tenno Sho (Autumn)",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1074,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 24,
+    "kind": 1,
+    "race": "Hopeful Stakes",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "Satsuki Sho",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Tokyo Yushun (Japanese Derby)",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "Kikuka Sho",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 47,
+    "kind": 1,
+    "race": "Stayers Stakes",
+    "grade": 200,
+    "top": 3
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "Tenno Sho (Spring)",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "Tenno Sho (Autumn)",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Arima Kinen",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1078,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "New Zealand Trophy",
+    "grade": 200,
+    "top": 5
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "Aoi Stakes",
+    "grade": 300,
+    "top": 5
+   },
+   {
+    "turn": 42,
+    "kind": 1,
+    "race": "Sprinters Stakes",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 46,
+    "kind": 1,
+    "race": "Mile Championship",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 59,
+    "kind": 1,
+    "race": "Yasuda Kinen",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 66,
+    "kind": 1,
+    "race": "Sprinters Stakes",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "Tenno Sho (Autumn)",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1087,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 21,
+    "kind": 1,
+    "race": "Fantasy Stakes",
+    "grade": 300,
+    "top": 5
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "Hanshin Juvenile Fillies",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 29,
+    "kind": 1,
+    "race": "Fillies' Revue",
+    "grade": 200,
+    "top": 5
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "Oka Sho",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 42,
+    "kind": 1,
+    "race": "Sprinters Stakes",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "Takamatsunomiya Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 66,
+    "kind": 1,
+    "race": "Sprinters Stakes",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1098,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 24,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 3000,
+    "value_2": 0
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "Fukuryu Stakes",
+    "grade": 400,
+    "top": 3
+   },
+   {
+    "turn": 47,
+    "kind": 1,
+    "race": "Champions Cup",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 52,
+    "kind": 1,
+    "race": "February Stakes",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 57,
+    "kind": 1,
+    "race": "Kashiwa Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "Teio Sho",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 67,
+    "kind": 1,
+    "race": "M.C. Nambu Hai",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 69,
+    "kind": 1,
+    "condition_id": 20003,
+    "value_1": 3,
+    "value_2": 0
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Tokyo Daishoten",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1099,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 31,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 5000,
+    "value_2": 0
+   },
+   {
+    "turn": 39,
+    "kind": 1,
+    "race": "Leopard Stakes",
+    "grade": 300,
+    "top": 5
+   },
+   {
+    "turn": 47,
+    "kind": 1,
+    "race": "Champions Cup",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 51,
+    "kind": 1,
+    "race": "Kawasaki Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 57,
+    "kind": 1,
+    "race": "Kashiwa Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "Teio Sho",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 69,
+    "kind": 1,
+    "condition_id": 20003,
+    "value_1": 3,
+    "value_2": 0
+   },
+   {
+    "turn": 71,
+    "kind": 1,
+    "race": "Champions Cup",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Tokyo Daishoten",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ },
+ {
+  "chara_id": 1100,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0
+   },
+   {
+    "turn": 30,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 5000,
+    "value_2": 0
+   },
+   {
+    "turn": 37,
+    "kind": 1,
+    "race": "Japan Dirt Derby",
+    "grade": 100,
+    "top": 5
+   },
+   {
+    "turn": 42,
+    "kind": 1,
+    "race": "Sirius Stakes",
+    "grade": 300,
+    "top": 3
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "Tokyo Daishoten",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 51,
+    "kind": 1,
+    "race": "Kawasaki Kinen",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 57,
+    "kind": 1,
+    "race": "Kashiwa Kinen",
+    "grade": 100,
+    "top": 1
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "Teio Sho",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 69,
+    "kind": 1,
+    "condition_id": 20003,
+    "value_1": 3,
+    "value_2": 0
+   },
+   {
+    "turn": 71,
+    "kind": 1,
+    "race": "Champions Cup",
+    "grade": 100,
+    "top": 3
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "Tokyo Daishoten",
+    "grade": 100,
+    "top": 1
+   }
+  ]
+ }
+]

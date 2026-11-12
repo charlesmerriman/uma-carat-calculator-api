@@ -109,6 +109,7 @@ erDiagram
         json star_stats "the five stats at every star level, lowest first: [{star, speed, stamina, power, guts, wit}]"
         string jp_name "the JP client's name; from the JP snapshot for every outfit it holds"
         string jp_title "the JP client's [Title]"
+        json career_objectives "the character's career goals from objectives.json, the same list on each of her outfits"
     }
 
     Skill {
@@ -1864,6 +1865,15 @@ name check as its skill links, and never once the id is in global's snapshot. **
 uma's stays blank or hand-set) **and never the English `title`**. Every outfit and card the
 JP snapshot holds, global ones included, takes `jp_name` and `jp_title`. The pages mark the
 JP-only facts as the JP game's, liable to change on global.
+
+**Career objectives** (`master_snapshot/objectives.json`, since 2026-11-12): each character's
+goals on the default route, from `single_mode_route` / `single_mode_route_race` (`target_type`
+1; the scenario's finals are left out). A race goal names its race through
+`single_mode_program` and `text_data` 28, with the grade code and the placing needed. Other
+goal kinds (a fan count, places in several races) are kept undecoded. The import writes a
+character's list to each of her outfits (`Uma.career_objectives`); `calculatorapi/career.py`
+words the race goals and counts the rest. The file was added with `--only objectives.json`,
+which writes one file from a newer mdb without refreshing the others.
 
 ## `PatreonTier` / `PatreonSupporter`
 

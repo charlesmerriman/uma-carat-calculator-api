@@ -945,7 +945,9 @@ sent so it can find them there and in the Collection. Never `admin_comments`.
 - **Uma** (trainees only, `Uma.trainees()`; 404 for a casual outfit or an NPC): `id`,
   `game_id`, `name`, `title`, `jp_name`, `jp_title`, `portrait`, `image`, `rarity`,
   `running_style`, `on_global`, `purpose`, `apt` / `base` / `growth` (keyed objects),
-  `star_stats`, `skills` (the `/skills` list row plus `source`, `level`, `cost`,
+  `star_stats`, `objectives` (race goals: `turn`, `when` "Classic Year, Early Feb", `race`,
+  `grade` G1 to OP or null, `need` "Win" / "Top 5" / "Run it"; career.py) and `objectives_hidden`
+  (goals of kinds not decoded yet), `skills` (the `/skills` list row plus `source`, `level`, `cost`,
   `evolves_from` as a game id; unique, innate, awakening, evolved), `outfits` (the
   character's other outfits), `cards` (her own cards and every group card listing her).
 - **Card** (404 for a placeholder): `id`, `game_id`, `name`, `title`, `jp_name`,
