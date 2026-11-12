@@ -4,7 +4,7 @@ GET /pvp-catalogue: everything the PvP team builder's picker searches.
 Public, read-only, the same for everyone, and cached (pvp_catalogue_cache.py).
 Fetched once by the builder the first time a picker opens, never on /app load.
 
-    umas           Uma.pickable(): id, name, image, portrait, rarity,
+    umas           Uma.trainees(): id, name, image, portrait, rarity,
                    running_style, character_id, is_variant, on_global, apt
                    ({turf, dirt, ..., end}, 1..8 = G..S, null when unknown)
                    and skills [{skill, source, level}]
@@ -110,7 +110,8 @@ def build_catalogue():
         )
 
     umas = []
-    for uma in Uma.pickable().order_by("name", "id"):
+    # Trainees only: a casual outfit or an NPC is a picture, not a racer (Uma.trainees).
+    for uma in Uma.trainees().order_by("name", "id"):
         umas.append({
             "id": uma.id,
             "name": uma.name,

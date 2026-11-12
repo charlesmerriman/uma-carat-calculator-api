@@ -82,8 +82,9 @@ from .admin_patreon_import import (
     parse_patreon_csv,
 )
 from .predictions import GAME_EVENT_END_DATE_BUFFER
+from .models.uma import CASUAL_IDS, TRAINEE_IDS
 from .models import (
-    CustomUser, Uma, Skill, SkillAlias, SkillEvolutionCondition, UmaSkill, SupportCardSkill,
+    CustomUser, Uma, UmaKind, Skill, SkillAlias, SkillEvolutionCondition, UmaSkill, SupportCardSkill,
     SupportCard, UserPlannedBanner,
     Plan, IncomeProfile,
     TeamTrialsRank, ClubRank, ChampionsMeetingRank, LeagueOfHeroesRank,
@@ -541,12 +542,33 @@ PURPOSE_FIELDSET = (
 PURPOSE_FILTER = ("purpose", admin.EmptyFieldListFilter)
 
 
+class UmaKindFilter(admin.SimpleListFilter):
+    """Trainee, casual outfit or NPC, from the game id (models/uma.py
+    `uma_kind`). Only trainees reach the PvP pickers; the other two are
+    pictures for favourites."""
+
+    title = "kind"
+    parameter_name = "kind"
+
+    def lookups(self, request, model_admin):
+        return UmaKind.choices
+
+    def queryset(self, request, queryset):
+        ranges = {
+            UmaKind.TRAINEE: Q(game_id__isnull=True) | Q(game_id__gte=TRAINEE_IDS[0], game_id__lt=TRAINEE_IDS[1]),
+            UmaKind.CASUAL: Q(game_id__gte=CASUAL_IDS[0], game_id__lt=CASUAL_IDS[1]),
+        }
+        if self.value() == UmaKind.NPC:
+            return queryset.exclude(ranges[UmaKind.TRAINEE] | ranges[UmaKind.CASUAL])
+        return queryset.filter(ranges[self.value()]) if self.value() in ranges else queryset
+
+
 @admin.register(Uma)
 class UmaAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
     inlines = (UmaSkillInline,)
     list_display = ("image_preview", "name", "game_id", "is_time_limited", "rarity")
     list_display_links = ("name",)
-    list_filter = ("is_time_limited", "rarity", PURPOSE_FILTER)
+    list_filter = (UmaKindFilter, "is_time_limited", "rarity", PURPOSE_FILTER)
     ordering = ("name",)
     # required: autocomplete source for banner inlines. `=game_id` is an exact
     # match, so typing an id finds one row rather than every name containing it.

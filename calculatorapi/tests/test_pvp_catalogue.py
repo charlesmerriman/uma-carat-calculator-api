@@ -16,8 +16,10 @@ from calculatorapi.models import (
     SupportCard,
     SupportCardSkill,
     Uma,
+    UmaKind,
     UmaSkill,
 )
+from calculatorapi.models.uma import uma_kind
 from calculatorapi.tests.base import CalculatorTestCase, PLAIN_TEST_STORAGES
 from calculatorapi.tests.factories import make_user
 
@@ -57,6 +59,23 @@ class CatalogueTests(CalculatorTestCase):
         response = APIClient().get("/pvp-catalogue")
         self.assertEqual(response.status_code, 200)
         return response.json()
+
+    def test_trainees_only_but_favourites_keep_the_pictures(self):
+        """A casual outfit and an NPC are pictures, not racers: out of every PvP
+        picker, still on offer as a favourite (GET /umas)."""
+        Uma.objects.create(name="Special Week (Casual)", game_id=901001, image="umas/901001.png")
+        Uma.objects.create(name="Happy Meek (NPC)", game_id=200101, image="umas/200101.png")
+        Uma.objects.create(name="Tazuna Hayakawa (NPC)", game_id=800101, image="umas/800101.png")
+        self.assertEqual([uma["name"] for uma in self.fetch()["umas"]], ["Maruzensky"])
+        favourites = {uma["name"] for uma in APIClient().get("/umas").json()}
+        self.assertTrue({"Special Week (Casual)", "Happy Meek (NPC)", "Tazuna Hayakawa (NPC)"} <= favourites)
+
+    def test_kind_comes_from_the_game_id(self):
+        kinds = {game_id: uma_kind(game_id) for game_id in (None, 100401, 199999, 200101, 800101, 901001)}
+        self.assertEqual(kinds, {
+            None: UmaKind.TRAINEE, 100401: UmaKind.TRAINEE, 199999: UmaKind.TRAINEE,
+            200101: UmaKind.NPC, 800101: UmaKind.NPC, 901001: UmaKind.CASUAL,
+        })
 
     def test_shape(self):
         body = self.fetch()
