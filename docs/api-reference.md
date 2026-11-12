@@ -918,14 +918,19 @@ uma or card tables). Keyed by the game's skill id, the same in every database.
 skill with a name: global's, UmaTL's, or the Japanese one when it has neither; Japanese
 names sort last):
 `id`, `game_id`, `name`, `image`, `rarity`, `tier`, `group_id`, `version`, `is_evolved`,
-`availability`, `uses_translation`, and `other_names` (`Skill.search_names`: the translation
-when global's name is shown, every alias including GameTora's names, the Japanese name when
-it isn't the shown one), for search.
+`availability`, `uses_translation`, `cost` (null for a unique), `type` (the Type filter's
+key from the icon family, `skill_types.py`; `other` for an unplaced icon), `owners` (the
+outfits a unique, its inherited copy or an evolution belongs to, for search), `pair` (the
+game id of a unique's inherited copy or the copy's unique, else null), and `other_names`
+(`Skill.search_names`: the translation when global's name is shown, every alias including
+GameTora's names, the Japanese name when it isn't the shown one), for search.
 
-`GET /skills/<game_id>` is one skill in full: the list fields plus `description`, `readable`
+`GET /skills/<game_id>` is one skill in full: the list fields (with `pair` as a list row
+instead of an id) plus `description`, `readable`
 (as on a guide), `sources` (every outfit and card: `id`, `name`, `game_id`, `image`,
-`source`, `level` for an outfit, `on_global`; on-global first), `evolution` (`from` and
-`into` as list rows, `conditions` as `[{"text", "uses_translation", "is_japanese"}]`,
+`source`, `level` for an outfit, `rarity` and `card_type` for a card, `on_global`;
+on-global first), `evolution` (`from` and `into` as list rows, each `into` row with the
+`owners` that evolve it, `conditions` as `[{"text", "uses_translation", "is_japanese"}]`,
 `scenario`), and `versions` (its forms on global, as on a guide). 404 for a skill with no
 name at all, or no such id.
 

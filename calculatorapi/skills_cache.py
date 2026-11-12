@@ -29,10 +29,10 @@ from django.core.cache import caches
 CACHE_ALIAS = "skills"
 GENERATION_KEY = "skills:generation"
 # Bump the suffix when a payload's SHAPE changes.
-LIST_KEY = "skills:list:v1:{generation}"
-DETAIL_KEY = "skills:detail:v1:{generation}:{game_id}"
+LIST_KEY = "skills:list:v2:{generation}"
+DETAIL_KEY = "skills:detail:v2:{generation}:{game_id}"
 # An Encyclopedia page: `kind` is "uma" or "card" (views/encyclopedia.py).
-PAGE_KEY = "skills:page:v1:{generation}:{kind}:{game_id}"
+PAGE_KEY = "skills:page:v2:{generation}:{kind}:{game_id}"
 
 # Backstop only, as in pvp_catalogue_cache.py.
 CACHE_TTL_SECONDS = 300

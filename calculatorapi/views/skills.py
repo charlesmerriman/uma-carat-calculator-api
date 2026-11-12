@@ -34,9 +34,18 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
 from calculatorapi import pvp_guide_editing, skill_text, skills_cache
-from calculatorapi.models import Skill
+from calculatorapi.models import Skill, UmaSkill
 from calculatorapi.models.skill import skill_families
+from calculatorapi.skill_types import skill_type
 from calculatorapi.views.pvp_catalogue import image_url
+
+# A unique's inherited copy is the same id with its leading 1 made a 9:
+# Special Week's Shooting Star is 100011, the copy a parent passes on 900011.
+# Checked 2026-11-12: all 272 uniques with such an id have their copy, and no
+# copy is without its unique. A ★1/★2 outfit's starting unique (five digits)
+# has none.
+UNIQUE_IDS, INHERITED_IDS = range(100000, 200000), range(900000, 1000000)
+INHERITED_OFFSET = 800000
 
 
 def _shown():
@@ -57,12 +66,54 @@ def summary(skill):
         "is_evolved": skill.evolves_from_id is not None,
         "availability": skill.availability,
         "uses_translation": skill.uses_translation,
+        # Skill points; null for a unique, which isn't bought.
+        "cost": skill.cost,
+        # The Type filter's key (skill_types.py).
+        "type": skill_type(skill.icon_id),
     }
 
 
+class Owners:
+    """
+    Whose skill a skill is, for a whole build in two queries: the outfits a
+    unique or an evolution belongs to (an inherited copy takes its unique's),
+    and the unique / inherited pairing. Search matches a unique by the uma's
+    name (Daptrius's item 11), and an evolution names its uma instead of
+    reading "(evolved)".
+    """
+
+    def __init__(self):
+        self.names = {}
+        rows = (UmaSkill.objects.filter(source__in=("unique", "evolved"))
+                .values_list("skill__game_id", "uma__name").order_by("uma__name"))
+        for game_id, name in rows:
+            self.names.setdefault(game_id, []).append(name)
+        self.shown_ids = set(Skill.objects.shown().values_list("game_id", flat=True))
+
+    def pair(self, game_id):
+        """The game id of a unique's inherited copy, or of a copy's unique."""
+        if game_id in UNIQUE_IDS:
+            other = game_id + INHERITED_OFFSET
+        elif game_id in INHERITED_IDS:
+            other = game_id - INHERITED_OFFSET
+        else:
+            return None
+        return other if other in self.shown_ids else None
+
+    def of(self, game_id):
+        names = self.names.get(game_id)
+        if names is None and game_id in INHERITED_IDS:
+            names = self.names.get(game_id - INHERITED_OFFSET)
+        return list(dict.fromkeys(names or []))
+
+    def fields(self, game_id):
+        return {"owners": self.of(game_id), "pair": self.pair(game_id)}
+
+
 def build_list():
+    owners = Owners()
     return [
-        {**summary(skill), "other_names": skill.search_names}
+        {**summary(skill), "other_names": skill.search_names, **owners.fields(skill.game_id)}
         for skill in _shown().prefetch_related("aliases").by_shown_name()
     ]
 
@@ -81,7 +132,9 @@ def sources(skill):
         {"id": row.support_card_id, "name": row.support_card.name,
          "game_id": row.support_card.game_id,
          "image": image_url(row.support_card.image.name if row.support_card.image else ""),
-         "source": row.source, "on_global": row.support_card.is_on_global}
+         "source": row.source, "on_global": row.support_card.is_on_global,
+         # For "Hide R" / "Hide SR" (Daptrius's item 3) and the type icon.
+         "rarity": row.support_card.rarity, "card_type": row.support_card.card_type}
         for row in skill.support_cards.select_related("support_card").order_by(
             "-support_card__is_on_global", "source", "support_card__name",
         )
@@ -89,15 +142,17 @@ def sources(skill):
     return {"umas": umas, "cards": cards}
 
 
-def evolution(skill):
+def evolution(skill, owners):
     """What this skill evolves from and into, and what unlocks it if evolved.
     Only skills a page may show are named (shown_q), which since 2026-11-12
-    includes a step known only by its Japanese name."""
+    includes a step known only by its Japanese name. Each `into` row names
+    the outfit that evolves it (`owners`)."""
     base = skill.evolves_from
     return {
         "from": summary(base) if base and base.is_shown else None,
         "into": [
-            summary(row) for row in Skill.objects.shown().filter(evolves_from=skill)
+            {**summary(row), "owners": owners.of(row.game_id)}
+            for row in Skill.objects.shown().filter(evolves_from=skill)
             .select_related("evolves_from").by_shown_name()
         ],
         "conditions": [
@@ -111,13 +166,19 @@ def evolution(skill):
 
 
 def build_detail(skill):
+    owners = Owners()
+    pair_id = owners.pair(skill.game_id)
+    pair = _shown().filter(game_id=pair_id).first() if pair_id else None
     return {
         **summary(skill),
         "other_names": skill.search_names,
+        "owners": owners.of(skill.game_id),
+        # The unique's inherited copy, or the copy's unique, as a list row.
+        "pair": summary(pair) if pair else None,
         "description": skill.shown_description,
         "readable": skill_text.describe(skill, skill_text.context_from_database()),
         "sources": sources(skill),
-        "evolution": evolution(skill),
+        "evolution": evolution(skill, owners),
         # Its white, gold and evolved forms on global (skill_families): the
         # same "other versions" a guide's skill chip lists.
         "versions": [summary(row) for row in skill_families([skill]).get(skill.pk, [])],

@@ -60,7 +60,7 @@ def base_name(uma_name):
 
 def _skill_rows(rows):
     """The page's skill list from UmaSkill or SupportCardSkill rows: the Skills
-    page's summary of each, plus where it comes from and its point cost."""
+    page's summary of each (cost and type included), plus where it comes from."""
     found = []
     for row in rows:
         skill = row.skill
@@ -68,7 +68,6 @@ def _skill_rows(rows):
             **summary(skill),
             "source": row.source,
             "level": getattr(row, "level", None),
-            "cost": skill.cost,
             "evolves_from": skill.evolves_from.game_id if skill.evolves_from_id else None,
         })
     return found
