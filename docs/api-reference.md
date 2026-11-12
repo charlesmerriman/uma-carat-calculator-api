@@ -1123,7 +1123,7 @@ the same as one that does not exist.
 | `GET /pvp-teams` | | every team, every event, oldest first |
 | `POST /pvp-teams` | `{kind, event, name?, members?, notes?}` | `201` the team |
 | `GET /pvp-teams/<id>` | | the team |
-| `PUT /pvp-teams/<id>` | `{members, notes?}` | the team. Replaces every member and card in one transaction; `notes` left out = unchanged |
+| `PUT /pvp-teams/<id>` | `{members, notes?}` | the team, plus `tickets_followed` (how many unraced CM Runs tickets took the new lineup). Replaces every member and card in one transaction; `notes` left out = unchanged |
 | `PATCH /pvp-teams/<id>` | `{name?, is_focus?}` | the team. `is_focus: true` moves the account's one pin here; `false` clears it |
 | `DELETE /pvp-teams/<id>` | | `204` |
 
@@ -1163,7 +1163,7 @@ auto-save is idempotent; every query is scoped to the caller.
 |---|---|---|
 | `GET /pvp-runs` | | every run the caller logged in every event, grouped by event (the Collection's CM history); each run names its `kind` and `event` |
 | `GET /pvp-runs/<kind>/<event_id>` | | every run the caller logged for the event, days first, then the final |
-| `PUT /pvp-runs/<kind>/<event_id>/day/<d>/ticket/<t>` | `{runners?, races?, note?, skipped?}` | the run. Creates it on the first save; replaces its runners and races after |
+| `PUT /pvp-runs/<kind>/<event_id>/day/<d>/ticket/<t>` | `{runners?, races?, note?, skipped?, team?}` | the run. Creates it on the first save; replaces its runners and races after. `team`: the caller's team it was filled from; left out keeps the link, `null` drops it |
 | `PUT /pvp-runs/<kind>/<event_id>/final` | `{runners?, races?, finals_group?, placement?, note?}` | the run. On LoH this is the Top 96: `{runners?, placement?, note?}`, no races |
 | `DELETE` either path | | `204`, also when nothing was logged there |
 
@@ -1171,7 +1171,7 @@ A run, out (a `PUT` body is the part the URL does not already say):
 
 ```json
 { "kind": "cm", "event": 21, "stage": "day", "day": 1, "ticket": 2,
-  "finals_group": "", "placement": null, "note": "", "skipped": false,
+  "finals_group": "", "placement": null, "note": "", "skipped": false, "team": 7,
   "runners": [{"position": 0, "uma": 41, "style": "front", "trained_uma": null}],
   "races": [{"race": 1, "winner": 0}, {"race": 2, "winner": null}],
   "updated_at": "ISO8601" }

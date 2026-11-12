@@ -10,6 +10,7 @@ views/pvp_team.py.
 """
 
 from django.db import transaction
+from django.utils import timezone
 
 from calculatorapi import trained_umas
 
@@ -21,6 +22,8 @@ from calculatorapi.models import (
     SupportCard,
     PvpTeam,
     PvpTeamCard,
+    PvpRun,
+    PvpRunRunner,
     PvpTeamMember,
     Uma,
     UmaKind,
@@ -112,7 +115,61 @@ def replace_team(team, *, members, notes=None):
             team.notes = list(notes)
         # Saved even with no column changed, so updated_at says "edited now".
         team.save(update_fields=["notes", "updated_at"])
+        # The tickets that follow it take the new lineup, in the same
+        # transaction, so a phone and a desktop never see them disagree.
+        team.tickets_followed = sync_followers(team)
     return team
+
+
+def unraced_runs():
+    """Runs with nothing raced, skipped, placed or grouped: a lineup at most.
+    Only these follow a team (models/pvp_run.py, "A RUN IS A FACT ONCE IT IS
+    RACED")."""
+    return PvpRun.objects.filter(races__isnull=True, skipped=False, placement__isnull=True, finals_group="")
+
+
+def sync_followers(team, exclude_run=None):
+    """Give every unraced ticket that follows `team` the team's lineup (uma,
+    style and veteran per spot; no deck). Returns how many it rewrote, for the
+    client's toast. A raced follower keeps the lineup it ran with.
+
+    Only a ticket whose lineup differs is touched, so the count is what
+    changed: the team autosaves on every edit, a card swap included, and the
+    client toasts a non-zero count. Delete-then-create on the runners, like
+    write_run: the lineup is the team's, whole. A spot the team has emptied
+    empties on the tickets too.
+    """
+    members = list(team.members.all())
+    wanted = sorted((m.position, m.uma_id, m.style, m.trained_uma_id) for m in members)
+    followers = (
+        unraced_runs().filter(team=team).exclude(id=getattr(exclude_run, "id", None))
+        .distinct().prefetch_related("runners")
+    )
+    ids = [
+        run.id for run in followers
+        if sorted((r.position, r.uma_id, r.style, r.trained_uma_id) for r in run.runners.all()) != wanted
+    ]
+    if not ids:
+        return 0
+    PvpRunRunner.objects.filter(run_id__in=ids).delete()
+    PvpRunRunner.objects.bulk_create(
+        PvpRunRunner(
+            run_id=run_id, position=member.position, uma_id=member.uma_id,
+            style=member.style, trained_uma_id=member.trained_uma_id,
+        )
+        for run_id in ids
+        for member in members
+    )
+    PvpRun.objects.filter(id__in=ids).update(updated_at=timezone.now())
+    return len(ids)
+
+
+def team_lineup(team):
+    """The team's lineup as sorted (position, uma, style, veteran) tuples, the
+    shape write_run compares a ticket's runners against."""
+    return sorted(
+        (member.position, member.uma_id, member.style, member.trained_uma_id) for member in team.members.all()
+    )
 
 
 def check_lineup(uma_ids):

@@ -1166,11 +1166,16 @@ plan for linking veterans: `notes/pvp-planner-plan.md` ("R3 CM Runs").
   were never run, so no races = an unused ticket and some = stopped after those. Only the
   player sets it, never the clock ("not logged" on a past day may be slow typing), and a
   `PUT` without it takes it back. Win rates are unchanged by it: an unlisted race was never
-  in a denominator.
+  in a denominator. `team` (nullable FK to `PvpTeam`, `SET_NULL`; `0131`, backfilled by
+  `0132` on exact unique matches): the team an UNRACED ticket follows. A team save rewrites
+  the runners of its unraced followers (`pvp_teams.sync_followers`); a veteran picked on an
+  unraced follower goes back to the team; any other lineup change drops the link. A raced
+  ticket keeps its lineup, because `PvpRunRace.winner` is a spot
+  (`notes/runs-follow-team-plan.md`).
 - **`PvpRunRunner`**: `position` 0..2, `uma`, `style` (never `everyone`), unique per run on
-  position and uma. A **copy** of the lineup when the ticket was logged, never a pointer at
-  a `PvpTeam`: editing or deleting a team must not rewrite results, and results belong to
-  the account and the event. `trained_uma` (nullable, SET_NULL) is a LINK to the veteran
+  position and uma. A **copy** of the lineup, rewritten from its team only while the ticket
+  is unraced (`PvpRun.team` above): editing or deleting a team must not rewrite results,
+  and results belong to the account and the event. `trained_uma` (nullable, SET_NULL) is a LINK to the veteran
   that ran, the same column `PvpTeamMember` has (stats live only on the veteran).
 - **`PvpRunRace`**: `race` 1..5 and `winner`, the spot of the player's uma that won, NULL
   for a loss. **No row = not raced yet**, which a win rate leaves out of its denominator.
