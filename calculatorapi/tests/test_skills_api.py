@@ -5,8 +5,8 @@ from django.test.utils import CaptureQueriesContext
 from rest_framework.test import APIClient
 
 from calculatorapi.models import (
-    PvpGuide, PvpSkillRecommendation, Skill, SkillAlias, SkillEvolutionCondition, SupportCard,
-    SupportCardSkill, Uma, UmaSkill,
+    PatreonSupporter, PatreonTier, PvpGuide, PvpSkillRecommendation, Skill, SkillAlias,
+    SkillEvolutionCondition, SupportCard, SupportCardSkill, Uma, UmaSkill,
 )
 from calculatorapi.tests.base import CalculatorTestCase
 from calculatorapi.tests.factories import make_user
@@ -25,22 +25,68 @@ def make(game_id, **fields):
 
 
 def editor_client():
-    """The skills work is shelved to guide editors (staff) for now."""
+    """Staff: one of the early-access readers, and the guide editors."""
     client = APIClient()
     client.force_authenticate(make_user("editor", is_staff=True))
     return client
 
 
-class SkillsShelvedTests(CalculatorTestCase):
-    """Shelved (owner, 2026-10-23): nobody but a guide editor knows it exists."""
+def early_access_readers():
+    """{label: user} for the five kinds of reader the Encyclopedia gate tells
+    apart (notes/encyclopedia-plan.md, "Supporters and staff first"). None is
+    the guest."""
+    tier = PatreonTier.objects.create(name="Junior Class", order=10)
+    supporter = make_user("supporter")
+    PatreonSupporter.objects.create(display_name="Patron", patreon_user_id="7", tier=tier,
+                                    is_active=True, linked_user=supporter)
+    granted = make_user("tester")
+    granted.early_access = True
+    granted.save(update_fields=["early_access"])
+    return {"guest": None, "plain": make_user("plain"), "supporter": supporter,
+            "staff": make_user("staff", is_staff=True), "granted": granted}
 
-    def test_the_routes_are_a_404_to_everyone_else(self):
+
+def client_for(user):
+    client = APIClient()
+    if user is not None:
+        client.force_authenticate(user)
+    return client
+
+
+# What each reader gets from a gated route: a guest is asked to sign in, an
+# account without early access is refused, and the three ways in read it.
+EXPECTED_STATUS = {"guest": 401, "plain": 403, "supporter": 200, "staff": 200, "granted": 200}
+
+# The tables a page is built from. A cached hit reads none of them; the only
+# query it makes is the early-access check's pledge lookup, worked out on every
+# request by rule (patreon.md: entitlement is never stored).
+BUILD_TABLES = ("calculatorapi_skill", "calculatorapi_umaskill", "calculatorapi_supportcardskill",
+                "calculatorapi_uma\"", "calculatorapi_supportcard\"")
+
+
+def skill_queries(queries):
+    """The captured queries that touched a table a page is built from."""
+    return [query["sql"] for query in queries.captured_queries
+            if any(table in query["sql"] for table in BUILD_TABLES)]
+
+
+class SkillsGateTests(CalculatorTestCase):
+    """Supporters and staff first (owner, 2026-11-12): the early-access rule."""
+
+    def test_each_reader_gets_its_answer(self):
         make(201351, name="Gourmand")
-        for client in (APIClient(), APIClient()):
-            self.assertEqual(client.get("/skills").status_code, 404)
-            self.assertEqual(client.get("/skills/201351").status_code, 404)
-            client.force_authenticate(make_user(f"player{id(client)}"))
-            self.assertEqual(client.get("/skills").status_code, 404)
+        for label, user in early_access_readers().items():
+            client = client_for(user)
+            for path in ("/skills", "/skills/201351"):
+                self.assertEqual(client.get(path).status_code, EXPECTED_STATUS[label], (label, path))
+
+    def test_a_lapsed_pledge_loses_it_on_the_next_request(self):
+        make(201351, name="Gourmand")
+        supporter = early_access_readers()["supporter"]
+        client = client_for(supporter)
+        self.assertEqual(client.get("/skills").status_code, 200)
+        PatreonSupporter.objects.filter(linked_user=supporter).update(is_active=False)
+        self.assertEqual(client.get("/skills").status_code, 403)
 
     def test_a_guide_shows_a_player_global_skills_only(self):
         cm = make_champions_meeting()
@@ -53,10 +99,12 @@ class SkillsShelvedTests(CalculatorTestCase):
         body = APIClient().get(url("cm", cm.id)).json()
         self.assertEqual([row["skill"]["name"] for row in body["skill_recommendations"]], ["Gourmand"])
         self.assertEqual(set(body["skill_mentions"]), {"gourmand"})
-        # A guide editor sees both, as the site's preview of the shelved work.
-        body = editor_client().get(url("cm", cm.id)).json()
-        self.assertEqual(len(body["skill_recommendations"]), 2)
-        self.assertEqual(set(body["skill_mentions"]), {"fan skill", "gourmand"})
+        # Early access sees both: staff, and now supporters too.
+        readers = early_access_readers()
+        for label in ("staff", "supporter"):
+            body = client_for(readers[label]).get(url("cm", cm.id)).json()
+            self.assertEqual(len(body["skill_recommendations"]), 2, label)
+            self.assertEqual(set(body["skill_mentions"]), {"fan skill", "gourmand"}, label)
 
 
 class SkillListTests(CalculatorTestCase):
@@ -91,7 +139,7 @@ class SkillListTests(CalculatorTestCase):
         self.client.get("/skills")
         with CaptureQueriesContext(connection) as queries:
             self.client.get("/skills")
-        self.assertEqual(len(queries), 0)
+        self.assertEqual(skill_queries(queries), [])
         self.announced.name = "Renamed"
         self.announced.save()
         self.assertIn("Renamed", [row["name"] for row in self.client.get("/skills").json()])
@@ -153,7 +201,7 @@ class SkillDetailTests(CalculatorTestCase):
         self.client.get(f"/skills/{self.gourmand.game_id}")
         with CaptureQueriesContext(connection) as queries:
             self.client.get(f"/skills/{self.gourmand.game_id}")
-        self.assertEqual(len(queries), 0)
+        self.assertEqual(skill_queries(queries), [])
         SupportCard.objects.filter(name="Kitasan Black").first().delete()
         body = self.client.get(f"/skills/{self.gourmand.game_id}").json()
         self.assertEqual(body["sources"]["cards"], [])

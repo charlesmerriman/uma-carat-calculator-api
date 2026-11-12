@@ -907,7 +907,10 @@ refusal with no field has `""`.
 ### `GET /skills` and `GET /skills/<game_id>`
 
 Every skill a player may read about (`views/skills.py`): the Skills page and the guide
-editor's picker. Public, cached as rendered bytes in the `skills` cache alias
+editor's picker. **Early access only** (supporters and staff first, the Encyclopedia's
+gate, `pvp_guide_editing.sees_skills_preview`): 401 for a guest, 403
+`{"error": "The Encyclopedia is open to supporters first."}` for anyone else, as
+`/rankings/*`. Cached as rendered bytes in the `skills` cache alias
 (`skills_cache.py`, a new generation on any write to the skill, alias, condition, junction,
 uma or card tables). Keyed by the game's skill id, the same in every database.
 
@@ -925,6 +928,26 @@ it isn't the shown one), for search.
 `into` as list rows, `conditions` as `[{"text", "uses_translation", "is_japanese"}]`,
 `scenario`), and `versions` (its forms on global, as on a guide). 404 for a skill with no
 name at all, or no such id.
+
+### `GET /encyclopedia/umas/<game_id>` and `GET /encyclopedia/cards/<game_id>`
+
+One outfit's or one support card's Encyclopedia page (`views/encyclopedia.py`), keyed by
+the game's id. The same gate as `/skills` (401 / 403), the same cache alias and
+generation (`skills_cache.read_page`). **No dates and no banners**: the client reads them
+from `/calculator-data`, so date prediction stays in one place; `id` (the row's pk) is
+sent so it can find them there and in the Collection. Never `admin_comments`.
+
+- **Uma** (trainees only, `Uma.trainees()`; 404 for a casual outfit or an NPC): `id`,
+  `game_id`, `name`, `title`, `jp_name`, `jp_title`, `portrait`, `image`, `rarity`,
+  `running_style`, `on_global`, `purpose`, `apt` / `base` / `growth` (keyed objects),
+  `star_stats`, `skills` (the `/skills` list row plus `source`, `level`, `cost`,
+  `evolves_from` as a game id; unique, innate, awakening, evolved), `outfits` (the
+  character's other outfits), `cards` (her own cards and every group card listing her).
+- **Card** (404 for a placeholder): `id`, `game_id`, `name`, `title`, `jp_name`,
+  `jp_title`, `image`, `image_borderless`, `card_type`, `rarity`, `character_id`,
+  `on_global`, `released_at`, `group_members`, `purpose`, `skills` (hints, then events),
+  `outfits` (a group card's are its members'), `cards` (the character's other cards; `[]`
+  on a group card).
 
 ### `GET /pvp-catalogue`
 
