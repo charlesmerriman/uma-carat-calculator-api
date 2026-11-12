@@ -26,11 +26,21 @@ from calculatorapi.analytics.common import SANE_MAX_PULLS, SANE_MAX_STEPS
 from calculatorapi.models import AnniversaryEvent, AnniversaryEventProduct, BannerTimeline
 from calculatorapi.predictions import anniversary_event_effective_dates, build_effective_date_maps
 
-# Each bucket starts at its edge; the last is open ("300 and up"). A step-up's
-# planned figure is ladder STEPS (rules file step-up.md), so its buckets are of
-# steps: one step, two, three, four, five and up.
-PULL_EDGES = (0, 50, 100, 200, 300)
-STEP_EDGES = (0, 2, 3, 4, 5)
+# Each bucket starts at its edge and runs to the next one; the last is open
+# ("600 and up"). The edges sit on the numbers people actually plan, which
+# differ by banner kind (Daptrius's read of the live spreads, 2026-11-03):
+#   * an uma banner clusters at 133 and at 200 (the spark), so each of those
+#     is a bucket ONE wide ("133", "200") with the ranges around them;
+#   * a support banner clusters at 200, 400 and 600 (one, two and three
+#     sparks), the same way;
+#   * a step-up's planned figure is ladder STEPS (rules file step-up.md), and
+#     a round is five steps, so people plan 5, 10 or 15.
+# A bucket one wide is labelled with its number alone on the client
+# (utils/pullPlanRankings.ts spreadLabel), so "200" reads as exactly 200.
+UMA_EDGES = (0, 100, 133, 134, 200, 201)
+SUPPORT_EDGES = (0, 200, 201, 400, 401, 600)
+STEP_EDGES = (0, 5, 6, 10, 11, 15)
+EDGES = {"uma": UMA_EDGES, "support": SUPPORT_EDGES, "step_up": STEP_EDGES}
 # Banners listed under "also planning".
 ALSO_PLANNING = 3
 
@@ -50,7 +60,7 @@ class PlanFigures:
     at a time (the one pass over the active rows; notes/rankings-speed-plan.md).
 
     SPREAD: each planner once per banner, by what they plan on it (pulls, or
-    steps for a step-up), in buckets from PULL_EDGES / STEP_EDGES. A row over
+    steps for a step-up), in buckets from EDGES by the banner's kind. A row over
     the sane cap is left out here as it is from the average: its planner
     really plans the banner, but not a billion pulls. So a spread can sum to
     fewer than the row's `planners`, by the row's `excluded`.
@@ -76,7 +86,7 @@ class PlanFigures:
             sane[key] = sane.get(key, True) and pulls <= cap
         live = [key for key in totals if key in self.live_keys]
         for key, total in totals.items():
-            edges = STEP_EDGES if key[0] == "step_up" else PULL_EDGES
+            edges = EDGES[key[0]]
             spread = self.spreads.setdefault(key, {"edges": list(edges), "planners": [0] * len(edges)})
             if sane[key]:
                 spread["planners"][_bucket(total, edges)] += 1

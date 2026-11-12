@@ -1039,7 +1039,7 @@ the client's `useRankingsPullPlans`) until the owner says Raptive approved; 403 
   "banners": [{"type": "uma", "unit": "pulls", "id": 88, "name": "Gentildonna",
                "start_date": "...", "end_date": "...", "predicted": true, "status": "upcoming",
                "share": 0.36, "average": 165.0, "median": 150,
-               "spread": {"edges": [0, 50, 100, 200, 300], "shares": [0.1, 0.24, 0.47, 0.12, 0.07]},
+               "spread": {"edges": [0, 100, 133, 134, 200, 201], "shares": [0.1, 0.12, 0.3, 0.14, 0.27, 0.07]},
                "also": [{"type": "support", "id": 90, "name": "Kitasan Black", "share": 0.36}]}],
   "demand": [{"month": "2026-11", "share": 0.4}, {"month": "Later", "share": 0.1}] }
 ```
@@ -1050,8 +1050,11 @@ pulls. A banner's `share` is of everyone with any banner in their active plan, e
 planners away). Staff are left out and only active plans count; an implausible pull count
 still counts its planner but not the figures. Every banner anyone plans is sent, ended ones
 included (`status`). `spread` is each planner once by what they plan there, as shares of the
-planners with a sane figure, in buckets that start at each edge (the last is open); a
-step-up's edges are STEPS (`[0, 2, 3, 4, 5]`). `also` is the three running or upcoming
+planners with a sane figure, in buckets that start at each edge (the last is open). The
+edges depend on the banner's kind and sit on what people plan: uma `[0, 100, 133, 134, 200,
+201]`, support `[0, 200, 201, 400, 401, 600]`, and a step-up's are STEPS `[0, 5, 6, 10, 11,
+15]` (a round is five). A bucket one wide (`133`, `200`) is that exact number
+(`rankings_figures.EDGES`). `also` is the three running or upcoming
 banners most often in the same plans, as a share of this banner's planners
 (`rankings_figures.PlanFigures`). `demand` is each month's share of every planned pull,
 by the month a banner ends.
