@@ -275,3 +275,18 @@ class SkillOwnersAndTypeTests(CalculatorTestCase):
         SupportCardSkill.objects.create(support_card=card, skill=self.gold, source="hint")
         [row] = self.client.get("/skills/200011").json()["sources"]["cards"]
         self.assertEqual((row["rarity"], row["card_type"]), (1, "speed"))
+
+    def test_a_card_carries_its_title_and_frameless_art(self):
+        """The skill page frames each card itself (FramedCard), and a card's name
+        is its character's, so the title is what tells two of her cards apart."""
+        card = SupportCard.objects.create(
+            name="Kitasan Black", title="[Fire at My Heels]", game_id=30028, rarity=3, card_type="speed",
+            image_borderless="support_cards_borderless/30028.webp",
+        )
+        bare = SupportCard.objects.create(name="Tokai Teio", game_id=30111, rarity=3, card_type="wit")
+        for row in (card, bare):
+            SupportCardSkill.objects.create(support_card=row, skill=self.gold, source="hint")
+        rows = {row["game_id"]: row for row in self.client.get("/skills/200011").json()["sources"]["cards"]}
+        self.assertEqual(rows[30028]["title"], "[Fire at My Heels]")
+        self.assertTrue(rows[30028]["image_borderless"].endswith("support_cards_borderless/30028.webp"))
+        self.assertIsNone(rows[30111]["image_borderless"])
