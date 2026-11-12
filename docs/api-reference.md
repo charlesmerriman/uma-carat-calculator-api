@@ -927,7 +927,7 @@ English name, or no such id.
 
 The team builder's catalogue (`views/pvp_catalogue.py`). Public, the same for everyone, and
 **cached** in `pvp_catalogue_cache.py` (key `pvp_catalogue:v4`, TTL 300, dropped by any
-save or delete of an Uma, SupportCard, Skill, UmaSkill or SupportCardSkill; the same
+save or delete of an Uma, SupportCard, Skill, SkillAlias, UmaSkill or SupportCardSkill; the same
 one-process caveat as `/calculator-data`). About 540 KB raw, 50 KB gzipped; the client
 fetches it once, when a picker first opens.
 
@@ -944,8 +944,13 @@ fetches it once, when a picker first opens.
                      "skills": [{"skill": 88, "source": "hint"}]}],
   "skills": [{"id": 88, "name": "Groundwork", "description": "string", "image": "url | null",
               "rarity": 1, "tier": 1, "group_id": 2001, "cost": 120,
-              "game_id": 200061, "version": "○ white"}] }
+              "game_id": 200061, "version": "○ white",
+              "other_names": ["Ground Work", "下準備"]}] }
 ```
+
+A skill's `other_names` (`Skill.search_names`) are every name a search should match besides
+`name`: UmaTL's when global's is shown, its aliases (old names, and GameTora's names, which
+are never displayed), and the Japanese name.
 
 `umas` is `Uma.pickable()` (with a picture, no `(All)`); `support_cards` is every card
 with art. `released_at` is `SupportCard.global_release_at`, null for a card not out on Global: the

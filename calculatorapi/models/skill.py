@@ -347,6 +347,20 @@ class Skill(models.Model):
         return self.name or self.translated_name
 
     @property
+    def search_names(self):
+        """
+        Every name besides the shown one that a search should match: UmaTL's
+        when global's is shown, every alias (old names, and GameTora's, which
+        is never displayed: owner and Daptrius, 2026-11-12), and the Japanese
+        name. Reads `aliases.all()`, so prefetch them for a list.
+        """
+        names = [self.translated_name] if self.name and self.translated_name else []
+        names += [alias.name for alias in self.aliases.all()]
+        names.append(self.jp_name)
+        shown = self.shown_name
+        return list(dict.fromkeys(name for name in names if name and name != shown))
+
+    @property
     def shown_description(self):
         """As shown_name, for the description, decided on its own."""
         return self.description or self.translated_description
