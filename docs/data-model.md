@@ -1706,7 +1706,9 @@ versions" would list them as if they were in the game.
 **Three text slots, global first** (owner, 2026-10-16): `name` / `description` hold
 global's English, `translated_name` / `translated_description` UmaTL's, `jp_name` /
 `jp_description` the JP client's (admin only). A player reads `shown_name` /
-`shown_description` (global's text if any, else the translation, each field on its own);
+`shown_description` (global's text if any, else the translation, each field on its own; a
+name with neither is the Japanese one, shown in Japanese, owner and Daptrius 2026-11-12, and
+a description with neither stays blank, the readable "when / does" text standing in);
 the admin labels a row `admin_label` (the shown name, else the Japanese). `SkillAlias`
 keeps every other name a skill answers to: its older names, so a `[[mention]]` that used
 one still resolves, and **GameTora's name** for it, so search finds a skill by the name

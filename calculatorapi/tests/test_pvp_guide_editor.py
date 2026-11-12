@@ -433,8 +433,10 @@ class ValidationTests(CalculatorTestCase):
         self.assertIn(("uma_recommendations[0].uma", pvp_guide_document.NOT_IN_CATALOGUE), errors)
 
     def test_skill_rows(self):
-        untranslated = make_skill("", 900001, availability="jp", jp_name="日本語")
-        row = {"style": "front", "category": "speed", "tier": None, "skill": untranslated.id, "note": ""}
+        # A skill with no name at all. One with only its Japanese name is
+        # accepted and shown in Japanese (2026-11-12).
+        nameless = make_skill("", 900001, availability="jp")
+        row = {"style": "front", "category": "speed", "tier": None, "skill": nameless.id, "note": ""}
         errors = self.refuse(skill_recommendations=[row])
         self.assertIn(("skill_recommendations[0].skill", pvp_guide_document.SKILL_NOT_SHOWN), errors)
         twice = dict(row, skill=self.fixture.skill.id)

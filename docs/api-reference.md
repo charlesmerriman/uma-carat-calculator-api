@@ -911,17 +911,20 @@ editor's picker. Public, cached as rendered bytes in the `skills` cache alias
 (`skills_cache.py`, a new generation on any write to the skill, alias, condition, junction,
 uma or card tables). Keyed by the game's skill id, the same in every database.
 
-`GET /skills` is a list, ordered by shown name, of every `Skill.objects.shown()` row:
+`GET /skills` is a list, ordered by shown name, of every `Skill.objects.shown()` row (any
+skill with a name: global's, UmaTL's, or the Japanese one when it has neither; Japanese
+names sort last):
 `id`, `game_id`, `name`, `image`, `rarity`, `tier`, `group_id`, `version`, `is_evolved`,
-`availability`, `uses_translation`, and `other_names` (the translation when global's name is
-shown, old names kept as aliases, the Japanese name), for search.
+`availability`, `uses_translation`, and `other_names` (`Skill.search_names`: the translation
+when global's name is shown, every alias including GameTora's names, the Japanese name when
+it isn't the shown one), for search.
 
 `GET /skills/<game_id>` is one skill in full: the list fields plus `description`, `readable`
 (as on a guide), `sources` (every outfit and card: `id`, `name`, `game_id`, `image`,
 `source`, `level` for an outfit, `on_global`; on-global first), `evolution` (`from` and
 `into` as list rows, `conditions` as `[{"text", "uses_translation", "is_japanese"}]`,
 `scenario`), and `versions` (its forms on global, as on a guide). 404 for a skill with no
-English name, or no such id.
+name at all, or no such id.
 
 ### `GET /pvp-catalogue`
 
