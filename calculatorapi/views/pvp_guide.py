@@ -25,7 +25,7 @@ client's banner data only knows cards that were on a banner, and skills are not
 on the client at all yet.
 """
 
-from django.db.models import Count, Exists, F, OuterRef, Subquery
+from django.db.models import Count, Exists, F, OuterRef, Q, Subquery
 from rest_framework import permissions, serializers
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -192,8 +192,8 @@ class _SkillSerializer(serializers.ModelSerializer):
     readable = serializers.SerializerMethodField()
     sources = serializers.SerializerMethodField()
     # A unique's inherited copy (Skill.is_inherited_unique): a white by rarity,
-    # framed in the unique's purple on the site. Not `unique_of`, which names
-    # the outfit whose OWN unique a skill is and stays null on the copy.
+    # framed in the unique's purple on the site. `unique_of` names the outfit
+    # on both the unique and its copy (_unique_of); this tells them apart.
     is_inherited = serializers.BooleanField(source="is_inherited_unique", read_only=True)
 
     class Meta:
@@ -305,20 +305,41 @@ def _ordered_key(row):
     return (_by_style(row), row.order, row.id)
 
 
-def _unique_of(skill_ids):
-    """{skill id: outfit name} for the skills that are some outfit's unique.
+# A unique's inherited copy is the same game id with its leading 1 made a 9
+# (Shooting Star 100011, its copy 900011); true of all 272 uniques that have
+# one (2026-11-12). The game links them by nothing else.
+INHERITED_OFFSET = 800000
 
-    One query for the whole guide. If two outfits ever share a unique, the
+
+def _unique_of(skill_ids):
+    """{skill id: outfit name} for the skills that are some outfit's unique,
+    and for each unique's inherited copy, which names the same outfit
+    (Daptrius, 2026-11-12: "Lights of Vaudeville (Fuji Kiseki)" whichever
+    version a guide recommends).
+
+    Two queries for the whole guide. If two outfits ever share a unique, the
     lower uma id wins, so the answer is stable between requests.
     """
+    copies = dict(
+        Skill.objects.filter(pk__in=skill_ids, game_id__gte=900000, game_id__lt=1000000)
+        .values_list("pk", "game_id")
+    )
+    unique_game_ids = {game_id - INHERITED_OFFSET for game_id in copies.values()}
     rows = (
-        UmaSkill.objects.filter(skill_id__in=skill_ids, source=UmaSkillSource.UNIQUE)
-        .select_related("uma")
+        UmaSkill.objects.filter(
+            Q(skill_id__in=skill_ids) | Q(skill__game_id__in=unique_game_ids),
+            source=UmaSkillSource.UNIQUE,
+        )
+        .select_related("uma", "skill")
         .order_by("uma_id")
     )
-    owners = {}
+    owners, by_game_id = {}, {}
     for row in rows:
         owners.setdefault(row.skill_id, row.uma.name)
+        by_game_id.setdefault(row.skill.game_id, row.uma.name)
+    for pk, game_id in copies.items():
+        if game_id - INHERITED_OFFSET in by_game_id:
+            owners.setdefault(pk, by_game_id[game_id - INHERITED_OFFSET])
     return owners
 
 
