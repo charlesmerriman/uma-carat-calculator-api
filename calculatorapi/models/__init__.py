@@ -9,7 +9,7 @@ from .income_profile import IncomeProfile
 from .plan import Plan, PLAN_CAP, DEFAULT_PLAN_NAME
 from .user_planned_banner import UserPlannedBanner
 from .support_card import SupportCard, SupportCardRarity, SupportCardType
-from .uma import Uma, Rarity, RunningStyle, Aptitude
+from .uma import Uma, UmaKind, Rarity, RunningStyle, Aptitude
 from .skill import Skill, SkillAvailability, SkillRarity, SkillTier
 from .skill_alias import SkillAlias
 from .skill_evolution_condition import SkillEvolutionCondition

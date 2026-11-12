@@ -158,6 +158,12 @@ class RuleTests(PvpTeamFixture):
     def test_two_outfits_of_one_character(self):
         self.assert_refused(self.members(self.oguri, self.oguri_xmas), "two outfits")
 
+    def test_a_casual_outfit_or_an_npc(self):
+        # Pictures, not racers (Uma.trainees): the pickers never offer them either.
+        for name, game_id in (("Special Week (Casual)", 901001), ("Happy Meek (NPC)", 200101)):
+            with self.subTest(name):
+                self.assert_refused(self.members(self.oguri, make_uma(name, game_id)), "can't race")
+
     def test_the_same_uma_twice(self):
         members = self.members(self.oguri, self.maruzensky)
         members[1]["uma"] = self.oguri.id

@@ -23,6 +23,7 @@ from calculatorapi.models import (
     PvpTeamCard,
     PvpTeamMember,
     Uma,
+    UmaKind,
 )
 
 # The URL's / body's kind -> (the event model, the team's FK to it).
@@ -116,7 +117,8 @@ def replace_team(team, *, members, notes=None):
 
 def check_lineup(uma_ids):
     """{id: Uma} for a lineup's umas, or TeamRefused for one the game refuses:
-    an uma not on the site, the same uma twice, or two outfits of one character.
+    an uma not on the site, the same uma twice, a casual outfit or an NPC, or
+    two outfits of one character.
 
     Shared with pvp_runs.py, so a logged ticket's lineup obeys the same rules
     as the team it was copied from.
@@ -126,6 +128,10 @@ def check_lineup(uma_ids):
         raise TeamRefused("One of those umas isn't on the site any more.")
     if len(set(uma_ids)) != len(uma_ids):
         raise TeamRefused("A team can't have the same uma twice.")
+    # The pickers offer trainees only (Uma.trainees); this is the same rule for
+    # a request that didn't come from them.
+    if any(umas[uma_id].kind != UmaKind.TRAINEE for uma_id in uma_ids):
+        raise TeamRefused("Casual outfits and NPCs can't race in a team.")
     characters = [umas[uma_id].character_id for uma_id in uma_ids]
     known = [character for character in characters if character is not None]
     if len(set(known)) != len(known):
