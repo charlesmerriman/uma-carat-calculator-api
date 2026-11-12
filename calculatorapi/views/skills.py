@@ -2,10 +2,11 @@
 GET /skills and GET /skills/<game_id>: every skill a player may read about,
 for the site's Skills page and the guide editor's skill picker.
 
-WHICH SKILLS: Skill.objects.shown(), any skill with an English name, global's
-or UmaTL's (models/skill.py, shown_q). A JP-only skill is included and says so
+WHICH SKILLS: Skill.objects.shown(), any skill with a name (models/skill.py,
+shown_q): global's, UmaTL's, or the Japanese one when it has neither (owner
+and Daptrius, 2026-11-12). A JP-only skill is included and says so
 (`availability`), and `uses_translation` says when its text is UmaTL's, which
-the site credits. One with only a Japanese name is left out.
+the site credits.
 
 THE LIST is small rows for searching and filtering (~2,000, a few hundred KB
 raw): the shown name, every other name the skill answers to
@@ -87,8 +88,8 @@ def sources(skill):
 
 def evolution(skill):
     """What this skill evolves from and into, and what unlocks it if evolved.
-    Only skills a page may show are named; a step with no English name is left
-    out rather than shown in Japanese."""
+    Only skills a page may show are named (shown_q), which since 2026-11-12
+    includes a step known only by its Japanese name."""
     base = skill.evolves_from
     return {
         "from": summary(base) if base and base.is_shown else None,

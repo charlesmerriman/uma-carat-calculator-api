@@ -70,13 +70,17 @@ class SkillListTests(CalculatorTestCase):
         self.nameless = make(200998, name="", availability="jp", jp_name="名前だけ")
         SkillAlias.objects.create(skill=self.gourmand, name="Old Gourmand")
 
-    def test_lists_every_skill_with_an_english_name_by_that_name(self):
+    def test_lists_every_skill_by_the_name_a_player_reads(self):
         rows = self.client.get("/skills").json()
+        # A skill with no global or UmaTL name is listed by its Japanese one,
+        # after the English names (owner and Daptrius, 2026-11-12).
         self.assertEqual([row["name"] for row in rows],
-                         ["Bring on the Banquet!", "Fan Skill", "Gourmand"])
+                         ["Bring on the Banquet!", "Fan Skill", "Gourmand", "名前だけ"])
         fan = rows[1]
         self.assertEqual((fan["availability"], fan["uses_translation"]), ("jp", True))
-        self.assertNotIn(self.nameless.game_id, [row["game_id"] for row in rows])
+        nameless = rows[3]
+        self.assertEqual((nameless["game_id"], nameless["uses_translation"]), (self.nameless.game_id, False))
+        self.assertEqual(nameless["other_names"], [])
 
     def test_every_other_name_is_there_for_search(self):
         gourmand = next(row for row in self.client.get("/skills").json() if row["name"] == "Gourmand")
@@ -138,9 +142,11 @@ class SkillDetailTests(CalculatorTestCase):
         self.assertEqual([row["name"] for row in body["sources"]["cards"]], ["Kitasan Black"])
         self.assertEqual([row["name"] for row in body["evolution"]["into"]], ["Gluttonous Ruler"])
 
-    def test_a_hidden_or_unknown_skill_is_a_404(self):
+    def test_a_japanese_name_skill_has_a_page_and_an_unknown_one_is_a_404(self):
         make(200998, name="", availability="jp", jp_name="名前だけ")
-        self.assertEqual(self.client.get("/skills/200998").status_code, 404)
+        self.assertEqual(self.client.get("/skills/200998").json()["name"], "名前だけ")
+        make(200997, name="", availability="jp")  # no name at all: still hidden
+        self.assertEqual(self.client.get("/skills/200997").status_code, 404)
         self.assertEqual(self.client.get("/skills/1").status_code, 404)
 
     def test_a_page_is_cached_and_dropped_when_a_source_changes(self):

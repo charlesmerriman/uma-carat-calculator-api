@@ -87,7 +87,7 @@ DECK_SLOTS = 6
 
 # Error copy. Shown beside the field, so written for the editor.
 NOT_IN_CATALOGUE = "Pick one from the list."
-SKILL_NOT_SHOWN = "That skill has no English name yet."
+SKILL_NOT_SHOWN = "That skill has no name yet."
 SLOT_NEEDS_SOMETHING = 'Pick a card, or write a note like "or any speed".'
 ONE_BORROW = "Only one slot can be the borrowed card."
 LIMIT_BREAK_NEEDS_CARD = "A limit break needs a card."
@@ -275,7 +275,7 @@ def errors(data):  # pylint: disable=too-many-locals
     skill_ids = {row["skill"] for row in data["skill_recommendations"]}
     known_skills = {
         skill.id: skill.shown_name
-        for skill in Skill.objects.shown().filter(id__in=skill_ids).only("id", "name", "translated_name")
+        for skill in Skill.objects.shown().filter(id__in=skill_ids).only("id", "name", "translated_name", "jp_name")
     }
     seen = set()
     for i, row in enumerate(data["skill_recommendations"]):

@@ -914,7 +914,7 @@ class Command(BaseCommand):
                 f"    {plan['skipped_kinds']} of a kind models/spark.py doesn't name yet, skipped"
             ))
         if plan.get("jp_only"):
-            self.stdout.write(f"    {plan['jp_only']} are JP-only skills, hidden from players")
+            self.stdout.write(f"    {plan['jp_only']} are JP-only skills, kept out of the team builder")
         if plan.get("aliases"):
             self.stdout.write(f"    {len(plan['aliases'])} replaced name(s) kept as aliases")
         if plan.get("gametora_aliases"):

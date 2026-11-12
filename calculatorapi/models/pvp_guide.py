@@ -83,7 +83,7 @@ def unknown_skill_mentions(names):
 
 def _suggest(name):
     """Up to three skill names close to a mistyped one: names a player reads."""
-    names = [skill.shown_name for skill in Skill.objects.shown().only("name", "translated_name")]
+    names = [skill.shown_name for skill in Skill.objects.shown().only("name", "translated_name", "jp_name")]
     by_key = {candidate.casefold(): candidate for candidate in names}
     close = difflib.get_close_matches(name.casefold(), list(by_key), n=3, cutoff=0.6)
     return [by_key[key] for key in close]
@@ -526,7 +526,7 @@ class PvpSkillRecommendation(SkillMentionsMixin, models.Model):
     def clean(self):
         # Layer two, for a save that reached past the form's choices.
         if self.skill_id is not None and not self.skill.is_shown:
-            raise ValidationError({"skill": "That skill has no English name yet."})
+            raise ValidationError({"skill": "That skill has no name yet."})
         super().clean()
 
     def __str__(self):

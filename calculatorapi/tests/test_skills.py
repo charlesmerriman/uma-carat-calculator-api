@@ -451,8 +451,11 @@ class SkillOnGlobalTests(CalculatorTestCase):
         self.assertEqual(skill.shown_name, "Official Name")
         # Each field on its own: global's name beside the translated description.
         self.assertEqual(skill.shown_description, "Fan text.")
+        # No global or UmaTL name: shown in Japanese, never hidden (2026-11-12).
         untranslated = Skill(name="", translated_name="", jp_name="日本語", game_id=2)
-        self.assertEqual((untranslated.shown_name, untranslated.admin_label), ("", "日本語"))
+        self.assertEqual((untranslated.shown_name, untranslated.admin_label), ("日本語", "日本語"))
+        self.assertTrue(untranslated.is_shown)
+        self.assertFalse(Skill(name="", game_id=3).is_shown)
 
     def test_admin_filter_lists_the_unreleased(self):
         self.client.force_login(CustomUser.objects.create_superuser(username="boss", password="x"))
