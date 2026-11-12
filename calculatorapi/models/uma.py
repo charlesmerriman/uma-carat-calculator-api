@@ -55,6 +55,36 @@ def _game_int(help_text, choices=None):
     )
 
 
+# The game's id ranges, by what kind of row an uma is (Daptrius, 2026-11-10).
+# Only a TRAINEE can be trained and raced, so only a trainee belongs in a
+# PvP picker; the other two exist for their pictures (a favourite, an account
+# picture, later a contributor's avatar):
+#   1xxxxx  a trainee outfit (102001 = Special Week's first outfit)
+#   2xxxxx  an NPC racer with racing silks (Happy Meek, 200101)
+#   8xxxxx  an NPC from the school, not a racer (Tazuna Hayakawa, 800101)
+#   9xxxxx  a trainee's casual clothes (Special Week (Casual), 901001)
+TRAINEE_IDS = (100_000, 200_000)
+CASUAL_IDS = (900_000, 1_000_000)
+
+
+class UmaKind(models.TextChoices):
+    """What an uma row is, worked out from its game id (`Uma.kind`)."""
+
+    TRAINEE = "trainee", "Trainee"
+    CASUAL = "casual", "Casual outfit"
+    NPC = "npc", "NPC"
+
+
+def uma_kind(game_id):
+    """The UmaKind of a game id. No id (a hand-made row such as a placeholder)
+    counts as a trainee: it was made to be picked, and nothing else has none."""
+    if game_id is None or TRAINEE_IDS[0] <= game_id < TRAINEE_IDS[1]:
+        return UmaKind.TRAINEE
+    if CASUAL_IDS[0] <= game_id < CASUAL_IDS[1]:
+        return UmaKind.CASUAL
+    return UmaKind.NPC
+
+
 class Uma(models.Model):
     name = models.CharField(max_length=255)
     # The game's own id for this outfit: character `1020` outfit `01` is
@@ -227,6 +257,22 @@ class Uma(models.Model):
             .exclude(image__isnull=True)
             .exclude(name__iexact=cls.ALL_PLACEHOLDER_NAME)
         )
+
+    @classmethod
+    def trainees(cls):
+        """The pickable umas that can race: what every PvP picker offers (the
+        team builder, the guide editor, the Collection, CM Runs). Casual
+        outfits and NPCs stay in `pickable()`, so they can still be a favourite.
+        Worked out from the game id rather than stored, because the id already
+        says it and a stored flag could disagree with it."""
+        return cls.pickable().filter(
+            models.Q(game_id__isnull=True) | models.Q(game_id__gte=TRAINEE_IDS[0], game_id__lt=TRAINEE_IDS[1])
+        )
+
+    @property
+    def kind(self):
+        """Trainee, casual outfit or NPC (UmaKind), from the game id."""
+        return uma_kind(self.game_id)
 
     @property
     def is_costume_variant(self):

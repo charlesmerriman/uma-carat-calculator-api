@@ -2,14 +2,16 @@
 GET /skills and GET /skills/<game_id>: every skill a player may read about,
 for the site's Skills page and the guide editor's skill picker.
 
-WHICH SKILLS: Skill.objects.shown(), any skill with an English name, global's
-or UmaTL's (models/skill.py, shown_q). A JP-only skill is included and says so
+WHICH SKILLS: Skill.objects.shown(), any skill with a name (models/skill.py,
+shown_q): global's, UmaTL's, or the Japanese one when it has neither (owner
+and Daptrius, 2026-11-12). A JP-only skill is included and says so
 (`availability`), and `uses_translation` says when its text is UmaTL's, which
-the site credits. One with only a Japanese name is left out.
+the site credits.
 
 THE LIST is small rows for searching and filtering (~2,000, a few hundred KB
-raw): the shown name, every other name the skill answers to (the translation,
-old names, the Japanese one), colour, version and where it is. THE DETAIL is
+raw): the shown name, every other name the skill answers to
+(Skill.search_names: the translation, aliases, the Japanese one), colour,
+version and where it is. THE DETAIL is
 one skill in full: its text, when it fires and what it does
 (skill_text.describe), every outfit and card that gives it, what it evolves
 from and into, and what unlocks an evolution.
@@ -55,19 +57,9 @@ def summary(skill):
     }
 
 
-def other_names(skill):
-    """Every name besides the shown one, for search: the translation when
-    global's name is shown, old names kept as aliases, the Japanese name."""
-    names = [skill.translated_name] if skill.name and skill.translated_name else []
-    names += [alias.name for alias in skill.aliases.all()]
-    names.append(skill.jp_name)
-    shown = skill.shown_name
-    return list(dict.fromkeys(name for name in names if name and name != shown))
-
-
 def build_list():
     return [
-        {**summary(skill), "other_names": other_names(skill)}
+        {**summary(skill), "other_names": skill.search_names}
         for skill in _shown().prefetch_related("aliases").by_shown_name()
     ]
 
@@ -96,8 +88,8 @@ def sources(skill):
 
 def evolution(skill):
     """What this skill evolves from and into, and what unlocks it if evolved.
-    Only skills a page may show are named; a step with no English name is left
-    out rather than shown in Japanese."""
+    Only skills a page may show are named (shown_q), which since 2026-11-12
+    includes a step known only by its Japanese name."""
     base = skill.evolves_from
     return {
         "from": summary(base) if base and base.is_shown else None,
@@ -118,7 +110,7 @@ def evolution(skill):
 def build_detail(skill):
     return {
         **summary(skill),
-        "other_names": other_names(skill),
+        "other_names": skill.search_names,
         "description": skill.shown_description,
         "readable": skill_text.describe(skill, skill_text.context_from_database()),
         "sources": sources(skill),

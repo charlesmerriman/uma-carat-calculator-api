@@ -110,16 +110,19 @@ class GuideModelTests(CalculatorTestCase):
         with self.assertRaises(IntegrityError), transaction.atomic():
             PvpUmaRecommendation.objects.create(guide=guide, style="everyone", uma=uma)
 
-    def test_a_skill_with_no_english_name_is_refused(self):
+    def test_only_a_skill_with_no_name_at_all_is_refused(self):
         guide = PvpGuide.objects.create(champions_meeting=self.cm)
-        untranslated = make_skill("", 900001, availability="jp", jp_name="日本語")
+        nameless = make_skill("", 900001, availability="jp")
         with self.assertRaises(ValidationError):
             PvpSkillRecommendation(
-                guide=guide, style="front", category="speed", skill=untranslated
+                guide=guide, style="front", category="speed", skill=nameless
             ).clean()
-        # A JP-only skill with a translation is fine: the site tags it.
+        # A JP-only skill with a translation is fine: the site tags it. So is
+        # one with only its Japanese name, shown in Japanese (2026-11-12).
         translated = make_skill("", 900002, availability="jp", translated_name="Fan Name")
         PvpSkillRecommendation(guide=guide, style="front", category="speed", skill=translated).clean()
+        untranslated = make_skill("", 900003, availability="jp", jp_name="日本語")
+        PvpSkillRecommendation(guide=guide, style="front", category="speed", skill=untranslated).clean()
 
 
 class GuideEndpointTests(CalculatorTestCase):
@@ -497,7 +500,7 @@ class GuideAdminTests(CalculatorTestCase):
         self.assertEqual(row["text"], "Kitasan Black")
         self.assertNotIn("picture", row)  # no image on this card
 
-    def test_skill_autocomplete_offers_every_skill_with_an_english_name(self):
+    def test_skill_autocomplete_offers_every_skill_with_a_name(self):
         make_skill("Global Skill", 100099)
         make_skill("JP Only Skill", 900001, availability="jp")
         make_skill("", 900002, availability="jp", jp_name="Skill 日本語")
@@ -508,10 +511,10 @@ class GuideAdminTests(CalculatorTestCase):
         self.assertEqual(res.status_code, 200)
         names = [row["text"] for row in res.json()["results"]]
         self.assertIn("Global Skill (100099)", names)
-        # JP-only skills may be picked now (the site tags them)...
+        # JP-only skills may be picked (the site tags them), and so may one
+        # known only by its Japanese name (2026-11-12).
         self.assertIn("JP Only Skill (900001)", names)
-        # ...but not one with only its Japanese name.
-        self.assertNotIn("Skill 日本語 (900002)", names)
+        self.assertIn("Skill 日本語 (900002)", names)
 
     def test_the_event_pages_no_longer_offer_the_five_boxes(self):
         cm = self.guide.champions_meeting

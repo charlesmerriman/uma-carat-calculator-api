@@ -75,17 +75,24 @@ def on_global_q(prefix=""):
 
 def shown_q(prefix=""):
     """
-    What a guide or the Skills page may show: any skill with an English name,
-    global's or a translation (owner, 2026-10-23: JP-only skills on published
-    guides, tagged "JP only" and crediting UmaTL). A skill with only its
-    Japanese name stays in the admin; an editor can give it a name there.
+    What a guide or the Skills page may show: any skill with a name, global's,
+    UmaTL's or the Japanese one (owner, 2026-10-23: JP-only skills on
+    published guides, tagged "JP only" and crediting UmaTL; owner and
+    Daptrius, 2026-11-12: a skill with only its Japanese name is shown in
+    Japanese, never hidden). Every imported skill has a Japanese name, so in
+    practice this is every skill; the rule stays a rule so a hand-made row
+    with no name at all is still left out.
 
     The WIDER of the two rules. on_global_q() still decides what is in the
     game on global: the team builder's catalogue, a skill's "other versions"
     and the track greens read that one. Callable with no arguments, for
     limit_choices_to.
     """
-    return ~models.Q(**{f"{prefix}name": ""}) | ~models.Q(**{f"{prefix}translated_name": ""})
+    return (
+        ~models.Q(**{f"{prefix}name": ""})
+        | ~models.Q(**{f"{prefix}translated_name": ""})
+        | ~models.Q(**{f"{prefix}jp_name": ""})
+    )
 
 
 class SkillQuerySet(models.QuerySet):
@@ -120,9 +127,14 @@ class SkillQuerySet(models.QuerySet):
 
     def by_shown_name(self):
         """Ordered by the name a player reads (Skill.shown_name), in SQL: a
-        JP-only skill's global name is blank and would otherwise sort first."""
+        JP-only skill's global name is blank and would otherwise sort first.
+        Japanese names sort after the English ones (their code points are higher)."""
         return self.annotate(
-            shown_name_sort=Lower(Coalesce(NullIf("name", models.Value("")), "translated_name")),
+            shown_name_sort=Lower(Coalesce(
+                NullIf("name", models.Value("")),
+                NullIf("translated_name", models.Value("")),
+                "jp_name",
+            )),
         ).order_by("shown_name_sort", "game_id")
 
     def resolve_names(self, names):
@@ -183,9 +195,11 @@ class Skill(models.Model):
     `description` hold global's official English; `translated_*` UmaTL's
     fan translation of the JP text; `jp_*` the JP client's own. What a player
     reads is `shown_name` / `shown_description`: the global text when there
-    is any, else the translation, each field on its own. Read those, never a
-    slot directly, wherever a skill reaches a player. A skill with neither is
-    admin-only and labelled by its Japanese name (`admin_label`).
+    is any, else the translation, each field on its own; a name with neither
+    is the Japanese one (owner and Daptrius, 2026-11-12), a description with
+    neither is blank and the readable "when / does" text stands in. Read
+    those, never a slot directly, wherever a skill reaches a player.
+    GameTora's names are aliases, searched and never shown.
 
     "IS THIS THE GOLD VERSION OF SOMETHING?" is answered by `group_id`: the
     white (○, and in some groups a ◎ too), gold and × versions of one effect
@@ -331,7 +345,7 @@ class Skill(models.Model):
     @property
     def is_shown(self):
         """May a guide or the Skills page show it? The same rule as shown_q()."""
-        return bool(self.name or self.translated_name)
+        return bool(self.name or self.translated_name or self.jp_name)
 
     @property
     def uses_translation(self):
@@ -343,8 +357,23 @@ class Skill(models.Model):
 
     @property
     def shown_name(self):
-        """What a player reads: global's name, else the translation, else ""."""
-        return self.name or self.translated_name
+        """What a player reads: global's name, else UmaTL's, else the Japanese
+        one (the client marks that `lang="ja"` by its script), else ""."""
+        return self.name or self.translated_name or self.jp_name
+
+    @property
+    def search_names(self):
+        """
+        Every name besides the shown one that a search should match: UmaTL's
+        when global's is shown, every alias (old names, and GameTora's, which
+        is never displayed: owner and Daptrius, 2026-11-12), and the Japanese
+        name. Reads `aliases.all()`, so prefetch them for a list.
+        """
+        names = [self.translated_name] if self.name and self.translated_name else []
+        names += [alias.name for alias in self.aliases.all()]
+        names.append(self.jp_name)
+        shown = self.shown_name
+        return list(dict.fromkeys(name for name in names if name and name != shown))
 
     @property
     def shown_description(self):

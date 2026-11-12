@@ -911,23 +911,26 @@ editor's picker. Public, cached as rendered bytes in the `skills` cache alias
 (`skills_cache.py`, a new generation on any write to the skill, alias, condition, junction,
 uma or card tables). Keyed by the game's skill id, the same in every database.
 
-`GET /skills` is a list, ordered by shown name, of every `Skill.objects.shown()` row:
+`GET /skills` is a list, ordered by shown name, of every `Skill.objects.shown()` row (any
+skill with a name: global's, UmaTL's, or the Japanese one when it has neither; Japanese
+names sort last):
 `id`, `game_id`, `name`, `image`, `rarity`, `tier`, `group_id`, `version`, `is_evolved`,
-`availability`, `uses_translation`, and `other_names` (the translation when global's name is
-shown, old names kept as aliases, the Japanese name), for search.
+`availability`, `uses_translation`, and `other_names` (`Skill.search_names`: the translation
+when global's name is shown, every alias including GameTora's names, the Japanese name when
+it isn't the shown one), for search.
 
 `GET /skills/<game_id>` is one skill in full: the list fields plus `description`, `readable`
 (as on a guide), `sources` (every outfit and card: `id`, `name`, `game_id`, `image`,
 `source`, `level` for an outfit, `on_global`; on-global first), `evolution` (`from` and
 `into` as list rows, `conditions` as `[{"text", "uses_translation", "is_japanese"}]`,
 `scenario`), and `versions` (its forms on global, as on a guide). 404 for a skill with no
-English name, or no such id.
+name at all, or no such id.
 
 ### `GET /pvp-catalogue`
 
 The team builder's catalogue (`views/pvp_catalogue.py`). Public, the same for everyone, and
 **cached** in `pvp_catalogue_cache.py` (key `pvp_catalogue:v4`, TTL 300, dropped by any
-save or delete of an Uma, SupportCard, Skill, UmaSkill or SupportCardSkill; the same
+save or delete of an Uma, SupportCard, Skill, SkillAlias, UmaSkill or SupportCardSkill; the same
 one-process caveat as `/calculator-data`). About 540 KB raw, 50 KB gzipped; the client
 fetches it once, when a picker first opens.
 
@@ -944,8 +947,13 @@ fetches it once, when a picker first opens.
                      "skills": [{"skill": 88, "source": "hint"}]}],
   "skills": [{"id": 88, "name": "Groundwork", "description": "string", "image": "url | null",
               "rarity": 1, "tier": 1, "group_id": 2001, "cost": 120,
-              "game_id": 200061, "version": "○ white"}] }
+              "game_id": 200061, "version": "○ white",
+              "other_names": ["Ground Work", "下準備"]}] }
 ```
+
+A skill's `other_names` (`Skill.search_names`) are every name a search should match besides
+`name`: UmaTL's when global's is shown, its aliases (old names, and GameTora's names, which
+are never displayed), and the Japanese name.
 
 `umas` is `Uma.pickable()` (with a picture, no `(All)`); `support_cards` is every card
 with art. `released_at` is `SupportCard.global_release_at`, null for a card not out on Global: the
@@ -1039,7 +1047,7 @@ the client's `useRankingsPullPlans`) until the owner says Raptive approved; 403 
   "banners": [{"type": "uma", "unit": "pulls", "id": 88, "name": "Gentildonna",
                "start_date": "...", "end_date": "...", "predicted": true, "status": "upcoming",
                "share": 0.36, "average": 165.0, "median": 150,
-               "spread": {"edges": [0, 50, 100, 200, 300], "shares": [0.1, 0.24, 0.47, 0.12, 0.07]},
+               "spread": {"edges": [0, 100, 133, 134, 200, 201], "shares": [0.1, 0.12, 0.3, 0.14, 0.27, 0.07]},
                "also": [{"type": "support", "id": 90, "name": "Kitasan Black", "share": 0.36}]}],
   "demand": [{"month": "2026-11", "share": 0.4}, {"month": "Later", "share": 0.1}] }
 ```
@@ -1050,11 +1058,15 @@ pulls. A banner's `share` is of everyone with any banner in their active plan, e
 planners away). Staff are left out and only active plans count; an implausible pull count
 still counts its planner but not the figures. Every banner anyone plans is sent, ended ones
 included (`status`). `spread` is each planner once by what they plan there, as shares of the
-planners with a sane figure, in buckets that start at each edge (the last is open); a
-step-up's edges are STEPS (`[0, 2, 3, 4, 5]`). `also` is the three running or upcoming
+planners with a sane figure, in buckets that start at each edge (the last is open). The
+edges depend on the banner's kind and sit on what people plan: uma `[0, 100, 133, 134, 200,
+201]`, support `[0, 200, 201, 400, 401, 600]`, and a step-up's are STEPS `[0, 5, 6, 10, 11,
+15]` (a round is five). A bucket one wide (`133`, `200`) is that exact number
+(`rankings_figures.EDGES`). `also` is the three running or upcoming
 banners most often in the same plans, as a share of this banner's planners
 (`rankings_figures.PlanFigures`). `demand` is each month's share of every planned pull,
-by the month a banner ends.
+by the month a banner ends: this month and the next seventeen one by one, then `Later`
+(`PULL_PLAN_DEMAND_MONTHS`). The client draws six months, then quarters, then Later.
 
 ### `GET /rankings/pvp/<kind>/<event_id>`
 

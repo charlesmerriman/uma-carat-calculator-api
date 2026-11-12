@@ -664,7 +664,7 @@ class LazySkillNames:
             from .models import Skill  # pylint: disable=import-outside-toplevel
             self._names = {
                 row.game_id: row.shown_name
-                for row in Skill.objects.only("game_id", "name", "translated_name")
+                for row in Skill.objects.only("game_id", "name", "translated_name", "jp_name")
                 if row.shown_name
             }
         return self._names.get(game_id, default)

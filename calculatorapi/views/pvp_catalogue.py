@@ -4,7 +4,7 @@ GET /pvp-catalogue: everything the PvP team builder's picker searches.
 Public, read-only, the same for everyone, and cached (pvp_catalogue_cache.py).
 Fetched once by the builder the first time a picker opens, never on /app load.
 
-    umas           Uma.pickable(): id, name, image, portrait, rarity,
+    umas           Uma.trainees(): id, name, image, portrait, rarity,
                    running_style, character_id, is_variant, on_global, apt
                    ({turf, dirt, ..., end}, 1..8 = G..S, null when unknown)
                    and skills [{skill, source, level}]
@@ -15,6 +15,9 @@ Fetched once by the builder the first time a picker opens, never on /app load.
     skills         skills ON GLOBAL only: id, name, description, image,
                    rarity, tier, group_id, cost, game_id, version (the
                    label "○ white" / "◎ gold" / ..., for the guide editor)
+                   and other_names (Skill.search_names: the translation,
+                   aliases including GameTora's names, the Japanese name),
+                   which every skill search box matches but never shows
 
 Skills are a lookup table rather than embedded in each card: one skill is
 taught by dozens of cards, and the picker's "search by skill" walks from a
@@ -76,7 +79,7 @@ def build_catalogue():
     # `version` ("○ white", "◎ gold", ...) and `game_id` are for the guide
     # editor's skill picker and its paste-from-the-sheet matching; the team
     # builder ignores both.
-    for skill in Skill.objects.on_global().order_by("name", "id"):
+    for skill in Skill.objects.on_global().prefetch_related("aliases").order_by("name", "id"):
         skills.append({
             "id": skill.id,
             "name": skill.name,
@@ -88,6 +91,7 @@ def build_catalogue():
             "cost": skill.cost,
             "game_id": skill.game_id,
             "version": skill.version_label,
+            "other_names": skill.search_names,
         })
     global_ids = {skill["id"] for skill in skills}
 
@@ -110,7 +114,8 @@ def build_catalogue():
         )
 
     umas = []
-    for uma in Uma.pickable().order_by("name", "id"):
+    # Trainees only: a casual outfit or an NPC is a picture, not a racer (Uma.trainees).
+    for uma in Uma.trainees().order_by("name", "id"):
         umas.append({
             "id": uma.id,
             "name": uma.name,

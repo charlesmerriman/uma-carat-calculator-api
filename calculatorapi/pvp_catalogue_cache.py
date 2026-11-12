@@ -40,6 +40,7 @@ _RELEVANT_MODELS = frozenset({
     "uma",
     "supportcard",
     "skill",
+    "skillalias",  # other_names: an alias edit in the admin changes search
     "umaskill",
     "supportcardskill",
 })

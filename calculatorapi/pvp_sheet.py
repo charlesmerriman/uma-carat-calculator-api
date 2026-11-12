@@ -548,7 +548,7 @@ class ProseLinker:
 
     def __init__(self):
         names = {}
-        for skill in Skill.objects.shown().order_by("game_id").only("name", "translated_name"):
+        for skill in Skill.objects.shown().order_by("game_id").only("name", "translated_name", "jp_name"):
             name = skill.shown_name.strip()
             if re.search(r"[○◎×]", name) or len(name) < 5 or name.casefold() in LINK_STOPLIST:
                 continue

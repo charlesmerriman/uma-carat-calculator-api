@@ -322,7 +322,7 @@ def pull_plans_payload():
     """
     timeline_dates = build_effective_date_maps()[BannerTimeline]
     timelines = banner_timelines()
-    popularity, demand = BannerTally(), DemandTally(timeline_dates, timelines)
+    popularity, demand = BannerTally(), DemandTally(timeline_dates, timelines, months=PULL_PLAN_DEMAND_MONTHS)
     figures = PlanFigures(live_banner_keys(timeline_dates, timelines))
     planners = fold(popularity, demand, figures)
 
@@ -370,6 +370,13 @@ def rankings_pull_plans(request):
 
 # A win rate under this many races is noise; the client says "not enough
 # runs yet" for it rather than drawing 100% from one lucky ticket.
+# "When the pulls fall due" lists this month and the next five, then four
+# quarters, then Later (owner, 2026-11-12: with five months 82% sat in Later,
+# because players plan a year ahead). The server sends the eighteen months one
+# by one and the client groups months seven to eighteen into quarters
+# (utils/pullPlanRankings.ts stripColumns), so a label change is client-only.
+PULL_PLAN_DEMAND_MONTHS = 18
+
 MIN_RACES = 20
 
 
