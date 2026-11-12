@@ -5,14 +5,18 @@ one row per ticket (an attempt of five races) and one for the final.
 Built for the PvP page's "CM Runs" view (notes/pvp-planner-plan.md, "R3 CM
 Runs"). Account only: a guest sees a sign-in card, so there is no device copy.
 
-A RUN IS A FACT, A TEAM IS A CHOICE
------------------------------------
-A run copies its lineup (uma and style per spot) when the ticket is started and
-owns it from then on. It never points at the PvpTeam it came from: editing or
-deleting a team must not rewrite what already happened, and results hang off
-the account and the event, not off a team. PvpRunRunner.trained_uma is a
-LINK to the veteran that ran (a game veteran is frozen once trained, so a link
-reads the same numbers a copy would, and the stats live in one place).
+A RUN IS A FACT ONCE IT IS RACED, A TEAM IS A CHOICE
+---------------------------------------------------
+A run copies its lineup (uma, style and veteran per spot) from a My team team
+and owns that copy. Until a race is logged it also FOLLOWS the team it came
+from (`team`, owner 2026-11-12, notes/runs-follow-team-plan.md): a team edit
+rewrites the lineup of its unraced tickets (pvp_teams.sync_followers), and a
+veteran picked on an unraced ticket goes back to the team. Once raced, a ticket
+keeps the lineup it ran with: race wins are stored by SPOT (PvpRunRace.winner),
+so rewriting a raced ticket would hand its wins to whoever stands there now.
+Deleting a team only clears the link. PvpRunRunner.trained_uma is a LINK to
+the veteran that ran (a game veteran is frozen once trained, so a link reads
+the same numbers a copy would, and the stats live in one place).
 
 PRIVATE, LIKE A TEAM
 --------------------
@@ -109,6 +113,12 @@ class PvpRun(models.Model):
     # logged" on a past day may only be slow typing, and a guessed skip would
     # stay wrong. A day's ticket only (pvp_run_stage_shape).
     skipped = models.BooleanField(default=False)
+    # The team this ticket was filled from, while it still holds that team's
+    # lineup. Only an unraced ticket is ever rewritten through it (module
+    # docstring); NULL means no team, or the team was deleted.
+    team = models.ForeignKey(
+        "PvpTeam", on_delete=models.SET_NULL, null=True, blank=True, related_name="runs"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
