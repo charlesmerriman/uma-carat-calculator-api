@@ -193,6 +193,29 @@ class Uma(models.Model):
     growth_power = _game_int("Power growth bonus, percent.")
     growth_guts = _game_int("Guts growth bonus, percent.")
     growth_wit = _game_int("Wit growth bonus, percent.")
+    # Every star level's stats, not only the initial one the base_* columns
+    # hold: the Encyclopedia's uma page switches between them (owner,
+    # 2026-11-12). One JSON list rather than fifteen more columns, because
+    # nothing filters or sorts by it: it is read whole with its outfit.
+    # [{"star": 3, "speed": 83, "stamina": 88, ...}, ...], ascending, one entry
+    # per star level the game lists (★1 outfits have five, ★3 outfits three).
+    # Global's when the outfit is out there, else the JP client's.
+    star_stats = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Stats at every star level, from the game-data import.",
+    )
+    # The JP client's own name and title, shown beside the English ones on the
+    # Encyclopedia page. From the JP snapshot for every outfit it holds, global
+    # ones included. Blank when the import ran without it.
+    jp_name = models.CharField(
+        max_length=100, blank=True, default="", verbose_name="JP name",
+        help_text="The character's name in the JP client, e.g. スペシャルウィーク.",
+    )
+    jp_title = models.CharField(
+        max_length=100, blank=True, default="", verbose_name="JP title",
+        help_text="The outfit's title in the JP client, e.g. [スペシャルドリーマー].",
+    )
 
     @property
     def character_id(self):

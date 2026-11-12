@@ -69,12 +69,17 @@ WHAT IT WRITES, and what it leaves alone:
                (nine-digit) and event bonus (seven-digit) ids are skipped.
   Uma          title, rarity, running_style, the ten apt_* grades, the five
                base_* stats at the initial star count, the five growth_*
-               bonuses. `rarity` is what the selector pickers read, through
-               `Uma.is_three_star`. Matched on `game_id`.
+               bonuses, and star_stats (every star level). `rarity` is what
+               the selector pickers read, through `Uma.is_three_star`. Matched
+               on `game_id`. An outfit global doesn't have takes all of these
+               from the JP snapshot EXCEPT rarity and title (JP_SKIPPED_COLUMNS),
+               after the same name check as its links. Every outfit in the JP
+               snapshot takes jp_name and jp_title.
   SupportCard  card_type, rarity, character_id, title, and group_members (a
                group card's umas, by name). Matched on `game_id`. A card
-               global doesn't have takes `card_type` alone from the JP
-               snapshot, after the same name check as its links.
+               global doesn't have takes `card_type` and `character_id` from
+               the JP snapshot, after the same name check as its links. Every
+               card in the JP snapshot takes jp_name and jp_title.
   UmaSkill     one row per (uma, skill, source) the game lists: unique, innate
                and awakening skills, with `level` (see the model). Rows are
                ADDED and never deleted, so a hand-added row survives. An
@@ -134,22 +139,14 @@ from calculatorapi.models import (
     Uma, UmaSkill,
 )
 from calculatorapi.game_data_sources import (
-    SecondarySources, jp_owner_links, name_matches, plan_evolutions, plan_gametora_aliases,
+    SecondarySources, jp_names, jp_owner_links, name_matches, plan_evolutions, plan_gametora_aliases,
 )
+from calculatorapi.game_data_values import jp_uma_values, merged, uma_values
 from calculatorapi.models.skill import SkillAvailability, SkillRarity, SkillTier
 
 CONFIRM_PHRASE = "import"
 
 DEFAULT_SNAPSHOT = Path(__file__).resolve().parents[3] / "scripts" / "data" / "master_snapshot"
-
-# snapshot key -> Uma column, for the blocks that copy straight across.
-APTITUDE_COLUMNS = {
-    "turf": "apt_turf", "dirt": "apt_dirt",
-    "short": "apt_short", "mile": "apt_mile", "medium": "apt_medium", "long": "apt_long",
-    "front": "apt_front", "pace": "apt_pace", "late": "apt_late", "end": "apt_end",
-}
-STAT_NAMES = ("speed", "stamina", "power", "guts", "wit")
-RUNNING_STYLES = {"front": 1, "pace": 2, "late": 3, "end": 4}
 
 
 def load_snapshot(directory):
@@ -244,29 +241,6 @@ def guessed_structure(skill_id, name, known_ids):
     else:
         rarity, tier = SkillRarity.WHITE, SkillTier.WHITE
     return {"rarity": rarity, "group_id": group_id, "tier": tier}
-
-
-def uma_values(card):
-    """The Uma column values one snapshot outfit implies."""
-    initial = next(
-        (star for star in card["stars"] if star["star"] == card["default_rarity"]), None,
-    )
-    if initial is None:
-        raise CommandError(
-            f"card {card['id']} has no per-star row for its initial rarity "
-            f"{card['default_rarity']}; the snapshot is inconsistent"
-        )
-    values = {
-        "title": card["title"],
-        "rarity": card["default_rarity"],
-        "running_style": RUNNING_STYLES[card["running_style"]],
-    }
-    for key, column in APTITUDE_COLUMNS.items():
-        values[column] = initial["aptitude"][key]
-    for stat in STAT_NAMES:
-        values[f"base_{stat}"] = initial["stats"][stat]
-        values[f"growth_{stat}"] = card["growth"][stat]
-    return values
 
 
 def load_gametora(path):
@@ -480,7 +454,16 @@ class Command(BaseCommand):
         support_plan = self._plan(
             "support card", SupportCard, snapshot["support_cards"], support_values,
         )
-        self._add_jp_card_types(support_plan, jp_links["card_types"])
+        uma_names, card_names = jp_names(
+            sources,
+            uma_plan["distrusted"] | jp_links["uma_distrusted"],
+            support_plan["distrusted"] | jp_links["card_distrusted"],
+        )
+        self._add_values(uma_plan, Uma, merged(
+            uma_names,
+            {game_id: jp_uma_values(card) for game_id, card in jp_links["uma_cards"].items()},
+        ))
+        self._add_values(support_plan, SupportCard, merged(card_names, jp_links["card_facts"]))
         known_skills = (
             {skill["id"] for skill in snapshot["skills"]}
             | {skill["id"] for skill in snapshot["skill_text_ahead"]}
@@ -547,7 +530,8 @@ class Command(BaseCommand):
         """
         by_game_id = {row.game_id: row for row in model.objects.exclude(game_id__isnull=True)}
         now = timezone.now()
-        changed, unchanged, missing, mismatched = [], 0, [], []
+        changed, missing, mismatched = [], [], []
+        current = set()  # game_ids already as the game says; _add_values may move one out
         distrusted = set()  # game_ids the name check rejected; junctions skip them too
 
         for card in cards:
@@ -572,31 +556,44 @@ class Command(BaseCommand):
             if diff:
                 changed.append((row, diff))
             else:
-                unchanged += 1
+                current.add(card["id"])
 
         changed += no_longer_on_global(by_game_id, cards)
 
         return {
-            "label": label, "changed": changed, "unchanged": unchanged,
+            "label": label, "changed": changed, "unchanged": len(current), "current": current,
             "missing": missing, "mismatched": mismatched, "distrusted": distrusted,
         }
 
     @staticmethod
-    def _add_jp_card_types(plan, card_types):
+    def _add_values(plan, model, values_by_id):
         """
-        Fold the JP-only cards' types into the support card plan. A row the
-        plan already changes (it said it was on global and no longer is)
-        gets the type in the same diff, so it is saved once.
+        Fold the JP snapshot's columns ({game id: {column: value}}) into a
+        global plan: JP-only rows' facts, and every row's JP name.
+
+        A row the plan already changes gets them in the same diff, so it is
+        saved once. A row the plan counted as current and that changes here
+        stops being counted, so the report's numbers still add up. The
+        callers never send a column global's values set for the same row
+        (JP facts only for JP-only rows, and jp_* columns global doesn't
+        have), so nothing here overrides global.
         """
         pending = {row.game_id: diff for row, diff in plan["changed"]}
-        for row in SupportCard.objects.filter(game_id__in=card_types):
-            card_type = card_types[row.game_id]
-            if row.card_type == card_type:
+        for row in model.objects.filter(game_id__in=values_by_id):
+            diff = {
+                column: value for column, value in values_by_id[row.game_id].items()
+                if getattr(row, column) != value
+            }
+            if not diff:
                 continue
             if row.game_id in pending:
-                pending[row.game_id]["card_type"] = card_type
-            else:
-                plan["changed"].append((row, {"card_type": card_type}))
+                pending[row.game_id].update(diff)
+                continue
+            plan["changed"].append((row, diff))
+            pending[row.game_id] = diff
+            if row.game_id in plan["current"]:
+                plan["current"].discard(row.game_id)
+                plan["unchanged"] -= 1
 
     @staticmethod
     def _plan_skills(skills, detailed, ahead=(), sources=None, evolutions=None):  # pylint: disable=too-many-locals

@@ -265,10 +265,17 @@ def jp_owner_links(sources, snapshot):
     JP snapshot. Outfits and cards ON global keep global's links only: JP's
     lists can differ, and global's are what a player there gets.
 
-    Also `card_types`, {game id: type} for the same JP-only support cards:
-    global's files don't type a card it doesn't have, and a blank type matched
-    no filter in the team builder's card picker (board, 2026-10-26). Global's
-    type always wins, because a card on global is never in this list.
+    Also the facts global's files can't give a row it doesn't have, from the
+    same JP snapshot (global's always win, because a row on global is never in
+    these):
+      `card_facts`  {game id: {"card_type", "character_id"}} for JP-only
+                    support cards. The type first (a blank one matched no
+                    filter in the team builder's card picker, board
+                    2026-10-26), the character id for the Encyclopedia.
+      `uma_cards`   {game id: the JP snapshot's outfit} for JP-only outfits,
+                    which the command turns into aptitudes, stats and growth
+                    (jp_uma_values). The Encyclopedia shows them marked as JP
+                    data (owner, 2026-11-12).
 
     THE NAME CHECK, in English: a JP card's names are Japanese, so its
     character id is looked up in global's data instead, and our row's name
@@ -276,8 +283,8 @@ def jp_owner_links(sources, snapshot):
     character global doesn't have at all can't be checked; its rows are
     trusted and counted as `unchecked` in the report.
     """
-    result = {"uma_rows": [], "card_rows": [], "card_types": {}, "uma_distrusted": set(),
-              "card_distrusted": set(), "lines": [], "unchecked": 0}
+    result = {"uma_rows": [], "card_rows": [], "card_facts": {}, "uma_cards": {},
+              "uma_distrusted": set(), "card_distrusted": set(), "lines": [], "unchecked": 0}
     if sources.jp is None:
         return result
     english = {card["chara_id"]: card["chara_name"] for card in snapshot["cards"]}
@@ -321,10 +328,44 @@ def jp_owner_links(sources, snapshot):
         (row["support_card_id"], row["skill_id"], "hint", None)
         for row in sources.jp["support_hints"] if row["support_card_id"] in jp_cards
     ]
-    # A distrusted id is no better a key for a type than for skills.
-    result["card_types"] = {
-        card["id"]: card["card_type"] for card in sources.jp["support_cards"]
-        if card["id"] in jp_cards and card["id"] not in result["card_distrusted"]
-        and card.get("card_type")
+    # A distrusted id is no better a key for its facts than for its skills.
+    result["card_facts"] = _jp_card_facts(sources, jp_cards - result["card_distrusted"])
+    result["uma_cards"] = {
+        card["id"]: card for card in sources.jp["cards"]
+        if card["id"] in jp_umas and card["id"] not in result["uma_distrusted"]
     }
     return result
+
+
+def _jp_card_facts(sources, card_ids):
+    """{game id: {"character_id", "card_type"}} for the JP-only cards in `card_ids`;
+    a card the JP snapshot gives no type keeps its type out of the dict."""
+    facts = {}
+    for card in sources.jp["support_cards"]:
+        if card["id"] in card_ids:
+            facts[card["id"]] = {"character_id": card["chara_id"]}
+            if card.get("card_type"):
+                facts[card["id"]]["card_type"] = card["card_type"]
+    return facts
+
+
+def jp_names(sources, uma_distrusted, card_distrusted):
+    """
+    ({outfit id: {"jp_name", "jp_title"}}, {card id: {...}}) from the JP
+    snapshot, for every outfit and card it holds, global ones included: the
+    Japanese name is a fact about the row wherever it is out. An id either
+    name check rejected (global's or jp_owner_links') is skipped, so a wrong
+    game_id doesn't put another character's name on the row.
+    """
+    if sources.jp is None:
+        return {}, {}
+    return tuple(
+        {
+            card["id"]: {"jp_name": card["chara_name"], "jp_title": card["title"]}
+            for card in cards if card["id"] not in distrusted
+        }
+        for cards, distrusted in (
+            (sources.jp["cards"], uma_distrusted),
+            (sources.jp["support_cards"], card_distrusted),
+        )
+    )
