@@ -69,7 +69,7 @@ def summary(skill):
         # Skill points; null for a unique, which isn't bought.
         "cost": skill.cost,
         # The Type filter's key (skill_types.py).
-        "type": skill_type(skill.icon_id),
+        "type": skill_type(skill.icon_id, skill.effects),
     }
 
 

@@ -920,7 +920,10 @@ skill with a name: global's, UmaTL's, or the Japanese one when it has neither; J
 names sort last):
 `id`, `game_id`, `name`, `image`, `rarity`, `tier`, `group_id`, `version`, `is_evolved`,
 `availability`, `uses_translation`, `cost` (null for a unique), `type` (the Type filter's
-key from the icon family, `skill_types.py`; `other` for an unplaced icon), `owners` (the
+key, `skill_types.py`: the icon family, e.g. `velocity`, `recovery`, `scenario`; a sub-type as
+its parent plus a suffix, `stat_speed` ... `stat_several` and `debuff_speed` ...
+`debuff_vision`; `current_speed` for a Speed-family skill that raises its runner's current
+speed; `other` for an unplaced icon), `owners` (the
 outfits a unique, its inherited copy or an evolution belongs to, for search), `pair` (the
 game id of a unique's inherited copy or the copy's unique, else null), and `other_names`
 (`Skill.search_names`: the translation when global's name is shown, every alias including
