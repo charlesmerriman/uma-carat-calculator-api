@@ -19,6 +19,11 @@ zero but under half a percent is sent as SMALL, so the page can still say
 
 PUBLIC COUNTS. A gallery post and its copies are on the public post page,
 so the gallery payload keeps `posts`, `decks` and `copies`.
+
+FAVOURITE UMAS SEND COUNTS (owner, 2026-11-13, on Daptrius's board post
+"Rankings -> Players -> Favorite Uma"): nearly every share was "<1%", which
+said nothing. The owner chose raw counts knowing their sum is a floor on how
+many people set a favourite. Only this list: everything else stays a share.
 """
 
 from calculatorapi.rankings_snapshots import RANKED_RACES
@@ -160,7 +165,8 @@ def player_shares(payload):
     engaged = payload["engaged"]
     return {
         "generated_at": payload["generated_at"],
-        "favourites": [{"uma": row["uma"], "share": share(row["people"], engaged)} for row in payload["favourites"]],
+        # Counts, not shares, by the owner's call (module docstring, FAVOURITE UMAS).
+        "favourites": [{"uma": row["uma"], "people": row["people"]} for row in payload["favourites"]],
         "ranks": [
             {
                 "label": rank["label"],

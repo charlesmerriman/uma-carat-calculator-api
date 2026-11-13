@@ -1140,7 +1140,7 @@ from 20 races, 2 from 100, 3 from 300.
 
 The Rankings page's Players tab, same gate and cache: the admin analytics among engaged
 accounts, staff out, as shares of them (that total is never sent). `favourites` (uma id,
-share), `ranks` (Team Trials and club rank: the share who set one, and each rank's share of
+`people`: a COUNT, the one list that sends one, by the owner's call of 2026-11-13), `ranks` (Team Trials and club rank: the share who set one, and each rank's share of
 them, no "Not set" row), `income` (the share with each income option on, and `default_on`:
 where a new account starts), `budget` (per Team Trials class, highest first: the MEDIAN
 carats held and pulls planned, a class of one never shown), `selectors` (per campaign
@@ -1150,7 +1150,7 @@ selector: `buyers` of every player, `picked` of the buyers, the top five picks, 
 
 ```json
 { "generated_at": "...",
-  "favourites": [{"uma": 41, "share": 0.06}],
+  "favourites": [{"uma": 41, "people": 12}],
   "ranks": [{"label": "Team Trials", "share": 0.75, "rows": [{"name": "Class 6", "share": 0.38}]}],
   "income": [{"key": "daily_carat", "label": "Daily Carat Pack", "share": 0.42, "default_on": false}],
   "budget": [{"name": "Class 6", "carats": 24000, "pulls": 150}],
