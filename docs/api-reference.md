@@ -957,7 +957,8 @@ sent so it can find them there and in the Collection. Never `admin_comments`.
   a "fans" or "placings" goal carries its whole sentence in `race` ("Get 3,000 fans", "Place 3rd
   or better in 2 G1 races") with a null `grade` and an empty `need`; career.py) and `objectives_hidden`
   (goals of kinds not decoded yet), `skills` (the `/skills` list row plus `source`, `level`, `cost`,
-  `evolves_from` as a game id; unique, innate, awakening, evolved), `outfits` (the
+  `evolves_from` as a game id, and `conditions`, an evolution's unlock conditions in the
+  skill page's shape, empty for any other row; unique, innate, awakening, evolved), `outfits` (the
   character's other outfits), `cards` (her own cards and every group card listing her; each
   row carries `image_borderless` beside `image`, so the page frames the card itself).
 - **Card** (404 for a placeholder): `id`, `game_id`, `name`, `title`, `jp_name`,

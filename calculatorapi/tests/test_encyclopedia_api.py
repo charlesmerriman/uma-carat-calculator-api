@@ -4,7 +4,7 @@ from django.db import connection
 from django.test import override_settings
 from django.test.utils import CaptureQueriesContext
 
-from calculatorapi.models import SupportCard, SupportCardSkill, Uma, UmaSkill
+from calculatorapi.models import SkillEvolutionCondition, SupportCard, SupportCardSkill, Uma, UmaSkill
 from calculatorapi.tests.base import CalculatorTestCase, PLAIN_TEST_STORAGES
 from calculatorapi.tests.test_skills_api import (
     EXPECTED_STATUS, client_for, early_access_readers, editor_client, make, skill_queries,
@@ -91,6 +91,20 @@ class UmaPageTests(EncyclopediaFixture):
         gold, evolved = skills[1], skills[2]
         self.assertEqual((gold["level"], gold["cost"]), (3, 180))
         self.assertEqual(evolved["evolves_from"], 200011)
+        self.assertEqual((gold["conditions"], evolved["conditions"]), ([], []))
+
+    def test_an_evolution_carries_its_unlock_conditions(self):
+        SkillEvolutionCondition.objects.create(
+            skill=self.evolved, game_id=10010101, num=1, sub_num=1, timing_type=1, count_type=1,
+            text="Attain at least 600 Stamina", jp_text="条件",
+        )
+        SkillEvolutionCondition.objects.create(
+            skill=self.evolved, game_id=10010102, num=2, sub_num=1, timing_type=1, count_type=1, jp_text="スキルを3個",
+        )
+        evolved = self.page()["skills"][2]
+        self.assertEqual([(row["text"], row["is_japanese"]) for row in evolved["conditions"]], [
+            ("Attain at least 600 Stamina", False), ("スキルを3個", True),
+        ])
 
     def test_relatives_other_outfits_own_cards_and_group_cards(self):
         body = self.page()

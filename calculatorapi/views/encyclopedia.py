@@ -39,7 +39,7 @@ from calculatorapi import skills_cache, support_effects
 from calculatorapi.career import shown_goals
 from calculatorapi.models import Skill, SupportCard, SupportCardSkill, Uma, UmaSkill
 from calculatorapi.views.pvp_catalogue import image_url
-from calculatorapi.views.skills import _bytes, _json, refused, summary
+from calculatorapi.views.skills import _bytes, _json, refused, summary, unlock_conditions
 
 APTITUDE_KEYS = ("turf", "dirt", "short", "mile", "medium", "long", "front", "pace", "late", "end")
 STAT_KEYS = ("speed", "stamina", "power", "guts", "wit")
@@ -70,6 +70,10 @@ def _skill_rows(rows):
             "source": row.source,
             "level": getattr(row, "level", None),
             "evolves_from": skill.evolves_from.game_id if skill.evolves_from_id else None,
+            # An evolution's unlock conditions beside it, so the uma page needn't
+            # send a player to each skill's page for them (Daptrius, 2026-11-13).
+            # Only an uma's evolutions have any; a card's rows never query.
+            "conditions": unlock_conditions(skill) if row.source == "evolved" else [],
         })
     return found
 
@@ -124,6 +128,7 @@ def build_uma(uma):
     skills = (
         UmaSkill.objects.filter(uma=uma, skill_id__in=_shown_skill_ids())
         .select_related("skill__evolves_from")
+        .prefetch_related("skill__evolution_conditions")
     )
     character = uma.character_id
     # Race goals worded (career.py); goals of other kinds are counted, never guessed at.
