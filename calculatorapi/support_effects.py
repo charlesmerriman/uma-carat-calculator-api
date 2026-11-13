@@ -38,11 +38,23 @@ suite holds the table above cell for cell.
 HOW A VALUE IS WRITTEN (percent, a plain number, "Lv 2") is not in the game
 files. calculatorapi/data/support_effect_types.json holds each type's name and
 help text (the game's own English, text_data 151 and 154) and a `format`.
-Seven formats are confirmed from the same shots (`format_confirmed`): Friendship
-Bonus, Mood Effect and Hint Frequency are percents, Hint Levels a level, Power
-Bonus, Initial Friendship Gauge and Specialty Priority plain numbers. Every
-other type is sent as the plain number the files hold, never dressed with a
-unit by a guess, until someone confirms it.
+Sixteen are confirmed (`format_confirmed`). Seven from the same shots:
+Friendship Bonus, Mood Effect and Hint Frequency are percents, Hint Levels a
+level, Power Bonus, Initial Friendship Gauge and Specialty Priority plain
+numbers. Nine from Daptrius's list on 2026-11-13 (same board post): Training
+Effectiveness, Race Bonus, Fan Bonus, Event Recovery, Event Effectiveness,
+Failure Protection and Energy Cost Reduction are percents, Skill Point Bonus
+and Wit Friendship Recovery plain numbers. Every other type (the stat
+bonuses, the initial and max stats) is sent as the plain number the files
+hold, never dressed with a unit by a guess. Minigame Effectiveness is one of
+those: he has never seen it, and no card in either client has it.
+
+WHAT THE PAGE DOESN'T ADD UP. The table and the unique effect are shown side
+by side, never summed, because they don't simply add (Daptrius, same reply):
+a unique Friendship Bonus or Specialty Priority multiplies with the card's
+own. A card with Specialty Priority 35 and a unique 40 behaves like
+(100 + 35) x 1.4 = 189, so 89, not 75. Everything else adds, as far as he
+knows. The page says so under a unique effect that names one of the two.
 """
 
 import json
@@ -128,10 +140,26 @@ def table(effects, rarity):
     return sorted(rows, key=lambda row: (row["unlock"], row["type"]))
 
 
-def unique_effect(unique):
+# Friendship Bonus and Specialty Priority: a unique effect's value of either
+# multiplies with the card's own (the top of this file).
+MULTIPLIED_TYPES = (1, 19)
+
+
+def multiplied(text, effects):
     """
-    The unique effect for the page: {"level", "text"}, or None when the card
-    has none or there are no confirmed words for it.
+    The effects a unique effect multiplies instead of adds, by name: those of
+    MULTIPLIED_TYPES that its words name AND the card's own table has (with
+    none of its own there is nothing to multiply with).
+    """
+    own = {effect["type"] for effect in effects or []}
+    return [TYPES[kind]["name"] for kind in MULTIPLIED_TYPES if kind in own and TYPES[kind]["name"] in text]
+
+
+def unique_effect(unique, effects=None):
+    """
+    The unique effect for the page: {"level", "text", "multiplies"}, or None
+    when the card has none or there are no confirmed words for it. `effects`
+    is the card's own stored table, for `multiplies` (see `multiplied`).
 
     The text is the game's own sentence where the global client has one. A
     JP-only card has no English sentence, so its typed effects are named
@@ -142,7 +170,7 @@ def unique_effect(unique):
     if not unique:
         return None
     if unique.get("text"):
-        return {"level": unique["level"], "text": unique["text"]}
+        return {"level": unique["level"], "text": unique["text"], "multiplies": multiplied(unique["text"], effects)}
     parts = []
     for effect in unique.get("effects", []):
         known = TYPES.get(effect["type"])
@@ -151,4 +179,5 @@ def unique_effect(unique):
         parts.append(f"{known['name']} {effect['value']}")
     if not parts:
         return None
-    return {"level": unique["level"], "text": ", ".join(parts)}
+    text = ", ".join(parts)
+    return {"level": unique["level"], "text": text, "multiplies": multiplied(text, effects)}

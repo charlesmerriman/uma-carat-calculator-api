@@ -105,13 +105,24 @@ class TableTests(SimpleTestCase):
         self.assertEqual(support_effects.table(BRIGHTEST_STAR, None), [])
 
     def test_only_confirmed_formats_carry_a_unit(self):
-        """Seven formats are confirmed from Daptrius's shots; every other type is a plain number."""
+        """Seven formats are confirmed from Daptrius's shots and nine from his list
+        (2026-11-13); every other type is a plain number."""
         types = support_effects.load_types()
         self.assertEqual(
             {key: row["format"] for key, row in types.items() if row["format_confirmed"]},
-            {1: "percent", 2: "percent", 18: "percent", 17: "level", 5: "number", 14: "number", 19: "number"},
+            {
+                # His shots of Special Week's SSR.
+                1: "percent", 2: "percent", 18: "percent", 17: "level", 5: "number", 14: "number", 19: "number",
+                # His list: Training Effectiveness, Race Bonus, Fan Bonus, Event Recovery, Event
+                # Effectiveness, Failure Protection, Energy Cost Reduction; then Skill Point Bonus
+                # and Wit Friendship Recovery.
+                8: "percent", 15: "percent", 16: "percent", 25: "percent", 26: "percent", 27: "percent",
+                28: "percent", 30: "number", 31: "number",
+            },
         )
         self.assertTrue(all(row["format"] == "number" for row in types.values() if not row["format_confirmed"]))
+        # Minigame Effectiveness: he has never seen it, so it stays a bare number.
+        self.assertEqual((types[29]["name"], types[29]["format"]), ("Minigame Effectiveness", "number"))
 
     def test_the_committed_names_are_the_snapshots(self):
         """The API's file is the game's vocabulary: a client update that adds a type fails here until it is added."""
@@ -125,11 +136,25 @@ class TableTests(SimpleTestCase):
 
 class UniqueEffectTests(SimpleTestCase):
     def test_the_games_own_sentence_where_global_has_one(self):
-        self.assertEqual(support_effects.unique_effect(UNIQUE), {"level": 30, "text": "Guts Bonus and Initial Guts"})
+        self.assertEqual(support_effects.unique_effect(UNIQUE),
+                         {"level": 30, "text": "Guts Bonus and Initial Guts", "multiplies": []})
 
     def test_a_jp_only_card_names_its_plain_typed_effects(self):
         jp_only = {"level": 30, "effects": [{"type": 6, "value": 1}, {"type": 12, "value": 20}]}
-        self.assertEqual(support_effects.unique_effect(jp_only), {"level": 30, "text": "Guts Bonus 1, Initial Guts 20"})
+        self.assertEqual(support_effects.unique_effect(jp_only),
+                         {"level": 30, "text": "Guts Bonus 1, Initial Guts 20", "multiplies": []})
+
+    def test_a_unique_friendship_bonus_or_specialty_priority_multiplies_with_the_cards_own(self):
+        """Daptrius, 2026-11-13: Specialty Priority 35 with a unique 40 acts like (100 + 35) x 1.4,
+        not 35 + 40. The page is told which of the two the unique effect names, and only when the
+        card has its own to multiply with."""
+        unique = {"level": 30, "effects": [], "text": "Gain Specialty Priority (40) when the bond gauge is at least 80"}
+        own = [{"type": 19, "levels": {"1": 35}}, {"type": 1, "levels": {"1": 10}}]
+        self.assertEqual(support_effects.unique_effect(unique, own)["multiplies"], ["Specialty Priority"])
+        self.assertEqual(support_effects.unique_effect(unique, [{"type": 1, "levels": {"1": 10}}])["multiplies"], [])
+        typed = {"level": 30, "effects": [{"type": 1, "value": 10}, {"type": 19, "value": 20}]}
+        self.assertEqual(support_effects.unique_effect(typed, own)["multiplies"],
+                         ["Friendship Bonus", "Specialty Priority"])
 
     def test_a_conditional_effect_nobody_decoded_is_not_worded(self):
         conditional = {"level": 30, "effects": [{"type": 101, "value": 80, "params": [3, 1, 30, 1]}]}
@@ -159,7 +184,8 @@ class CardPageEffectsTests(CalculatorTestCase):
         )
         body = editor_client().get("/encyclopedia/cards/30001").json()
         self.assertEqual(body["caps"], [30, 35, 40, 45, 50])
-        self.assertEqual(body["unique_effect"], {"level": 30, "text": "Guts Bonus and Initial Guts"})
+        self.assertEqual(body["unique_effect"],
+                         {"level": 30, "text": "Guts Bonus and Initial Guts", "multiplies": []})
         self.assertEqual(len(body["effects"]), 8)
         hint = next(row for row in body["effects"] if row["name"] == "Hint Frequency")
         self.assertEqual([hint["values"][level - 1] for level in (30, 35, 40, 45, 50)], [30, 33, 36, 40, 40])

@@ -52,8 +52,8 @@
   "type": 8,
   "name": "Training Effectiveness",
   "help": "Increases the effectiveness of training performed together",
-  "format": "number",
-  "format_confirmed": false
+  "format": "percent",
+  "format_confirmed": true
  },
  {
   "type": 9,
@@ -101,15 +101,15 @@
   "type": 15,
   "name": "Race Bonus",
   "help": "Increases stat gain from races",
-  "format": "number",
-  "format_confirmed": false
+  "format": "percent",
+  "format_confirmed": true
  },
  {
   "type": 16,
   "name": "Fan Bonus",
   "help": "Increases fan gain from races",
-  "format": "number",
-  "format_confirmed": false
+  "format": "percent",
+  "format_confirmed": true
  },
  {
   "type": 17,
@@ -171,29 +171,29 @@
   "type": 25,
   "name": "Event Recovery",
   "help": "Increases Energy recovery from this Support Card's events",
-  "format": "number",
-  "format_confirmed": false
+  "format": "percent",
+  "format_confirmed": true
  },
  {
   "type": 26,
   "name": "Event Effectiveness",
   "help": "Increases stat gain from this Support Card's events",
-  "format": "number",
-  "format_confirmed": false
+  "format": "percent",
+  "format_confirmed": true
  },
  {
   "type": 27,
   "name": "Failure Protection",
   "help": "Decreases the probability of failure when training together",
-  "format": "number",
-  "format_confirmed": false
+  "format": "percent",
+  "format_confirmed": true
  },
  {
   "type": 28,
   "name": "Energy Cost Reduction",
   "help": "Decreases Energy consumed when training together",
-  "format": "number",
-  "format_confirmed": false
+  "format": "percent",
+  "format_confirmed": true
  },
  {
   "type": 29,
@@ -207,13 +207,13 @@
   "name": "Skill Point Bonus",
   "help": "Increases skill point gain when training together",
   "format": "number",
-  "format_confirmed": false
+  "format_confirmed": true
  },
  {
   "type": 31,
   "name": "Wit Friendship Recovery",
   "help": "Increases Energy recovery from Wit Friendship Training",
   "format": "number",
-  "format_confirmed": false
+  "format_confirmed": true
  }
 ]

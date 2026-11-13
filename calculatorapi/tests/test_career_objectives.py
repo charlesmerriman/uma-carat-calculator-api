@@ -46,9 +46,9 @@ class TurnLabelTests(CalculatorTestCase):
         goals = SPECIAL_WEEK_GOALS[:2] + [
             # A race goal with no English name for its race.
             {"turn": 69, "kind": 1, "condition_id": 20002, "value_1": 1, "value_2": 0},
-            # Placings in a grade below G1: "that grade" or "that grade or better" isn't confirmed.
-            {"turn": 49, "kind": 2, "condition_id": 300, "value_1": 3, "value_2": 4},
-            {"turn": 25, "kind": 2, "condition_id": 700, "value_1": 1, "value_2": 2},
+            # Placings in a grade nobody has read off the game (G2, OP).
+            {"turn": 49, "kind": 2, "condition_id": 200, "value_1": 3, "value_2": 4},
+            {"turn": 25, "kind": 2, "condition_id": 400, "value_1": 1, "value_2": 2},
         ]
         rows, hidden = shown_goals(goals)
         self.assertEqual(rows, [
@@ -74,11 +74,23 @@ class TurnLabelTests(CalculatorTestCase):
         ])
         self.assertEqual(hidden, 0)
 
+    def test_a_grade_below_g1_means_that_grade_or_higher(self):
+        """As Daptrius read the two in the files (board, 2026-11-13): Tamamo Cross's is
+        "4 G3 or higher", Smart Falcon's "1st in 2 Pre-OP or higher races"."""
+        self.assertEqual(goal_text({"kind": 2, "condition_id": 300, "value_1": 3, "value_2": 4}),
+                         "Place 3rd or better in 4 races at G3 or higher")
+        self.assertEqual(goal_text({"kind": 2, "condition_id": 700, "value_1": 1, "value_2": 2}),
+                         "Win 2 races at Pre-OP or higher")
+        self.assertEqual(goal_text({"kind": 2, "condition_id": 700, "value_1": 1, "value_2": 1}),
+                         "Win 1 race at Pre-OP or higher")
+
     def test_the_wording_of_a_count_and_a_placing(self):
         self.assertEqual(goal_text({"kind": 3, "value_1": 10000}), "Get 10,000 fans")
         self.assertEqual(goal_text({"kind": 2, "condition_id": 100, "value_1": 5, "value_2": 1}),
                          "Place 5th or better in 1 G1 race")
-        self.assertIsNone(goal_text({"kind": 2, "condition_id": 100, "value_1": 1, "value_2": 2}))
+        self.assertEqual(goal_text({"kind": 2, "condition_id": 100, "value_1": 1, "value_2": 2}), "Win 2 G1 races")
+        self.assertIsNone(goal_text({"kind": 2, "condition_id": 100, "value_1": 0, "value_2": 2}))
+        self.assertIsNone(goal_text({"kind": 2, "condition_id": 100, "value_1": 3, "value_2": 0}))
         self.assertIsNone(goal_text({"kind": 3, "value_1": 0}))
         self.assertEqual([ordinal(n) for n in (1, 2, 3, 4, 11, 12, 13, 21, 22)],
                          ["1st", "2nd", "3rd", "4th", "11th", "12th", "13th", "21st", "22nd"])
