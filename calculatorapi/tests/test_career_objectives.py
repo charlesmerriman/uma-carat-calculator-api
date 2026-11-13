@@ -5,11 +5,12 @@ from io import StringIO
 from pathlib import Path
 
 from django.core.management import call_command
+from django.test import override_settings
 
 from calculatorapi.career import goal_text, need_label, ordinal, shown_goals, turn_label
 from calculatorapi.game_data_values import objective_values
 from calculatorapi.models import Uma
-from calculatorapi.tests.base import CalculatorTestCase
+from calculatorapi.tests.base import CalculatorTestCase, PLAIN_TEST_STORAGES
 from calculatorapi.tests.test_skills_api import editor_client
 
 SNAPSHOT = Path(__file__).resolve().parents[2] / "scripts" / "data" / "master_snapshot"
@@ -119,6 +120,9 @@ class ObjectiveImportTests(CalculatorTestCase):
         self.assertIn("Nothing to write.", out.getvalue())
 
 
+# The pages build image URLs from stored names. CI has no bucket configured, so
+# the S3 storage raises there; plain file storage answers anywhere.
+@override_settings(STORAGES=PLAIN_TEST_STORAGES)
 class UmaPageObjectivesTests(CalculatorTestCase):
     def test_the_page_sends_them_worded(self):
         Uma.objects.create(name="Special Week", game_id=100101, image="umas/100101.png",

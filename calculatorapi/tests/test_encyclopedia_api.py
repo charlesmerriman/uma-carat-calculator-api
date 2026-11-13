@@ -1,10 +1,11 @@
 """GET /encyclopedia/umas/<game_id> and GET /encyclopedia/cards/<game_id>."""
 
 from django.db import connection
+from django.test import override_settings
 from django.test.utils import CaptureQueriesContext
 
 from calculatorapi.models import SupportCard, SupportCardSkill, Uma, UmaSkill
-from calculatorapi.tests.base import CalculatorTestCase
+from calculatorapi.tests.base import CalculatorTestCase, PLAIN_TEST_STORAGES
 from calculatorapi.tests.test_skills_api import (
     EXPECTED_STATUS, client_for, early_access_readers, editor_client, make, skill_queries,
 )
@@ -22,6 +23,9 @@ def card(game_id, name, **fields):
                                       **fields)
 
 
+# The pages build image URLs from stored names. CI has no bucket configured, so
+# the S3 storage raises there; plain file storage answers anywhere.
+@override_settings(STORAGES=PLAIN_TEST_STORAGES)
 class EncyclopediaFixture(CalculatorTestCase):  # pylint: disable=too-many-instance-attributes
     def setUp(self):
         self.client = editor_client()

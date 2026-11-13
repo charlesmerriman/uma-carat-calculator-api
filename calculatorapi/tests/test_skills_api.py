@@ -1,6 +1,7 @@
 """GET /skills and GET /skills/<game_id>, and the skill fields a guide now sends."""
 
 from django.db import connection
+from django.test import override_settings
 from django.test.utils import CaptureQueriesContext
 from rest_framework.test import APIClient
 
@@ -8,7 +9,7 @@ from calculatorapi.models import (
     PatreonSupporter, PatreonTier, PvpGuide, PvpSkillRecommendation, Skill, SkillAlias,
     SkillEvolutionCondition, SupportCard, SupportCardSkill, Uma, UmaSkill,
 )
-from calculatorapi.tests.base import CalculatorTestCase
+from calculatorapi.tests.base import CalculatorTestCase, PLAIN_TEST_STORAGES
 from calculatorapi.tests.factories import make_user
 from calculatorapi.tests.test_pvp_guides import make_champions_meeting, url
 
@@ -232,6 +233,9 @@ class GuideSkillFieldsTests(CalculatorTestCase):
         self.assertEqual(skill["unique_of"], "Special Week (New)")
 
 
+# The pages build image URLs from stored names. CI has no bucket configured, so
+# the S3 storage raises there; plain file storage answers anywhere.
+@override_settings(STORAGES=PLAIN_TEST_STORAGES)
 class SkillOwnersAndTypeTests(CalculatorTestCase):
     """Cost, type, owners and the unique / inherited pair (encyclopedia PR 3)."""
 

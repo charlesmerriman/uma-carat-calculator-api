@@ -3,12 +3,12 @@
 import json
 from pathlib import Path
 
-from django.test import SimpleTestCase
+from django.test import SimpleTestCase, override_settings
 
 from calculatorapi import support_effects
 from calculatorapi.game_data_values import effect_values
 from calculatorapi.models import SupportCard
-from calculatorapi.tests.base import CalculatorTestCase
+from calculatorapi.tests.base import CalculatorTestCase, PLAIN_TEST_STORAGES
 from calculatorapi.tests.test_skills_api import editor_client
 
 SNAPSHOT = Path(__file__).resolve().parents[2] / "scripts" / "data" / "master_snapshot"
@@ -176,6 +176,9 @@ class EffectImportTests(SimpleTestCase):
         self.assertNotIn(30999, values)
 
 
+# The pages build image URLs from stored names. CI has no bucket configured, so
+# the S3 storage raises there; plain file storage answers anywhere.
+@override_settings(STORAGES=PLAIN_TEST_STORAGES)
 class CardPageEffectsTests(CalculatorTestCase):
     def test_the_page_sends_the_table_the_caps_and_the_unique_effect(self):
         SupportCard.objects.create(
