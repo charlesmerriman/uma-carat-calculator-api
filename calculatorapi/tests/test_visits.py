@@ -240,6 +240,15 @@ class VisitLandingAndReferrerTests(CalculatorTestCase):
         self._hit(path='/app/zz99ZZ99/', ref='')
         self.assertEqual(self._landing(), {SHARED_PLAN_ROUTE: 2})
 
+    def test_encyclopedia_pages_count_one_bucket_per_kind(self):
+        """About 2,650 pages: the lists by name, each kind's pages as one row."""
+        self.assertEqual(landing_route('/app/umas'), '/app/umas')
+        self.assertEqual(landing_route('/app/cards/'), '/app/cards')
+        self.assertEqual(landing_route('/app/umas/100101'), '/app/umas/<id>')
+        self.assertEqual(landing_route('/app/cards/30001?x=1'), '/app/cards/<id>')
+        self.assertEqual(landing_route('/app/skills/201351'), '/app/skills/<id>')
+        self.assertEqual(landing_route('/app/skills/gourmand'), 'other')
+
     def test_an_eight_letter_app_route_is_still_itself(self):
         # "timeline" fits the share id's shape; the known route wins.
         self.assertEqual(landing_route('/app/timeline'), '/app/timeline')

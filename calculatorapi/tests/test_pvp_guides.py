@@ -255,6 +255,10 @@ class GuideEndpointTests(CalculatorTestCase):
         self.assertEqual(rec["skill"]["unique_of"], "Maruzensky")
         # Her own unique, not an inherited copy: the copy is a separate white.
         self.assertFalse(rec["skill"]["is_inherited"])
+        # The hover card's header facts, as GET /skills sends them: a unique costs
+        # nothing, and a skill with no icon family placed yet is typed "other".
+        self.assertIsNone(rec["skill"]["cost"])
+        self.assertIn("type", rec["skill"])
         self.assertEqual(body["style_notes"], [{"style": "front", "body": "**Go early.**"}])
 
         slots = body["decks"][0]["slots"]

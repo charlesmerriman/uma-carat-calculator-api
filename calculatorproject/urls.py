@@ -67,6 +67,7 @@ from calculatorapi.views.rankings import (
     rankings_gallery, rankings_guides, rankings_players, rankings_pull_plans, rankings_pvp,
 )
 from calculatorapi.views.skills import skill_detail, skill_list
+from calculatorapi.views.encyclopedia import encyclopedia_card, encyclopedia_uma
 from calculatorapi.views.pvp_team import pvp_team_detail, pvp_team_list
 from calculatorapi.views.pvp_run import pvp_run_final, pvp_run_history, pvp_run_list, pvp_run_ticket
 from calculatorapi.views.trained_uma import trained_uma_detail, trained_uma_import, trained_uma_list
@@ -230,9 +231,12 @@ urlpatterns = [
     path("rankings/pvp/<str:kind>/<int:event_id>", rankings_pvp, name="rankings-pvp"),
     path("rankings/players", rankings_players, name="rankings-players"),
     # Every skill a player may read about, and one skill in full: the Skills
-    # page and the guide editor's picker. Public, cached. → views/skills.py
+    # page and the guide editor's picker. Early access (401/403), cached. → views/skills.py
     path("skills", skill_list, name="skill-list"),
     path("skills/<int:game_id>", skill_detail, name="skill-detail"),
+    # The Encyclopedia's uma and card pages, supporters and staff first. → views/encyclopedia.py
+    path("encyclopedia/umas/<int:game_id>", encyclopedia_uma, name="encyclopedia-uma"),
+    path("encyclopedia/cards/<int:game_id>", encyclopedia_card, name="encyclopedia-card"),
     # A signed-in player's PvP teams. Guests keep theirs on the device.
     # → views/pvp_team.py
     path("pvp-teams", pvp_team_list, name="pvp-team-list"),

@@ -1,4 +1,9 @@
-"""Server-side cache for ``GET /skills`` and ``GET /skills/<game_id>``.
+"""Server-side cache for ``GET /skills``, ``GET /skills/<game_id>`` and the
+Encyclopedia's ``GET /encyclopedia/<kind>/<game_id>`` pages.
+
+The Encyclopedia's uma and card pages live here too (2026-11-12) because they
+are built from exactly the tables the skill pages are, so one generation and
+one set of signals covers all of them.
 
 A sibling of pvp_catalogue_cache.py, built the same way: read that module's
 docstring (and public_payload_cache.py's before it) for the one-process LocMem
@@ -24,8 +29,10 @@ from django.core.cache import caches
 CACHE_ALIAS = "skills"
 GENERATION_KEY = "skills:generation"
 # Bump the suffix when a payload's SHAPE changes.
-LIST_KEY = "skills:list:v1:{generation}"
-DETAIL_KEY = "skills:detail:v1:{generation}:{game_id}"
+LIST_KEY = "skills:list:v3:{generation}"
+DETAIL_KEY = "skills:detail:v4:{generation}:{game_id}"
+# An Encyclopedia page: `kind` is "uma" or "card" (views/encyclopedia.py).
+PAGE_KEY = "skills:page:v8:{generation}:{kind}:{game_id}"
 
 # Backstop only, as in pvp_catalogue_cache.py.
 CACHE_TTL_SECONDS = 300
@@ -70,6 +77,18 @@ def read_detail(game_id):
 def store_detail(game_id, json_bytes):
     _cache().set(
         DETAIL_KEY.format(generation=_generation(), game_id=game_id), json_bytes, CACHE_TTL_SECONDS,
+    )
+
+
+def read_page(kind, game_id):
+    """One cached Encyclopedia page as JSON bytes, or None on a miss."""
+    return _cache().get(PAGE_KEY.format(generation=_generation(), kind=kind, game_id=game_id))
+
+
+def store_page(kind, game_id, json_bytes):
+    _cache().set(
+        PAGE_KEY.format(generation=_generation(), kind=kind, game_id=game_id),
+        json_bytes, CACHE_TTL_SECONDS,
     )
 
 

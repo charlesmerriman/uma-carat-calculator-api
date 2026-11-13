@@ -35,6 +35,14 @@ What comes out, one file per concern (all sorted by id, so re-runs diff cleanly)
   evolution_condition_text.json  global only: the official English text of
                       evolution conditions, keyed by condition id. Like skill
                       names, this text ships before global has the conditions
+  objectives.json     global only: each character's career goals on the default
+                      route (see extract_objectives)
+  support_effects.json  every support card's effects as the game states them:
+                      each effect's value at the levels the game names, and
+                      the unique effect (see extract_support_effects)
+  support_effect_types.json  global only: each effect type's English name and
+                      help text ("Friendship Bonus", "Increases the
+                      effectiveness of Friendship Training")
   sparks.json         global only: every spark (the game's "factor"), what a
                       veteran's export lists by id: kind, stars and name
   race_links.json     jp only: each CM's and LoH's course id and race
@@ -101,6 +109,10 @@ TEXT_SUPPORT_TITLE = 76
 TEXT_SUPPORT_CHARA = 77
 TEXT_EVOLUTION_CONDITION = 290  # "Reach 600 Stamina", by skill_upgrade_condition.id
 TEXT_SPARK_NAME = 147       # "Speed", "Oka Sho", by succession_factor.factor_id
+TEXT_RACE_INSTANCE = 28     # "Kisaragi Sho", by race_instance.id
+TEXT_EFFECT_NAME = 151      # "Friendship Bonus", by support_card_effect_table.type
+TEXT_EFFECT_HELP = 154      # "Increases the effectiveness of Friendship Training", by the same type
+TEXT_UNIQUE_EFFECT = 155    # "Guts Bonus and Initial Guts", by support card id
 
 # succession_factor.factor_type -> what the spark is, read from the global
 # client on 2026-10-27: 1 the five stats (blue in the game), 2 the surface,
@@ -425,6 +437,128 @@ def extract_sparks(conn):
     ]
 
 
+# single_mode_route_race.target_type: 1 is the character's own career goal; 3
+# the scenario's finals (turns 74 to 78), the same for everyone, left out.
+GOAL_TARGET = 1
+# condition_type 1: run a race (condition_id is a single_mode_program id). The
+# other kinds (2, 3, 7, 8, 9: 57 rows on 2026-11-12, kind 3 looks like a fan
+# count) are extracted as they are, undecoded; the site shows none of them
+# until one is confirmed (notes/encyclopedia-plan.md, PR 11).
+RACE_GOAL = 1
+
+
+def extract_objectives(conn):
+    """
+    Each character's career goals on the default route (scenario_id 0), in
+    order: [{"chara_id", "goals": [{"turn", "kind", ...}]}]. A race goal names
+    its race through the career program (text_data 28 by race instance, the
+    client's own words), with the race's grade code and the placing needed
+    (condition_value_1: 1 win, 2/3/5 that place or better, 0 just run it).
+    Keyed by CHARACTER, as the game keys them: every outfit shares them.
+    """
+    names = text_map(conn, TEXT_RACE_INSTANCE)
+    programs = {
+        row["id"]: row for row in conn.execute(
+            "SELECT p.id, p.race_instance_id, r.grade FROM single_mode_program p "
+            "JOIN race_instance ri ON ri.id = p.race_instance_id JOIN race r ON r.id = ri.race_id"
+        )
+    }
+    routes = conn.execute(
+        "SELECT chara_id, race_set_id FROM single_mode_route WHERE scenario_id = 0 ORDER BY chara_id, priority"
+    ).fetchall()
+    found = []
+    for route in routes:
+        goals = []
+        for row in conn.execute(
+            "SELECT turn, condition_type, condition_id, condition_value_1, condition_value_2 "
+            "FROM single_mode_route_race WHERE race_set_id = ? AND target_type = ? ORDER BY sort_id",
+            (route["race_set_id"], GOAL_TARGET),
+        ):
+            goal = {"turn": row["turn"], "kind": row["condition_type"]}
+            program = programs.get(row["condition_id"]) if row["condition_type"] == RACE_GOAL else None
+            if program is not None:
+                goal.update(race=names.get(program["race_instance_id"], ""), grade=program["grade"],
+                            top=row["condition_value_1"])
+            else:
+                goal.update(condition_id=row["condition_id"], value_1=row["condition_value_1"],
+                            value_2=row["condition_value_2"])
+            goals.append(goal)
+        found.append({"chara_id": route["chara_id"], "goals": goals})
+    return found
+
+
+# support_card_effect_table's value columns and the card level each one names.
+# A value of -1 means "the game names no value at this level".
+EFFECT_LEVEL_COLUMNS = (("init", 1),) + tuple((f"limit_lv{level}", level) for level in range(5, 55, 5))
+EFFECT_UNSET = -1
+# A real card's id is five digits; the tutorial's copies sit above nine million.
+TUTORIAL_CARD_IDS_FROM = 9_000_000
+
+
+def extract_support_effects(conn, region="global"):
+    """
+    Each support card's effects, exactly as the game's tables state them:
+
+      [{"id": 30001,
+        "effects": [{"type": 1, "levels": {"1": 10, "25": 15, "30": 15, "45": 20}}, ...],
+        "unique": {"level": 30, "effects": [{"type": 6, "value": 1}, {"type": 12, "value": 20}],
+                   "text": "Guts Bonus and Initial Guts"}}]
+
+    `effects` is support_card_effect_table: one row per card and effect type,
+    with a value at SOME of the levels 1, 5, 10 ... 50. Only those named
+    levels are kept. What the value is between two of them is not in the
+    files: calculatorapi/support_effects.py works it out, by the rule checked
+    against real cards, so the snapshot stays a copy of the game.
+
+    `unique` is support_card_unique_effect: the level that unlocks it and up
+    to two typed effects. A type of 100 or more is a conditional effect whose
+    extra numbers (`params`) nobody here has decoded, so the page words a
+    unique effect with the game's OWN sentence (text_data 155, by card id),
+    which only the global client has in English. Null for a card with none.
+    """
+    if not has_table(conn, "support_card_effect_table"):
+        return []
+    sentences = text_map(conn, TEXT_UNIQUE_EFFECT) if region == "global" else {}
+    uniques = {}
+    for row in conn.execute("SELECT * FROM support_card_unique_effect ORDER BY id"):
+        effects = []
+        for slot in ("0", "1"):
+            if row[f"type_{slot}"]:
+                effect = {"type": row[f"type_{slot}"], "value": row[f"value_{slot}"]}
+                params = [row[f"value_{slot}_{index}"] for index in range(1, 5)]
+                if any(params):
+                    effect["params"] = params
+                effects.append(effect)
+        unique = {"level": row["lv"], "effects": effects}
+        if sentences.get(row["id"], "").strip():
+            unique["text"] = sentences[row["id"]].strip()
+        uniques[row["id"]] = unique
+
+    cards = {}
+    for row in conn.execute(
+        "SELECT * FROM support_card_effect_table WHERE id < ? ORDER BY id, type", (TUTORIAL_CARD_IDS_FROM,)
+    ):
+        levels = {
+            str(level): row[column] for column, level in EFFECT_LEVEL_COLUMNS if row[column] != EFFECT_UNSET
+        }
+        if levels:
+            cards.setdefault(row["id"], []).append({"type": row["type"], "levels": levels})
+    return [
+        {"id": card_id, "effects": effects, "unique": uniques.get(card_id)}
+        for card_id, effects in sorted(cards.items())
+    ]
+
+
+def extract_support_effect_types(conn):
+    """[{"type": 1, "name": "Friendship Bonus", "help": "Increases the ..."}], the game's own English."""
+    helps = text_map(conn, TEXT_EFFECT_HELP)
+    return [
+        {"type": effect_type, "name": name.strip(), "help": helps.get(effect_type, "").strip()}
+        for effect_type, name in sorted(text_map(conn, TEXT_EFFECT_NAME).items())
+        if name.strip()
+    ]
+
+
 def has_table(conn, name):
     return conn.execute(
         "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?", (name,)
@@ -559,6 +693,7 @@ def extract(mdb_path, region="global"):
         cards, card_skills = extract_cards(conn)
         support_cards, support_hints = extract_support_cards(conn, region)
         evolutions = extract_evolutions(conn)
+        support_effects = extract_support_effects(conn, region)
         # Text ahead of definitions is a global thing: JP defines what it
         # names, and global's English is the text worth having early. So are
         # the spark names: global's English is what a veteran card shows.
@@ -572,6 +707,8 @@ def extract(mdb_path, region="global"):
                     if text.strip()
                 },
                 "sparks.json": extract_sparks(conn),
+                "objectives.json": extract_objectives(conn),
+                "support_effect_types.json": extract_support_effect_types(conn),
             }
         # The course links come from JP's tables: they know every event
         # global will run, while global's stop at the events it has run.
@@ -590,6 +727,7 @@ def extract(mdb_path, region="global"):
         "evolutions_outfit": len(evolutions["outfit"]),
         "evolutions_scenario": len(evolutions["scenario"]),
         "evolutions_succession": len(evolutions["succession"]),
+        "support_effects": len(support_effects),
     }
     files = {
         "skills.json": skills,
@@ -598,6 +736,7 @@ def extract(mdb_path, region="global"):
         "support_cards.json": support_cards,
         "support_hints.json": support_hints,
         "evolutions.json": evolutions,
+        "support_effects.json": support_effects,
     }
     if region == "jp":
         counts.update({f"race_links_{kind}": len(region_only["race_links.json"][kind])
@@ -624,6 +763,8 @@ def main():
     parser.add_argument("--mdb", type=Path, help="path to master.mdb (required for jp)")
     parser.add_argument("--out", type=Path, help="output directory (default: per region)")
     parser.add_argument("--dry-run", action="store_true", help="print counts, write nothing")
+    parser.add_argument("--only", action="append", metavar="FILE",
+                        help="write only this file (e.g. objectives.json), leaving the rest as committed; repeatable")
     args = parser.parse_args()
 
     if args.mdb is None:
@@ -643,6 +784,10 @@ def main():
         return
 
     args.out.mkdir(parents=True, exist_ok=True)
+    if args.only:
+        # A new file from a NEWER mdb than the committed snapshot, without
+        # refreshing the rest (a content update is its own change).
+        files = {name: payload for name, payload in files.items() if name in args.only}
     for name, payload in files.items():
         (args.out / name).write_text(
             json.dumps(payload, indent=1, ensure_ascii=False) + "\n", encoding="utf-8",
