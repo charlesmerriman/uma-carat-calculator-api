@@ -35,7 +35,7 @@ from django.http import Http404
 from rest_framework import permissions
 from rest_framework.decorators import api_view, permission_classes
 
-from calculatorapi import skills_cache
+from calculatorapi import skills_cache, support_effects
 from calculatorapi.career import shown_goals
 from calculatorapi.models import Skill, SupportCard, SupportCardSkill, Uma, UmaSkill
 from calculatorapi.views.pvp_catalogue import image_url
@@ -187,6 +187,12 @@ def build_card(card):
         "released_at": card.global_release_at.isoformat() if card.global_release_at else None,
         "group_members": card.group_members,
         "purpose": card.purpose,
+        # Its training effects at every level, its level cap at each limit break
+        # and its unique effect (support_effects.py has the growth rule and its
+        # check). [] / [] / None for a card the snapshots hold no effects for.
+        "effects": support_effects.table(card.effects, card.rarity),
+        "caps": list(support_effects.caps(card.rarity)) if card.effects else [],
+        "unique_effect": support_effects.unique_effect(card.unique_effect),
         "skills": sorted(
             _skill_rows(skills),
             key=lambda row: (CARD_SKILL_ORDER.get(row["source"], 9), row["name"]),

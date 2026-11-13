@@ -9,6 +9,8 @@ secondary sources say.
 
 from django.core.management.base import CommandError
 
+from calculatorapi.models import SupportCard
+
 # snapshot key -> Uma column, for the blocks that copy straight across.
 APTITUDE_COLUMNS = {
     "turf": "apt_turf", "dirt": "apt_dirt",
@@ -89,6 +91,37 @@ def objective_values(objectives, uma_game_ids):
         for game_id in uma_game_ids
         if game_id // 100 in by_character
     }
+
+
+def effect_values(global_effects, jp_effects, card_game_ids):
+    """
+    {card game id: {"effects": [...], "unique_effect": {...} | None}} from the
+    two support_effects.json files. Global wins: a card the global client
+    defines takes global's numbers and the game's English sentence for its
+    unique effect. A card only JP has takes JP's numbers, with no sentence
+    (calculatorapi/support_effects.py then names its typed effects instead).
+    """
+    by_id = {row["id"]: row for row in jp_effects}
+    by_id.update({row["id"]: row for row in global_effects})
+    return {
+        game_id: {"effects": by_id[game_id]["effects"], "unique_effect": by_id[game_id].get("unique")}
+        for game_id in card_game_ids
+        if game_id in by_id
+    }
+
+
+def card_values(snapshot, sources, card_names, jp_links, support_plan):
+    """
+    Every column the import adds to a support card beyond global's own: its
+    JP name, a JP-only card's facts, and its effects, for each card row the
+    import trusts (one whose game id it didn't flag as a mismatch).
+    """
+    distrusted = support_plan["distrusted"] | jp_links["card_distrusted"]
+    trusted = set(SupportCard.objects.exclude(game_id=None).values_list("game_id", flat=True)) - distrusted
+    jp_effects = sources.jp.get("support_effects", []) if sources.jp else []
+    return merged(
+        card_names, jp_links["card_facts"], effect_values(snapshot["support_effects"], jp_effects, trusted),
+    )
 
 
 def merged(*sources):
