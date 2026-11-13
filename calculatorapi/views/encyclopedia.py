@@ -3,6 +3,9 @@ GET /encyclopedia/umas/<game_id> and GET /encyclopedia/cards/<game_id>: one
 outfit's or one support card's page in the Encyclopedia
 (notes/encyclopedia-plan.md). The lists need no endpoint of their own: the
 web draws them from GET /pvp-catalogue, which is public and already loaded.
+The one exception is GET /encyclopedia/card-effects, every card's effects for
+the card list's effect sort, fetched only when that sort is picked
+(notes/card-effect-sort-plan.md).
 
 WHO: the Encyclopedia is supporters and staff first (owner, 2026-11-12), so
 both answer as GET /skills does: a guest 401, anyone without early access 403
@@ -238,3 +241,45 @@ def encyclopedia_card(request, game_id):
         lambda game_id: SupportCard.objects.filter(game_id=game_id, is_placeholder=False).first(),
         build_card,
     )
+
+
+def build_card_effects():
+    """
+    Every game card's effects at its five limit-break caps and its unique
+    effect's plain parts, for sorting the card list by an effect
+    (notes/card-effect-sort-plan.md). Keyed by the card's pk, the id the list
+    already has from /pvp-catalogue. `types` names every effect type any card
+    has, for the sort's picker, in the game's type order.
+    """
+    cards, present = {}, set()
+    for card in SupportCard.objects.filter(is_placeholder=False).exclude(game_id=None).only(
+        "id", "rarity", "effects", "unique_effect",
+    ):
+        effects = support_effects.at_caps(card.effects, card.rarity)
+        if not effects:
+            continue
+        present.update(effects)
+        cards[str(card.id)] = {
+            "caps": list(support_effects.caps(card.rarity)),
+            "effects": {str(kind): values for kind, values in effects.items()},
+            "unique": support_effects.unique_parts(card.unique_effect),
+        }
+    types = [
+        {"type": kind, "name": support_effects.TYPES[kind]["name"], "format": support_effects.TYPES[kind]["format"]}
+        for kind in sorted(present)
+    ]
+    return {"types": types, "cards": cards}
+
+
+@api_view(["GET"])
+@permission_classes([permissions.IsAuthenticated])
+def encyclopedia_card_effects(request):
+    """GET /encyclopedia/card-effects: the card list's effect sort. Same gate and
+    cache as the pages; one entry for everyone let in."""
+    if (refusal := refused(request)) is not None:
+        return refusal
+    body = skills_cache.read_page("card-effects", 0)
+    if body is None:
+        body = _bytes(build_card_effects())
+        skills_cache.store_page("card-effects", 0, body)
+    return _json(body)
