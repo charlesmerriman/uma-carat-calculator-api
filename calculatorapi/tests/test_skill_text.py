@@ -226,7 +226,7 @@ class EffectTextTests(CalculatorTestCase):
         timed = describe(skill(effects=[slot([ability(27, 3500)], duration=24000, cooldown=300000)],
                                activate_lot=1), CONTEXT)
         self.assertEqual((timed["slots"][0]["duration"], timed["slots"][0]["cooldown"]),
-                         ("2.4 s", "30 s per 1,000 m"))
+                         ("2.4 s per 1,000 m", "30 s per 1,000 m"))
         self.assertIs(timed["wit_check"], True)
         self.assertIsNone(describe(skill(), CONTEXT)["wit_check"])
 

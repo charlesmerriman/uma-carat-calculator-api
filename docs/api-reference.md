@@ -747,7 +747,9 @@ also carries:
 `availability` (`"global"`, `"announced"`, `"jp"`: the site tags `"jp"` as "JP only");
 `uses_translation` (true when the name or description shown is UmaTL's: the site credits
 UmaTL); `readable` (when it fires and what it does, `skill_text.describe`: `{"wit_check",
-"complete", "slots": [{"after", "when", "effects", "duration", "cooldown"}]}`, each
+"complete", "slots": [{"after", "when", "effects", "duration", "cooldown"}]}`, where a timed
+`duration` and a repeating `cooldown` are the game's base values per 1,000 m of race
+("2.4 s per 1,000 m": the game scales both by the race's length); each
 condition `{"all": [phrase], "any": [[phrase]]}`, each phrase `{"text", "raw"}` where `raw`
 is the game's own code, not yet translated); and `sources` (`{"umas": [{"name", "source",
 "level", "on_global"}], "uma_count", "cards": [{"name", "source", "on_global"}],
@@ -964,7 +966,9 @@ sent so it can find them there and in the Collection. Never `admin_comments`.
   order it gains them: `type`, `name`, `help`, `format` "percent" / "number" / "level", `unlock`
   the first level it has the effect, `values` one per level from 1 to its top cap with `null`
   before `unlock`), `caps` (its level cap at each limit break, 0 to 4), `unique_effect`
-  (`{"level", "text"}` or `null`; support_effects.py), `skills` (hints, then events),
+  (`{"level", "text", "multiplies"}` or `null`; `multiplies` names the effects, of Friendship Bonus
+  and Specialty Priority, that it multiplies with the card's own instead of adding to;
+  support_effects.py), `skills` (hints, then events),
   `outfits` (a group card's are its members'), `cards` (the character's other cards; `[]`
   on a group card).
 

@@ -17,10 +17,12 @@ kinds as far as someone who plays has confirmed how the game words them
   late December, Oguri Cap must get 3,000 fans by the end of that turn").
 - kind 2, placings in a grade: `condition_id` is the grade's code, `value_1`
   the placing and `value_2` how many races ("Senior Year, late June, Oguri Cap
-  must place 3rd or better in 2 G1 races": 100, 3, 2). ONLY G1 IS WORDED. For
-  the lower grades nobody has confirmed whether the game means that grade or
-  "that grade or better" (300, 3, 4 and 700, 1, 2 are the two in the files),
-  so those stay counted in `hidden`, never worded by a guess.
+  must place 3rd or better in 2 G1 races": 100, 3, 2). A grade below G1 means
+  THAT GRADE OR HIGHER, and a placing of 1 is a win (Daptrius, 2026-11-13, on
+  the two in the files: Tamamo Cross's 300, 3, 4 is "4 G3 or higher" and
+  Smart Falcon's 700, 1, 2 is "1st in 2 Pre-OP or higher races"). Only the
+  three codes he read are worded (PLACING_GRADES); any other stays counted in
+  `hidden`, never worded by a guess.
 
 NOT IN THE FILES WE READ: a goal an event can swap for another (Agnes
 Tachyon's Derby becomes the NHK Mile Cup when her mood is too low; Daptrius,
@@ -39,8 +41,9 @@ GRADE_LABELS = {100: "G1", 200: "G2", 300: "G3", 400: "OP"}
 RACE_GOAL = 1
 PLACINGS_GOAL = 2
 FANS_GOAL = 3
-# The one grade a placings goal is worded for: see the top of this file.
-G1 = 100
+# The grades a placings goal is worded for, as the sentence says them: see the
+# top of this file. Nothing ranks above G1, so it needs no "or higher".
+PLACING_GRADES = {100: "G1 {races}", 300: "{races} at G3 or higher", 700: "{races} at Pre-OP or higher"}
 
 
 def turn_label(turn):
@@ -81,12 +84,14 @@ def goal_text(goal):
     kind = goal.get("kind")
     if kind == FANS_GOAL and goal.get("value_1", 0) > 0:
         return f"Get {goal['value_1']:,} fans"
-    if kind == PLACINGS_GOAL and goal.get("condition_id") == G1:
+    if kind == PLACINGS_GOAL and goal.get("condition_id") in PLACING_GRADES:
         place, races = goal.get("value_1", 0), goal.get("value_2", 0)
-        # "Place 1st or better" isn't how anyone would say a win, and no G1
-        # goal in the files asks for one, so it stays unworded.
-        if place >= 2 and races >= 1:
-            return f"Place {ordinal(place)} or better in {races} G1 {'race' if races == 1 else 'races'}"
+        if place < 1 or races < 1:
+            return None
+        # "2 G1 races", "4 races at G3 or higher".
+        where = PLACING_GRADES[goal["condition_id"]].format(races="race" if races == 1 else "races")
+        # A placing of 1 is a win: nobody says "place 1st or better".
+        return f"Win {races} {where}" if place == 1 else f"Place {ordinal(place)} or better in {races} {where}"
     return None
 
 

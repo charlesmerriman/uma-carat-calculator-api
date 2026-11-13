@@ -192,7 +192,7 @@ def build_card(card):
         # check). [] / [] / None for a card the snapshots hold no effects for.
         "effects": support_effects.table(card.effects, card.rarity),
         "caps": list(support_effects.caps(card.rarity)) if card.effects else [],
-        "unique_effect": support_effects.unique_effect(card.unique_effect),
+        "unique_effect": support_effects.unique_effect(card.unique_effect, card.effects),
         "skills": sorted(
             _skill_rows(skills),
             key=lambda row: (CARD_SKILL_ORDER.get(row["source"], 9), row["name"]),

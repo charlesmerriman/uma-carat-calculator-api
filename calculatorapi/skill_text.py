@@ -22,7 +22,7 @@ THE SHAPE, per effect slot (a skill has one or two):
     {"after": condition,              # the precondition: must have held earlier
      "when":  condition,              # the condition itself
      "effects": [phrase, ...],
-     "duration": "2.4 s" | "Whole race" | None,
+     "duration": "2.4 s per 1,000 m" | "Whole race" | None,
      "cooldown": "Once per race" | "30 s per 1,000 m" | None}
 
 where a condition is {"all": [phrase, ...], "any": [[phrase, ...], ...]}
@@ -33,15 +33,18 @@ coverage.
 Units, from zephyr's horse notes and checked on known skills: durations and
 cooldowns are ten-thousandths of a second; speeds, accelerations, stats and
 recovery are the value ÷ 10,000 (m/s, m/s², stat points, share of max
-endurance). A duration is the game's base value; the game stretches it on
-longer courses.
+endurance). A duration and a cooldown are the game's base values: it scales
+both by the race's length ÷ 1,000 m.
 
 THE WORDING (Daptrius's list and Henry, for the Encyclopedia, 2026-11-12):
 a flat stat reads "+40 Power", number first; NO UNIT is shown but seconds
-(Henry, 2026-10-23: "Velocity +0.35", never "+0.35 m/s"); and a cooldown
-that can repeat is stated against the race's length, because the game scales
-it by length ÷ 1,000 m (a 30 s cooldown is 60 s on a 2,000 m race). The
-cooldown wording is ours until Daptrius confirms it.
+(Henry, 2026-10-23: "Velocity +0.35", never "+0.35 m/s"); and a duration,
+like a cooldown that can repeat, is stated against the race's length, because
+the game scales both by length ÷ 1,000 m (a 30 s cooldown is 60 s on a
+2,000 m race, a 2.4 s effect lasts 4.8 s there). Daptrius confirmed the
+cooldown wording on 2026-11-12 and that "activation time and cooldown scale
+the same" on 2026-11-13 (board, "Dedicated pages for umas, support cards and
+skills").
 """
 
 from dataclasses import dataclass, field
@@ -626,7 +629,8 @@ def describe_slot(slot, context):
         "after": describe_condition(slot.get("precondition", ""), context),
         "when": describe_condition(slot.get("condition", ""), context),
         "effects": [ability_text(ability, context) for ability in slot.get("abilities", [])],
-        "duration": "Whole race" if duration < 0 else (seconds(duration) if duration > 0 else None),
+        "duration": ("Whole race" if duration < 0
+                     else f"{seconds(duration)} per 1,000 m" if duration > 0 else None),
         "cooldown": ("Once per race" if cooldown >= ONCE_PER_RACE
                      else f"{seconds(cooldown)} per 1,000 m" if cooldown > 0 else None),
     }

@@ -1877,8 +1877,9 @@ writes a character's list to each of her outfits (`Uma.career_objectives`);
 `calculatorapi/career.py` words the race goals, a fan count (kind 3: `value_1` fans by that
 turn) and placings in G1s (kind 2 with `condition_id` 100: `value_1` the placing, `value_2` how
 many races), as Daptrius read them off the game on 2026-11-12, and counts the rest. A kind 2
-goal for a lower grade stays unworded until someone confirms whether the game means that
-grade or "that grade or better". The file was added with `--only objectives.json`,
+goal for a lower grade means that grade or higher, and a placing of 1 is a win (Daptrius,
+2026-11-13): 300 reads "at G3 or higher" and 700 "at Pre-OP or higher", the only two codes
+in the files; any other stays unworded. The file was added with `--only objectives.json`,
 which writes one file from a newer mdb without refreshing the others.
 
 **Support card effects** (`master_snapshot/support_effects.json` and `jp_snapshot/support_effects.json`,
@@ -1891,8 +1892,11 @@ the value at every level (a straight line between named levels, rounded down; no
 first; flat after the last), which Daptrius checked on 2026-11-12 at five levels of one SSR; the
 module's docstring has the table. Effect names and help text are the game's English
 (`master_snapshot/support_effect_types.json`, `text_data` 151 and 154), committed for the API as
-`calculatorapi/data/support_effect_types.json` with each type's `format`: seven are confirmed, and
-every other type is sent as a plain number. JP already has a type (32) the global client doesn't
+`calculatorapi/data/support_effect_types.json` with each type's `format`: sixteen are confirmed (seven
+from his shots, nine from his list of 2026-11-13), and every other type is sent as a plain number.
+A unique effect's Friendship Bonus or Specialty Priority multiplies with the card's own instead of
+adding to it (Daptrius, same reply), so the page never sums the two and is told which apply
+(`unique_effect.multiplies`). JP already has a type (32) the global client doesn't
 name; an effect of an unnamed type is left out of the page until its name is extracted. Both
 files were written with `--only`, from the 2026-11-06 global mdb and the JP export.
 
