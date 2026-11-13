@@ -182,3 +182,45 @@ def unique_effect(unique, effects=None):
         return None
     text = ", ".join(parts)
     return {"level": unique["level"], "text": text, "multiplies": multiplied(text, effects)}
+
+
+# ── For sorting the card list by an effect (notes/card-effect-sort-plan.md) ──
+
+
+def at_caps(effects, rarity):
+    """
+    Each effect type's value at the card's five limit-break caps (index 0 is
+    0LB, 4 is MLB), by `value_at`, so the list sorts on the same numbers the
+    card page shows. None at a cap the effect hasn't unlocked by. Types the
+    file doesn't name are left out, as `table` leaves them out.
+    """
+    levels = caps(rarity)
+    if not levels:
+        return {}
+    found = {}
+    for effect in effects or []:
+        if effect["type"] not in TYPES or not effect.get("levels"):
+            continue
+        values = [value_at(effect["levels"], level) for level in levels]
+        if any(value is not None for value in values):
+            found[effect["type"]] = values
+    return found
+
+
+def unique_parts(unique):
+    """
+    The unique effect's plain parts for a sort: {"level", "values": {type:
+    value}, "conditional"}. A part with params, or a type of 100 and up, is
+    conditional (numbers nobody here has decoded); it is left out and
+    `conditional` says so, so the list can mark the card instead of guessing.
+    None when the card has no unique effect, or none with any parts.
+    """
+    if not unique or not unique.get("effects"):
+        return None
+    values, conditional = {}, False
+    for effect in unique["effects"]:
+        if effect.get("params") or effect["type"] >= 100 or effect["type"] not in TYPES:
+            conditional = True
+            continue
+        values[effect["type"]] = values.get(effect["type"], 0) + effect["value"]
+    return {"level": unique["level"], "values": values, "conditional": conditional}
