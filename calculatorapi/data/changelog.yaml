@@ -32,6 +32,17 @@
 # module changed. Newest entry first is conventional here but not required — the
 # page sorts by date.
 
+- key: encyclopedia
+  date: 2026-11-13
+  title: "The Encyclopedia, for supporters first"
+  version: "v2.16"
+  changes:
+    - added: "Introducing the Encyclopedia! Supporters get it first, and it opens to everyone later."
+    - added: "A page for every uma, support card and skill. Press Ctrl+K to search and jump straight to one, see a support card's effects at any level and limit break, and read each uma's career objectives."
+    - added: "Supporters can click an uma or support card on the Timeline, in a guide, Rankings, your Collection, Selectors, Legend Races or a gallery post to open its page."
+    - changed: "Skill pop-ups in the PvP guides have a new look."
+    - fixed: "Inherited uniques in the PvP guides name the uma they come from."
+
 - key: runs-teams-rankings
   date: 2026-11-12
   title: "Team buttons in CM Runs, sharper pull plan rankings, and a pile of fixes"
