@@ -54,7 +54,8 @@ by side, never summed, because they don't simply add (Daptrius, same reply):
 a unique Friendship Bonus or Specialty Priority multiplies with the card's
 own. A card with Specialty Priority 35 and a unique 40 behaves like
 (100 + 35) x 1.4 = 189, so 89, not 75. Everything else adds, as far as he
-knows. The page says so under a unique effect that names one of the two.
+knows. The API names which of the two a unique multiplies (`multiplies`);
+the page stopped saying so in a line on 2026-11-13 (Daptrius: noise).
 """
 
 import json
