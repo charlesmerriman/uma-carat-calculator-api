@@ -1929,7 +1929,7 @@ editor narrowing a cutoff cannot 400 a plan its owner never touched.
   "is_recommended": false,
   "admin_comments": "string | null",
   "banner_timeline": { "id": 1, "name": "string", "start_date": "ISO8601", "end_date": "ISO8601", "is_predicted": false, "jp_start_date": "ISO8601 | null", "jp_end_date": "ISO8601 | null", "global_start_date": "ISO8601 | null", "global_end_date": "ISO8601 | null", "image": "url | null" },
-  "umas": [ { "id": 1, "name": "string", "image": "url | null", "portrait": "url | null", "admin_comments": "string | null", "purpose": "string", "first_jp_date": "ISO8601 | null", "is_time_limited": false, "is_three_star": true, "rarity": "1 | 2 | 3 | null" } ],
+  "umas": [ { "id": 1, "name": "string", "image": "url | null", "portrait": "url | null", "admin_comments": "string | null", "purpose": "string", "first_jp_date": "ISO8601 | null", "is_time_limited": false, "is_three_star": true, "rarity": "1 | 2 | 3 | null", "game_id": "int | null" } ],
   "rate_up_picks": "int | null",
   "rate_overrides": { "<uma id>": 0.005 }
 }
@@ -1958,6 +1958,10 @@ characters), rendered as the overlay on its Timeline tile. Never `null` — `""`
 Unlike the per-banner `recommendation` on `banner_timeline_data`'s cards, it describes the
 card itself, so it is identical on every banner the card appears on.
 
+`game_id` on a nested uma or support card is the key of its Encyclopedia page
+(`/app/umas/<game_id>`, `/app/cards/<game_id>`), which the Timeline's tiles link to. `null`
+until the card is imported, and always `null` for a placeholder card, which has no page.
+
 `first_jp_date` on a nested uma or support card is the earliest JP banner it appeared
 on, derived server-side (never stored) and the key the **temporal** half of selector
 eligibility is judged on: a selector may only take cards released on JP on or before its
@@ -1980,7 +1984,7 @@ including one with a `null` (unrestricted) cutoff. A client must check both halv
   "is_recommended": false,
   "admin_comments": "string | null",
   "banner_timeline": { ... },
-  "support_cards": [ { "id": 1, "name": "string", "image": "url | null", "admin_comments": "string | null", "purpose": "string", "first_jp_date": "ISO8601 | null", "rarity": "1 | 2 | 3 | null" } ],
+  "support_cards": [ { "id": 1, "name": "string", "image": "url | null", "admin_comments": "string | null", "purpose": "string", "first_jp_date": "ISO8601 | null", "rarity": "1 | 2 | 3 | null", "game_id": "int | null" } ],
   "rate_up_picks": "int | null",
   "rate_overrides": { "<support card id>": 0.005 }
 }
