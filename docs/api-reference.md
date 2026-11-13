@@ -766,8 +766,9 @@ stored. The team builder counts a source that teaches the pick or a HIGHER versi
 that teaches the gold teaches the white too, so a gold on the team covers a white pick and
 a white never covers a gold (owner, 2026-10-14); an evolved pick is covered by its base,
 which is what gets evolved. `style` values: `everyone`, `runaway`, `front`, `pace`, `late`, `end` (never
-`everyone` on an uma). `category`: `acceleration`, `speed`, `green`, `recovery`,
-`debuff`, `other`. Stat values are short TEXT as the guide writes them (`"1100+"`, `"578*"`), `""` where it gives none. Text fields are
+`everyone` on an uma). `category`: `acceleration`, `early_mid` (Early-Race / Mid-Game), `late`
+(Late-Race), `speed`, `green`, `recovery`, `debuff`, `other` (the sheet's ungrouped list, read as
+"Core skills"); every one stays pickable, and the reader hides a group with no skills. Stat values are short TEXT as the guide writes them (`"1100+"`, `"578*"`), `""` where it gives none. Text fields are
 markdown (`short_description`, `meta_analysis`, style note `body`) or one-line notes; both
 may hold `==highlight==` spans the client renders red.
 
@@ -957,7 +958,8 @@ sent so it can find them there and in the Collection. Never `admin_comments`.
   a "fans" or "placings" goal carries its whole sentence in `race` ("Get 3,000 fans", "Place 3rd
   or better in 2 G1 races") with a null `grade` and an empty `need`; career.py) and `objectives_hidden`
   (goals of kinds not decoded yet), `skills` (the `/skills` list row plus `source`, `level`, `cost`,
-  `evolves_from` as a game id; unique, innate, awakening, evolved), `outfits` (the
+  `evolves_from` as a game id, and `conditions`, an evolution's unlock conditions in the
+  skill page's shape, empty for any other row; unique, innate, awakening, evolved), `outfits` (the
   character's other outfits), `cards` (her own cards and every group card listing her; each
   row carries `image_borderless` beside `image`, so the page frames the card itself).
 - **Card** (404 for a placeholder): `id`, `game_id`, `name`, `title`, `jp_name`,
@@ -971,6 +973,22 @@ sent so it can find them there and in the Collection. Never `admin_comments`.
   support_effects.py), `skills` (hints, then events),
   `outfits` (a group card's are its members'), `cards` (the character's other cards; `[]`
   on a group card).
+
+### `GET /encyclopedia/card-effects`
+
+Every game card's effects, for the card list's "By effect" sort (notes/card-effect-sort-plan.md).
+Same gate and cache as the pages (401 guest, 403 without early access). `types` lists every effect
+type any card has (`type`, `name`, `format`), in type order. `cards` is keyed by the card's pk (the
+list's id from `/pvp-catalogue`): `caps` (the level cap at limit break 0 to 4), `effects` (type to
+its value at each of those caps, `null` before it unlocks; `support_effects.at_caps`) and `unique`
+(`level`, `values`: type to the unique's plain value, `conditional`: true when a part with
+undecoded params was left out; null for no unique). A card with no effects is left out.
+
+```json
+{"types": [{"type": 19, "name": "Specialty Priority", "format": "number"}],
+ "cards": {"42": {"caps": [30, 35, 40, 45, 50], "effects": {"19": [20, 25, 30, 35, 35]},
+                  "unique": {"level": 30, "values": {"19": 40}, "conditional": false}}}}
+```
 
 ### `GET /pvp-catalogue`
 
@@ -1139,7 +1157,7 @@ from 20 races, 2 from 100, 3 from 300.
 
 The Rankings page's Players tab, same gate and cache: the admin analytics among engaged
 accounts, staff out, as shares of them (that total is never sent). `favourites` (uma id,
-share), `ranks` (Team Trials and club rank: the share who set one, and each rank's share of
+`people`: a COUNT, the one list that sends one, by the owner's call of 2026-11-13), `ranks` (Team Trials and club rank: the share who set one, and each rank's share of
 them, no "Not set" row), `income` (the share with each income option on, and `default_on`:
 where a new account starts), `budget` (per Team Trials class, highest first: the MEDIAN
 carats held and pulls planned, a class of one never shown), `selectors` (per campaign
@@ -1149,7 +1167,7 @@ selector: `buyers` of every player, `picked` of the buyers, the top five picks, 
 
 ```json
 { "generated_at": "...",
-  "favourites": [{"uma": 41, "share": 0.06}],
+  "favourites": [{"uma": 41, "people": 12}],
   "ranks": [{"label": "Team Trials", "share": 0.75, "rows": [{"name": "Class 6", "share": 0.38}]}],
   "income": [{"key": "daily_carat", "label": "Daily Carat Pack", "share": 0.42, "default_on": false}],
   "budget": [{"name": "Class 6", "carats": 24000, "pulls": 150}],

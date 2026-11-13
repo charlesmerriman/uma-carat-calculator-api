@@ -197,3 +197,41 @@ class CardPageEffectsTests(CalculatorTestCase):
         SupportCard.objects.create(name="Bare", game_id=30777, rarity=3, card_type="speed", image="support_cards/x.png")
         body = editor_client().get("/encyclopedia/cards/30777").json()
         self.assertEqual((body["effects"], body["caps"], body["unique_effect"]), ([], [], None))
+
+
+class EffectSortTests(SimpleTestCase):
+    """The card list's effect sort reads these (notes/card-effect-sort-plan.md)."""
+
+    def test_values_at_each_limit_break_cap(self):
+        found = support_effects.at_caps(BRIGHTEST_STAR, 3)
+        self.assertEqual(found[18], [30, 33, 36, 40, 40])  # Hint Frequency
+        self.assertEqual(found[8], [None, None, None, 5, 10])  # Training Effectiveness unlocks at 45
+        self.assertEqual(support_effects.at_caps(BRIGHTEST_STAR, None), {})
+
+    def test_the_uniques_plain_parts_and_whether_any_part_was_left_out(self):
+        self.assertEqual(support_effects.unique_parts(UNIQUE),
+                         {"level": 30, "values": {6: 1, 12: 20}, "conditional": False})
+        conditional = {"level": 25, "effects": [{"type": 15, "value": 5},
+                                                {"type": 101, "value": 3, "params": [1, 2]}]}
+        self.assertEqual(support_effects.unique_parts(conditional),
+                         {"level": 25, "values": {15: 5}, "conditional": True})
+        self.assertIsNone(support_effects.unique_parts(None))
+
+
+class CardEffectsRouteTests(CalculatorTestCase):
+    def test_every_card_keyed_by_pk_with_the_types_any_card_has(self):
+        card = SupportCard.objects.create(
+            name="Special Week", title="[The Brightest Star in Japan!]", game_id=30001, rarity=3, card_type="guts",
+            image="support_cards/30001.png", effects=BRIGHTEST_STAR, unique_effect=UNIQUE,
+        )
+        SupportCard.objects.create(name="Bare", game_id=30777, rarity=3, card_type="speed", image="support_cards/x.png")
+        body = editor_client().get("/encyclopedia/card-effects").json()
+        self.assertEqual(list(body["cards"]), [str(card.id)])  # a card with no effects isn't sent
+        row = body["cards"][str(card.id)]
+        self.assertEqual(row["caps"], [30, 35, 40, 45, 50])
+        self.assertEqual(row["effects"]["19"], [20, 25, 30, 35, 35])  # Specialty Priority
+        self.assertEqual(row["unique"], {"level": 30, "values": {"6": 1, "12": 20}, "conditional": False})
+        self.assertEqual([entry["type"] for entry in body["types"]], [1, 2, 5, 8, 14, 17, 18, 19])
+
+    def test_supporters_first_like_the_pages(self):
+        self.assertEqual(self.client.get("/encyclopedia/card-effects").status_code, 401)
