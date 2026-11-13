@@ -179,8 +179,16 @@ class PvpSkillCategory(models.TextChoices):
     """
     How a guide groups its skills. The sheet's "Green" and "Debuffs" groups are
     `style=everyone` rows in the green and debuff categories.
+
+    EARLY_MID and LATE are Henry's (board, 2026-11-13: "Acceleration,
+    Early-Race / Mid-Game, and Late-Race"). Nothing is retired: an editor
+    may pick any group, and the reader hides one with no skills (owner,
+    2026-11-13), so old guides keep Speed and "other" until re-filed and
+    old revisions still restore. notes/guide-skill-groups-plan.md.
     """
     ACCELERATION = "acceleration", "Acceleration"
+    EARLY_MID = "early_mid", "Early-Race / Mid-Game"
+    LATE = "late", "Late-Race"
     SPEED = "speed", "Speed"
     GREEN = "green", "Green"
     RECOVERY = "recovery", "Recovery"
