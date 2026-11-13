@@ -161,14 +161,22 @@ def evolution(skill, owners):
             for row in Skill.objects.shown().filter(evolves_from=skill)
             .select_related("evolves_from").by_shown_name()
         ],
-        "conditions": [
-            {"text": condition.shown_text or condition.jp_text,
-             "uses_translation": not condition.text and bool(condition.translated_text),
-             "is_japanese": not condition.shown_text}
-            for condition in skill.evolution_conditions.all()
-        ],
+        "conditions": unlock_conditions(skill),
         "scenario": skill.evolution_scenario,
     }
+
+
+def unlock_conditions(skill):
+    """What unlocks an evolved skill, worded as a player reads it: global's
+    English, else UmaTL's, else the Japanese (flagged). Shared by the skill's
+    page and the uma page, which lists them under each evolution (Daptrius,
+    2026-11-13). Prefetch `evolution_conditions` when calling it in a loop."""
+    return [
+        {"text": condition.shown_text or condition.jp_text,
+         "uses_translation": not condition.text and bool(condition.translated_text),
+         "is_japanese": not condition.shown_text}
+        for condition in skill.evolution_conditions.all()
+    ]
 
 
 def build_detail(skill):
