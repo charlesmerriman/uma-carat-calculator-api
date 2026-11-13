@@ -271,6 +271,33 @@ class CardPurposeTests(CalculatorTestCase):
                          'Great for front runners.')
 
 
+class EncyclopediaLinkIdTests(CalculatorTestCase):
+    """The game id each Timeline tile links its Encyclopedia page by."""
+
+    def setUp(self):
+        start = timezone.make_aware(datetime.datetime(2025, 4, 30))
+        self.timeline = BannerTimeline.objects.create(
+            name='Window', jp_start_date=start,
+            jp_end_date=start + datetime.timedelta(days=10))
+        uma_banner = BannerUma.objects.create(banner_timeline=self.timeline, name='Gold Ship')
+        UmasOnUmaBanner.objects.create(
+            banner_uma=uma_banner, uma=Uma.objects.create(name='Gold Ship', game_id=100701))
+        support_banner = BannerSupport.objects.create(
+            banner_timeline=self.timeline, name='Kitasan Black')
+        for card in (SupportCard.objects.create(name='Kitasan Black', game_id=30028),
+                     SupportCard.objects.create(name='Any SSR', game_id=31000, is_placeholder=True)):
+            SupportsOnSupportBanner.objects.create(banner_support=support_banner, support_card=card)
+
+    def test_umas_and_cards_carry_their_game_id(self):
+        row = next(t for t in self.client.get('/calculator-data').json()['banner_timeline_data']
+                   if t['id'] == self.timeline.pk)
+        self.assertEqual(row['banner_umas'][0]['umas'][0]['game_id'], 100701)
+        ids = {card['name']: card['game_id']
+               for card in row['banner_supports'][0]['support_cards']}
+        # A placeholder's id is made up and it has no page, so it sends none.
+        self.assertEqual(ids, {'Kitasan Black': 30028, 'Any SSR': None})
+
+
 class RateUpInputTests(CalculatorTestCase):
     """What the client's rate-up rule reads: card rarity, picks, and overrides.
 
