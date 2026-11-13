@@ -106,6 +106,10 @@ erDiagram
         int apt_turf "ten apt_* grades on the game's 1..8 scale (G..S): turf dirt short mile medium long front pace late end"
         int base_speed "five base_* stats at the initial star count"
         int growth_speed "five growth_* bonuses in percent"
+        json star_stats "the five stats at every star level, lowest first: [{star, speed, stamina, power, guts, wit}]"
+        string jp_name "the JP client's name; from the JP snapshot for every outfit it holds"
+        string jp_title "the JP client's [Title]"
+        json career_objectives "the character's career goals from objectives.json, the same list on each of her outfits"
     }
 
     Skill {
@@ -152,6 +156,10 @@ erDiagram
         int character_id "IMPORTED: the game's character id, a number not a FK"
         string title "IMPORTED: the card's [Title]"
         json group_members "IMPORTED: a group card's umas by name (support_card_group); [] for every other card"
+        string jp_name "IMPORTED: the JP client's name (a group card's is the group's)"
+        string jp_title "IMPORTED: the JP client's [Title]"
+        json effects "IMPORTED: each training effect's value at the levels the game names"
+        json unique_effect "IMPORTED: the unique effect's unlock level, typed effects and the game's sentence, or null"
         string image
         string image_borderless "the game's texture: no frame, no type icon; support_cards_borderless/ in the Space; the site frames it (FramedCard); no fallback to image"
         string admin_comments
@@ -1850,6 +1858,47 @@ python scripts/fetch_gametora_skill_names.py                            # any ti
   already answer to it. **The site never displays GameTora's text** (owner and Daptrius,
   2026-11-12: their loc files read as meant for projects that don't compete with GameTora),
   so only the names are kept, and only for search.
+
+**What the JP snapshot gives an outfit or card global doesn't have** (since 2026-11-12, for
+the Encyclopedia): an outfit takes its running style, aptitudes, base stats, growth and
+`star_stats`; a card its `card_type` and `character_id`. Each only after the same English
+name check as its skill links, and never once the id is in global's snapshot. **Never
+`Uma.rarity`** (it feeds `is_three_star`, so selectors and rate-up odds: an unreleased
+uma's stays blank or hand-set) **and never the English `title`**. Every outfit and card the
+JP snapshot holds, global ones included, takes `jp_name` and `jp_title`. The pages mark the
+JP-only facts as the JP game's, liable to change on global.
+
+**Career objectives** (`master_snapshot/objectives.json`, since 2026-11-12): each character's
+goals on the default route, from `single_mode_route` / `single_mode_route_race` (`target_type`
+1; the scenario's finals are left out). A race goal names its race through
+`single_mode_program` and `text_data` 28, with the grade code and the placing needed. The other
+two kinds are kept as the files give them (`condition_id`, `value_1`, `value_2`). The import
+writes a character's list to each of her outfits (`Uma.career_objectives`);
+`calculatorapi/career.py` words the race goals, a fan count (kind 3: `value_1` fans by that
+turn) and placings in G1s (kind 2 with `condition_id` 100: `value_1` the placing, `value_2` how
+many races), as Daptrius read them off the game on 2026-11-12, and counts the rest. A kind 2
+goal for a lower grade means that grade or higher, and a placing of 1 is a win (Daptrius,
+2026-11-13): 300 reads "at G3 or higher" and 700 "at Pre-OP or higher", the only two codes
+in the files; any other stays unworded. The file was added with `--only objectives.json`,
+which writes one file from a newer mdb without refreshing the others.
+
+**Support card effects** (`master_snapshot/support_effects.json` and `jp_snapshot/support_effects.json`,
+since 2026-11-12): each card's `support_card_effect_table` rows, kept as the game states them (an
+effect's value at SOME of the levels 1, 5, 10 ... 50), and its `support_card_unique_effect` row
+(the unlock level, up to two typed effects, and on global the game's own sentence, `text_data`
+155). The import writes them to `SupportCard.effects` and `SupportCard.unique_effect`, global's
+when the global client defines the card, else JP's. `calculatorapi/support_effects.py` works out
+the value at every level (a straight line between named levels, rounded down; nothing before the
+first; flat after the last), which Daptrius checked on 2026-11-12 at five levels of one SSR; the
+module's docstring has the table. Effect names and help text are the game's English
+(`master_snapshot/support_effect_types.json`, `text_data` 151 and 154), committed for the API as
+`calculatorapi/data/support_effect_types.json` with each type's `format`: sixteen are confirmed (seven
+from his shots, nine from his list of 2026-11-13), and every other type is sent as a plain number.
+A unique effect's Friendship Bonus or Specialty Priority multiplies with the card's own instead of
+adding to it (Daptrius, same reply), so the page never sums the two and is told which apply
+(`unique_effect.multiplies`). JP already has a type (32) the global client doesn't
+name; an effect of an unnamed type is left out of the page until its name is extracted. Both
+files were written with `--only`, from the 2026-11-06 global mdb and the JP export.
 
 ## `PatreonTier` / `PatreonSupporter`
 

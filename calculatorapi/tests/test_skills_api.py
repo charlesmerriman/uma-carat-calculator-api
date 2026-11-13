@@ -1,14 +1,15 @@
 """GET /skills and GET /skills/<game_id>, and the skill fields a guide now sends."""
 
 from django.db import connection
+from django.test import override_settings
 from django.test.utils import CaptureQueriesContext
 from rest_framework.test import APIClient
 
 from calculatorapi.models import (
-    PvpGuide, PvpSkillRecommendation, Skill, SkillAlias, SkillEvolutionCondition, SupportCard,
-    SupportCardSkill, Uma, UmaSkill,
+    PatreonSupporter, PatreonTier, PvpGuide, PvpSkillRecommendation, Skill, SkillAlias,
+    SkillEvolutionCondition, SupportCard, SupportCardSkill, Uma, UmaSkill,
 )
-from calculatorapi.tests.base import CalculatorTestCase
+from calculatorapi.tests.base import CalculatorTestCase, PLAIN_TEST_STORAGES
 from calculatorapi.tests.factories import make_user
 from calculatorapi.tests.test_pvp_guides import make_champions_meeting, url
 
@@ -25,22 +26,68 @@ def make(game_id, **fields):
 
 
 def editor_client():
-    """The skills work is shelved to guide editors (staff) for now."""
+    """Staff: one of the early-access readers, and the guide editors."""
     client = APIClient()
     client.force_authenticate(make_user("editor", is_staff=True))
     return client
 
 
-class SkillsShelvedTests(CalculatorTestCase):
-    """Shelved (owner, 2026-10-23): nobody but a guide editor knows it exists."""
+def early_access_readers():
+    """{label: user} for the five kinds of reader the Encyclopedia gate tells
+    apart (notes/encyclopedia-plan.md, "Supporters and staff first"). None is
+    the guest."""
+    tier = PatreonTier.objects.create(name="Junior Class", order=10)
+    supporter = make_user("supporter")
+    PatreonSupporter.objects.create(display_name="Patron", patreon_user_id="7", tier=tier,
+                                    is_active=True, linked_user=supporter)
+    granted = make_user("tester")
+    granted.early_access = True
+    granted.save(update_fields=["early_access"])
+    return {"guest": None, "plain": make_user("plain"), "supporter": supporter,
+            "staff": make_user("staff", is_staff=True), "granted": granted}
 
-    def test_the_routes_are_a_404_to_everyone_else(self):
+
+def client_for(user):
+    client = APIClient()
+    if user is not None:
+        client.force_authenticate(user)
+    return client
+
+
+# What each reader gets from a gated route: a guest is asked to sign in, an
+# account without early access is refused, and the three ways in read it.
+EXPECTED_STATUS = {"guest": 401, "plain": 403, "supporter": 200, "staff": 200, "granted": 200}
+
+# The tables a page is built from. A cached hit reads none of them; the only
+# query it makes is the early-access check's pledge lookup, worked out on every
+# request by rule (patreon.md: entitlement is never stored).
+BUILD_TABLES = ("calculatorapi_skill", "calculatorapi_umaskill", "calculatorapi_supportcardskill",
+                "calculatorapi_uma\"", "calculatorapi_supportcard\"")
+
+
+def skill_queries(queries):
+    """The captured queries that touched a table a page is built from."""
+    return [query["sql"] for query in queries.captured_queries
+            if any(table in query["sql"] for table in BUILD_TABLES)]
+
+
+class SkillsGateTests(CalculatorTestCase):
+    """Supporters and staff first (owner, 2026-11-12): the early-access rule."""
+
+    def test_each_reader_gets_its_answer(self):
         make(201351, name="Gourmand")
-        for client in (APIClient(), APIClient()):
-            self.assertEqual(client.get("/skills").status_code, 404)
-            self.assertEqual(client.get("/skills/201351").status_code, 404)
-            client.force_authenticate(make_user(f"player{id(client)}"))
-            self.assertEqual(client.get("/skills").status_code, 404)
+        for label, user in early_access_readers().items():
+            client = client_for(user)
+            for path in ("/skills", "/skills/201351"):
+                self.assertEqual(client.get(path).status_code, EXPECTED_STATUS[label], (label, path))
+
+    def test_a_lapsed_pledge_loses_it_on_the_next_request(self):
+        make(201351, name="Gourmand")
+        supporter = early_access_readers()["supporter"]
+        client = client_for(supporter)
+        self.assertEqual(client.get("/skills").status_code, 200)
+        PatreonSupporter.objects.filter(linked_user=supporter).update(is_active=False)
+        self.assertEqual(client.get("/skills").status_code, 403)
 
     def test_a_guide_shows_a_player_global_skills_only(self):
         cm = make_champions_meeting()
@@ -53,10 +100,12 @@ class SkillsShelvedTests(CalculatorTestCase):
         body = APIClient().get(url("cm", cm.id)).json()
         self.assertEqual([row["skill"]["name"] for row in body["skill_recommendations"]], ["Gourmand"])
         self.assertEqual(set(body["skill_mentions"]), {"gourmand"})
-        # A guide editor sees both, as the site's preview of the shelved work.
-        body = editor_client().get(url("cm", cm.id)).json()
-        self.assertEqual(len(body["skill_recommendations"]), 2)
-        self.assertEqual(set(body["skill_mentions"]), {"fan skill", "gourmand"})
+        # Early access sees both: staff, and now supporters too.
+        readers = early_access_readers()
+        for label in ("staff", "supporter"):
+            body = client_for(readers[label]).get(url("cm", cm.id)).json()
+            self.assertEqual(len(body["skill_recommendations"]), 2, label)
+            self.assertEqual(set(body["skill_mentions"]), {"fan skill", "gourmand"}, label)
 
 
 class SkillListTests(CalculatorTestCase):
@@ -91,7 +140,7 @@ class SkillListTests(CalculatorTestCase):
         self.client.get("/skills")
         with CaptureQueriesContext(connection) as queries:
             self.client.get("/skills")
-        self.assertEqual(len(queries), 0)
+        self.assertEqual(skill_queries(queries), [])
         self.announced.name = "Renamed"
         self.announced.save()
         self.assertIn("Renamed", [row["name"] for row in self.client.get("/skills").json()])
@@ -153,7 +202,7 @@ class SkillDetailTests(CalculatorTestCase):
         self.client.get(f"/skills/{self.gourmand.game_id}")
         with CaptureQueriesContext(connection) as queries:
             self.client.get(f"/skills/{self.gourmand.game_id}")
-        self.assertEqual(len(queries), 0)
+        self.assertEqual(skill_queries(queries), [])
         SupportCard.objects.filter(name="Kitasan Black").first().delete()
         body = self.client.get(f"/skills/{self.gourmand.game_id}").json()
         self.assertEqual(body["sources"]["cards"], [])
@@ -175,10 +224,74 @@ class GuideSkillFieldsTests(CalculatorTestCase):
         skill = row["skill"]
         self.assertEqual((skill["name"], skill["description"]), ("Fan Skill", "Fan text."))
         self.assertEqual((skill["availability"], skill["uses_translation"]), ("jp", True))
-        self.assertEqual(skill["readable"]["slots"][0]["effects"][0]["text"], "Velocity +0.15 m/s")
+        self.assertEqual(skill["readable"]["slots"][0]["effects"][0]["text"], "Velocity +0.15")
         self.assertEqual(skill["sources"], {
             "umas": [{"name": "Special Week (New)", "source": "unique", "level": 3, "on_global": False}],
             "uma_count": 1, "cards": [], "card_count": 0,
         })
         # A JP outfit's unique is named now that the site labels JP content.
         self.assertEqual(skill["unique_of"], "Special Week (New)")
+
+
+# The pages build image URLs from stored names. CI has no bucket configured, so
+# the S3 storage raises there; plain file storage answers anywhere.
+@override_settings(STORAGES=PLAIN_TEST_STORAGES)
+class SkillOwnersAndTypeTests(CalculatorTestCase):
+    """Cost, type, owners and the unique / inherited pair (encyclopedia PR 3)."""
+
+    def setUp(self):
+        self.client = editor_client()
+        spe = Uma.objects.create(name="Special Week", game_id=100101)
+        unique = make(100011, name="Shooting Star", rarity=5, icon_id=0, cost=None)
+        make(900011, name="Shooting Star", rarity=1, icon_id=20013, cost=200)
+        self.gold = make(200011, name="Gold Skill", rarity=2, icon_id=20012, cost=180)
+        evolved = make(100101111, name="Evolved Star", rarity=6, icon_id=20016, evolves_from=self.gold)
+        make(200501, name="Passive", icon_id=10011, cost=70)
+        make(200601, name="Odd", icon_id=99991)
+        UmaSkill.objects.create(uma=spe, skill=unique, source="unique")
+        UmaSkill.objects.create(uma=spe, skill=evolved, source="evolved", level=3)
+
+    def rows(self):
+        return {row["game_id"]: row for row in self.client.get("/skills").json()}
+
+    def test_cost_and_type_from_the_icon_family(self):
+        rows = self.rows()
+        self.assertEqual((rows[200011]["cost"], rows[200011]["type"]), (180, "velocity"))
+        self.assertEqual((rows[100011]["cost"], rows[100011]["type"]), (None, "unique"))
+        # A green is typed by the stat its family raises (Daptrius, 2026-11-12).
+        self.assertEqual(rows[200501]["type"], "stat_speed")
+        # A family nobody placed is "other", never a guess.
+        self.assertEqual(rows[200601]["type"], "other")
+
+    def test_a_unique_and_its_copy_name_their_uma_and_each_other(self):
+        rows = self.rows()
+        self.assertEqual((rows[100011]["owners"], rows[100011]["pair"]), (["Special Week"], 900011))
+        self.assertEqual((rows[900011]["owners"], rows[900011]["pair"]), (["Special Week"], 100011))
+        self.assertEqual((rows[200011]["owners"], rows[200011]["pair"]), ([], None))
+        self.assertEqual(self.client.get("/skills/900011").json()["pair"]["game_id"], 100011)
+
+    def test_an_evolution_names_its_uma(self):
+        detail = self.client.get("/skills/200011").json()
+        self.assertEqual([(row["name"], row["owners"]) for row in detail["evolution"]["into"]],
+                         [("Evolved Star", ["Special Week"])])
+
+    def test_a_cards_rarity_and_type_for_hide_r(self):
+        card = SupportCard.objects.create(name="Kitasan Black", game_id=10028, rarity=1, card_type="speed")
+        SupportCardSkill.objects.create(support_card=card, skill=self.gold, source="hint")
+        [row] = self.client.get("/skills/200011").json()["sources"]["cards"]
+        self.assertEqual((row["rarity"], row["card_type"]), (1, "speed"))
+
+    def test_a_card_carries_its_title_and_frameless_art(self):
+        """The skill page frames each card itself (FramedCard), and a card's name
+        is its character's, so the title is what tells two of her cards apart."""
+        card = SupportCard.objects.create(
+            name="Kitasan Black", title="[Fire at My Heels]", game_id=30028, rarity=3, card_type="speed",
+            image_borderless="support_cards_borderless/30028.webp",
+        )
+        bare = SupportCard.objects.create(name="Tokai Teio", game_id=30111, rarity=3, card_type="wit")
+        for row in (card, bare):
+            SupportCardSkill.objects.create(support_card=row, skill=self.gold, source="hint")
+        rows = {row["game_id"]: row for row in self.client.get("/skills/200011").json()["sources"]["cards"]}
+        self.assertEqual(rows[30028]["title"], "[Fire at My Heels]")
+        self.assertTrue(rows[30028]["image_borderless"].endswith("support_cards_borderless/30028.webp"))
+        self.assertIsNone(rows[30111]["image_borderless"])

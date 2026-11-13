@@ -187,8 +187,8 @@ class EffectTextTests(CalculatorTestCase):
             ability(27, 3500), ability(31, 2000), ability(1, 600000), ability(9, 550),
             ability(21, -1500, target_type=18, target_value=1), ability(8, 100000),
         ), [
-            "Velocity +0.35 m/s", "Acceleration +0.2 m/s²", "Speed +60", "Recovers 5.5% endurance",
-            "Current speed -0.15 m/s (Front Runners)", "Field of view +10",
+            "Velocity +0.35", "Acceleration +0.2", "+60 Speed", "Recovers 5.5% endurance",
+            "Current speed -0.15 (Front Runners)", "Field of view +10",
         ])
 
     def test_targets(self):
@@ -198,8 +198,8 @@ class EffectTextTests(CalculatorTestCase):
             ability(21, -500, target_type=9, target_value=1),
             ability(1, 400000, target_type=22, target_value=1002),
         ), [
-            "Drains 0.5% endurance (runners ahead)", "Current speed -0.05 m/s (up to 2 runners behind)",
-            "Current speed -0.05 m/s (the runner ahead)", "Speed +40 (Silence Suzuka)",
+            "Drains 0.5% endurance (runners ahead)", "Current speed -0.05 (up to 2 runners behind)",
+            "Current speed -0.05 (the runner ahead)", "+40 Speed (Silence Suzuka)",
         ])
 
     def test_unconfirmed_units_give_the_direction_only(self):
@@ -215,7 +215,7 @@ class EffectTextTests(CalculatorTestCase):
         self.assertFalse(described["complete"])
 
     def test_a_scaling_value_says_so(self):
-        self.assertEqual(self.effects(ability(27, 3500, value_usage=3)), ["Velocity +0.35 m/s (varies)"])
+        self.assertEqual(self.effects(ability(27, 3500, value_usage=3)), ["Velocity +0.35 (varies)"])
 
     def test_duration_cooldown_and_wit_check(self):
         passive = describe(skill(effects=[slot([ability(1, 400000)], duration=-1, cooldown=0)],
@@ -226,7 +226,7 @@ class EffectTextTests(CalculatorTestCase):
         timed = describe(skill(effects=[slot([ability(27, 3500)], duration=24000, cooldown=300000)],
                                activate_lot=1), CONTEXT)
         self.assertEqual((timed["slots"][0]["duration"], timed["slots"][0]["cooldown"]),
-                         ("2.4 s", "30 s"))
+                         ("2.4 s per 1,000 m", "30 s per 1,000 m"))
         self.assertIs(timed["wit_check"], True)
         self.assertIsNone(describe(skill(), CONTEXT)["wit_check"])
 
@@ -292,7 +292,7 @@ class SkillAdminTextTests(CalculatorTestCase):
         page = self.client.get(reverse("admin:calculatorapi_skill_change", args=[evolved.pk]))
 
         self.assertContains(page, "At a random moment mid-race")
-        self.assertContains(page, "Recovers 5.5% endurance; Velocity +0.15 m/s")
+        self.assertContains(page, "Recovers 5.5% endurance; Velocity +0.15")
         self.assertContains(page, "Rolls against Wit before it fires.")
         self.assertContains(page, "Special Week</a> (evolved, level 3)")
         self.assertContains(page, "Evolves from Gourmand")

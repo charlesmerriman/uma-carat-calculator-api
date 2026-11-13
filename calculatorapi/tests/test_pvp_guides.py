@@ -255,6 +255,10 @@ class GuideEndpointTests(CalculatorTestCase):
         self.assertEqual(rec["skill"]["unique_of"], "Maruzensky")
         # Her own unique, not an inherited copy: the copy is a separate white.
         self.assertFalse(rec["skill"]["is_inherited"])
+        # The hover card's header facts, as GET /skills sends them: a unique costs
+        # nothing, and a skill with no icon family placed yet is typed "other".
+        self.assertIsNone(rec["skill"]["cost"])
+        self.assertIn("type", rec["skill"])
         self.assertEqual(body["style_notes"], [{"style": "front", "body": "**Go early.**"}])
 
         slots = body["decks"][0]["slots"]
@@ -1474,3 +1478,25 @@ class DeckLimitBreakTests(CalculatorTestCase):
         with self.assertRaises(IntegrityError), transaction.atomic():
             PvpDeckSlot.objects.create(deck=self.deck, slot=3, note="Any Wit", limit_break=2)
         PvpDeckSlot.objects.create(deck=self.deck, slot=3, support_card=self.card, limit_break=4)
+
+
+class InheritedUniqueOwnerTests(CalculatorTestCase):
+    """Daptrius, 2026-11-12: an inherited copy names its uma, as the unique does."""
+
+    def test_the_copy_names_the_uma_of_its_unique(self):
+        cm = make_champions_meeting()
+        fuji = Uma.objects.create(name="Fuji Kiseki", game_id=103301)
+        unique = make_skill("Lights of Vaudeville", 110331, rarity=5)
+        copy = make_skill("Lights of Vaudeville", 910331, rarity=1, tier=2)
+        lone_copy = make_skill("No Unique Here", 919991, rarity=1, tier=2)
+        UmaSkill.objects.create(uma=fuji, skill=unique, source="unique")
+        guide = PvpGuide.objects.create(champions_meeting=cm, visibility="public")
+        for skill in (unique, copy, lone_copy):
+            PvpSkillRecommendation.objects.create(guide=guide, style="front", category="speed", skill=skill)
+
+        body = APIClient().get(url("cm", cm.id)).json()
+        rows = {row["skill"]["id"]: row["skill"] for row in body["skill_recommendations"]}
+        self.assertEqual((rows[unique.id]["unique_of"], rows[unique.id]["is_inherited"]), ("Fuji Kiseki", False))
+        self.assertEqual((rows[copy.id]["unique_of"], rows[copy.id]["is_inherited"]), ("Fuji Kiseki", True))
+        # A copy whose unique has no uma names nobody.
+        self.assertIsNone(rows[lone_copy.id]["unique_of"])
