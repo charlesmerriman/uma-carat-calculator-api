@@ -766,8 +766,9 @@ stored. The team builder counts a source that teaches the pick or a HIGHER versi
 that teaches the gold teaches the white too, so a gold on the team covers a white pick and
 a white never covers a gold (owner, 2026-10-14); an evolved pick is covered by its base,
 which is what gets evolved. `style` values: `everyone`, `runaway`, `front`, `pace`, `late`, `end` (never
-`everyone` on an uma). `category`: `acceleration`, `speed`, `green`, `recovery`,
-`debuff`, `other`. Stat values are short TEXT as the guide writes them (`"1100+"`, `"578*"`), `""` where it gives none. Text fields are
+`everyone` on an uma). `category`: `acceleration`, `early_mid` (Early-Race / Mid-Game), `late`
+(Late-Race), `speed`, `green`, `recovery`, `debuff`, `other` (the sheet's ungrouped list, read as
+"Core skills"); every one stays pickable, and the reader hides a group with no skills. Stat values are short TEXT as the guide writes them (`"1100+"`, `"578*"`), `""` where it gives none. Text fields are
 markdown (`short_description`, `meta_analysis`, style note `body`) or one-line notes; both
 may hold `==highlight==` spans the client renders red.
 
