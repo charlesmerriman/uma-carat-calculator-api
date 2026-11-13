@@ -1869,10 +1869,14 @@ JP-only facts as the JP game's, liable to change on global.
 **Career objectives** (`master_snapshot/objectives.json`, since 2026-11-12): each character's
 goals on the default route, from `single_mode_route` / `single_mode_route_race` (`target_type`
 1; the scenario's finals are left out). A race goal names its race through
-`single_mode_program` and `text_data` 28, with the grade code and the placing needed. Other
-goal kinds (a fan count, places in several races) are kept undecoded. The import writes a
-character's list to each of her outfits (`Uma.career_objectives`); `calculatorapi/career.py`
-words the race goals and counts the rest. The file was added with `--only objectives.json`,
+`single_mode_program` and `text_data` 28, with the grade code and the placing needed. The other
+two kinds are kept as the files give them (`condition_id`, `value_1`, `value_2`). The import
+writes a character's list to each of her outfits (`Uma.career_objectives`);
+`calculatorapi/career.py` words the race goals, a fan count (kind 3: `value_1` fans by that
+turn) and placings in G1s (kind 2 with `condition_id` 100: `value_1` the placing, `value_2` how
+many races), as Daptrius read them off the game on 2026-11-12, and counts the rest. A kind 2
+goal for a lower grade stays unworded until someone confirms whether the game means that
+grade or "that grade or better". The file was added with `--only objectives.json`,
 which writes one file from a newer mdb without refreshing the others.
 
 ## `PatreonTier` / `PatreonSupporter`
