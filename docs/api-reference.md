@@ -960,7 +960,11 @@ sent so it can find them there and in the Collection. Never `admin_comments`.
   row carries `image_borderless` beside `image`, so the page frames the card itself).
 - **Card** (404 for a placeholder): `id`, `game_id`, `name`, `title`, `jp_name`,
   `jp_title`, `image`, `image_borderless`, `card_type`, `rarity`, `character_id`,
-  `on_global`, `released_at`, `group_members`, `purpose`, `skills` (hints, then events),
+  `on_global`, `released_at`, `group_members`, `purpose`, `effects` (its training effects in the
+  order it gains them: `type`, `name`, `help`, `format` "percent" / "number" / "level", `unlock`
+  the first level it has the effect, `values` one per level from 1 to its top cap with `null`
+  before `unlock`), `caps` (its level cap at each limit break, 0 to 4), `unique_effect`
+  (`{"level", "text"}` or `null`; support_effects.py), `skills` (hints, then events),
   `outfits` (a group card's are its members'), `cards` (the character's other cards; `[]`
   on a group card).
 

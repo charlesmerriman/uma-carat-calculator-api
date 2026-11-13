@@ -168,6 +168,20 @@ class SupportCard(models.Model):
         max_length=100, blank=True, default="", verbose_name="JP title",
         help_text="The card's title in the JP client.",
     )
+    # The card's training effects and its unique effect, as the game's tables
+    # state them (scripts/extract_master_snapshot.py, extract_support_effects):
+    # written by import_game_data, read whole with the card and never edited
+    # by hand. calculatorapi/support_effects.py turns them into the page's
+    # table. JSON, not tables of their own: nothing asks SQL "which cards have
+    # Race Bonus", and the day something does is the day to add one.
+    effects = models.JSONField(
+        blank=True, default=list,
+        help_text='Each effect\'s value at the levels the game names: [{"type": 1, "levels": {"1": 10, "25": 15}}].',
+    )
+    unique_effect = models.JSONField(
+        blank=True, null=True,
+        help_text="The unique effect: the level that unlocks it, its typed effects, and the game's sentence for it.",
+    )
 
     def save(self, *args, **kwargs):
         # A card an editor adds by hand, e.g. one that is not on global yet,

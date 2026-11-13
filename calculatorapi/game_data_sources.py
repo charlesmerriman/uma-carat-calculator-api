@@ -80,6 +80,9 @@ class SecondarySources:
             if not path.is_file():
                 raise CommandError(f"JP snapshot file missing: {path}")
             files[name] = json.loads(path.read_text(encoding="utf-8"))
+        # Optional: a JP snapshot from before 2026-11-12 has no card effects.
+        path = directory / "support_effects.json"
+        files["support_effects"] = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else []
         return files
 
     @staticmethod

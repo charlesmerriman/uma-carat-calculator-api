@@ -158,6 +158,8 @@ erDiagram
         json group_members "IMPORTED: a group card's umas by name (support_card_group); [] for every other card"
         string jp_name "IMPORTED: the JP client's name (a group card's is the group's)"
         string jp_title "IMPORTED: the JP client's [Title]"
+        json effects "IMPORTED: each training effect's value at the levels the game names"
+        json unique_effect "IMPORTED: the unique effect's unlock level, typed effects and the game's sentence, or null"
         string image
         string image_borderless "the game's texture: no frame, no type icon; support_cards_borderless/ in the Space; the site frames it (FramedCard); no fallback to image"
         string admin_comments
@@ -1878,6 +1880,21 @@ many races), as Daptrius read them off the game on 2026-11-12, and counts the re
 goal for a lower grade stays unworded until someone confirms whether the game means that
 grade or "that grade or better". The file was added with `--only objectives.json`,
 which writes one file from a newer mdb without refreshing the others.
+
+**Support card effects** (`master_snapshot/support_effects.json` and `jp_snapshot/support_effects.json`,
+since 2026-11-12): each card's `support_card_effect_table` rows, kept as the game states them (an
+effect's value at SOME of the levels 1, 5, 10 ... 50), and its `support_card_unique_effect` row
+(the unlock level, up to two typed effects, and on global the game's own sentence, `text_data`
+155). The import writes them to `SupportCard.effects` and `SupportCard.unique_effect`, global's
+when the global client defines the card, else JP's. `calculatorapi/support_effects.py` works out
+the value at every level (a straight line between named levels, rounded down; nothing before the
+first; flat after the last), which Daptrius checked on 2026-11-12 at five levels of one SSR; the
+module's docstring has the table. Effect names and help text are the game's English
+(`master_snapshot/support_effect_types.json`, `text_data` 151 and 154), committed for the API as
+`calculatorapi/data/support_effect_types.json` with each type's `format`: seven are confirmed, and
+every other type is sent as a plain number. JP already has a type (32) the global client doesn't
+name; an effect of an unnamed type is left out of the page until its name is extracted. Both
+files were written with `--only`, from the 2026-11-06 global mdb and the JP export.
 
 ## `PatreonTier` / `PatreonSupporter`
 
