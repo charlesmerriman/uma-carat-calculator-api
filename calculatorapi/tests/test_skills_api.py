@@ -254,7 +254,8 @@ class SkillOwnersAndTypeTests(CalculatorTestCase):
         rows = self.rows()
         self.assertEqual((rows[200011]["cost"], rows[200011]["type"]), (180, "velocity"))
         self.assertEqual((rows[100011]["cost"], rows[100011]["type"]), (None, "unique"))
-        self.assertEqual(rows[200501]["type"], "stat")
+        # A green is typed by the stat its family raises (Daptrius, 2026-11-12).
+        self.assertEqual(rows[200501]["type"], "stat_speed")
         # A family nobody placed is "other", never a guess.
         self.assertEqual(rows[200601]["type"], "other")
 

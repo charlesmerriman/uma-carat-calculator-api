@@ -214,7 +214,7 @@ class _SkillSerializer(serializers.ModelSerializer):
         )
 
     def get_type(self, obj):
-        return skill_type(obj.icon_id)
+        return skill_type(obj.icon_id, obj.effects)
 
     def get_readable(self, obj):
         return skill_text.describe(obj, self.context["text"])
