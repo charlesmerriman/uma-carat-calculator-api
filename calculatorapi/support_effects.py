@@ -233,25 +233,31 @@ def multiplied(text, effects, amounts=None):
 
 def unique_effect(unique, effects=None):
     """
-    The unique effect for the page: {"level", "text", "amounts",
-    "multiplies"}, or None when the card has none or there are no confirmed
-    words for it. `effects` is the card's own stored table, for `multiplies`.
+    The unique effect for the page: {"level", "text", "translated",
+    "amounts", "multiplies"}, or None when the card has none or there are no
+    confirmed words for it. `effects` is the card's own stored table, for
+    `multiplies`.
 
-    The text is the game's own sentence where the global client has one. A
-    JP-only card has no English sentence, so its effects are named instead
-    (`named_text`), and only when every slot can be read. `amounts` holds the
-    numbers (`unique_amounts`) whenever every slot can be read, for a card
-    with the game's sentence too: that sentence never states them.
+    The text is the game's own sentence where the global client has one, else
+    UmaTL's (`translated_text`, the import's; `translated` is then True and
+    the page credits UmaTL), else the effects by name (`named_text`), only
+    when every slot can be read. `amounts` holds the numbers
+    (`unique_amounts`) whenever every slot can be read, beside either
+    sentence too: neither states them.
     """
     if not unique:
         return None
     amounts = unique_amounts(unique)
     text = (unique.get("text") or "").strip()
+    translation = (unique.get("translated_text") or "").strip()
+    translated = not text and bool(translation)
+    if not text:
+        text = translation
     if not text:
         if amounts is None:
             return None
         text = named_text(amounts)
-    return {"level": unique["level"], "text": text, "amounts": amounts,
+    return {"level": unique["level"], "text": text, "translated": translated, "amounts": amounts,
             "multiplies": multiplied(text, effects, amounts)}
 
 

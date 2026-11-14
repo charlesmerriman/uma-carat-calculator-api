@@ -88,16 +88,24 @@ def _shown_skill_ids():
     return Skill.objects.shown().values("id")
 
 
+# A title, a unique effect sentence or a race name may be UmaTL's fan
+# translation, shown only while Global (or an editor) has none. Each row and
+# page says so (`title_translated`, `uses_translation`), so the page can
+# credit UmaTL, as its terms ask (notes/encyclopedia-jp-fills-plan.md, PR 3).
+
+
 def _outfit_row(uma):
     return {
-        "id": uma.id, "game_id": uma.game_id, "name": uma.name, "title": uma.title,
+        "id": uma.id, "game_id": uma.game_id, "name": uma.name, "title": uma.shown_title,
+        "title_translated": uma.uses_translated_title,
         "portrait": _file_url(uma.portrait), "rarity": uma.rarity, "on_global": uma.on_global,
     }
 
 
 def _card_row(card):
     return {
-        "id": card.id, "game_id": card.game_id, "name": card.name, "title": card.title,
+        "id": card.id, "game_id": card.game_id, "name": card.name, "title": card.shown_title,
+        "title_translated": card.uses_translated_title,
         "image": _file_url(card.image),
         # The frameless texture, so the page draws the card in the site's own
         # frame (FramedCard) as the Collection does; None until it is uploaded.
@@ -139,11 +147,17 @@ def build_uma(uma):
     character = uma.character_id
     # Race goals worded (career.py); goals of other kinds are counted, never guessed at.
     objectives, objectives_hidden = shown_goals(uma.career_objectives)
+    outfits = [row for row in _outfits_of([character]) if row["id"] != uma.id]
+    cards = _cards_of(character, base_name(uma.name))
     return {
         "id": uma.id,
         "game_id": uma.game_id,
         "name": uma.name,
-        "title": uma.title,
+        "title": uma.shown_title,
+        # A JP route's race named by UmaTL is marked by the import (game_data_values.jp_route_goals).
+        "uses_translation": uma.uses_translated_title
+        or any(goal.get("translated") for goal in uma.career_objectives or [])
+        or any(row["title_translated"] for row in [*outfits, *cards]),
         "jp_name": uma.jp_name,
         "jp_title": uma.jp_title,
         "portrait": _file_url(uma.portrait),
@@ -162,8 +176,8 @@ def build_uma(uma):
             _skill_rows(skills),
             key=lambda row: (UMA_SKILL_ORDER.get(row["source"], 9), row["level"] or 0, row["name"]),
         ),
-        "outfits": [row for row in _outfits_of([character]) if row["id"] != uma.id],
-        "cards": _cards_of(character, base_name(uma.name)),
+        "outfits": outfits,
+        "cards": cards,
     }
 
 
@@ -182,11 +196,15 @@ def build_card(card):
     others = [] if is_group else [
         row for row in _cards_of(card.character_id, card.name) if row["id"] != card.id
     ]
+    unique = support_effects.unique_effect(card.unique_effect, card.effects)
     return {
         "id": card.id,
         "game_id": card.game_id,
         "name": card.name,
-        "title": card.title,
+        "title": card.shown_title,
+        "uses_translation": card.uses_translated_title
+        or bool(unique and unique["translated"])
+        or any(row["title_translated"] for row in [*outfits, *others]),
         "jp_name": card.jp_name,
         "jp_title": card.jp_title,
         "image": _file_url(card.image),
@@ -205,7 +223,7 @@ def build_card(card):
         # check). [] / [] / None for a card the snapshots hold no effects for.
         "effects": support_effects.table(card.effects, card.rarity),
         "caps": list(support_effects.caps(card.rarity)) if card.effects else [],
-        "unique_effect": support_effects.unique_effect(card.unique_effect, card.effects),
+        "unique_effect": unique,
         "skills": sorted(
             _skill_rows(skills),
             key=lambda row: (CARD_SKILL_ORDER.get(row["source"], 9), row["name"]),

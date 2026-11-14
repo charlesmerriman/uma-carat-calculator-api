@@ -1,8 +1,9 @@
 # UmaTL translations
 
 The files in this folder are a slice of **UmaTL**'s English translation of the
-Umamusume: Pretty Derby JP client: skill names, skill descriptions and skill
-evolution conditions.
+Umamusume: Pretty Derby JP client: skill names, skill descriptions, skill
+evolution conditions, outfit and support card titles, support card unique
+effects and race names.
 
 - Source: https://github.com/UmaTL/hachimi-tl-en (`localized_data/text_data_dict.json`)
 - Commit: `97b61b6cd05ba3fad232b079f9764e0785e02df8` (2026-10-31T08:49:36Z)

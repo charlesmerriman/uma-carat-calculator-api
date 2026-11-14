@@ -77,23 +77,27 @@ def jp_uma_values(card):
     return values
 
 
-def jp_route_goals(goals, race_names):
+def jp_route_goals(goals, race_names, translated_races=None):
     """
-    A JP route's goals with each race named in Global's English, by the race's
-    id (race_names.json). The JP file's names are Japanese, so a race Global
-    has no name for keeps an empty name: the page counts that goal as hidden
-    rather than show Japanese text or a guess.
+    A JP route's goals with each race named in English, by the race's id:
+    Global's name (race_names.json), else UmaTL's (`translated_races`, marked
+    `"translated": True` so the page credits UmaTL). The JP file's names are
+    Japanese, so a race neither names keeps an empty name: the page counts
+    that goal as hidden rather than show Japanese text or a guess.
     """
     named = []
     for goal in goals:
         goal = dict(goal)
         if "race_instance_id" in goal:
-            goal["race"] = race_names.get(str(goal["race_instance_id"]), "")
+            key = str(goal["race_instance_id"])
+            goal["race"] = race_names.get(key, "")
+            if not goal["race"] and (translation := (translated_races or {}).get(key, "")):
+                goal["race"], goal["translated"] = translation, True
         named.append(goal)
     return named
 
 
-def objective_values(objectives, uma_game_ids, jp_objectives=(), race_names=None):
+def objective_values(objectives, uma_game_ids, jp_objectives=(), race_names=None, translated_races=None):
     """
     {outfit game id: {"career_objectives": goals}} from objectives.json, for
     every outfit whose character has a route. The game keys goals by
@@ -104,7 +108,8 @@ def objective_values(objectives, uma_game_ids, jp_objectives=(), race_names=None
     `jp_route_goals` (notes/encyclopedia-jp-fills-plan.md, PR 2).
     """
     by_character = {
-        row["chara_id"]: jp_route_goals(row["goals"], race_names or {}) for row in jp_objectives
+        row["chara_id"]: jp_route_goals(row["goals"], race_names or {}, translated_races)
+        for row in jp_objectives
     }
     by_character.update({row["chara_id"]: row["goals"] for row in objectives})
     return {
@@ -114,21 +119,28 @@ def objective_values(objectives, uma_game_ids, jp_objectives=(), race_names=None
     }
 
 
-def effect_values(global_effects, jp_effects, card_game_ids):
+def effect_values(global_effects, jp_effects, card_game_ids, translated_uniques=None):
     """
     {card game id: {"effects": [...], "unique_effect": {...} | None}} from the
     two support_effects.json files. Global wins: a card the global client
     defines takes global's numbers and the game's English sentence for its
-    unique effect. A card only JP has takes JP's numbers, with no sentence
-    (calculatorapi/support_effects.py then names its typed effects instead).
+    unique effect. A card only JP has takes JP's numbers, with no sentence of
+    the game's; UmaTL's goes in `translated_text` when the slice has one
+    (`translated_uniques`), else calculatorapi/support_effects.py names its
+    typed effects instead.
     """
     by_id = {row["id"]: row for row in jp_effects}
     by_id.update({row["id"]: row for row in global_effects})
-    return {
-        game_id: {"effects": by_id[game_id]["effects"], "unique_effect": by_id[game_id].get("unique")}
-        for game_id in card_game_ids
-        if game_id in by_id
-    }
+    values = {}
+    for game_id in card_game_ids:
+        if game_id not in by_id:
+            continue
+        unique = by_id[game_id].get("unique")
+        translation = (translated_uniques or {}).get(str(game_id), "")
+        if unique and not unique.get("text") and translation:
+            unique = {**unique, "translated_text": translation}
+        values[game_id] = {"effects": by_id[game_id]["effects"], "unique_effect": unique}
+    return values
 
 
 def card_values(snapshot, sources, card_names, jp_links, support_plan):
@@ -140,8 +152,10 @@ def card_values(snapshot, sources, card_names, jp_links, support_plan):
     distrusted = support_plan["distrusted"] | jp_links["card_distrusted"]
     trusted = set(SupportCard.objects.exclude(game_id=None).values_list("game_id", flat=True)) - distrusted
     jp_effects = sources.jp.get("support_effects", []) if sources.jp else []
+    translated = sources.umatl.get("unique_effects", {}) if sources.umatl else {}
     return merged(
-        card_names, jp_links["card_facts"], effect_values(snapshot["support_effects"], jp_effects, trusted),
+        card_names, jp_links["card_facts"],
+        effect_values(snapshot["support_effects"], jp_effects, trusted, translated),
     )
 
 

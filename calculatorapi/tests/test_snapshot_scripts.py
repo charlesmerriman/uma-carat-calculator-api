@@ -270,7 +270,38 @@ class UmaTLSliceTests(CalculatorTestCase):
         self.assertEqual(list(text["skill_names"].items()), [("3", "Alpha"), ("20", "Beta")])
         self.assertEqual(text["skill_descriptions"], {"3": "Does a thing"})
         self.assertEqual(text["evolution_conditions"], {"10010101": "Reach 600 Stamina"})
-        self.assertEqual(set(text), {"skill_names", "skill_descriptions", "evolution_conditions"})
+        self.assertEqual(set(text), set(umatl.CATEGORIES))
+
+    def test_titles_uniques_and_races_with_their_whitespace_collapsed(self):
+        """notes/encyclopedia-jp-fills-plan.md, PR 3: UmaTL's sentences carry the client's line
+        breaks and double spaces; the slice collapses them and never changes a word. The skill
+        categories keep their text as first sliced."""
+        full = {
+            "5": {"100101": "[Special Dreamer]"},
+            "76": {"30134": "[Ambitious]", "99999": "Not ours"},
+            "155": {"20001": "Skill Pt bonus and initial \nWit increase", "30134": "Training bonus scaling "
+                    "with learnt  speed skills, up to 5"},
+            "28": {"902790": "Junior Make Debut"},
+            "47": {"3": "Keeps  its  spaces"},
+        }
+        wanted = {"outfit_titles": {"100101"}, "card_titles": {"30134"}, "unique_effects": {"20001", "30134"},
+                  "race_names": {"902790"}, "skill_names": {"3"}}
+        text = umatl.slice_text(full, wanted)
+        self.assertEqual(text["outfit_titles"], {"100101": "[Special Dreamer]"})
+        self.assertEqual(text["card_titles"], {"30134": "[Ambitious]"})
+        self.assertEqual(text["unique_effects"], {
+            "20001": "Skill Pt bonus and initial Wit increase",
+            "30134": "Training bonus scaling with learnt speed skills, up to 5",
+        })
+        self.assertEqual(text["race_names"], {"902790": "Junior Make Debut"})
+        self.assertEqual(text["skill_names"], {"3": "Keeps  its  spaces"})
+
+    def test_the_wanted_ids_come_from_the_jp_snapshot(self):
+        wanted = umatl.wanted_ids(SCRIPTS / "data" / "jp_snapshot")
+        self.assertIn("100101", wanted["outfit_titles"])
+        self.assertIn("30001", wanted["card_titles"])
+        self.assertEqual(wanted["unique_effects"], wanted["card_titles"])
+        self.assertIn("902790", wanted["race_names"])  # a JP-only route's debut
 
 
 class UploadBorderlessCardsTests(CalculatorTestCase):
