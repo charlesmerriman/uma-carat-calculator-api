@@ -16,13 +16,14 @@ from calculatorapi.tests.test_skills_api import editor_client
 SNAPSHOT = Path(__file__).resolve().parents[2] / "scripts" / "data" / "master_snapshot"
 
 SPECIAL_WEEK_GOALS = [
-    {"turn": 12, "kind": 1, "race": "Junior Make Debut", "grade": 900, "top": 0},
-    {"turn": 27, "kind": 1, "race": "Kisaragi Sho", "grade": 300, "top": 5},
-    {"turn": 34, "kind": 1, "race": "Tokyo Yushun (Japanese Derby)", "grade": 100, "top": 5},
-    {"turn": 44, "kind": 1, "race": "Kikuka Sho", "grade": 100, "top": 3},
-    {"turn": 56, "kind": 1, "race": "Tenno Sho (Spring)", "grade": 100, "top": 3},
-    {"turn": 70, "kind": 1, "race": "Japan Cup", "grade": 100, "top": 2},
-    {"turn": 72, "kind": 1, "race": "Arima Kinen", "grade": 100, "top": 1},
+    {"turn": 12, "kind": 1, "race": "Junior Make Debut", "grade": 900, "top": 0, "race_instance_id": 904185},
+    {"turn": 27, "kind": 1, "race": "Kisaragi Sho", "grade": 300, "top": 5, "race_instance_id": 300901},
+    {"turn": 34, "kind": 1, "race": "Tokyo Yushun (Japanese Derby)", "grade": 100, "top": 5,
+     "race_instance_id": 101001},
+    {"turn": 44, "kind": 1, "race": "Kikuka Sho", "grade": 100, "top": 3, "race_instance_id": 101501},
+    {"turn": 56, "kind": 1, "race": "Tenno Sho (Spring)", "grade": 100, "top": 3, "race_instance_id": 100601},
+    {"turn": 70, "kind": 1, "race": "Japan Cup", "grade": 100, "top": 2, "race_instance_id": 101901},
+    {"turn": 72, "kind": 1, "race": "Arima Kinen", "grade": 100, "top": 1, "race_instance_id": 102301},
 ]
 
 
@@ -104,6 +105,39 @@ class ObjectiveImportTests(CalculatorTestCase):
             objective_values(objectives, {100101, 100102, 100201}),
             {100101: {"career_objectives": SPECIAL_WEEK_GOALS}, 100102: {"career_objectives": SPECIAL_WEEK_GOALS}},
         )
+
+    def test_a_character_only_jp_has_takes_jps_route_with_globals_race_names(self):
+        """notes/encyclopedia-jp-fills-plan.md, PR 2: JP's names are Japanese, so each race is
+        named by its id from Global's race_names.json; one Global has no name for stays blank,
+        which the page counts as hidden."""
+        jp = [
+            {"chara_id": 1043, "goals": [
+                {"turn": 12, "kind": 1, "race": "ジュニア級メイクデビュー", "grade": 900, "top": 0,
+                 "race_instance_id": 902790},
+                {"turn": 25, "kind": 3, "condition_id": 0, "value_1": 3000, "value_2": 0},
+                {"turn": 40, "kind": 1, "race": "新しいレース", "grade": 100, "top": 3, "race_instance_id": 999999},
+            ]},
+            {"chara_id": 1001, "goals": [{"turn": 1, "kind": 1, "race": "JP's", "race_instance_id": 101001}]},
+        ]
+        global_routes = [{"chara_id": 1001, "goals": SPECIAL_WEEK_GOALS}]
+        values = objective_values(global_routes, {104301, 100101}, jp, {"902790": "Junior Make Debut"})
+        self.assertEqual(values[104301]["career_objectives"], [
+            {"turn": 12, "kind": 1, "race": "Junior Make Debut", "grade": 900, "top": 0, "race_instance_id": 902790},
+            {"turn": 25, "kind": 3, "condition_id": 0, "value_1": 3000, "value_2": 0},
+            {"turn": 40, "kind": 1, "race": "", "grade": 100, "top": 3, "race_instance_id": 999999},
+        ])
+        # Global's route wins for a character it has.
+        self.assertEqual(values[100101]["career_objectives"], SPECIAL_WEEK_GOALS)
+
+    def test_the_committed_jp_file_is_named_from_globals_race_names(self):
+        """Every race id on a JP-only route that Global names, by the committed files."""
+        jp_snapshot = SNAPSHOT.parent / "jp_snapshot"
+        jp = json.loads((jp_snapshot / "objectives.json").read_text(encoding="utf-8"))
+        names = json.loads((SNAPSHOT / "race_names.json").read_text(encoding="utf-8"))
+        self.assertEqual(names["101001"], "Tokyo Yushun (Japanese Derby)")
+        global_routes = json.loads((SNAPSHOT / "objectives.json").read_text(encoding="utf-8"))
+        global_characters = {row["chara_id"] for row in global_routes}
+        self.assertTrue(any(row["chara_id"] not in global_characters for row in jp))
 
     def test_the_committed_file_has_special_weeks_seven_races(self):
         objectives = json.loads((SNAPSHOT / "objectives.json").read_text(encoding="utf-8"))

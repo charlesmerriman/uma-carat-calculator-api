@@ -35,8 +35,12 @@ What comes out, one file per concern (all sorted by id, so re-runs diff cleanly)
   evolution_condition_text.json  global only: the official English text of
                       evolution conditions, keyed by condition id. Like skill
                       names, this text ships before global has the conditions
-  objectives.json     global only: each character's career goals on the default
-                      route (see extract_objectives)
+  objectives.json     each character's career goals on the default route (see
+                      extract_objectives). A race goal's name is in the
+                      client's language, so the JP file's are Japanese; the
+                      import names those from race_names.json
+  race_names.json     global only: every race instance's English name, by id
+                      (text_data 28), for naming a JP route's races
   support_effects.json  every support card's effects as the game states them:
                       each effect's value at the levels the game names, and
                       the unique effect (see extract_support_effects)
@@ -504,6 +508,9 @@ def extract_objectives(conn):
     client's own words), with the race's grade code and the placing needed
     (condition_value_1: 1 win, 2/3/5 that place or better, 0 just run it).
     Keyed by CHARACTER, as the game keys them: every outfit shares them.
+    A race goal also carries its `race_instance_id`, the same id in both
+    clients (1,978 checked against UmaTL's names, 2026-11-14), so a JP route
+    can take Global's English name for the race.
     """
     names = text_map(conn, TEXT_RACE_INSTANCE)
     programs = {
@@ -527,7 +534,7 @@ def extract_objectives(conn):
             program = programs.get(row["condition_id"]) if row["condition_type"] == RACE_GOAL else None
             if program is not None:
                 goal.update(race=names.get(program["race_instance_id"], ""), grade=program["grade"],
-                            top=row["condition_value_1"])
+                            top=row["condition_value_1"], race_instance_id=program["race_instance_id"])
             else:
                 goal.update(condition_id=row["condition_id"], value_1=row["condition_value_1"],
                             value_2=row["condition_value_2"])
@@ -756,13 +763,19 @@ def extract(mdb_path, region="global"):
                     if text.strip()
                 },
                 "sparks.json": extract_sparks(conn),
-                "objectives.json": extract_objectives(conn),
+                "race_names.json": {
+                    str(race_id): text
+                    for race_id, text in sorted(text_map(conn, TEXT_RACE_INSTANCE).items())
+                    if text.strip()
+                },
                 "support_effect_types.json": extract_support_effect_types(conn),
             }
         # The course links come from JP's tables: they know every event
         # global will run, while global's stop at the events it has run.
         if region == "jp":
             region_only = {"race_links.json": extract_race_links(conn)}
+        # Both clients: JP's routes cover the characters global doesn't have.
+        region_only["objectives.json"] = extract_objectives(conn)
     finally:
         conn.close()
 
@@ -790,6 +803,7 @@ def extract(mdb_path, region="global"):
     if region == "jp":
         counts.update({f"race_links_{kind}": len(region_only["race_links.json"][kind])
                        for kind in ("champions", "heroes")})
+        counts["objectives"] = len(region_only["objectives.json"])
     else:
         counts.update({name.removesuffix(".json"): len(payload) for name, payload in region_only.items()})
     files.update(region_only)

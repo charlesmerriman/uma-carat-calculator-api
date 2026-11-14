@@ -167,6 +167,10 @@ def load_snapshot(directory):
     for name in ("support_events", "skill_text_ahead", "sparks", "objectives", "support_effects"):
         path = directory / f"{name}.json"
         files[name] = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else []
+    # Every race's English name by race instance id, for a JP route's goals; a
+    # snapshot from before 2026-11-14 has none.
+    path = directory / "race_names.json"
+    files["race_names"] = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
     # Global's English for evolution conditions, keyed by condition id; a
     # snapshot from before 2026-10-23 has none.
     path = directory / "evolution_condition_text.json"
@@ -455,7 +459,10 @@ class Command(BaseCommand):
         self._add_values(uma_plan, Uma, merged(
             uma_names,
             {game_id: jp_uma_values(card) for game_id, card in jp_links["uma_cards"].items()},
-            objective_values(snapshot["objectives"], trusted_umas),
+            objective_values(
+                snapshot["objectives"], trusted_umas,
+                sources.jp.get("objectives", []) if sources.jp else [], snapshot["race_names"],
+            ),
         ))
         self._add_values(support_plan, SupportCard, card_values(snapshot, sources, card_names, jp_links, support_plan))
         known_skills = (
