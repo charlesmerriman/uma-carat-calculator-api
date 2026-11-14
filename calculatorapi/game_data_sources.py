@@ -80,9 +80,11 @@ class SecondarySources:
             if not path.is_file():
                 raise CommandError(f"JP snapshot file missing: {path}")
             files[name] = json.loads(path.read_text(encoding="utf-8"))
-        # Optional: a JP snapshot from before 2026-11-12 has no card effects.
-        path = directory / "support_effects.json"
-        files["support_effects"] = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else []
+        # Optional: a JP snapshot from before 2026-11-12 has no card effects,
+        # and one from before 2026-11-14 no career objectives.
+        for name in ("support_effects", "objectives"):
+            path = directory / f"{name}.json"
+            files[name] = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else []
         return files
 
     @staticmethod
@@ -354,21 +356,29 @@ def _jp_card_facts(sources, card_ids):
 
 def jp_names(sources, uma_distrusted, card_distrusted):
     """
-    ({outfit id: {"jp_name", "jp_title"}}, {card id: {...}}) from the JP
-    snapshot, for every outfit and card it holds, global ones included: the
-    Japanese name is a fact about the row wherever it is out. An id either
-    name check rejected (global's or jp_owner_links') is skipped, so a wrong
-    game_id doesn't put another character's name on the row.
+    ({outfit id: {"jp_name", "jp_title", "translated_title"}}, {card id:
+    {...}}) from the JP snapshot, for every outfit and card it holds, global
+    ones included: the Japanese name is a fact about the row wherever it is
+    out. `translated_title` is UmaTL's, when the slice is loaded (shown only
+    while `title` is blank). An id either name check rejected (global's or
+    jp_owner_links') is skipped, so a wrong game_id doesn't put another
+    character's name on the row.
     """
     if sources.jp is None:
         return {}, {}
-    return tuple(
-        {
-            card["id"]: {"jp_name": card["chara_name"], "jp_title": card["title"]}
-            for card in cards if card["id"] not in distrusted
-        }
-        for cards, distrusted in (
-            (sources.jp["cards"], uma_distrusted),
-            (sources.jp["support_cards"], card_distrusted),
-        )
-    )
+    umatl = sources.umatl
+    found = []
+    for cards, distrusted, category in (
+        (sources.jp["cards"], uma_distrusted, "outfit_titles"),
+        (sources.jp["support_cards"], card_distrusted, "card_titles"),
+    ):
+        titles = umatl.get(category, {}) if umatl is not None else None
+        rows = {}
+        for card in cards:
+            if card["id"] in distrusted:
+                continue
+            rows[card["id"]] = {"jp_name": card["chara_name"], "jp_title": card["title"]}
+            if titles is not None:
+                rows[card["id"]]["translated_title"] = titles.get(str(card["id"]), "")
+        found.append(rows)
+    return tuple(found)

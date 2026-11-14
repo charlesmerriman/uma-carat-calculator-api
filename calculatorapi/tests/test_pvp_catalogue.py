@@ -92,6 +92,16 @@ class CatalogueTests(CalculatorTestCase):
         self.assertEqual(body["support_cards"][0]["card_type"], "speed")
         self.assertEqual(body["support_cards"][0]["group_members"], [])
 
+    def test_a_title_is_the_shown_one(self):
+        """UmaTL's title only while Global's (or an editor's) is blank: the Encyclopedia's
+        search matches on it (notes/encyclopedia-jp-fills-plan.md, PR 3)."""
+        Uma.objects.filter(pk=self.uma.pk).update(title="", translated_title="[UmaTL Title]")
+        SupportCard.objects.filter(pk=self.card.pk).update(title="[Global Title]", translated_title="[Not Shown]")
+        body = self.fetch()
+        self.assertEqual(body["umas"][0]["title"], "[UmaTL Title]")
+        self.assertEqual(body["support_cards"][0]["title"], "[Global Title]")
+        self.assertNotIn("translated_title", body["support_cards"][0])
+
     def test_a_card_says_when_it_came_out(self):
         self.assertEqual(self.fetch()["support_cards"][0]["released_at"], "2025-07-01T00:00:00+00:00")
 

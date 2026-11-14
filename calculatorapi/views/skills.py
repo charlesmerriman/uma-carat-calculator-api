@@ -135,7 +135,9 @@ def sources(skill):
     cards = [
         {"id": row.support_card_id, "name": row.support_card.name,
          # A card's name is its character's, shared by all her cards; the title tells them apart.
-         "title": row.support_card.title,
+         # Global's or an editor's, else UmaTL's; the page credits UmaTL when one is.
+         "title": row.support_card.shown_title,
+         "title_translated": row.support_card.uses_translated_title,
          "game_id": row.support_card.game_id,
          "image": image_url(row.support_card.image.name if row.support_card.image else ""),
          # The frameless texture for FramedCard; None until it is uploaded.

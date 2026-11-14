@@ -35,8 +35,12 @@ What comes out, one file per concern (all sorted by id, so re-runs diff cleanly)
   evolution_condition_text.json  global only: the official English text of
                       evolution conditions, keyed by condition id. Like skill
                       names, this text ships before global has the conditions
-  objectives.json     global only: each character's career goals on the default
-                      route (see extract_objectives)
+  objectives.json     each character's career goals on the default route (see
+                      extract_objectives). A race goal's name is in the
+                      client's language, so the JP file's are Japanese; the
+                      import names those from race_names.json
+  race_names.json     global only: every race instance's English name, by id
+                      (text_data 28), for naming a JP route's races
   support_effects.json  every support card's effects as the game states them:
                       each effect's value at the levels the game names, and
                       the unique effect (see extract_support_effects)
@@ -265,23 +269,44 @@ def extract_skill_text_ahead(conn, skills):
     ]
 
 
-def first_gacha_dates(conn):
+# main_story_data.add_reward_category_1 for an outfit (51 is a support card,
+# 90 an item). Every story chapter that gives one also dates it, through its
+# part's start_date.
+MAIN_STORY_OUTFIT_REWARD = 50
+
+
+def first_release_dates(conn):
     """
-    {outfit id: the earliest start_date of a gacha that offers it}, or None
-    when the database has no gacha tables (the JP mdb rebuilt from a CSV
-    export). gacha_available.card_type 1 is an outfit, 2 a support card. The
-    client dates its "not released here" gachas 2099-01-01, so the minimum is
-    a real gacha whenever the outfit has one.
+    {outfit id: when it first became obtainable on this region}, the earliest
+    of the gachas that offer it and the main story chapters that give it, or
+    None when the database has neither table set (the JP mdb rebuilt from a
+    CSV export). An outfit is obtainable either way: [Ruler of Japan] Special
+    Week is on no gacha and is the reward of main story Part 7 (2026-06-25;
+    the owner, 2026-11-14: "obtainable right now"). gacha_available.card_type
+    1 is an outfit, 2 a support card. The client dates its "not released here"
+    gachas 2099-01-01, so the minimum is a real gacha whenever there is one.
     """
     tables = {name for (name,) in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
-    if not {"gacha_available", "gacha_data"} <= tables:
+    sources = []
+    if {"gacha_available", "gacha_data"} <= tables:
+        sources.append(("""
+            SELECT a.card_id, g.start_date
+            FROM gacha_available a JOIN gacha_data g ON g.id = a.gacha_id
+            WHERE a.card_type = 1
+        """, ()))
+    if {"main_story_data", "main_story_part"} <= tables:
+        sources.append(("""
+            SELECT d.add_reward_id_1, p.start_date
+            FROM main_story_data d JOIN main_story_part p ON p.id = d.part_id
+            WHERE d.add_reward_category_1 = ?
+        """, (MAIN_STORY_OUTFIT_REWARD,)))
+    if not sources:
         return None
-    return dict(conn.execute("""
-        SELECT a.card_id, MIN(g.start_date)
-        FROM gacha_available a JOIN gacha_data g ON g.id = a.gacha_id
-        WHERE a.card_type = 1
-        GROUP BY a.card_id
-    """))
+    first = {}
+    for query, params in sources:
+        for card_id, start in conn.execute(query, params):
+            first[card_id] = min(start, first.get(card_id, start))
+    return first
 
 
 def extract_cards(conn):  # pylint: disable=too-many-locals
@@ -312,7 +337,7 @@ def extract_cards(conn):  # pylint: disable=too-many-locals
             },
         })
 
-    first_gacha = first_gacha_dates(conn)
+    first_release = first_release_dates(conn)
 
     cards, card_skills = [], []
     for row in conn.execute("SELECT * FROM card_data ORDER BY id"):
@@ -330,13 +355,13 @@ def extract_cards(conn):  # pylint: disable=too-many-locals
             "running_style": RUNNING_STYLES.get(row["running_style"], str(row["running_style"])),
             "growth": stat_block(row, "talent_"),
             "stars": stars,
-            # When the outfit first came to a gacha on this region, as unix
-            # seconds: card_data carries no date of its own, unlike
-            # support_card_data. None for an outfit on no gacha in the client
-            # (it ships some ahead of their banners, and never dates them), so
-            # it is not out yet. import_game_data reads this for
-            # Uma.global_release_at. Absent on a client with no gacha tables.
-            **({"start_date": first_gacha.get(card_id)} if first_gacha is not None else {}),
+            # When the outfit first became obtainable on this region (a gacha
+            # or a main story reward), as unix seconds: card_data carries no
+            # date of its own, unlike support_card_data. None for an outfit
+            # nothing in the client gives yet, so it is not out.
+            # import_game_data reads this for Uma.global_release_at. Absent on
+            # a client with neither table set.
+            **({"start_date": first_release.get(card_id)} if first_release is not None else {}),
         })
 
         # Unique skills: one row per distinct skill, at the first star that
@@ -483,6 +508,9 @@ def extract_objectives(conn):
     client's own words), with the race's grade code and the placing needed
     (condition_value_1: 1 win, 2/3/5 that place or better, 0 just run it).
     Keyed by CHARACTER, as the game keys them: every outfit shares them.
+    A race goal also carries its `race_instance_id`, the same id in both
+    clients (1,978 checked against UmaTL's names, 2026-11-14), so a JP route
+    can take Global's English name for the race.
     """
     names = text_map(conn, TEXT_RACE_INSTANCE)
     programs = {
@@ -506,7 +534,7 @@ def extract_objectives(conn):
             program = programs.get(row["condition_id"]) if row["condition_type"] == RACE_GOAL else None
             if program is not None:
                 goal.update(race=names.get(program["race_instance_id"], ""), grade=program["grade"],
-                            top=row["condition_value_1"])
+                            top=row["condition_value_1"], race_instance_id=program["race_instance_id"])
             else:
                 goal.update(condition_id=row["condition_id"], value_1=row["condition_value_1"],
                             value_2=row["condition_value_2"])
@@ -735,13 +763,19 @@ def extract(mdb_path, region="global"):
                     if text.strip()
                 },
                 "sparks.json": extract_sparks(conn),
-                "objectives.json": extract_objectives(conn),
+                "race_names.json": {
+                    str(race_id): text
+                    for race_id, text in sorted(text_map(conn, TEXT_RACE_INSTANCE).items())
+                    if text.strip()
+                },
                 "support_effect_types.json": extract_support_effect_types(conn),
             }
         # The course links come from JP's tables: they know every event
         # global will run, while global's stop at the events it has run.
         if region == "jp":
             region_only = {"race_links.json": extract_race_links(conn)}
+        # Both clients: JP's routes cover the characters global doesn't have.
+        region_only["objectives.json"] = extract_objectives(conn)
     finally:
         conn.close()
 
@@ -769,6 +803,7 @@ def extract(mdb_path, region="global"):
     if region == "jp":
         counts.update({f"race_links_{kind}": len(region_only["race_links.json"][kind])
                        for kind in ("champions", "heroes")})
+        counts["objectives"] = len(region_only["objectives.json"])
     else:
         counts.update({name.removesuffix(".json"): len(payload) for name, payload in region_only.items()})
     files.update(region_only)

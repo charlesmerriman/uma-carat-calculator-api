@@ -103,9 +103,9 @@ class Uma(models.Model):
         ),
     )
     # When the outfit comes out on Global, by the game's own data: the first
-    # gacha that offers it in the global client (clamped to Global's launch),
-    # written by the import only. None for an outfit the client holds on no
-    # gacha, or doesn't hold at all. May be AHEAD of today: the client ships
+    # gacha that offers it or main story chapter that gives it in the global
+    # client (clamped to Global's launch), written by the import only. None
+    # for an outfit nothing in the client gives yet, or one it doesn't hold. May be AHEAD of today: the client ships
     # outfits before their banners. One half of "on global"; the rule is
     # calculatorapi/global_release.py, never compared by hand.
     global_release_at = models.DateTimeField(
@@ -224,6 +224,14 @@ class Uma(models.Model):
         max_length=100, blank=True, default="", verbose_name="JP title",
         help_text="The outfit's title in the JP client, e.g. [スペシャルドリーマー].",
     )
+    # UmaTL's English title (scripts/data/umatl/), written by the import for
+    # every id the JP snapshot holds. Shown only while `title` is blank: Global's
+    # title and an editor's both win, and the page credits UmaTL when it shows
+    # (`uses_translated_title`). Never read by an AI feature (UmaTL's terms).
+    translated_title = models.CharField(
+        max_length=100, blank=True, default="",
+        help_text="UmaTL's English title, shown only while title is blank. Import-owned.",
+    )
     # The character's career goals on the default route, as the game files
     # state them (scripts/data/master_snapshot/objectives.json). The game keys
     # them by CHARACTER; with no character row to hold them, the import writes
@@ -234,6 +242,16 @@ class Uma(models.Model):
         blank=True,
         help_text="Career goals from the game-data import, in order.",
     )
+
+    @property
+    def shown_title(self):
+        """The title a reader sees: Global's or an editor's, else UmaTL's."""
+        return self.title or self.translated_title
+
+    @property
+    def uses_translated_title(self):
+        """Does the shown title come from UmaTL (so the page credits it)?"""
+        return not self.title and bool(self.translated_title)
 
     @property
     def character_id(self):

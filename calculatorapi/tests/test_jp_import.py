@@ -291,6 +291,45 @@ class JpImportTests(CalculatorTestCase):  # pylint: disable=too-many-instance-at
         self.assertEqual((card.card_type, card.character_id), ("speed", 1068))
         self.assertEqual((card.jp_name, card.jp_title), ("キタサンブラック", "[新衣装]"))
 
+    def test_umatl_fills_titles_a_unique_sentence_and_a_race_name_each_in_its_own_slot(self):
+        """notes/encyclopedia-jp-fills-plan.md, PR 3: UmaTL's title goes to `translated_title`
+        (never `title`, the editors' until Global's), its unique sentence to the unique effect's
+        `translated_text`, and its race name to a JP route's goal, marked `translated`."""
+        self.jp["support_cards"] = [jp_support_card(30300, "speed")]
+        self.jp["support_effects"] = [{"id": 30300, "effects": [{"type": 3, "levels": {"1": 5}}],
+                                       "unique": {"level": 1, "effects": [
+                                           {"type": 101, "value": 80, "params": [3, 1, 0, 0]}]}}]
+        self.jp["objectives"] = [{"chara_id": SPECIAL_WEEK // 100, "goals": [
+            {"turn": 12, "kind": 1, "race": "ジュニア級メイクデビュー", "grade": 900, "top": 0, "race_instance_id": 1},
+            {"turn": 40, "kind": 1, "race": "新しいレース", "grade": 100, "top": 3, "race_instance_id": 2},
+        ]}]
+        self.umatl.update({
+            "outfit_titles": {str(SPECIAL_WEEK): "[Special Dreamer]"},
+            "card_titles": {"30300": "[New Outfit]"},
+            "unique_effects": {"30300": "Speed Bonus (Friendship 80+)"},
+            "race_names": {"1": "UmaTL Debut", "2": "A New Race"},
+        })
+        card = SupportCard.objects.create(name="Kitasan Black", game_id=30300)
+        self.run_import(extra_global={"race_names": {"1": "Junior Make Debut"}})
+
+        uma = Uma.objects.get(pk=self.special_week.pk)
+        self.assertEqual((uma.title, uma.translated_title, uma.shown_title),
+                         ("", "[Special Dreamer]", "[Special Dreamer]"))
+        self.assertTrue(uma.uses_translated_title)
+        # Global's race name wins; UmaTL names only the race Global has no name for.
+        self.assertEqual([(goal["race"], goal.get("translated", False)) for goal in uma.career_objectives],
+                         [("Junior Make Debut", False), ("A New Race", True)])
+        card.refresh_from_db()
+        self.assertEqual((card.title, card.translated_title), ("", "[New Outfit]"))
+        self.assertEqual(card.unique_effect["translated_text"], "Speed Bonus (Friendship 80+)")
+
+    def test_an_editors_title_beats_umatls(self):
+        self.umatl["outfit_titles"] = {str(SPECIAL_WEEK): "[Special Dreamer]"}
+        Uma.objects.filter(pk=self.special_week.pk).update(title="[Editor's Title]")
+        self.run_import()
+        uma = Uma.objects.get(pk=self.special_week.pk)
+        self.assertEqual((uma.shown_title, uma.uses_translated_title), ("[Editor's Title]", False))
+
     def test_a_jp_card_whose_row_names_someone_else_gets_no_links(self):
         # Global names character 1068 (through its support card), so a JP card
         # of that character must be a row with that name in it.

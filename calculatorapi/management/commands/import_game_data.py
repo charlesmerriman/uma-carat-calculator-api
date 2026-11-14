@@ -10,7 +10,9 @@ THE SOURCES, in order of authority (since 2026-10-23):
      the structure of skills global doesn't define, evolutions, and the
      skill links of outfits and cards global doesn't have.
   3. scripts/data/umatl/text.json, UmaTL's English, only ever into the
-     `translated_*` columns, which a player reads only while global's are blank.
+     `translated_*` columns (skills, conditions, Uma and SupportCard titles),
+     a unique effect's `translated_text` and a JP route's race names (marked
+     `translated`), which a player reads only while global's are blank.
   4. scripts/data/gametora/names.json, GameTora's skill names, only ever as
      SkillAlias rows: search finds a skill by them, the site never shows them
      (owner and Daptrius, 2026-11-12; scripts/fetch_gametora_skill_names.py).
@@ -167,6 +169,10 @@ def load_snapshot(directory):
     for name in ("support_events", "skill_text_ahead", "sparks", "objectives", "support_effects"):
         path = directory / f"{name}.json"
         files[name] = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else []
+    # Every race's English name by race instance id, for a JP route's goals; a
+    # snapshot from before 2026-11-14 has none.
+    path = directory / "race_names.json"
+    files["race_names"] = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
     # Global's English for evolution conditions, keyed by condition id; a
     # snapshot from before 2026-10-23 has none.
     path = directory / "evolution_condition_text.json"
@@ -333,8 +339,9 @@ def global_release(card):
     """
     When an outfit or card comes out on Global by the game's own data
     (Uma/SupportCard.global_release_at): the snapshot's `start_date` (a
-    card's own; an outfit's first gacha), never earlier than Global's launch,
-    and None when the snapshot gives no date (an outfit on no gacha). Stored
+    card's own; an outfit's first gacha or main story reward), never earlier
+    than Global's launch, and None when the snapshot gives no date (an
+    outfit nothing in the client gives yet). Stored
     even when it is still ahead: the client ships cards before release, and
     dates its JP-only ones 2099-01-01. global_release.py compares it with now
     when a page is served, so a dated card turns on by itself on the day.
@@ -454,7 +461,11 @@ class Command(BaseCommand):
         self._add_values(uma_plan, Uma, merged(
             uma_names,
             {game_id: jp_uma_values(card) for game_id, card in jp_links["uma_cards"].items()},
-            objective_values(snapshot["objectives"], trusted_umas),
+            objective_values(
+                snapshot["objectives"], trusted_umas,
+                sources.jp.get("objectives", []) if sources.jp else [], snapshot["race_names"],
+                sources.umatl.get("race_names", {}) if sources.umatl else {},
+            ),
         ))
         self._add_values(support_plan, SupportCard, card_values(snapshot, sources, card_names, jp_links, support_plan))
         known_skills = (

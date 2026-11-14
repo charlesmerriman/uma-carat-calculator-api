@@ -1748,7 +1748,7 @@ result ("In plain English") with "Where it comes from".
 **`SupportCard.global_release_at`** is import-owned too: the game's `start_date`, Global's launch
 for a card the client dates before it (every launch card reads JP's 2021-02-24), stored even
 when still ahead (the client's JP-only cards read 2099), NULL for a card the global snapshot
-doesn't hold. `Uma.global_release_at` (`0135`) is the same for an outfit, from its first gacha.
+doesn't hold. `Uma.global_release_at` (`0135`) is the same for an outfit, from its first gacha or main story reward.
 Both are half of "on global" (below), and the card's also feeds the Collection's Release date
 sort, since 172 Global cards sit on no banner; the API shows it only once it has passed. **It is
 never selector eligibility**, which stays derived from JP banner dates (`eligibility.py`): a card
@@ -1759,7 +1759,7 @@ on no banner staying unknown there is what keeps it out of selectors, so it neve
 `calculatorapi/global_release.py`, when a page is served: an outfit or card is out once a
 CONFIRMED global banner for it has started (a predicted date never counts), or once its
 import-owned `global_release_at` has passed (the game's own date: a card's `start_date`, an
-outfit's first gacha, either possibly still ahead; None when the global snapshot doesn't hold
+outfit's first gacha or main story reward, either possibly still ahead; None when the global snapshot doesn't hold
 it). The banner half needs no snapshot refresh; the date half is what releases the launch
 roster and every card on no banner. Every `on_global` the API sends (Encyclopedia, skill
 pages, guides, the PvP catalogue) reads it, and the catalogue ships skill links for released
@@ -1874,8 +1874,10 @@ the Encyclopedia): an outfit takes its running style, aptitudes, base stats, gro
 name check as its skill links, and never once the id is in global's snapshot. **Never
 `Uma.rarity`** (it feeds `is_three_star`, so selectors and rate-up odds: an unreleased
 uma's stays blank or hand-set) **and never the English `title`**. Every outfit and card the
-JP snapshot holds, global ones included, takes `jp_name` and `jp_title`. The pages mark the
-JP-only facts as the JP game's, liable to change on global.
+JP snapshot holds, global ones included, takes `jp_name` and `jp_title`, and UmaTL's English
+title in `translated_title` (shown only while `title` is blank: `shown_title`; since
+2026-11-14). The pages mark the JP-only facts as the JP game's, liable to change on global,
+and credit UmaTL wherever its text shows.
 
 **Career objectives** (`master_snapshot/objectives.json`, since 2026-11-12): each character's
 goals on the default route, from `single_mode_route` / `single_mode_route_race` (`target_type`
@@ -1889,7 +1891,12 @@ many races), as Daptrius read them off the game on 2026-11-12, and counts the re
 goal for a lower grade means that grade or higher, and a placing of 1 is a win (Daptrius,
 2026-11-13): 300 reads "at G3 or higher" and 700 "at Pre-OP or higher", the only two codes
 in the files; any other stays unworded. The file was added with `--only objectives.json`,
-which writes one file from a newer mdb without refreshing the others.
+which writes one file from a newer mdb without refreshing the others. Since 2026-11-14 JP's
+routes come too (`jp_snapshot/objectives.json`, from the 2026-10-18 export) for the characters
+global doesn't have: each race goal carries its `race_instance_id` (the same id in both
+clients), and the import names it from global's `race_names.json`, else UmaTL's (the goal is
+marked `translated`), else leaves it blank and counted as hidden. Global's route wins for a
+character it has. notes/encyclopedia-jp-fills-plan.md.
 
 **Support card effects** (`master_snapshot/support_effects.json` and `jp_snapshot/support_effects.json`,
 since 2026-11-12): each card's `support_card_effect_table` rows, kept as the game states them (an

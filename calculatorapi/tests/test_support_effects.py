@@ -28,6 +28,10 @@ UNIQUE = {"level": 30, "effects": [{"type": 6, "value": 1}, {"type": 12, "value"
           "text": "Guts Bonus and Initial Guts"}
 
 
+UNIQUE_AMOUNTS = [{"type": 6, "name": "Guts Bonus", "value": 1, "format": "number", "condition": None},
+                  {"type": 12, "name": "Initial Guts", "value": 20, "format": "number", "condition": None}]
+
+
 def levels_of(effect_type):
     return next(effect["levels"] for effect in BRIGHTEST_STAR if effect["type"] == effect_type)
 
@@ -137,12 +141,56 @@ class TableTests(SimpleTestCase):
 class UniqueEffectTests(SimpleTestCase):
     def test_the_games_own_sentence_where_global_has_one(self):
         self.assertEqual(support_effects.unique_effect(UNIQUE),
-                         {"level": 30, "text": "Guts Bonus and Initial Guts", "multiplies": []})
+                         {"level": 30, "text": "Guts Bonus and Initial Guts", "translated": False,
+                          "amounts": UNIQUE_AMOUNTS, "multiplies": []})
 
     def test_a_jp_only_card_names_its_plain_typed_effects(self):
         jp_only = {"level": 30, "effects": [{"type": 6, "value": 1}, {"type": 12, "value": 20}]}
         self.assertEqual(support_effects.unique_effect(jp_only),
-                         {"level": 30, "text": "Guts Bonus 1, Initial Guts 20", "multiplies": []})
+                         {"level": 30, "text": "Guts Bonus and Initial Guts", "translated": False,
+                          "amounts": UNIQUE_AMOUNTS, "multiplies": []})
+
+    def test_a_friendship_gauge_effect_is_decoded(self):
+        """Type 101: `value` is the gauge threshold, `params` up to two (type, amount) pairs.
+        Card 30053, whose game sentence is "Speed Bonus and Skill Point Bonus (Friendship Gauge 80+)"."""
+        jp_style = {"level": 1, "effects": [{"type": 101, "value": 80, "params": [3, 1, 30, 1]}]}
+        self.assertEqual(support_effects.unique_effect(jp_style), {
+            "level": 1, "text": "Speed Bonus and Skill Point Bonus (Friendship Gauge 80+)", "translated": False,
+            "amounts": [
+                {"type": 3, "name": "Speed Bonus", "value": 1, "format": "number", "condition": "Friendship Gauge 80+"},
+                {"type": 30, "name": "Skill Point Bonus", "value": 1, "format": "number",
+                 "condition": "Friendship Gauge 80+"},
+            ],
+            "multiplies": [],
+        })
+        one_pair = {"level": 1, "effects": [{"type": 101, "value": 100, "params": [7, 3, 0, 0]}]}
+        self.assertEqual(support_effects.unique_effect(one_pair)["text"], "Wit Bonus (Friendship Gauge 100+)")
+
+    def test_umatls_sentence_comes_after_the_games_and_before_the_named_line(self):
+        """PR 3: the import puts UmaTL's sentence in `translated_text`; it shows only when the game
+        has none of its own, and the page is told so (`translated`) to credit UmaTL."""
+        gauge = [{"type": 101, "value": 80, "params": [3, 1, 0, 0]}]
+        jp_only = {"level": 1, "effects": gauge, "translated_text": "Speed Bonus (Friendship 80+)"}
+        page = support_effects.unique_effect(jp_only)
+        self.assertEqual((page["text"], page["translated"]), ("Speed Bonus (Friendship 80+)", True))
+        self.assertEqual([part["value"] for part in page["amounts"]], [1])
+        both = {**jp_only, "text": "Speed Bonus (Friendship Gauge 80+)"}
+        self.assertEqual(support_effects.unique_effect(both)["translated"], False)
+        # An undecoded part with UmaTL's sentence: the words show, no numbers.
+        worded = {"level": 1, "effects": [{"type": 116, "value": 1, "params": [8, 4, 5, 0]}],
+                  "translated_text": "Training bonus scaling with learnt speed skills, up to 5"}
+        self.assertEqual(support_effects.unique_effect(worded)["amounts"], None)
+
+    def test_a_plain_part_and_a_gauge_part_are_named_in_order(self):
+        mixed = {"level": 1, "effects": [{"type": 15, "value": 5}, {"type": 101, "value": 80, "params": [8, 10, 0, 0]}]}
+        self.assertEqual(support_effects.unique_effect(mixed)["text"],
+                         "Race Bonus, Training Effectiveness (Friendship Gauge 80+)")
+
+    def test_a_decoded_friendship_bonus_multiplies_by_its_number_not_its_words(self):
+        gauge = {"level": 1, "effects": [{"type": 101, "value": 80, "params": [1, 10, 0, 0]}],
+                 "text": "Bonus during friendship training"}
+        self.assertEqual(support_effects.unique_effect(gauge, [{"type": 1, "levels": {"1": 25}}])["multiplies"],
+                         ["Friendship Bonus"])
 
     def test_a_unique_friendship_bonus_or_specialty_priority_multiplies_with_the_cards_own(self):
         """Daptrius, 2026-11-13: Specialty Priority 35 with a unique 40 acts like (100 + 35) x 1.4,
@@ -157,9 +205,39 @@ class UniqueEffectTests(SimpleTestCase):
                          ["Friendship Bonus", "Specialty Priority"])
 
     def test_a_conditional_effect_nobody_decoded_is_not_worded(self):
-        conditional = {"level": 30, "effects": [{"type": 101, "value": 80, "params": [3, 1, 30, 1]}]}
+        conditional = {"level": 30, "effects": [{"type": 113, "value": 28, "params": [30, 0, 0, 0]}]}
         self.assertIsNone(support_effects.unique_effect(conditional))
         self.assertIsNone(support_effects.unique_effect(None))
+        # A gauge pair naming an effect type the names file lacks is not decoded either.
+        unknown = {"level": 1, "effects": [{"type": 101, "value": 80, "params": [99, 1, 0, 0]}]}
+        self.assertIsNone(support_effects.unique_effect(unknown))
+
+    def test_a_sentence_with_an_undecoded_part_keeps_its_words_and_sends_no_amounts(self):
+        worded = {"level": 30, "effects": [{"type": 113, "value": 28, "params": [30, 0, 0, 0]}],
+                  "text": "Training Energy Cost Reduction when Friendship Training occurs"}
+        self.assertEqual(support_effects.unique_effect(worded)["amounts"], None)
+
+
+class FriendshipGaugeCheckTests(SimpleTestCase):
+    """The decoding of type 101, held against the game's own words: every effect it names, and
+    the threshold, appear in the global client's sentence for that card, on every type-101 row
+    in the committed snapshot (33 on 2026-11-14)."""
+
+    def test_every_global_type_101_row_matches_the_games_sentence(self):
+        rows = json.loads((SNAPSHOT / "support_effects.json").read_text(encoding="utf-8"))
+        checked = 0
+        for card in rows:
+            unique = card["unique"]
+            if not unique or not any(effect["type"] == 101 for effect in unique["effects"]):
+                continue
+            with self.subTest(card=card["id"]):
+                page = support_effects.unique_effect(unique)
+                self.assertIsNotNone(page["amounts"])
+                for part in page["amounts"]:
+                    self.assertIn(part["name"].lower(), unique["text"].lower())
+                    self.assertIn(part["condition"].split()[-1].rstrip("+"), unique["text"])
+            checked += 1
+        self.assertGreaterEqual(checked, 33)
 
 
 class EffectImportTests(SimpleTestCase):
@@ -188,7 +266,8 @@ class CardPageEffectsTests(CalculatorTestCase):
         body = editor_client().get("/encyclopedia/cards/30001").json()
         self.assertEqual(body["caps"], [30, 35, 40, 45, 50])
         self.assertEqual(body["unique_effect"],
-                         {"level": 30, "text": "Guts Bonus and Initial Guts", "multiplies": []})
+                         {"level": 30, "text": "Guts Bonus and Initial Guts", "translated": False,
+                          "amounts": UNIQUE_AMOUNTS, "multiplies": []})
         self.assertEqual(len(body["effects"]), 8)
         hint = next(row for row in body["effects"] if row["name"] == "Hint Frequency")
         self.assertEqual([hint["values"][level - 1] for level in (30, 35, 40, 45, 50)], [30, 33, 36, 40, 40])
@@ -212,9 +291,15 @@ class EffectSortTests(SimpleTestCase):
         self.assertEqual(support_effects.unique_parts(UNIQUE),
                          {"level": 30, "values": {6: 1, 12: 20}, "conditional": False})
         conditional = {"level": 25, "effects": [{"type": 15, "value": 5},
-                                                {"type": 101, "value": 3, "params": [1, 2]}]}
+                                                {"type": 113, "value": 28, "params": [30, 0, 0, 0]}]}
         self.assertEqual(support_effects.unique_parts(conditional),
                          {"level": 25, "values": {15: 5}, "conditional": True})
+
+    def test_a_decoded_gauge_part_counts_in_the_sort(self):
+        """Owner, 2026-11-14: counted as if the gauge is reached, and no "+?" mark."""
+        gauge = {"level": 1, "effects": [{"type": 101, "value": 80, "params": [8, 10, 30, 2]}]}
+        self.assertEqual(support_effects.unique_parts(gauge),
+                         {"level": 1, "values": {8: 10, 30: 2}, "conditional": False})
         self.assertIsNone(support_effects.unique_parts(None))
 
 

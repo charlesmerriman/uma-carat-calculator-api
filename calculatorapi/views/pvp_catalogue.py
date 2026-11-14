@@ -131,6 +131,9 @@ def build_catalogue():
             # draws the bordered art; the portrait is there for the drawer's
             # small tiles, where a rarity border reads as a frame in a frame.
             "portrait": _url(uma.portrait.name),
+            # Global's or an editor's title, else UmaTL's (Uma.shown_title):
+            # the Encyclopedia's search matches on it, and its lists credit UmaTL.
+            "title": uma.shown_title,
             "rarity": uma.rarity,
             "running_style": uma.running_style,
             # Two outfits of one character may not share a team (the game's
@@ -149,8 +152,11 @@ def build_catalogue():
         # group_members: a group card's umas, by name, which the builder's
         # deck rules treat as that many cards. [] on every other card.
         .values("id", "name", "game_id", "image", "image_borderless", "card_type", "rarity", "title",
-                "group_members", "is_placeholder", "global_release_at")
+                "translated_title", "group_members", "is_placeholder", "global_release_at")
     ):
+        # Global's or an editor's title, else UmaTL's (SupportCard.shown_title).
+        card["title"] = card["title"] or card.pop("translated_title")
+        card.pop("translated_title", None)
         card["image"] = _url(card["image"])
         # The texture the site frames itself (FramedCard), null when there is
         # none: never a fallback to `image`, which has a frame of its own.

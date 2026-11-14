@@ -209,6 +209,50 @@ class EvolutionExtractTests(CalculatorTestCase):
         self.assertEqual(len(evolutions["outfit"]), 1)
 
 
+def release_db(with_story=True):
+    """Two outfits on gachas (one also on a 2099 one) and, with the story
+    tables, one given only by a main story chapter."""
+    conn = sqlite3.connect(":memory:")
+    conn.executescript("""
+        CREATE TABLE gacha_data (id INTEGER, start_date INTEGER);
+        CREATE TABLE gacha_available (gacha_id INTEGER, card_id INTEGER, card_type INTEGER);
+        INSERT INTO gacha_data VALUES (1, 1751493600), (2, 4070908800), (3, 1762380000);
+        INSERT INTO gacha_available VALUES (2, 100101, 1), (1, 100101, 1), (3, 106501, 1),
+                                           (1, 30028, 2);
+    """)
+    if with_story:
+        conn.executescript("""
+            CREATE TABLE main_story_part (id INTEGER, start_date INTEGER);
+            CREATE TABLE main_story_data (id INTEGER, part_id INTEGER,
+                add_reward_category_1 INTEGER, add_reward_id_1 INTEGER);
+            INSERT INTO main_story_part VALUES (7, 1782424800);
+            INSERT INTO main_story_data VALUES (713, 7, 50, 100103), (714, 7, 51, 30105),
+                                               (715, 7, 90, 43);
+        """)
+    return conn
+
+
+class FirstReleaseTests(CalculatorTestCase):
+    def test_an_outfit_takes_its_earliest_gacha_never_the_2099_mark(self):
+        first = extractor.first_release_dates(release_db())
+        self.assertEqual((first[100101], first[106501]), (1751493600, 1762380000))
+        self.assertNotIn(30028, first)  # a support card's gacha row
+
+    def test_a_main_story_reward_dates_an_outfit_on_no_gacha(self):
+        # [Ruler of Japan] Special Week, the reward of main story Part 7.
+        first = extractor.first_release_dates(release_db())
+        self.assertEqual(first[100103], 1782424800)
+        self.assertNotIn(30105, first)  # category 51 is a support card
+        self.assertNotIn(43, first)
+
+    def test_a_client_without_the_story_tables_still_dates_gachas(self):
+        first = extractor.first_release_dates(release_db(with_story=False))
+        self.assertEqual(sorted(first), [100101, 106501])
+
+    def test_a_client_with_neither_table_set_gives_none(self):
+        self.assertIsNone(extractor.first_release_dates(sqlite3.connect(":memory:")))
+
+
 class UmaTLSliceTests(CalculatorTestCase):
     def test_keeps_only_wanted_ids_sorted_and_drops_blanks(self):
         full = {
@@ -226,7 +270,38 @@ class UmaTLSliceTests(CalculatorTestCase):
         self.assertEqual(list(text["skill_names"].items()), [("3", "Alpha"), ("20", "Beta")])
         self.assertEqual(text["skill_descriptions"], {"3": "Does a thing"})
         self.assertEqual(text["evolution_conditions"], {"10010101": "Reach 600 Stamina"})
-        self.assertEqual(set(text), {"skill_names", "skill_descriptions", "evolution_conditions"})
+        self.assertEqual(set(text), set(umatl.CATEGORIES))
+
+    def test_titles_uniques_and_races_with_their_whitespace_collapsed(self):
+        """notes/encyclopedia-jp-fills-plan.md, PR 3: UmaTL's sentences carry the client's line
+        breaks and double spaces; the slice collapses them and never changes a word. The skill
+        categories keep their text as first sliced."""
+        full = {
+            "5": {"100101": "[Special Dreamer]"},
+            "76": {"30134": "[Ambitious]", "99999": "Not ours"},
+            "155": {"20001": "Skill Pt bonus and initial \nWit increase", "30134": "Training bonus scaling "
+                    "with learnt  speed skills, up to 5"},
+            "28": {"902790": "Junior Make Debut"},
+            "47": {"3": "Keeps  its  spaces"},
+        }
+        wanted = {"outfit_titles": {"100101"}, "card_titles": {"30134"}, "unique_effects": {"20001", "30134"},
+                  "race_names": {"902790"}, "skill_names": {"3"}}
+        text = umatl.slice_text(full, wanted)
+        self.assertEqual(text["outfit_titles"], {"100101": "[Special Dreamer]"})
+        self.assertEqual(text["card_titles"], {"30134": "[Ambitious]"})
+        self.assertEqual(text["unique_effects"], {
+            "20001": "Skill Pt bonus and initial Wit increase",
+            "30134": "Training bonus scaling with learnt speed skills, up to 5",
+        })
+        self.assertEqual(text["race_names"], {"902790": "Junior Make Debut"})
+        self.assertEqual(text["skill_names"], {"3": "Keeps  its  spaces"})
+
+    def test_the_wanted_ids_come_from_the_jp_snapshot(self):
+        wanted = umatl.wanted_ids(SCRIPTS / "data" / "jp_snapshot")
+        self.assertIn("100101", wanted["outfit_titles"])
+        self.assertIn("30001", wanted["card_titles"])
+        self.assertEqual(wanted["unique_effects"], wanted["card_titles"])
+        self.assertIn("902790", wanted["race_names"])  # a JP-only route's debut
 
 
 class UploadBorderlessCardsTests(CalculatorTestCase):
