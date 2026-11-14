@@ -32,6 +32,16 @@ in tables the extractor never reads as INTEGER. A column the file doesn't
 know stops the rebuild ("has columns the schema doesn't"), so nothing is
 guessed silently.
 
+SKILL ICONS: skill_data_processed.csv (Daptrius, 2026-11-14). The JP
+skill_data leaves icon_id at 0 on some released skills (176 in the 2026-10-26
+export, 197 in the snapshot of 2026-11-02), and the game draws them some
+other way. Daptrius's skill_data_processed.csv is the same table with those
+icons filled in; he said it will come with every export from now on. When an
+export holds one (in masterdata_tables/ or at the top of the folder), it is
+loaded AS skill_data, and the catalogue's skill_data count is checked against
+it like any table. On 2026-11-14 it differed from that day's skill_data only
+in icon_id.
+
 Run from backend/ (the output path is required: the rebuilt file is ~35 MB and
 belongs in a scratch folder, never in the repo or next to the export):
     python scripts/jp_export_to_mdb.py /path/to/export /tmp/jp/master.mdb
@@ -93,6 +103,22 @@ def load_rows(conn, table, columns, csv_path):
     return count
 
 
+# A table whose CSV a teammate's processed copy replaces, by the copy's file name.
+PROCESSED = {"skill_data": "skill_data_processed.csv"}
+
+
+def table_csv(export_dir, table):
+    """The CSV to load for `table`: a processed copy when the export has one
+    (module docstring, SKILL ICONS), else masterdata_tables/<table>.csv."""
+    name = PROCESSED.get(table)
+    if name:
+        for candidate in (export_dir / "masterdata_tables" / name, export_dir / name):
+            if candidate.is_file():
+                print(f"{table}: loading {candidate.name} in place of {table}.csv")
+                return candidate
+    return export_dir / "masterdata_tables" / f"{table}.csv"
+
+
 def rebuild(export_dir, out_path):
     schema = json.loads(
         (export_dir / "masterdata_schema_and_previews.json").read_text(encoding="utf-8")
@@ -107,7 +133,7 @@ def rebuild(export_dir, out_path):
         for table, info in schema.items():
             checked(table, NAME, "table name")
             create_table(conn, table, info["columns"])
-            count = load_rows(conn, table, info["columns"], export_dir / "masterdata_tables" / f"{table}.csv")
+            count = load_rows(conn, table, info["columns"], table_csv(export_dir, table))
             # A short CSV means a truncated export; better to stop than to
             # extract a snapshot that is silently missing rows.
             if table in expected and count != expected[table]:

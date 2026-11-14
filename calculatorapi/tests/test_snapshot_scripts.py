@@ -101,6 +101,16 @@ class JpExportRebuildTests(CalculatorTestCase):
         with self.assertRaisesRegex(SystemExit, "2 rows in the CSV, the catalogue says 3"):
             rebuild_script.rebuild(self.export, self.out)
 
+    def test_a_processed_skill_data_replaces_the_games(self):
+        # Daptrius's copy fills the icons the game leaves at 0 (2026-11-14).
+        columns = [("id", "INTEGER", 1), ("icon_id", "INTEGER", 0)]
+        write_export(self.export, {"skill_data": (columns, [["101121", "0"]])})
+        with (self.export / "skill_data_processed.csv").open("w", encoding="utf-8-sig", newline="") as f:
+            csv.writer(f).writerows([["id", "icon_id"], ["101121", "20013"]])
+        rebuild_script.rebuild(self.export, self.out)
+        conn = sqlite3.connect(self.out)
+        self.assertEqual(conn.execute("SELECT icon_id FROM skill_data WHERE id = 101121").fetchone(), (20013,))
+
     def test_a_name_that_isnt_the_games_is_refused(self):
         # The export is someone else's file: nothing odd reaches the SQL.
         write_export(self.export, {'x"; DROP TABLE y; --': ([("id", "INTEGER", 1)], [])})
