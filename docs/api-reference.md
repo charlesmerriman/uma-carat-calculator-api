@@ -950,8 +950,12 @@ generation (`skills_cache.read_page`). **No dates and no banners**: the client r
 from `/calculator-data`, so date prediction stays in one place; `id` (the row's pk) is
 sent so it can find them there and in the Collection. Never `admin_comments`.
 
+- **Both pages:** `title` is the shown one (Global's or an editor's, else UmaTL's), and
+  `uses_translation` is true when anything on the page is UmaTL's fan translation (a title,
+  a row's title, a unique effect sentence, a race name), so the page credits UmaTL. Each
+  `outfits` / `cards` row carries `title_translated`.
 - **Uma** (trainees only, `Uma.trainees()`; 404 for a casual outfit or an NPC): `id`,
-  `game_id`, `name`, `title`, `jp_name`, `jp_title`, `portrait`, `image`, `rarity`,
+  `game_id`, `name`, `title`, `uses_translation`, `jp_name`, `jp_title`, `portrait`, `image`, `rarity`,
   `running_style`, `on_global`, `purpose`, `apt` / `base` / `growth` (keyed objects),
   `star_stats`, `objectives` (her goals in order: `turn`, `when` "Classic Year, Early Feb", `kind`
   "race" / "fans" / "placings", `race`, `grade` G1 to OP or null, `need` "Win" / "Top 5" / "Run it";
@@ -968,7 +972,10 @@ sent so it can find them there and in the Collection. Never `admin_comments`.
   order it gains them: `type`, `name`, `help`, `format` "percent" / "number" / "level", `unlock`
   the first level it has the effect, `values` one per level from 1 to its top cap with `null`
   before `unlock`), `caps` (its level cap at each limit break, 0 to 4), `unique_effect`
-  (`{"level", "text", "multiplies"}` or `null`; `multiplies` names the effects, of Friendship Bonus
+  (`{"level", "text", "translated", "amounts", "multiplies"}` or `null`; `text` is the game's
+  sentence, else UmaTL's (`translated` true), else the effects by name; `amounts` lists each part
+  as `type`, `name`, `value`, `format` and `condition` ("Friendship Gauge 80+" for a decoded
+  type 101, else null), or `null` when a part can't be read yet; `multiplies` names the effects, of Friendship Bonus
   and Specialty Priority, that it multiplies with the card's own instead of adding to;
   support_effects.py), `skills` (hints, then events),
   `outfits` (a group card's are its members'), `cards` (the character's other cards; `[]`

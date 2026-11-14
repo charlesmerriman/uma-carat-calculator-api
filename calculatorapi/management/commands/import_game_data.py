@@ -10,7 +10,9 @@ THE SOURCES, in order of authority (since 2026-10-23):
      the structure of skills global doesn't define, evolutions, and the
      skill links of outfits and cards global doesn't have.
   3. scripts/data/umatl/text.json, UmaTL's English, only ever into the
-     `translated_*` columns, which a player reads only while global's are blank.
+     `translated_*` columns (skills, conditions, Uma and SupportCard titles),
+     a unique effect's `translated_text` and a JP route's race names (marked
+     `translated`), which a player reads only while global's are blank.
   4. scripts/data/gametora/names.json, GameTora's skill names, only ever as
      SkillAlias rows: search finds a skill by them, the site never shows them
      (owner and Daptrius, 2026-11-12; scripts/fetch_gametora_skill_names.py).
@@ -462,6 +464,7 @@ class Command(BaseCommand):
             objective_values(
                 snapshot["objectives"], trusted_umas,
                 sources.jp.get("objectives", []) if sources.jp else [], snapshot["race_names"],
+                sources.umatl.get("race_names", {}) if sources.umatl else {},
             ),
         ))
         self._add_values(support_plan, SupportCard, card_values(snapshot, sources, card_names, jp_links, support_plan))

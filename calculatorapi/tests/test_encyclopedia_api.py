@@ -142,6 +142,38 @@ class CardPageTests(EncyclopediaFixture):
         self.assertEqual(body["cards"], [])
 
 
+class TranslationCreditTests(EncyclopediaFixture):
+    """notes/encyclopedia-jp-fills-plan.md, PR 3: a title Global (or an editor) hasn't given is
+    UmaTL's, and a page showing any UmaTL text says so (`uses_translation`), for the credit."""
+
+    def test_a_global_page_uses_no_translation(self):
+        self.assertFalse(self.client.get(f"/encyclopedia/umas/{SPECIAL_WEEK}").json()["uses_translation"])
+        self.assertFalse(self.client.get(f"/encyclopedia/cards/{SPE_CARD}").json()["uses_translation"])
+
+    def test_umatls_title_shows_only_while_the_title_is_blank(self):
+        SupportCard.objects.filter(pk=self.ssr.pk).update(translated_title="[Not Shown]")
+        Uma.objects.filter(pk=self.summer.pk).update(translated_title="[Summer Title]")
+        body = self.client.get(f"/encyclopedia/cards/{SPE_CARD}").json()
+        self.assertEqual(body["title"], "[The Brightest Star]")
+        # Her summer outfit's row shows UmaTL's title, so this page credits UmaTL too.
+        summer = next(row for row in body["outfits"] if row["game_id"] == SPECIAL_WEEK_SUMMER)
+        self.assertEqual((summer["title"], summer["title_translated"]), ("[Summer Title]", True))
+        self.assertTrue(body["uses_translation"])
+        page = self.client.get(f"/encyclopedia/umas/{SPECIAL_WEEK_SUMMER}").json()
+        self.assertEqual((page["title"], page["uses_translation"]), ("[Summer Title]", True))
+
+    def test_umatls_unique_sentence_and_race_name_are_credited(self):
+        jp = card(30400, "Kitasan Black", rarity=3, card_type="speed", unique_effect={
+            "level": 1, "effects": [{"type": 101, "value": 80, "params": [3, 1, 0, 0]}],
+            "translated_text": "Speed Bonus (Friendship 80+)"})
+        body = self.client.get(f"/encyclopedia/cards/{jp.game_id}").json()
+        self.assertEqual((body["unique_effect"]["text"], body["uses_translation"]),
+                         ("Speed Bonus (Friendship 80+)", True))
+        runner = uma(100701, "Gold Ship", career_objectives=[
+            {"turn": 40, "kind": 1, "race": "A New Race", "grade": 100, "top": 3, "translated": True}])
+        self.assertTrue(self.client.get(f"/encyclopedia/umas/{runner.game_id}").json()["uses_translation"])
+
+
 class CacheTests(EncyclopediaFixture):
     def test_a_page_costs_a_bounded_number_of_queries(self):
         with CaptureQueriesContext(connection) as queries:

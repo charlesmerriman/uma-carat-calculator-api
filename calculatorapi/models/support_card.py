@@ -168,6 +168,14 @@ class SupportCard(models.Model):
         max_length=100, blank=True, default="", verbose_name="JP title",
         help_text="The card's title in the JP client.",
     )
+    # UmaTL's English title (scripts/data/umatl/), written by the import for
+    # every id the JP snapshot holds. Shown only while `title` is blank: Global's
+    # title and an editor's both win, and the page credits UmaTL when it shows
+    # (`uses_translated_title`). Never read by an AI feature (UmaTL's terms).
+    translated_title = models.CharField(
+        max_length=100, blank=True, default="",
+        help_text="UmaTL's English title, shown only while title is blank. Import-owned.",
+    )
     # The card's training effects and its unique effect, as the game's tables
     # state them (scripts/extract_master_snapshot.py, extract_support_effects):
     # written by import_game_data, read whole with the card and never edited
@@ -182,6 +190,16 @@ class SupportCard(models.Model):
         blank=True, null=True,
         help_text="The unique effect: the level that unlocks it, its typed effects, and the game's sentence for it.",
     )
+
+    @property
+    def shown_title(self):
+        """The title a reader sees: Global's or an editor's, else UmaTL's."""
+        return self.title or self.translated_title
+
+    @property
+    def uses_translated_title(self):
+        """Does the shown title come from UmaTL (so the page credits it)?"""
+        return not self.title and bool(self.translated_title)
 
     def save(self, *args, **kwargs):
         # A card an editor adds by hand, e.g. one that is not on global yet,
