@@ -7,49 +7,56 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904185
    },
    {
     "turn": 27,
     "kind": 1,
     "race": "Kisaragi Sho",
     "grade": 300,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 300901
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Tokyo Yushun (Japanese Derby)",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 101001
    },
    {
     "turn": 44,
     "kind": 1,
     "race": "Kikuka Sho",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101501
    },
    {
     "turn": 56,
     "kind": 1,
     "race": "Tenno Sho (Spring)",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100601
    },
    {
     "turn": 70,
     "kind": 1,
     "race": "Japan Cup",
     "grade": 100,
-    "top": 2
+    "top": 2,
+    "race_instance_id": 101901
    },
    {
     "turn": 72,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 102301
    }
   ]
  },
@@ -61,7 +68,8 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904185
    },
    {
     "turn": 27,
@@ -75,42 +83,48 @@
     "kind": 1,
     "race": "Yayoi Sho",
     "grade": 200,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 200601
    },
    {
     "turn": 42,
     "kind": 1,
     "race": "Kobe Shimbun Hai",
     "grade": 200,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 202401
    },
    {
     "turn": 53,
     "kind": 1,
     "race": "Kinko Sho",
     "grade": 200,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 200701
    },
    {
     "turn": 60,
     "kind": 1,
     "race": "Takarazuka Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101201
    },
    {
     "turn": 67,
     "kind": 1,
     "race": "Mainichi Okan",
     "grade": 200,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 202601
    },
    {
     "turn": 68,
     "kind": 1,
     "race": "Tenno Sho (Autumn)",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101601
    }
   ]
  },
@@ -122,56 +136,64 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904181
    },
    {
     "turn": 26,
     "kind": 1,
     "race": "Wakagoma Stakes",
     "grade": 400,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 400901
    },
    {
     "turn": 31,
     "kind": 1,
     "race": "Satsuki Sho",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100501
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Tokyo Yushun (Japanese Derby)",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 101001
    },
    {
     "turn": 44,
     "kind": 1,
     "race": "Kikuka Sho",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101501
    },
    {
     "turn": 56,
     "kind": 1,
     "race": "Tenno Sho (Spring)",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100601
    },
    {
     "turn": 70,
     "kind": 1,
     "race": "Japan Cup",
     "grade": 100,
-    "top": 2
+    "top": 2,
+    "race_instance_id": 101901
    },
    {
     "turn": 72,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 102301
    }
   ]
  },
@@ -183,63 +205,72 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 901110
    },
    {
     "turn": 23,
     "kind": 1,
     "race": "Asahi Hai Futurity Stakes",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 102201
    },
    {
     "turn": 30,
     "kind": 1,
     "race": "Spring Stakes",
     "grade": 200,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 201001
    },
    {
     "turn": 31,
     "kind": 1,
     "race": "Satsuki Sho",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100501
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Tokyo Yushun (Japanese Derby)",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 101001
    },
    {
     "turn": 48,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 102301
    },
    {
     "turn": 54,
     "kind": 1,
     "race": "Osaka Hai",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 100301
    },
    {
     "turn": 59,
     "kind": 1,
     "race": "Yasuda Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101101
    },
    {
     "turn": 68,
     "kind": 1,
     "race": "Tenno Sho (Autumn)",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101601
    }
   ]
  },
@@ -251,84 +282,96 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904191
    },
    {
     "turn": 23,
     "kind": 1,
     "race": "Asahi Hai Futurity Stakes",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 102201
    },
    {
     "turn": 29,
     "kind": 1,
     "race": "Yayoi Sho",
     "grade": 200,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 200601
    },
    {
     "turn": 31,
     "kind": 1,
     "race": "Satsuki Sho",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100501
    },
    {
     "turn": 33,
     "kind": 1,
     "race": "NHK Mile Cup",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100701
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Tokyo Yushun (Japanese Derby)",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 101001
    },
    {
     "turn": 44,
     "kind": 1,
     "race": "Kikuka Sho",
     "grade": 100,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 101501
    },
    {
     "turn": 46,
     "kind": 1,
     "race": "Mile Championship",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101801
    },
    {
     "turn": 54,
     "kind": 1,
     "race": "Takamatsunomiya Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100201
    },
    {
     "turn": 59,
     "kind": 1,
     "race": "Yasuda Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101101
    },
    {
     "turn": 68,
     "kind": 1,
     "race": "Tenno Sho (Autumn)",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101601
    },
    {
     "turn": 72,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 102301
    }
   ]
  },
@@ -340,7 +383,8 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904186
    },
    {
     "turn": 24,
@@ -354,21 +398,24 @@
     "kind": 1,
     "race": "NHK Mile Cup",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100701
    },
    {
     "turn": 46,
     "kind": 1,
     "race": "Mile Championship",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101801
    },
    {
     "turn": 48,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 102301
    },
    {
     "turn": 60,
@@ -382,14 +429,16 @@
     "kind": 1,
     "race": "Tenno Sho (Autumn)",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101601
    },
    {
     "turn": 72,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 102301
    }
   ]
  },
@@ -401,63 +450,72 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904184
    },
    {
     "turn": 24,
     "kind": 1,
     "race": "Hopeful Stakes",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 102401
    },
    {
     "turn": 31,
     "kind": 1,
     "race": "Satsuki Sho",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100501
    },
    {
     "turn": 44,
     "kind": 1,
     "race": "Kikuka Sho",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101501
    },
    {
     "turn": 48,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 102301
    },
    {
     "turn": 56,
     "kind": 1,
     "race": "Tenno Sho (Spring)",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100601
    },
    {
     "turn": 60,
     "kind": 1,
     "race": "Takarazuka Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101201
    },
    {
     "turn": 68,
     "kind": 1,
     "race": "Tenno Sho (Autumn)",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101601
    },
    {
     "turn": 72,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 102301
    }
   ]
  },
@@ -469,70 +527,80 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904182
    },
    {
     "turn": 23,
     "kind": 1,
     "race": "Hanshin Juvenile Fillies",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 102101
    },
    {
     "turn": 29,
     "kind": 1,
     "race": "Tulip Sho",
     "grade": 200,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 301801
    },
    {
     "turn": 31,
     "kind": 1,
     "race": "Oka Sho",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100401
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Tokyo Yushun (Japanese Derby)",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 101001
    },
    {
     "turn": 44,
     "kind": 1,
     "race": "Shuka Sho",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101401
    },
    {
     "turn": 48,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 102301
    },
    {
     "turn": 57,
     "kind": 1,
     "race": "Victoria Mile",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100801
    },
    {
     "turn": 59,
     "kind": 1,
     "race": "Yasuda Kinen",
     "grade": 100,
-    "top": 2
+    "top": 2,
+    "race_instance_id": 101101
    },
    {
     "turn": 68,
     "kind": 1,
     "race": "Tenno Sho (Autumn)",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101601
    }
   ]
  },
@@ -544,70 +612,80 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904183
    },
    {
     "turn": 29,
     "kind": 1,
     "race": "Tulip Sho",
     "grade": 200,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 301801
    },
    {
     "turn": 31,
     "kind": 1,
     "race": "Oka Sho",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100401
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Japanese Oaks",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100901
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Tokyo Yushun (Japanese Derby)",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 101001
    },
    {
     "turn": 44,
     "kind": 1,
     "race": "Shuka Sho",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101401
    },
    {
     "turn": 45,
     "kind": 1,
     "race": "Queen Elizabeth II Cup",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101701
    },
    {
     "turn": 54,
     "kind": 1,
     "race": "Osaka Hai",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100301
    },
    {
     "turn": 68,
     "kind": 1,
     "race": "Tenno Sho (Autumn)",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101601
    },
    {
     "turn": 72,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 102301
    }
   ]
  },
@@ -619,56 +697,64 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 902790
    },
    {
     "turn": 25,
     "kind": 1,
     "race": "Shinzan Kinen",
     "grade": 300,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 300301
    },
    {
     "turn": 33,
     "kind": 1,
     "race": "NHK Mile Cup",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100701
    },
    {
     "turn": 36,
     "kind": 1,
     "race": "Unicorn Stakes",
     "grade": 300,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 303301
    },
    {
     "turn": 46,
     "kind": 1,
     "race": "Mile Championship",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101801
    },
    {
     "turn": 59,
     "kind": 1,
     "race": "Yasuda Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101101
    },
    {
     "turn": 66,
     "kind": 1,
     "race": "Sprinters Stakes",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101301
    },
    {
     "turn": 70,
     "kind": 1,
     "race": "Mile Championship",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101801
    }
   ]
  },
@@ -680,56 +766,64 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 901210
    },
    {
     "turn": 23,
     "kind": 1,
     "race": "Asahi Hai Futurity Stakes",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 102201
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Tokyo Yushun (Japanese Derby)",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 101001
    },
    {
     "turn": 46,
     "kind": 1,
     "race": "Japan Cup",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 101901
    },
    {
     "turn": 48,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 102301
    },
    {
     "turn": 60,
     "kind": 1,
     "race": "Takarazuka Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101201
    },
    {
     "turn": 67,
     "kind": 1,
     "race": "Mainichi Okan",
     "grade": 200,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 202601
    },
    {
     "turn": 72,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 102301
    }
   ]
  },
@@ -741,70 +835,80 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904190
    },
    {
     "turn": 23,
     "kind": 1,
     "race": "Hanshin Juvenile Fillies",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 102101
    },
    {
     "turn": 31,
     "kind": 1,
     "race": "Oka Sho",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100401
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Japanese Oaks",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100901
    },
    {
     "turn": 44,
     "kind": 1,
     "race": "Shuka Sho",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101401
    },
    {
     "turn": 48,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 102301
    },
    {
     "turn": 54,
     "kind": 1,
     "race": "Osaka Hai",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 100301
    },
    {
     "turn": 59,
     "kind": 1,
     "race": "Yasuda Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101101
    },
    {
     "turn": 70,
     "kind": 1,
     "race": "Japan Cup",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101901
    },
    {
     "turn": 72,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 102301
    }
   ]
  },
@@ -816,7 +920,8 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904185
    },
    {
     "turn": 24,
@@ -830,35 +935,40 @@
     "kind": 1,
     "race": "Kobe Shimbun Hai",
     "grade": 200,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 202401
    },
    {
     "turn": 44,
     "kind": 1,
     "race": "Kikuka Sho",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101501
    },
    {
     "turn": 56,
     "kind": 1,
     "race": "Tenno Sho (Spring)",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 100601
    },
    {
     "turn": 60,
     "kind": 1,
     "race": "Takarazuka Kinen",
     "grade": 100,
-    "top": 2
+    "top": 2,
+    "race_instance_id": 102501
    },
    {
     "turn": 68,
     "kind": 1,
     "race": "Tenno Sho (Autumn)",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101601
    }
   ]
  },
@@ -870,56 +980,64 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 902790
    },
    {
     "turn": 27,
     "kind": 1,
     "race": "Kyodo News Hai",
     "grade": 300,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 301201
    },
    {
     "turn": 33,
     "kind": 1,
     "race": "NHK Mile Cup",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100701
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Tokyo Yushun (Japanese Derby)",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 101001
    },
    {
     "turn": 43,
     "kind": 1,
     "race": "Mainichi Okan",
     "grade": 200,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 202601
    },
    {
     "turn": 60,
     "kind": 1,
     "race": "Takarazuka Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101201
    },
    {
     "turn": 70,
     "kind": 1,
     "race": "Japan Cup",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101901
    },
    {
     "turn": 72,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 102301
    }
   ]
  },
@@ -931,7 +1049,8 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904183
    },
    {
     "turn": 28,
@@ -945,49 +1064,56 @@
     "kind": 1,
     "race": "Satsuki Sho",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100501
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Tokyo Yushun (Japanese Derby)",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 101001
    },
    {
     "turn": 48,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 102301
    },
    {
     "turn": 56,
     "kind": 1,
     "race": "Tenno Sho (Spring)",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100601
    },
    {
     "turn": 60,
     "kind": 1,
     "race": "Takarazuka Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101201
    },
    {
     "turn": 70,
     "kind": 1,
     "race": "Japan Cup",
     "grade": 100,
-    "top": 2
+    "top": 2,
+    "race_instance_id": 101901
    },
    {
     "turn": 72,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 102301
    }
   ]
  },
@@ -999,105 +1125,120 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904189
    },
    {
     "turn": 23,
     "kind": 1,
     "race": "Asahi Hai Futurity Stakes",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 102201
    },
    {
     "turn": 31,
     "kind": 1,
     "race": "Satsuki Sho",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100501
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Tokyo Yushun (Japanese Derby)",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 101001
    },
    {
     "turn": 44,
     "kind": 1,
     "race": "Kikuka Sho",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101501
    },
    {
     "turn": 48,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 102301
    },
    {
     "turn": 54,
     "kind": 1,
     "race": "Hanshin Daishoten",
     "grade": 200,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 200901
    },
    {
     "turn": 56,
     "kind": 1,
     "race": "Tenno Sho (Spring)",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 100601
    },
    {
     "turn": 56,
     "kind": 1,
     "race": "Tenno Sho (Spring)",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 100601
    },
    {
     "turn": 68,
     "kind": 1,
     "race": "Tenno Sho (Autumn)",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101601
    },
    {
     "turn": 68,
     "kind": 1,
     "race": "Tenno Sho (Autumn)",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101601
    },
    {
     "turn": 70,
     "kind": 1,
     "race": "Japan Cup",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101901
    },
    {
     "turn": 70,
     "kind": 1,
     "race": "Japan Cup",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101901
    },
    {
     "turn": 72,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 102301
    },
    {
     "turn": 72,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 102301
    }
   ]
  },
@@ -1109,63 +1250,72 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 903720
    },
    {
     "turn": 19,
     "kind": 1,
     "race": "Saudi Arabia Royal Cup",
     "grade": 300,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 305701
    },
    {
     "turn": 31,
     "kind": 1,
     "race": "Satsuki Sho",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100501
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Tokyo Yushun (Japanese Derby)",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 101001
    },
    {
     "turn": 44,
     "kind": 1,
     "race": "Kikuka Sho",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101501
    },
    {
     "turn": 48,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 102301
    },
    {
     "turn": 56,
     "kind": 1,
     "race": "Tenno Sho (Spring)",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100601
    },
    {
     "turn": 70,
     "kind": 1,
     "race": "Japan Cup",
     "grade": 100,
-    "top": 2
+    "top": 2,
+    "race_instance_id": 101901
    },
    {
     "turn": 72,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 102301
    }
   ]
  },
@@ -1177,63 +1327,72 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904184
    },
    {
     "turn": 23,
     "kind": 1,
     "race": "Hanshin Juvenile Fillies",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 102101
    },
    {
     "turn": 31,
     "kind": 1,
     "race": "Oka Sho",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100401
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Japanese Oaks",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100901
    },
    {
     "turn": 44,
     "kind": 1,
     "race": "Shuka Sho",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101401
    },
    {
     "turn": 54,
     "kind": 1,
     "race": "Osaka Hai",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100301
    },
    {
     "turn": 60,
     "kind": 1,
     "race": "Takarazuka Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101201
    },
    {
     "turn": 64,
     "kind": 1,
     "race": "Sapporo Kinen",
     "grade": 200,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 202001
    },
    {
     "turn": 68,
     "kind": 1,
     "race": "Tenno Sho (Autumn)",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101601
    }
   ]
  },
@@ -1245,35 +1404,40 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 902790
    },
    {
     "turn": 28,
     "kind": 1,
     "race": "Hyacinth Stakes",
     "grade": 400,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 401801
    },
    {
     "turn": 33,
     "kind": 1,
     "race": "NHK Mile Cup",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100701
    },
    {
     "turn": 37,
     "kind": 1,
     "race": "Japan Dirt Derby",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 110201
    },
    {
     "turn": 46,
     "kind": 1,
     "race": "Mile Championship",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101801
    },
    {
     "turn": 60,
@@ -1287,7 +1451,8 @@
     "kind": 1,
     "race": "Tenno Sho (Autumn)",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101601
    }
   ]
  },
@@ -1299,7 +1464,8 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 901240
    },
    {
     "turn": 25,
@@ -1313,56 +1479,64 @@
     "kind": 1,
     "race": "Satsuki Sho",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100501
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Tokyo Yushun (Japanese Derby)",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 101001
    },
    {
     "turn": 44,
     "kind": 1,
     "race": "Kikuka Sho",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101501
    },
    {
     "turn": 48,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 102301
    },
    {
     "turn": 56,
     "kind": 1,
     "race": "Tenno Sho (Spring)",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100601
    },
    {
     "turn": 60,
     "kind": 1,
     "race": "Takarazuka Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101201
    },
    {
     "turn": 68,
     "kind": 1,
     "race": "Tenno Sho (Autumn)",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101601
    },
    {
     "turn": 72,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 102301
    }
   ]
  },
@@ -1374,7 +1548,8 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904185
    },
    {
     "turn": 29,
@@ -1395,35 +1570,40 @@
     "kind": 1,
     "race": "Hanshin Daishoten",
     "grade": 200,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 200901
    },
    {
     "turn": 56,
     "kind": 1,
     "race": "Tenno Sho (Spring)",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100601
    },
    {
     "turn": 60,
     "kind": 1,
     "race": "Takarazuka Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101201
    },
    {
     "turn": 68,
     "kind": 1,
     "race": "Tenno Sho (Autumn)",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101601
    },
    {
     "turn": 72,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 102301
    }
   ]
  },
@@ -1435,7 +1615,8 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904185
    },
    {
     "turn": 24,
@@ -1449,77 +1630,88 @@
     "kind": 1,
     "race": "Oka Sho",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100401
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Japanese Oaks",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100901
    },
    {
     "turn": 44,
     "kind": 1,
     "race": "Shuka Sho",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101401
    },
    {
     "turn": 45,
     "kind": 1,
     "race": "Queen Elizabeth II Cup",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101701
    },
    {
     "turn": 54,
     "kind": 1,
     "race": "Osaka Hai",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100301
    },
    {
     "turn": 60,
     "kind": 1,
     "race": "Takarazuka Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101201
    },
    {
     "turn": 64,
     "kind": 1,
     "race": "Sapporo Kinen",
     "grade": 200,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 202001
    },
    {
     "turn": 68,
     "kind": 1,
     "race": "Tenno Sho (Autumn)",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101601
    },
    {
     "turn": 69,
     "kind": 1,
     "race": "Queen Elizabeth II Cup",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101701
    },
    {
     "turn": 70,
     "kind": 1,
     "race": "Mile Championship",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101801
    },
    {
     "turn": 72,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 102301
    }
   ]
  },
@@ -1531,63 +1723,72 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904186
    },
    {
     "turn": 23,
     "kind": 1,
     "race": "Asahi Hai Futurity Stakes",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 102201
    },
    {
     "turn": 31,
     "kind": 1,
     "race": "Satsuki Sho",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100501
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Tokyo Yushun (Japanese Derby)",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 101001
    },
    {
     "turn": 44,
     "kind": 1,
     "race": "Kikuka Sho",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101501
    },
    {
     "turn": 56,
     "kind": 1,
     "race": "Tenno Sho (Spring)",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 102701
    },
    {
     "turn": 60,
     "kind": 1,
     "race": "Takarazuka Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101201
    },
    {
     "turn": 68,
     "kind": 1,
     "race": "Tenno Sho (Autumn)",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101601
    },
    {
     "turn": 72,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 102301
    }
   ]
  },
@@ -1599,7 +1800,8 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904183
    },
    {
     "turn": 37,
@@ -1613,49 +1815,56 @@
     "kind": 1,
     "race": "Kikuka Sho",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101501
    },
    {
     "turn": 48,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 102301
    },
    {
     "turn": 54,
     "kind": 1,
     "race": "Hanshin Daishoten",
     "grade": 200,
-    "top": 2
+    "top": 2,
+    "race_instance_id": 200901
    },
    {
     "turn": 56,
     "kind": 1,
     "race": "Tenno Sho (Spring)",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100601
    },
    {
     "turn": 60,
     "kind": 1,
     "race": "Takarazuka Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101201
    },
    {
     "turn": 68,
     "kind": 1,
     "race": "Tenno Sho (Autumn)",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101601
    },
    {
     "turn": 72,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 102301
    }
   ]
  },
@@ -1667,7 +1876,8 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 902810
    },
    {
     "turn": 26,
@@ -1681,56 +1891,64 @@
     "kind": 1,
     "race": "Yayoi Sho",
     "grade": 200,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 200601
    },
    {
     "turn": 42,
     "kind": 1,
     "race": "St. Lite Kinen",
     "grade": 200,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 202301
    },
    {
     "turn": 44,
     "kind": 1,
     "race": "Kikuka Sho",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101501
    },
    {
     "turn": 48,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 102301
    },
    {
     "turn": 56,
     "kind": 1,
     "race": "Tenno Sho (Spring)",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100601
    },
    {
     "turn": 60,
     "kind": 1,
     "race": "Takarazuka Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101201
    },
    {
     "turn": 70,
     "kind": 1,
     "race": "Japan Cup",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101901
    },
    {
     "turn": 72,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 102301
    }
   ]
  },
@@ -1742,63 +1960,72 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904187
    },
    {
     "turn": 23,
     "kind": 1,
     "race": "Asahi Hai Futurity Stakes",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 102201
    },
    {
     "turn": 30,
     "kind": 1,
     "race": "Spring Stakes",
     "grade": 200,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 201001
    },
    {
     "turn": 31,
     "kind": 1,
     "race": "Satsuki Sho",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100501
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Tokyo Yushun (Japanese Derby)",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 101001
    },
    {
     "turn": 44,
     "kind": 1,
     "race": "Kikuka Sho",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101501
    },
    {
     "turn": 56,
     "kind": 1,
     "race": "Tenno Sho (Spring)",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100601
    },
    {
     "turn": 70,
     "kind": 1,
     "race": "Japan Cup",
     "grade": 100,
-    "top": 2
+    "top": 2,
+    "race_instance_id": 101901
    },
    {
     "turn": 72,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 102301
    }
   ]
  },
@@ -1810,63 +2037,72 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 902810
    },
    {
     "turn": 25,
     "kind": 1,
     "race": "Junior Cup",
     "grade": 400,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 400201
    },
    {
     "turn": 31,
     "kind": 1,
     "race": "Satsuki Sho",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100501
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Tokyo Yushun (Japanese Derby)",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 101001
    },
    {
     "turn": 44,
     "kind": 1,
     "race": "Kikuka Sho",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101501
    },
    {
     "turn": 48,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 102301
    },
    {
     "turn": 56,
     "kind": 1,
     "race": "Tenno Sho (Spring)",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100601
    },
    {
     "turn": 60,
     "kind": 1,
     "race": "Takarazuka Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 102501
    },
    {
     "turn": 72,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 102301
    }
   ]
  },
@@ -1878,7 +2114,8 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904193
    },
    {
     "turn": 23,
@@ -1899,49 +2136,56 @@
     "kind": 1,
     "race": "Sprinters Stakes",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101301
    },
    {
     "turn": 44,
     "kind": 1,
     "race": "Swan Stakes",
     "grade": 200,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 202901
    },
    {
     "turn": 46,
     "kind": 1,
     "race": "Mile Championship",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101801
    },
    {
     "turn": 54,
     "kind": 1,
     "race": "Takamatsunomiya Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 100201
    },
    {
     "turn": 59,
     "kind": 1,
     "race": "Yasuda Kinen",
     "grade": 100,
-    "top": 2
+    "top": 2,
+    "race_instance_id": 101101
    },
    {
     "turn": 66,
     "kind": 1,
     "race": "Sprinters Stakes",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101301
    },
    {
     "turn": 70,
     "kind": 1,
     "race": "Mile Championship",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101801
    }
   ]
  },
@@ -1953,70 +2197,80 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904190
    },
    {
     "turn": 23,
     "kind": 1,
     "race": "Hanshin Juvenile Fillies",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 102101
    },
    {
     "turn": 31,
     "kind": 1,
     "race": "Oka Sho",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100401
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Japanese Oaks",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100901
    },
    {
     "turn": 38,
     "kind": 1,
     "race": "Queen Stakes",
     "grade": 300,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 304301
    },
    {
     "turn": 44,
     "kind": 1,
     "race": "Shuka Sho",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101401
    },
    {
     "turn": 54,
     "kind": 1,
     "race": "Osaka Hai",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100301
    },
    {
     "turn": 57,
     "kind": 1,
     "race": "Victoria Mile",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100801
    },
    {
     "turn": 69,
     "kind": 1,
     "race": "Queen Elizabeth II Cup",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101701
    },
    {
     "turn": 70,
     "kind": 1,
     "race": "Japan Cup",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101901
    }
   ]
  },
@@ -2028,56 +2282,64 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 903720
    },
    {
     "turn": 30,
     "kind": 1,
     "race": "Spring Stakes",
     "grade": 200,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 201001
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Tokyo Yushun (Japanese Derby)",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 101001
    },
    {
     "turn": 44,
     "kind": 1,
     "race": "Kikuka Sho",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101501
    },
    {
     "turn": 54,
     "kind": 1,
     "race": "Nikkei Sho",
     "grade": 200,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 201101
    },
    {
     "turn": 56,
     "kind": 1,
     "race": "Tenno Sho (Spring)",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 100601
    },
    {
     "turn": 60,
     "kind": 1,
     "race": "Takarazuka Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 102501
    },
    {
     "turn": 72,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 102301
    }
   ]
  },
@@ -2089,70 +2351,80 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904190
    },
    {
     "turn": 23,
     "kind": 1,
     "race": "Asahi Hai Futurity Stakes",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 102201
    },
    {
     "turn": 31,
     "kind": 1,
     "race": "Satsuki Sho",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100501
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Tokyo Yushun (Japanese Derby)",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 101001
    },
    {
     "turn": 44,
     "kind": 1,
     "race": "Kikuka Sho",
     "grade": 100,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 101501
    },
    {
     "turn": 54,
     "kind": 1,
     "race": "Osaka Hai",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100301
    },
    {
     "turn": 60,
     "kind": 1,
     "race": "Takarazuka Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 102501
    },
    {
     "turn": 68,
     "kind": 1,
     "race": "Tenno Sho (Autumn)",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101601
    },
    {
     "turn": 70,
     "kind": 1,
     "race": "Japan Cup",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101901
    },
    {
     "turn": 72,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 102301
    }
   ]
  },
@@ -2164,70 +2436,80 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904185
    },
    {
     "turn": 29,
     "kind": 1,
     "race": "Yayoi Sho",
     "grade": 200,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 200601
    },
    {
     "turn": 31,
     "kind": 1,
     "race": "Satsuki Sho",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100501
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Tokyo Yushun (Japanese Derby)",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 101001
    },
    {
     "turn": 33,
     "kind": 1,
     "race": "NHK Mile Cup",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100701
    },
    {
     "turn": 44,
     "kind": 1,
     "race": "Kikuka Sho",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101501
    },
    {
     "turn": 54,
     "kind": 1,
     "race": "Osaka Hai",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100301
    },
    {
     "turn": 60,
     "kind": 1,
     "race": "Takarazuka Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101201
    },
    {
     "turn": 68,
     "kind": 1,
     "race": "Tenno Sho (Autumn)",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101601
    },
    {
     "turn": 72,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 102301
    }
   ]
  },
@@ -2239,56 +2521,64 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904183
    },
    {
     "turn": 24,
     "kind": 1,
     "race": "Hopeful Stakes",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 102401
    },
    {
     "turn": 31,
     "kind": 1,
     "race": "Satsuki Sho",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100501
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Tokyo Yushun (Japanese Derby)",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 101001
    },
    {
     "turn": 44,
     "kind": 1,
     "race": "Kikuka Sho",
     "grade": 100,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 101501
    },
    {
     "turn": 60,
     "kind": 1,
     "race": "Takarazuka Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101201
    },
    {
     "turn": 68,
     "kind": 1,
     "race": "Tenno Sho (Autumn)",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101601
    },
    {
     "turn": 70,
     "kind": 1,
     "race": "Japan Cup",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101901
    }
   ]
  },
@@ -2300,7 +2590,8 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904196
    },
    {
     "turn": 24,
@@ -2314,49 +2605,56 @@
     "kind": 1,
     "race": "Japan Dirt Derby",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 110201
    },
    {
     "turn": 48,
     "kind": 1,
     "race": "Tokyo Daishoten",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 110601
    },
    {
     "turn": 56,
     "kind": 1,
     "race": "Tenno Sho (Spring)",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100601
    },
    {
     "turn": 60,
     "kind": 1,
     "race": "Takarazuka Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101201
    },
    {
     "turn": 67,
     "kind": 1,
     "race": "Mainichi Okan",
     "grade": 200,
-    "top": 2
+    "top": 2,
+    "race_instance_id": 202601
    },
    {
     "turn": 68,
     "kind": 1,
     "race": "Tenno Sho (Autumn)",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101601
    },
    {
     "turn": 72,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 102301
    }
   ]
  },
@@ -2368,63 +2666,72 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 901240
    },
    {
     "turn": 24,
     "kind": 1,
     "race": "Hopeful Stakes",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 102401
    },
    {
     "turn": 29,
     "kind": 1,
     "race": "Yayoi Sho",
     "grade": 200,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 200601
    },
    {
     "turn": 31,
     "kind": 1,
     "race": "Satsuki Sho",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100501
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Tokyo Yushun (Japanese Derby)",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 101001
    },
    {
     "turn": 44,
     "kind": 1,
     "race": "Kikuka Sho",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101501
    },
    {
     "turn": 54,
     "kind": 1,
     "race": "Osaka Hai",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100301
    },
    {
     "turn": 60,
     "kind": 1,
     "race": "Takarazuka Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101201
    },
    {
     "turn": 72,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 102301
    }
   ]
  },
@@ -2436,70 +2743,80 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 902810
    },
    {
     "turn": 24,
     "kind": 1,
     "race": "Hopeful Stakes",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 102401
    },
    {
     "turn": 31,
     "kind": 1,
     "race": "Satsuki Sho",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100501
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Tokyo Yushun (Japanese Derby)",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 101001
    },
    {
     "turn": 44,
     "kind": 1,
     "race": "Kikuka Sho",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101501
    },
    {
     "turn": 46,
     "kind": 1,
     "race": "Japan Cup",
     "grade": 100,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 101901
    },
    {
     "turn": 56,
     "kind": 1,
     "race": "Tenno Sho (Spring)",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100601
    },
    {
     "turn": 60,
     "kind": 1,
     "race": "Takarazuka Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101201
    },
    {
     "turn": 68,
     "kind": 1,
     "race": "Tenno Sho (Autumn)",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101601
    },
    {
     "turn": 72,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 102301
    }
   ]
  },
@@ -2511,70 +2828,80 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904185
    },
    {
     "turn": 25,
     "kind": 1,
     "race": "Keisei Hai",
     "grade": 300,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 300601
    },
    {
     "turn": 31,
     "kind": 1,
     "race": "Satsuki Sho",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100501
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Tokyo Yushun (Japanese Derby)",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 101001
    },
    {
     "turn": 46,
     "kind": 1,
     "race": "Japan Cup",
     "grade": 100,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 101901
    },
    {
     "turn": 48,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 102301
    },
    {
     "turn": 54,
     "kind": 1,
     "race": "Osaka Hai",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100301
    },
    {
     "turn": 56,
     "kind": 1,
     "race": "Tenno Sho (Spring)",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100601
    },
    {
     "turn": 68,
     "kind": 1,
     "race": "Tenno Sho (Autumn)",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101601
    },
    {
     "turn": 72,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 102301
    }
   ]
  },
@@ -2586,7 +2913,8 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904188
    },
    {
     "turn": 23,
@@ -2600,49 +2928,56 @@
     "kind": 1,
     "race": "Fillies' Revue",
     "grade": 200,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 200801
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Aoi Stakes",
     "grade": 300,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 405001
    },
    {
     "turn": 36,
     "kind": 1,
     "race": "Hakodate Sprint Stakes",
     "grade": 300,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 303401
    },
    {
     "turn": 42,
     "kind": 1,
     "race": "Sprinters Stakes",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101301
    },
    {
     "turn": 53,
     "kind": 1,
     "race": "Ocean Stakes",
     "grade": 300,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 301901
    },
    {
     "turn": 54,
     "kind": 1,
     "race": "Takamatsunomiya Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 100201
    },
    {
     "turn": 66,
     "kind": 1,
     "race": "Sprinters Stakes",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101301
    }
   ]
  },
@@ -2654,7 +2989,8 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904186
    },
    {
     "turn": 31,
@@ -2668,49 +3004,56 @@
     "kind": 1,
     "race": "Japanese Oaks",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100901
    },
    {
     "turn": 44,
     "kind": 1,
     "race": "Shuka Sho",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101401
    },
    {
     "turn": 45,
     "kind": 1,
     "race": "Queen Elizabeth II Cup",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101701
    },
    {
     "turn": 53,
     "kind": 1,
     "race": "Kinko Sho",
     "grade": 200,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 200701
    },
    {
     "turn": 57,
     "kind": 1,
     "race": "Victoria Mile",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100801
    },
    {
     "turn": 60,
     "kind": 1,
     "race": "Takarazuka Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101201
    },
    {
     "turn": 69,
     "kind": 1,
     "race": "Queen Elizabeth II Cup",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101701
    }
   ]
  },
@@ -2722,70 +3065,80 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904192
    },
    {
     "turn": 23,
     "kind": 1,
     "race": "Hanshin Juvenile Fillies",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 102101
    },
    {
     "turn": 31,
     "kind": 1,
     "race": "Satsuki Sho",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100501
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Tokyo Yushun (Japanese Derby)",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 101001
    },
    {
     "turn": 44,
     "kind": 1,
     "race": "Kikuka Sho",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101501
    },
    {
     "turn": 48,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 102301
    },
    {
     "turn": 54,
     "kind": 1,
     "race": "Osaka Hai",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100301
    },
    {
     "turn": 56,
     "kind": 1,
     "race": "Tenno Sho (Spring)",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100601
    },
    {
     "turn": 60,
     "kind": 1,
     "race": "Takarazuka Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101201
    },
    {
     "turn": 70,
     "kind": 1,
     "race": "Japan Cup",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101901
    }
   ]
  },
@@ -2797,77 +3150,88 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 901110
    },
    {
     "turn": 21,
     "kind": 1,
     "race": "Keio Hai Junior Stakes",
     "grade": 200,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 203001
    },
    {
     "turn": 30,
     "kind": 1,
     "race": "Spring Stakes",
     "grade": 200,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 201001
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Aoi Stakes",
     "grade": 300,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 405001
    },
    {
     "turn": 42,
     "kind": 1,
     "race": "Sprinters Stakes",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101301
    },
    {
     "turn": 54,
     "kind": 1,
     "race": "Takamatsunomiya Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100201
    },
    {
     "turn": 60,
     "kind": 1,
     "race": "Hakodate Sprint Stakes",
     "grade": 300,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 303401
    },
    {
     "turn": 61,
     "kind": 1,
     "race": "CBC Sho",
     "grade": 300,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 303501
    },
    {
     "turn": 65,
     "kind": 1,
     "race": "Centaur Stakes",
     "grade": 200,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 202101
    },
    {
     "turn": 66,
     "kind": 1,
     "race": "Sprinters Stakes",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101301
    },
    {
     "turn": 70,
     "kind": 1,
     "race": "Mile Championship",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101801
    }
   ]
  },
@@ -2879,77 +3243,88 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904199
    },
    {
     "turn": 21,
     "kind": 1,
     "race": "Daily Hai Junior Stakes",
     "grade": 200,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 203201
    },
    {
     "turn": 23,
     "kind": 1,
     "race": "Hanshin Juvenile Fillies",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 102101
    },
    {
     "turn": 31,
     "kind": 1,
     "race": "Oka Sho",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100401
    },
    {
     "turn": 33,
     "kind": 1,
     "race": "NHK Mile Cup",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100701
    },
    {
     "turn": 41,
     "kind": 1,
     "race": "Rose Stakes",
     "grade": 200,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 202201
    },
    {
     "turn": 46,
     "kind": 1,
     "race": "Mile Championship",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101801
    },
    {
     "turn": 54,
     "kind": 1,
     "race": "Takamatsunomiya Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100201
    },
    {
     "turn": 59,
     "kind": 1,
     "race": "Yasuda Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101101
    },
    {
     "turn": 66,
     "kind": 1,
     "race": "Sprinters Stakes",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101301
    },
    {
     "turn": 70,
     "kind": 1,
     "race": "Mile Championship",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101801
    }
   ]
  },
@@ -2961,70 +3336,80 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904182
    },
    {
     "turn": 23,
     "kind": 1,
     "race": "Hanshin Juvenile Fillies",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 102101
    },
    {
     "turn": 31,
     "kind": 1,
     "race": "Oka Sho",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100401
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Japanese Oaks",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100901
    },
    {
     "turn": 44,
     "kind": 1,
     "race": "Shuka Sho",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101401
    },
    {
     "turn": 45,
     "kind": 1,
     "race": "Queen Elizabeth II Cup",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101701
    },
    {
     "turn": 59,
     "kind": 1,
     "race": "Yasuda Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101101
    },
    {
     "turn": 60,
     "kind": 1,
     "race": "Takarazuka Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101201
    },
    {
     "turn": 68,
     "kind": 1,
     "race": "Tenno Sho (Autumn)",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101601
    },
    {
     "turn": 69,
     "kind": 1,
     "race": "Queen Elizabeth II Cup",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101701
    }
   ]
  },
@@ -3036,56 +3421,64 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904185
    },
    {
     "turn": 28,
     "kind": 1,
     "race": "Sumire Stakes",
     "grade": 400,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 402001
    },
    {
     "turn": 44,
     "kind": 1,
     "race": "Kikuka Sho",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101501
    },
    {
     "turn": 48,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 102301
    },
    {
     "turn": 54,
     "kind": 1,
     "race": "Osaka Hai",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100301
    },
    {
     "turn": 56,
     "kind": 1,
     "race": "Tenno Sho (Spring)",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100601
    },
    {
     "turn": 68,
     "kind": 1,
     "race": "Tenno Sho (Autumn)",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101601
    },
    {
     "turn": 72,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 102301
    }
   ]
  },
@@ -3097,7 +3490,8 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 902790
    },
    {
     "turn": 25,
@@ -3111,63 +3505,72 @@
     "kind": 1,
     "race": "Satsuki Sho",
     "grade": 100,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 100501
    },
    {
     "turn": 37,
     "kind": 1,
     "race": "Japan Dirt Derby",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 110201
    },
    {
     "turn": 45,
     "kind": 1,
     "race": "JBC Classic",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 110501
    },
    {
     "turn": 48,
     "kind": 1,
     "race": "Tokyo Daishoten",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 110601
    },
    {
     "turn": 52,
     "kind": 1,
     "race": "February Stakes",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 100101
    },
    {
     "turn": 60,
     "kind": 1,
     "race": "Teio Sho",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 110101
    },
    {
     "turn": 69,
     "kind": 1,
     "race": "JBC Classic",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 110501
    },
    {
     "turn": 71,
     "kind": 1,
     "race": "Champions Cup",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 102001
    },
    {
     "turn": 72,
     "kind": 1,
     "race": "Tokyo Daishoten",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 110601
    }
   ]
  },
@@ -3179,7 +3582,8 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 901240
    },
    {
     "turn": 27,
@@ -3193,63 +3597,72 @@
     "kind": 1,
     "race": "Aoba Sho",
     "grade": 200,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 201601
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Tokyo Yushun (Japanese Derby)",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 101001
    },
    {
     "turn": 44,
     "kind": 1,
     "race": "Kikuka Sho",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101501
    },
    {
     "turn": 48,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 102301
    },
    {
     "turn": 56,
     "kind": 1,
     "race": "Tenno Sho (Spring)",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100601
    },
    {
     "turn": 60,
     "kind": 1,
     "race": "Takarazuka Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101201
    },
    {
     "turn": 68,
     "kind": 1,
     "race": "Tenno Sho (Autumn)",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101601
    },
    {
     "turn": 70,
     "kind": 1,
     "race": "Japan Cup",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101901
    },
    {
     "turn": 72,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 102301
    }
   ]
  },
@@ -3261,63 +3674,72 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904183
    },
    {
     "turn": 24,
     "kind": 1,
     "race": "Hopeful Stakes",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 102401
    },
    {
     "turn": 31,
     "kind": 1,
     "race": "Satsuki Sho",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100501
    },
    {
     "turn": 45,
     "kind": 1,
     "race": "Copa Republica Argentina",
     "grade": 200,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 203101
    },
    {
     "turn": 48,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 102301
    },
    {
     "turn": 54,
     "kind": 1,
     "race": "Osaka Hai",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100301
    },
    {
     "turn": 56,
     "kind": 1,
     "race": "Tenno Sho (Spring)",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100601
    },
    {
     "turn": 60,
     "kind": 1,
     "race": "Takarazuka Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101201
    },
    {
     "turn": 68,
     "kind": 1,
     "race": "Tenno Sho (Autumn)",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101601
    }
   ]
  },
@@ -3329,56 +3751,64 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 902810
    },
    {
     "turn": 25,
     "kind": 1,
     "race": "Keisei Hai",
     "grade": 300,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 300601
    },
    {
     "turn": 31,
     "kind": 1,
     "race": "Satsuki Sho",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100501
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Tokyo Yushun (Japanese Derby)",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 101001
    },
    {
     "turn": 44,
     "kind": 1,
     "race": "Kikuka Sho",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101501
    },
    {
     "turn": 47,
     "kind": 1,
     "race": "Chunichi Shimbun Hai",
     "grade": 300,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 306801
    },
    {
     "turn": 60,
     "kind": 1,
     "race": "Takarazuka Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101201
    },
    {
     "turn": 70,
     "kind": 1,
     "race": "Japan Cup",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101901
    }
   ]
  },
@@ -3390,63 +3820,72 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904184
    },
    {
     "turn": 24,
     "kind": 1,
     "race": "Hopeful Stakes",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 102401
    },
    {
     "turn": 31,
     "kind": 1,
     "race": "Satsuki Sho",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100501
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Tokyo Yushun (Japanese Derby)",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 101001
    },
    {
     "turn": 44,
     "kind": 1,
     "race": "Kikuka Sho",
     "grade": 100,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 101501
    },
    {
     "turn": 54,
     "kind": 1,
     "race": "Nikkei Sho",
     "grade": 200,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 201101
    },
    {
     "turn": 56,
     "kind": 1,
     "race": "Tenno Sho (Spring)",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 102701
    },
    {
     "turn": 68,
     "kind": 1,
     "race": "Tenno Sho (Autumn)",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101601
    },
    {
     "turn": 72,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 102301
    }
   ]
  },
@@ -3458,63 +3897,72 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904195
    },
    {
     "turn": 23,
     "kind": 1,
     "race": "Hanshin Juvenile Fillies",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 102101
    },
    {
     "turn": 31,
     "kind": 1,
     "race": "Oka Sho",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100401
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Japanese Oaks",
     "grade": 100,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 100901
    },
    {
     "turn": 42,
     "kind": 1,
     "race": "Sprinters Stakes",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101301
    },
    {
     "turn": 54,
     "kind": 1,
     "race": "Takamatsunomiya Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100201
    },
    {
     "turn": 56,
     "kind": 1,
     "race": "Milers Cup",
     "grade": 200,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 201401
    },
    {
     "turn": 59,
     "kind": 1,
     "race": "Yasuda Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101101
    },
    {
     "turn": 66,
     "kind": 1,
     "race": "Sprinters Stakes",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101301
    }
   ]
  },
@@ -3526,7 +3974,8 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 902730
    },
    {
     "turn": 37,
@@ -3554,21 +4003,24 @@
     "kind": 1,
     "race": "Negishi Stakes",
     "grade": 300,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 300801
    },
    {
     "turn": 52,
     "kind": 1,
     "race": "February Stakes",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100101
    },
    {
     "turn": 63,
     "kind": 1,
     "race": "Elm Stakes",
     "grade": 300,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 304701
    },
    {
     "turn": 69,
@@ -3582,7 +4034,8 @@
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 102301
    }
   ]
  },
@@ -3594,7 +4047,8 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904197
    },
    {
     "turn": 24,
@@ -3615,42 +4069,48 @@
     "kind": 1,
     "race": "Swan Stakes",
     "grade": 200,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 202901
    },
    {
     "turn": 54,
     "kind": 1,
     "race": "Takamatsunomiya Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100201
    },
    {
     "turn": 59,
     "kind": 1,
     "race": "Yasuda Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101101
    },
    {
     "turn": 60,
     "kind": 1,
     "race": "Takarazuka Kinen",
     "grade": 100,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 101201
    },
    {
     "turn": 66,
     "kind": 1,
     "race": "Sprinters Stakes",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101301
    },
    {
     "turn": 70,
     "kind": 1,
     "race": "Mile Championship",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101801
    }
   ]
  },
@@ -3662,84 +4122,96 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904185
    },
    {
     "turn": 29,
     "kind": 1,
     "race": "Yayoi Sho",
     "grade": 200,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 200601
    },
    {
     "turn": 30,
     "kind": 1,
     "race": "Spring Stakes",
     "grade": 200,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 201001
    },
    {
     "turn": 30,
     "kind": 1,
     "race": "Mainichi Hai",
     "grade": 300,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 302301
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Tokyo Yushun (Japanese Derby)",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 101001
    },
    {
     "turn": 44,
     "kind": 1,
     "race": "Kikuka Sho",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101501
    },
    {
     "turn": 53,
     "kind": 1,
     "race": "Kinko Sho",
     "grade": 200,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 200701
    },
    {
     "turn": 60,
     "kind": 1,
     "race": "Takarazuka Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101201
    },
    {
     "turn": 63,
     "kind": 1,
     "race": "Kokura Kinen",
     "grade": 300,
-    "top": 2
+    "top": 2,
+    "race_instance_id": 304401
    },
    {
     "turn": 61,
     "kind": 1,
     "race": "Hakodate Kinen",
     "grade": 300,
-    "top": 2
+    "top": 2,
+    "race_instance_id": 303901
    },
    {
     "turn": 64,
     "kind": 1,
     "race": "Sapporo Kinen",
     "grade": 200,
-    "top": 2
+    "top": 2,
+    "race_instance_id": 202001
    },
    {
     "turn": 72,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 102301
    }
   ]
  },
@@ -3751,7 +4223,8 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904183
    },
    {
     "turn": 31,
@@ -3772,42 +4245,48 @@
     "kind": 1,
     "race": "Nikkei Shinshun Hai",
     "grade": 200,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 200101
    },
    {
     "turn": 53,
     "kind": 1,
     "race": "Kinko Sho",
     "grade": 200,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 200701
    },
    {
     "turn": 60,
     "kind": 1,
     "race": "Takarazuka Kinen",
     "grade": 100,
-    "top": 2
+    "top": 2,
+    "race_instance_id": 101201
    },
    {
     "turn": 68,
     "kind": 1,
     "race": "Tenno Sho (Autumn)",
     "grade": 100,
-    "top": 2
+    "top": 2,
+    "race_instance_id": 101601
    },
    {
     "turn": 70,
     "kind": 1,
     "race": "Japan Cup",
     "grade": 100,
-    "top": 2
+    "top": 2,
+    "race_instance_id": 101901
    },
    {
     "turn": 72,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 102301
    }
   ]
  },
@@ -3819,70 +4298,80 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904191
    },
    {
     "turn": 23,
     "kind": 1,
     "race": "Hanshin Juvenile Fillies",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 102101
    },
    {
     "turn": 31,
     "kind": 1,
     "race": "Oka Sho",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100401
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Japanese Oaks",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100901
    },
    {
     "turn": 44,
     "kind": 1,
     "race": "Shuka Sho",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101401
    },
    {
     "turn": 48,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 102301
    },
    {
     "turn": 54,
     "kind": 1,
     "race": "Osaka Hai",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100301
    },
    {
     "turn": 60,
     "kind": 1,
     "race": "Takarazuka Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101201
    },
    {
     "turn": 67,
     "kind": 1,
     "race": "Fuchu Umamusume Stakes",
     "grade": 200,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 202801
    },
    {
     "turn": 69,
     "kind": 1,
     "race": "Queen Elizabeth II Cup",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101701
    }
   ]
  },
@@ -3894,63 +4383,72 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904183
    },
    {
     "turn": 26,
     "kind": 1,
     "race": "Wakagoma Stakes",
     "grade": 400,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 400901
    },
    {
     "turn": 39,
     "kind": 1,
     "race": "Kokura Kinen",
     "grade": 300,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 304401
    },
    {
     "turn": 44,
     "kind": 1,
     "race": "Kikuka Sho",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101501
    },
    {
     "turn": 48,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 102301
    },
    {
     "turn": 60,
     "kind": 1,
     "race": "Takarazuka Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101201
    },
    {
     "turn": 68,
     "kind": 1,
     "race": "Tenno Sho (Autumn)",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101601
    },
    {
     "turn": 71,
     "kind": 1,
     "race": "Chunichi Shimbun Hai",
     "grade": 300,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 306801
    },
    {
     "turn": 72,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 102301
    }
   ]
  },
@@ -3962,63 +4460,72 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904182
    },
    {
     "turn": 24,
     "kind": 1,
     "race": "Hopeful Stakes",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 102401
    },
    {
     "turn": 31,
     "kind": 1,
     "race": "Satsuki Sho",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100501
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Tokyo Yushun (Japanese Derby)",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 101001
    },
    {
     "turn": 44,
     "kind": 1,
     "race": "Kikuka Sho",
     "grade": 100,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 101501
    },
    {
     "turn": 54,
     "kind": 1,
     "race": "Takamatsunomiya Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 100201
    },
    {
     "turn": 59,
     "kind": 1,
     "race": "Yasuda Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101101
    },
    {
     "turn": 66,
     "kind": 1,
     "race": "Sprinters Stakes",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101301
    },
    {
     "turn": 68,
     "kind": 1,
     "race": "Tenno Sho (Autumn)",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101601
    }
   ]
  },
@@ -4030,7 +4537,8 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904181
    },
    {
     "turn": 24,
@@ -4044,56 +4552,64 @@
     "kind": 1,
     "race": "Satsuki Sho",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100501
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Tokyo Yushun (Japanese Derby)",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 101001
    },
    {
     "turn": 44,
     "kind": 1,
     "race": "Kikuka Sho",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101501
    },
    {
     "turn": 52,
     "kind": 1,
     "race": "Diamond Stakes",
     "grade": 300,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 301401
    },
    {
     "turn": 56,
     "kind": 1,
     "race": "Tenno Sho (Spring)",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100601
    },
    {
     "turn": 60,
     "kind": 1,
     "race": "Takarazuka Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101201
    },
    {
     "turn": 70,
     "kind": 1,
     "race": "Japan Cup",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101901
    },
    {
     "turn": 72,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 102301
    }
   ]
  },
@@ -4105,7 +4621,8 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904183
    },
    {
     "turn": 35,
@@ -4119,42 +4636,48 @@
     "kind": 1,
     "race": "Hakodate Kinen",
     "grade": 300,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 303901
    },
    {
     "turn": 49,
     "kind": 1,
     "race": "Nikkei Shinshun Hai",
     "grade": 200,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 200101
    },
    {
     "turn": 56,
     "kind": 1,
     "race": "Tenno Sho (Spring)",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100601
    },
    {
     "turn": 60,
     "kind": 1,
     "race": "Takarazuka Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101201
    },
    {
     "turn": 68,
     "kind": 1,
     "race": "Tenno Sho (Autumn)",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101601
    },
    {
     "turn": 72,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 102301
    }
   ]
  },
@@ -4166,63 +4689,72 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904201
    },
    {
     "turn": 23,
     "kind": 1,
     "race": "Hanshin Juvenile Fillies",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 102101
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Aoi Stakes",
     "grade": 300,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 405001
    },
    {
     "turn": 46,
     "kind": 1,
     "race": "Mile Championship",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101801
    },
    {
     "turn": 54,
     "kind": 1,
     "race": "Takamatsunomiya Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100201
    },
    {
     "turn": 56,
     "kind": 1,
     "race": "Milers Cup",
     "grade": 200,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 201401
    },
    {
     "turn": 59,
     "kind": 1,
     "race": "Yasuda Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101101
    },
    {
     "turn": 70,
     "kind": 1,
     "race": "Mile Championship",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101801
    },
    {
     "turn": 72,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 102301
    }
   ]
  },
@@ -4234,70 +4766,80 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904183
    },
    {
     "turn": 31,
     "kind": 1,
     "race": "Satsuki Sho",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100501
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Tokyo Yushun (Japanese Derby)",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 101001
    },
    {
     "turn": 44,
     "kind": 1,
     "race": "Kikuka Sho",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101501
    },
    {
     "turn": 48,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 102301
    },
    {
     "turn": 54,
     "kind": 1,
     "race": "Osaka Hai",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100301
    },
    {
     "turn": 56,
     "kind": 1,
     "race": "Tenno Sho (Spring)",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100601
    },
    {
     "turn": 67,
     "kind": 1,
     "race": "Kyoto Daishoten",
     "grade": 200,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 202701
    },
    {
     "turn": 68,
     "kind": 1,
     "race": "Tenno Sho (Autumn)",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101601
    },
    {
     "turn": 72,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 102301
    }
   ]
  },
@@ -4309,7 +4851,8 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 902810
    },
    {
     "turn": 30,
@@ -4323,63 +4866,72 @@
     "kind": 1,
     "race": "St. Lite Kinen",
     "grade": 200,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 202301
    },
    {
     "turn": 44,
     "kind": 1,
     "race": "Kikuka Sho",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101501
    },
    {
     "turn": 48,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 102301
    },
    {
     "turn": 54,
     "kind": 1,
     "race": "Osaka Hai",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100301
    },
    {
     "turn": 56,
     "kind": 1,
     "race": "Tenno Sho (Spring)",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100601
    },
    {
     "turn": 60,
     "kind": 1,
     "race": "Takarazuka Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101201
    },
    {
     "turn": 68,
     "kind": 1,
     "race": "Tenno Sho (Autumn)",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101601
    },
    {
     "turn": 70,
     "kind": 1,
     "race": "Japan Cup",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101901
    },
    {
     "turn": 72,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 102301
    }
   ]
  },
@@ -4391,63 +4943,72 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904189
    },
    {
     "turn": 23,
     "kind": 1,
     "race": "Asahi Hai Futurity Stakes",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 102201
    },
    {
     "turn": 31,
     "kind": 1,
     "race": "Satsuki Sho",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 102801
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Tokyo Yushun (Japanese Derby)",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 101001
    },
    {
     "turn": 44,
     "kind": 1,
     "race": "Tenno Sho (Autumn)",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101601
    },
    {
     "turn": 59,
     "kind": 1,
     "race": "Yasuda Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101101
    },
    {
     "turn": 60,
     "kind": 1,
     "race": "Takarazuka Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101201
    },
    {
     "turn": 68,
     "kind": 1,
     "race": "Tenno Sho (Autumn)",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101601
    },
    {
     "turn": 70,
     "kind": 1,
     "race": "Japan Cup",
     "grade": 100,
-    "top": 2
+    "top": 2,
+    "race_instance_id": 101901
    }
   ]
  },
@@ -4459,7 +5020,8 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904194
    },
    {
     "turn": 30,
@@ -4473,63 +5035,72 @@
     "kind": 1,
     "race": "Aoba Sho",
     "grade": 200,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 201601
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Tokyo Yushun (Japanese Derby)",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 101001
    },
    {
     "turn": 44,
     "kind": 1,
     "race": "Kikuka Sho",
     "grade": 100,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 101501
    },
    {
     "turn": 44,
     "kind": 1,
     "race": "Tenno Sho (Autumn)",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101601
    },
    {
     "turn": 54,
     "kind": 1,
     "race": "Osaka Hai",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100301
    },
    {
     "turn": 60,
     "kind": 1,
     "race": "Takarazuka Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101201
    },
    {
     "turn": 67,
     "kind": 1,
     "race": "Mainichi Okan",
     "grade": 200,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 202601
    },
    {
     "turn": 68,
     "kind": 1,
     "race": "Tenno Sho (Autumn)",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101601
    },
    {
     "turn": 68,
     "kind": 1,
     "race": "Tenno Sho (Autumn)",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101601
    }
   ]
  },
@@ -4541,63 +5112,72 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904185
    },
    {
     "turn": 30,
     "kind": 1,
     "race": "Mainichi Hai",
     "grade": 300,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 302301
    },
    {
     "turn": 31,
     "kind": 1,
     "race": "Satsuki Sho",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 102801
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Tokyo Yushun (Japanese Derby)",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 101001
    },
    {
     "turn": 44,
     "kind": 1,
     "race": "Kikuka Sho",
     "grade": 100,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 101501
    },
    {
     "turn": 54,
     "kind": 1,
     "race": "Osaka Hai",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100301
    },
    {
     "turn": 59,
     "kind": 1,
     "race": "Yasuda Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101101
    },
    {
     "turn": 60,
     "kind": 1,
     "race": "Takarazuka Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101201
    },
    {
     "turn": 68,
     "kind": 1,
     "race": "Tenno Sho (Autumn)",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101601
    }
   ]
  },
@@ -4609,63 +5189,72 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904183
    },
    {
     "turn": 24,
     "kind": 1,
     "race": "Hopeful Stakes",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 102401
    },
    {
     "turn": 31,
     "kind": 1,
     "race": "Satsuki Sho",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100501
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Tokyo Yushun (Japanese Derby)",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 101001
    },
    {
     "turn": 44,
     "kind": 1,
     "race": "Kikuka Sho",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101501
    },
    {
     "turn": 47,
     "kind": 1,
     "race": "Stayers Stakes",
     "grade": 200,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 203301
    },
    {
     "turn": 56,
     "kind": 1,
     "race": "Tenno Sho (Spring)",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 100601
    },
    {
     "turn": 68,
     "kind": 1,
     "race": "Tenno Sho (Autumn)",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101601
    },
    {
     "turn": 72,
     "kind": 1,
     "race": "Arima Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 102301
    }
   ]
  },
@@ -4677,56 +5266,64 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 901110
    },
    {
     "turn": 31,
     "kind": 1,
     "race": "New Zealand Trophy",
     "grade": 200,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 201301
    },
    {
     "turn": 34,
     "kind": 1,
     "race": "Aoi Stakes",
     "grade": 300,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 405001
    },
    {
     "turn": 42,
     "kind": 1,
     "race": "Sprinters Stakes",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101301
    },
    {
     "turn": 46,
     "kind": 1,
     "race": "Mile Championship",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 101801
    },
    {
     "turn": 59,
     "kind": 1,
     "race": "Yasuda Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101101
    },
    {
     "turn": 66,
     "kind": 1,
     "race": "Sprinters Stakes",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101301
    },
    {
     "turn": 68,
     "kind": 1,
     "race": "Tenno Sho (Autumn)",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101601
    }
   ]
  },
@@ -4738,56 +5335,64 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904199
    },
    {
     "turn": 21,
     "kind": 1,
     "race": "Fantasy Stakes",
     "grade": 300,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 306001
    },
    {
     "turn": 23,
     "kind": 1,
     "race": "Hanshin Juvenile Fillies",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 102101
    },
    {
     "turn": 29,
     "kind": 1,
     "race": "Fillies' Revue",
     "grade": 200,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 200801
    },
    {
     "turn": 31,
     "kind": 1,
     "race": "Oka Sho",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 100401
    },
    {
     "turn": 42,
     "kind": 1,
     "race": "Sprinters Stakes",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101301
    },
    {
     "turn": 54,
     "kind": 1,
     "race": "Takamatsunomiya Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100201
    },
    {
     "turn": 66,
     "kind": 1,
     "race": "Sprinters Stakes",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 101301
    }
   ]
  },
@@ -4799,7 +5404,8 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904198
    },
    {
     "turn": 24,
@@ -4813,42 +5419,48 @@
     "kind": 1,
     "race": "Fukuryu Stakes",
     "grade": 400,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 403301
    },
    {
     "turn": 47,
     "kind": 1,
     "race": "Champions Cup",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 102001
    },
    {
     "turn": 52,
     "kind": 1,
     "race": "February Stakes",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 100101
    },
    {
     "turn": 57,
     "kind": 1,
     "race": "Kashiwa Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 110901
    },
    {
     "turn": 60,
     "kind": 1,
     "race": "Teio Sho",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 110101
    },
    {
     "turn": 67,
     "kind": 1,
     "race": "M.C. Nambu Hai",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 111001
    },
    {
     "turn": 69,
@@ -4862,7 +5474,8 @@
     "kind": 1,
     "race": "Tokyo Daishoten",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 110601
    }
   ]
  },
@@ -4874,7 +5487,8 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904200
    },
    {
     "turn": 31,
@@ -4888,35 +5502,40 @@
     "kind": 1,
     "race": "Leopard Stakes",
     "grade": 300,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 304501
    },
    {
     "turn": 47,
     "kind": 1,
     "race": "Champions Cup",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 102001
    },
    {
     "turn": 51,
     "kind": 1,
     "race": "Kawasaki Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 110701
    },
    {
     "turn": 57,
     "kind": 1,
     "race": "Kashiwa Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 110901
    },
    {
     "turn": 60,
     "kind": 1,
     "race": "Teio Sho",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 110101
    },
    {
     "turn": 69,
@@ -4930,14 +5549,16 @@
     "kind": 1,
     "race": "Champions Cup",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 102001
    },
    {
     "turn": 72,
     "kind": 1,
     "race": "Tokyo Daishoten",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 110601
    }
   ]
  },
@@ -4949,7 +5570,8 @@
     "kind": 1,
     "race": "Junior Make Debut",
     "grade": 900,
-    "top": 0
+    "top": 0,
+    "race_instance_id": 904200
    },
    {
     "turn": 30,
@@ -4963,42 +5585,48 @@
     "kind": 1,
     "race": "Japan Dirt Derby",
     "grade": 100,
-    "top": 5
+    "top": 5,
+    "race_instance_id": 110201
    },
    {
     "turn": 42,
     "kind": 1,
     "race": "Sirius Stakes",
     "grade": 300,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 305601
    },
    {
     "turn": 48,
     "kind": 1,
     "race": "Tokyo Daishoten",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 110601
    },
    {
     "turn": 51,
     "kind": 1,
     "race": "Kawasaki Kinen",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 110701
    },
    {
     "turn": 57,
     "kind": 1,
     "race": "Kashiwa Kinen",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 110901
    },
    {
     "turn": 60,
     "kind": 1,
     "race": "Teio Sho",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 110101
    },
    {
     "turn": 69,
@@ -5012,14 +5640,16 @@
     "kind": 1,
     "race": "Champions Cup",
     "grade": 100,
-    "top": 3
+    "top": 3,
+    "race_instance_id": 102001
    },
    {
     "turn": 72,
     "kind": 1,
     "race": "Tokyo Daishoten",
     "grade": 100,
-    "top": 1
+    "top": 1,
+    "race_instance_id": 110601
    }
   ]
  }

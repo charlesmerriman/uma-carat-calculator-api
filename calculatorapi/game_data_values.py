@@ -77,15 +77,36 @@ def jp_uma_values(card):
     return values
 
 
-def objective_values(objectives, uma_game_ids):
+def jp_route_goals(goals, race_names):
+    """
+    A JP route's goals with each race named in Global's English, by the race's
+    id (race_names.json). The JP file's names are Japanese, so a race Global
+    has no name for keeps an empty name: the page counts that goal as hidden
+    rather than show Japanese text or a guess.
+    """
+    named = []
+    for goal in goals:
+        goal = dict(goal)
+        if "race_instance_id" in goal:
+            goal["race"] = race_names.get(str(goal["race_instance_id"]), "")
+        named.append(goal)
+    return named
+
+
+def objective_values(objectives, uma_game_ids, jp_objectives=(), race_names=None):
     """
     {outfit game id: {"career_objectives": goals}} from objectives.json, for
     every outfit whose character has a route. The game keys goals by
     character (game id // 100), so each outfit of one character gets the same
-    list. From the GLOBAL client only: its race names are Global's English,
-    which is why an outfit not yet out on global may take them too.
+    list. Global's route wins for a character it has: its race names are
+    Global's English, which is why an outfit not yet out on global may take
+    them too. A character only JP has takes JP's route, its races named by
+    `jp_route_goals` (notes/encyclopedia-jp-fills-plan.md, PR 2).
     """
-    by_character = {row["chara_id"]: row["goals"] for row in objectives}
+    by_character = {
+        row["chara_id"]: jp_route_goals(row["goals"], race_names or {}) for row in jp_objectives
+    }
+    by_character.update({row["chara_id"]: row["goals"] for row in objectives})
     return {
         game_id: {"career_objectives": by_character[game_id // 100]}
         for game_id in uma_game_ids
