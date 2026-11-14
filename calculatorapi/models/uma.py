@@ -103,9 +103,9 @@ class Uma(models.Model):
         ),
     )
     # When the outfit comes out on Global, by the game's own data: the first
-    # gacha that offers it in the global client (clamped to Global's launch),
-    # written by the import only. None for an outfit the client holds on no
-    # gacha, or doesn't hold at all. May be AHEAD of today: the client ships
+    # gacha that offers it or main story chapter that gives it in the global
+    # client (clamped to Global's launch), written by the import only. None
+    # for an outfit nothing in the client gives yet, or one it doesn't hold. May be AHEAD of today: the client ships
     # outfits before their banners. One half of "on global"; the rule is
     # calculatorapi/global_release.py, never compared by hand.
     global_release_at = models.DateTimeField(
