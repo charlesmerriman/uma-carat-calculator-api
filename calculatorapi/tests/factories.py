@@ -20,6 +20,11 @@ from calculatorapi.models import (
 )
 
 
+# A global release date already past, for a test row that should read "on
+# global" by the game's own date (global_release.py), with no banner needed.
+RELEASED_ON_GLOBAL = datetime.datetime(2025, 7, 1, tzinfo=datetime.timezone.utc)
+
+
 def make_ranks():
     """Create one of each rank type with zero income — minimal valid FKs for CustomUser."""
     club = ClubRank.objects.create(name='None', income_amount=0)

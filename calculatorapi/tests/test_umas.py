@@ -26,9 +26,11 @@ from calculatorapi.models import (
     UserPlannedPurchase,
     UserStepUpSelection,
 )
+from calculatorapi.global_release import card_is_released, uma_is_released
 from calculatorapi.models.uma import game_id_from_image
 from calculatorapi.tests.base import CalculatorTestCase, PLAIN_TEST_STORAGES
 from calculatorapi.tests.factories import (
+    RELEASED_ON_GLOBAL,
     make_anniversary_event,
     make_champions_meeting,
     make_step_up_banner,
@@ -357,6 +359,8 @@ def snapshot_card(card_id=102701, chara_name="Mejiro Ryan", default_rarity=1, **
         "default_rarity": default_rarity, "running_style": "late",
         "growth": {"speed": 0, "stamina": 0, "power": 20, "guts": 0, "wit": 10},
         "stars": [star(1, 87), star(2, 93), star(3, 98)],
+        # Its first gacha on global (2025-07-02), so out by the game's date.
+        "start_date": 1751493600,
     }
     card.update(overrides)
     return card
@@ -513,12 +517,15 @@ class ImportGameDataUmaTests(CalculatorTestCase):
 
 
 class ImportGameDataSupportGlobalTests(CalculatorTestCase):
-    """`is_on_global` on a support card: in the snapshot AND out by now."""
+    """`global_release_at` on a support card: the game's date, even one ahead,
+    and on global only once it has passed (global_release.py)."""
 
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()  # pylint: disable=consider-using-with
         self.addCleanup(self.tmp.cleanup)
-        self.turbo = SupportCard.objects.create(name="Twin Turbo", game_id=30060, is_on_global=True)
+        self.turbo = SupportCard.objects.create(
+            name="Twin Turbo", game_id=30060, global_release_at=RELEASED_ON_GLOBAL,
+        )
         self.kitasan = SupportCard.objects.create(name="Kitasan Black", game_id=30028)
 
     @staticmethod
@@ -540,8 +547,35 @@ class ImportGameDataSupportGlobalTests(CalculatorTestCase):
 
         self.turbo.refresh_from_db()
         self.kitasan.refresh_from_db()
-        self.assertFalse(self.turbo.is_on_global)
-        self.assertTrue(self.kitasan.is_on_global)
+        # Stored as the game has it, and not out until then.
+        self.assertEqual(self.turbo.global_release_at.year, 2099)
+        self.assertFalse(card_is_released(self.turbo))
+        self.assertTrue(card_is_released(self.kitasan))
+
+    def test_a_row_the_snapshot_no_longer_holds_loses_its_date(self):
+        write_snapshot(self.tmp.name, support_cards=[self.card(30028, "Kitasan Black", 1751493600)])
+
+        import_game_data(self.tmp.name)
+
+        self.turbo.refresh_from_db()
+        self.assertIsNone(self.turbo.global_release_at)
+        self.assertFalse(card_is_released(self.turbo))
+
+    def test_an_outfit_takes_its_first_gacha_and_one_on_no_gacha_is_not_out(self):
+        ryan = Uma.objects.create(name="Mejiro Ryan", game_id=102701)
+        ruler = Uma.objects.create(name="Special Week", game_id=100103)
+        write_snapshot(self.tmp.name, cards=[
+            snapshot_card(102701, "Mejiro Ryan"),
+            # In the client, on no gacha (the real [Ruler of Japan]): not out.
+            snapshot_card(100103, "Special Week", start_date=None),
+        ])
+
+        import_game_data(self.tmp.name)
+
+        ryan.refresh_from_db()
+        self.assertEqual(ryan.global_release_at.date().isoformat(), "2025-07-02")
+        self.assertTrue(uma_is_released(ryan))
+        self.assertFalse(uma_is_released(ruler))
 
     def test_the_committed_snapshot_dates_exactly_four_cards_ahead(self):
         path = Path(__file__).resolve().parents[2] / "scripts" / "data" / "master_snapshot" / "support_cards.json"

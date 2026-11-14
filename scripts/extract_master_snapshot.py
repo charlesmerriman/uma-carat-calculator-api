@@ -265,7 +265,26 @@ def extract_skill_text_ahead(conn, skills):
     ]
 
 
-def extract_cards(conn):
+def first_gacha_dates(conn):
+    """
+    {outfit id: the earliest start_date of a gacha that offers it}, or None
+    when the database has no gacha tables (the JP mdb rebuilt from a CSV
+    export). gacha_available.card_type 1 is an outfit, 2 a support card. The
+    client dates its "not released here" gachas 2099-01-01, so the minimum is
+    a real gacha whenever the outfit has one.
+    """
+    tables = {name for (name,) in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
+    if not {"gacha_available", "gacha_data"} <= tables:
+        return None
+    return dict(conn.execute("""
+        SELECT a.card_id, MIN(g.start_date)
+        FROM gacha_available a JOIN gacha_data g ON g.id = a.gacha_id
+        WHERE a.card_type = 1
+        GROUP BY a.card_id
+    """))
+
+
+def extract_cards(conn):  # pylint: disable=too-many-locals
     """Outfits with their per-star rows. Also returns the unique-skill rows."""
     full_names = text_map(conn, TEXT_CARD_FULL)
     titles = text_map(conn, TEXT_CARD_TITLE)
@@ -293,6 +312,8 @@ def extract_cards(conn):
             },
         })
 
+    first_gacha = first_gacha_dates(conn)
+
     cards, card_skills = [], []
     for row in conn.execute("SELECT * FROM card_data ORDER BY id"):
         card_id = row["id"]
@@ -309,6 +330,13 @@ def extract_cards(conn):
             "running_style": RUNNING_STYLES.get(row["running_style"], str(row["running_style"])),
             "growth": stat_block(row, "talent_"),
             "stars": stars,
+            # When the outfit first came to a gacha on this region, as unix
+            # seconds: card_data carries no date of its own, unlike
+            # support_card_data. None for an outfit on no gacha in the client
+            # (it ships some ahead of their banners, and never dates them), so
+            # it is not out yet. import_game_data reads this for
+            # Uma.global_release_at. Absent on a client with no gacha tables.
+            **({"start_date": first_gacha.get(card_id)} if first_gacha is not None else {}),
         })
 
         # Unique skills: one row per distinct skill, at the first star that
@@ -392,7 +420,7 @@ def extract_support_cards(conn, region="global"):
             # When the card comes out on this region, as unix seconds. The
             # global client carries a few JP-only cards dated 2099-01-01, its
             # "not released here" mark, so being in the table is not being
-            # out (import_game_data reads this for is_on_global).
+            # out (import_game_data reads this for global_release_at).
             "start_date": row["start_date"],
         }
         # Group cards only, so the other 260 rows diff the same as before.

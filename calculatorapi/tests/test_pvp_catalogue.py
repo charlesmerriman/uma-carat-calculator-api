@@ -22,7 +22,7 @@ from calculatorapi.models import (
 )
 from calculatorapi.models.uma import uma_kind
 from calculatorapi.tests.base import CalculatorTestCase, PLAIN_TEST_STORAGES
-from calculatorapi.tests.factories import make_user
+from calculatorapi.tests.factories import RELEASED_ON_GLOBAL, make_user
 
 
 def make_skill(name, game_id, description="Does a thing.", availability="global"):
@@ -42,13 +42,13 @@ class CatalogueTests(CalculatorTestCase):
         self.jp_only = make_skill("Not Yet", 200021, availability="jp")
         self.uma = Uma.objects.create(
             name="Maruzensky", game_id=100401, image="umas/100401.png",
-            apt_front=8, apt_long=4, is_on_global=True,
+            apt_front=8, apt_long=4, global_release_at=RELEASED_ON_GLOBAL,
         )
         Uma.objects.create(name="No Picture", game_id=100501)
         Uma.objects.create(name="(All)", image="umas/all.png")
         self.card = SupportCard.objects.create(
             name="Kitasan Black", game_id=30028, image="support_cards/30028.png",
-            card_type="speed", is_on_global=True,
+            card_type="speed", global_release_at=RELEASED_ON_GLOBAL,
         )
         SupportCard.objects.create(name="Blank Card", game_id=30029)
         UmaSkill.objects.create(uma=self.uma, skill=self.on_global, source="unique", level=1)
@@ -93,12 +93,16 @@ class CatalogueTests(CalculatorTestCase):
         self.assertEqual(body["support_cards"][0]["group_members"], [])
 
     def test_a_card_says_when_it_came_out(self):
-        self.assertIsNone(self.fetch()["support_cards"][0]["released_at"])
+        self.assertEqual(self.fetch()["support_cards"][0]["released_at"], "2025-07-01T00:00:00+00:00")
+
+    def test_a_card_dated_ahead_is_not_out_and_shows_no_date(self):
+        # The client's 2099 "not released here" mark, or a card shipped early.
         SupportCard.objects.filter(pk=self.card.pk).update(
-            global_release_at=datetime.datetime(2026, 3, 12, tzinfo=datetime.timezone.utc)
+            global_release_at=datetime.datetime(2099, 1, 1, tzinfo=datetime.timezone.utc)
         )
         pvp_catalogue_cache.invalidate()
-        self.assertEqual(self.fetch()["support_cards"][0]["released_at"], "2026-03-12T00:00:00+00:00")
+        card = self.fetch()["support_cards"][0]
+        self.assertEqual((card["released_at"], card["on_global"], card["skills"]), (None, False, []))
 
     def test_a_card_sends_its_borderless_art_or_null(self):
         # Never a fallback to `image`: the bordered picture has a frame of its
