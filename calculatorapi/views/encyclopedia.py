@@ -40,6 +40,9 @@ from rest_framework.decorators import api_view, permission_classes
 
 from calculatorapi import skills_cache, support_effects
 from calculatorapi.career import shown_goals
+from calculatorapi.global_release import (
+    annotate_cards, annotate_umas, card_is_released, game_release_passed, uma_is_released,
+)
 from calculatorapi.models import Skill, SupportCard, SupportCardSkill, Uma, UmaSkill
 from calculatorapi.views.pvp_catalogue import image_url
 from calculatorapi.views.skills import _bytes, _json, refused, summary, unlock_conditions
@@ -88,7 +91,7 @@ def _shown_skill_ids():
 def _outfit_row(uma):
     return {
         "id": uma.id, "game_id": uma.game_id, "name": uma.name, "title": uma.title,
-        "portrait": _file_url(uma.portrait), "rarity": uma.rarity, "on_global": uma.is_on_global,
+        "portrait": _file_url(uma.portrait), "rarity": uma.rarity, "on_global": uma.on_global,
     }
 
 
@@ -100,7 +103,7 @@ def _card_row(card):
         # frame (FramedCard) as the Collection does; None until it is uploaded.
         "image_borderless": _file_url(card.image_borderless),
         "card_type": card.card_type, "rarity": card.rarity,
-        "on_global": card.is_on_global,
+        "on_global": card.on_global,
     }
 
 
@@ -114,14 +117,14 @@ def _outfits_of(character_ids, names=()):
         match |= Q(game_id__gte=character * 100, game_id__lt=(character + 1) * 100)
     for name in names:
         match |= Q(name=name) | Q(name__startswith=f"{name} (")
-    return [_outfit_row(uma) for uma in Uma.trainees().filter(match).order_by("game_id")]
+    return [_outfit_row(uma) for uma in annotate_umas(Uma.trainees().filter(match)).order_by("game_id")]
 
 
 def _cards_of(character_id, name):
     """The character's support cards: their own (by character id) and every
     group card that lists them. A group card is filed under ONE member's
     character id, so it is matched by its members instead, never by id."""
-    cards = SupportCard.objects.filter(is_placeholder=False).exclude(game_id=None)
+    cards = annotate_cards(SupportCard.objects.filter(is_placeholder=False).exclude(game_id=None))
     own = cards.filter(character_id=character_id).exclude(card_type="group") if character_id else cards.none()
     groups = [card for card in cards.filter(card_type="group") if name in card.group_members]
     return [_card_row(card) for card in sorted([*own, *groups], key=lambda card: card.game_id)]
@@ -147,7 +150,7 @@ def build_uma(uma):
         "image": _file_url(uma.image),
         "rarity": uma.rarity,
         "running_style": uma.running_style,
-        "on_global": uma.is_on_global,
+        "on_global": uma_is_released(uma),
         "purpose": uma.purpose,
         "apt": {key: getattr(uma, f"apt_{key}") for key in APTITUDE_KEYS},
         "base": {key: getattr(uma, f"base_{key}") for key in STAT_KEYS},
@@ -191,8 +194,10 @@ def build_card(card):
         "card_type": card.card_type,
         "rarity": card.rarity,
         "character_id": card.character_id,
-        "on_global": card.is_on_global,
-        "released_at": card.global_release_at.isoformat() if card.global_release_at else None,
+        "on_global": card_is_released(card),
+        # The game's own date, once it has passed (a date ahead may be the
+        # client's 2099 "not released here" mark).
+        "released_at": released.isoformat() if (released := game_release_passed(card.global_release_at)) else None,
         "group_members": card.group_members,
         "purpose": card.purpose,
         # Its training effects at every level, its level cap at each limit break

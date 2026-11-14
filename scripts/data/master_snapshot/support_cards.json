@@ -946,6 +946,17 @@
   "start_date": 1792015200
  },
  {
+  "id": 10087,
+  "chara_id": 1087,
+  "chara_name": "Aston Machan",
+  "name": "[Tracen Academy] Aston Machan",
+  "title": "[Tracen Academy]",
+  "rarity": 1,
+  "card_type": "speed",
+  "skill_set_id": 9081087,
+  "start_date": 1793916000
+ },
+ {
   "id": 20001,
   "chara_id": 1005,
   "chara_name": "Fuji Kiseki",
@@ -1527,6 +1538,17 @@
   "card_type": "stamina",
   "skill_set_id": 9081015,
   "start_date": 1792015200
+ },
+ {
+  "id": 20055,
+  "chara_id": 1087,
+  "chara_name": "Aston Machan",
+  "name": "[A Clip to Keep Your Heart Warm] Aston Machan",
+  "title": "[A Clip to Keep Your Heart Warm]",
+  "rarity": 2,
+  "card_type": "speed",
+  "skill_set_id": 9081087,
+  "start_date": 1793916000
  },
  {
   "id": 30001,
@@ -2904,6 +2926,50 @@
   "card_type": "power",
   "skill_set_id": 9081011,
   "start_date": 1792533600
+ },
+ {
+  "id": 30130,
+  "chara_id": 1093,
+  "chara_name": "K.S.Miracle",
+  "name": "[To You] K.S.Miracle",
+  "title": "[To You]",
+  "rarity": 3,
+  "card_type": "guts",
+  "skill_set_id": 9081093,
+  "start_date": 1793916000
+ },
+ {
+  "id": 30131,
+  "chara_id": 1055,
+  "chara_name": "Marvelous Sunday",
+  "name": "[Marvelous☆Chocolate Show] Marvelous Sunday",
+  "title": "[Marvelous☆Chocolate Show]",
+  "rarity": 3,
+  "card_type": "speed",
+  "skill_set_id": 9081055,
+  "start_date": 1794261600
+ },
+ {
+  "id": 30132,
+  "chara_id": 1054,
+  "chara_name": "Biko Pegasus",
+  "name": "[Transform! Garçon Form!] Biko Pegasus",
+  "title": "[Transform! Garçon Form!]",
+  "rarity": 3,
+  "card_type": "power",
+  "skill_set_id": 9081054,
+  "start_date": 1794261600
+ },
+ {
+  "id": 30133,
+  "chara_id": 1028,
+  "chara_name": "Hishi Akebono",
+  "name": "[Fondente Smile] Hishi Akebono",
+  "title": "[Fondente Smile]",
+  "rarity": 3,
+  "card_type": "wit",
+  "skill_set_id": 9081028,
+  "start_date": 1794261600
  },
  {
   "id": 30145,

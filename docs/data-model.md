@@ -1746,16 +1746,25 @@ the skills players can see read in full (2026-10-23). The parser is
 result ("In plain English") with "Where it comes from".
 
 **`SupportCard.global_release_at`** is import-owned too: the game's `start_date`, Global's launch
-for a card the client dates before it (every launch card reads JP's 2021-02-24), NULL for a card
-not out on Global. It exists for the Collection's Release date sort, since 172 Global cards sit on
-no banner. **It is never selector eligibility**, which stays derived from JP banner dates
-(`eligibility.py`): a card on no banner staying unknown there is what keeps it out of selectors, so
-only `/pvp-catalogue` carries it, never `/calculator-data`.
+for a card the client dates before it (every launch card reads JP's 2021-02-24), stored even
+when still ahead (the client's JP-only cards read 2099), NULL for a card the global snapshot
+doesn't hold. `Uma.global_release_at` (`0135`) is the same for an outfit, from its first gacha.
+Both are half of "on global" (below), and the card's also feeds the Collection's Release date
+sort, since 172 Global cards sit on no banner; the API shows it only once it has passed. **It is
+never selector eligibility**, which stays derived from JP banner dates (`eligibility.py`): a card
+on no banner staying unknown there is what keeps it out of selectors, so it never reaches
+`/calculator-data`.
 
-**`Uma.is_on_global` / `SupportCard.is_on_global`** are import-owned: true exactly for the
-ids in the global snapshot. The PvP catalogue's `on_global` reads them (it used to mean
-"has skill links", which JP-only outfits now have too), and ships skill links for on-global
-outfits and cards only, so the team builder never counts a JP card's skills.
+**"On global" means released on global** (owner, 2026-11-14), decided by one module,
+`calculatorapi/global_release.py`, when a page is served: an outfit or card is out once a
+CONFIRMED global banner for it has started (a predicted date never counts), or once its
+import-owned `global_release_at` has passed (the game's own date: a card's `start_date`, an
+outfit's first gacha, either possibly still ahead; None when the global snapshot doesn't hold
+it). The banner half needs no snapshot refresh; the date half is what releases the launch
+roster and every card on no banner. Every `on_global` the API sends (Encyclopedia, skill
+pages, guides, the PvP catalogue) reads it, and the catalogue ships skill links for released
+outfits and cards only. Until `0135` it was a stored `is_on_global` meaning "in the global
+client", which ran ahead of the game and, with a stale snapshot, behind it.
 
 **`SupportCard.is_placeholder`** (`0121`, owner 2026-10-27, Henry's and Daptrius's ask): a
 stand-in for "your best SSR Speed card" in a shared team. The 21 rows (R, SR and SSR of each

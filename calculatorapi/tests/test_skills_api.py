@@ -10,7 +10,7 @@ from calculatorapi.models import (
     SkillEvolutionCondition, SupportCard, SupportCardSkill, Uma, UmaSkill,
 )
 from calculatorapi.tests.base import CalculatorTestCase, PLAIN_TEST_STORAGES
-from calculatorapi.tests.factories import make_user
+from calculatorapi.tests.factories import RELEASED_ON_GLOBAL, make_user
 from calculatorapi.tests.test_pvp_guides import make_champions_meeting, url
 
 SPEED = [{"precondition": "", "condition": "phase_random==1", "duration": 30000,
@@ -161,12 +161,12 @@ class SkillDetailTests(CalculatorTestCase):
             skill=self.ruler, game_id=10010102, num=2, sub_num=1, timing_type=1, count_type=1,
             jp_text="スキルを3個",
         )
-        week = Uma.objects.create(name="Special Week", game_id=100101, is_on_global=True)
+        week = Uma.objects.create(name="Special Week", game_id=100101, global_release_at=RELEASED_ON_GLOBAL)
         jp_week = Uma.objects.create(name="Special Week (New)", game_id=100105)
         UmaSkill.objects.create(uma=jp_week, skill=self.gourmand, source="awakening", level=3)
         UmaSkill.objects.create(uma=week, skill=self.gourmand, source="awakening", level=3)
         UmaSkill.objects.create(uma=week, skill=self.ruler, source="evolved", level=3)
-        card = SupportCard.objects.create(name="Kitasan Black", game_id=30028, is_on_global=True)
+        card = SupportCard.objects.create(name="Kitasan Black", game_id=30028, global_release_at=RELEASED_ON_GLOBAL)
         SupportCardSkill.objects.create(support_card=card, skill=self.gourmand, source="hint")
 
     def test_one_skill_in_full(self):

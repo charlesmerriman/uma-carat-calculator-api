@@ -17,6 +17,7 @@ from django.core.management import call_command
 from calculatorapi.models import (
     Skill, SkillAlias, SkillEvolutionCondition, SupportCard, SupportCardSkill, Uma, UmaSkill,
 )
+from calculatorapi.global_release import card_is_released, uma_is_released
 from calculatorapi.tests.base import CalculatorTestCase
 from calculatorapi.tests.test_skills import SNAPSHOT_DIR, ahead_skill, snapshot_skill, write_snapshot
 from calculatorapi.tests.test_umas import snapshot_card
@@ -235,7 +236,7 @@ class JpImportTests(CalculatorTestCase):  # pylint: disable=too-many-instance-at
             [(FAN_SKILL, "innate"), (GOURMAND, "awakening"), (RULER, "evolved")],
         )
         self.special_week.refresh_from_db()
-        self.assertFalse(self.special_week.is_on_global)
+        self.assertFalse(uma_is_released(self.special_week))
 
     def test_a_jp_outfit_takes_its_facts_from_jp_but_never_rarity_or_title(self):
         Uma.objects.filter(pk=self.special_week.pk).update(rarity=2, title="[Editor's Title]")
@@ -250,7 +251,7 @@ class JpImportTests(CalculatorTestCase):  # pylint: disable=too-many-instance-at
         self.assertEqual((uma.jp_name, uma.jp_title), ("スペシャルウィーク", "[スペシャルドリーマー]"))
         # Rarity feeds selectors and odds, the title is the editors' until global's.
         self.assertEqual((uma.rarity, uma.title), (2, "[Editor's Title]"))
-        self.assertFalse(uma.is_on_global)
+        self.assertFalse(uma_is_released(uma))
 
     def test_a_jp_outfit_with_no_rarity_keeps_it_blank(self):
         self.run_import()
@@ -269,7 +270,7 @@ class JpImportTests(CalculatorTestCase):  # pylint: disable=too-many-instance-at
         # Global's three rows, not JP's speeds.
         self.assertEqual([row["speed"] for row in uma.star_stats], [87, 93, 98])
         self.assertEqual(uma.jp_name, "スペシャルウィーク")
-        self.assertTrue(uma.is_on_global)
+        self.assertTrue(uma_is_released(uma))
 
     def test_a_distrusted_jp_outfit_takes_nothing(self):
         # Global names character 1001, so a JP-only outfit of it must be a row
@@ -321,7 +322,7 @@ class JpImportTests(CalculatorTestCase):  # pylint: disable=too-many-instance-at
 
         jp_card.refresh_from_db()
         global_card.refresh_from_db()
-        self.assertEqual((jp_card.card_type, jp_card.is_on_global), ("speed", False))
+        self.assertEqual((jp_card.card_type, card_is_released(jp_card)), ("speed", False))
         self.assertEqual(global_card.card_type, "wit")
 
     def test_a_jp_card_whose_row_names_someone_else_gets_no_type(self):

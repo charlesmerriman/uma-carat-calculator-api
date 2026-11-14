@@ -51,6 +51,7 @@ from django.utils import timezone
 
 from calculatorapi import gallery, gallery_ranking, pvp_teams
 from calculatorapi.content_snapshot import require_local_database
+from calculatorapi.global_release import released_card_q, released_uma_q
 from calculatorapi.models import (
     ChampionsMeeting,
     CustomUser,
@@ -246,13 +247,13 @@ class TeamPool:  # pylint: disable=too-few-public-methods
 def _on_global_umas():
     """Pictured umas, the ones on global (they have skills) when there are any."""
     umas = Uma.pickable()
-    on_global = umas.filter(is_on_global=True)
+    on_global = umas.filter(released_uma_q())
     return list(on_global if on_global.exists() else umas)
 
 
 def _on_global_cards():
     cards = SupportCard.objects.all()
-    on_global = cards.filter(is_on_global=True)
+    on_global = cards.filter(released_card_q())
     return list((on_global if on_global.exists() else cards).values_list("id", flat=True))
 
 

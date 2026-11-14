@@ -102,11 +102,19 @@ class Uma(models.Model):
             "digits of the image filename. Editors rarely need to touch this."
         ),
     )
-    is_on_global = models.BooleanField(
-        default=False,
+    # When the outfit comes out on Global, by the game's own data: the first
+    # gacha that offers it in the global client (clamped to Global's launch),
+    # written by the import only. None for an outfit the client holds on no
+    # gacha, or doesn't hold at all. May be AHEAD of today: the client ships
+    # outfits before their banners. One half of "on global"; the rule is
+    # calculatorapi/global_release.py, never compared by hand.
+    global_release_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        editable=False,
         help_text=(
-            "In the global client's data today. Set by the game-data import only: "
-            "the team builder reads it for a outfit on no banner."
+            "When the outfit comes out on Global, by the game's own data (may be ahead "
+            "of today). Set by the game-data import only."
         ),
     )
     image = models.ImageField(upload_to="umas/", blank=True, null=True)

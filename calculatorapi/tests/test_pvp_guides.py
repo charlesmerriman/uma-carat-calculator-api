@@ -46,6 +46,7 @@ from calculatorapi.models import (
 )
 from calculatorapi.tests.base import CalculatorTestCase, PLAIN_TEST_STORAGES
 from calculatorapi.tests.factories import (
+    RELEASED_ON_GLOBAL,
     make_champions_meeting,
     make_league_of_heroes,
     make_scenario,
@@ -205,7 +206,7 @@ class GuideEndpointTests(CalculatorTestCase):
         self.assertEqual(body["event"], loh.id)
 
     def test_full_shape(self):
-        uma = Uma.objects.create(name="Maruzensky", is_on_global=True, apt_short=2, apt_front=8)
+        uma = Uma.objects.create(name="Maruzensky", global_release_at=RELEASED_ON_GLOBAL, apt_short=2, apt_front=8)
         card = SupportCard.objects.create(name="Kitasan Black", card_type="speed", rarity=3)
         skill = make_skill("Lead the Pack", 100011, rarity=5)
         UmaSkill.objects.create(uma=uma, skill=skill, source="unique")
