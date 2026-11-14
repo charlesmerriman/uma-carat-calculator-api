@@ -32,10 +32,11 @@ only cards that were on a banner, with no skills or aptitudes at all. This is
 the one route that has both, and it is big (~500 KB raw, ~100 KB gzipped),
 which is why it is its own lazily-fetched, cached route.
 
-`on_global` says the card is in the game on global today: the stored
-`is_on_global`, which import_game_data sets exactly for cards in the global
-client's snapshot. (Until 2026-10-23 it was "has skill links"; the JP snapshot
-now gives JP-only outfits and cards links too.) The team builder uses it for
+`on_global` says the card is out on Global right now, by the one rule in
+calculatorapi/global_release.py: a confirmed global banner for it has started,
+or the game's own release date has passed. (Until 2026-11-14 it was "in the
+global client", which ran ahead of the game and, with a stale snapshot, behind
+it; until 2026-10-23, "has skill links".) The team builder uses it for
 cards on no banner, the launch roster and event rewards, which have no release
 date: on global means out, otherwise "Not on global yet". Links are shipped
 for on-global cards only, so the builder never counts a JP card's skills.
@@ -50,10 +51,12 @@ from collections import defaultdict
 
 from django.core.files.storage import default_storage
 from django.http import HttpResponse
+from django.utils import timezone
 from rest_framework import permissions
 from rest_framework.decorators import api_view, permission_classes
 
 from calculatorapi import pvp_catalogue_cache
+from calculatorapi.global_release import game_release_passed, released_cards, released_umas
 from calculatorapi.models import Skill, SupportCard, SupportCardSkill, Uma, UmaSkill
 
 # The uma's ten aptitude columns, keyed by the short names the client uses.
@@ -94,9 +97,12 @@ def build_catalogue():
             "other_names": skill.search_names,
         })
     global_ids = {skill["id"] for skill in skills}
+    # Out on Global right now (global_release.py), one query each.
+    now = timezone.now()
+    out_umas, out_cards = released_umas(now), released_cards(now)
 
     uma_skills = defaultdict(list)
-    for row in UmaSkill.objects.filter(skill_id__in=global_ids, uma__is_on_global=True).values(
+    for row in UmaSkill.objects.filter(skill_id__in=global_ids, uma_id__in=out_umas).values(
         "uma_id", "skill_id", "source", "level"
     ).order_by("uma_id", "source", "level", "skill_id"):
         uma_skills[row["uma_id"]].append(
@@ -105,7 +111,7 @@ def build_catalogue():
 
     card_skills = defaultdict(list)
     for row in SupportCardSkill.objects.filter(
-        skill_id__in=global_ids, support_card__is_on_global=True,
+        skill_id__in=global_ids, support_card_id__in=out_cards,
     ).values(
         "support_card_id", "skill_id", "source"
     ).order_by("support_card_id", "source", "skill_id"):
@@ -131,7 +137,7 @@ def build_catalogue():
             # CM rule). The client checks with this; pvp_teams.py re-checks.
             "character_id": uma.character_id,
             "is_variant": uma.is_costume_variant,
-            "on_global": uma.is_on_global,
+            "on_global": uma.id in out_umas,
             "apt": {key: getattr(uma, f"apt_{key}") for key in APTITUDE_FIELDS},
             "skills": uma_skills.get(uma.id, []),
         })
@@ -143,16 +149,17 @@ def build_catalogue():
         # group_members: a group card's umas, by name, which the builder's
         # deck rules treat as that many cards. [] on every other card.
         .values("id", "name", "game_id", "image", "image_borderless", "card_type", "rarity", "title",
-                "group_members", "is_on_global", "is_placeholder", "global_release_at")
+                "group_members", "is_placeholder", "global_release_at")
     ):
         card["image"] = _url(card["image"])
         # The texture the site frames itself (FramedCard), null when there is
         # none: never a fallback to `image`, which has a frame of its own.
         card["image_borderless"] = _url(card["image_borderless"])
-        card["on_global"] = card.pop("is_on_global")
-        # The Collection's Release date sort, for cards on no banner. Selectors
-        # never read this: models/support_card.py says why.
-        released = card.pop("global_release_at")
+        card["on_global"] = card["id"] in out_cards
+        # The Collection's Release date sort, for cards on no banner: the
+        # game's date once it has passed (global_release.game_release_passed).
+        # Selectors never read this: models/support_card.py says why.
+        released = game_release_passed(card.pop("global_release_at"), now)
         card["released_at"] = released.isoformat() if released else None
         # A stand-in ("your best SSR Speed card"): always out, see SupportCard.
         card["placeholder"] = card.pop("is_placeholder")

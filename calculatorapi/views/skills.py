@@ -34,6 +34,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
 from calculatorapi import pvp_guide_editing, skill_text, skills_cache
+from calculatorapi.global_release import released_cards, released_umas
 from calculatorapi.models import Skill, UmaSkill
 from calculatorapi.models.skill import skill_families
 from calculatorapi.skill_types import skill_type
@@ -120,14 +121,17 @@ def build_list():
 
 def sources(skill):
     """Every outfit and card that gives the skill, on-global ones first."""
+    # Out on Global right now (global_release.py). The sorts are stable, so
+    # the out ones move to the front and each half keeps the SQL order.
+    out_umas, out_cards = released_umas(), released_cards()
+    uma_rows = skill.umas.select_related("uma").order_by("source", "level", "uma__name")
     umas = [
         {"id": row.uma_id, "name": row.uma.name, "game_id": row.uma.game_id,
          "image": image_url(row.uma.portrait.name if row.uma.portrait else ""),
-         "source": row.source, "level": row.level, "on_global": row.uma.is_on_global}
-        for row in skill.umas.select_related("uma").order_by(
-            "-uma__is_on_global", "source", "level", "uma__name",
-        )
+         "source": row.source, "level": row.level, "on_global": row.uma_id in out_umas}
+        for row in sorted(uma_rows, key=lambda row: row.uma_id not in out_umas)
     ]
+    card_rows = skill.support_cards.select_related("support_card").order_by("source", "support_card__name")
     cards = [
         {"id": row.support_card_id, "name": row.support_card.name,
          # A card's name is its character's, shared by all her cards; the title tells them apart.
@@ -138,12 +142,10 @@ def sources(skill):
          "image_borderless": image_url(
              row.support_card.image_borderless.name if row.support_card.image_borderless else ""
          ),
-         "source": row.source, "on_global": row.support_card.is_on_global,
+         "source": row.source, "on_global": row.support_card_id in out_cards,
          # For "Hide R" / "Hide SR" (Daptrius's item 3) and the type icon.
          "rarity": row.support_card.rarity, "card_type": row.support_card.card_type}
-        for row in skill.support_cards.select_related("support_card").order_by(
-            "-support_card__is_on_global", "source", "support_card__name",
-        )
+        for row in sorted(card_rows, key=lambda row: row.support_card_id not in out_cards)
     ]
     return {"umas": umas, "cards": cards}
 

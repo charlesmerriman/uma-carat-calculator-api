@@ -32,6 +32,7 @@ from rest_framework.response import Response
 
 from calculatorapi import guide_access, pvp_guide_editing, skill_text
 from calculatorapi.pvp_guides import guide_queryset
+from calculatorapi.global_release import released_cards, released_umas
 from calculatorapi.models import (
     GalleryComment,
     ChampionsMeeting,
@@ -419,26 +420,31 @@ def _sources(skill_ids):
     Outfits and cards on global come first, so a player sees what they can get.
     """
     found = {}
+    # Out on Global right now (global_release.py). The sort below is stable,
+    # so the out ones move to the front and each half keeps the SQL order.
+    out_umas, out_cards = released_umas(), released_cards()
 
     def entry(skill_id):
         return found.setdefault(skill_id, {"umas": [], "uma_count": 0, "cards": [], "card_count": 0})
 
-    for row in UmaSkill.objects.filter(skill_id__in=skill_ids).select_related("uma").order_by(
-        "-uma__is_on_global", "source", "uma__name",
-    ):
+    uma_rows = UmaSkill.objects.filter(skill_id__in=skill_ids).select_related("uma").order_by(
+        "source", "uma__name",
+    )
+    for row in sorted(uma_rows, key=lambda row: row.uma_id not in out_umas):
         item = entry(row.skill_id)
         item["uma_count"] += 1
         if len(item["umas"]) < SOURCES_SHOWN:
             item["umas"].append({"name": row.uma.name, "source": row.source, "level": row.level,
-                                 "on_global": row.uma.is_on_global})
-    for row in SupportCardSkill.objects.filter(skill_id__in=skill_ids).select_related(
+                                 "on_global": row.uma_id in out_umas})
+    card_rows = SupportCardSkill.objects.filter(skill_id__in=skill_ids).select_related(
         "support_card",
-    ).order_by("-support_card__is_on_global", "source", "support_card__name"):
+    ).order_by("source", "support_card__name")
+    for row in sorted(card_rows, key=lambda row: row.support_card_id not in out_cards):
         item = entry(row.skill_id)
         item["card_count"] += 1
         if len(item["cards"]) < SOURCES_SHOWN:
             item["cards"].append({"name": row.support_card.name, "source": row.source,
-                                  "on_global": row.support_card.is_on_global})
+                                  "on_global": row.support_card_id in out_cards})
     return found
 
 

@@ -40,9 +40,11 @@ written only while empty so an editor's correction sticks; a scenario's or a
 succession's base is the game's own. Unlock conditions are replaced as a set
 whenever they differ: global's English, UmaTL's, and the Japanese.
 
-`is_on_global` on Uma and SupportCard is set here: true for the ids in the
-global snapshot whose `start_date` has passed (out_on_global; the client
-carries a few JP-only support cards dated 2099). Global outfits and cards get
+`global_release_at` on Uma and SupportCard is set here: the game's own date
+for every id in the global snapshot (a card's `start_date`, an outfit's first
+gacha; global_release), even one still ahead, and None for every row the
+snapshot doesn't hold. It is only half of "on global": the rule, with the
+banner half, is calculatorapi/global_release.py. Global outfits and cards get
 global's skill links only;
 JP's links go to the others, after a name check in English (jp_owner_links).
 
@@ -131,7 +133,6 @@ from pathlib import Path
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
-from django.utils import timezone
 
 from calculatorapi import course_zones_cache, public_payload_cache, pvp_catalogue_cache, skills_cache
 from calculatorapi.models import (
@@ -320,7 +321,6 @@ def support_values(card):
         # Only group cards carry `members` in the snapshot; every other card
         # is written back to [] so a card that stops being one is cleared.
         "group_members": card.get("members", []),
-        "global_release_at": global_release(card, timezone.now()),
     }
 
 
@@ -329,43 +329,33 @@ def support_values(card):
 GLOBAL_LAUNCH = datetime.datetime(2025, 6, 26, 22, 0, tzinfo=datetime.timezone.utc)
 
 
-def global_release(card, now):
+def global_release(card):
     """
-    When a card came out on Global, for the Collection's sort
-    (SupportCard.global_release_at): the game's own date, Global's launch for
-    a launch card, and None for a card that isn't out (out_on_global).
+    When an outfit or card comes out on Global by the game's own data
+    (Uma/SupportCard.global_release_at): the snapshot's `start_date` (a
+    card's own; an outfit's first gacha), never earlier than Global's launch,
+    and None when the snapshot gives no date (an outfit on no gacha). Stored
+    even when it is still ahead: the client ships cards before release, and
+    dates its JP-only ones 2099-01-01. global_release.py compares it with now
+    when a page is served, so a dated card turns on by itself on the day.
     """
     start = card.get("start_date")
-    if start is None or not out_on_global(card, now):
+    if start is None:
         return None
     return max(GLOBAL_LAUNCH, datetime.datetime.fromtimestamp(start, tz=datetime.timezone.utc))
 
 
-def out_on_global(card, now):
-    """
-    Whether a card in the global snapshot is out on global by `now`. Being in
-    the client's table is not enough: it carries four JP-only support cards
-    (30058 to 30061, Twin Turbo [Constellation of Stars] among them) dated
-    2099-01-01, its "not released here" mark, so a card whose `start_date` is
-    still ahead is not out (Daptrius, 2026-10-29: the Collection showed them).
-    A card the snapshot gives no date (every uma) is out. Compared with the
-    time the import runs, so a card dated ahead turns on at the first deploy
-    after its date.
-    """
-    start = card.get("start_date")
-    return start is None or start <= now.timestamp()
-
-
-def no_longer_on_global(by_game_id, cards):
+def no_longer_in_snapshot(by_game_id, cards):
     """
     (row, diff) pairs for the rows the global snapshot doesn't hold but which
-    say they are on global: not on global, whatever they said before.
+    carry a global release date: the game no longer dates them, so neither do
+    we (a banner can still release them, global_release.py).
     """
     in_snapshot = {card["id"] for card in cards}
     return [
-        (row, {"is_on_global": False})
+        (row, {"global_release_at": None})
         for game_id, row in by_game_id.items()
-        if game_id not in in_snapshot and row.is_on_global
+        if game_id not in in_snapshot and row.global_release_at is not None
     ]
 
 
@@ -532,7 +522,6 @@ class Command(BaseCommand):
         Python objects, so a dry run is as cheap as it looks.
         """
         by_game_id = {row.game_id: row for row in model.objects.exclude(game_id__isnull=True)}
-        now = timezone.now()
         changed, missing, mismatched = [], [], []
         current = set()  # game_ids already as the game says; _add_values may move one out
         distrusted = set()  # game_ids the name check rejected; junctions skip them too
@@ -549,9 +538,9 @@ class Command(BaseCommand):
                 )
                 distrusted.add(card["id"])
                 continue
-            # In the global snapshot and dated, so out on global (the team
-            # builder reads it for cards on no banner; see pvp_catalogue.py).
-            values = {**values_for(card), "is_on_global": out_on_global(card, now)}
+            # The game's own release date, even one still ahead: whether it is
+            # out is global_release.py's call, made when a page is served.
+            values = {**values_for(card), "global_release_at": global_release(card)}
             diff = {
                 column: value for column, value in values.items()
                 if getattr(row, column) != value
@@ -561,7 +550,7 @@ class Command(BaseCommand):
             else:
                 current.add(card["id"])
 
-        changed += no_longer_on_global(by_game_id, cards)
+        changed += no_longer_in_snapshot(by_game_id, cards)
 
         return {
             "label": label, "changed": changed, "unchanged": len(current), "current": current,

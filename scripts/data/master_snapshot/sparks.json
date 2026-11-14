@@ -5214,6 +5214,12 @@
   "name": "Carnival Bonus"
  },
  {
+  "id": 4000103,
+  "kind": "carnival",
+  "stars": 1,
+  "name": "Carnival Bonus"
+ },
+ {
   "id": 10010101,
   "kind": "unique",
   "stars": 1,
@@ -6150,6 +6156,24 @@
   "name": "Let's Pump Some Iron!"
  },
  {
+  "id": 10270201,
+  "kind": "unique",
+  "stars": 1,
+  "name": "A Warm Cup for You"
+ },
+ {
+  "id": 10270202,
+  "kind": "unique",
+  "stars": 2,
+  "name": "A Warm Cup for You"
+ },
+ {
+  "id": 10270203,
+  "kind": "unique",
+  "stars": 3,
+  "name": "A Warm Cup for You"
+ },
+ {
   "id": 10280101,
   "kind": "unique",
   "stars": 1,
@@ -6238,6 +6262,24 @@
   "kind": "unique",
   "stars": 3,
   "name": "All Charged! It's Go Time!"
+ },
+ {
+  "id": 10310201,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Fresh☆Parlor"
+ },
+ {
+  "id": 10310202,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Fresh☆Parlor"
+ },
+ {
+  "id": 10310203,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Fresh☆Parlor"
  },
  {
   "id": 10320101,
@@ -6994,6 +7036,24 @@
   "kind": "unique",
   "stars": 3,
   "name": "Keep Pushing Ahead"
+ },
+ {
+  "id": 10650101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Hands in the Air Like Ya Don't Care!"
+ },
+ {
+  "id": 10650102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Hands in the Air Like Ya Don't Care!"
+ },
+ {
+  "id": 10650103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Hands in the Air Like Ya Don't Care!"
  },
  {
   "id": 10670101,

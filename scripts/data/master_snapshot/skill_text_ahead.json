@@ -20,11 +20,6 @@
   "description": "Moderately increase velocity continuously when toward the back sometime upon approaching late-race. Effect increases if far from the lead and the race is medium or long."
  },
  {
-  "id": 100651,
-  "name": "Hands in the Air Like Ya Don't Care!",
-  "description": "Moderately crank the velocity when vibing toward the front sometime upon approaching late-race. If it's like a sprint or mile race or smth, moderately crank the velocity CONTINUOUSLY!"
- },
- {
   "id": 100661,
   "name": "Turbo BLAST!",
   "description": "Slightly increase velocity continuously for an extremely long duration when leading by a fair margin halfway through mid-race, but very slightly lose steam at the end of late-race."
@@ -80,16 +75,6 @@
   "description": "Increase velocity and very slightly increase acceleration for a moderate duration when toward the back on a downhill just before late-race after passing another runner 3 times mid-race."
  },
  {
-  "id": 110271,
-  "name": "A Warm Cup for You",
-  "description": "Increase velocity for a moderate duration when 2nd or worse and within 4 lengths of the lead on a downhill just before late-race. If the race is medium, also very slightly increase acceleration."
- },
- {
-  "id": 110311,
-  "name": "Fresh☆Parlor",
-  "description": "Moderately increase velocity continuously when positioned toward the front in the early part of mid-race. Oh, and have a dollop of moderate endurance recovery too!"
- },
- {
   "id": 110321,
   "name": "Summer Halation",
   "description": "Greatly increase velocity for a moderate duration when well-positioned on a corner in the second half of the race. If at Nakayama Racecourse, also increase acceleration based on Speed."
@@ -140,29 +125,9 @@
   "description": "Increase velocity on a corner. (Mile)"
  },
  {
-  "id": 201253,
-  "name": "Crescent Gale",
-  "description": "Increase velocity on a corner. (Front Runner)"
- },
- {
-  "id": 201393,
-  "name": "Sharp Arc",
-  "description": "Increase velocity on a corner. (Late Surger)"
- },
- {
   "id": 201602,
   "name": "Solid Preparation",
   "description": "Increase acceleration when many skills activate early-race."
- },
- {
-  "id": 202171,
-  "name": "Master of Declines",
-  "description": "Increase velocity on a downhill."
- },
- {
-  "id": 202511,
-  "name": "Gonna Be Ur #1 FRFR",
-  "description": "Press coverage goes to the skill user's head, moderately increasing chance of rushing."
  },
  {
   "id": 202521,
@@ -380,11 +345,6 @@
   "description": "Very slightly increase velocity continuously when toward the back sometime upon approaching late-race. Effect increases if far from the lead and the race is medium or long."
  },
  {
-  "id": 900651,
-  "name": "Hands in the Air Like Ya Don't Care!",
-  "description": "Very slightly increase velocity when positioned toward the front sometime upon approaching late-race. If it's a sprint or mile race, very slightly increase velocity continuously."
- },
- {
   "id": 900661,
   "name": "Turbo BLAST!",
   "description": "Minimally increase velocity continuously for an extremely long duration when leading by a fair margin halfway through mid-race, but very slightly lose steam at the end of late-race."
@@ -440,16 +400,6 @@
   "description": "Slightly increase velocity and very minimally increase acceleration for a moderate duration when toward the back on a downhill just before late-race after passing another runner 3 times mid-race."
  },
  {
-  "id": 910271,
-  "name": "A Warm Cup for You",
-  "description": "Slightly increase velocity for a moderate duration when 2nd or worse and within 4 lengths of the lead on a downhill just before late-race. If the race is medium, also very minimally increase acceleration."
- },
- {
-  "id": 910311,
-  "name": "Fresh☆Parlor",
-  "description": "Very slightly increase velocity continuously and very slightly recover endurance when positioned toward the front in the early part of mid-race."
- },
- {
   "id": 910321,
   "name": "Summer Halation",
   "description": "Moderately increase velocity for a moderate duration when well-positioned on a corner in the second half of the race. If at Nakayama Racecourse, also increase acceleration based on Speed."
@@ -488,11 +438,6 @@
   "id": 910711,
   "name": "Danser le Présent",
   "description": "Expend endurance to slightly increase velocity and minimally surge ahead when well-positioned on the final straight late-race with another runner close behind."
- },
- {
-  "id": 1000013,
-  "name": "Carnival Bonus",
-  "description": "Increase attributes by +{0}％ in the Racing Carnival. {1}％ chance to also raise runner's mood to Great. This skill will disappear when the event ends."
  },
  {
   "id": 1000014,

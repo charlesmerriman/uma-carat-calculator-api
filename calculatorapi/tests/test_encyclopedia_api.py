@@ -6,6 +6,7 @@ from django.test.utils import CaptureQueriesContext
 
 from calculatorapi.models import SkillEvolutionCondition, SupportCard, SupportCardSkill, Uma, UmaSkill
 from calculatorapi.tests.base import CalculatorTestCase, PLAIN_TEST_STORAGES
+from calculatorapi.tests.factories import RELEASED_ON_GLOBAL
 from calculatorapi.tests.test_skills_api import (
     EXPECTED_STATUS, client_for, early_access_readers, editor_client, make, skill_queries,
 )
@@ -32,7 +33,7 @@ class EncyclopediaFixture(CalculatorTestCase):  # pylint: disable=too-many-insta
         self.spe = uma(
             SPECIAL_WEEK, "Special Week", title="[Special Dreamer]", jp_name="スペシャルウィーク",
             jp_title="[スペシャルドリーマー]", rarity=3, running_style=3, apt_turf=7, base_speed=83,
-            growth_stamina=20, is_on_global=True, purpose="Great late surger.",
+            growth_stamina=20, global_release_at=RELEASED_ON_GLOBAL, purpose="Great late surger.",
             admin_comments="Editors only.",
             star_stats=[{"star": 3, "speed": 83, "stamina": 88, "power": 98, "guts": 90, "wit": 91}],
         )

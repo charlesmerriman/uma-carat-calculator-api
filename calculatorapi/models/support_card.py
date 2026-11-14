@@ -44,29 +44,29 @@ class SupportCard(models.Model):
             "Anchors this card's image filename in the DO Space."
         ),
     )
-    is_on_global = models.BooleanField(
-        default=False,
-        help_text=(
-            "In the global client's data today. Set by the game-data import only: "
-            "the team builder reads it for a card on no banner."
-        ),
-    )
-    # When the card came out on Global, from the game's own table. Written by
-    # the import only. It exists for one thing, the Collection's Release date
-    # sort, because welfare SSRs, SRs and Rs never sit on a banner.
+    # When the card comes out on Global, by the game's own table: written by
+    # the import only, from the global client's start_date (clamped to
+    # Global's launch), and None for a card the client doesn't hold. It may be
+    # AHEAD of today: the client ships cards before their release, and a few
+    # JP-only ones dated 2099, its "not released here" mark.
+    #
+    # One of the two halves of "on global" (calculatorapi/global_release.py):
+    # the card is out once this has passed OR a confirmed global banner for it
+    # has started. Read through that module, never compared here and there.
+    # It also serves the Collection's Release date sort for cards on no banner.
     #
     # NEVER SELECTOR ELIGIBILITY. A selector judges a card on its first JP
     # banner (eligibility.py), and a card on no banner staying unknown there
     # is what keeps these cards out of every selector. Filling that gap from
     # this column would offer them. It stays off /calculator-data for the same
-    # reason: only GET /pvp-catalogue carries it.
+    # reason.
     global_release_at = models.DateTimeField(
         null=True,
         blank=True,
         editable=False,
         help_text=(
-            "When the card came out on Global. Set by the game-data import only, "
-            "for the Collection's sort. Selectors never read it."
+            "When the card comes out on Global, by the game's own data (may be ahead "
+            "of today). Set by the game-data import only. Selectors never read it."
         ),
     )
     image = models.ImageField(upload_to="support_cards/", blank=True, null=True)
