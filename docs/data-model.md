@@ -1748,7 +1748,7 @@ result ("In plain English") with "Where it comes from".
 **`SupportCard.global_release_at`** is import-owned too: the game's `start_date`, Global's launch
 for a card the client dates before it (every launch card reads JP's 2021-02-24), stored even
 when still ahead (the client's JP-only cards read 2099), NULL for a card the global snapshot
-doesn't hold. `Uma.global_release_at` (`0135`) is the same for an outfit, from its first gacha.
+doesn't hold. `Uma.global_release_at` (`0135`) is the same for an outfit, from its first gacha or main story reward.
 Both are half of "on global" (below), and the card's also feeds the Collection's Release date
 sort, since 172 Global cards sit on no banner; the API shows it only once it has passed. **It is
 never selector eligibility**, which stays derived from JP banner dates (`eligibility.py`): a card
@@ -1759,7 +1759,7 @@ on no banner staying unknown there is what keeps it out of selectors, so it neve
 `calculatorapi/global_release.py`, when a page is served: an outfit or card is out once a
 CONFIRMED global banner for it has started (a predicted date never counts), or once its
 import-owned `global_release_at` has passed (the game's own date: a card's `start_date`, an
-outfit's first gacha, either possibly still ahead; None when the global snapshot doesn't hold
+outfit's first gacha or main story reward, either possibly still ahead; None when the global snapshot doesn't hold
 it). The banner half needs no snapshot refresh; the date half is what releases the launch
 roster and every card on no banner. Every `on_global` the API sends (Encyclopedia, skill
 pages, guides, the PvP catalogue) reads it, and the catalogue ships skill links for released

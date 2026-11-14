@@ -333,8 +333,9 @@ def global_release(card):
     """
     When an outfit or card comes out on Global by the game's own data
     (Uma/SupportCard.global_release_at): the snapshot's `start_date` (a
-    card's own; an outfit's first gacha), never earlier than Global's launch,
-    and None when the snapshot gives no date (an outfit on no gacha). Stored
+    card's own; an outfit's first gacha or main story reward), never earlier
+    than Global's launch, and None when the snapshot gives no date (an
+    outfit nothing in the client gives yet). Stored
     even when it is still ahead: the client ships cards before release, and
     dates its JP-only ones 2099-01-01. global_release.py compares it with now
     when a page is served, so a dated card turns on by itself on the day.

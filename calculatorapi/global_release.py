@@ -17,8 +17,9 @@ An outfit or card is out on Global once EITHER has happened:
    release day as soon as an editor has entered the banner.
 2. The game's own release date has passed: `global_release_at`, which
    import_game_data writes from the global client (a support card's own
-   `start_date`; an outfit's first gacha). This is what releases everything
-   on no banner: the launch roster, event-reward cards, Rs and SRs.
+   `start_date`; an outfit's first gacha or main story reward). This is what
+   releases everything on no banner: the launch roster, event-reward cards,
+   Rs and SRs, and story-reward outfits like [Ruler of Japan] Special Week.
 
 Both are compared with NOW, when the request is served, never stored as a
 boolean: a stored flag could only change at a deploy. The pages that read it
