@@ -145,43 +145,114 @@ def table(effects, rarity):
 # multiplies with the card's own (the top of this file).
 MULTIPLIED_TYPES = (1, 19)
 
+# A unique effect's type 101 reads "while the Friendship Gauge is at `value`
+# or more, gain these": `params` holds up to two (effect type, amount) pairs,
+# [type, amount, type, amount], a 0 type for an empty slot. Card 30053's
+# value 80 with params 3, 1, 30, 1 is Speed Bonus 1 and Skill Point Bonus 1,
+# and the game's own sentence for it is "Speed Bonus and Skill Point Bonus
+# (Friendship Gauge 80+)". Checked 2026-11-14 against all 33 type-101 rows in
+# the global client: every effect it names and the threshold are in the
+# game's sentence (the test suite holds that check over the committed
+# snapshot). Every other type of 100 and up is still undecoded.
+# notes/encyclopedia-jp-fills-plan.md, PR 1.
+FRIENDSHIP_GAUGE = 101
 
-def multiplied(text, effects):
+
+def effect_amounts(effect):
+    """
+    One unique-effect slot as the game's numbers: [{"type", "name", "value",
+    "format", "condition"}], `condition` None for a plain part and
+    "Friendship Gauge 80+" for a decoded type 101. None when the slot can't be
+    read: an undecoded type, or an effect type the names file doesn't have.
+    """
+    if effect["type"] in TYPES and not effect.get("params"):
+        pairs, condition = [(effect["type"], effect["value"])], None
+    elif effect["type"] == FRIENDSHIP_GAUGE and effect.get("params"):
+        params = list(effect["params"]) + [0, 0, 0, 0]
+        pairs = [(params[index], params[index + 1]) for index in (0, 2) if params[index]]
+        condition = f"Friendship Gauge {effect['value']}+"
+    else:
+        return None
+    if not pairs or any(kind not in TYPES for kind, _ in pairs):
+        return None
+    return [
+        {"type": kind, "name": TYPES[kind]["name"], "value": value, "format": TYPES[kind]["format"],
+         "condition": condition}
+        for kind, value in pairs
+    ]
+
+
+def unique_amounts(unique):
+    """
+    Every part of a unique effect as numbers (see `effect_amounts`), or None
+    when any slot can't be read: a partial list would understate the effect
+    on the page. The sort reads the slots one by one instead (`unique_parts`).
+    """
+    parts = []
+    for effect in unique.get("effects", []):
+        amounts = effect_amounts(effect)
+        if amounts is None:
+            return None
+        parts.extend(amounts)
+    return parts or None
+
+
+def joined(names):
+    """["A"] -> "A"; ["A", "B"] -> "A and B"; ["A", "B", "C"] -> "A, B and C"."""
+    return names[0] if len(names) == 1 else f"{', '.join(names[:-1])} and {names[-1]}"
+
+
+def named_text(amounts):
+    """
+    The line for a unique effect with no sentence of its own, in the game's
+    style: the effects by name, a condition in brackets after the ones it
+    covers ("Speed Bonus and Skill Point Bonus (Friendship Gauge 80+)"). The
+    numbers are sent beside it in `amounts`.
+    """
+    groups = {}
+    for part in amounts:
+        groups.setdefault(part["condition"], []).append(part["name"])
+    return ", ".join(
+        joined(names) + (f" ({condition})" if condition else "") for condition, names in groups.items()
+    )
+
+
+def multiplied(text, effects, amounts=None):
     """
     The effects a unique effect multiplies instead of adds, by name: those of
-    MULTIPLIED_TYPES that its words name AND the card's own table has (with
-    none of its own there is nothing to multiply with).
+    MULTIPLIED_TYPES that it gives AND the card's own table has (with none of
+    its own there is nothing to multiply with). What it gives is read from its
+    numbers when they're known, else from its words.
     """
     own = {effect["type"] for effect in effects or []}
+    if amounts is not None:
+        gives = {part["type"] for part in amounts}
+        return [TYPES[kind]["name"] for kind in MULTIPLIED_TYPES if kind in own and kind in gives]
     return [TYPES[kind]["name"] for kind in MULTIPLIED_TYPES if kind in own and TYPES[kind]["name"] in text]
 
 
 def unique_effect(unique, effects=None):
     """
-    The unique effect for the page: {"level", "text", "multiplies"}, or None
-    when the card has none or there are no confirmed words for it. `effects`
-    is the card's own stored table, for `multiplies` (see `multiplied`).
+    The unique effect for the page: {"level", "text", "amounts",
+    "multiplies"}, or None when the card has none or there are no confirmed
+    words for it. `effects` is the card's own stored table, for `multiplies`.
 
     The text is the game's own sentence where the global client has one. A
-    JP-only card has no English sentence, so its typed effects are named
-    instead ("Guts Bonus 1, Initial Guts 20"), and only when every one is a
-    plain named type: a conditional type (100 and up) carries numbers nobody
-    here has decoded.
+    JP-only card has no English sentence, so its effects are named instead
+    (`named_text`), and only when every slot can be read. `amounts` holds the
+    numbers (`unique_amounts`) whenever every slot can be read, for a card
+    with the game's sentence too: that sentence never states them.
     """
     if not unique:
         return None
-    if unique.get("text"):
-        return {"level": unique["level"], "text": unique["text"], "multiplies": multiplied(unique["text"], effects)}
-    parts = []
-    for effect in unique.get("effects", []):
-        known = TYPES.get(effect["type"])
-        if known is None or effect.get("params"):
+    amounts = unique_amounts(unique)
+    text = (unique.get("text") or "").strip()
+    if not text:
+        if amounts is None:
             return None
-        parts.append(f"{known['name']} {effect['value']}")
-    if not parts:
-        return None
-    text = ", ".join(parts)
-    return {"level": unique["level"], "text": text, "multiplies": multiplied(text, effects)}
+        text = named_text(amounts)
+    return {"level": unique["level"], "text": text, "amounts": amounts,
+            "multiplies": multiplied(text, effects, amounts)}
 
 
 # ── For sorting the card list by an effect (notes/card-effect-sort-plan.md) ──
@@ -209,18 +280,21 @@ def at_caps(effects, rarity):
 
 def unique_parts(unique):
     """
-    The unique effect's plain parts for a sort: {"level", "values": {type:
-    value}, "conditional"}. A part with params, or a type of 100 and up, is
-    conditional (numbers nobody here has decoded); it is left out and
-    `conditional` says so, so the list can mark the card instead of guessing.
-    None when the card has no unique effect, or none with any parts.
+    The unique effect's parts for a sort: {"level", "values": {type: value},
+    "conditional"}. Plain parts and decoded friendship-gauge parts (type 101,
+    counted as if the gauge is reached; owner, 2026-11-14) are summed by type.
+    A slot nobody here has decoded is left out and `conditional` says so, so
+    the list can mark the card instead of guessing. None when the card has no
+    unique effect, or none with any parts.
     """
     if not unique or not unique.get("effects"):
         return None
     values, conditional = {}, False
     for effect in unique["effects"]:
-        if effect.get("params") or effect["type"] >= 100 or effect["type"] not in TYPES:
+        amounts = effect_amounts(effect)
+        if amounts is None:
             conditional = True
             continue
-        values[effect["type"]] = values.get(effect["type"], 0) + effect["value"]
+        for part in amounts:
+            values[part["type"]] = values.get(part["type"], 0) + part["value"]
     return {"level": unique["level"], "values": values, "conditional": conditional}
