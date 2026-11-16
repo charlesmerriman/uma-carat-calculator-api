@@ -1,0 +1,219 @@
+[
+ {
+  "type": 1,
+  "name": "Friendship Bonus",
+  "help": "Increases the effectiveness of Friendship Training",
+  "format": "percent",
+  "format_confirmed": true
+ },
+ {
+  "type": 2,
+  "name": "Mood Effect",
+  "help": "Amplifies the effect of mood when training together",
+  "format": "percent",
+  "format_confirmed": true
+ },
+ {
+  "type": 3,
+  "name": "Speed Bonus",
+  "help": "Increases Speed gain when training together",
+  "format": "number",
+  "format_confirmed": false
+ },
+ {
+  "type": 4,
+  "name": "Stamina Bonus",
+  "help": "Increases Stamina gain when training together",
+  "format": "number",
+  "format_confirmed": false
+ },
+ {
+  "type": 5,
+  "name": "Power Bonus",
+  "help": "Increases Power gain when training together",
+  "format": "number",
+  "format_confirmed": true
+ },
+ {
+  "type": 6,
+  "name": "Guts Bonus",
+  "help": "Increases Guts gain when training together",
+  "format": "number",
+  "format_confirmed": false
+ },
+ {
+  "type": 7,
+  "name": "Wit Bonus",
+  "help": "Increases Wit gain when training together",
+  "format": "number",
+  "format_confirmed": false
+ },
+ {
+  "type": 8,
+  "name": "Training Effectiveness",
+  "help": "Increases the effectiveness of training performed together",
+  "format": "percent",
+  "format_confirmed": true
+ },
+ {
+  "type": 9,
+  "name": "Initial Speed",
+  "help": "Increases initial Speed when beginning a Career playthrough",
+  "format": "number",
+  "format_confirmed": false
+ },
+ {
+  "type": 10,
+  "name": "Initial Stamina",
+  "help": "Increases initial Stamina when beginning a Career playthrough",
+  "format": "number",
+  "format_confirmed": false
+ },
+ {
+  "type": 11,
+  "name": "Initial Power",
+  "help": "Increases initial Power when beginning a Career playthrough",
+  "format": "number",
+  "format_confirmed": false
+ },
+ {
+  "type": 12,
+  "name": "Initial Guts",
+  "help": "Increases initial Guts when beginning a Career playthrough",
+  "format": "number",
+  "format_confirmed": false
+ },
+ {
+  "type": 13,
+  "name": "Initial Wit",
+  "help": "Increases initial Wit when beginning a Career playthrough",
+  "format": "number",
+  "format_confirmed": false
+ },
+ {
+  "type": 14,
+  "name": "Initial Friendship Gauge",
+  "help": "Increases initial Friendship Gauge when beginning a Career playthrough",
+  "format": "number",
+  "format_confirmed": true
+ },
+ {
+  "type": 15,
+  "name": "Race Bonus",
+  "help": "Increases stat gain from races",
+  "format": "percent",
+  "format_confirmed": true
+ },
+ {
+  "type": 16,
+  "name": "Fan Bonus",
+  "help": "Increases fan gain from races",
+  "format": "percent",
+  "format_confirmed": true
+ },
+ {
+  "type": 17,
+  "name": "Hint Levels",
+  "help": "Increases the level of hints gained through events",
+  "format": "level",
+  "format_confirmed": true
+ },
+ {
+  "type": 18,
+  "name": "Hint Frequency",
+  "help": "Increases the frequency at which hint events occur",
+  "format": "percent",
+  "format_confirmed": true
+ },
+ {
+  "type": 19,
+  "name": "Specialty Priority",
+  "help": "Increases the frequency at which the character participates in their preferred training type",
+  "format": "number",
+  "format_confirmed": true
+ },
+ {
+  "type": 20,
+  "name": "Max Speed",
+  "help": "Increases max Speed value when beginning a Career playthrough",
+  "format": "number",
+  "format_confirmed": false
+ },
+ {
+  "type": 21,
+  "name": "Max Stamina",
+  "help": "Increases max Stamina value when beginning a Career playthrough",
+  "format": "number",
+  "format_confirmed": false
+ },
+ {
+  "type": 22,
+  "name": "Max Power",
+  "help": "Increases max Power value when beginning a Career playthrough",
+  "format": "number",
+  "format_confirmed": false
+ },
+ {
+  "type": 23,
+  "name": "Max Guts",
+  "help": "Increases max Guts value when beginning a Career playthrough",
+  "format": "number",
+  "format_confirmed": false
+ },
+ {
+  "type": 24,
+  "name": "Max Wit",
+  "help": "Increases max Wit value when beginning a Career playthrough",
+  "format": "number",
+  "format_confirmed": false
+ },
+ {
+  "type": 25,
+  "name": "Event Recovery",
+  "help": "Increases Energy recovery from this Support Card's events",
+  "format": "percent",
+  "format_confirmed": true
+ },
+ {
+  "type": 26,
+  "name": "Event Effectiveness",
+  "help": "Increases stat gain from this Support Card's events",
+  "format": "percent",
+  "format_confirmed": true
+ },
+ {
+  "type": 27,
+  "name": "Failure Protection",
+  "help": "Decreases the probability of failure when training together",
+  "format": "percent",
+  "format_confirmed": true
+ },
+ {
+  "type": 28,
+  "name": "Energy Cost Reduction",
+  "help": "Decreases Energy consumed when training together",
+  "format": "percent",
+  "format_confirmed": true
+ },
+ {
+  "type": 29,
+  "name": "Minigame Effectiveness",
+  "help": "Increases stat gain from minigames",
+  "format": "number",
+  "format_confirmed": false
+ },
+ {
+  "type": 30,
+  "name": "Skill Point Bonus",
+  "help": "Increases skill point gain when training together",
+  "format": "number",
+  "format_confirmed": true
+ },
+ {
+  "type": 31,
+  "name": "Wit Friendship Recovery",
+  "help": "Increases Energy recovery from Wit Friendship Training",
+  "format": "number",
+  "format_confirmed": true
+ }
+]

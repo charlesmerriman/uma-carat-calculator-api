@@ -34,6 +34,9 @@ class UmaSerializer(FirstJpDateMixin, serializers.ModelSerializer):
             # Null until imported, which the client reads as ★3, the same
             # default is_three_star applies.
             "rarity",
+            # The key of the uma's Encyclopedia page (/app/umas/<game_id>),
+            # which the Timeline's tiles link to. Null until imported.
+            "game_id",
         )
 
 

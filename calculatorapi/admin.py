@@ -81,6 +81,7 @@ from .admin_patreon_import import (
     apply_patreon_import,
     parse_patreon_csv,
 )
+from .global_release import card_is_released, uma_is_released
 from .predictions import GAME_EVENT_END_DATE_BUFFER
 from .models.uma import CASUAL_IDS, TRAINEE_IDS
 from .models import (
@@ -573,7 +574,10 @@ class UmaAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
     # required: autocomplete source for banner inlines. `=game_id` is an exact
     # match, so typing an id finds one row rather than every name containing it.
     search_fields = ("name", "=game_id")
-    readonly_fields = ("image_preview", "borderless_preview", "is_on_global")
+    # The Encyclopedia's import-only columns are read-only: nothing an editor
+    # types there would survive the next deploy's import.
+    readonly_fields = ("image_preview", "borderless_preview", "on_global_now", "global_release_at",
+                       "jp_name", "jp_title", "translated_title", "star_stats", "career_objectives")
     fieldsets = (
         (None, {"fields": (
             "name", "game_id", "image", "image_preview",
@@ -599,16 +603,24 @@ class UmaAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
                 "so edits here do not stick. Fix the source instead."
             ),
             "fields": (
-                "is_on_global", "title", "running_style",
+                ("on_global_now", "global_release_at"), ("title", "translated_title"), ("jp_name", "jp_title"),
+                "running_style",
                 ("apt_turf", "apt_dirt"),
                 ("apt_short", "apt_mile", "apt_medium", "apt_long"),
                 ("apt_front", "apt_pace", "apt_late", "apt_end"),
                 ("base_speed", "base_stamina", "base_power", "base_guts", "base_wit"),
                 ("growth_speed", "growth_stamina", "growth_power", "growth_guts", "growth_wit"),
+                "star_stats", "career_objectives",
             ),
         }),
     )
 
+
+    # The site's "On global" tag as a player sees it now: the game's release
+    # date (beside it) or a started confirmed global banner (global_release.py).
+    @admin.display(description="On global now", boolean=True)
+    def on_global_now(self, obj):
+        return uma_is_released(obj) if obj.pk else None
 
     @admin.display(description="Borderless preview")
     def borderless_preview(self, obj):
@@ -827,7 +839,8 @@ class SupportCardAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
     list_filter = ("card_type", "rarity", "is_placeholder", PURPOSE_FILTER)
     ordering = ("name",)
     search_fields = ("name", "=game_id")  # required: autocomplete source for banner inlines
-    readonly_fields = ("image_preview", "borderless_preview", "is_on_global", "global_release_at")
+    readonly_fields = ("image_preview", "borderless_preview", "on_global_now", "global_release_at",
+                       "jp_name", "jp_title", "translated_title", "effects", "unique_effect")
     # Explicit since purpose arrived: Django's every-field default form had
     # nowhere to say that one of these boxes is public.
     fieldsets = (
@@ -841,10 +854,15 @@ class SupportCardAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
                 "Filled by the game-data import and overwritten by the next one, "
                 "so edits here do not stick. Fix the source instead."
             ),
-            "fields": ("is_on_global", "global_release_at", "title", "card_type", "rarity", "character_id",
-                       "group_members"),
+            "fields": (("on_global_now", "global_release_at"), ("title", "translated_title"), ("jp_name", "jp_title"),
+                       "card_type", "rarity", "character_id", "group_members", "effects", "unique_effect"),
         }),
     )
+
+    # The site's "On global" tag now; see UmaAdmin.on_global_now.
+    @admin.display(description="On global now", boolean=True)
+    def on_global_now(self, obj):
+        return card_is_released(obj) if obj.pk else None
 
     @admin.display(description="Borderless preview")
     def borderless_preview(self, obj):

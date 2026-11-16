@@ -15,6 +15,7 @@ from django.utils import timezone
 
 from calculatorapi import support_backfill
 from calculatorapi.management.commands.import_game_data import GLOBAL_LAUNCH
+from calculatorapi.global_release import game_release_passed
 from calculatorapi.models import (
     Uma, SupportCard,
     BannerTimeline, BannerUma, BannerSupport,
@@ -624,9 +625,12 @@ class ImportGameDataSupportCardTests(CalculatorTestCase):
         # 2021-02-24, the date the client gives every launch card.
         self.assertEqual(self._released(start_date=1614124800), GLOBAL_LAUNCH)
 
-    def test_a_card_that_isnt_out_has_no_release_date(self):
-        # 2099-01-01, the client's "not released here" mark.
-        self.assertIsNone(self._released(start_date=4070908800))
+    def test_a_card_that_isnt_out_keeps_the_games_date_and_is_not_out(self):
+        # 2099-01-01, the client's "not released here" mark: stored as the game
+        # has it, and global_release.py keeps it off global until then.
+        released = self._released(start_date=4070908800)
+        self.assertEqual(released.year, 2099)
+        self.assertIsNone(game_release_passed(released))
 
     def test_a_card_with_no_date_has_no_release_date(self):
         self.assertIsNone(self._released())

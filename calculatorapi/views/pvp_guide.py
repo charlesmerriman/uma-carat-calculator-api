@@ -25,13 +25,14 @@ client's banner data only knows cards that were on a banner, and skills are not
 on the client at all yet.
 """
 
-from django.db.models import Count, Exists, F, OuterRef, Subquery
+from django.db.models import Count, Exists, F, OuterRef, Q, Subquery
 from rest_framework import permissions, serializers
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
 from calculatorapi import guide_access, pvp_guide_editing, skill_text
 from calculatorapi.pvp_guides import guide_queryset
+from calculatorapi.global_release import released_cards, released_umas
 from calculatorapi.models import (
     GalleryComment,
     ChampionsMeeting,
@@ -54,6 +55,7 @@ from calculatorapi.models import (
 )
 from calculatorapi.models.pvp_guide import STYLE_RANK, find_skill_mentions
 from calculatorapi.models.skill import skill_families
+from calculatorapi.skill_types import skill_type
 from calculatorapi.views.pvp_catalogue import APTITUDE_FIELDS
 
 # The URL's kind -> the guide's FK to that event.
@@ -192,17 +194,28 @@ class _SkillSerializer(serializers.ModelSerializer):
     readable = serializers.SerializerMethodField()
     sources = serializers.SerializerMethodField()
     # A unique's inherited copy (Skill.is_inherited_unique): a white by rarity,
-    # framed in the unique's purple on the site. Not `unique_of`, which names
-    # the outfit whose OWN unique a skill is and stays null on the copy.
+    # framed in the unique's purple on the site. `unique_of` names the outfit
+    # on both the unique and its copy (_unique_of); this tells them apart.
     is_inherited = serializers.BooleanField(source="is_inherited_unique", read_only=True)
+    # The Skills list's type key ("velocity", skill_types.py), for the hover
+    # card's header, beside `cost` (skill points; null for a unique). The same
+    # two facts GET /skills sends, so the card reads alike on a guide and in
+    # the Encyclopedia.
+    type = serializers.SerializerMethodField()
 
     class Meta:
         model = Skill
         fields = (
-            "id", "name", "description", "image", "rarity", "unique_of", "is_inherited",
+            # game_id: the skill's Encyclopedia page (/app/skills/<game_id>), which the
+            # hover card links for early access.
+            "id", "game_id", "name", "description", "image", "rarity", "unique_of", "is_inherited",
             "version", "tier", "is_evolved", "versions",
             "availability", "uses_translation", "readable", "sources",
+            "cost", "type",
         )
+
+    def get_type(self, obj):
+        return skill_type(obj.icon_id, obj.effects)
 
     def get_readable(self, obj):
         return skill_text.describe(obj, self.context["text"])
@@ -303,20 +316,41 @@ def _ordered_key(row):
     return (_by_style(row), row.order, row.id)
 
 
-def _unique_of(skill_ids):
-    """{skill id: outfit name} for the skills that are some outfit's unique.
+# A unique's inherited copy is the same game id with its leading 1 made a 9
+# (Shooting Star 100011, its copy 900011); true of all 272 uniques that have
+# one (2026-11-12). The game links them by nothing else.
+INHERITED_OFFSET = 800000
 
-    One query for the whole guide. If two outfits ever share a unique, the
+
+def _unique_of(skill_ids):
+    """{skill id: outfit name} for the skills that are some outfit's unique,
+    and for each unique's inherited copy, which names the same outfit
+    (Daptrius, 2026-11-12: "Lights of Vaudeville (Fuji Kiseki)" whichever
+    version a guide recommends).
+
+    Two queries for the whole guide. If two outfits ever share a unique, the
     lower uma id wins, so the answer is stable between requests.
     """
+    copies = dict(
+        Skill.objects.filter(pk__in=skill_ids, game_id__gte=900000, game_id__lt=1000000)
+        .values_list("pk", "game_id")
+    )
+    unique_game_ids = {game_id - INHERITED_OFFSET for game_id in copies.values()}
     rows = (
-        UmaSkill.objects.filter(skill_id__in=skill_ids, source=UmaSkillSource.UNIQUE)
-        .select_related("uma")
+        UmaSkill.objects.filter(
+            Q(skill_id__in=skill_ids) | Q(skill__game_id__in=unique_game_ids),
+            source=UmaSkillSource.UNIQUE,
+        )
+        .select_related("uma", "skill")
         .order_by("uma_id")
     )
-    owners = {}
+    owners, by_game_id = {}, {}
     for row in rows:
         owners.setdefault(row.skill_id, row.uma.name)
+        by_game_id.setdefault(row.skill.game_id, row.uma.name)
+    for pk, game_id in copies.items():
+        if game_id - INHERITED_OFFSET in by_game_id:
+            owners.setdefault(pk, by_game_id[game_id - INHERITED_OFFSET])
     return owners
 
 
@@ -386,26 +420,31 @@ def _sources(skill_ids):
     Outfits and cards on global come first, so a player sees what they can get.
     """
     found = {}
+    # Out on Global right now (global_release.py). The sort below is stable,
+    # so the out ones move to the front and each half keeps the SQL order.
+    out_umas, out_cards = released_umas(), released_cards()
 
     def entry(skill_id):
         return found.setdefault(skill_id, {"umas": [], "uma_count": 0, "cards": [], "card_count": 0})
 
-    for row in UmaSkill.objects.filter(skill_id__in=skill_ids).select_related("uma").order_by(
-        "-uma__is_on_global", "source", "uma__name",
-    ):
+    uma_rows = UmaSkill.objects.filter(skill_id__in=skill_ids).select_related("uma").order_by(
+        "source", "uma__name",
+    )
+    for row in sorted(uma_rows, key=lambda row: row.uma_id not in out_umas):
         item = entry(row.skill_id)
         item["uma_count"] += 1
         if len(item["umas"]) < SOURCES_SHOWN:
             item["umas"].append({"name": row.uma.name, "source": row.source, "level": row.level,
-                                 "on_global": row.uma.is_on_global})
-    for row in SupportCardSkill.objects.filter(skill_id__in=skill_ids).select_related(
+                                 "on_global": row.uma_id in out_umas})
+    card_rows = SupportCardSkill.objects.filter(skill_id__in=skill_ids).select_related(
         "support_card",
-    ).order_by("-support_card__is_on_global", "source", "support_card__name"):
+    ).order_by("source", "support_card__name")
+    for row in sorted(card_rows, key=lambda row: row.support_card_id not in out_cards):
         item = entry(row.skill_id)
         item["card_count"] += 1
         if len(item["cards"]) < SOURCES_SHOWN:
             item["cards"].append({"name": row.support_card.name, "source": row.source,
-                                  "on_global": row.support_card.is_on_global})
+                                  "on_global": row.support_card_id in out_cards})
     return found
 
 

@@ -1,0 +1,10966 @@
+[
+ {
+  "chara_id": 1001,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904185
+   },
+   {
+    "turn": 27,
+    "kind": 1,
+    "race": "きさらぎ賞",
+    "grade": 300,
+    "top": 5,
+    "race_instance_id": 300901
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100601
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 2,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1002,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904185
+   },
+   {
+    "turn": 27,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 5000,
+    "value_2": 0
+   },
+   {
+    "turn": 29,
+    "kind": 1,
+    "race": "弥生賞",
+    "grade": 200,
+    "top": 5,
+    "race_instance_id": 200601
+   },
+   {
+    "turn": 42,
+    "kind": 1,
+    "race": "神戸新聞杯",
+    "grade": 200,
+    "top": 3,
+    "race_instance_id": 202401
+   },
+   {
+    "turn": 53,
+    "kind": 1,
+    "race": "金鯱賞",
+    "grade": 200,
+    "top": 1,
+    "race_instance_id": 200701
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 67,
+    "kind": 1,
+    "race": "毎日王冠",
+    "grade": 200,
+    "top": 1,
+    "race_instance_id": 202601
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101601
+   }
+  ]
+ },
+ {
+  "chara_id": 1003,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904181
+   },
+   {
+    "turn": 26,
+    "kind": 1,
+    "race": "若駒ステークス",
+    "grade": 400,
+    "top": 3,
+    "race_instance_id": 400901
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100501
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100601
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 2,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1004,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 901110
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "朝日杯フューチュリティステークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 102201
+   },
+   {
+    "turn": 30,
+    "kind": 1,
+    "race": "スプリングステークス",
+    "grade": 200,
+    "top": 3,
+    "race_instance_id": 201001
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100501
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 0,
+    "race_instance_id": 102301
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "大阪杯",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 100301
+   },
+   {
+    "turn": 59,
+    "kind": 1,
+    "race": "安田記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101101
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101601
+   }
+  ]
+ },
+ {
+  "chara_id": 1005,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904191
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "朝日杯フューチュリティステークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 102201
+   },
+   {
+    "turn": 29,
+    "kind": 1,
+    "race": "弥生賞",
+    "grade": 200,
+    "top": 5,
+    "race_instance_id": 200601
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100501
+   },
+   {
+    "turn": 33,
+    "kind": 1,
+    "race": "NHKマイルカップ",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100701
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 0,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 46,
+    "kind": 1,
+    "race": "マイルチャンピオンシップ",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101801
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "高松宮記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100201
+   },
+   {
+    "turn": 59,
+    "kind": 1,
+    "race": "安田記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101101
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 0,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1006,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904186
+   },
+   {
+    "turn": 24,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 3000,
+    "value_2": 0
+   },
+   {
+    "turn": 33,
+    "kind": 1,
+    "race": "NHKマイルカップ",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100701
+   },
+   {
+    "turn": 46,
+    "kind": 1,
+    "race": "マイルチャンピオンシップ",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101801
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 102301
+   },
+   {
+    "turn": 60,
+    "kind": 2,
+    "condition_id": 100,
+    "value_1": 3,
+    "value_2": 2
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1007,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904184
+   },
+   {
+    "turn": 24,
+    "kind": 1,
+    "race": "ホープフルステークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 102401
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100501
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 102301
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100601
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1008,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904182
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "阪神ジュベナイルフィリーズ",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 102101
+   },
+   {
+    "turn": 29,
+    "kind": 1,
+    "race": "チューリップ賞",
+    "grade": 200,
+    "top": 5,
+    "race_instance_id": 301801
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "桜花賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100401
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "秋華賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101401
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 0,
+    "race_instance_id": 102301
+   },
+   {
+    "turn": 57,
+    "kind": 1,
+    "race": "ヴィクトリアマイル",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100801
+   },
+   {
+    "turn": 59,
+    "kind": 1,
+    "race": "安田記念",
+    "grade": 100,
+    "top": 2,
+    "race_instance_id": 101101
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101601
+   }
+  ]
+ },
+ {
+  "chara_id": 1009,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904183
+   },
+   {
+    "turn": 29,
+    "kind": 1,
+    "race": "チューリップ賞",
+    "grade": 200,
+    "top": 5,
+    "race_instance_id": 301801
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "桜花賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100401
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "オークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100901
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "秋華賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101401
+   },
+   {
+    "turn": 45,
+    "kind": 1,
+    "race": "エリザベス女王杯",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101701
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "大阪杯",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100301
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1010,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 902790
+   },
+   {
+    "turn": 25,
+    "kind": 1,
+    "race": "シンザン記念",
+    "grade": 300,
+    "top": 5,
+    "race_instance_id": 300301
+   },
+   {
+    "turn": 33,
+    "kind": 1,
+    "race": "NHKマイルカップ",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100701
+   },
+   {
+    "turn": 36,
+    "kind": 1,
+    "race": "ユニコーンステークス",
+    "grade": 300,
+    "top": 5,
+    "race_instance_id": 303301
+   },
+   {
+    "turn": 46,
+    "kind": 1,
+    "race": "マイルチャンピオンシップ",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101801
+   },
+   {
+    "turn": 59,
+    "kind": 1,
+    "race": "安田記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101101
+   },
+   {
+    "turn": 66,
+    "kind": 1,
+    "race": "スプリンターズステークス",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101301
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "マイルチャンピオンシップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101801
+   }
+  ]
+ },
+ {
+  "chara_id": 1011,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 901210
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "朝日杯フューチュリティステークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 102201
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 46,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 102301
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 67,
+    "kind": 1,
+    "race": "毎日王冠",
+    "grade": 200,
+    "top": 1,
+    "race_instance_id": 202601
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1012,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904190
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "阪神ジュベナイルフィリーズ",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 102101
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "桜花賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100401
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "オークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100901
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "秋華賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101401
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 102301
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "大阪杯",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 100301
+   },
+   {
+    "turn": 59,
+    "kind": 1,
+    "race": "安田記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101101
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1013,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904185
+   },
+   {
+    "turn": 24,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 3000,
+    "value_2": 0
+   },
+   {
+    "turn": 42,
+    "kind": 1,
+    "race": "神戸新聞杯",
+    "grade": 200,
+    "top": 3,
+    "race_instance_id": 202401
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 100601
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 2,
+    "race_instance_id": 102501
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101601
+   }
+  ]
+ },
+ {
+  "chara_id": 1014,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 902790
+   },
+   {
+    "turn": 27,
+    "kind": 1,
+    "race": "共同通信杯",
+    "grade": 300,
+    "top": 5,
+    "race_instance_id": 301201
+   },
+   {
+    "turn": 33,
+    "kind": 1,
+    "race": "NHKマイルカップ",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100701
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 43,
+    "kind": 1,
+    "race": "毎日王冠",
+    "grade": 200,
+    "top": 3,
+    "race_instance_id": 202601
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1015,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904183
+   },
+   {
+    "turn": 28,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 5000,
+    "value_2": 0
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100501
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 102301
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100601
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 2,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1016,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904189
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "朝日杯フューチュリティステークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 102201
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100501
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 102301
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "阪神大賞典",
+    "grade": 200,
+    "top": 1,
+    "race_instance_id": 200901
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 100601
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 100601
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1017,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 903720
+   },
+   {
+    "turn": 19,
+    "kind": 1,
+    "race": "サウジアラビアロイヤルカップ",
+    "grade": 300,
+    "top": 5,
+    "race_instance_id": 305701
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100501
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 102301
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100601
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 2,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1018,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904184
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "阪神ジュベナイルフィリーズ",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 102101
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "桜花賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100401
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "オークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100901
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "秋華賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101401
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "大阪杯",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100301
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 64,
+    "kind": 1,
+    "race": "札幌記念",
+    "grade": 200,
+    "top": 1,
+    "race_instance_id": 202001
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101601
+   }
+  ]
+ },
+ {
+  "chara_id": 1019,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 902790
+   },
+   {
+    "turn": 28,
+    "kind": 1,
+    "race": "ヒヤシンスステークス",
+    "grade": 400,
+    "top": 3,
+    "race_instance_id": 401801
+   },
+   {
+    "turn": 33,
+    "kind": 1,
+    "race": "NHKマイルカップ",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100701
+   },
+   {
+    "turn": 37,
+    "kind": 1,
+    "race": "ジャパンダートダービー",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 110201
+   },
+   {
+    "turn": 46,
+    "kind": 1,
+    "race": "マイルチャンピオンシップ",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101801
+   },
+   {
+    "turn": 60,
+    "kind": 2,
+    "condition_id": 100,
+    "value_1": 3,
+    "value_2": 3
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101601
+   }
+  ]
+ },
+ {
+  "chara_id": 1020,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 901240
+   },
+   {
+    "turn": 25,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 3000,
+    "value_2": 0
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100501
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 102301
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100601
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1021,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904185
+   },
+   {
+    "turn": 29,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 5000,
+    "value_2": 0
+   },
+   {
+    "turn": 49,
+    "kind": 2,
+    "condition_id": 300,
+    "value_1": 3,
+    "value_2": 4
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "阪神大賞典",
+    "grade": 200,
+    "top": 3,
+    "race_instance_id": 200901
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100601
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1022,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904185
+   },
+   {
+    "turn": 24,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 3000,
+    "value_2": 0
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "桜花賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100401
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "オークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100901
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "秋華賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101401
+   },
+   {
+    "turn": 45,
+    "kind": 1,
+    "race": "エリザベス女王杯",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101701
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "大阪杯",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100301
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 64,
+    "kind": 1,
+    "race": "札幌記念",
+    "grade": 200,
+    "top": 3,
+    "race_instance_id": 202001
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 69,
+    "kind": 1,
+    "race": "エリザベス女王杯",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101701
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "マイルチャンピオンシップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101801
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1023,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904186
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "朝日杯フューチュリティステークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 102201
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100501
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 102701
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1024,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904183
+   },
+   {
+    "turn": 37,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 10000,
+    "value_2": 0
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 102301
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "阪神大賞典",
+    "grade": 200,
+    "top": 2,
+    "race_instance_id": 200901
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100601
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1025,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 902810
+   },
+   {
+    "turn": 26,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 4000,
+    "value_2": 0
+   },
+   {
+    "turn": 29,
+    "kind": 1,
+    "race": "弥生賞",
+    "grade": 200,
+    "top": 5,
+    "race_instance_id": 200601
+   },
+   {
+    "turn": 42,
+    "kind": 1,
+    "race": "セントライト記念",
+    "grade": 200,
+    "top": 3,
+    "race_instance_id": 202301
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 102301
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100601
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1026,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904187
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "朝日杯フューチュリティステークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 102201
+   },
+   {
+    "turn": 30,
+    "kind": 1,
+    "race": "スプリングステークス",
+    "grade": 200,
+    "top": 5,
+    "race_instance_id": 201001
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100501
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100601
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 2,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1027,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 902810
+   },
+   {
+    "turn": 25,
+    "kind": 1,
+    "race": "ジュニアカップ",
+    "grade": 400,
+    "top": 3,
+    "race_instance_id": 400201
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100501
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 102301
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100601
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102501
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1028,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904193
+   },
+   {
+    "turn": 23,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 3000,
+    "value_2": 0
+   },
+   {
+    "turn": 37,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 10000,
+    "value_2": 0
+   },
+   {
+    "turn": 42,
+    "kind": 1,
+    "race": "スプリンターズステークス",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101301
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "スワンステークス",
+    "grade": 200,
+    "top": 3,
+    "race_instance_id": 202901
+   },
+   {
+    "turn": 46,
+    "kind": 1,
+    "race": "マイルチャンピオンシップ",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101801
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "高松宮記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 100201
+   },
+   {
+    "turn": 59,
+    "kind": 1,
+    "race": "安田記念",
+    "grade": 100,
+    "top": 2,
+    "race_instance_id": 101101
+   },
+   {
+    "turn": 66,
+    "kind": 1,
+    "race": "スプリンターズステークス",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101301
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "マイルチャンピオンシップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101801
+   }
+  ]
+ },
+ {
+  "chara_id": 1029,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904190
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "阪神ジュベナイルフィリーズ",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 102101
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "桜花賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100401
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "オークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100901
+   },
+   {
+    "turn": 38,
+    "kind": 1,
+    "race": "クイーンステークス",
+    "grade": 300,
+    "top": 1,
+    "race_instance_id": 304301
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "秋華賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101401
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "大阪杯",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100301
+   },
+   {
+    "turn": 57,
+    "kind": 1,
+    "race": "ヴィクトリアマイル",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100801
+   },
+   {
+    "turn": 69,
+    "kind": 1,
+    "race": "エリザベス女王杯",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101701
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101901
+   }
+  ]
+ },
+ {
+  "chara_id": 1030,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 903720
+   },
+   {
+    "turn": 30,
+    "kind": 1,
+    "race": "スプリングステークス",
+    "grade": 200,
+    "top": 5,
+    "race_instance_id": 201001
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "日経賞",
+    "grade": 200,
+    "top": 3,
+    "race_instance_id": 201101
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 100601
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 102501
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1031,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904190
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "朝日杯フューチュリティステークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 102201
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100501
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 0,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "大阪杯",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100301
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 102501
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1032,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904185
+   },
+   {
+    "turn": 29,
+    "kind": 1,
+    "race": "弥生賞",
+    "grade": 200,
+    "top": 5,
+    "race_instance_id": 200601
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100501
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 33,
+    "kind": 1,
+    "race": "NHKマイルカップ",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100701
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "大阪杯",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100301
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1033,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904183
+   },
+   {
+    "turn": 24,
+    "kind": 1,
+    "race": "ホープフルステークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 102401
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100501
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 0,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101901
+   }
+  ]
+ },
+ {
+  "chara_id": 1034,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904196
+   },
+   {
+    "turn": 24,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 3000,
+    "value_2": 0
+   },
+   {
+    "turn": 37,
+    "kind": 1,
+    "race": "ジャパンダートダービー",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 110201
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "東京大賞典",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 110601
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100601
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 67,
+    "kind": 1,
+    "race": "毎日王冠",
+    "grade": 200,
+    "top": 2,
+    "race_instance_id": 202601
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1035,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 901240
+   },
+   {
+    "turn": 24,
+    "kind": 1,
+    "race": "ホープフルステークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 102401
+   },
+   {
+    "turn": 29,
+    "kind": 1,
+    "race": "弥生賞",
+    "grade": 200,
+    "top": 5,
+    "race_instance_id": 200601
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100501
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "大阪杯",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100301
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1036,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 902810
+   },
+   {
+    "turn": 24,
+    "kind": 1,
+    "race": "ホープフルステークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 102401
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100501
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 46,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 0,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100601
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1037,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904185
+   },
+   {
+    "turn": 25,
+    "kind": 1,
+    "race": "京成杯",
+    "grade": 300,
+    "top": 5,
+    "race_instance_id": 300601
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100501
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 46,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 0,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 0,
+    "race_instance_id": 102301
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "大阪杯",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100301
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100601
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1038,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904188
+   },
+   {
+    "turn": 23,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 3000,
+    "value_2": 0
+   },
+   {
+    "turn": 29,
+    "kind": 1,
+    "race": "フィリーズレビュー",
+    "grade": 200,
+    "top": 5,
+    "race_instance_id": 200801
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "葵ステークス",
+    "grade": 300,
+    "top": 5,
+    "race_instance_id": 405001
+   },
+   {
+    "turn": 36,
+    "kind": 1,
+    "race": "函館スプリントステークス",
+    "grade": 300,
+    "top": 3,
+    "race_instance_id": 303401
+   },
+   {
+    "turn": 42,
+    "kind": 1,
+    "race": "スプリンターズステークス",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101301
+   },
+   {
+    "turn": 53,
+    "kind": 1,
+    "race": "オーシャンステークス",
+    "grade": 300,
+    "top": 3,
+    "race_instance_id": 301901
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "高松宮記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 100201
+   },
+   {
+    "turn": 66,
+    "kind": 1,
+    "race": "スプリンターズステークス",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101301
+   }
+  ]
+ },
+ {
+  "chara_id": 1039,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904186
+   },
+   {
+    "turn": 31,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 7000,
+    "value_2": 0
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "オークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100901
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "秋華賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101401
+   },
+   {
+    "turn": 45,
+    "kind": 1,
+    "race": "エリザベス女王杯",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101701
+   },
+   {
+    "turn": 53,
+    "kind": 1,
+    "race": "金鯱賞",
+    "grade": 200,
+    "top": 3,
+    "race_instance_id": 200701
+   },
+   {
+    "turn": 57,
+    "kind": 1,
+    "race": "ヴィクトリアマイル",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100801
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 69,
+    "kind": 1,
+    "race": "エリザベス女王杯",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101701
+   }
+  ]
+ },
+ {
+  "chara_id": 1040,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904192
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "阪神ジュベナイルフィリーズ",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 102101
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100501
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 102301
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "大阪杯",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100301
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100601
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101901
+   }
+  ]
+ },
+ {
+  "chara_id": 1041,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 901110
+   },
+   {
+    "turn": 21,
+    "kind": 1,
+    "race": "京王杯ジュニアステークス",
+    "grade": 200,
+    "top": 5,
+    "race_instance_id": 203001
+   },
+   {
+    "turn": 30,
+    "kind": 1,
+    "race": "スプリングステークス",
+    "grade": 200,
+    "top": 0,
+    "race_instance_id": 201001
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "葵ステークス",
+    "grade": 300,
+    "top": 5,
+    "race_instance_id": 405001
+   },
+   {
+    "turn": 42,
+    "kind": 1,
+    "race": "スプリンターズステークス",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101301
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "高松宮記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100201
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "函館スプリントステークス",
+    "grade": 300,
+    "top": 1,
+    "race_instance_id": 303401
+   },
+   {
+    "turn": 61,
+    "kind": 1,
+    "race": "CBC賞",
+    "grade": 300,
+    "top": 1,
+    "race_instance_id": 303501
+   },
+   {
+    "turn": 65,
+    "kind": 1,
+    "race": "セントウルステークス",
+    "grade": 200,
+    "top": 1,
+    "race_instance_id": 202101
+   },
+   {
+    "turn": 66,
+    "kind": 1,
+    "race": "スプリンターズステークス",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101301
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "マイルチャンピオンシップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101801
+   }
+  ]
+ },
+ {
+  "chara_id": 1042,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904199
+   },
+   {
+    "turn": 21,
+    "kind": 1,
+    "race": "デイリー杯ジュニアステークス",
+    "grade": 200,
+    "top": 5,
+    "race_instance_id": 203201
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "阪神ジュベナイルフィリーズ",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 102101
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "桜花賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100401
+   },
+   {
+    "turn": 33,
+    "kind": 1,
+    "race": "NHKマイルカップ",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100701
+   },
+   {
+    "turn": 41,
+    "kind": 1,
+    "race": "ローズステークス",
+    "grade": 200,
+    "top": 3,
+    "race_instance_id": 202201
+   },
+   {
+    "turn": 46,
+    "kind": 1,
+    "race": "マイルチャンピオンシップ",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101801
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "高松宮記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100201
+   },
+   {
+    "turn": 59,
+    "kind": 1,
+    "race": "安田記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101101
+   },
+   {
+    "turn": 66,
+    "kind": 1,
+    "race": "スプリンターズステークス",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101301
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "マイルチャンピオンシップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101801
+   }
+  ]
+ },
+ {
+  "chara_id": 1043,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 902790
+   },
+   {
+    "turn": 25,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 3000,
+    "value_2": 0
+   },
+   {
+    "turn": 36,
+    "kind": 1,
+    "race": "ユニコーンステークス",
+    "grade": 300,
+    "top": 5,
+    "race_instance_id": 303301
+   },
+   {
+    "turn": 37,
+    "kind": 1,
+    "race": "ジャパンダートダービー",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 110201
+   },
+   {
+    "turn": 50,
+    "kind": 1,
+    "race": "東海ステークス",
+    "grade": 200,
+    "top": 3,
+    "race_instance_id": 200201
+   },
+   {
+    "turn": 52,
+    "kind": 1,
+    "race": "フェブラリーステークス",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 100101
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "帝王賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 110101
+   },
+   {
+    "turn": 71,
+    "kind": 1,
+    "race": "チャンピオンズカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102001
+   }
+  ]
+ },
+ {
+  "chara_id": 1044,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904182
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "阪神ジュベナイルフィリーズ",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 102101
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "桜花賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100401
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "オークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100901
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "秋華賞",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101401
+   },
+   {
+    "turn": 45,
+    "kind": 1,
+    "race": "エリザベス女王杯",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101701
+   },
+   {
+    "turn": 59,
+    "kind": 1,
+    "race": "安田記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101101
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 69,
+    "kind": 1,
+    "race": "エリザベス女王杯",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101701
+   }
+  ]
+ },
+ {
+  "chara_id": 1045,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904185
+   },
+   {
+    "turn": 28,
+    "kind": 1,
+    "race": "すみれステークス",
+    "grade": 400,
+    "top": 3,
+    "race_instance_id": 402001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 102301
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "大阪杯",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100301
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100601
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1046,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 902790
+   },
+   {
+    "turn": 25,
+    "kind": 2,
+    "condition_id": 700,
+    "value_1": 1,
+    "value_2": 2
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 0,
+    "race_instance_id": 100501
+   },
+   {
+    "turn": 37,
+    "kind": 1,
+    "race": "ジャパンダートダービー",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 110201
+   },
+   {
+    "turn": 45,
+    "kind": 1,
+    "race": "JBCクラシック",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 110501
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "東京大賞典",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 110601
+   },
+   {
+    "turn": 52,
+    "kind": 1,
+    "race": "フェブラリーステークス",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 100101
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "帝王賞",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 110101
+   },
+   {
+    "turn": 69,
+    "kind": 1,
+    "race": "JBCクラシック",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 110501
+   },
+   {
+    "turn": 71,
+    "kind": 1,
+    "race": "チャンピオンズカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102001
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "東京大賞典",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 110601
+   }
+  ]
+ },
+ {
+  "chara_id": 1047,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 901240
+   },
+   {
+    "turn": 27,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 5000,
+    "value_2": 0
+   },
+   {
+    "turn": 32,
+    "kind": 1,
+    "race": "青葉賞",
+    "grade": 200,
+    "top": 5,
+    "race_instance_id": 201601
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 102301
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100601
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1048,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904183
+   },
+   {
+    "turn": 24,
+    "kind": 1,
+    "race": "ホープフルステークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 102401
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100501
+   },
+   {
+    "turn": 45,
+    "kind": 1,
+    "race": "アルゼンチン共和国杯",
+    "grade": 200,
+    "top": 3,
+    "race_instance_id": 203101
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 0,
+    "race_instance_id": 102301
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "大阪杯",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100301
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100601
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101601
+   }
+  ]
+ },
+ {
+  "chara_id": 1049,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 902810
+   },
+   {
+    "turn": 25,
+    "kind": 1,
+    "race": "京成杯",
+    "grade": 300,
+    "top": 5,
+    "race_instance_id": 300601
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100501
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 47,
+    "kind": 1,
+    "race": "中日新聞杯",
+    "grade": 300,
+    "top": 1,
+    "race_instance_id": 306801
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101901
+   }
+  ]
+ },
+ {
+  "chara_id": 1050,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904184
+   },
+   {
+    "turn": 24,
+    "kind": 1,
+    "race": "ホープフルステークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 102401
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100501
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 0,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "日経賞",
+    "grade": 200,
+    "top": 1,
+    "race_instance_id": 201101
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 102701
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1051,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904195
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "阪神ジュベナイルフィリーズ",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 102101
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "桜花賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100401
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "オークス",
+    "grade": 100,
+    "top": 0,
+    "race_instance_id": 100901
+   },
+   {
+    "turn": 42,
+    "kind": 1,
+    "race": "スプリンターズステークス",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101301
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "高松宮記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100201
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "マイラーズカップ",
+    "grade": 200,
+    "top": 3,
+    "race_instance_id": 201401
+   },
+   {
+    "turn": 59,
+    "kind": 1,
+    "race": "安田記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101101
+   },
+   {
+    "turn": 66,
+    "kind": 1,
+    "race": "スプリンターズステークス",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101301
+   }
+  ]
+ },
+ {
+  "chara_id": 1052,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 902730
+   },
+   {
+    "turn": 37,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 5000,
+    "value_2": 0
+   },
+   {
+    "turn": 45,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 9000,
+    "value_2": 0
+   },
+   {
+    "turn": 48,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 12000,
+    "value_2": 0
+   },
+   {
+    "turn": 50,
+    "kind": 1,
+    "race": "根岸ステークス",
+    "grade": 300,
+    "top": 5,
+    "race_instance_id": 300801
+   },
+   {
+    "turn": 52,
+    "kind": 1,
+    "race": "フェブラリーステークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100101
+   },
+   {
+    "turn": 63,
+    "kind": 1,
+    "race": "エルムステークス",
+    "grade": 300,
+    "top": 5,
+    "race_instance_id": 304701
+   },
+   {
+    "turn": 69,
+    "kind": 1,
+    "condition_id": 20002,
+    "value_1": 1,
+    "value_2": 0
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 0,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1053,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904197
+   },
+   {
+    "turn": 24,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 3000,
+    "value_2": 0
+   },
+   {
+    "turn": 29,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 6000,
+    "value_2": 0
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "スワンステークス",
+    "grade": 200,
+    "top": 3,
+    "race_instance_id": 202901
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "高松宮記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100201
+   },
+   {
+    "turn": 59,
+    "kind": 1,
+    "race": "安田記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101101
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 0,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 66,
+    "kind": 1,
+    "race": "スプリンターズステークス",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101301
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "マイルチャンピオンシップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101801
+   }
+  ]
+ },
+ {
+  "chara_id": 1054,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904197
+   },
+   {
+    "turn": 25,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 5000,
+    "value_2": 0
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "ニュージーランドトロフィー",
+    "grade": 200,
+    "top": 5,
+    "race_instance_id": 201301
+   },
+   {
+    "turn": 42,
+    "kind": 1,
+    "race": "スプリンターズステークス",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101301
+   },
+   {
+    "turn": 46,
+    "kind": 1,
+    "race": "マイルチャンピオンシップ",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101801
+   },
+   {
+    "turn": 52,
+    "kind": 1,
+    "race": "フェブラリーステークス",
+    "grade": 100,
+    "top": 0,
+    "race_instance_id": 100101
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "高松宮記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 100201
+   },
+   {
+    "turn": 59,
+    "kind": 1,
+    "race": "安田記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101101
+   },
+   {
+    "turn": 65,
+    "kind": 1,
+    "race": "セントウルステークス",
+    "grade": 200,
+    "top": 1,
+    "race_instance_id": 202101
+   },
+   {
+    "turn": 66,
+    "kind": 1,
+    "race": "スプリンターズステークス",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101301
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "マイルチャンピオンシップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101801
+   }
+  ]
+ },
+ {
+  "chara_id": 1055,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904183
+   },
+   {
+    "turn": 27,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 5000,
+    "value_2": 0
+   },
+   {
+    "turn": 47,
+    "kind": 1,
+    "race": "チャレンジカップ",
+    "grade": 300,
+    "top": 1,
+    "race_instance_id": 306701
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "大阪杯",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100301
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100601
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1056,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904185
+   },
+   {
+    "turn": 29,
+    "kind": 1,
+    "race": "弥生賞",
+    "grade": 200,
+    "top": 5,
+    "race_instance_id": 200601
+   },
+   {
+    "turn": 30,
+    "kind": 1,
+    "race": "スプリングステークス",
+    "grade": 200,
+    "top": 5,
+    "race_instance_id": 201001
+   },
+   {
+    "turn": 30,
+    "kind": 1,
+    "race": "毎日杯",
+    "grade": 300,
+    "top": 5,
+    "race_instance_id": 302301
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 53,
+    "kind": 1,
+    "race": "金鯱賞",
+    "grade": 200,
+    "top": 3,
+    "race_instance_id": 200701
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 63,
+    "kind": 1,
+    "race": "小倉記念",
+    "grade": 300,
+    "top": 2,
+    "race_instance_id": 304401
+   },
+   {
+    "turn": 61,
+    "kind": 1,
+    "race": "函館記念",
+    "grade": 300,
+    "top": 2,
+    "race_instance_id": 303901
+   },
+   {
+    "turn": 64,
+    "kind": 1,
+    "race": "札幌記念",
+    "grade": 200,
+    "top": 2,
+    "race_instance_id": 202001
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1057,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 902810
+   },
+   {
+    "turn": 27,
+    "kind": 1,
+    "race": "共同通信杯",
+    "grade": 300,
+    "top": 5,
+    "race_instance_id": 301201
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100501
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1058,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904183
+   },
+   {
+    "turn": 31,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 6000,
+    "value_2": 0
+   },
+   {
+    "turn": 44,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 15000,
+    "value_2": 0
+   },
+   {
+    "turn": 49,
+    "kind": 1,
+    "race": "日経新春杯",
+    "grade": 200,
+    "top": 3,
+    "race_instance_id": 200101
+   },
+   {
+    "turn": 53,
+    "kind": 1,
+    "race": "金鯱賞",
+    "grade": 200,
+    "top": 1,
+    "race_instance_id": 200701
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 2,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 2,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 2,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1059,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904191
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "阪神ジュベナイルフィリーズ",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 102101
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "桜花賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100401
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "オークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100901
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "秋華賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101401
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 0,
+    "race_instance_id": 102301
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "大阪杯",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100301
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 67,
+    "kind": 1,
+    "race": "府中ウマ娘ステークス",
+    "grade": 200,
+    "top": 1,
+    "race_instance_id": 202801
+   },
+   {
+    "turn": 69,
+    "kind": 1,
+    "race": "エリザベス女王杯",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101701
+   }
+  ]
+ },
+ {
+  "chara_id": 1060,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904183
+   },
+   {
+    "turn": 26,
+    "kind": 1,
+    "race": "若駒ステークス",
+    "grade": 400,
+    "top": 3,
+    "race_instance_id": 400901
+   },
+   {
+    "turn": 39,
+    "kind": 1,
+    "race": "小倉記念",
+    "grade": 300,
+    "top": 3,
+    "race_instance_id": 304401
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 102301
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 71,
+    "kind": 1,
+    "race": "中日新聞杯",
+    "grade": 300,
+    "top": 1,
+    "race_instance_id": 306801
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1061,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904182
+   },
+   {
+    "turn": 24,
+    "kind": 1,
+    "race": "ホープフルステークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 102401
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100501
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 0,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "高松宮記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 100201
+   },
+   {
+    "turn": 59,
+    "kind": 1,
+    "race": "安田記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101101
+   },
+   {
+    "turn": 66,
+    "kind": 1,
+    "race": "スプリンターズステークス",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101301
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101601
+   }
+  ]
+ },
+ {
+  "chara_id": 1062,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904181
+   },
+   {
+    "turn": 24,
+    "kind": 2,
+    "condition_id": 100,
+    "value_1": 5,
+    "value_2": 1
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100501
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 52,
+    "kind": 1,
+    "race": "ダイヤモンドステークス",
+    "grade": 300,
+    "top": 3,
+    "race_instance_id": 301401
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100601
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1063,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904204
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "阪神ジュベナイルフィリーズ",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 102101
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "桜花賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100401
+   },
+   {
+    "turn": 32,
+    "kind": 1,
+    "race": "フローラステークス",
+    "grade": 200,
+    "top": 5,
+    "race_instance_id": 201501
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "オークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100901
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "秋華賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101401
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "大阪杯",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100301
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 0,
+    "race_instance_id": 100601
+   },
+   {
+    "turn": 59,
+    "kind": 1,
+    "race": "安田記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101101
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 66,
+    "kind": 1,
+    "race": "オールカマー",
+    "grade": 200,
+    "top": 3,
+    "race_instance_id": 202501
+   },
+   {
+    "turn": 69,
+    "kind": 1,
+    "race": "エリザベス女王杯",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101701
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "マイルチャンピオンシップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101801
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 0,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1064,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904183
+   },
+   {
+    "turn": 35,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 9000,
+    "value_2": 0
+   },
+   {
+    "turn": 37,
+    "kind": 1,
+    "race": "函館記念",
+    "grade": 300,
+    "top": 3,
+    "race_instance_id": 303901
+   },
+   {
+    "turn": 49,
+    "kind": 1,
+    "race": "日経新春杯",
+    "grade": 200,
+    "top": 3,
+    "race_instance_id": 200101
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100601
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1065,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904201
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "阪神ジュベナイルフィリーズ",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 102101
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "葵ステークス",
+    "grade": 300,
+    "top": 5,
+    "race_instance_id": 405001
+   },
+   {
+    "turn": 46,
+    "kind": 1,
+    "race": "マイルチャンピオンシップ",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101801
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "高松宮記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100201
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "マイラーズカップ",
+    "grade": 200,
+    "top": 3,
+    "race_instance_id": 201401
+   },
+   {
+    "turn": 59,
+    "kind": 1,
+    "race": "安田記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101101
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "マイルチャンピオンシップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101801
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 0,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1066,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 901210
+   },
+   {
+    "turn": 29,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 5000,
+    "value_2": 0
+   },
+   {
+    "turn": 37,
+    "kind": 1,
+    "race": "ラジオNIKKEI賞",
+    "grade": 300,
+    "top": 5,
+    "race_instance_id": 303601
+   },
+   {
+    "turn": 42,
+    "kind": 1,
+    "race": "セントライト記念",
+    "grade": 200,
+    "top": 5,
+    "race_instance_id": 202301
+   },
+   {
+    "turn": 57,
+    "kind": 2,
+    "condition_id": 300,
+    "value_1": 3,
+    "value_2": 3
+   },
+   {
+    "turn": 61,
+    "kind": 1,
+    "race": "七夕賞",
+    "grade": 300,
+    "top": 1,
+    "race_instance_id": 303801
+   },
+   {
+    "turn": 66,
+    "kind": 1,
+    "race": "オールカマー",
+    "grade": 200,
+    "top": 1,
+    "race_instance_id": 202501
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 0,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1067,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904183
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100501
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 102301
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "大阪杯",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100301
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100601
+   },
+   {
+    "turn": 67,
+    "kind": 1,
+    "race": "京都大賞典",
+    "grade": 200,
+    "top": 1,
+    "race_instance_id": 202701
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1068,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 902810
+   },
+   {
+    "turn": 30,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 5000,
+    "value_2": 0
+   },
+   {
+    "turn": 42,
+    "kind": 1,
+    "race": "セントライト記念",
+    "grade": 200,
+    "top": 3,
+    "race_instance_id": 202301
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 102301
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "大阪杯",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100301
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100601
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1069,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904189
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "朝日杯フューチュリティステークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 102201
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 102801
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 59,
+    "kind": 1,
+    "race": "安田記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101101
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 2,
+    "race_instance_id": 101901
+   }
+  ]
+ },
+ {
+  "chara_id": 1070,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 901240
+   },
+   {
+    "turn": 19,
+    "kind": 1,
+    "race": "サウジアラビアロイヤルカップ",
+    "grade": 300,
+    "top": 5,
+    "race_instance_id": 305701
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100501
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 0,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 102301
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "大阪杯",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100301
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1071,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904194
+   },
+   {
+    "turn": 30,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 6000,
+    "value_2": 0
+   },
+   {
+    "turn": 32,
+    "kind": 1,
+    "race": "青葉賞",
+    "grade": 200,
+    "top": 5,
+    "race_instance_id": 201601
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 0,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "大阪杯",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100301
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 67,
+    "kind": 1,
+    "race": "毎日王冠",
+    "grade": 200,
+    "top": 3,
+    "race_instance_id": 202601
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101601
+   }
+  ]
+ },
+ {
+  "chara_id": 1072,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904185
+   },
+   {
+    "turn": 30,
+    "kind": 1,
+    "race": "毎日杯",
+    "grade": 300,
+    "top": 5,
+    "race_instance_id": 302301
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 102801
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 0,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "大阪杯",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100301
+   },
+   {
+    "turn": 59,
+    "kind": 1,
+    "race": "安田記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101101
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101601
+   }
+  ]
+ },
+ {
+  "chara_id": 1073,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904183
+   },
+   {
+    "turn": 33,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 5000,
+    "value_2": 0
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 0,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100601
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 67,
+    "kind": 1,
+    "race": "京都大賞典",
+    "grade": 200,
+    "top": 1,
+    "race_instance_id": 202701
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1074,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904183
+   },
+   {
+    "turn": 24,
+    "kind": 1,
+    "race": "ホープフルステークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 102401
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100501
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 47,
+    "kind": 1,
+    "race": "ステイヤーズステークス",
+    "grade": 200,
+    "top": 3,
+    "race_instance_id": 203301
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 100601
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1076,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 901240
+   },
+   {
+    "turn": 25,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 3000,
+    "value_2": 0
+   },
+   {
+    "turn": 32,
+    "kind": 2,
+    "condition_id": 300,
+    "value_1": 3,
+    "value_2": 1
+   },
+   {
+    "turn": 46,
+    "kind": 2,
+    "condition_id": 300,
+    "value_1": 3,
+    "value_2": 1
+   },
+   {
+    "turn": 49,
+    "kind": 1,
+    "race": "中山金杯",
+    "grade": 300,
+    "top": 1,
+    "race_instance_id": 300201
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100601
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1077,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904185
+   },
+   {
+    "turn": 24,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 3000,
+    "value_2": 0
+   },
+   {
+    "turn": 29,
+    "kind": 1,
+    "race": "弥生賞",
+    "grade": 200,
+    "top": 5,
+    "race_instance_id": 200601
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100501
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100601
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1078,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 901110
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "ニュージーランドトロフィー",
+    "grade": 200,
+    "top": 5,
+    "race_instance_id": 201301
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "葵ステークス",
+    "grade": 300,
+    "top": 5,
+    "race_instance_id": 405001
+   },
+   {
+    "turn": 42,
+    "kind": 1,
+    "race": "スプリンターズステークス",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101301
+   },
+   {
+    "turn": 46,
+    "kind": 1,
+    "race": "マイルチャンピオンシップ",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101801
+   },
+   {
+    "turn": 59,
+    "kind": 1,
+    "race": "安田記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101101
+   },
+   {
+    "turn": 66,
+    "kind": 1,
+    "race": "スプリンターズステークス",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101301
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101601
+   }
+  ]
+ },
+ {
+  "chara_id": 1079,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904205
+   },
+   {
+    "turn": 24,
+    "kind": 1,
+    "race": "全日本ジュニア優駿",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 110801
+   },
+   {
+    "turn": 37,
+    "kind": 1,
+    "race": "ジャパンダートダービー",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 110201
+   },
+   {
+    "turn": 45,
+    "kind": 1,
+    "race": "JBCクラシック",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 110501
+   },
+   {
+    "turn": 47,
+    "kind": 1,
+    "race": "チャンピオンズカップ",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 102001
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "東京大賞典",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 110601
+   },
+   {
+    "turn": 52,
+    "kind": 1,
+    "race": "フェブラリーステークス",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100101
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "ダイオライト記念",
+    "grade": 200,
+    "top": 1,
+    "race_instance_id": 204001
+   },
+   {
+    "turn": 57,
+    "kind": 1,
+    "race": "かしわ記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 110901
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "帝王賞",
+    "grade": 100,
+    "top": 2,
+    "race_instance_id": 110101
+   },
+   {
+    "turn": 69,
+    "kind": 1,
+    "race": "JBCクラシック",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 111601
+   }
+  ]
+ },
+ {
+  "chara_id": 1080,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904198
+   },
+   {
+    "turn": 32,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 5000,
+    "value_2": 0
+   },
+   {
+    "turn": 39,
+    "kind": 1,
+    "race": "レパードステークス",
+    "grade": 300,
+    "top": 5,
+    "race_instance_id": 304501
+   },
+   {
+    "turn": 45,
+    "kind": 1,
+    "race": "みやこステークス",
+    "grade": 300,
+    "top": 3,
+    "race_instance_id": 306101
+   },
+   {
+    "turn": 47,
+    "kind": 1,
+    "race": "チャンピオンズカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102001
+   },
+   {
+    "turn": 52,
+    "kind": 1,
+    "race": "フェブラリーステークス",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100101
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "帝王賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 110101
+   },
+   {
+    "turn": 67,
+    "kind": 1,
+    "race": "マイルチャンピオンシップ南部杯",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 103001
+   },
+   {
+    "turn": 69,
+    "kind": 1,
+    "race": "JBCクラシック",
+    "grade": 100,
+    "top": 2,
+    "race_instance_id": 110501
+   },
+   {
+    "turn": 71,
+    "kind": 1,
+    "race": "チャンピオンズカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102001
+   }
+  ]
+ },
+ {
+  "chara_id": 1081,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904208
+   },
+   {
+    "turn": 26,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 5000,
+    "value_2": 0
+   },
+   {
+    "turn": 38,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 10000,
+    "value_2": 0
+   },
+   {
+    "turn": 43,
+    "kind": 1,
+    "race": "マイルチャンピオンシップ南部杯",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 111001
+   },
+   {
+    "turn": 47,
+    "kind": 1,
+    "race": "チャンピオンズカップ",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 102001
+   },
+   {
+    "turn": 52,
+    "kind": 1,
+    "race": "フェブラリーステークス",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100101
+   },
+   {
+    "turn": 57,
+    "kind": 1,
+    "race": "かしわ記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 110901
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "帝王賞",
+    "grade": 100,
+    "top": 2,
+    "race_instance_id": 110101
+   },
+   {
+    "turn": 67,
+    "kind": 1,
+    "race": "マイルチャンピオンシップ南部杯",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 111001
+   },
+   {
+    "turn": 69,
+    "kind": 1,
+    "condition_id": 20002,
+    "value_1": 1,
+    "value_2": 0
+   },
+   {
+    "turn": 71,
+    "kind": 1,
+    "race": "チャンピオンズカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102001
+   }
+  ]
+ },
+ {
+  "chara_id": 1082,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904191
+   },
+   {
+    "turn": 33,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 7000,
+    "value_2": 0
+   },
+   {
+    "turn": 43,
+    "kind": 1,
+    "race": "府中ウマ娘ステークス",
+    "grade": 200,
+    "top": 3,
+    "race_instance_id": 202801
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "秋華賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101401
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "高松宮記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100201
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "マイラーズカップ",
+    "grade": 200,
+    "top": 1,
+    "race_instance_id": 201401
+   },
+   {
+    "turn": 59,
+    "kind": 1,
+    "race": "安田記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101101
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "スワンステークス",
+    "grade": 200,
+    "top": 2,
+    "race_instance_id": 202901
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "マイルチャンピオンシップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101801
+   }
+  ]
+ },
+ {
+  "chara_id": 1083,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 902810
+   },
+   {
+    "turn": 26,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 5000,
+    "value_2": 0
+   },
+   {
+    "turn": 32,
+    "kind": 1,
+    "race": "青葉賞",
+    "grade": 200,
+    "top": 5,
+    "race_instance_id": 201601
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102901
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 102301
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1084,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904192
+   },
+   {
+    "turn": 25,
+    "kind": 1,
+    "race": "シンザン記念",
+    "grade": 300,
+    "top": 5,
+    "race_instance_id": 300301
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100501
+   },
+   {
+    "turn": 33,
+    "kind": 1,
+    "race": "NHKマイルカップ",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100701
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 42,
+    "kind": 1,
+    "race": "神戸新聞杯",
+    "grade": 200,
+    "top": 3,
+    "race_instance_id": 202401
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 102901
+   },
+   {
+    "turn": 59,
+    "kind": 1,
+    "race": "安田記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101101
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101901
+   }
+  ]
+ },
+ {
+  "chara_id": 1085,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904186
+   },
+   {
+    "turn": 29,
+    "kind": 1,
+    "race": "フィリーズレビュー",
+    "grade": 200,
+    "top": 5,
+    "race_instance_id": 200801
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "桜花賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100401
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "オークス",
+    "grade": 100,
+    "top": 0,
+    "race_instance_id": 100901
+   },
+   {
+    "turn": 41,
+    "kind": 1,
+    "race": "ローズステークス",
+    "grade": 200,
+    "top": 3,
+    "race_instance_id": 202201
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "高松宮記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100201
+   },
+   {
+    "turn": 59,
+    "kind": 1,
+    "race": "安田記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101101
+   },
+   {
+    "turn": 66,
+    "kind": 1,
+    "race": "スプリンターズステークス",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101301
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "マイルチャンピオンシップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101801
+   }
+  ]
+ },
+ {
+  "chara_id": 1086,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904193
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "阪神ジュベナイルフィリーズ",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 102101
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "桜花賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100401
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "オークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100901
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "秋華賞",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101401
+   },
+   {
+    "turn": 57,
+    "kind": 1,
+    "race": "ヴィクトリアマイル",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 100801
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 69,
+    "kind": 1,
+    "race": "エリザベス女王杯",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101701
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101901
+   }
+  ]
+ },
+ {
+  "chara_id": 1087,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904199
+   },
+   {
+    "turn": 21,
+    "kind": 1,
+    "race": "ファンタジーステークス",
+    "grade": 300,
+    "top": 5,
+    "race_instance_id": 306001
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "阪神ジュベナイルフィリーズ",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 102101
+   },
+   {
+    "turn": 29,
+    "kind": 1,
+    "race": "フィリーズレビュー",
+    "grade": 200,
+    "top": 5,
+    "race_instance_id": 200801
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "桜花賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100401
+   },
+   {
+    "turn": 42,
+    "kind": 1,
+    "race": "スプリンターズステークス",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101301
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "高松宮記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100201
+   },
+   {
+    "turn": 66,
+    "kind": 1,
+    "race": "スプリンターズステークス",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101301
+   }
+  ]
+ },
+ {
+  "chara_id": 1088,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904194
+   },
+   {
+    "turn": 22,
+    "kind": 1,
+    "race": "東京スポーツ杯ジュニアステークス",
+    "grade": 300,
+    "top": 5,
+    "race_instance_id": 306401
+   },
+   {
+    "turn": 29,
+    "kind": 1,
+    "race": "弥生賞",
+    "grade": 200,
+    "top": 5,
+    "race_instance_id": 200601
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100501
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 51,
+    "kind": 1,
+    "race": "京都記念",
+    "grade": 200,
+    "top": 1,
+    "race_instance_id": 200401
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "大阪杯",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100301
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101901
+   }
+  ]
+ },
+ {
+  "chara_id": 1089,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904185
+   },
+   {
+    "turn": 24,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 3000,
+    "value_2": 0
+   },
+   {
+    "turn": 47,
+    "kind": 2,
+    "condition_id": 300,
+    "value_1": 3,
+    "value_2": 3
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "阪神大賞典",
+    "grade": 200,
+    "top": 1,
+    "race_instance_id": 200901
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100601
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 67,
+    "kind": 1,
+    "race": "京都大賞典",
+    "grade": 200,
+    "top": 3,
+    "race_instance_id": 202701
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101901
+   }
+  ]
+ },
+ {
+  "chara_id": 1090,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904207
+   },
+   {
+    "turn": 23,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 3000,
+    "value_2": 0
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "桜花賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100401
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "オークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100901
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "秋華賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101401
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "大阪杯",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100301
+   },
+   {
+    "turn": 57,
+    "kind": 1,
+    "race": "ヴィクトリアマイル",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 100801
+   },
+   {
+    "turn": 69,
+    "kind": 1,
+    "race": "エリザベス女王杯",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101701
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101901
+   }
+  ]
+ },
+ {
+  "chara_id": 1091,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904182
+   },
+   {
+    "turn": 30,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 5000,
+    "value_2": 0
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "桜花賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100401
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "オークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100901
+   },
+   {
+    "turn": 41,
+    "kind": 1,
+    "race": "紫苑ステークス",
+    "grade": 300,
+    "top": 3,
+    "race_instance_id": 305401
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "秋華賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101401
+   },
+   {
+    "turn": 52,
+    "kind": 1,
+    "race": "中山記念",
+    "grade": 200,
+    "top": 3,
+    "race_instance_id": 200501
+   },
+   {
+    "turn": 57,
+    "kind": 1,
+    "race": "ヴィクトリアマイル",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100801
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101901
+   }
+  ]
+ },
+ {
+  "chara_id": 1092,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904189
+   },
+   {
+    "turn": 27,
+    "kind": 1,
+    "race": "きさらぎ賞",
+    "grade": 300,
+    "top": 5,
+    "race_instance_id": 300901
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100501
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 0,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 46,
+    "kind": 1,
+    "race": "マイルチャンピオンシップ",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101801
+   },
+   {
+    "turn": 57,
+    "kind": 1,
+    "race": "新潟大賞典",
+    "grade": 300,
+    "top": 1,
+    "race_instance_id": 302801
+   },
+   {
+    "turn": 59,
+    "kind": 1,
+    "race": "安田記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101101
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 102901
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 103101
+   }
+  ]
+ },
+ {
+  "chara_id": 1093,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904203
+   },
+   {
+    "turn": 32,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 5000,
+    "value_2": 0
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "葵ステークス",
+    "grade": 300,
+    "top": 5,
+    "race_instance_id": 405001
+   },
+   {
+    "turn": 36,
+    "kind": 1,
+    "race": "函館スプリントステークス",
+    "grade": 300,
+    "top": 1,
+    "race_instance_id": 303401
+   },
+   {
+    "turn": 40,
+    "kind": 1,
+    "race": "キーンランドカップ",
+    "grade": 300,
+    "top": 1,
+    "race_instance_id": 305001
+   },
+   {
+    "turn": 41,
+    "kind": 1,
+    "race": "セントウルステークス",
+    "grade": 200,
+    "top": 1,
+    "race_instance_id": 202101
+   },
+   {
+    "turn": 42,
+    "kind": 1,
+    "race": "スプリンターズステークス",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101301
+   },
+   {
+    "turn": 42,
+    "kind": 12,
+    "condition_id": 0,
+    "value_1": 0,
+    "value_2": 0
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "スワンステークス",
+    "grade": 200,
+    "top": 1,
+    "race_instance_id": 202901
+   },
+   {
+    "turn": 46,
+    "kind": 1,
+    "race": "マイルチャンピオンシップ",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101801
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "高松宮記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 100201
+   },
+   {
+    "turn": 59,
+    "kind": 1,
+    "race": "安田記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101101
+   },
+   {
+    "turn": 66,
+    "kind": 1,
+    "race": "スプリンターズステークス",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101301
+   }
+  ]
+ },
+ {
+  "chara_id": 1094,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904184
+   },
+   {
+    "turn": 24,
+    "kind": 1,
+    "race": "ホープフルステークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 102401
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100501
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 46,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "阪神大賞典",
+    "grade": 200,
+    "top": 3,
+    "race_instance_id": 200901
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100601
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 103101
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1095,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904197
+   },
+   {
+    "turn": 30,
+    "kind": 1,
+    "race": "ファルコンステークス",
+    "grade": 300,
+    "top": 5,
+    "race_instance_id": 302101
+   },
+   {
+    "turn": 40,
+    "kind": 1,
+    "race": "北九州記念",
+    "grade": 300,
+    "top": 5,
+    "race_instance_id": 304801
+   },
+   {
+    "turn": 41,
+    "kind": 1,
+    "race": "セントウルステークス",
+    "grade": 200,
+    "top": 3,
+    "race_instance_id": 202101
+   },
+   {
+    "turn": 42,
+    "kind": 1,
+    "race": "スプリンターズステークス",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 103201
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "高松宮記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 100201
+   },
+   {
+    "turn": 65,
+    "kind": 1,
+    "race": "セントウルステークス",
+    "grade": 200,
+    "top": 1,
+    "race_instance_id": 202101
+   },
+   {
+    "turn": 66,
+    "kind": 1,
+    "race": "スプリンターズステークス",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101301
+   }
+  ]
+ },
+ {
+  "chara_id": 1096,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904206
+   },
+   {
+    "turn": 27,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 3000,
+    "value_2": 0
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100501
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 0,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 0,
+    "race_instance_id": 102301
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101901
+   }
+  ]
+ },
+ {
+  "chara_id": 1097,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904182
+   },
+   {
+    "turn": 25,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 5000,
+    "value_2": 0
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "桜花賞",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 100401
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "オークス",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 100901
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "秋華賞",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101401
+   },
+   {
+    "turn": 45,
+    "kind": 1,
+    "race": "エリザベス女王杯",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101701
+   },
+   {
+    "turn": 53,
+    "kind": 1,
+    "race": "金鯱賞",
+    "grade": 200,
+    "top": 3,
+    "race_instance_id": 200701
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 69,
+    "kind": 1,
+    "race": "エリザベス女王杯",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101701
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101901
+   }
+  ]
+ },
+ {
+  "chara_id": 1098,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904198
+   },
+   {
+    "turn": 24,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 3000,
+    "value_2": 0
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "伏竜ステークス",
+    "grade": 400,
+    "top": 3,
+    "race_instance_id": 403301
+   },
+   {
+    "turn": 47,
+    "kind": 1,
+    "race": "チャンピオンズカップ",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 102001
+   },
+   {
+    "turn": 52,
+    "kind": 1,
+    "race": "フェブラリーステークス",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100101
+   },
+   {
+    "turn": 57,
+    "kind": 1,
+    "race": "かしわ記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 110901
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "帝王賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 110101
+   },
+   {
+    "turn": 67,
+    "kind": 1,
+    "race": "マイルチャンピオンシップ南部杯",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 111001
+   },
+   {
+    "turn": 69,
+    "kind": 1,
+    "condition_id": 20003,
+    "value_1": 3,
+    "value_2": 0
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "東京大賞典",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 110601
+   }
+  ]
+ },
+ {
+  "chara_id": 1099,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904200
+   },
+   {
+    "turn": 31,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 5000,
+    "value_2": 0
+   },
+   {
+    "turn": 39,
+    "kind": 1,
+    "race": "レパードステークス",
+    "grade": 300,
+    "top": 5,
+    "race_instance_id": 304501
+   },
+   {
+    "turn": 47,
+    "kind": 1,
+    "race": "チャンピオンズカップ",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 102001
+   },
+   {
+    "turn": 51,
+    "kind": 1,
+    "race": "川崎記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 110701
+   },
+   {
+    "turn": 57,
+    "kind": 1,
+    "race": "かしわ記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 110901
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "帝王賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 110101
+   },
+   {
+    "turn": 69,
+    "kind": 1,
+    "condition_id": 20003,
+    "value_1": 3,
+    "value_2": 0
+   },
+   {
+    "turn": 71,
+    "kind": 1,
+    "race": "チャンピオンズカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102001
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "東京大賞典",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 110601
+   }
+  ]
+ },
+ {
+  "chara_id": 1100,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904200
+   },
+   {
+    "turn": 30,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 5000,
+    "value_2": 0
+   },
+   {
+    "turn": 37,
+    "kind": 1,
+    "race": "ジャパンダートダービー",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 110201
+   },
+   {
+    "turn": 42,
+    "kind": 1,
+    "race": "シリウスステークス",
+    "grade": 300,
+    "top": 3,
+    "race_instance_id": 305601
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "東京大賞典",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 110601
+   },
+   {
+    "turn": 51,
+    "kind": 1,
+    "race": "川崎記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 110701
+   },
+   {
+    "turn": 57,
+    "kind": 1,
+    "race": "かしわ記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 110901
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "帝王賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 110101
+   },
+   {
+    "turn": 69,
+    "kind": 1,
+    "condition_id": 20003,
+    "value_1": 3,
+    "value_2": 0
+   },
+   {
+    "turn": 71,
+    "kind": 1,
+    "race": "チャンピオンズカップ",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 102001
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "東京大賞典",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 110601
+   }
+  ]
+ },
+ {
+  "chara_id": 1102,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904183
+   },
+   {
+    "turn": 28,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 4000,
+    "value_2": 0
+   },
+   {
+    "turn": 33,
+    "kind": 1,
+    "race": "京都新聞杯",
+    "grade": 200,
+    "top": 5,
+    "race_instance_id": 201701
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "日経賞",
+    "grade": 200,
+    "top": 2,
+    "race_instance_id": 201101
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 2,
+    "race_instance_id": 100601
+   },
+   {
+    "turn": 64,
+    "kind": 1,
+    "race": "札幌記念",
+    "grade": 200,
+    "top": 4,
+    "race_instance_id": 202001
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 2,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1103,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904194
+   },
+   {
+    "turn": 30,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 5000,
+    "value_2": 0
+   },
+   {
+    "turn": 32,
+    "kind": 1,
+    "race": "青葉賞",
+    "grade": 200,
+    "top": 1,
+    "race_instance_id": 201601
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 0,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "大阪杯",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100301
+   },
+   {
+    "turn": 66,
+    "kind": 1,
+    "race": "オールカマー",
+    "grade": 200,
+    "top": 3,
+    "race_instance_id": 202501
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101901
+   }
+  ]
+ },
+ {
+  "chara_id": 1104,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904185
+   },
+   {
+    "turn": 30,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 5000,
+    "value_2": 0
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100501
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 0,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "大阪杯",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 100301
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1105,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904182
+   },
+   {
+    "turn": 24,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 3000,
+    "value_2": 0
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100501
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 36,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 0,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 46,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "大阪杯",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100301
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 0,
+    "race_instance_id": 100601
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101901
+   }
+  ]
+ },
+ {
+  "chara_id": 1106,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904202
+   },
+   {
+    "turn": 34,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 8000,
+    "value_2": 0
+   },
+   {
+    "turn": 42,
+    "kind": 1,
+    "race": "神戸新聞杯",
+    "grade": 200,
+    "top": 3,
+    "race_instance_id": 202401
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 100601
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1107,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904185
+   },
+   {
+    "turn": 30,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 5000,
+    "value_2": 0
+   },
+   {
+    "turn": 47,
+    "kind": 1,
+    "race": "チャレンジカップ",
+    "grade": 300,
+    "top": 1,
+    "race_instance_id": 306701
+   },
+   {
+    "turn": 53,
+    "kind": 1,
+    "race": "金鯱賞",
+    "grade": 200,
+    "top": 1,
+    "race_instance_id": 200701
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1108,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904194
+   },
+   {
+    "turn": 27,
+    "kind": 1,
+    "race": "共同通信杯",
+    "grade": 300,
+    "top": 5,
+    "race_instance_id": 301201
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100501
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 0,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 52,
+    "kind": 1,
+    "race": "中山記念",
+    "grade": 200,
+    "top": 1,
+    "race_instance_id": 200501
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "大阪杯",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 100301
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101901
+   }
+  ]
+ },
+ {
+  "chara_id": 1109,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904201
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "阪神ジュベナイルフィリーズ",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 102101
+   },
+   {
+    "turn": 29,
+    "kind": 1,
+    "race": "フィリーズレビュー",
+    "grade": 200,
+    "top": 5,
+    "race_instance_id": 200801
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "桜花賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100401
+   },
+   {
+    "turn": 33,
+    "kind": 1,
+    "race": "NHKマイルカップ",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100701
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "オークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100901
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "秋華賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101401
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "高松宮記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100201
+   },
+   {
+    "turn": 57,
+    "kind": 1,
+    "race": "ヴィクトリアマイル",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100801
+   },
+   {
+    "turn": 66,
+    "kind": 1,
+    "race": "スプリンターズステークス",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101301
+   },
+   {
+    "turn": 69,
+    "kind": 1,
+    "race": "エリザベス女王杯",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101701
+   }
+  ]
+ },
+ {
+  "chara_id": 1110,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904186
+   },
+   {
+    "turn": 30,
+    "kind": 1,
+    "race": "フラワーカップ",
+    "grade": 300,
+    "top": 5,
+    "race_instance_id": 302201
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "桜花賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100401
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "オークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100901
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "秋華賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101401
+   },
+   {
+    "turn": 57,
+    "kind": 1,
+    "race": "ヴィクトリアマイル",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100801
+   },
+   {
+    "turn": 69,
+    "kind": 1,
+    "race": "エリザベス女王杯",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101701
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101901
+   }
+  ]
+ },
+ {
+  "chara_id": 1111,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904182
+   },
+   {
+    "turn": 27,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 5000,
+    "value_2": 0
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "桜花賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100401
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "オークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100901
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "秋華賞",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101401
+   },
+   {
+    "turn": 45,
+    "kind": 1,
+    "race": "エリザベス女王杯",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101701
+   },
+   {
+    "turn": 57,
+    "kind": 1,
+    "race": "ヴィクトリアマイル",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 100801
+   },
+   {
+    "turn": 69,
+    "kind": 1,
+    "race": "エリザベス女王杯",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101701
+   }
+  ]
+ },
+ {
+  "chara_id": 1112,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904201
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "阪神ジュベナイルフィリーズ",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 102101
+   },
+   {
+    "turn": 29,
+    "kind": 1,
+    "race": "フィリーズレビュー",
+    "grade": 200,
+    "top": 5,
+    "race_instance_id": 200801
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "桜花賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100401
+   },
+   {
+    "turn": 33,
+    "kind": 1,
+    "race": "NHKマイルカップ",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100701
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "秋華賞",
+    "grade": 100,
+    "top": 0,
+    "race_instance_id": 101401
+   },
+   {
+    "turn": 55,
+    "kind": 1,
+    "race": "阪神ウマ娘ステークス",
+    "grade": 200,
+    "top": 3,
+    "race_instance_id": 201201
+   },
+   {
+    "turn": 57,
+    "kind": 1,
+    "race": "ヴィクトリアマイル",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100801
+   },
+   {
+    "turn": 62,
+    "kind": 1,
+    "race": "クイーンステークス",
+    "grade": 300,
+    "top": 1,
+    "race_instance_id": 304301
+   },
+   {
+    "turn": 67,
+    "kind": 1,
+    "race": "府中ウマ娘ステークス",
+    "grade": 200,
+    "top": 1,
+    "race_instance_id": 202801
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "マイルチャンピオンシップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101801
+   }
+  ]
+ },
+ {
+  "chara_id": 1113,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904206
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "阪神ジュベナイルフィリーズ",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 102101
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "桜花賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100401
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "オークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100901
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "秋華賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101401
+   },
+   {
+    "turn": 45,
+    "kind": 1,
+    "race": "エリザベス女王杯",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101701
+   },
+   {
+    "turn": 57,
+    "kind": 1,
+    "race": "ヴィクトリアマイル",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 100801
+   },
+   {
+    "turn": 64,
+    "kind": 1,
+    "race": "札幌記念",
+    "grade": 200,
+    "top": 1,
+    "race_instance_id": 202001
+   },
+   {
+    "turn": 69,
+    "kind": 1,
+    "race": "エリザベス女王杯",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101701
+   }
+  ]
+ },
+ {
+  "chara_id": 1114,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904206
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "阪神ジュベナイルフィリーズ",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 102101
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "桜花賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100401
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "オークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100901
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "秋華賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101401
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 102301
+   },
+   {
+    "turn": 57,
+    "kind": 1,
+    "race": "ヴィクトリアマイル",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100801
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1115,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 903720
+   },
+   {
+    "turn": 28,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 5000,
+    "value_2": 0
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102801
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100601
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1116,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904182
+   },
+   {
+    "turn": 25,
+    "kind": 1,
+    "race": "シンザン記念",
+    "grade": 300,
+    "top": 5,
+    "race_instance_id": 300301
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "桜花賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100401
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "オークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100901
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "秋華賞",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101401
+   },
+   {
+    "turn": 46,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "大阪杯",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 100301
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1117,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904202
+   },
+   {
+    "turn": 27,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 5000,
+    "value_2": 0
+   },
+   {
+    "turn": 32,
+    "kind": 1,
+    "race": "青葉賞",
+    "grade": 200,
+    "top": 5,
+    "race_instance_id": 201601
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 46,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "日経賞",
+    "grade": 200,
+    "top": 1,
+    "race_instance_id": 201101
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100601
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 2,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1118,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904206
+   },
+   {
+    "turn": 23,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 3000,
+    "value_2": 0
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "桜花賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100401
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "オークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100901
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "秋華賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101401
+   },
+   {
+    "turn": 45,
+    "kind": 1,
+    "race": "エリザベス女王杯",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101701
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "大阪杯",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100301
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 69,
+    "kind": 1,
+    "race": "エリザベス女王杯",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101701
+   }
+  ]
+ },
+ {
+  "chara_id": 1119,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904191
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "朝日杯フューチュリティステークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 102201
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100501
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "大阪杯",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100301
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100601
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 66,
+    "kind": 1,
+    "race": "オールカマー",
+    "grade": 200,
+    "top": 1,
+    "race_instance_id": 202501
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1120,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904197
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "朝日杯フューチュリティステークス",
+    "grade": 100,
+    "top": 0,
+    "race_instance_id": 102201
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "葵ステークス",
+    "grade": 300,
+    "top": 5,
+    "race_instance_id": 405001
+   },
+   {
+    "turn": 38,
+    "kind": 1,
+    "race": "アイビスサマーダッシュ",
+    "grade": 300,
+    "top": 1,
+    "race_instance_id": 304201
+   },
+   {
+    "turn": 42,
+    "kind": 1,
+    "race": "スプリンターズステークス",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 103201
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "高松宮記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100201
+   },
+   {
+    "turn": 62,
+    "kind": 1,
+    "race": "アイビスサマーダッシュ",
+    "grade": 300,
+    "top": 1,
+    "race_instance_id": 304201
+   },
+   {
+    "turn": 66,
+    "kind": 1,
+    "race": "スプリンターズステークス",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101301
+   }
+  ]
+ },
+ {
+  "chara_id": 1121,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904188
+   },
+   {
+    "turn": 23,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 3000,
+    "value_2": 0
+   },
+   {
+    "turn": 33,
+    "kind": 1,
+    "race": "NHKマイルカップ",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100701
+   },
+   {
+    "turn": 41,
+    "kind": 1,
+    "race": "セントウルステークス",
+    "grade": 200,
+    "top": 3,
+    "race_instance_id": 202101
+   },
+   {
+    "turn": 42,
+    "kind": 1,
+    "race": "スプリンターズステークス",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101301
+   },
+   {
+    "turn": 46,
+    "kind": 1,
+    "race": "マイルチャンピオンシップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101801
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "高松宮記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100201
+   },
+   {
+    "turn": 59,
+    "kind": 1,
+    "race": "安田記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101101
+   },
+   {
+    "turn": 66,
+    "kind": 1,
+    "race": "スプリンターズステークス",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101301
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "マイルチャンピオンシップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101801
+   }
+  ]
+ },
+ {
+  "chara_id": 1124,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904194
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "朝日杯フューチュリティステークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 102201
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100501
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 46,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 0,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 2,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101901
+   }
+  ]
+ },
+ {
+  "chara_id": 1127,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 902810
+   },
+   {
+    "turn": 24,
+    "kind": 1,
+    "race": "ホープフルステークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 102401
+   },
+   {
+    "turn": 32,
+    "kind": 1,
+    "race": "青葉賞",
+    "grade": 200,
+    "top": 5,
+    "race_instance_id": 201601
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 46,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 0,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "日経賞",
+    "grade": 200,
+    "top": 1,
+    "race_instance_id": 201101
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 100601
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1129,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904193
+   },
+   {
+    "turn": 25,
+    "kind": 1,
+    "race": "シンザン記念",
+    "grade": 300,
+    "top": 1,
+    "race_instance_id": 300301
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "桜花賞",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 100401
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "オークス",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 100901
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "秋華賞",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101401
+   },
+   {
+    "turn": 46,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "大阪杯",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 100301
+   },
+   {
+    "turn": 57,
+    "kind": 1,
+    "race": "ヴィクトリアマイル",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 100801
+   },
+   {
+    "turn": 59,
+    "kind": 1,
+    "race": "安田記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101101
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101901
+   }
+  ]
+ },
+ {
+  "chara_id": 1130,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904191
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "阪神ジュベナイルフィリーズ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102101
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "桜花賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100401
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "オークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100901
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "秋華賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101401
+   },
+   {
+    "turn": 52,
+    "kind": 1,
+    "race": "中山記念",
+    "grade": 200,
+    "top": 2,
+    "race_instance_id": 200501
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "大阪杯",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 100301
+   },
+   {
+    "turn": 57,
+    "kind": 1,
+    "race": "ヴィクトリアマイル",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 100801
+   },
+   {
+    "turn": 69,
+    "kind": 1,
+    "race": "エリザベス女王杯",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 103401
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 2,
+    "race_instance_id": 101901
+   }
+  ]
+ },
+ {
+  "chara_id": 1131,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904193
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "朝日杯フューチュリティステークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 102201
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "桜花賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100401
+   },
+   {
+    "turn": 33,
+    "kind": 1,
+    "race": "NHKマイルカップ",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100701
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "阪神カップ",
+    "grade": 200,
+    "top": 1,
+    "race_instance_id": 203401
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "高松宮記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100201
+   },
+   {
+    "turn": 59,
+    "kind": 1,
+    "race": "安田記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101101
+   },
+   {
+    "turn": 66,
+    "kind": 1,
+    "race": "スプリンターズステークス",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101301
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "マイルチャンピオンシップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 103301
+   }
+  ]
+ },
+ {
+  "chara_id": 1132,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904183
+   },
+   {
+    "turn": 24,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 3000,
+    "value_2": 0
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "桜花賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100401
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "忘れな草賞",
+    "grade": 400,
+    "top": 1,
+    "race_instance_id": 403501
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "オークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100901
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "秋華賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101401
+   },
+   {
+    "turn": 45,
+    "kind": 1,
+    "race": "エリザベス女王杯",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101701
+   },
+   {
+    "turn": 51,
+    "kind": 1,
+    "race": "京都記念",
+    "grade": 200,
+    "top": 3,
+    "race_instance_id": 200401
+   },
+   {
+    "turn": 57,
+    "kind": 1,
+    "race": "ヴィクトリアマイル",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100801
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 69,
+    "kind": 1,
+    "race": "エリザベス女王杯",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 103401
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 2,
+    "race_instance_id": 101901
+   }
+  ]
+ },
+ {
+  "chara_id": 1133,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904204
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "阪神ジュベナイルフィリーズ",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 102101
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "桜花賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100401
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "オークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100901
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "秋華賞",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101401
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "大阪杯",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100301
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1134,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904193
+   },
+   {
+    "turn": 23,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 3000,
+    "value_2": 0
+   },
+   {
+    "turn": 32,
+    "kind": 1,
+    "race": "スイートピーステークス",
+    "grade": 400,
+    "top": 1,
+    "race_instance_id": 404301
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "オークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100901
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "秋華賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101401
+   },
+   {
+    "turn": 51,
+    "kind": 1,
+    "race": "京都記念",
+    "grade": 200,
+    "top": 3,
+    "race_instance_id": 200401
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "日経賞",
+    "grade": 200,
+    "top": 3,
+    "race_instance_id": 201101
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 102701
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 66,
+    "kind": 1,
+    "race": "オールカマー",
+    "grade": 200,
+    "top": 1,
+    "race_instance_id": 202501
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101901
+   }
+  ]
+ },
+ {
+  "chara_id": 1135,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904185
+   },
+   {
+    "turn": 29,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 5000,
+    "value_2": 0
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100501
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 2,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "天皇賞（春）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100601
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1136,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904206
+   },
+   {
+    "turn": 27,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 5000,
+    "value_2": 0
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "桜花賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100401
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "オークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100901
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "秋華賞",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101401
+   },
+   {
+    "turn": 46,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "大阪杯",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100301
+   },
+   {
+    "turn": 57,
+    "kind": 1,
+    "race": "ヴィクトリアマイル",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100801
+   },
+   {
+    "turn": 64,
+    "kind": 1,
+    "race": "札幌記念",
+    "grade": 200,
+    "top": 1,
+    "race_instance_id": 202001
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101901
+   }
+  ]
+ },
+ {
+  "chara_id": 1137,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904185
+   },
+   {
+    "turn": 24,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 3000,
+    "value_2": 0
+   },
+   {
+    "turn": 37,
+    "kind": 2,
+    "condition_id": 300,
+    "value_1": 1,
+    "value_2": 1
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 67,
+    "kind": 1,
+    "race": "京都大賞典",
+    "grade": 200,
+    "top": 1,
+    "race_instance_id": 202701
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 2,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1141,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904183
+   },
+   {
+    "turn": 24,
+    "kind": 1,
+    "race": "ホープフルステークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 102401
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100501
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 54,
+    "kind": 1,
+    "race": "大阪杯",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100301
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1143,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904206
+   },
+   {
+    "turn": 24,
+    "kind": 1,
+    "race": "ホープフルステークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 102401
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 100501
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 46,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   },
+   {
+    "turn": 52,
+    "kind": 1,
+    "race": "中山記念",
+    "grade": 200,
+    "top": 1,
+    "race_instance_id": 200501
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1144,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904206
+   },
+   {
+    "turn": 23,
+    "kind": 1,
+    "race": "朝日杯フューチュリティステークス",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102201
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "皐月賞",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100501
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "菊花賞",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101501
+   },
+   {
+    "turn": 46,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 102301
+   },
+   {
+    "turn": 49,
+    "kind": 1,
+    "race": "日経新春杯",
+    "grade": 200,
+    "top": 3,
+    "race_instance_id": 200101
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 68,
+    "kind": 1,
+    "race": "天皇賞（秋）",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101601
+   },
+   {
+    "turn": 70,
+    "kind": 1,
+    "race": "ジャパンカップ",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 101901
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1145,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904185
+   },
+   {
+    "turn": 26,
+    "kind": 1,
+    "race": "若駒ステークス",
+    "grade": 400,
+    "top": 5,
+    "race_instance_id": 400901
+   },
+   {
+    "turn": 30,
+    "kind": 1,
+    "race": "毎日杯",
+    "grade": 300,
+    "top": 5,
+    "race_instance_id": 302301
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "東京優駿（日本ダービー）",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 101001
+   },
+   {
+    "turn": 47,
+    "kind": 1,
+    "race": "チャレンジカップ",
+    "grade": 300,
+    "top": 1,
+    "race_instance_id": 306701
+   },
+   {
+    "turn": 48,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 102301
+   },
+   {
+    "turn": 49,
+    "kind": 1,
+    "race": "日経新春杯",
+    "grade": 200,
+    "top": 3,
+    "race_instance_id": 200101
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "宝塚記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101201
+   },
+   {
+    "turn": 72,
+    "kind": 1,
+    "race": "有馬記念",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102301
+   }
+  ]
+ },
+ {
+  "chara_id": 1149,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "ジュニア級メイクデビュー",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 904186
+   },
+   {
+    "turn": 23,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 3000,
+    "value_2": 0
+   },
+   {
+    "turn": 31,
+    "kind": 1,
+    "race": "桜花賞",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 100401
+   },
+   {
+    "turn": 34,
+    "kind": 1,
+    "race": "オークス",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 100901
+   },
+   {
+    "turn": 44,
+    "kind": 1,
+    "race": "秋華賞",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101401
+   },
+   {
+    "turn": 56,
+    "kind": 1,
+    "race": "マイラーズカップ",
+    "grade": 200,
+    "top": 3,
+    "race_instance_id": 201401
+   },
+   {
+    "turn": 57,
+    "kind": 1,
+    "race": "ヴィクトリアマイル",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 100801
+   },
+   {
+    "turn": 64,
+    "kind": 1,
+    "race": "札幌記念",
+    "grade": 200,
+    "top": 3,
+    "race_instance_id": 202001
+   },
+   {
+    "turn": 69,
+    "kind": 1,
+    "race": "エリザベス女王杯",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 101701
+   }
+  ]
+ }
+]

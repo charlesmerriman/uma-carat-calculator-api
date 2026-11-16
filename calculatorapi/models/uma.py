@@ -102,11 +102,19 @@ class Uma(models.Model):
             "digits of the image filename. Editors rarely need to touch this."
         ),
     )
-    is_on_global = models.BooleanField(
-        default=False,
+    # When the outfit comes out on Global, by the game's own data: the first
+    # gacha that offers it or main story chapter that gives it in the global
+    # client (clamped to Global's launch), written by the import only. None
+    # for an outfit nothing in the client gives yet, or one it doesn't hold. May be AHEAD of today: the client ships
+    # outfits before their banners. One half of "on global"; the rule is
+    # calculatorapi/global_release.py, never compared by hand.
+    global_release_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        editable=False,
         help_text=(
-            "In the global client's data today. Set by the game-data import only: "
-            "the team builder reads it for a outfit on no banner."
+            "When the outfit comes out on Global, by the game's own data (may be ahead "
+            "of today). Set by the game-data import only."
         ),
     )
     image = models.ImageField(upload_to="umas/", blank=True, null=True)
@@ -193,6 +201,57 @@ class Uma(models.Model):
     growth_power = _game_int("Power growth bonus, percent.")
     growth_guts = _game_int("Guts growth bonus, percent.")
     growth_wit = _game_int("Wit growth bonus, percent.")
+    # Every star level's stats, not only the initial one the base_* columns
+    # hold: the Encyclopedia's uma page switches between them (owner,
+    # 2026-11-12). One JSON list rather than fifteen more columns, because
+    # nothing filters or sorts by it: it is read whole with its outfit.
+    # [{"star": 3, "speed": 83, "stamina": 88, ...}, ...], ascending, one entry
+    # per star level the game lists (★1 outfits have five, ★3 outfits three).
+    # Global's when the outfit is out there, else the JP client's.
+    star_stats = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Stats at every star level, from the game-data import.",
+    )
+    # The JP client's own name and title, shown beside the English ones on the
+    # Encyclopedia page. From the JP snapshot for every outfit it holds, global
+    # ones included. Blank when the import ran without it.
+    jp_name = models.CharField(
+        max_length=100, blank=True, default="", verbose_name="JP name",
+        help_text="The character's name in the JP client, e.g. スペシャルウィーク.",
+    )
+    jp_title = models.CharField(
+        max_length=100, blank=True, default="", verbose_name="JP title",
+        help_text="The outfit's title in the JP client, e.g. [スペシャルドリーマー].",
+    )
+    # UmaTL's English title (scripts/data/umatl/), written by the import for
+    # every id the JP snapshot holds. Shown only while `title` is blank: Global's
+    # title and an editor's both win, and the page credits UmaTL when it shows
+    # (`uses_translated_title`). Never read by an AI feature (UmaTL's terms).
+    translated_title = models.CharField(
+        max_length=100, blank=True, default="",
+        help_text="UmaTL's English title, shown only while title is blank. Import-owned.",
+    )
+    # The character's career goals on the default route, as the game files
+    # state them (scripts/data/master_snapshot/objectives.json). The game keys
+    # them by CHARACTER; with no character row to hold them, the import writes
+    # the same list to each of her outfits. Every kind is kept; the API shows
+    # only the ones it can word (calculatorapi/career.py).
+    career_objectives = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Career goals from the game-data import, in order.",
+    )
+
+    @property
+    def shown_title(self):
+        """The title a reader sees: Global's or an editor's, else UmaTL's."""
+        return self.title or self.translated_title
+
+    @property
+    def uses_translated_title(self):
+        """Does the shown title come from UmaTL (so the page credits it)?"""
+        return not self.title and bool(self.translated_title)
 
     @property
     def character_id(self):

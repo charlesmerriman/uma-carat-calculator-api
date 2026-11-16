@@ -897,14 +897,16 @@ CACHES = {
         "LOCATION": "gallery-previews",
         "OPTIONS": {"MAX_ENTRIES": 64},
     },
-    # GET /skills and one GET /skills/<id> page per skill (calculatorapi/skills_cache.py):
-    # the list is a few hundred KB, a page a few KB, so a full set is ~5 MB.
-    # Its own alias so ~2,200 page keys never crowd "default". Same
-    # single-process caveat.
+    # GET /skills, one GET /skills/<id> page per skill, and the Encyclopedia's
+    # uma and card pages (calculatorapi/skills_cache.py): the list is a few
+    # hundred KB, a page a few KB. Prod on 2026-11-12 held 2,223 skills, 281
+    # trainee outfits and 568 real cards, about 3,070 keys and ~15 MB at full,
+    # so the bound is 4,000 (it was 3,000 before the Encyclopedia). Its own
+    # alias so the page keys never crowd "default". Same single-process caveat.
     "skills": {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
         "LOCATION": "skills",
-        "OPTIONS": {"MAX_ENTRIES": 3000},
+        "OPTIONS": {"MAX_ENTRIES": 4000},
     },
     # The Rankings page's payloads (calculatorapi/rankings_cache.py), each
     # built at most once an hour by decision and never invalidated: one per

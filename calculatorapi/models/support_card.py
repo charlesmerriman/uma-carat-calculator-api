@@ -44,29 +44,29 @@ class SupportCard(models.Model):
             "Anchors this card's image filename in the DO Space."
         ),
     )
-    is_on_global = models.BooleanField(
-        default=False,
-        help_text=(
-            "In the global client's data today. Set by the game-data import only: "
-            "the team builder reads it for a card on no banner."
-        ),
-    )
-    # When the card came out on Global, from the game's own table. Written by
-    # the import only. It exists for one thing, the Collection's Release date
-    # sort, because welfare SSRs, SRs and Rs never sit on a banner.
+    # When the card comes out on Global, by the game's own table: written by
+    # the import only, from the global client's start_date (clamped to
+    # Global's launch), and None for a card the client doesn't hold. It may be
+    # AHEAD of today: the client ships cards before their release, and a few
+    # JP-only ones dated 2099, its "not released here" mark.
+    #
+    # One of the two halves of "on global" (calculatorapi/global_release.py):
+    # the card is out once this has passed OR a confirmed global banner for it
+    # has started. Read through that module, never compared here and there.
+    # It also serves the Collection's Release date sort for cards on no banner.
     #
     # NEVER SELECTOR ELIGIBILITY. A selector judges a card on its first JP
     # banner (eligibility.py), and a card on no banner staying unknown there
     # is what keeps these cards out of every selector. Filling that gap from
     # this column would offer them. It stays off /calculator-data for the same
-    # reason: only GET /pvp-catalogue carries it.
+    # reason.
     global_release_at = models.DateTimeField(
         null=True,
         blank=True,
         editable=False,
         help_text=(
-            "When the card came out on Global. Set by the game-data import only, "
-            "for the Collection's sort. Selectors never read it."
+            "When the card comes out on Global, by the game's own data (may be ahead "
+            "of today). Set by the game-data import only. Selectors never read it."
         ),
     )
     image = models.ImageField(upload_to="support_cards/", blank=True, null=True)
@@ -158,6 +158,48 @@ class SupportCard(models.Model):
         blank=True,
         help_text="The umas a group card stands for, e.g. Team Sirius's six. Empty for every other card.",
     )
+    # The JP client's name and title, as on Uma. A group card's name is the
+    # group's (チーム＜シリウス＞), since the JP snapshot names it that way.
+    jp_name = models.CharField(
+        max_length=100, blank=True, default="", verbose_name="JP name",
+        help_text="The card's name in the JP client.",
+    )
+    jp_title = models.CharField(
+        max_length=100, blank=True, default="", verbose_name="JP title",
+        help_text="The card's title in the JP client.",
+    )
+    # UmaTL's English title (scripts/data/umatl/), written by the import for
+    # every id the JP snapshot holds. Shown only while `title` is blank: Global's
+    # title and an editor's both win, and the page credits UmaTL when it shows
+    # (`uses_translated_title`). Never read by an AI feature (UmaTL's terms).
+    translated_title = models.CharField(
+        max_length=100, blank=True, default="",
+        help_text="UmaTL's English title, shown only while title is blank. Import-owned.",
+    )
+    # The card's training effects and its unique effect, as the game's tables
+    # state them (scripts/extract_master_snapshot.py, extract_support_effects):
+    # written by import_game_data, read whole with the card and never edited
+    # by hand. calculatorapi/support_effects.py turns them into the page's
+    # table. JSON, not tables of their own: nothing asks SQL "which cards have
+    # Race Bonus", and the day something does is the day to add one.
+    effects = models.JSONField(
+        blank=True, default=list,
+        help_text='Each effect\'s value at the levels the game names: [{"type": 1, "levels": {"1": 10, "25": 15}}].',
+    )
+    unique_effect = models.JSONField(
+        blank=True, null=True,
+        help_text="The unique effect: the level that unlocks it, its typed effects, and the game's sentence for it.",
+    )
+
+    @property
+    def shown_title(self):
+        """The title a reader sees: Global's or an editor's, else UmaTL's."""
+        return self.title or self.translated_title
+
+    @property
+    def uses_translated_title(self):
+        """Does the shown title come from UmaTL (so the page credits it)?"""
+        return not self.title and bool(self.translated_title)
 
     def save(self, *args, **kwargs):
         # A card an editor adds by hand, e.g. one that is not on global yet,

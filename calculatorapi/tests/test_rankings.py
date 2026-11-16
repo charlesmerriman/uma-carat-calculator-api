@@ -481,7 +481,8 @@ class PlayersRankingsTests(CalculatorTestCase):
         client, _ = auth_client(make_user("staff", is_staff=True))
         body = client.get(self.URL).json()
         self.assertEqual([row["uma"] for row in body["favourites"]], [uma.id])
-        self.assertEqual(set(body["favourites"][0]), {"uma", "share"})
+        # Counts by the owner's call (rankings_shares.py, FAVOURITE UMAS); every other list sends shares.
+        self.assertEqual(body["favourites"][0], {"uma": uma.id, "people": 1})
         self.assertEqual([rank["label"] for rank in body["ranks"]], ["Team Trials", "Club Rank"])
         for rank in body["ranks"]:
             self.assertNotIn("Not set", [row["name"] for row in rank["rows"]])
