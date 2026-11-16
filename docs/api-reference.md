@@ -972,12 +972,15 @@ sent so it can find them there and in the Collection. Never `admin_comments`.
   order it gains them: `type`, `name`, `help`, `format` "percent" / "number" / "level", `unlock`
   the first level it has the effect, `values` one per level from 1 to its top cap with `null`
   before `unlock`), `caps` (its level cap at each limit break, 0 to 4), `unique_effect`
-  (`{"level", "text", "translated", "amounts", "multiplies"}` or `null`; `text` is the game's
-  sentence, else UmaTL's (`translated` true), else the effects by name; `amounts` lists each part
-  as `type`, `name`, `value`, `format` and `condition` ("Friendship Gauge 80+" for a decoded
-  type 101, else null), or `null` when a part can't be read yet; `multiplies` names the effects, of Friendship Bonus
-  and Specialty Priority, that it multiplies with the card's own instead of adding to;
-  support_effects.py), `skills` (hints, then events),
+  (`{"level", "text", "translated", "from_amounts", "amounts", "multiplies"}` or `null`; `text`
+  is the game's sentence, else UmaTL's (`translated` true), else the parts' own lines
+  (`from_amounts` true: the numbers are already in it); `amounts` lists each part as `type`
+  (null for one that isn't an effect type), `name`, `value` (the most it gives), `format`,
+  `condition` ("Friendship Gauge 80+" or null), `line` (the phrase to show, e.g. "Training
+  Effectiveness 1% per 10,000 fans, up to 20%") and `scope` ("card", or "deck" for an effect on
+  other cards), or `null` when a part can't be read yet; `multiplies` names the effects, of
+  Friendship Bonus and Specialty Priority, that it multiplies with the card's own instead of adding
+  to; support_effects.py, notes/unique-effects-plan.md), `skills` (hints, then events),
   `outfits` (a group card's are its members'), `cards` (the character's other cards; `[]`
   on a group card).
 
@@ -988,8 +991,8 @@ Same gate and cache as the pages (401 guest, 403 without early access). `types` 
 type any card has (`type`, `name`, `format`), in type order. `cards` is keyed by the card's pk (the
 list's id from `/pvp-catalogue`): `caps` (the level cap at limit break 0 to 4), `effects` (type to
 its value at each of those caps, `null` before it unlocks; `support_effects.at_caps`) and `unique`
-(`level`, `values`: type to the unique's plain value, `conditional`: true when a part with
-undecoded params was left out; null for no unique). A card with no effects is left out.
+(`level`, `values`: type to the most the unique gives the card itself, deck effects left out,
+`conditional`: true when a part no reader can read was left out; null for no unique). A card with no effects is left out.
 
 ```json
 {"types": [{"type": 19, "name": "Specialty Priority", "format": "number"}],

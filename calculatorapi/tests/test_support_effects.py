@@ -28,8 +28,10 @@ UNIQUE = {"level": 30, "effects": [{"type": 6, "value": 1}, {"type": 12, "value"
           "text": "Guts Bonus and Initial Guts"}
 
 
-UNIQUE_AMOUNTS = [{"type": 6, "name": "Guts Bonus", "value": 1, "format": "number", "condition": None},
-                  {"type": 12, "name": "Initial Guts", "value": 20, "format": "number", "condition": None}]
+UNIQUE_AMOUNTS = [{"type": 6, "name": "Guts Bonus", "value": 1, "format": "number", "condition": None,
+                   "line": "Guts Bonus 1", "scope": "card"},
+                  {"type": 12, "name": "Initial Guts", "value": 20, "format": "number", "condition": None,
+                   "line": "Initial Guts 20", "scope": "card"}]
 
 
 def levels_of(effect_type):
@@ -142,29 +144,31 @@ class UniqueEffectTests(SimpleTestCase):
     def test_the_games_own_sentence_where_global_has_one(self):
         self.assertEqual(support_effects.unique_effect(UNIQUE),
                          {"level": 30, "text": "Guts Bonus and Initial Guts", "translated": False,
-                          "amounts": UNIQUE_AMOUNTS, "multiplies": []})
+                          "from_amounts": False, "amounts": UNIQUE_AMOUNTS, "multiplies": []})
 
     def test_a_jp_only_card_names_its_plain_typed_effects(self):
         jp_only = {"level": 30, "effects": [{"type": 6, "value": 1}, {"type": 12, "value": 20}]}
         self.assertEqual(support_effects.unique_effect(jp_only),
-                         {"level": 30, "text": "Guts Bonus and Initial Guts", "translated": False,
-                          "amounts": UNIQUE_AMOUNTS, "multiplies": []})
+                         {"level": 30, "text": "Guts Bonus 1 and Initial Guts 20", "translated": False,
+                          "from_amounts": True, "amounts": UNIQUE_AMOUNTS, "multiplies": []})
 
     def test_a_friendship_gauge_effect_is_decoded(self):
         """Type 101: `value` is the gauge threshold, `params` up to two (type, amount) pairs.
         Card 30053, whose game sentence is "Speed Bonus and Skill Point Bonus (Friendship Gauge 80+)"."""
         jp_style = {"level": 1, "effects": [{"type": 101, "value": 80, "params": [3, 1, 30, 1]}]}
         self.assertEqual(support_effects.unique_effect(jp_style), {
-            "level": 1, "text": "Speed Bonus and Skill Point Bonus (Friendship Gauge 80+)", "translated": False,
+            "level": 1, "text": "Speed Bonus 1 and Skill Point Bonus 1 (Friendship Gauge 80+)", "translated": False,
+            "from_amounts": True,
             "amounts": [
-                {"type": 3, "name": "Speed Bonus", "value": 1, "format": "number", "condition": "Friendship Gauge 80+"},
+                {"type": 3, "name": "Speed Bonus", "value": 1, "format": "number", "condition": "Friendship Gauge 80+",
+                 "line": "Speed Bonus 1", "scope": "card"},
                 {"type": 30, "name": "Skill Point Bonus", "value": 1, "format": "number",
-                 "condition": "Friendship Gauge 80+"},
+                 "condition": "Friendship Gauge 80+", "line": "Skill Point Bonus 1", "scope": "card"},
             ],
             "multiplies": [],
         })
         one_pair = {"level": 1, "effects": [{"type": 101, "value": 100, "params": [7, 3, 0, 0]}]}
-        self.assertEqual(support_effects.unique_effect(one_pair)["text"], "Wit Bonus (Friendship Gauge 100+)")
+        self.assertEqual(support_effects.unique_effect(one_pair)["text"], "Wit Bonus 3 (Friendship Gauge 100+)")
 
     def test_umatls_sentence_comes_after_the_games_and_before_the_named_line(self):
         """PR 3: the import puts UmaTL's sentence in `translated_text`; it shows only when the game
@@ -176,15 +180,15 @@ class UniqueEffectTests(SimpleTestCase):
         self.assertEqual([part["value"] for part in page["amounts"]], [1])
         both = {**jp_only, "text": "Speed Bonus (Friendship Gauge 80+)"}
         self.assertEqual(support_effects.unique_effect(both)["translated"], False)
-        # An undecoded part with UmaTL's sentence: the words show, no numbers.
-        worded = {"level": 1, "effects": [{"type": 116, "value": 1, "params": [8, 4, 5, 0]}],
+        # An undecoded part (a type no reader knows) with UmaTL's sentence: the words show, no numbers.
+        worded = {"level": 1, "effects": [{"type": 199, "value": 1, "params": [8, 4, 5, 0]}],
                   "translated_text": "Training bonus scaling with learnt speed skills, up to 5"}
         self.assertEqual(support_effects.unique_effect(worded)["amounts"], None)
 
     def test_a_plain_part_and_a_gauge_part_are_named_in_order(self):
         mixed = {"level": 1, "effects": [{"type": 15, "value": 5}, {"type": 101, "value": 80, "params": [8, 10, 0, 0]}]}
         self.assertEqual(support_effects.unique_effect(mixed)["text"],
-                         "Race Bonus, Training Effectiveness (Friendship Gauge 80+)")
+                         "Race Bonus 5%, Training Effectiveness 10% (Friendship Gauge 80+)")
 
     def test_a_decoded_friendship_bonus_multiplies_by_its_number_not_its_words(self):
         gauge = {"level": 1, "effects": [{"type": 101, "value": 80, "params": [1, 10, 0, 0]}],
@@ -205,7 +209,7 @@ class UniqueEffectTests(SimpleTestCase):
                          ["Friendship Bonus", "Specialty Priority"])
 
     def test_a_conditional_effect_nobody_decoded_is_not_worded(self):
-        conditional = {"level": 30, "effects": [{"type": 113, "value": 28, "params": [30, 0, 0, 0]}]}
+        conditional = {"level": 30, "effects": [{"type": 199, "value": 28, "params": [30, 0, 0, 0]}]}
         self.assertIsNone(support_effects.unique_effect(conditional))
         self.assertIsNone(support_effects.unique_effect(None))
         # A gauge pair naming an effect type the names file lacks is not decoded either.
@@ -213,7 +217,7 @@ class UniqueEffectTests(SimpleTestCase):
         self.assertIsNone(support_effects.unique_effect(unknown))
 
     def test_a_sentence_with_an_undecoded_part_keeps_its_words_and_sends_no_amounts(self):
-        worded = {"level": 30, "effects": [{"type": 113, "value": 28, "params": [30, 0, 0, 0]}],
+        worded = {"level": 30, "effects": [{"type": 199, "value": 28, "params": [30, 0, 0, 0]}],
                   "text": "Training Energy Cost Reduction when Friendship Training occurs"}
         self.assertEqual(support_effects.unique_effect(worded)["amounts"], None)
 
@@ -238,6 +242,126 @@ class FriendshipGaugeCheckTests(SimpleTestCase):
                     self.assertIn(part["condition"].split()[-1].rstrip("+"), unique["text"])
             checked += 1
         self.assertGreaterEqual(checked, 33)
+
+
+def slot(kind, value, params=()):
+    """One stored unique-effect slot, as the import writes it."""
+    return {"level": 1, "effects": [{"type": kind, "value": value, "params": list(params)}]}
+
+
+class UniqueTypeTests(SimpleTestCase):
+    """Types 102 to 122 and the effect types 33 and 41 (notes/unique-effects-plan.md): each reads
+    as the plan's table says, from Daptrius's list and answers on 2026-11-16, and the card list's
+    sort counts each at its most. Card ids are the game's."""
+
+    # (card, stored slot, the line the page shows, what the sort counts)
+    READINGS = [
+        (30083, slot(102, 80, [20, 0, 0, 0]),
+         "Training Effectiveness 20% on a training that isn't its type (Friendship Gauge 80+)", {8: 20}),
+        (30085, slot(103, 5, [15, 0, 0, 0]), "Training Effectiveness 15% with 5 or more card types in the deck",
+         {8: 15}),
+        (30086, slot(104, 10000, [20, 0, 0, 0]), "Training Effectiveness 1% per 10,000 fans, up to 20%", {8: 20}),
+        (30090, slot(105, 10, [2, 0, 0, 0]),
+         "Initial stats +10 for each card in the deck, in that card's stat (Friend and Group cards: +2 to every "
+         "stat)", {}),
+        (30112, slot(106, 5, [1, 3, 0, 0]),
+         "Friendship Bonus 3% per Friendship Training with this card, up to 15%", {1: 15}),
+        (30094, slot(107, 1, [10, 30, 15, 5]),
+         "Friendship Bonus 5% to 15%, more the lower your Energy (15% at 30 Energy or less)", {1: 15}),
+        (30095, slot(108, 8, [100, 75, 5, 20]),
+         "Training Effectiveness 5%, plus 0.75% per point of max Energy over 100, up to 20%", {8: 20}),
+        (30099, slot(109, 8, [30, 0, 0, 0]),
+         "Training Effectiveness 1% per 30 total Friendship Gauge in the deck, up to 20%", {8: 20}),
+        (30102, slot(110, 8, [5, 0, 0, 0]),
+         "Training Effectiveness 5% per support card on the training, itself included (5% to 25%)", {8: 25}),
+        (30107, slot(111, 8, [5, 0, 0, 0]),
+         "Training Effectiveness 5% per level of the training facility, up to 25% at level 5", {8: 25}),
+        (30108, slot(112, 20), "20% chance a training's failure rate drops to 0%", {}),
+        (30127, slot(113, 2, [60, 0, 0, 0]), "Mood Effect 60% on Friendship Training", {2: 60}),
+        (30052, slot(113, 28, [30, 0, 0, 0]), "Energy Cost Reduction 30% on Friendship Training", {28: 30}),
+        (30115, slot(114, 8, [5, 20, 0, 0]), "Training Effectiveness 5% to 20%, more the higher your Energy",
+         {8: 20}),
+        (30146, slot(115, 14, [5, 0, 0, 0]), "Initial Friendship Gauge 5 for every card in the deck", {}),
+        (30154, slot(116, 3, [3, 1, 3, 0]), "Speed Bonus 1 per recovery skill learned, up to 3 skills", {3: 3}),
+        (30175, slot(116, 2, [5, 1, 3, 0]), "Power Bonus 1 per acceleration skill learned, up to 3 skills", {5: 3}),
+        (30223, slot(116, 1, [8, 4, 5, 0]),
+         "Training Effectiveness 4% per speed skill learned, up to 5 skills", {8: 20}),
+        (30148, slot(117, 8, [25, 20, 0, 0]),
+         "Training Effectiveness 1% per level across all five facilities, up to 20%", {8: 20}),
+        (30160, slot(118, 1, [60, 0, 0, 0]), "Can appear in 2 trainings at once (Friendship Gauge 60+)", {}),
+        (30188, slot(119, 50, [1, 60, 0, 0]),
+         "Specialty Priority 50 for every card in the deck (Friendship Gauge 60+)", {}),
+        (30264, slot(120, 1, [80, 1, 2, 0]),
+         "Stat bonus 1 for each card in the deck, in that card's stat, up to 2 per stat; Friend and Group cards "
+         "give Skill Point Bonus (Friendship Gauge 80+)", {}),
+        (30207, slot(121, 1, [2, 0, 0, 0]),
+         "Every support gains 1 more Friendship Gauge from training, 2 when training with this card", {}),
+        (30257, slot(122, 19, [60, 0, 0, 0]),
+         "Specialty Priority 60 on the next turn for supports that train with this card", {}),
+        (30298, slot(101, 80, [5, 1, 33, 1]), "Power Bonus 1 and Hint Levels Lv 1 (Friendship Gauge 80+)",
+         {5: 1, 17: 1}),
+        (30161, slot(101, 100, [30, 1, 41, 1]),
+         "Skill Point Bonus 1 and Speed, Stamina, Power, Guts and Wit Bonus 1 (Friendship Gauge 100+)",
+         {30: 1, 3: 1, 4: 1, 5: 1, 6: 1, 7: 1}),
+    ]
+
+    def test_each_type_reads_as_the_plan_says_and_sorts_at_its_most(self):
+        for card, unique, line, sorted_values in self.READINGS:
+            with self.subTest(card=card):
+                page = support_effects.unique_effect(unique)
+                self.assertEqual((page["text"], page["from_amounts"]), (line, True))
+                self.assertEqual(support_effects.unique_parts(unique),
+                                 {"level": 1, "values": sorted_values, "conditional": False})
+
+    def test_a_deck_effect_is_listed_but_never_sorted_or_multiplied(self):
+        """Daptrius, 2026-11-16, on Ryoka Tsurugi: list the amount, never say how it affects
+        priority. The card's own Specialty Priority doesn't gain it, and no multiply line."""
+        ryoka = slot(119, 50, [1, 60, 0, 0])
+        page = support_effects.unique_effect(ryoka, [{"type": 19, "levels": {"1": 20}}])
+        self.assertEqual(page["multiplies"], [])
+        self.assertEqual(page["amounts"][0]["scope"], "deck")
+        self.assertEqual(support_effects.unique_parts(ryoka)["values"], {})
+
+    def test_a_stacking_friendship_bonus_multiplies_with_the_cards_own(self):
+        twin_turbo = slot(106, 5, [1, 3, 0, 0])
+        self.assertEqual(support_effects.unique_effect(twin_turbo, [{"type": 1, "levels": {"1": 25}}])["multiplies"],
+                         ["Friendship Bonus"])
+
+    def test_a_slot_naming_an_unknown_effect_or_skill_kind_is_not_read(self):
+        self.assertIsNone(support_effects.unique_effect(slot(113, 99, [60, 0, 0, 0])))
+        self.assertIsNone(support_effects.unique_effect(slot(116, 9, [3, 1, 3, 0])))
+        self.assertEqual(support_effects.unique_parts(slot(116, 9, [3, 1, 3, 0]))["conditional"], True)
+
+    def test_every_unique_in_both_snapshots_now_reads(self):
+        """No card the game files hold keeps the sort's "+?" mark (2026-11-16: 563 JP cards and
+        271 Global). A type the game adds later fails here first: give it a reader or list it."""
+        for snapshot in (SNAPSHOT, SNAPSHOT.parent / "jp_snapshot"):
+            for card in json.loads((snapshot / "support_effects.json").read_text(encoding="utf-8")):
+                unique = card["unique"]
+                if not unique or not unique["effects"]:
+                    continue
+                with self.subTest(snapshot=snapshot.name, card=card["id"]):
+                    self.assertIsNotNone(support_effects.unique_amounts(unique))
+                    self.assertFalse(support_effects.unique_parts(unique)["conditional"])
+
+    def test_every_global_card_of_the_new_types_names_its_effect_in_the_games_sentence(self):
+        """Like the type-101 check: what each reader says the card gives, and its gauge
+        threshold, appear in the global client's own sentence for that card."""
+        rows = json.loads((SNAPSHOT / "support_effects.json").read_text(encoding="utf-8"))
+        checked = 0
+        for card in rows:
+            unique = card["unique"]
+            if not unique or not any(102 <= effect["type"] <= 122 for effect in unique["effects"]):
+                continue
+            with self.subTest(card=card["id"]):
+                amounts = support_effects.unique_amounts(unique)
+                self.assertIsNotNone(amounts)
+                for found in amounts or ():
+                    self.assertIn(found["name"].lower(), unique["text"].lower())
+                    if found["condition"]:
+                        self.assertIn(found["condition"].split()[-1].rstrip("+"), unique["text"])
+            checked += 1
+        self.assertGreaterEqual(checked, 17)
 
 
 class EffectImportTests(SimpleTestCase):
@@ -267,7 +391,7 @@ class CardPageEffectsTests(CalculatorTestCase):
         self.assertEqual(body["caps"], [30, 35, 40, 45, 50])
         self.assertEqual(body["unique_effect"],
                          {"level": 30, "text": "Guts Bonus and Initial Guts", "translated": False,
-                          "amounts": UNIQUE_AMOUNTS, "multiplies": []})
+                          "from_amounts": False, "amounts": UNIQUE_AMOUNTS, "multiplies": []})
         self.assertEqual(len(body["effects"]), 8)
         hint = next(row for row in body["effects"] if row["name"] == "Hint Frequency")
         self.assertEqual([hint["values"][level - 1] for level in (30, 35, 40, 45, 50)], [30, 33, 36, 40, 40])
@@ -291,7 +415,7 @@ class EffectSortTests(SimpleTestCase):
         self.assertEqual(support_effects.unique_parts(UNIQUE),
                          {"level": 30, "values": {6: 1, 12: 20}, "conditional": False})
         conditional = {"level": 25, "effects": [{"type": 15, "value": 5},
-                                                {"type": 113, "value": 28, "params": [30, 0, 0, 0]}]}
+                                                {"type": 199, "value": 28, "params": [30, 0, 0, 0]}]}
         self.assertEqual(support_effects.unique_parts(conditional),
                          {"level": 25, "values": {15: 5}, "conditional": True})
 
