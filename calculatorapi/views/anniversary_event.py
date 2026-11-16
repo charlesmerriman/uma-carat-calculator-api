@@ -4,6 +4,9 @@ from calculatorapi.models import AnniversaryEvent, AnniversaryEventProduct
 
 from .mixins import AnniversaryEventDateMixin
 
+# A product's `opens_at`, formatted as every other date on the wire.
+_DT = serializers.DateTimeField()
+
 
 class AnniversaryEventProductSerializer(serializers.ModelSerializer):
     """One purchasable line on a campaign — a carat pack or a selector.
@@ -42,6 +45,7 @@ class AnniversaryEventProductSerializer(serializers.ModelSerializer):
             "max_quantity",
             "jp_cutoff_date",
             "jp_cutoff_date_override",
+            "opens_with_part",
             "order",
         )
 
@@ -79,6 +83,18 @@ class AnniversaryEventSerializer(AnniversaryEventDateMixin, serializers.ModelSer
             "products",
             "banner_parts",
         )
+
+    def to_representation(self, instance):
+        """Each product gains `opens_at`: the instant its paid carats credit.
+        The start of the part it opens with (`opens_with_part`) when that part
+        is linked and dated, else the campaign's `main_start_date`, so an
+        editor's typo never drops a purchase from the projection."""
+        data = super().to_representation(instance)
+        part_starts = self._entry(instance).get("part_starts", {})
+        for product, row in zip(instance.products.all(), data["products"]):
+            start = part_starts.get(product.opens_with_part)
+            row["opens_at"] = _DT.to_representation(start) if start is not None else data["main_start_date"]
+        return data
 
     def get_banner_parts(self, obj):
         """The banner timelines this campaign spans, as ids + part numbers.
