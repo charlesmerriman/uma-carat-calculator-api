@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('calculatorapi', '0130_race_course'),
+        ('calculatorapi', '0136_translated_titles'),
     ]
 
     operations = [

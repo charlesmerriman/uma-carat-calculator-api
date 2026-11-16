@@ -662,11 +662,11 @@ class AnniversaryEventApiTests(CalculatorTestCase):
         self.assertEqual(opens['Spark Enhancement'], (9, _iso(part2.global_start_date)))
 
     def test_the_1500_packs_move_to_part_3_on_deploy(self):
-        """Migration 0132: anniversaries with a Part 3 only, blanks only."""
+        """Migration 0138: anniversaries with a Part 3 only, blanks only."""
         import importlib  # pylint: disable=import-outside-toplevel
         from django.apps import apps as django_apps  # pylint: disable=import-outside-toplevel
         set_part_3 = importlib.import_module(
-            'calculatorapi.migrations.0132_anniversary_1500_packs_open_in_part_3'
+            'calculatorapi.migrations.0138_anniversary_1500_packs_open_in_part_3'
         ).set_part_3
         self._add_parts_2_and_3()
         pack = AnniversaryEventProduct.objects.create(

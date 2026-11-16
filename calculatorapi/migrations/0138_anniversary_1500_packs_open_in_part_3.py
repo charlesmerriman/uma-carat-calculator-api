@@ -11,7 +11,7 @@ named exactly "1500 Carat Pack", only on `anniversary` campaigns that have a
 Part 3 linked and are not named in EXCEPTIONS (where there is none, Part 3 would fall back to the main part
 anyway, so the row is left blank rather than holding a value that means
 nothing). It creates and deletes nothing, and is a no-op on a database without
-those rows. Its own migration, apart from 0131's column (rules: never update
+those rows. Its own migration, apart from 0137's column (rules: never update
 rows and ALTER one table in one migration).
 """
 
@@ -44,7 +44,7 @@ def unset_part_3(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('calculatorapi', '0131_anniversaryeventproduct_opens_with_part'),
+        ('calculatorapi', '0137_anniversaryeventproduct_opens_with_part'),
     ]
 
     operations = [
