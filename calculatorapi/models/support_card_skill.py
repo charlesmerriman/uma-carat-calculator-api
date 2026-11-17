@@ -15,8 +15,8 @@ class SupportCardSkill(models.Model):
     One skill one support card can give, and how.
 
     `hint` rows come from the game's own data (the card's hint table) and
-    `event` rows from gametora's per-card pages, since the game's story-choice
-    data has no clean table for them. Both are imported by
+    `event` rows from the JP game server's per-card event skill lists, since
+    the mdb's story-choice data has no clean table for them. Both are imported by
     `manage.py import_game_data`, which adds rows it does not find and never
     deletes one. Edited as an inline on the support card's admin page.
     """

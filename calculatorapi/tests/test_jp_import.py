@@ -345,6 +345,27 @@ class JpImportTests(CalculatorTestCase):  # pylint: disable=too-many-instance-at
         self.assertFalse(SupportCardSkill.objects.filter(support_card=wrong).exists())
         self.assertIn("JP support card 30300", out)
 
+    def test_a_jp_only_card_takes_its_event_skills_from_jp_and_a_global_card_does_not(self):
+        # The JP server capture lists both cards; only the one global lacks
+        # reads it here (a global card's events come from global's own file).
+        self.jp["support_cards"] = [jp_support_card(30300, "speed"), jp_support_card(30028, "speed")]
+        self.jp["support_events"] = [
+            {"support_card_id": 30300, "skill_id": FAN_SKILL},
+            {"support_card_id": 30028, "skill_id": FAN_SKILL},
+        ]
+        jp_card = SupportCard.objects.create(name="[New Outfit] Kitasan Black", game_id=30300)
+        global_card = SupportCard.objects.create(name="Kitasan Black", game_id=30028)
+
+        self.run_import(extra_global={"support_cards": [{
+            "id": 30028, "chara_id": 1068, "chara_name": "Kitasan Black", "name": "Kitasan Black",
+            "title": "", "rarity": 3, "card_type": "wit", "skill_set_id": 1,
+        }]})
+
+        self.assertEqual(
+            list(jp_card.skills.values_list("skill__game_id", "source")), [(FAN_SKILL, "event")],
+        )
+        self.assertFalse(global_card.skills.exists())
+
     def test_a_jp_card_takes_its_type_from_jp_and_a_global_card_keeps_globals(self):
         self.jp["support_cards"] = [
             jp_support_card(30300, "speed"),
