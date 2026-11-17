@@ -71,6 +71,9 @@ ALL_RUNNERS = 10
 
 # variable == 1 (or another fixed value) reads as one fixed phrase.
 FLAGS = {
+    # A two-part skill whose second part waits for its first (Daptrius, board,
+    # 2026-11-17). Every one of the 146 JP skills using it has two parts.
+    ("is_activate_other_skill_detail", 1): "After Part 1 fires",
     ("is_lastspurt", 1): "In the last spurt",
     ("is_finalcorner", 1): "On the final corner or later",
     ("is_finalcorner", 0): "Before the final corner",
@@ -629,11 +632,20 @@ def describe_slot(slot, context):
         "after": describe_condition(slot.get("precondition", ""), context),
         "when": describe_condition(slot.get("condition", ""), context),
         "effects": [ability_text(ability, context) for ability in slot.get("abilities", [])],
+        # A duration that scales (`duration_usage` other than 1) says so, as a
+        # scaling value does: the files give a code per kind of scaling but not
+        # what each means, so the page marks it without guessing (Daptrius,
+        # board "Skill Effect and Duration Scaling", 2026-11-17).
         "duration": ("Whole race" if duration < 0
-                     else f"{seconds(duration)} per 1,000 m" if duration > 0 else None),
+                     else f"{seconds(duration)} per 1,000 m"
+                     + (" (varies)" if slot.get("duration_usage", 1) != 1 else "")
+                     if duration > 0 else None),
         "cooldown": ("Once per race" if cooldown >= ONCE_PER_RACE
                      else f"{seconds(cooldown)} per 1,000 m" if cooldown > 0 else None),
     }
+
+
+CHAIN_VARIABLE = "is_activate_other_skill_detail"
 
 
 def describe(skill, context=None):
@@ -654,6 +666,15 @@ def describe(skill, context=None):
     lot = getattr(skill, "activate_lot", None)
     return {
         "wit_check": None if lot is None else bool(lot),
+        # How a skill with several slots fires (Daptrius, board, 2026-11-17).
+        # Usually the game checks each slot in order and fires the FIRST whose
+        # conditions hold: alternatives, which a page calls Trigger 1, 2. A
+        # skill whose later slot waits on `is_activate_other_skill_detail`
+        # fires one after the other: parts, called Part 1, 2.
+        "chained": any(
+            CHAIN_VARIABLE in (slot.get(key) or "")
+            for slot in slots for key in ("precondition", "condition")
+        ),
         "slots": described,
         "complete": not any(item["raw"] for item in phrases),
     }

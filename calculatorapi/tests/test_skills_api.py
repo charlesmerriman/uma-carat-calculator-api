@@ -191,6 +191,44 @@ class SkillDetailTests(CalculatorTestCase):
         self.assertEqual([row["name"] for row in body["sources"]["cards"]], ["Kitasan Black"])
         self.assertEqual([row["name"] for row in body["evolution"]["into"]], ["Gluttonous Ruler"])
 
+    def test_an_evolved_skills_gold_is_listed_once(self):
+        """Its gold is "Evolves from", so not one of its other versions too
+        (Daptrius, board, 2026-11-17); and the gold's page names it under
+        "Evolves into" only."""
+        evolved = self.client.get(f"/skills/{self.ruler.game_id}").json()
+        self.assertEqual(evolved["evolution"]["from"]["name"], "Gourmand")
+        self.assertNotIn("Gourmand", [row["name"] for row in evolved["versions"]])
+        gold = self.client.get(f"/skills/{self.gourmand.game_id}").json()
+        self.assertNotIn("Gluttonous Ruler", [row["name"] for row in gold["versions"]])
+
+    def test_a_double_circle_lists_its_single_circles_givers(self):
+        """A hint for the ○ is a hint for the ◎ (Daptrius, board, 2026-11-17):
+        the ◎ lists the ○'s cards and umas, each marked with the ○'s name; a card
+        that gives both is listed once, for the ◎."""
+        single = make(200431, name="Mile Corners ○", group_id=20043, tier=1)
+        double = make(200432, name="Mile Corners ◎", group_id=20043, tier=2)
+        kitasan = SupportCard.objects.get(game_id=30028)
+        both = SupportCard.objects.create(name="Fine Motion", game_id=30030)
+        for giver in (kitasan, both):
+            SupportCardSkill.objects.create(support_card=giver, skill=single, source="hint")
+        SupportCardSkill.objects.create(support_card=both, skill=double, source="hint")
+        week = Uma.objects.get(game_id=100101)
+        UmaSkill.objects.create(uma=week, skill=single, source="awakening", level=2)
+        body = self.client.get("/skills/200432").json()
+        self.assertCountEqual([(row["name"], row["via"]) for row in body["sources"]["cards"]],
+                              [("Fine Motion", None), ("Kitasan Black", "Mile Corners ○")])
+        self.assertEqual([(row["name"], row["via"]) for row in body["sources"]["umas"]],
+                         [("Special Week", "Mile Corners ○")])
+        # The ○ keeps its own givers only.
+        own = self.client.get("/skills/200431").json()
+        self.assertEqual(sorted(row["name"] for row in own["sources"]["cards"]), ["Fine Motion", "Kitasan Black"])
+        self.assertTrue(all(row["via"] is None for row in own["sources"]["cards"]))
+
+    def test_an_inherited_copy_takes_no_givers_from_elsewhere(self):
+        # A lone white at tier 2 (a unique's inherited copy) has no ○ to borrow from.
+        make(900011, name="Shooting Star (inherited)", group_id=90001, tier=2)
+        self.assertEqual(self.client.get("/skills/900011").json()["sources"], {"umas": [], "cards": []})
+
     def test_a_japanese_name_skill_has_a_page_and_an_unknown_one_is_a_404(self):
         make(200998, name="", availability="jp", jp_name="名前だけ")
         self.assertEqual(self.client.get("/skills/200998").json()["name"], "名前だけ")

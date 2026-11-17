@@ -35,7 +35,7 @@ def make_skill(name, game_id, description="Does a thing.", availability="global"
 # Picture URLs go through default_storage, which is Spaces unless told
 # otherwise; CI has no bucket, so it would fail there and pass locally.
 @override_settings(STORAGES=PLAIN_TEST_STORAGES)
-class CatalogueTests(CalculatorTestCase):
+class CatalogueTests(CalculatorTestCase):  # pylint: disable=too-many-public-methods
 
     def setUp(self):
         self.on_global = make_skill("Groundwork", 200011)
@@ -101,6 +101,14 @@ class CatalogueTests(CalculatorTestCase):
         self.assertEqual(body["umas"][0]["title"], "[UmaTL Title]")
         self.assertEqual(body["support_cards"][0]["title"], "[Global Title]")
         self.assertNotIn("translated_title", body["support_cards"][0])
+
+    def test_counts_every_skill_the_skills_page_lists(self):
+        """The Encyclopedia's Skills tab shows its number before the list is
+        opened (Daptrius, board, 2026-11-17): JP-only skills included, as
+        GET /skills lists them, though `skills` here is global's only."""
+        body = self.fetch()
+        self.assertEqual(body["skill_count"], Skill.objects.shown().count())
+        self.assertGreater(body["skill_count"], len(body["skills"]))
 
     def test_every_characters_colours_ride_along_once(self):
         """One map for the whole catalogue (character_colours.py), looked up by character_id."""
