@@ -52,6 +52,9 @@ What comes out, one file per concern (all sorted by id, so re-runs diff cleanly)
   race_links.json     jp only: each CM's and LoH's course id and race
                       conditions, by number, which the admin's "Link courses"
                       reads (see extract_race_links)
+  characters.json     each character's two UI colours (see extract_characters).
+                      Writing it also rewrites the API's merged copy,
+                      calculatorapi/data/character_colours.json
 
 What the ids encode, because the import asserts on it:
 
@@ -89,6 +92,7 @@ Run from backend/:
 import argparse
 import datetime
 import json
+import re
 import sqlite3
 from pathlib import Path
 
@@ -741,6 +745,55 @@ def extract_evolutions(conn):
     return {"outfit": outfit, "scenario": scenario, "succession": succession}
 
 
+# chara_data's colours are six hex digits with no "#", in either case.
+HEX_COLOUR = re.compile(r"^[0-9A-Fa-f]{6}$")
+# The game leaves a character it never draws a training screen for (a
+# trainer, a reporter) at plain white. That is "unset", not a colour.
+UNSET_COLOUR = "FFFFFF"
+
+
+def extract_characters(conn):
+    """
+    Each character's two UI colours: chara_data.ui_color_main and
+    ui_color_sub, the pair the game paints her training screens in (Oguri
+    Cap: 3A7AD2 blue, ECE7E7 pale grey). The Encyclopedia paints her page
+    with them (notes/encyclopedia-redesign-plan.md).
+
+    Keyed by CHARACTER: every outfit and support card of hers shares them.
+    A row whose main colour is unset is skipped, and a value that is not six
+    hex digits stops the run: these end up in a style attribute, and the JP
+    half comes from a teammate's export.
+    """
+    characters = []
+    for row in conn.execute("SELECT id, ui_color_main, ui_color_sub FROM chara_data ORDER BY id"):
+        primary, sub = (str(row[key] or "").strip() for key in ("ui_color_main", "ui_color_sub"))
+        if not primary or primary.upper() == UNSET_COLOUR:
+            continue
+        for value in (primary, sub):
+            if not HEX_COLOUR.match(value):
+                raise SystemExit(f"chara_data {row['id']}: {value!r} is not a six-digit hex colour")
+        characters.append({"id": row["id"], "colour_main": f"#{primary.upper()}", "colour_sub": f"#{sub.upper()}"})
+    return characters
+
+
+# The API's copy: one {character id: [main, sub]} for both clients, read by
+# calculatorapi/character_colours.py.
+COLOURS_FILE = Path(__file__).resolve().parent.parent / "calculatorapi" / "data" / "character_colours.json"
+
+
+def merged_character_colours(snapshot_dirs):
+    """Both snapshots' characters.json as one map. Global's pair wins where
+    both have a character: it is the client a player here looks at."""
+    merged = {}
+    for directory in snapshot_dirs:  # later directories only fill what is missing
+        path = directory / "characters.json"
+        if not path.is_file():
+            continue
+        for row in json.loads(path.read_text(encoding="utf-8")):
+            merged.setdefault(str(row["id"]), [row["colour_main"], row["colour_sub"]])
+    return dict(sorted(merged.items(), key=lambda item: int(item[0])))
+
+
 def extract(mdb_path, region="global"):
     conn = sqlite3.connect(f"file:{mdb_path}?mode=ro", uri=True)
     conn.row_factory = sqlite3.Row  # columns by name, so no positional unpacking
@@ -776,6 +829,7 @@ def extract(mdb_path, region="global"):
             region_only = {"race_links.json": extract_race_links(conn)}
         # Both clients: JP's routes cover the characters global doesn't have.
         region_only["objectives.json"] = extract_objectives(conn)
+        region_only["characters.json"] = extract_characters(conn)
     finally:
         conn.close()
 
@@ -804,6 +858,7 @@ def extract(mdb_path, region="global"):
         counts.update({f"race_links_{kind}": len(region_only["race_links.json"][kind])
                        for kind in ("champions", "heroes")})
         counts["objectives"] = len(region_only["objectives.json"])
+        counts["characters"] = len(region_only["characters.json"])
     else:
         counts.update({name.removesuffix(".json"): len(payload) for name, payload in region_only.items()})
     files.update(region_only)
@@ -856,6 +911,10 @@ def main():
             json.dumps(payload, indent=1, ensure_ascii=False) + "\n", encoding="utf-8",
         )
     print(f"\nWrote {len(files)} file(s) to {args.out}")
+    if "characters.json" in files:
+        colours = merged_character_colours([DEFAULT_OUT["global"], DEFAULT_OUT["jp"]])
+        COLOURS_FILE.write_text(json.dumps(colours, indent=1) + "\n", encoding="utf-8")
+        print(f"Merged {len(colours)} characters' colours into {COLOURS_FILE}")
 
 
 if __name__ == "__main__":

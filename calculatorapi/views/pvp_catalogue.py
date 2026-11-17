@@ -21,6 +21,12 @@ Fetched once by the builder the first time a picker opens, never on /app load.
                    aliases including GameTora's names, the Japanese name),
                    which every skill search box matches but never shows
 
+    character_colours  {character id: [main, sub]}: each character's two
+                   colours from the game files (character_colours.py), which
+                   the Encyclopedia paints her tiles and pages with. Looked up
+                   by an uma's or a card's `character_id`; a character the
+                   files don't cover is simply absent
+
 Skills are a lookup table rather than embedded in each card: one skill is
 taught by dozens of cards, and the picker's "search by skill" walks from a
 skill to its cards anyway. A junction row pointing at a skill not on global is
@@ -57,7 +63,7 @@ from django.utils import timezone
 from rest_framework import permissions
 from rest_framework.decorators import api_view, permission_classes
 
-from calculatorapi import pvp_catalogue_cache
+from calculatorapi import character_colours, pvp_catalogue_cache
 from calculatorapi.global_release import game_release_passed, released_cards, released_umas
 from calculatorapi.models import Skill, SupportCard, SupportCardSkill, Uma, UmaSkill
 
@@ -176,7 +182,10 @@ def build_catalogue():
         card["skills"] = card_skills.get(card["id"], [])
         support_cards.append(card)
 
-    return {"umas": umas, "support_cards": support_cards, "skills": skills}
+    return {
+        "umas": umas, "support_cards": support_cards, "skills": skills,
+        "character_colours": character_colours.table(),
+    }
 
 
 @api_view(["GET"])
