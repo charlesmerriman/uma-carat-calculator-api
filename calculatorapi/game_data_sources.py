@@ -265,6 +265,34 @@ def plan_evolutions(sources, condition_text):
     return plan
 
 
+def jp_awakening_ahead(global_rows, jp_rows, jp_only_outfits):
+    """
+    Awakening ranks JP has given an outfit that global's files don't have
+    yet, as UmaSkill rows: JP raised the cap to 7 for some outfits (Special
+    Week, Tokai Teio and four more as of the 2026-10-02 export; Daptrius,
+    board "Awakening Level 6 and 7", 2026-11-17).
+
+    A global outfit otherwise takes its skills from global's files only, so
+    these ranks never arrived. Only a RANK global lacks for that outfit is
+    taken, never a rank global already has: global's own rows stay the truth
+    for what is in its game, and when global adds rank 6 its rows simply
+    match these. The skills are JP-only until then, so every page tags them
+    "JP only" and the team builder (global skills only) never offers them.
+    """
+    global_ranks = {}
+    for row in global_rows:
+        if row["source"] == "awakening":
+            global_ranks.setdefault(row["card_id"], set()).add(row["level"])
+    return [
+        (row["card_id"], row["skill_id"], row["source"], row["level"])
+        for row in jp_rows
+        if row["source"] == "awakening"
+        and row["card_id"] in global_ranks  # a global outfit (a JP-only one takes every row already)
+        and row["card_id"] not in jp_only_outfits
+        and row["level"] not in global_ranks[row["card_id"]]
+    ]
+
+
 def jp_owner_links(sources, snapshot):
     """
     Skill links for outfits and support cards global doesn't have, from the
@@ -329,7 +357,7 @@ def jp_owner_links(sources, snapshot):
     result["uma_rows"] = [
         (row["card_id"], row["skill_id"], row["source"], row["level"])
         for row in sources.jp["card_skills"] if row["card_id"] in jp_umas
-    ]
+    ] + jp_awakening_ahead(snapshot["card_skills"], sources.jp["card_skills"], jp_umas)
     # Hints from the JP mdb, event skills from the JP server capture
     # (scripts/convert_jp_support_events.py); a global card takes both from
     # global's own files, so only JP-only cards read these.

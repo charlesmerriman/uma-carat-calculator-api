@@ -272,6 +272,27 @@ class JpImportTests(CalculatorTestCase):  # pylint: disable=too-many-instance-at
         self.assertEqual(uma.jp_name, "スペシャルウィーク")
         self.assertTrue(uma_is_released(uma))
 
+    def test_a_global_outfit_takes_only_the_awakening_ranks_global_lacks_from_jp(self):
+        """JP raised some outfits' awakening cap to 7 (Daptrius, 2026-11-17): a
+        global outfit gains JP's ranks 6 and 7, and keeps global's own rows for
+        the ranks global has, whatever JP says about them."""
+        self.jp["card_skills"] = [
+            # Global has rank 3; JP's row for it is ignored.
+            {"card_id": SPECIAL_WEEK, "skill_id": BANQUET, "source": "awakening", "level": 3},
+            {"card_id": SPECIAL_WEEK, "skill_id": FAN_SKILL, "source": "awakening", "level": 6},
+            # Never an innate or a unique: those are global's alone for a global outfit.
+            {"card_id": SPECIAL_WEEK, "skill_id": RULER, "source": "innate", "level": None},
+        ]
+        global_card = snapshot_card(SPECIAL_WEEK, chara_name="Special Week")
+        self.run_import(extra_global={
+            "cards": [global_card],
+            "card_skills": [{"card_id": SPECIAL_WEEK, "skill_id": GOURMAND, "source": "awakening", "level": 3}],
+        })
+        self.assertCountEqual(
+            self.special_week.skills.exclude(source="evolved").values_list("skill__game_id", "source", "level"),
+            [(GOURMAND, "awakening", 3), (FAN_SKILL, "awakening", 6)],
+        )
+
     def test_a_distrusted_jp_outfit_takes_nothing(self):
         # Global names character 1001, so a JP-only outfit of it must be a row
         # with that name in it; this one names somebody else.

@@ -21,6 +21,9 @@ Fetched once by the builder the first time a picker opens, never on /app load.
                    aliases including GameTora's names, the Japanese name),
                    which every skill search box matches but never shows
 
+    skill_count    how many skills GET /skills lists, for the Encyclopedia's
+                   Skills tab
+
     character_colours  {character id: [main, sub]}: each character's two
                    colours from the game files (character_colours.py), which
                    the Encyclopedia paints her tiles and pages with. Looked up
@@ -185,6 +188,10 @@ def build_catalogue():
     return {
         "umas": umas, "support_cards": support_cards, "skills": skills,
         "character_colours": character_colours.table(),
+        # The Encyclopedia's Skills tab shows how many there are before its
+        # list is opened (Daptrius, board, 2026-11-17): the same rule as
+        # GET /skills (Skill.objects.shown()), so the two numbers agree.
+        "skill_count": Skill.objects.shown().count(),
     }
 
 

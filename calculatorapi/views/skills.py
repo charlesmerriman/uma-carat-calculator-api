@@ -35,8 +35,8 @@ from rest_framework.response import Response
 
 from calculatorapi import character_colours, pvp_guide_editing, skill_text, skills_cache
 from calculatorapi.global_release import released_cards, released_umas
-from calculatorapi.models import Skill, UmaSkill
-from calculatorapi.models.skill import skill_families
+from calculatorapi.models import Skill, SupportCardSkill, UmaSkill
+from calculatorapi.models.skill import SkillRarity, SkillTier, skill_families
 from calculatorapi.skill_types import skill_type
 from calculatorapi.views.pvp_catalogue import image_url
 
@@ -51,6 +51,21 @@ INHERITED_OFFSET = 800000
 
 def _shown():
     return Skill.objects.shown().select_related("evolves_from")
+
+
+# Out on global, then announced, then JP only.
+AVAILABILITY_ORDER = {"global": 0, "announced": 1, "jp": 2}
+
+
+def release_order(row):
+    """Sort key for evolved skills in the order they came out (Daptrius, board
+    "Umas, Evolved Skill Order", 2026-11-17): what global has before what it
+    doesn't, then the game id. The game numbers an outfit's evolutions of one
+    awakening rank in the order it added them: checked against the JP
+    files' start dates on 2026-11-17, all 550 (outfit, rank) groups agree.
+    The name order this replaced put a JP-only evolution above a global one.
+    `row` is a `summary()` dict."""
+    return (AVAILABILITY_ORDER.get(row["availability"], 9), row["game_id"])
 
 
 def summary(skill):
@@ -135,19 +150,44 @@ def build_list():
     ]
 
 
+def single_circle(skill):
+    """The ○ of a ◎ white, or None. A hint for the ○ is a hint for the ◎ too
+    (Daptrius, board "Double Circle Hint Givers", 2026-11-17), so a ◎ lists
+    the ○'s givers. A ◎ is a white at tier 2 with a tier-1 white in its
+    group (Skill.version_label); a unique's inherited copy is a lone tier-2
+    white, with no ○, so it gets nothing here."""
+    if skill.rarity != SkillRarity.WHITE or skill.tier != SkillTier.GOLD:
+        return None
+    return (Skill.objects.shown()
+            .filter(group_id=skill.group_id, rarity=SkillRarity.WHITE, tier=SkillTier.WHITE)
+            .exclude(pk=skill.pk).order_by("game_id").first())
+
+
 def sources(skill):
-    """Every outfit and card that gives the skill, on-global ones first."""
+    """Every outfit and card that gives the skill, on-global ones first. A ◎
+    adds its ○'s, each marked `via` the ○'s name (single_circle)."""
     # Out on Global right now (global_release.py). The sorts are stable, so
     # the out ones move to the front and each half keeps the SQL order.
     out_umas, out_cards = released_umas(), released_cards()
-    uma_rows = skill.umas.select_related("uma").order_by("source", "level", "uma__name")
+    lower = single_circle(skill)
+    givers = [skill, lower] if lower else [skill]
+    uma_rows = _unique_rows(
+        UmaSkill.objects.filter(skill__in=givers).select_related("uma", "skill")
+        .order_by("source", "level", "uma__name"),
+        lambda row: (row.uma_id, row.source), skill,
+    )
     umas = [
         {"id": row.uma_id, "name": row.uma.name, "game_id": row.uma.game_id,
          "image": image_url(row.uma.portrait.name if row.uma.portrait else ""),
-         "source": row.source, "level": row.level, "on_global": row.uma_id in out_umas}
+         "source": row.source, "level": row.level, "on_global": row.uma_id in out_umas,
+         "via": _via(row, skill)}
         for row in sorted(uma_rows, key=lambda row: row.uma_id not in out_umas)
     ]
-    card_rows = skill.support_cards.select_related("support_card").order_by("source", "support_card__name")
+    card_rows = _unique_rows(
+        SupportCardSkill.objects.filter(skill__in=givers).select_related("support_card", "skill")
+        .order_by("source", "support_card__name"),
+        lambda row: (row.support_card_id, row.source), skill,
+    )
     cards = [
         {"id": row.support_card_id, "name": row.support_card.name,
          # A card's name is its character's, shared by all her cards; the title tells them apart.
@@ -162,10 +202,27 @@ def sources(skill):
          ),
          "source": row.source, "on_global": row.support_card_id in out_cards,
          # For "Hide R" / "Hide SR" (Daptrius's item 3) and the type icon.
-         "rarity": row.support_card.rarity, "card_type": row.support_card.card_type}
+         "rarity": row.support_card.rarity, "card_type": row.support_card.card_type,
+         "via": _via(row, skill)}
         for row in sorted(card_rows, key=lambda row: row.support_card_id not in out_cards)
     ]
     return {"umas": umas, "cards": cards}
+
+
+def _unique_rows(rows, key, skill):
+    """The rows in their order, each owner and source once: a card that hints
+    both the ◎ and its ○ is listed for the ◎'s own row, never twice."""
+    kept = {}
+    for row in rows:
+        found = kept.get(key(row))
+        if found is None or (found.skill_id != skill.pk and row.skill_id == skill.pk):
+            kept[key(row)] = row
+    return list(kept.values())
+
+
+def _via(row, skill):
+    """The ○'s name when the row gives the ○ rather than this skill, else None."""
+    return None if row.skill_id == skill.pk else row.skill.shown_name
 
 
 def evolution(skill, owners):
@@ -176,11 +233,10 @@ def evolution(skill, owners):
     base = skill.evolves_from
     return {
         "from": summary(base) if base and base.is_shown else None,
-        "into": [
+        "into": sorted((
             {**summary(row), "owners": owners.of(row.game_id), "owner_umas": owners.umas_of(row.game_id)}
-            for row in Skill.objects.shown().filter(evolves_from=skill)
-            .select_related("evolves_from").by_shown_name()
-        ],
+            for row in Skill.objects.shown().filter(evolves_from=skill).select_related("evolves_from")
+        ), key=release_order),
         "conditions": unlock_conditions(skill),
         "scenario": skill.evolution_scenario,
     }
@@ -224,8 +280,13 @@ def build_detail(skill):
         "sources": sources(skill),
         "evolution": evolution(skill, owners),
         # Its white, gold and evolved forms on global (skill_families): the
-        # same "other versions" a guide's skill chip lists.
-        "versions": [summary(row) for row in skill_families([skill]).get(skill.pk, [])],
+        # same "other versions" a guide's skill chip lists, less what the page
+        # already shows as "Evolves from" and "Evolves into" (an evolved
+        # skill listed its gold twice; Daptrius, board, 2026-11-17).
+        "versions": [
+            summary(row) for row in skill_families([skill]).get(skill.pk, [])
+            if row.pk != skill.evolves_from_id and row.evolves_from_id != skill.pk
+        ],
     }
 
 

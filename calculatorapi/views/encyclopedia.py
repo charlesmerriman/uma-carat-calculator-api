@@ -49,7 +49,7 @@ from calculatorapi.global_release import (
 )
 from calculatorapi.models import Skill, SupportCard, SupportCardSkill, Uma, UmaSkill
 from calculatorapi.views.pvp_catalogue import image_url
-from calculatorapi.views.skills import _bytes, _json, refused, summary, unlock_conditions
+from calculatorapi.views.skills import _bytes, _json, refused, release_order, summary, unlock_conditions
 
 APTITUDE_KEYS = ("turf", "dirt", "short", "mile", "medium", "long", "front", "pace", "late", "end")
 STAT_KEYS = ("speed", "stamina", "power", "guts", "wit")
@@ -88,6 +88,14 @@ def _skill_rows(rows):
             **({"description": skill.shown_description} if row.source == "unique" else {}),
         })
     return found
+
+
+def _uma_skill_order(row):
+    """The order the game teaches them: unique, innate, awakening by rank, then
+    evolutions in the order they came out (views/skills.release_order), never
+    by name. Other skills in one rank keep the name order."""
+    within = release_order(row) if row["source"] == "evolved" else (0, row["name"])
+    return (UMA_SKILL_ORDER.get(row["source"], 9), row["level"] or 0, within)
 
 
 def _shown_skill_ids():
@@ -179,10 +187,7 @@ def build_uma(uma):
         "star_stats": uma.star_stats,
         "objectives": objectives,
         "objectives_hidden": objectives_hidden,
-        "skills": sorted(
-            _skill_rows(skills),
-            key=lambda row: (UMA_SKILL_ORDER.get(row["source"], 9), row["level"] or 0, row["name"]),
-        ),
+        "skills": sorted(_skill_rows(skills), key=_uma_skill_order),
         "outfits": outfits,
         "cards": cards,
     }
