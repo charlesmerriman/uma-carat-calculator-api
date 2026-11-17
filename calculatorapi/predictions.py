@@ -431,6 +431,69 @@ def build_game_event_confirmed_date_map(game_events):
     }
 
 
+# A story event's rewards can be claimed for this long after it ends. Every one
+# of the 22 Global has run so far ends with its banner and closes its claims
+# exactly three days later (the game's story_event_data, checked 2026-11-17), so
+# a predicted event gets the same. A fixed constant, unlike the game-event
+# buffer above: it describes the game, not a modelling choice, and it is never
+# income (StoryEvent is display only).
+STORY_EVENT_CLAIM_DAYS = timedelta(days=3)
+
+
+def story_event_dates(story_event, banner_timeline_emap):
+    """
+    Resolve a StoryEvent's dates: the game's own once Global has run it, its
+    banner's until then.
+
+    Two sources, in this order:
+
+    1. `global_start_at` is set: the import copied the game's own instants
+       (Global has scheduled the event). Those are the truth, never predicted.
+       A missing claim deadline is filled the same way a predicted one is.
+    2. Otherwise the linked banner's resolved window from the shared map: the
+       event runs with its banner, so it borrows the banner's start and end,
+       and is_predicted / applied_offset_days with them, which is how an
+       upcoming event picks up the banner's schedule offset for free.
+
+    `claim_end_date` is the extra key a story event has: the last moment to
+    claim its rewards. An event with neither source resolves to all-None and
+    sorts last, the same as an unlinked GameEvent.
+    """
+    if story_event.global_start_at is not None:
+        end = story_event.global_end_at
+        claim_end = story_event.global_claim_end_at or (
+            end + STORY_EVENT_CLAIM_DAYS if end is not None else None
+        )
+        return {
+            "start_date": story_event.global_start_at,
+            "end_date": end,
+            "claim_end_date": claim_end,
+            "is_predicted": False,
+            "applied_offset_days": 0,
+        }
+    entry = banner_timeline_emap.get(story_event.banner_timeline_id)
+    if entry is None or entry["start_date"] is None:
+        return {"start_date": None, "end_date": None, "claim_end_date": None,
+                "is_predicted": False, "applied_offset_days": 0}
+    end = entry["end_date"]
+    return {
+        "start_date": entry["start_date"],
+        "end_date": end,
+        "claim_end_date": end + STORY_EVENT_CLAIM_DAYS if end is not None else None,
+        "is_predicted": entry["is_predicted"],
+        "applied_offset_days": entry["applied_offset_days"],
+    }
+
+
+def build_story_event_date_map(story_events, banner_timeline_emap):
+    """Wraps story_event_dates over StoryEvent rows, resolving each via the
+    shared BannerTimeline map (/calculator-data's)."""
+    return {
+        story_event.id: story_event_dates(story_event, banner_timeline_emap)
+        for story_event in story_events
+    }
+
+
 def scenario_effective_dates(scenario, banner_timeline_emap):
     """
     Resolve a Scenario's START from its launch banner, by following its

@@ -144,6 +144,29 @@ a **Rewards** section. There are two carat fields:
 Both directly affect players' projections, so keep the amounts accurate to the
 in-game event.
 
+### Story events
+
+**Story events** are the game's limited-time events that run with a banner and give
+away a free support card. Each one shows on the Timeline as a row under its banner, with
+its logo, name, the last day to claim rewards, what it pays, and its free cards. They are
+for show only: changing one never changes anyone's carat projection (that is Game events,
+above).
+
+You don't add them. Every deploy reads them from the game's files: the name, the dates,
+the rewards and the cards. What's left for you:
+
+- **Image:** the event's logo. The row looks fine without one, so add it when you have it.
+- **Working name:** for an upcoming event Global hasn't named yet, type the English name
+  from the Carat Data Sheet. Global's own name replaces it on the site when the game ships
+  one. An event with neither reads "Story event".
+- **Rewards:** filled from the game's files. If yours differ, change them here. The page
+  ticks **Rewards set by hand** for you, and from then on deploys leave the rewards alone.
+  Untick it to hand them back to the game files.
+- **Free cards:** tick **Must get** only on a card worth going out of your way for. Most
+  cards don't get it. **Note** is optional, 80 characters, shown beside the card.
+- **Banner:** matched by start date. If an event sits under the wrong banner, change it
+  here and it stays changed.
+
 ## Daily legend races
 
 **Events & competitions → Daily legend races** lists the batches of umas that
