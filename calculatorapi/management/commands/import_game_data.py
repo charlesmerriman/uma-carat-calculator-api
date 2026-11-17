@@ -52,6 +52,10 @@ JP's links go to the others, after a name check in English (jp_owner_links).
 
 WHAT IT WRITES, and what it leaves alone:
 
+  StoryEvent   every story event in either snapshot, with its free cards,
+               CREATED when missing; what editors own is never touched
+               (the rules: calculatorapi/story_event_import.py).
+
   Skill        every column the game owns: name, description, rarity, group,
                tier, icon, cost, conditions, effects, and `availability`
                ("global" here, "announced" below). Matched on `game_id`, and CREATED
@@ -146,6 +150,9 @@ from calculatorapi.game_data_sources import (
 )
 from calculatorapi.game_data_values import card_values, jp_uma_values, merged, objective_values, uma_values
 from calculatorapi.models.skill import SkillAvailability, SkillRarity, SkillTier
+from calculatorapi.story_event_import import (
+    plan_story_events, report_lines as story_report_lines, write_story_events,
+)
 
 CONFIRM_PHRASE = "import"
 
@@ -166,7 +173,9 @@ def load_snapshot(directory):
     # Optional: event skills come from a server capture, not the mdb, a snapshot
     # from before 2026-10-16 has no text-ahead file, and one from before
     # 2026-10-27 no sparks, and one from before 2026-11-12 no objectives or card effects.
-    for name in ("support_events", "skill_text_ahead", "sparks", "objectives", "support_effects"):
+    # Story events arrived 2026-11-17 (notes/story-events-plan.md).
+    for name in ("support_events", "skill_text_ahead", "sparks", "objectives", "support_effects",
+                 "story_events"):
         path = directory / f"{name}.json"
         files[name] = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else []
     # Every race's English name by race instance id, for a JP route's goals; a
@@ -472,6 +481,9 @@ class Command(BaseCommand):
             ),
             self._plan_evolution_links(evolutions, known_skills),
             self._plan_sparks(snapshot["sparks"]),
+            plan_story_events(
+                snapshot["story_events"], sources.jp.get("story_events", []) if sources.jp else [],
+            ),
         ]
         if sources.jp is not None:
             plans.append(self._jp_notice(jp_links, evolutions))
@@ -479,7 +491,7 @@ class Command(BaseCommand):
 
         if not any(
             plan["changed"] or plan.get("created") or plan.get("conditions") or plan.get("aliases")
-            or plan.get("gametora_aliases") or plan.get("removed")
+            or plan.get("gametora_aliases") or plan.get("removed") or plan.get("new_cards")
             for plan in plans
         ):
             self.stdout.write(self.style.SUCCESS("\nNothing to write."))
@@ -851,6 +863,9 @@ class Command(BaseCommand):
                 if plan.get("spark"):
                     written += Command._write_sparks(plan)
                     continue
+                if plan.get("story"):
+                    written += write_story_events(plan)
+                    continue
                 for row, diff in plan["changed"]:
                     for column, value in diff.items():
                         setattr(row, column, value)
@@ -902,7 +917,11 @@ class Command(BaseCommand):
             ))
 
     def _report_jp_plan(self, plan, verb, dry_run):
-        """Report the JP pass's two plan kinds; False for any other plan."""
+        """Report the JP pass's two plan kinds and the story events; False for any other plan."""
+        if plan.get("story"):
+            for line, warning in story_report_lines(plan, dry_run):
+                self.stdout.write(self.style.WARNING(line) if warning else line)
+            return True
         if plan.get("notice"):
             self.stdout.write(f"\n{plan['label']}:")
             for line in plan["lines"]:

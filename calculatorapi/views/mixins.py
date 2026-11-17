@@ -141,6 +141,24 @@ class GameEventDateMixin(_ResolvedDateMixin):
                 "applied_offset_days": 0}
 
 
+class StoryEventDateMixin(GameEventDateMixin):
+    """
+    GameEventDateMixin plus `claim_end_date`: the last moment to claim a story
+    event's rewards, a few days after the event (and its banner) ends. Resolved
+    by predictions.story_event_dates; the Timeline row shows it and nothing else
+    about the dates, since the event runs with its banner.
+    """
+
+    claim_end_date = serializers.SerializerMethodField()
+
+    def get_claim_end_date(self, obj):
+        value = self._entry(obj)["claim_end_date"]
+        return _DT.to_representation(value) if value is not None else None
+
+    def _fallback(self, obj):
+        return {**super()._fallback(obj), "claim_end_date": None}
+
+
 class AnniversaryEventDateMixin(GameEventDateMixin):
     """
     GameEventDateMixin plus `main_start_date` — the start of the part that IS the

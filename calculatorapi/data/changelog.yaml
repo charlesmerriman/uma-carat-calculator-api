@@ -32,6 +32,26 @@
 # module changed. Newest entry first is conventional here but not required — the
 # page sorts by date.
 
+- key: story-events
+  date: 2026-11-17
+  title: "Story events on the Timeline"
+  version: "v2.17"
+  changes:
+    - added: "Story events are on the Timeline now, right under the banner they run with."
+    - added: "Each one shows what it pays, the last day to claim your rewards, and the free support cards it gives (five copies each). The few worth going out of your way for are marked Must get. Search finds a banner by its event or its free card too."
+    - added: "PvP guides split their skills into Early-Race, Mid-Game and Late-Race."
+    - added: "Rankings show how many players picked each favorite uma."
+    - added: "Supporters: the Encyclopedia kept growing while nobody was looking, and now it's in the tooltips. Hover any uma or support card, anywhere on the site, and it tells you everything about it. We've stopped trying to stop it."
+    - changed: "On desktop, a banner's options, its odds picker and its note open together in one panel."
+    - changed: "An anniversary's 1500 Carat Pack counts from Part 3, the day it goes on sale."
+    - changed: "The On global and JP only tags flip on release day."
+    - fixed: "Next pity counts the pulls you've already made."
+    - fixed: "On the carat forecast, a banner that runs around shorter ones gets a dashed line to the drop where its pulls come off, so its dot doesn't look lost."
+    - fixed: "What wins on Rankings shows the top 10 until you ask for more."
+    - fixed: "Uma pickers on the Selectors page say umas."
+    - fixed: "Long names on Timeline cards break in a sensible place."
+    - fixed: "Uma portraits should stop peeking out past their frames on some iPhones."
+
 - key: encyclopedia
   date: 2026-11-13
   title: "The Encyclopedia, for supporters first"

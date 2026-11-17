@@ -94,6 +94,7 @@ from .models import (
     ChampionsMeeting,
     SupportsOnSupportBanner, UmasOnUmaBanner,
     GameEvent, LeagueOfHeroes, Scenario,
+    StoryEvent, StoryEventCard,
     DailyLegendRaceRelease, DailyLegendRaceUma,
     ChangelogEntry, ChangelogChange,
     SocialAccount,
@@ -260,6 +261,19 @@ class DailyLegendRaceUmaInline(PicturePickersMixin, TabularInline):
     fields = ("uma",)
     autocomplete_fields = ("uma",)
     extra = 1
+
+
+class StoryEventCardInline(PicturePickersMixin, TabularInline):
+    """The free cards a story event gives, edited on the event's page.
+
+    The import adds the cards; editors set the mark and the note. No copies
+    column: every event gives five of each card.
+    """
+    model = StoryEventCard
+    fields = ("support_card", "must_get", "note", "order")
+    autocomplete_fields = ("support_card",)
+    ordering = ("order", "id")
+    extra = 0
 
 
 class AnniversaryEventProductInline(TabularInline):
@@ -873,6 +887,60 @@ class SupportCardAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
                 obj.image_borderless.url,
             )
         return "—"
+
+
+STORY_EVENT_REWARD_FIELDS = (
+    "carat_amount", "uma_ticket_amount", "support_ticket_amount",
+    "ssr_shard_amount", "sr_shard_amount",
+)
+# What the game-data import writes. Read-only on a saved event, so an edit can't
+# be quietly undone by the next deploy; editable on a new one, for the rare
+# event an editor adds before the import knows it.
+STORY_EVENT_GAME_FIELDS = (
+    "game_id", "name", "jp_name",
+    "global_start_at", "global_end_at", "global_claim_end_at", "jp_start_at", "jp_end_at",
+)
+
+
+@admin.register(StoryEvent)
+class StoryEventAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
+    """A story event and its free cards: the row under a banner on the Timeline.
+
+    Display only, never income: the planner's numbers come from Game events.
+    notes/story-events-plan.md has the why.
+    """
+    list_display = (
+        "__str__", "game_id", "banner_timeline", "global_start_at", "jp_start_at",
+        "carat_amount", "rewards_edited",
+    )
+    list_select_related = ("banner_timeline",)
+    search_fields = ("name", "working_name", "jp_name", "=game_id")
+    autocomplete_fields = ("banner_timeline",)
+    ordering = ("-game_id",)
+    inlines = (StoryEventCardInline,)
+    fieldsets = (
+        (None, {"fields": (
+            "game_id", "name", "working_name", "jp_name", "banner_timeline",
+            "image", "image_preview",
+        )}),
+        ("Dates from the game", {"fields": (
+            "global_start_at", "global_end_at", "global_claim_end_at",
+            "jp_start_at", "jp_end_at",
+        )}),
+        ("Rewards", {"fields": (*STORY_EVENT_REWARD_FIELDS, "rewards_edited")}),
+    )
+
+    def get_readonly_fields(self, request, obj=None):
+        readonly = ("image_preview",)
+        return readonly + STORY_EVENT_GAME_FIELDS if obj is not None else readonly
+
+    def save_model(self, request, obj, form, change):
+        # A reward an editor changes is theirs from now on: the import stops
+        # writing the rewards until someone unticks the box. The team's own
+        # figures (the Carat Data Sheet) win over the game files'.
+        if change and set(form.changed_data) & set(STORY_EVENT_REWARD_FIELDS):
+            obj.rewards_edited = True
+        super().save_model(request, obj, form, change)
 
 
 @admin.register(GameEvent)

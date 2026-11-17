@@ -240,6 +240,36 @@ erDiagram
         int ssr_crystal_amount
     }
 
+    StoryEvent {
+        int id PK
+        int game_id UK
+        string name "Global's"
+        string working_name
+        string jp_name
+        string image
+        int banner_timeline_id FK "nullable"
+        datetime global_start_at
+        datetime global_end_at
+        datetime global_claim_end_at
+        datetime jp_start_at
+        datetime jp_end_at
+        int carat_amount
+        int uma_ticket_amount
+        int support_ticket_amount
+        int ssr_shard_amount
+        int sr_shard_amount
+        bool rewards_edited
+    }
+
+    StoryEventCard {
+        int id PK
+        int story_event_id FK
+        int support_card_id FK
+        bool must_get
+        string note
+        int order
+    }
+
     Scenario {
         int id PK
         string name
@@ -355,6 +385,9 @@ erDiagram
     BannerStepUp }o--|| AnniversaryEvent : "anniversary_event"
 
     GameEvent }o--o| BannerTimeline : "banner_timeline"
+    StoryEvent }o--o| BannerTimeline : "banner_timeline"
+    StoryEventCard }o--|| StoryEvent : "story_event"
+    StoryEventCard }o--|| SupportCard : "support_card"
     Scenario }o--o| BannerTimeline : "banner_timeline"
     DailyLegendRaceRelease }o--o| BannerTimeline : "banner_timeline"
     DailyLegendRaceUma }o--|| DailyLegendRaceRelease : "release"
@@ -1490,6 +1523,38 @@ Because those dates are read *after* the offset pass has run, a `GameEvent` inhe
 `banner_timeline` is nullable (`on_delete=SET_NULL`) because not every event corresponds to a single banner — some tie to Champions Meeting rewards instead, some are campaign-wide events spanning multiple banners at once, and some are future placeholders — and because an event's own content (image, reward amounts) stays meaningful even if the banner it was tied to is later deleted. An unlinked (or unresolvable) event simply resolves to `null` dates, same as any other "no anchor" case in this system.
 
 The standalone `/events` route serves **confirmed-only** dates (`game_event_confirmed_dates()`, no prediction), matching the same convention used by `/leagueofheroes` — prediction is reserved for `/calculator-data`, which builds the richer map (`build_game_event_date_map()`) and reuses the request's single `BannerTimeline` emap rather than computing a second one.
+
+### `StoryEvent` is display only, and is not a `GameEvent`
+
+A **story event** is the game's limited-time event that runs alongside a banner and gives away
+a free ("welfare") support card. `StoryEvent` holds one, `StoryEventCard` its free cards, and
+the Timeline draws them as a row under the banner (`story_event_data`). Plan:
+`notes/story-events-plan.md`.
+
+**The two event models answer different questions.** A `GameEvent` row is one *income* bucket
+per banner window (about 200, named after the banner's umas), read by the ledger, and its
+carats cover everything paid in the window. A `StoryEvent` is the named event the game runs
+with roughly one banner in four, and its rewards are that event's own (2,160 carats for a
+recent one against its window's 2,610). Nothing in the income engine, the odds or selector
+eligibility reads `StoryEvent`, so a mistake in one can't move a projection.
+
+**Columns have owners.** The deploy's `import_game_data` writes what the game states
+(`game_id`, Global's `name`, `jp_name`, the five instants, the cards, and the rewards while
+`rewards_edited` is false). Editors own `image`, `working_name` (shown while `name` is blank),
+each card's `must_get` and `note`, and the rewards once they change one (the admin then ticks
+`rewards_edited`). The import matches `banner_timeline` by start date and writes it only while
+empty, so a correction sticks.
+
+**Dates: the game's, else the banner's.** `story_event_dates()` uses the game's own instants
+when Global has scheduled the event (never predicted), and otherwise borrows the linked banner's
+resolved window, `is_predicted` and offset included, exactly like shape 2 below but with no
+buffer: an event ends with its banner. The extra key is `claim_end_date`, the last moment to
+claim rewards: the game's, else `end_date` + `STORY_EVENT_CLAIM_DAYS` (3 days, which every
+Global event so far has had).
+
+**Its cards never look like catalogue cards.** `StoryEventCardSerializer` sends no
+`first_jp_date`, and eligibility is built from banner links alone, so a welfare card stays out
+of selectors (owner, 2026-10-30; pinned in `test_story_events.py`).
 
 ### `Scenario` borrows a start and never has an end — the fourth date shape
 

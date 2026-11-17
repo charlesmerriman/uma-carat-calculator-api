@@ -48,6 +48,7 @@ _EXPECTED_GET_KEYS = {
     'user_planned_banner_data', 'champions_meeting_data', 'league_of_heroes_event_data',
     'events_data', 'user_stats_data', 'banner_timeline_data',
     'anniversary_event_data', 'scenario_data', 'daily_legend_race_data',
+    'story_event_data',
     'user_planned_purchase_data',
     'user_step_up_selection_data',
     'user_plans', 'active_plan_id',

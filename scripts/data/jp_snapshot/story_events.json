@@ -1,0 +1,974 @@
+[
+ {
+  "id": 1001,
+  "name": "キミの夢へと走り出せ！",
+  "start": "2021-03-02T03:00:00+00:00",
+  "end": "2021-03-15T02:59:59+00:00",
+  "claim_end": "2021-03-18T02:59:59+00:00",
+  "rewards": {
+   "carats": 1040,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 0,
+   "sr_shards": 0
+  },
+  "cards": [
+   30025
+  ]
+ },
+ {
+  "id": 1002,
+  "name": "Brand-new Friend",
+  "start": "2021-03-30T03:00:00+00:00",
+  "end": "2021-04-15T02:59:59+00:00",
+  "claim_end": "2021-04-18T02:59:59+00:00",
+  "rewards": {
+   "carats": 890,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 0,
+   "sr_shards": 0
+  },
+  "cards": [
+   30030,
+   20026
+  ]
+ },
+ {
+  "id": 1003,
+  "name": "花咲く乙女のJunePride",
+  "start": "2021-05-28T03:00:00+00:00",
+  "end": "2021-06-10T02:59:59+00:00",
+  "claim_end": "2021-06-13T02:59:59+00:00",
+  "rewards": {
+   "carats": 1010,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 0,
+   "sr_shards": 0
+  },
+  "cards": [
+   30041
+  ]
+ },
+ {
+  "id": 1004,
+  "name": "幻想世界ウマネスト",
+  "start": "2021-06-29T03:00:00+00:00",
+  "end": "2021-07-12T02:59:59+00:00",
+  "claim_end": "2021-07-15T02:59:59+00:00",
+  "rewards": {
+   "carats": 1260,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 0,
+   "sr_shards": 0
+  },
+  "cards": [
+   30057
+  ]
+ },
+ {
+  "id": 1005,
+  "name": "あの娘が水着に着替えたら　ウマ娘夏物語",
+  "start": "2021-07-29T03:00:00+00:00",
+  "end": "2021-08-11T02:59:59+00:00",
+  "claim_end": "2021-08-14T02:59:59+00:00",
+  "rewards": {
+   "carats": 1260,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 0,
+   "sr_shards": 0
+  },
+  "cards": [
+   30047
+  ]
+ },
+ {
+  "id": 1006,
+  "name": "Make up in Halloween！",
+  "start": "2021-09-29T03:00:00+00:00",
+  "end": "2021-10-11T02:59:59+00:00",
+  "claim_end": "2021-10-14T02:59:59+00:00",
+  "rewards": {
+   "carats": 2160,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30066
+  ]
+ },
+ {
+  "id": 1007,
+  "name": "晩秋、囃子響きたる",
+  "start": "2021-10-28T03:00:00+00:00",
+  "end": "2021-11-08T02:59:59+00:00",
+  "claim_end": "2021-11-11T02:59:59+00:00",
+  "rewards": {
+   "carats": 2160,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30070
+  ]
+ },
+ {
+  "id": 1008,
+  "name": "聖なる夜に重なるキセキ",
+  "start": "2021-11-29T03:00:00+00:00",
+  "end": "2021-12-14T02:59:59+00:00",
+  "claim_end": "2021-12-17T02:59:59+00:00",
+  "rewards": {
+   "carats": 2160,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30074
+  ]
+ },
+ {
+  "id": 1009,
+  "name": "瑞花繚乱！新春かるた合戦",
+  "start": "2021-12-31T03:00:00+00:00",
+  "end": "2022-01-11T02:59:59+00:00",
+  "claim_end": "2022-01-14T02:59:59+00:00",
+  "rewards": {
+   "carats": 2160,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30079
+  ]
+ },
+ {
+  "id": 1010,
+  "name": "栄冠のパティスリー",
+  "start": "2022-01-28T03:00:00+00:00",
+  "end": "2022-02-08T02:59:59+00:00",
+  "claim_end": "2022-02-11T02:59:59+00:00",
+  "rewards": {
+   "carats": 2160,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30084
+  ]
+ },
+ {
+  "id": 1011,
+  "name": "羽ばたきのRun-up！",
+  "start": "2022-02-24T03:00:00+00:00",
+  "end": "2022-03-07T02:59:59+00:00",
+  "claim_end": "2022-03-10T02:59:59+00:00",
+  "rewards": {
+   "carats": 2440,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30087,
+   20043
+  ]
+ },
+ {
+  "id": 1012,
+  "name": "今宵、リーニュ・ドロワットで",
+  "start": "2022-03-29T03:00:00+00:00",
+  "end": "2022-04-11T02:59:59+00:00",
+  "claim_end": "2022-04-14T02:59:59+00:00",
+  "rewards": {
+   "carats": 2160,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30092
+  ]
+ },
+ {
+  "id": 1013,
+  "name": "轟け、エール！トレセン学園応援団",
+  "start": "2022-04-28T03:00:00+00:00",
+  "end": "2022-05-10T02:59:59+00:00",
+  "claim_end": "2022-05-13T02:59:59+00:00",
+  "rewards": {
+   "carats": 2160,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30096
+  ]
+ },
+ {
+  "id": 1014,
+  "name": "『刻限』～Silks&Three Riddles～",
+  "start": "2022-05-30T03:00:00+00:00",
+  "end": "2022-06-10T02:59:59+00:00",
+  "claim_end": "2022-06-13T02:59:59+00:00",
+  "rewards": {
+   "carats": 2160,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30100
+  ]
+ },
+ {
+  "id": 1015,
+  "name": "シーク・ソルヴ・サマーウォーク！",
+  "start": "2022-06-30T03:00:00+00:00",
+  "end": "2022-07-11T02:59:59+00:00",
+  "claim_end": "2022-07-14T02:59:59+00:00",
+  "rewards": {
+   "carats": 2160,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30104
+  ]
+ },
+ {
+  "id": 1016,
+  "name": "大乱闘！？夏色☆バカンス",
+  "start": "2022-07-29T03:00:00+00:00",
+  "end": "2022-08-10T02:59:59+00:00",
+  "claim_end": "2022-08-13T02:59:59+00:00",
+  "rewards": {
+   "carats": 2160,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30109
+  ]
+ },
+ {
+  "id": 1017,
+  "name": "鉄翼蒸気奇譚",
+  "start": "2022-08-29T03:00:00+00:00",
+  "end": "2022-09-12T02:59:59+00:00",
+  "claim_end": "2022-09-15T02:59:59+00:00",
+  "rewards": {
+   "carats": 2160,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30113
+  ]
+ },
+ {
+  "id": 1018,
+  "name": "デイズ・イン・ア・フラッシュ",
+  "start": "2022-09-29T03:00:00+00:00",
+  "end": "2022-10-11T02:59:59+00:00",
+  "claim_end": "2022-10-14T02:59:59+00:00",
+  "rewards": {
+   "carats": 2160,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30117
+  ]
+ },
+ {
+  "id": 1019,
+  "name": "おもいより、おもいかけ",
+  "start": "2022-10-28T03:00:00+00:00",
+  "end": "2022-11-09T02:59:59+00:00",
+  "claim_end": "2022-11-12T02:59:59+00:00",
+  "rewards": {
+   "carats": 2160,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30119
+  ]
+ },
+ {
+  "id": 1020,
+  "name": "Illuminate the Heart",
+  "start": "2022-11-28T03:00:00+00:00",
+  "end": "2022-12-12T02:59:59+00:00",
+  "claim_end": "2022-12-15T02:59:59+00:00",
+  "rewards": {
+   "carats": 2160,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30125
+  ]
+ },
+ {
+  "id": 1021,
+  "name": "Happy new future ～朝焼けの絆～",
+  "start": "2022-12-29T03:00:00+00:00",
+  "end": "2023-01-10T02:59:59+00:00",
+  "claim_end": "2023-01-13T02:59:59+00:00",
+  "rewards": {
+   "carats": 2160,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30129
+  ]
+ },
+ {
+  "id": 1022,
+  "name": "スイートメモリー・ティータイム",
+  "start": "2023-01-30T03:00:00+00:00",
+  "end": "2023-02-13T02:59:59+00:00",
+  "claim_end": "2023-02-16T02:59:59+00:00",
+  "rewards": {
+   "carats": 2160,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30133
+  ]
+ },
+ {
+  "id": 1023,
+  "name": "Leap into a New World!",
+  "start": "2023-02-24T03:00:00+00:00",
+  "end": "2023-03-10T02:59:59+00:00",
+  "claim_end": "2023-03-13T02:59:59+00:00",
+  "rewards": {
+   "carats": 2220,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30135
+  ]
+ },
+ {
+  "id": 1024,
+  "name": "されば君、かなし",
+  "start": "2023-03-29T03:00:00+00:00",
+  "end": "2023-04-10T02:59:59+00:00",
+  "claim_end": "2023-04-13T02:59:59+00:00",
+  "rewards": {
+   "carats": 2160,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30140
+  ]
+ },
+ {
+  "id": 1025,
+  "name": "神算鬼謀！？春祭！熱闘鬼ドッジ",
+  "start": "2023-04-28T03:00:00+00:00",
+  "end": "2023-05-10T02:59:59+00:00",
+  "claim_end": "2023-05-13T02:59:59+00:00",
+  "rewards": {
+   "carats": 2160,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30143
+  ]
+ },
+ {
+  "id": 1026,
+  "name": "宣誓、戦う君へのプロポーズ",
+  "start": "2023-05-29T03:00:00+00:00",
+  "end": "2023-06-09T02:59:59+00:00",
+  "claim_end": "2023-06-12T02:59:59+00:00",
+  "rewards": {
+   "carats": 2160,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30150
+  ]
+ },
+ {
+  "id": 1027,
+  "name": "#summer #besties",
+  "start": "2023-06-29T03:00:00+00:00",
+  "end": "2023-07-10T02:59:59+00:00",
+  "claim_end": "2023-07-13T02:59:59+00:00",
+  "rewards": {
+   "carats": 2160,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30155
+  ]
+ },
+ {
+  "id": 1028,
+  "name": "夏の陽は、青く凪ぐ",
+  "start": "2023-07-31T03:00:00+00:00",
+  "end": "2023-08-14T02:59:59+00:00",
+  "claim_end": "2023-08-17T02:59:59+00:00",
+  "rewards": {
+   "carats": 2160,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30159
+  ]
+ },
+ {
+  "id": 1029,
+  "name": "フェアウェルを継ぎ接いで",
+  "start": "2023-09-29T03:00:00+00:00",
+  "end": "2023-10-10T02:59:59+00:00",
+  "claim_end": "2023-10-13T02:59:59+00:00",
+  "rewards": {
+   "carats": 2160,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30167
+  ]
+ },
+ {
+  "id": 1030,
+  "name": "秋さびて、想ひ綴る",
+  "start": "2023-10-30T03:00:00+00:00",
+  "end": "2023-11-09T02:59:59+00:00",
+  "claim_end": "2023-11-12T02:59:59+00:00",
+  "rewards": {
+   "carats": 2160,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30171
+  ]
+ },
+ {
+  "id": 1031,
+  "name": "A Gleaming Mejiro Gala",
+  "start": "2023-11-30T03:00:00+00:00",
+  "end": "2023-12-11T02:59:59+00:00",
+  "claim_end": "2023-12-14T02:59:59+00:00",
+  "rewards": {
+   "carats": 2160,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30176
+  ]
+ },
+ {
+  "id": 1032,
+  "name": "ワタシモミンナノ",
+  "start": "2023-12-28T03:00:00+00:00",
+  "end": "2024-01-09T02:59:59+00:00",
+  "claim_end": "2024-01-12T02:59:59+00:00",
+  "rewards": {
+   "carats": 2130,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30180,
+   30181
+  ]
+ },
+ {
+  "id": 1033,
+  "name": "おでんせ！和みの幸味庵",
+  "start": "2024-01-31T03:00:00+00:00",
+  "end": "2024-02-14T02:59:59+00:00",
+  "claim_end": "2024-02-17T02:59:59+00:00",
+  "rewards": {
+   "carats": 2160,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30185
+  ]
+ },
+ {
+  "id": 1034,
+  "name": "彗星蘭の君へ～Let's dance now!～",
+  "start": "2024-03-29T03:00:00+00:00",
+  "end": "2024-04-09T02:59:59+00:00",
+  "claim_end": "2024-04-12T02:59:59+00:00",
+  "rewards": {
+   "carats": 2910,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30197
+  ]
+ },
+ {
+  "id": 1035,
+  "name": "下剋上、兵どもが鬨の声",
+  "start": "2024-04-30T03:00:00+00:00",
+  "end": "2024-05-10T02:59:59+00:00",
+  "claim_end": "2024-05-13T02:59:59+00:00",
+  "rewards": {
+   "carats": 2910,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30200
+  ]
+ },
+ {
+  "id": 1036,
+  "name": "拝啓、波真珠の私より",
+  "start": "2024-05-30T03:00:00+00:00",
+  "end": "2024-06-13T02:59:59+00:00",
+  "claim_end": "2024-06-16T02:59:59+00:00",
+  "rewards": {
+   "carats": 2910,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30205
+  ]
+ },
+ {
+  "id": 1037,
+  "name": "夕映えは渚のJugend",
+  "start": "2024-07-29T03:00:00+00:00",
+  "end": "2024-08-14T02:59:59+00:00",
+  "claim_end": "2024-08-17T02:59:59+00:00",
+  "rewards": {
+   "carats": 2910,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30212
+  ]
+ },
+ {
+  "id": 1038,
+  "name": "あなたと仰ぐハーベストムーン",
+  "start": "2024-08-30T03:00:00+00:00",
+  "end": "2024-09-10T02:59:59+00:00",
+  "claim_end": "2024-09-13T02:59:59+00:00",
+  "rewards": {
+   "carats": 2910,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30220
+  ]
+ },
+ {
+  "id": 1039,
+  "name": "スラップスティック・クラッシュ！",
+  "start": "2024-09-30T03:00:00+00:00",
+  "end": "2024-10-11T02:59:59+00:00",
+  "claim_end": "2024-10-14T02:59:59+00:00",
+  "rewards": {
+   "carats": 2910,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30225
+  ]
+ },
+ {
+  "id": 1040,
+  "name": "つどい歌えよ、星々よ！",
+  "start": "2024-11-28T03:00:00+00:00",
+  "end": "2024-12-10T02:59:59+00:00",
+  "claim_end": "2024-12-13T02:59:59+00:00",
+  "rewards": {
+   "carats": 2910,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30231
+  ]
+ },
+ {
+  "id": 1041,
+  "name": "画竜、暁風を呼ぶ",
+  "start": "2024-12-27T03:00:00+00:00",
+  "end": "2025-01-10T02:59:59+00:00",
+  "claim_end": "2025-01-13T02:59:59+00:00",
+  "rewards": {
+   "carats": 2910,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30235
+  ]
+ },
+ {
+  "id": 1042,
+  "name": "Melty♡ for U",
+  "start": "2025-01-31T03:00:00+00:00",
+  "end": "2025-02-14T02:59:59+00:00",
+  "claim_end": "2025-02-17T02:59:59+00:00",
+  "rewards": {
+   "carats": 2910,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30239
+  ]
+ },
+ {
+  "id": 1043,
+  "name": "Phantasmagoria　～幻踏～",
+  "start": "2025-03-31T03:00:00+00:00",
+  "end": "2025-04-10T02:59:59+00:00",
+  "claim_end": "2025-04-13T02:59:59+00:00",
+  "rewards": {
+   "carats": 2910,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30247
+  ]
+ },
+ {
+  "id": 1044,
+  "name": "宙照らす、ドリーミーナイトパレード",
+  "start": "2025-04-30T03:00:00+00:00",
+  "end": "2025-05-12T02:59:59+00:00",
+  "claim_end": "2025-05-15T02:59:59+00:00",
+  "rewards": {
+   "carats": 2910,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30251
+  ]
+ },
+ {
+  "id": 1045,
+  "name": "青水無月の花浜匙",
+  "start": "2025-05-30T03:00:00+00:00",
+  "end": "2025-06-13T02:59:59+00:00",
+  "claim_end": "2025-06-16T02:59:59+00:00",
+  "rewards": {
+   "carats": 2910,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30255
+  ]
+ },
+ {
+  "id": 1046,
+  "name": "サマーデイズ『キミ』グラフィティ",
+  "start": "2025-07-31T03:00:00+00:00",
+  "end": "2025-08-14T02:59:59+00:00",
+  "claim_end": "2025-08-17T02:59:59+00:00",
+  "rewards": {
+   "carats": 2910,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30263
+  ]
+ },
+ {
+  "id": 1047,
+  "name": "ことば・こころ・ひびけ",
+  "start": "2025-08-29T03:00:00+00:00",
+  "end": "2025-09-09T02:59:59+00:00",
+  "claim_end": "2025-09-12T02:59:59+00:00",
+  "rewards": {
+   "carats": 2910,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30269
+  ]
+ },
+ {
+  "id": 1048,
+  "name": "Act 0：脚光、届けトラピーズ！",
+  "start": "2025-09-29T03:00:00+00:00",
+  "end": "2025-10-10T02:59:59+00:00",
+  "claim_end": "2025-10-13T02:59:59+00:00",
+  "rewards": {
+   "carats": 2910,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30273
+  ]
+ },
+ {
+  "id": 1049,
+  "name": "実録！！黄金聖夜24時",
+  "start": "2025-11-28T03:00:00+00:00",
+  "end": "2025-12-11T02:59:59+00:00",
+  "claim_end": "2025-12-14T02:59:59+00:00",
+  "rewards": {
+   "carats": 2910,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30280
+  ]
+ },
+ {
+  "id": 1050,
+  "name": "青のみちゆき、初春近し。",
+  "start": "2025-12-26T03:00:00+00:00",
+  "end": "2026-01-08T02:59:59+00:00",
+  "claim_end": "2026-01-11T02:59:59+00:00",
+  "rewards": {
+   "carats": 2910,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30284
+  ]
+ },
+ {
+  "id": 1051,
+  "name": "届け我魂！バレンタイン限界バトル",
+  "start": "2026-01-30T03:00:00+00:00",
+  "end": "2026-02-14T02:59:59+00:00",
+  "claim_end": "2026-02-17T02:59:59+00:00",
+  "rewards": {
+   "carats": 2910,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30288
+  ]
+ },
+ {
+  "id": 1052,
+  "name": "君ありて、春",
+  "start": "2026-03-30T03:00:00+00:00",
+  "end": "2026-04-10T02:59:59+00:00",
+  "claim_end": "2026-04-13T02:59:59+00:00",
+  "rewards": {
+   "carats": 2460,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 0
+  },
+  "cards": [
+   30295
+  ]
+ },
+ {
+  "id": 1053,
+  "name": "紅蓮の咆哮　白焔の爛華",
+  "start": "2026-04-30T03:00:00+00:00",
+  "end": "2026-05-11T02:59:59+00:00",
+  "claim_end": "2026-05-14T02:59:59+00:00",
+  "rewards": {
+   "carats": 2460,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 0
+  },
+  "cards": [
+   30299
+  ]
+ },
+ {
+  "id": 1054,
+  "name": "ハッピー？ブルー☆バスターズ！！",
+  "start": "2026-05-29T03:00:00+00:00",
+  "end": "2026-06-15T02:59:59+00:00",
+  "claim_end": "2026-06-18T02:59:59+00:00",
+  "rewards": {
+   "carats": 2460,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 0
+  },
+  "cards": [
+   30303
+  ]
+ },
+ {
+  "id": 1055,
+  "name": "あの夏のケセラセラ",
+  "start": "2026-07-30T03:00:00+00:00",
+  "end": "2026-08-14T02:59:59+00:00",
+  "claim_end": "2026-08-17T02:59:59+00:00",
+  "rewards": {
+   "carats": 2460,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 0
+  },
+  "cards": [
+   30309
+  ]
+ },
+ {
+  "id": 1056,
+  "name": "ゆけゆけ、きらぼし調査隊！",
+  "start": "2026-08-31T03:00:00+00:00",
+  "end": "2026-09-11T02:59:59+00:00",
+  "claim_end": "2026-09-14T02:59:59+00:00",
+  "rewards": {
+   "carats": 2460,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 0
+  },
+  "cards": [
+   30316
+  ]
+ },
+ {
+  "id": 1057,
+  "name": "Banquet of Shadows",
+  "start": "2026-09-30T03:00:00+00:00",
+  "end": "2026-10-13T02:59:59+00:00",
+  "claim_end": "2026-10-16T02:59:59+00:00",
+  "rewards": {
+   "carats": 2460,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 0
+  },
+  "cards": [
+   30321
+  ]
+ }
+]
