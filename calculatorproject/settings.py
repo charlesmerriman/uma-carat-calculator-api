@@ -188,6 +188,11 @@ UNFOLD = {
                         "link": reverse_lazy("admin:calculatorapi_gameevent_changelist"),
                     },
                     {
+                        "title": _("Story events"),
+                        "icon": "auto_stories",
+                        "link": reverse_lazy("admin:calculatorapi_storyevent_changelist"),
+                    },
+                    {
                         "title": _("Champions Meetings"),
                         "icon": "emoji_events",
                         "link": reverse_lazy("admin:calculatorapi_championsmeeting_changelist"),

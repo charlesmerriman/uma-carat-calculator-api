@@ -347,6 +347,7 @@ in that module).
   "anniversary_event_data":      [ AnniversaryEvent ],
   "scenario_data":               [ Scenario ],
   "daily_legend_race_data":      [ DailyLegendRaceRelease ],
+  "story_event_data":            [ StoryEvent ],
   "user_planned_purchase_data":  [ UserPlannedPurchase ],
   "user_step_up_selection_data": [ UserStepUpSelection ],
   "income_ledger":               [ IncomeLedgerRow ],
@@ -356,7 +357,7 @@ in that module).
 
 `user_stats_data` is the **active plan's** stats: the account's own, or, when that plan has `separate_income` on, its income profile's. Same shape either way (`Plan.income_profile_id` says which). `user_planned_purchase_data` follows the same rule: the purchases of that same stats block. Step-up selections are the account's whichever plan is open.
 
-`user_planned_banner_data`, `banner_uma_data`, `banner_support_data`, `champions_meeting_data`, `league_of_heroes_event_data`, `events_data`, `anniversary_event_data`, `scenario_data`, `daily_legend_race_data` and `user_planned_purchase_data` are all ordered by each row's **resolved** (confirmed-or-predicted) global start date, sorted server-side in Python since predicted dates aren't a DB column.
+`user_planned_banner_data`, `banner_uma_data`, `banner_support_data`, `champions_meeting_data`, `league_of_heroes_event_data`, `events_data`, `anniversary_event_data`, `scenario_data`, `daily_legend_race_data`, `story_event_data` and `user_planned_purchase_data` are all ordered by each row's **resolved** (confirmed-or-predicted) global start date, sorted server-side in Python since predicted dates aren't a DB column.
 
 ---
 
@@ -2114,6 +2115,50 @@ Reward amounts are fields on the event itself (no separate reward model/list).
   "sr_crystal_amount": 0,
   "ssr_shard_amount": 0,
   "ssr_crystal_amount": 0
+}
+```
+
+### `StoryEvent` (from `story_event_data`)
+
+A story event and the free cards it gives, for the Timeline row under its banner. **Display
+only**: the income ledger never reads it (that is `GameEvent`), and its cards never reach
+selector eligibility. Only events linked to a banner are sent.
+
+- `name` is the name a player reads: Global's, else the editors' working name, else `""`
+  (the client says "Story event"). The Japanese name is never sent.
+- Dates are the game's own once Global has run the event (`is_predicted: false`), else the
+  linked banner's resolved window (with its `is_predicted`). `claim_end_date` is the last
+  moment to claim rewards: the game's, else `end_date` + 3 days
+  (`predictions.STORY_EVENT_CLAIM_DAYS`).
+- Rewards are the event's own, not its banner window's income.
+- Each card's `title` is Global's only, never UmaTL's (it would need a credit line); a card
+  Global hasn't titled sends `""`. `game_id` is null for a placeholder. There is no
+  `first_jp_date` on purpose. Every event gives five copies of each card, so no count is sent.
+
+```json
+{
+  "id": 1,
+  "game_id": 1022,
+  "name": "Sweet Memories Teatime",
+  "image": "url | null",
+  "banner_timeline": 72,
+  "start_date": "ISO8601 | null",
+  "end_date": "ISO8601 | null",
+  "claim_end_date": "ISO8601 | null",
+  "is_predicted": false,
+  "applied_offset_days": 0,
+  "carat_amount": 2160,
+  "uma_ticket_amount": 2,
+  "support_ticket_amount": 2,
+  "ssr_shard_amount": 3,
+  "sr_shard_amount": 3,
+  "cards": [
+    {
+      "id": 412, "name": "Hishi Akebono", "title": "[Fondente Smile]",
+      "image": "url | null", "rarity": 3, "purpose": "", "game_id": 30133,
+      "must_get": false, "note": ""
+    }
+  ]
 }
 ```
 
