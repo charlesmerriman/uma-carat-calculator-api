@@ -1016,7 +1016,8 @@ fetches it once, when a picker first opens.
             "skills": [{"skill": 210, "source": "unique", "level": 1}]}],
   "support_cards": [{"id": 302, "name": "Kitasan Black", "game_id": 30086, "image": "url",
                      "image_borderless": "url | null", "card_type": "speed",
-                     "rarity": 3, "title": "[Fire at My Heels]", "group_members": [], "on_global": true,
+                     "rarity": 3, "title": "[Fire at My Heels]", "character_id": 1068,
+                     "group_members": [], "on_global": true,
                      "released_at": "2026-03-12T00:00:00+00:00",
                      "skills": [{"skill": 88, "source": "hint"}]}],
   "skills": [{"id": 88, "name": "Groundwork", "description": "string", "image": "url | null",
@@ -1031,7 +1032,9 @@ are never displayed), and the Japanese name.
 
 `umas` is `Uma.pickable()` (with a picture, no `(All)`); `support_cards` is every card
 with art. `released_at` is `SupportCard.global_release_at`, null for a card not out on Global: the
-Collection's Release date sort reads it, and selectors never do. `skills` holds skills on global only, and a uma's or card's skill link to any
+Collection's and the Encyclopedia's Release date sorts read it, and selectors never do. A card's
+`character_id` is the game's 4-digit character (null when unknown), the same number an uma's
+`game_id` starts with; the Encyclopedia's search matches it. `skills` holds skills on global only, and a uma's or card's skill link to any
 other skill is left out. Aptitudes are 1..8 = G..S, `null` when not imported. A uma's
 `source` is `unique` / `innate` / `awakening` / `evolved` (`level` means different things
 per source, `models/uma_skill.py`); a card's is `hint` / `event`. `on_global`: the card is in the

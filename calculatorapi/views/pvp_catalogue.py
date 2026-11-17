@@ -10,8 +10,10 @@ Fetched once by the builder the first time a picker opens, never on /app load.
                    and skills [{skill, source, level}]
     support_cards  every card with art: id, name, image, image_borderless
                    (the frameless texture, null until uploaded), card_type,
-                   rarity, title, group_members (a group card's umas, by name;
-                   [] on any other card), on_global and skills [{skill, source}]
+                   rarity, title, character_id (the game's 4-digit character,
+                   null when unknown), group_members (a group card's umas, by
+                   name; [] on any other card), on_global, released_at and
+                   skills [{skill, source}]
     skills         skills ON GLOBAL only: id, name, description, image,
                    rarity, tier, group_id, cost, game_id, version (the
                    label "○ white" / "◎ gold" / ..., for the guide editor)
@@ -151,8 +153,10 @@ def build_catalogue():
         .order_by("name", "id")
         # group_members: a group card's umas, by name, which the builder's
         # deck rules treat as that many cards. [] on every other card.
+        # character_id: the game's 4-digit character, which the Encyclopedia's
+        # search matches (an uma's is its outfit id's first four digits).
         .values("id", "name", "game_id", "image", "image_borderless", "card_type", "rarity", "title",
-                "translated_title", "group_members", "is_placeholder", "global_release_at")
+                "translated_title", "group_members", "is_placeholder", "global_release_at", "character_id")
     ):
         # Global's or an editor's title, else UmaTL's (SupportCard.shown_title).
         card["title"] = card["title"] or card.pop("translated_title")
@@ -162,7 +166,7 @@ def build_catalogue():
         # none: never a fallback to `image`, which has a frame of its own.
         card["image_borderless"] = _url(card["image_borderless"])
         card["on_global"] = card["id"] in out_cards
-        # The Collection's Release date sort, for cards on no banner: the
+        # The Collection's and the Encyclopedia's Release date sorts, for cards on no banner: the
         # game's date once it has passed (global_release.game_release_passed).
         # Selectors never read this: models/support_card.py says why.
         released = game_release_passed(card.pop("global_release_at"), now)
