@@ -1826,7 +1826,10 @@ outfit otherwise takes its skill rows from global's files only, which stop at 5,
 `game_data_sources.jp_awakening_ahead` adds JP's awakening rows at the ranks global lacks
 for that outfit, and never a rank global has. The skills are JP-only, so the pages tag them
 and the team builder (global skills only) leaves them out; when global adds the ranks, its
-own rows match. An outfit JP raised after the export needs a newer export.
+own rows match. If global fills a rank with a DIFFERENT skill, the borrowed row is removed
+(`game_data_sources.jp_awakening_superseded` and `superseded_uma_skills`): the one
+junction row the import ever deletes, and only one matching JP's row exactly, so an editor's
+own row stays. An outfit JP raised after the export needs a newer export.
 
 Support card **event** skills are not in any clean table (they come from story choice
 data), but the client asks the server for each card's list, and Daptrius captured those
