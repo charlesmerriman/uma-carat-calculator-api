@@ -1,8 +1,12 @@
-"""Story events: dates, the /calculator-data payload, the admin, and the two
-things they must never feed (income and selector eligibility).
-notes/story-events-plan.md."""
+"""Story events: the extractor's reward sum, the import, dates, the
+/calculator-data payload, the admin, and the two things they must never feed
+(income and selector eligibility). notes/story-events-plan.md."""
 
 import datetime
+import json
+import sqlite3
+import tempfile
+from pathlib import Path
 
 from django.db import IntegrityError, connection, transaction
 from django.test import override_settings
@@ -23,8 +27,199 @@ from calculatorapi.predictions import (
 
 from .base import PLAIN_TEST_STORAGES, CalculatorTestCase
 from .factories import _dt, _iso, make_timeline
+from .test_skills import import_game_data, write_snapshot
+from .test_snapshot_scripts import extractor
 
 DAY = datetime.timedelta(days=1)
+
+
+def story_event_db():
+    """An in-memory mdb holding one story event laid out the way the game lays
+    out Sweet Memories Teatime (event 1022), which pays 2,160 carats, 2 + 2
+    tickets, 3 + 3 shards and five copies of its card."""
+    conn = sqlite3.connect(":memory:")
+    conn.row_factory = sqlite3.Row
+    conn.executescript("""
+        CREATE TABLE text_data (category INTEGER, "index" INTEGER, text TEXT);
+        CREATE TABLE story_event_data (story_event_id INTEGER, start_date INTEGER,
+            ending_date INTEGER, end_date INTEGER);
+        CREATE TABLE story_event_point_reward (story_event_id INTEGER, item_category INTEGER,
+            item_id INTEGER, item_num INTEGER);
+        CREATE TABLE story_event_roulette_bingo (story_event_id INTEGER, sheet_num INTEGER,
+            can_loop INTEGER, reward_set_id INTEGER);
+        CREATE TABLE story_event_bingo_reward (reward_set_id INTEGER, item_category INTEGER,
+            item_id INTEGER, item_num INTEGER);
+        CREATE TABLE story_event_story_data (story_event_id INTEGER,
+            add_reward_category_1 INTEGER, add_reward_id_1 INTEGER, add_reward_num_1 INTEGER,
+            add_reward_category_2 INTEGER, add_reward_id_2 INTEGER, add_reward_num_2 INTEGER);
+        CREATE TABLE story_event_mission (story_event_id INTEGER, item_category INTEGER,
+            item_id INTEGER, item_num INTEGER);
+
+        INSERT INTO text_data VALUES (189, 1022, 'Sweet Memories Teatime');
+        INSERT INTO story_event_data VALUES (1022, 1794261600, 1795471199, 1795730399);
+
+        -- Points: 1,500 carats in steps, the tickets, 3 rainbow shards, 1 copy.
+        INSERT INTO story_event_point_reward VALUES (1022, 90, 43, 1000), (1022, 90, 43, 500),
+            (1022, 40, 41, 2), (1022, 40, 111, 2), (1022, 164, 149, 3), (1022, 51, 30133, 1),
+            (1022, 91, 59, 232000);
+        -- Roulette: sheets 1 and 2 SHARE set 44 and each pays it; sheet 3 pays
+        -- set 45; the looping sheet 4 pays nothing that counts.
+        INSERT INTO story_event_roulette_bingo VALUES (1022, 1, 0, 44), (1022, 2, 0, 44),
+            (1022, 3, 0, 45), (1022, 4, 1, 7);
+        INSERT INTO story_event_bingo_reward VALUES (44, 90, 43, 150), (44, 164, 150, 1),
+            (44, 51, 30133, 1), (45, 90, 43, 150), (45, 164, 150, 1), (45, 51, 30133, 1),
+            (7, 90, 43, 9999);
+        -- Story: seven chapters of 30 carats, and the fifth copy on the last.
+        INSERT INTO story_event_story_data VALUES (1022, 90, 43, 30, 0, 0, 0),
+            (1022, 90, 43, 30, 0, 0, 0), (1022, 90, 43, 30, 0, 0, 0), (1022, 90, 43, 30, 0, 0, 0),
+            (1022, 90, 43, 30, 0, 0, 0), (1022, 90, 43, 30, 0, 0, 0), (1022, 90, 43, 30, 0, 0, 0),
+            (1022, 51, 30133, 1, 0, 0, 0);
+        -- A mission paying event points only.
+        INSERT INTO story_event_mission VALUES (1022, 100, 58, 90000);
+    """)
+    return conn
+
+
+class StoryEventExtractTests(CalculatorTestCase):
+
+    def test_the_reward_sum_reads_all_four_tables(self):
+        [event] = extractor.extract_story_events(story_event_db())
+        self.assertEqual(event, {
+            "id": 1022,
+            "name": "Sweet Memories Teatime",
+            "start": "2026-11-09T22:00:00+00:00",
+            "end": "2026-11-23T21:59:59+00:00",
+            "claim_end": "2026-11-26T21:59:59+00:00",
+            "rewards": {"carats": 2160, "uma_tickets": 2, "support_tickets": 2,
+                        "ssr_shards": 3, "sr_shards": 3},
+            "cards": [30133],
+        })
+
+    def test_a_database_without_story_events_gives_none(self):
+        conn = sqlite3.connect(":memory:")
+        conn.row_factory = sqlite3.Row
+        self.assertIsNone(extractor.extract_story_events(conn))
+
+
+def snapshot_event(event_id=1022, carats=2160, **overrides):
+    """One event as story_events.json carries it: Sweet Memories Teatime by default."""
+    return {
+        "id": event_id, "name": "Sweet Memories Teatime", "start": "2026-11-09T22:00:00+00:00",
+        "end": "2026-11-23T21:59:59+00:00", "claim_end": "2026-11-26T21:59:59+00:00",
+        "rewards": {"carats": carats, "uma_tickets": 2, "support_tickets": 2,
+                    "ssr_shards": 3, "sr_shards": 3},
+        "cards": [30133],
+        **overrides,
+    }
+
+
+class StoryEventImportTests(CalculatorTestCase):
+    """The import's story event pass: what it creates, what it leaves to editors."""
+
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()  # pylint: disable=consider-using-with
+        self.addCleanup(tmp.cleanup)
+        self.root = Path(tmp.name)
+        self.teatime_banner = make_timeline(
+            name="Ines Fujin (Valentine)", global_start_date=_dt(2026, 11, 9, 22),
+            global_end_date=_dt(2026, 11, 23, 21, 59, 59), jp_start_date=_dt(2023, 1, 30, 22),
+        )
+        # An upcoming banner: no Global dates, its JP day is 2023-03-29.
+        self.upcoming_banner = make_timeline(
+            name="Mejiro Ardan (Ballroom)", jp_start_date=_dt(2023, 3, 29, 22),
+            jp_end_date=_dt(2023, 4, 9, 21, 59, 59),
+        )
+        self.hishi = _card("Hishi Akebono", 30133)
+        _card("Tokai Teio", 30140)
+        self.global_events = [snapshot_event()]
+        self.jp_events = [
+            snapshot_event(name="スイートメモリー", start="2023-01-31T03:00:00+00:00",
+                           end="2023-02-10T02:59:59+00:00", claim_end="2023-02-13T02:59:59+00:00"),
+            # 12:00 on 2023-03-29 in Japan: the upcoming banner's JP day.
+            snapshot_event(1024, name="されば君、かなし", start="2023-03-29T03:00:00+00:00",
+                           end="2023-04-10T02:59:59+00:00", claim_end="2023-04-13T02:59:59+00:00",
+                           cards=[30140]),
+        ]
+
+    def run_import(self, *flags):
+        global_dir = self.root / "master_snapshot"
+        global_dir.mkdir(exist_ok=True)
+        write_snapshot(global_dir, [])
+        (global_dir / "story_events.json").write_text(json.dumps(self.global_events), encoding="utf-8")
+        jp_dir = self.root / "jp_snapshot"
+        jp_dir.mkdir(exist_ok=True)
+        for name in ("skills", "cards", "card_skills", "support_cards", "support_hints"):
+            (jp_dir / f"{name}.json").write_text("[]", encoding="utf-8")
+        (jp_dir / "evolutions.json").write_text(
+            json.dumps({"outfit": [], "scenario": [], "succession": []}), encoding="utf-8")
+        (jp_dir / "story_events.json").write_text(json.dumps(self.jp_events), encoding="utf-8")
+        return import_game_data(global_dir, "--jp-snapshot", str(jp_dir), *flags)
+
+    def test_creates_every_event_with_its_banner_and_cards(self):
+        out = self.run_import()
+        self.assertIn("story events: updating 0, creating 2, adding 2 free card(s)", out)
+        teatime = StoryEvent.objects.get(game_id=1022)
+        self.assertEqual(teatime.name, "Sweet Memories Teatime")
+        self.assertEqual(teatime.jp_name, "スイートメモリー")
+        self.assertEqual(teatime.global_claim_end_at, _dt(2026, 11, 26, 21, 59, 59))
+        self.assertEqual(teatime.jp_start_at, _dt(2023, 1, 31, 3))
+        self.assertEqual(teatime.carat_amount, 2160)
+        # Global's start, to the minute.
+        self.assertEqual(teatime.banner_timeline, self.teatime_banner)
+        self.assertEqual([c.support_card for c in teatime.cards.all()], [self.hishi])
+        upcoming = StoryEvent.objects.get(game_id=1024)
+        # No Global name, and Global's dates stay empty.
+        self.assertEqual((upcoming.name, upcoming.global_start_at), ("", None))
+        # JP's start, on the banner's JP day.
+        self.assertEqual(upcoming.banner_timeline, self.upcoming_banner)
+
+    def test_a_second_run_changes_nothing(self):
+        self.run_import()
+        self.assertIn("Nothing to write.", self.run_import())
+
+    def test_the_game_columns_follow_the_snapshot(self):
+        self.run_import()
+        self.global_events = [snapshot_event(name="Sweet Memories Tea Time")]
+        self.run_import()
+        self.assertEqual(StoryEvent.objects.get(game_id=1022).name, "Sweet Memories Tea Time")
+
+    def test_rewards_follow_the_files_until_an_editor_changes_one(self):
+        self.run_import()
+        self.global_events = [snapshot_event(carats=2000)]
+        self.run_import()
+        self.assertEqual(StoryEvent.objects.get(game_id=1022).carat_amount, 2000)
+
+        StoryEvent.objects.filter(game_id=1022).update(carat_amount=2910, rewards_edited=True)
+        self.global_events = [snapshot_event(carats=1800)]
+        self.run_import()
+        self.assertEqual(StoryEvent.objects.get(game_id=1022).carat_amount, 2910)
+
+    def test_what_editors_own_survives(self):
+        self.run_import()
+        other = make_timeline(name="The right banner")
+        teatime = StoryEvent.objects.get(game_id=1022)
+        StoryEvent.objects.filter(pk=teatime.pk).update(banner_timeline=other)
+        StoryEvent.objects.filter(game_id=1024).update(working_name="You Are Sareba, I Feel Sad")
+        StoryEventCard.objects.filter(story_event=teatime).update(must_get=True, note="Grab it")
+        self.assertIn("Nothing to write.", self.run_import())
+        teatime.refresh_from_db()
+        self.assertEqual(teatime.banner_timeline, other)
+        self.assertEqual(StoryEvent.objects.get(game_id=1024).working_name,
+                         "You Are Sareba, I Feel Sad")
+        self.assertEqual(teatime.cards.get().note, "Grab it")
+
+    def test_a_card_with_no_row_is_reported_and_skipped(self):
+        self.jp_events.append(snapshot_event(1030, name="", start="2023-08-01T03:00:00+00:00",
+                                             cards=[30999]))
+        out = self.run_import()
+        self.assertIn("event 1030: support card 30999 has no row; add it and re-run", out)
+        self.assertIn("no banner found for 1: 1030", out)
+        self.assertFalse(StoryEvent.objects.get(game_id=1030).cards.exists())
+
+    def test_global_only_imports_globals_events(self):
+        out = self.run_import("--global-only")
+        self.assertIn("creating 1, adding 1 free card(s)", out)
+        self.assertEqual(StoryEvent.objects.get().jp_name, "")
 
 
 def _card(name, game_id, rarity=3, **fields):

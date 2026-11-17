@@ -52,6 +52,10 @@ What comes out, one file per concern (all sorted by id, so re-runs diff cleanly)
   race_links.json     jp only: each CM's and LoH's course id and race
                       conditions, by number, which the admin's "Link courses"
                       reads (see extract_race_links)
+  story_events.json   every story event: name, start, end, claim deadline,
+                      rewards and the free cards it gives (see
+                      extract_story_events). Global's are the events it has
+                      run; JP's the ones still to come
   characters.json     each character's two UI colours (see extract_characters).
                       Writing it also rewrites the API's merged copy,
                       calculatorapi/data/character_colours.json
@@ -88,6 +92,10 @@ Run from backend/:
     python scripts/extract_master_snapshot.py --mdb /path/to/master.mdb
     python scripts/extract_master_snapshot.py --region jp --mdb /tmp/jp/master.mdb
 """
+
+# One reader per concern in one file, so the run order and the meta counts live
+# beside every reader; past 1,000 lines since the story events (2026-11-17).
+# pylint: disable=too-many-lines
 
 import argparse
 import datetime
@@ -150,6 +158,21 @@ STAT_WORDS = {
 SUPPORT_CARD_TYPES = {2: "friend", 3: "group"}
 
 HINT_GAIN_SKILL = 0   # hint_value_1 is a skill id; type 1 rows are stat hints
+
+# Story events (extract_story_events). text_data 189 is a story event's name,
+# by story_event_id. A reward is (item_category, item_id): read off the
+# client's own text_data 23 item names on 2026-11-17 (43 "Carats", 41 "Trainee
+# Scout Ticket", 111 "Support Card Scout Ticket", 149 "Rainbow Crystal Shard",
+# 150 "Gold Crystal Shard"); category 51 is a support card, by its id.
+TEXT_STORY_EVENT_NAME = 189
+STORY_EVENT_REWARDS = {
+    "carats": (90, 43),
+    "uma_tickets": (40, 41),
+    "support_tickets": (40, 111),
+    "ssr_shards": (164, 149),
+    "sr_shards": (164, 150),
+}
+STORY_EVENT_CARD_REWARD = 51
 
 
 # The game's column names for the five stats, in the order this project uses.
@@ -781,6 +804,124 @@ def extract_characters(conn):
 COLOURS_FILE = Path(__file__).resolve().parent.parent / "calculatorapi" / "data" / "character_colours.json"
 
 
+def _iso(unix_seconds):
+    if not unix_seconds:
+        return None
+    return datetime.datetime.fromtimestamp(unix_seconds, datetime.timezone.utc).isoformat()
+
+
+def extract_story_events(conn):
+    """
+    Every story event: its name, its three instants, what it pays and which
+    support cards it gives away. The Timeline draws one under its banner
+    (notes/story-events-plan.md).
+
+    The instants: `start_date`, `ending_date` (the event's last moment, with
+    its banner) and `end_date` (the last moment to claim rewards, three days
+    later on every Global event so far). Written as `start`, `end`, `claim_end`.
+
+    A REWARD TOTAL READS FOUR TABLES, and the first version of this sum read
+    two and came out 360 carats and a copy short (2026-11-17):
+
+      story_event_point_reward     the points ladder
+      story_event_roulette_bingo   one row per roulette SHEET, each pointing at
+        -> story_event_bingo_reward  a reward set. Two sheets can share a set,
+                                   and each sheet pays it, so the join counts
+                                   the set once per sheet. The looping last
+                                   sheet (can_loop = 1) is left out: it repeats
+                                   without end and pays nothing listed here.
+      story_event_story_data       each story chapter's add_reward_* (7 x 30
+                                   carats, and a card copy on the last one)
+      story_event_mission          the event's missions
+
+    Summed this way the files give the team's figure on 48 of the 57 JP events
+    and on 16 of the 22 Global ones (Daptrius's Carat Data Sheet, checked
+    2026-11-17). Where they differ the team's figure wins: the import writes
+    these only as a starting value (see import_game_data).
+
+    `cards` is each support card id the event gives, SSRs first. Every event
+    gives five copies of each (Daptrius), so no count is kept.
+
+    None when the database has no story event tables.
+    """
+    if not has_table(conn, "story_event_data"):
+        return None
+    names = text_map(conn, TEXT_STORY_EVENT_NAME)
+
+    def total(event_id, category, item_id):
+        amount = 0
+        if has_table(conn, "story_event_point_reward"):
+            amount += conn.execute(
+                "SELECT COALESCE(SUM(item_num), 0) FROM story_event_point_reward"
+                " WHERE story_event_id = ? AND item_category = ? AND item_id = ?",
+                (event_id, category, item_id),
+            ).fetchone()[0]
+        if has_table(conn, "story_event_roulette_bingo"):
+            amount += conn.execute(
+                "SELECT COALESCE(SUM(b.item_num), 0) FROM story_event_roulette_bingo r"
+                " JOIN story_event_bingo_reward b ON b.reward_set_id = r.reward_set_id"
+                " WHERE r.story_event_id = ? AND r.can_loop = 0"
+                " AND b.item_category = ? AND b.item_id = ?",
+                (event_id, category, item_id),
+            ).fetchone()[0]
+        if has_table(conn, "story_event_story_data"):
+            for slot in (1, 2):
+                amount += conn.execute(
+                    f"SELECT COALESCE(SUM(add_reward_num_{slot}), 0) FROM story_event_story_data"
+                    f" WHERE story_event_id = ? AND add_reward_category_{slot} = ?"
+                    f" AND add_reward_id_{slot} = ?",
+                    (event_id, category, item_id),
+                ).fetchone()[0]
+        if has_table(conn, "story_event_mission"):
+            amount += conn.execute(
+                "SELECT COALESCE(SUM(item_num), 0) FROM story_event_mission"
+                " WHERE story_event_id = ? AND item_category = ? AND item_id = ?",
+                (event_id, category, item_id),
+            ).fetchone()[0]
+        return amount
+
+    def cards(event_id):
+        found = set()
+        queries = [
+            ("story_event_point_reward",
+             "SELECT item_id FROM story_event_point_reward"
+             " WHERE story_event_id = ? AND item_category = ?"),
+            ("story_event_roulette_bingo",
+             "SELECT b.item_id FROM story_event_roulette_bingo r"
+             " JOIN story_event_bingo_reward b ON b.reward_set_id = r.reward_set_id"
+             " WHERE r.story_event_id = ? AND b.item_category = ?"),
+            ("story_event_story_data",
+             "SELECT add_reward_id_1 FROM story_event_story_data"
+             " WHERE story_event_id = ? AND add_reward_category_1 = ?"),
+        ]
+        for table, query in queries:
+            if has_table(conn, table):
+                found.update(card_id for (card_id,) in
+                             conn.execute(query, (event_id, STORY_EVENT_CARD_REWARD)))
+        # SSRs first (a support id's leading digit is its rarity), then by id.
+        return sorted(found, key=lambda card_id: (-(card_id // 10_000), card_id))
+
+    events = []
+    for row in conn.execute(
+        "SELECT story_event_id, start_date, ending_date, end_date FROM story_event_data"
+        " ORDER BY story_event_id"
+    ):
+        event_id = row["story_event_id"]
+        events.append({
+            "id": event_id,
+            "name": names.get(event_id, "").strip(),
+            "start": _iso(row["start_date"]),
+            "end": _iso(row["ending_date"]),
+            "claim_end": _iso(row["end_date"]),
+            "rewards": {
+                key: total(event_id, category, item_id)
+                for key, (category, item_id) in STORY_EVENT_REWARDS.items()
+            },
+            "cards": cards(event_id),
+        })
+    return events
+
+
 def merged_character_colours(snapshot_dirs):
     """Both snapshots' characters.json as one map. Global's pair wins where
     both have a character: it is the client a player here looks at."""
@@ -830,6 +971,10 @@ def extract(mdb_path, region="global"):
         # Both clients: JP's routes cover the characters global doesn't have.
         region_only["objectives.json"] = extract_objectives(conn)
         region_only["characters.json"] = extract_characters(conn)
+        # Both clients: global's are the events it has run (with English
+        # names), JP's the ones still to come.
+        if has_table(conn, "story_event_data"):
+            region_only["story_events.json"] = extract_story_events(conn)
     finally:
         conn.close()
 
@@ -859,6 +1004,8 @@ def extract(mdb_path, region="global"):
                        for kind in ("champions", "heroes")})
         counts["objectives"] = len(region_only["objectives.json"])
         counts["characters"] = len(region_only["characters.json"])
+        if "story_events.json" in region_only:
+            counts["story_events"] = len(region_only["story_events.json"])
     else:
         counts.update({name.removesuffix(".json"): len(payload) for name, payload in region_only.items()})
     files.update(region_only)
