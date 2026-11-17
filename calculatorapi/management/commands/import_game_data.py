@@ -89,12 +89,10 @@ WHAT IT WRITES, and what it leaves alone:
                ADDED and never deleted, so a hand-added row survives. An
                outfit not in our database is skipped along with its rows.
   SupportCardSkill  `hint` rows from the snapshot's support_hints.json (the
-               game's own data) and `event` rows from support_events.json
-               (the JP game server's own lists, via
-               scripts/convert_jp_support_events.py; optional, so a snapshot
-               without it imports hints alone). A JP-only card takes both from
-               jp_snapshot/ instead. Same add-never-delete rule, matched on
-               the card's game_id.
+               game's own data) and `event` rows from support_events.json (the
+               JP server's lists, scripts/convert_jp_support_events.py; optional).
+               A JP-only card reads both from jp_snapshot/. Same add-never-delete
+               rule, matched on the card's game_id.
   Spark        every spark in sparks.json (kind, stars, name), keyed on the
                game's own id, created when missing. Optional: a snapshot from
                before 2026-10-27 has none. A kind models/spark.py doesn't name
