@@ -102,6 +102,12 @@ class CatalogueTests(CalculatorTestCase):
         self.assertEqual(body["support_cards"][0]["title"], "[Global Title]")
         self.assertNotIn("translated_title", body["support_cards"][0])
 
+    def test_a_card_sends_its_character_id(self):
+        """The Encyclopedia's search finds a card by its character's 4-digit id, the
+        same id an uma's outfit starts with (board "Add Searchable Aliases", 2026-11-17)."""
+        SupportCard.objects.filter(pk=self.card.pk).update(character_id=1068)
+        self.assertEqual(self.fetch()["support_cards"][0]["character_id"], 1068)
+
     def test_a_card_says_when_it_came_out(self):
         self.assertEqual(self.fetch()["support_cards"][0]["released_at"], "2025-07-01T00:00:00+00:00")
 
