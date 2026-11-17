@@ -28,7 +28,7 @@ gametora runs on the JP game's balance, and a JP balance patch can reach a card
 before global gets it. So a `--numbers` mismatch is a prompt to check the game,
 never a reason to change the snapshot by hand.
 
-HOW: the same JSON twins fetch_support_events.py reads, one per card page. Slugs
+HOW: gametora's per-card JSON twins (its Next.js data endpoint). Slugs
 come from scripts/data/character_cards.json (`gametora_url`) and
 scripts/data/support_cards_source.json (`<id>-<name_en>`), which are also the
 lists of cards "we know of" for --stale.
@@ -45,10 +45,44 @@ import argparse
 import datetime
 import json
 import sys
+import re
 import time
 import urllib.error
+import urllib.request
+from pathlib import Path
 
-from fetch_support_events import DATA_DIR, SNAPSHOT_DIR, get, slugify
+# These two helpers lived in fetch_support_events.py until 2026-11-17, when
+# event skills moved to the JP server capture and that script was retired.
+DATA_DIR = Path(__file__).parent / "data"
+SNAPSHOT_DIR = DATA_DIR / "master_snapshot"
+USER_AGENT = "Mozilla/5.0 (umacaratcalculator.com data check)"
+
+
+def slugify(name):
+    """gametora's slug rule as observed: lowercase, punctuation dropped, spaces to dashes."""
+    cleaned = re.sub(r"[^a-z0-9 ]", "", name.lower().replace("-", " "))
+    return re.sub(r"\s+", "-", cleaned.strip())
+
+
+def get(url, attempts=3):
+    """
+    The page's text. A network failure (a TLS handshake that times out, say)
+    is retried with a short backoff. An HTTPError is an answer, not a failure,
+    and goes straight to the caller, which treats a 404 as "try the next slug".
+    """
+    request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    for attempt in range(1, attempts + 1):
+        try:
+            with urllib.request.urlopen(request, timeout=30) as response:
+                return response.read().decode("utf-8")
+        except urllib.error.HTTPError:
+            raise
+        except (urllib.error.URLError, TimeoutError):
+            if attempt == attempts:
+                raise
+            time.sleep(2 * attempt)
+    raise AssertionError("unreachable")
+
 
 DATA_URL = "https://gametora.com/_next/data/{build_id}/umamusume/{kind}/{slug}.json"
 PAGE_URL = "https://gametora.com/umamusume/{kind}/{slug}"

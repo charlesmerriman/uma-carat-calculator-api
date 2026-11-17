@@ -33,7 +33,7 @@ from rest_framework import permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
-from calculatorapi import pvp_guide_editing, skill_text, skills_cache
+from calculatorapi import character_colours, pvp_guide_editing, skill_text, skills_cache
 from calculatorapi.global_release import released_cards, released_umas
 from calculatorapi.models import Skill, UmaSkill
 from calculatorapi.models.skill import skill_families
@@ -84,11 +84,20 @@ class Owners:
     """
 
     def __init__(self):
-        self.names = {}
+        self.names, self.umas = {}, {}
         rows = (UmaSkill.objects.filter(source__in=("unique", "evolved"))
-                .values_list("skill__game_id", "uma__name").order_by("uma__name"))
-        for game_id, name in rows:
+                .values_list("skill__game_id", "uma__name", "uma_id", "uma__game_id",
+                             "uma__image_borderless", "uma__image")
+                .order_by("uma__name"))
+        for game_id, name, uma_id, uma_game_id, borderless, image in rows:
+            # Uma.portrait's rule: the frameless cut, else the bordered art.
+            portrait = borderless or image
             self.names.setdefault(game_id, []).append(name)
+            # Her face beside the skill (the redesign): the row's pk for the
+            # favorites frame, her game id for the link and her colours.
+            self.umas.setdefault(game_id, {})[uma_id] = {
+                "id": uma_id, "game_id": uma_game_id, "name": name, "portrait": image_url(portrait or ""),
+            }
         self.shown_ids = set(Skill.objects.shown().values_list("game_id", flat=True))
 
     def pair(self, game_id):
@@ -107,8 +116,15 @@ class Owners:
             names = self.names.get(game_id - INHERITED_OFFSET)
         return list(dict.fromkeys(names or []))
 
+    def umas_of(self, game_id):
+        """The same outfits as `of`, as rows a page can draw."""
+        found = self.umas.get(game_id)
+        if found is None and game_id in INHERITED_IDS:
+            found = self.umas.get(game_id - INHERITED_OFFSET)
+        return list((found or {}).values())
+
     def fields(self, game_id):
-        return {"owners": self.of(game_id), "pair": self.pair(game_id)}
+        return {"owners": self.of(game_id), "owner_umas": self.umas_of(game_id), "pair": self.pair(game_id)}
 
 
 def build_list():
@@ -161,7 +177,7 @@ def evolution(skill, owners):
     return {
         "from": summary(base) if base and base.is_shown else None,
         "into": [
-            {**summary(row), "owners": owners.of(row.game_id)}
+            {**summary(row), "owners": owners.of(row.game_id), "owner_umas": owners.umas_of(row.game_id)}
             for row in Skill.objects.shown().filter(evolves_from=skill)
             .select_related("evolves_from").by_shown_name()
         ],
@@ -183,6 +199,13 @@ def unlock_conditions(skill):
     ]
 
 
+def _owner_colours(owner_umas):
+    """The colours of the ONE character a skill belongs to, else None: two
+    outfits of one character share a pair, two characters share nothing."""
+    characters = {uma["game_id"] // 100 for uma in owner_umas if uma["game_id"]}
+    return character_colours.colours_for(characters.pop()) if len(characters) == 1 else None
+
+
 def build_detail(skill):
     owners = Owners()
     pair_id = owners.pair(skill.game_id)
@@ -191,6 +214,9 @@ def build_detail(skill):
         **summary(skill),
         "other_names": skill.search_names,
         "owners": owners.of(skill.game_id),
+        "owner_umas": (owner_umas := owners.umas_of(skill.game_id)),
+        # A skill that is one character's wears her colours on its page.
+        "colours": _owner_colours(owner_umas),
         # The unique's inherited copy, or the copy's unique, as a list row.
         "pair": summary(pair) if pair else None,
         "description": skill.shown_description,

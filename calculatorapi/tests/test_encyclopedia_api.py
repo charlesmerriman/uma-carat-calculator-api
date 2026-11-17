@@ -84,6 +84,20 @@ class UmaPageTests(EncyclopediaFixture):
         self.assertNotIn("admin_comments", body)
         self.assertNotIn("Editors only.", str(body))
 
+    def test_she_wears_her_own_colours_and_her_unique_says_what_it_does(self):
+        """The redesign: the game's pair for character 1001, and the unique skill's text for its plate."""
+        self.unique.description = "Greatly increase velocity."
+        self.unique.save()
+        body = self.page()
+        self.assertEqual(body["colours"], ["#EE6DCB", "#FFDEF9"])
+        unique, gold = body["skills"][0], body["skills"][1]
+        self.assertEqual(unique["description"], "Greatly increase velocity.")
+        self.assertNotIn("description", gold)
+
+    def test_a_character_the_files_dont_cover_has_no_colours(self):
+        uma(199901, "Nobody Yet")
+        self.assertIsNone(self.client.get("/encyclopedia/umas/199901").json()["colours"])
+
     def test_skills_in_the_games_order_and_only_shown_ones(self):
         skills = self.page()["skills"]
         self.assertEqual([(row["name"], row["source"]) for row in skills], [
@@ -134,6 +148,10 @@ class CardPageTests(EncyclopediaFixture):
                          [("Gold Skill", "hint", 180)])
         self.assertEqual([row["game_id"] for row in body["outfits"]], [SPECIAL_WEEK, SPECIAL_WEEK_SUMMER])
         self.assertEqual([row["game_id"] for row in body["cards"]], [SPE_SR, SIRIUS])
+
+    def test_a_card_wears_its_characters_colours_and_a_group_card_none(self):
+        self.assertEqual(self.client.get(f"/encyclopedia/cards/{SPE_CARD}").json()["colours"], ["#EE6DCB", "#FFDEF9"])
+        self.assertIsNone(self.client.get(f"/encyclopedia/cards/{SIRIUS}").json()["colours"])
 
     def test_a_group_card_lists_its_members_outfits(self):
         body = self.client.get(f"/encyclopedia/cards/{SIRIUS}").json()

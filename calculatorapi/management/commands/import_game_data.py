@@ -89,9 +89,9 @@ WHAT IT WRITES, and what it leaves alone:
                ADDED and never deleted, so a hand-added row survives. An
                outfit not in our database is skipped along with its rows.
   SupportCardSkill  `hint` rows from the snapshot's support_hints.json (the
-               game's own data) and `event` rows from support_events.json
-               (gametora, via scripts/fetch_support_events.py; optional, so a
-               snapshot without it imports hints alone). Same add-never-delete
+               game's own data) and `event` rows from support_events.json (the
+               JP server's lists, scripts/convert_jp_support_events.py; optional).
+               A JP-only card reads both from jp_snapshot/. Same add-never-delete
                rule, matched on the card's game_id.
   Spark        every spark in sparks.json (kind, stars, name), keyed on the
                game's own id, created when missing. Optional: a snapshot from
@@ -163,7 +163,7 @@ def load_snapshot(directory):
         if not path.is_file():
             raise CommandError(f"snapshot file missing: {path}")
         files[name] = json.loads(path.read_text(encoding="utf-8"))
-    # Optional: event skills come from gametora, not the game, a snapshot
+    # Optional: event skills come from a server capture, not the mdb, a snapshot
     # from before 2026-10-16 has no text-ahead file, and one from before
     # 2026-10-27 no sparks, and one from before 2026-11-12 no objectives or card effects.
     for name in ("support_events", "skill_text_ahead", "sparks", "objectives", "support_effects"):

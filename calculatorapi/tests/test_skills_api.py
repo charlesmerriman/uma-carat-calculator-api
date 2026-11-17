@@ -270,6 +270,20 @@ class SkillOwnersAndTypeTests(CalculatorTestCase):
         self.assertEqual((rows[200011]["owners"], rows[200011]["pair"]), ([], None))
         self.assertEqual(self.client.get("/skills/900011").json()["pair"]["game_id"], 100011)
 
+    def test_a_unique_shows_whose_it_is_and_wears_her_colours(self):
+        """The redesign: her face on the list row, her colours on the skill's page."""
+        spe = Uma.objects.get(game_id=100101)
+        rows = self.rows()
+        self.assertEqual([(uma["id"], uma["game_id"], uma["name"]) for uma in rows[100011]["owner_umas"]],
+                         [(spe.id, 100101, "Special Week")])
+        self.assertEqual(rows[900011]["owner_umas"], rows[100011]["owner_umas"])
+        self.assertEqual(rows[200011]["owner_umas"], [])
+        self.assertEqual(self.client.get("/skills/100011").json()["colours"], ["#EE6DCB", "#FFDEF9"])
+        # A gold skill is nobody's, so its page keeps its own colour.
+        gold = self.client.get("/skills/200011").json()
+        self.assertIsNone(gold["colours"])
+        self.assertEqual(gold["evolution"]["into"][0]["owner_umas"][0]["game_id"], 100101)
+
     def test_an_evolution_names_its_uma(self):
         detail = self.client.get("/skills/200011").json()
         self.assertEqual([(row["name"], row["owners"]) for row in detail["evolution"]["into"]],

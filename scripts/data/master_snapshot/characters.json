@@ -1,0 +1,467 @@
+[
+ {
+  "id": 1001,
+  "colour_main": "#EE6DCB",
+  "colour_sub": "#FFDEF9"
+ },
+ {
+  "id": 1002,
+  "colour_main": "#29BD70",
+  "colour_sub": "#FFCE48"
+ },
+ {
+  "id": 1003,
+  "colour_main": "#3376D2",
+  "colour_sub": "#FF99D0"
+ },
+ {
+  "id": 1004,
+  "colour_main": "#EA504A",
+  "colour_sub": "#FFCD00"
+ },
+ {
+  "id": 1005,
+  "colour_main": "#444745",
+  "colour_sub": "#33B839"
+ },
+ {
+  "id": 1006,
+  "colour_main": "#3A7AD2",
+  "colour_sub": "#ECE7E7"
+ },
+ {
+  "id": 1007,
+  "colour_main": "#DA3C57",
+  "colour_sub": "#E9DA36"
+ },
+ {
+  "id": 1008,
+  "colour_main": "#D4C200",
+  "colour_sub": "#3DD1D7"
+ },
+ {
+  "id": 1009,
+  "colour_main": "#4F64D8",
+  "colour_sub": "#E73472"
+ },
+ {
+  "id": 1010,
+  "colour_main": "#73C032",
+  "colour_sub": "#FFAC42"
+ },
+ {
+  "id": 1011,
+  "colour_main": "#3A34AC",
+  "colour_sub": "#E3493F"
+ },
+ {
+  "id": 1012,
+  "colour_main": "#2185D0",
+  "colour_sub": "#E6453A"
+ },
+ {
+  "id": 1013,
+  "colour_main": "#00B5BE",
+  "colour_sub": "#DFC8E7"
+ },
+ {
+  "id": 1014,
+  "colour_main": "#DD4E31",
+  "colour_sub": "#EFDB28"
+ },
+ {
+  "id": 1015,
+  "colour_main": "#F271C4",
+  "colour_sub": "#FBE415"
+ },
+ {
+  "id": 1016,
+  "colour_main": "#75358C",
+  "colour_sub": "#D638A3"
+ },
+ {
+  "id": 1017,
+  "colour_main": "#1C7763",
+  "colour_sub": "#C6314B"
+ },
+ {
+  "id": 1018,
+  "colour_main": "#0092CB",
+  "colour_sub": "#FAE053"
+ },
+ {
+  "id": 1019,
+  "colour_main": "#F37F96",
+  "colour_sub": "#F9F189"
+ },
+ {
+  "id": 1020,
+  "colour_main": "#65D283",
+  "colour_sub": "#F4DA40"
+ },
+ {
+  "id": 1021,
+  "colour_main": "#3290D6",
+  "colour_sub": "#C6DAE7"
+ },
+ {
+  "id": 1022,
+  "colour_main": "#20A95C",
+  "colour_sub": "#EE5340"
+ },
+ {
+  "id": 1023,
+  "colour_main": "#B03D81",
+  "colour_sub": "#E776B6"
+ },
+ {
+  "id": 1024,
+  "colour_main": "#F57D38",
+  "colour_sub": "#FFC845"
+ },
+ {
+  "id": 1025,
+  "colour_main": "#494541",
+  "colour_sub": "#E8DD4C"
+ },
+ {
+  "id": 1026,
+  "colour_main": "#EE60A1",
+  "colour_sub": "#F0ED41"
+ },
+ {
+  "id": 1027,
+  "colour_main": "#14BAAE",
+  "colour_sub": "#7C4D3A"
+ },
+ {
+  "id": 1028,
+  "colour_main": "#208BCD",
+  "colour_sub": "#FA6F8B"
+ },
+ {
+  "id": 1029,
+  "colour_main": "#AF7E51",
+  "colour_sub": "#C8D8EB"
+ },
+ {
+  "id": 1030,
+  "colour_main": "#384A86",
+  "colour_sub": "#CA3E6D"
+ },
+ {
+  "id": 1031,
+  "colour_main": "#F078C5",
+  "colour_sub": "#54AE1B"
+ },
+ {
+  "id": 1032,
+  "colour_main": "#35B2B6",
+  "colour_sub": "#E2E868"
+ },
+ {
+  "id": 1033,
+  "colour_main": "#3865A1",
+  "colour_sub": "#78D5E1"
+ },
+ {
+  "id": 1034,
+  "colour_main": "#AE419E",
+  "colour_sub": "#EC86D0"
+ },
+ {
+  "id": 1035,
+  "colour_main": "#DD3D5B",
+  "colour_sub": "#EDE233"
+ },
+ {
+  "id": 1036,
+  "colour_main": "#2459B4",
+  "colour_sub": "#E1E000"
+ },
+ {
+  "id": 1037,
+  "colour_main": "#3D3B3A",
+  "colour_sub": "#E33067"
+ },
+ {
+  "id": 1038,
+  "colour_main": "#F86669",
+  "colour_sub": "#47423E"
+ },
+ {
+  "id": 1039,
+  "colour_main": "#E146A7",
+  "colour_sub": "#00C7B1"
+ },
+ {
+  "id": 1040,
+  "colour_main": "#245099",
+  "colour_sub": "#E63C5C"
+ },
+ {
+  "id": 1041,
+  "colour_main": "#EE6FAB",
+  "colour_sub": "#F2D4D7"
+ },
+ {
+  "id": 1042,
+  "colour_main": "#B02D40",
+  "colour_sub": "#1690D4"
+ },
+ {
+  "id": 1043,
+  "colour_main": "#63666A",
+  "colour_sub": "#6F2678"
+ },
+ {
+  "id": 1044,
+  "colour_main": "#926DDA",
+  "colour_sub": "#BC204B"
+ },
+ {
+  "id": 1045,
+  "colour_main": "#5693DA",
+  "colour_sub": "#C8C9C7"
+ },
+ {
+  "id": 1046,
+  "colour_main": "#F8587B",
+  "colour_sub": "#403A35"
+ },
+ {
+  "id": 1047,
+  "colour_main": "#5F9B26",
+  "colour_sub": "#F3EA5D"
+ },
+ {
+  "id": 1048,
+  "colour_main": "#25B8AE",
+  "colour_sub": "#1C57B9"
+ },
+ {
+  "id": 1049,
+  "colour_main": "#C0453F",
+  "colour_sub": "#236192"
+ },
+ {
+  "id": 1050,
+  "colour_main": "#E575CE",
+  "colour_sub": "#F3DD6D"
+ },
+ {
+  "id": 1051,
+  "colour_main": "#E26ECB",
+  "colour_sub": "#F6EB61"
+ },
+ {
+  "id": 1052,
+  "colour_main": "#FA7395",
+  "colour_sub": "#EDE04B"
+ },
+ {
+  "id": 1053,
+  "colour_main": "#366965",
+  "colour_sub": "#2D2926"
+ },
+ {
+  "id": 1054,
+  "colour_main": "#E7396F",
+  "colour_sub": "#D162B8"
+ },
+ {
+  "id": 1055,
+  "colour_main": "#CA46B0",
+  "colour_sub": "#B52542"
+ },
+ {
+  "id": 1056,
+  "colour_main": "#3D89E9",
+  "colour_sub": "#F8A717"
+ },
+ {
+  "id": 1057,
+  "colour_main": "#6FC346",
+  "colour_sub": "#FBE122"
+ },
+ {
+  "id": 1058,
+  "colour_main": "#46449B",
+  "colour_sub": "#D64388"
+ },
+ {
+  "id": 1059,
+  "colour_main": "#19B49E",
+  "colour_sub": "#6F3B42"
+ },
+ {
+  "id": 1060,
+  "colour_main": "#28A959",
+  "colour_sub": "#B82720"
+ },
+ {
+  "id": 1061,
+  "colour_main": "#0E9451",
+  "colour_sub": "#1C57A5"
+ },
+ {
+  "id": 1062,
+  "colour_main": "#0F8DCE",
+  "colour_sub": "#EE5B56"
+ },
+ {
+  "id": 1063,
+  "colour_main": "#49B73F",
+  "colour_sub": "#C6D1D5"
+ },
+ {
+  "id": 1064,
+  "colour_main": "#27C79C",
+  "colour_sub": "#865432"
+ },
+ {
+  "id": 1065,
+  "colour_main": "#5B64D5",
+  "colour_sub": "#FBE247"
+ },
+ {
+  "id": 1066,
+  "colour_main": "#1985D2",
+  "colour_sub": "#27B784"
+ },
+ {
+  "id": 1067,
+  "colour_main": "#94BF01",
+  "colour_sub": "#F9EB39"
+ },
+ {
+  "id": 1068,
+  "colour_main": "#5A6065",
+  "colour_sub": "#FC6D31"
+ },
+ {
+  "id": 1069,
+  "colour_main": "#F9879D",
+  "colour_sub": "#F7DDE2"
+ },
+ {
+  "id": 1070,
+  "colour_main": "#248379",
+  "colour_sub": "#E3628C"
+ },
+ {
+  "id": 1071,
+  "colour_main": "#28BAA5",
+  "colour_sub": "#BFE4EB"
+ },
+ {
+  "id": 1072,
+  "colour_main": "#DA483A",
+  "colour_sub": "#FFDA93"
+ },
+ {
+  "id": 1073,
+  "colour_main": "#8F4DAC",
+  "colour_sub": "#F5CD47"
+ },
+ {
+  "id": 1074,
+  "colour_main": "#45C5C1",
+  "colour_sub": "#9F5F54"
+ },
+ {
+  "id": 1076,
+  "colour_main": "#F0638A",
+  "colour_sub": "#FECDC9"
+ },
+ {
+  "id": 1077,
+  "colour_main": "#EA5BC0",
+  "colour_sub": "#8F3D7D"
+ },
+ {
+  "id": 1078,
+  "colour_main": "#5192C1",
+  "colour_sub": "#AE4544"
+ },
+ {
+  "id": 1083,
+  "colour_main": "#12762F",
+  "colour_sub": "#292D45"
+ },
+ {
+  "id": 1084,
+  "colour_main": "#DAB610",
+  "colour_sub": "#173061"
+ },
+ {
+  "id": 1085,
+  "colour_main": "#D2445D",
+  "colour_sub": "#6946A9"
+ },
+ {
+  "id": 1087,
+  "colour_main": "#CF4436",
+  "colour_sub": "#E1DCCB"
+ },
+ {
+  "id": 1093,
+  "colour_main": "#85AAE1",
+  "colour_sub": "#EBD64A"
+ },
+ {
+  "id": 1098,
+  "colour_main": "#EEB42A",
+  "colour_sub": "#D93C49"
+ },
+ {
+  "id": 1099,
+  "colour_main": "#D94149",
+  "colour_sub": "#CDDEE0"
+ },
+ {
+  "id": 1100,
+  "colour_main": "#D85081",
+  "colour_sub": "#D8D2D9"
+ },
+ {
+  "id": 2002,
+  "colour_main": "#ED4F44",
+  "colour_sub": "#674445"
+ },
+ {
+  "id": 2003,
+  "colour_main": "#6973AB",
+  "colour_sub": "#61C9F5"
+ },
+ {
+  "id": 2004,
+  "colour_main": "#DA483A",
+  "colour_sub": "#FFDA93"
+ },
+ {
+  "id": 9001,
+  "colour_main": "#44A705",
+  "colour_sub": "#F3CD00"
+ },
+ {
+  "id": 9004,
+  "colour_main": "#464ED2",
+  "colour_sub": "#E48CFA"
+ },
+ {
+  "id": 9005,
+  "colour_main": "#DF4945",
+  "colour_sub": "#C3CACD"
+ },
+ {
+  "id": 9006,
+  "colour_main": "#54498C",
+  "colour_sub": "#8B9096"
+ },
+ {
+  "id": 9008,
+  "colour_main": "#F482A2",
+  "colour_sub": "#92DDCD"
+ }
+]

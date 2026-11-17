@@ -1682,8 +1682,8 @@ Edited as an inline on the uma's admin page.
 
 `SupportCardSkill` does the same for support cards, unique on `(support_card, skill,
 source)`: `hint` rows come from the game's own hint table in the snapshot, `event` rows from
-gametora's per-card pages (`scripts/fetch_support_events.py` writes
-`support_events.json` next to the snapshot; the game has no clean table for them). A hint
+the JP game server's per-card lists (`scripts/convert_jp_support_events.py` writes
+`support_events.json` into both snapshot folders; the mdb has no clean table for them). A hint
 listed under two hint groups is one row. Edited as an inline on the support card's page.
 
 `description` is the game's own text and is what a page should show by default;
@@ -1820,10 +1820,14 @@ therefore lists two `unique` rows for those 17 outfits, with `level` the star at
 each first applies.
 
 Support card **event** skills are not in any clean table (they come from story choice
-data); gametora's per-card pages are the agreed source for that one piece, fetched by
-`scripts/fetch_support_events.py` into `support_events.json` in the same folder (their
-Next.js data endpoint, slug `<id>-<gametora name>`; 648 rows across 249 cards on
-2026-09-16). Ids only: no gametora name or description is stored.
+data), but the client asks the server for each card's list, and Daptrius captured those
+answers from the JP server on 2026-11-14 (`support_skill_lists.json`, 568 cards).
+`scripts/convert_jp_support_events.py <capture>` turns it into `support_events.json` in
+both folders: a global card keeps only skills global's snapshot knows (5 rows of skill
+202992 dropped), a JP-only card keeps all of its own; 695 global and 856 JP-only rows.
+Ids only. Until 2026-11-17 these came from gametora's card pages
+(`fetch_support_events.py`, retired); the capture covered every row gametora had and
+six cards it missed.
 
 `scripts/check_against_gametora.py` is the other use of gametora, and it stores nothing:
 `--numbers` compares every snapshot card's rarity, stats, growth, aptitudes and support
@@ -1831,6 +1835,21 @@ type with their pages, and `--stale` lists cards whose global release date has p
 which the snapshot lacks (so: launch the game, re-extract). Its first run, 2026-09-17,
 found the extractor's hand-typed `command_id` table had stamina, power and guts rotated;
 the extractor now reads the command names from the game (`text_data` category 55).
+
+### Character colours (2026-11-17)
+
+`chara_data.ui_color_main` and `ui_color_sub` are the two colours the game paints a
+character's training screens in. `extract_master_snapshot.py` writes them to
+`characters.json` in each snapshot (`extract_characters`: a row left at white is "unset" and
+skipped, and anything that is not six hex digits stops the run), and merges both snapshots
+into `calculatorapi/data/character_colours.json` (global's pair wins), the file the API reads
+(`character_colours.py`). The Encyclopedia paints a character's pages and tiles with them.
+
+They are a file and not columns because they belong to a CHARACTER, which has no row here,
+and nothing filters or edits them. `test_character_colours.py` holds the file to the
+snapshots and to plain hex. The JP half was read from the 2026-10-02 export with
+`--only characters.json`, so a character newer than that has no pair until a newer export;
+the page then wears the theme's accent.
 
 ### The JP snapshot and the UmaTL slice (2026-10-23)
 

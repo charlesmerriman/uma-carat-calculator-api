@@ -10,14 +10,22 @@ Fetched once by the builder the first time a picker opens, never on /app load.
                    and skills [{skill, source, level}]
     support_cards  every card with art: id, name, image, image_borderless
                    (the frameless texture, null until uploaded), card_type,
-                   rarity, title, group_members (a group card's umas, by name;
-                   [] on any other card), on_global and skills [{skill, source}]
+                   rarity, title, character_id (the game's 4-digit character,
+                   null when unknown), group_members (a group card's umas, by
+                   name; [] on any other card), on_global, released_at and
+                   skills [{skill, source}]
     skills         skills ON GLOBAL only: id, name, description, image,
                    rarity, tier, group_id, cost, game_id, version (the
                    label "○ white" / "◎ gold" / ..., for the guide editor)
                    and other_names (Skill.search_names: the translation,
                    aliases including GameTora's names, the Japanese name),
                    which every skill search box matches but never shows
+
+    character_colours  {character id: [main, sub]}: each character's two
+                   colours from the game files (character_colours.py), which
+                   the Encyclopedia paints her tiles and pages with. Looked up
+                   by an uma's or a card's `character_id`; a character the
+                   files don't cover is simply absent
 
 Skills are a lookup table rather than embedded in each card: one skill is
 taught by dozens of cards, and the picker's "search by skill" walks from a
@@ -55,7 +63,7 @@ from django.utils import timezone
 from rest_framework import permissions
 from rest_framework.decorators import api_view, permission_classes
 
-from calculatorapi import pvp_catalogue_cache
+from calculatorapi import character_colours, pvp_catalogue_cache
 from calculatorapi.global_release import game_release_passed, released_cards, released_umas
 from calculatorapi.models import Skill, SupportCard, SupportCardSkill, Uma, UmaSkill
 
@@ -151,8 +159,10 @@ def build_catalogue():
         .order_by("name", "id")
         # group_members: a group card's umas, by name, which the builder's
         # deck rules treat as that many cards. [] on every other card.
+        # character_id: the game's 4-digit character, which the Encyclopedia's
+        # search matches (an uma's is its outfit id's first four digits).
         .values("id", "name", "game_id", "image", "image_borderless", "card_type", "rarity", "title",
-                "translated_title", "group_members", "is_placeholder", "global_release_at")
+                "translated_title", "group_members", "is_placeholder", "global_release_at", "character_id")
     ):
         # Global's or an editor's title, else UmaTL's (SupportCard.shown_title).
         card["title"] = card["title"] or card.pop("translated_title")
@@ -162,7 +172,7 @@ def build_catalogue():
         # none: never a fallback to `image`, which has a frame of its own.
         card["image_borderless"] = _url(card["image_borderless"])
         card["on_global"] = card["id"] in out_cards
-        # The Collection's Release date sort, for cards on no banner: the
+        # The Collection's and the Encyclopedia's Release date sorts, for cards on no banner: the
         # game's date once it has passed (global_release.game_release_passed).
         # Selectors never read this: models/support_card.py says why.
         released = game_release_passed(card.pop("global_release_at"), now)
@@ -172,7 +182,10 @@ def build_catalogue():
         card["skills"] = card_skills.get(card["id"], [])
         support_cards.append(card)
 
-    return {"umas": umas, "support_cards": support_cards, "skills": skills}
+    return {
+        "umas": umas, "support_cards": support_cards, "skills": skills,
+        "character_colours": character_colours.table(),
+    }
 
 
 @api_view(["GET"])

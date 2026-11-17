@@ -81,8 +81,9 @@ class SecondarySources:
                 raise CommandError(f"JP snapshot file missing: {path}")
             files[name] = json.loads(path.read_text(encoding="utf-8"))
         # Optional: a JP snapshot from before 2026-11-12 has no card effects,
-        # and one from before 2026-11-14 no career objectives.
-        for name in ("support_effects", "objectives"):
+        # one from before 2026-11-14 no career objectives, and one from before
+        # 2026-11-17 no event skills.
+        for name in ("support_effects", "objectives", "support_events"):
             path = directory / f"{name}.json"
             files[name] = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else []
         return files
@@ -329,9 +330,15 @@ def jp_owner_links(sources, snapshot):
         (row["card_id"], row["skill_id"], row["source"], row["level"])
         for row in sources.jp["card_skills"] if row["card_id"] in jp_umas
     ]
+    # Hints from the JP mdb, event skills from the JP server capture
+    # (scripts/convert_jp_support_events.py); a global card takes both from
+    # global's own files, so only JP-only cards read these.
     result["card_rows"] = [
         (row["support_card_id"], row["skill_id"], "hint", None)
         for row in sources.jp["support_hints"] if row["support_card_id"] in jp_cards
+    ] + [
+        (row["support_card_id"], row["skill_id"], "event", None)
+        for row in sources.jp["support_events"] if row["support_card_id"] in jp_cards
     ]
     # A distrusted id is no better a key for its facts than for its skills.
     result["card_facts"] = _jp_card_facts(sources, jp_cards - result["card_distrusted"])
