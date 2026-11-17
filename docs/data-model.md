@@ -135,7 +135,7 @@ erDiagram
         int uma FK
         int skill FK
         string source "unique | innate | awakening | evolved"
-        int level "awakening rank 2..5, or the star a unique applies from; null for innate"
+        int level "awakening rank 2..7 (6 and 7 from JP), or the star a unique applies from; null for innate"
         string notes
     }
 
@@ -1803,7 +1803,7 @@ The tables the extractor reads, and the two places the schema is not what it loo
 | skill point cost | `single_mode_skill_need_point` | absent for every unique and 18 white/gold skills, so nullable |
 | uma outfits | `card_data` (105, of which 2 are tutorial variants above id 9,000,000, skipped) | `default_rarity` is the initial star count; `running_style` 1 front, 2 pace, 3 late, 4 end; `talent_*` are the growth bonuses in percent |
 | per-star stats and aptitudes | `card_rarity_data` (334) | one row per outfit per star. `speed`..`wiz` are the base stats at that star; `max_*` is the cap (1200 everywhere); `proper_*` aptitudes on the game's 1..8 scale (G F E D C B A S). **`skill_set` is not a skill id**: it keys the `skill_set` table, whose `skill_id1` is the unique skill that star carries |
-| innate and awakening skills | `available_skill_set` (721) | keyed by `card_data.available_skill_set_id`; `need_rank` 0 innate, 2..5 the awakening level |
+| innate and awakening skills | `available_skill_set` (721) | keyed by `card_data.available_skill_set_id`; `need_rank` 0 innate, 2..5 the awakening level (up to 7 in JP's) |
 | outfit text | `text_data` cat 4 (full), 5 (title), 6 (character name by character id) | |
 | support cards | `support_card_data` | `rarity` 1 R, 2 SR, 3 SSR; `command_id` is the training command, named by `text_data` category 55 and read from there by the extractor (101 speed, 102 **power**, 103 **guts**, 105 **stamina**, 106 wit: not stat order), and 0 with `support_card_type` 2 friend / 3 group |
 | group card members | `support_card_group` | one row per (`support_card_id`, `chara_id`): every uma a group card stands for. `support_card_data.chara_id` files the card under just one of them (Team Sirius under Special Week). Written as names (`text_data` category 6), because the team builder's deck rules match cards to umas by name |
@@ -1818,6 +1818,18 @@ rarity; a unique skill id embeds the character (`100011` is Special Week's base 
 (`10271`) until ★3, when the rarity-4 one (`100271`) replaces it. `card_skills.json`
 therefore lists two `unique` rows for those 17 outfits, with `level` the star at which
 each first applies.
+
+**Awakening ranks 6 and 7** (since 2026-11-17, Daptrius's board post "Awakening Level 6 and
+7"): JP raised six outfits' awakening cap to 7 (Special Week, Silence Suzuka, Tokai Teio,
+Mejiro McQueen, El Condor Pasa, Nakayama Festa, as of the 2026-10-02 export). A global
+outfit otherwise takes its skill rows from global's files only, which stop at 5, so
+`game_data_sources.jp_awakening_ahead` adds JP's awakening rows at the ranks global lacks
+for that outfit, and never a rank global has. The skills are JP-only, so the pages tag them
+and the team builder (global skills only) leaves them out; when global adds the ranks, its
+own rows match. If global fills a rank with a DIFFERENT skill, the borrowed row is removed
+(`game_data_sources.jp_awakening_superseded` and `superseded_uma_skills`): the one
+junction row the import ever deletes, and only one matching JP's row exactly, so an editor's
+own row stays. An outfit JP raised after the export needs a newer export.
 
 Support card **event** skills are not in any clean table (they come from story choice
 data), but the client asks the server for each card's list, and Daptrius captured those

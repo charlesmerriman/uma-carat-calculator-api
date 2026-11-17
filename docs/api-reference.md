@@ -747,7 +747,9 @@ also carries:
 `availability` (`"global"`, `"announced"`, `"jp"`: the site tags `"jp"` as "JP only");
 `uses_translation` (true when the name or description shown is UmaTL's: the site credits
 UmaTL); `readable` (when it fires and what it does, `skill_text.describe`: `{"wit_check",
-"complete", "slots": [{"after", "when", "effects", "duration", "cooldown"}]}`, where a timed
+"complete", "chained", "slots": [{"after", "when", "effects", "duration", "cooldown"}]}`, where
+`chained` is true when a later slot waits for the first to fire (the page calls the slots Part
+1, 2; otherwise they are alternatives, Trigger 1, 2), a duration that scales ends "(varies)", and a timed
 `duration` and a repeating `cooldown` are the game's base values per 1,000 m of race
 ("2.4 s per 1,000 m": the game scales both by the race's length); each
 condition `{"all": [phrase], "any": [[phrase]]}`, each phrase `{"text", "raw"}` where `raw`
@@ -938,10 +940,13 @@ instead of an id) plus `colours` (`[main, sub]` when the skill belongs to ONE ch
 game's pair for her from `character_colours.py`; else null), `description`, `readable`
 (as on a guide), `sources` (every outfit and card: `id`, `name`, `game_id`, `image`,
 `source`, `level` for an outfit, `title`, `image_borderless`, `rarity` and `card_type` for a
-card, `on_global`;
-on-global first), `evolution` (`from` and `into` as list rows, each `into` row with the
+card, `on_global`, and `via`: null, or on a ◎ white the ○'s name when the row gives the ○,
+whose hint counts for the ◎ too;
+on-global first), `evolution` (`from` and `into` as list rows, `into` in release order
+(out on global first, then game id), each `into` row with the
 `owners` and `owner_umas` that evolve it, `conditions` as `[{"text", "uses_translation", "is_japanese"}]`,
-`scenario`), and `versions` (its forms on global, as on a guide). 404 for a skill with no
+`scenario`), and `versions` (its forms on global, as on a guide, less the `from` and `into`
+rows already shown). 404 for a skill with no
 name at all, or no such id.
 
 ### `GET /encyclopedia/umas/<game_id>` and `GET /encyclopedia/cards/<game_id>`
@@ -968,7 +973,8 @@ sent so it can find them there and in the Collection. Never `admin_comments`.
   (goals of kinds not decoded yet), `skills` (the `/skills` list row plus `source`, `level`, `cost`,
   `evolves_from` as a game id, and `conditions`, an evolution's unlock conditions in the
   skill page's shape, empty for any other row, and a unique skill's `description`; unique,
-  innate, awakening, evolved), `outfits` (the
+  innate, awakening by rank (2 to 5, and 6 and 7 where JP has them), then evolutions in release
+  order, out on global first), `outfits` (the
   character's other outfits), `cards` (her own cards and every group card listing her; each
   row carries `image_borderless` beside `image`, so the page frames the card itself).
 - **Card** (404 for a placeholder): `id`, `game_id`, `name`, `title`, `jp_name`,
@@ -1013,7 +1019,9 @@ save or delete of an Uma, SupportCard, Skill, SkillAlias, UmaSkill or SupportCar
 one-process caveat as `/calculator-data`). About 540 KB raw, 50 KB gzipped; the client
 fetches it once, when a picker first opens. Beside `umas`, `support_cards` and `skills` it
 carries `character_colours`: `{"1006": ["#3A7AD2", "#ECE7E7"], ...}`, every character's two
-colours from the game files, looked up by an uma's or a card's `character_id`.
+colours from the game files, looked up by an uma's or a card's `character_id`, and
+`skill_count`, how many skills `GET /skills` lists (JP-only ones included), for the
+Encyclopedia's Skills tab.
 
 ```json
 { "umas": [{"id": 41, "name": "Maruzensky", "game_id": 100101, "image": "url", "portrait": "url",

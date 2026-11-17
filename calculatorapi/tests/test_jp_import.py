@@ -272,6 +272,63 @@ class JpImportTests(CalculatorTestCase):  # pylint: disable=too-many-instance-at
         self.assertEqual(uma.jp_name, "スペシャルウィーク")
         self.assertTrue(uma_is_released(uma))
 
+    def test_a_global_outfit_takes_only_the_awakening_ranks_global_lacks_from_jp(self):
+        """JP raised some outfits' awakening cap to 7 (Daptrius, 2026-11-17): a
+        global outfit gains JP's ranks 6 and 7, and keeps global's own rows for
+        the ranks global has, whatever JP says about them."""
+        self.jp["card_skills"] = [
+            # Global has rank 3; JP's row for it is ignored.
+            {"card_id": SPECIAL_WEEK, "skill_id": BANQUET, "source": "awakening", "level": 3},
+            {"card_id": SPECIAL_WEEK, "skill_id": FAN_SKILL, "source": "awakening", "level": 6},
+            # Never an innate or a unique: those are global's alone for a global outfit.
+            {"card_id": SPECIAL_WEEK, "skill_id": RULER, "source": "innate", "level": None},
+        ]
+        global_card = snapshot_card(SPECIAL_WEEK, chara_name="Special Week")
+        self.run_import(extra_global={
+            "cards": [global_card],
+            "card_skills": [{"card_id": SPECIAL_WEEK, "skill_id": GOURMAND, "source": "awakening", "level": 3}],
+        })
+        self.assertCountEqual(
+            self.special_week.skills.exclude(source="evolved").values_list("skill__game_id", "source", "level"),
+            [(GOURMAND, "awakening", 3), (FAN_SKILL, "awakening", 6)],
+        )
+
+    def test_a_borrowed_rank_goes_once_global_fills_it_with_another_skill(self):
+        """Once global ships rank 6 with a different skill, the row borrowed from
+        JP is removed (the import's one delete), and an editor's own row stays."""
+        self.jp["card_skills"] = [
+            {"card_id": SPECIAL_WEEK, "skill_id": FAN_SKILL, "source": "awakening", "level": 6},
+        ]
+        global_card = snapshot_card(SPECIAL_WEEK, chara_name="Special Week")
+        ranks_to_5 = [{"card_id": SPECIAL_WEEK, "skill_id": GOURMAND, "source": "awakening", "level": 3}]
+        self.run_import(extra_global={"cards": [global_card], "card_skills": ranks_to_5})
+        self.assertTrue(self.special_week.skills.filter(skill__game_id=FAN_SKILL, level=6).exists())
+        # An editor's hand-added row at the same rank: not JP's, so never removed.
+        editors = Skill.objects.create(game_id=200777, name="Editor's Pick", rarity=1, group_id=20077, tier=1)
+        UmaSkill.objects.create(uma=self.special_week, skill=editors, source="awakening", level=6)
+
+        # Global ships rank 6, with a skill of its own.
+        self.global_skills.append(snapshot_skill(200888, "Global Rank Six", rarity=1, group_id=20088))
+        out = self.run_import(extra_global={"cards": [global_card], "card_skills": ranks_to_5 + [
+            {"card_id": SPECIAL_WEEK, "skill_id": 200888, "source": "awakening", "level": 6},
+        ]})
+        self.assertIn("JP's, global has replaced it", out)
+        self.assertCountEqual(
+            self.special_week.skills.filter(source="awakening").values_list("skill__game_id", "level"),
+            [(GOURMAND, 3), (200888, 6), (200777, 6)],
+        )
+
+    def test_a_borrowed_rank_global_agrees_with_stays(self):
+        self.jp["card_skills"] = [
+            {"card_id": SPECIAL_WEEK, "skill_id": GOURMAND, "source": "awakening", "level": 6},
+        ]
+        global_card = snapshot_card(SPECIAL_WEEK, chara_name="Special Week")
+        self.run_import(extra_global={"cards": [global_card], "card_skills": []})
+        self.run_import(extra_global={"cards": [global_card], "card_skills": [
+            {"card_id": SPECIAL_WEEK, "skill_id": GOURMAND, "source": "awakening", "level": 6},
+        ]})
+        self.assertEqual(list(self.special_week.skills.filter(source="awakening").values_list("level", flat=True)), [6])
+
     def test_a_distrusted_jp_outfit_takes_nothing(self):
         # Global names character 1001, so a JP-only outfit of it must be a row
         # with that name in it; this one names somebody else.

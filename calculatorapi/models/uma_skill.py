@@ -22,8 +22,9 @@ class UmaSkill(models.Model):
     inline on the uma's admin page.
 
     `level` means different things per source, which is why it is one nullable
-    column rather than two: for `awakening` it is the awakening rank (2..5) that
-    unlocks the skill; for `unique` it is the star count at which that unique
+    column rather than two: for `awakening` it is the awakening rank (2..5, and
+    6..7 for the outfits JP has raised that far: game_data_sources.jp_awakening_ahead)
+    that unlocks the skill; for `unique` it is the star count at which that unique
     first applies (1 for the weaker one a ★1/★2 character starts with, 3 for
     the one that replaces it); for `innate` it is null. A ★1/★2 outfit therefore
     has two `unique` rows, and that is correct. For `evolved` it is the

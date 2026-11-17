@@ -108,6 +108,16 @@ class UmaPageTests(EncyclopediaFixture):
         self.assertEqual(evolved["evolves_from"], 200011)
         self.assertEqual((gold["conditions"], evolved["conditions"]), ([], []))
 
+    def test_evolutions_come_in_release_order_global_first(self):
+        """Daptrius, board, 2026-11-17: a JP-only evolution named earlier in the
+        alphabet sat above a global one. Global first, then the game id, which
+        numbers an outfit's evolutions of one rank in the order they came out."""
+        later = make(100101121, name="Aim Front Row Center!", rarity=6, evolves_from=self.gold,
+                     availability="jp")
+        UmaSkill.objects.create(uma=self.spe, skill=later, source="evolved", level=3)
+        evolved = [row["name"] for row in self.page()["skills"] if row["source"] == "evolved"]
+        self.assertEqual(evolved, ["Evolved Star", "Aim Front Row Center!"])
+
     def test_an_evolution_carries_its_unlock_conditions(self):
         SkillEvolutionCondition.objects.create(
             skill=self.evolved, game_id=10010101, num=1, sub_num=1, timing_type=1, count_type=1,

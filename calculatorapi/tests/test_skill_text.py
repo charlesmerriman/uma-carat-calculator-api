@@ -230,6 +230,25 @@ class EffectTextTests(CalculatorTestCase):
         self.assertIs(timed["wit_check"], True)
         self.assertIsNone(describe(skill(), CONTEXT)["wit_check"])
 
+    def test_a_scaling_duration_says_so(self):
+        scaled = {**slot([ability(27, 3500)], duration=24000), "duration_usage": 3}
+        self.assertEqual(describe(skill(effects=[scaled]), CONTEXT)["slots"][0]["duration"],
+                         "2.4 s per 1,000 m (varies)")
+
+    def test_two_slots_are_triggers_unless_the_second_waits_for_the_first(self):
+        # The game fires the first slot whose conditions hold: alternatives.
+        either = describe(skill(effects=[slot([ability(27, 3500)], condition="phase==1"),
+                                         slot([ability(27, 1500)], condition="phase==2")]), CONTEXT)
+        self.assertIs(either["chained"], False)
+        # A slot waiting on the other's firing makes them parts, one after the other.
+        chained = describe(skill(effects=[
+            slot([ability(27, 500)], condition="order==1"),
+            slot([ability(21, -500)], condition="phase==3&is_activate_other_skill_detail==1"),
+        ]), CONTEXT)
+        self.assertIs(chained["chained"], True)
+        self.assertIn("After Part 1 fires", texts(chained["slots"][1]["when"]["all"]))
+        self.assertTrue(chained["complete"])
+
     def test_a_skill_without_effects_still_reads_its_condition(self):
         described = describe(skill(condition="phase==1"), CONTEXT)
         self.assertEqual(texts(described["slots"][0]["when"]["all"]), ["Mid-race"])

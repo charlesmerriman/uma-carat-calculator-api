@@ -88,6 +88,8 @@ WHAT IT WRITES, and what it leaves alone:
                and awakening skills, with `level` (see the model). Rows are
                ADDED and never deleted, so a hand-added row survives. An
                outfit not in our database is skipped along with its rows.
+               Except a row borrowed from JP that global has since replaced
+               (game_data_sources.superseded_uma_skills).
   SupportCardSkill  `hint` rows from the snapshot's support_hints.json (the
                game's own data) and `event` rows from support_events.json (the
                JP server's lists, scripts/convert_jp_support_events.py; optional).
@@ -137,12 +139,10 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from calculatorapi import course_zones_cache, public_payload_cache, pvp_catalogue_cache, skills_cache
-from calculatorapi.models import (
-    Skill, SkillAlias, SkillEvolutionCondition, Spark, SparkKind, SupportCard, SupportCardSkill,
-    Uma, UmaSkill,
-)
+from calculatorapi.models import Skill, SkillAlias, SkillEvolutionCondition, Spark, SparkKind, SupportCard, Uma
 from calculatorapi.game_data_sources import (
-    SecondarySources, jp_names, jp_owner_links, name_matches, plan_evolutions, plan_gametora_aliases,
+    SUPPORT_CARD_SKILLS, UMA_SKILLS, SecondarySources, jp_names, jp_owner_links, name_matches,
+    plan_evolutions, plan_gametora_aliases, superseded_uma_skills,
 )
 from calculatorapi.game_data_values import card_values, jp_uma_values, merged, objective_values, uma_values
 from calculatorapi.models.skill import SkillAvailability, SkillRarity, SkillTier
@@ -366,36 +366,6 @@ def no_longer_in_snapshot(by_game_id, cards):
     ]
 
 
-class JunctionSpec:
-    """One skill junction table: who owns the rows and whether they carry a level."""
-
-    def __init__(self, label, owner_model, model, owner_field):
-        self.label = label
-        self.owner_model = owner_model
-        self.model = model
-        self.owner_field = owner_field
-        self.has_level = any(field.name == "level" for field in model._meta.fields)  # pylint: disable=protected-access
-
-    def existing_levels(self):
-        """{(owner game_id, skill game_id, source): level} for every row in the table."""
-        columns = [f"{self.owner_field}__game_id", "skill__game_id", "source"]
-        if self.has_level:
-            columns.append("level")
-        return {
-            tuple(values[:3]): (values[3] if self.has_level else None)
-            for values in self.model.objects.values_list(*columns)
-        }
-
-    def fields(self, owner, skill, source, level=None):
-        """Constructor / filter kwargs for one row."""
-        fields = {self.owner_field: owner, "skill": skill, "source": source}
-        if self.has_level and level is not None:
-            fields["level"] = level
-        return fields
-
-
-UMA_SKILLS = JunctionSpec("uma skill", Uma, UmaSkill, "uma")
-SUPPORT_CARD_SKILLS = JunctionSpec("support card skill", SupportCard, SupportCardSkill, "support_card")
 
 
 class Command(BaseCommand):
@@ -486,6 +456,8 @@ class Command(BaseCommand):
                     for row in snapshot["card_skills"]
                 ] + evolutions["junction"] + jp_links["uma_rows"],
                 known_skills, distrusted=uma_plan["distrusted"] | jp_links["uma_distrusted"],
+                removed=superseded_uma_skills(snapshot["card_skills"], sources.jp["card_skills"])
+                if sources.jp else (),
             ),
             self._plan_junction(
                 SUPPORT_CARD_SKILLS,
@@ -507,7 +479,7 @@ class Command(BaseCommand):
 
         if not any(
             plan["changed"] or plan.get("created") or plan.get("conditions") or plan.get("aliases")
-            or plan.get("gametora_aliases")
+            or plan.get("gametora_aliases") or plan.get("removed")
             for plan in plans
         ):
             self.stdout.write(self.style.SUCCESS("\nNothing to write."))
@@ -723,7 +695,7 @@ class Command(BaseCommand):
         return len(plan["changed"]) + len(plan["created"])
 
     @staticmethod
-    def _plan_junction(spec, rows, known_skills, distrusted=frozenset()):
+    def _plan_junction(spec, rows, known_skills, distrusted=frozenset(), removed=()):
         """
         Junction rows to add or update, as (owner game_id, skill game_id, source, level).
 
@@ -744,7 +716,7 @@ class Command(BaseCommand):
 
         plan = {
             "label": spec.label, "changed": [], "created": [], "unchanged": 0,
-            "missing": [], "mismatched": [], "junction": spec,
+            "missing": [], "mismatched": [], "junction": spec, "removed": list(removed),
         }
         seen = set()
         for owner_id, skill_id, source, level in rows:
@@ -856,7 +828,8 @@ class Command(BaseCommand):
             spec.model.objects.filter(
                 **spec.fields(owners[owner_id], skills[skill_id], source)
             ).update(level=level)
-        return len(plan["created"]) + len(plan["changed"])
+        spec.model.objects.filter(pk__in=[row.pk for row in plan["removed"]]).delete()
+        return len(plan["created"]) + len(plan["changed"]) + len(plan["removed"])
 
     @staticmethod
     def _write(plans):
@@ -958,7 +931,11 @@ class Command(BaseCommand):
                     f"\n{label}s: {'would add' if dry_run else 'adding'} {len(created)}, "
                     f"{verb.lower()} {len(plan['changed'])}, already current {plan['unchanged']}"
                 )
-                for line in plan["missing"]:
+                removals = [  # superseded_uma_skills: borrowed from JP, replaced by global since
+                    f"{'would remove' if dry_run else 'removing'} {row.uma.game_id} level {row.level} "
+                    f"skill {row.skill.game_id}: JP's, global has replaced it" for row in plan["removed"]
+                ]
+                for line in removals + plan["missing"]:
                     self.stdout.write(self.style.WARNING(f"    {line}"))
                 continue
             if created is not None:
