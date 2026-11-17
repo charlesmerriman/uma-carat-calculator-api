@@ -1836,6 +1836,21 @@ which the snapshot lacks (so: launch the game, re-extract). Its first run, 2026-
 found the extractor's hand-typed `command_id` table had stamina, power and guts rotated;
 the extractor now reads the command names from the game (`text_data` category 55).
 
+### Character colours (2026-11-17)
+
+`chara_data.ui_color_main` and `ui_color_sub` are the two colours the game paints a
+character's training screens in. `extract_master_snapshot.py` writes them to
+`characters.json` in each snapshot (`extract_characters`: a row left at white is "unset" and
+skipped, and anything that is not six hex digits stops the run), and merges both snapshots
+into `calculatorapi/data/character_colours.json` (global's pair wins), the file the API reads
+(`character_colours.py`). The Encyclopedia paints a character's pages and tiles with them.
+
+They are a file and not columns because they belong to a CHARACTER, which has no row here,
+and nothing filters or edits them. `test_character_colours.py` holds the file to the
+snapshots and to plain hex. The JP half was read from the 2026-10-02 export with
+`--only characters.json`, so a character newer than that has no pair until a newer export;
+the page then wears the theme's accent.
+
 ### The JP snapshot and the UmaTL slice (2026-10-23)
 
 JP is about three and a half years ahead of global, so its database holds the skills,

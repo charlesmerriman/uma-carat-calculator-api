@@ -102,6 +102,11 @@ class CatalogueTests(CalculatorTestCase):
         self.assertEqual(body["support_cards"][0]["title"], "[Global Title]")
         self.assertNotIn("translated_title", body["support_cards"][0])
 
+    def test_every_characters_colours_ride_along_once(self):
+        """One map for the whole catalogue (character_colours.py), looked up by character_id."""
+        colours = self.fetch()["character_colours"]
+        self.assertEqual(colours["1006"], ["#3A7AD2", "#ECE7E7"])  # Oguri Cap
+
     def test_a_card_sends_its_character_id(self):
         """The Encyclopedia's search finds a card by its character's 4-digit id, the
         same id an uma's outfit starts with (board "Add Searchable Aliases", 2026-11-17)."""

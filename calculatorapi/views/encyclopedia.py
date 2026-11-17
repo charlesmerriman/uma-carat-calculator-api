@@ -23,6 +23,10 @@ WHAT A PAGE CARRIES, and what it leaves to the client:
     the Japanese name), the editors' `purpose`, and every skill the outfit or
     card gives, as the Skills page's summary row plus where it comes from.
   * Its relatives: the character's other outfits and support cards.
+  * `colours`: the character's two colours, [main, sub], from the game files
+    (character_colours.py), or null when they hold none for her. A group
+    card's is null: it stands for several characters. An uma page's unique
+    skills carry their `description`, which the page leads its skills with.
   * NO DATES and NO BANNERS. The client already has every banner, with its
     predicted dates, from /calculator-data; reading them there keeps date
     prediction in one place. The page sends `id` (the row's pk) so the client
@@ -38,7 +42,7 @@ from django.http import Http404
 from rest_framework import permissions
 from rest_framework.decorators import api_view, permission_classes
 
-from calculatorapi import skills_cache, support_effects
+from calculatorapi import character_colours, skills_cache, support_effects
 from calculatorapi.career import shown_goals
 from calculatorapi.global_release import (
     annotate_cards, annotate_umas, card_is_released, game_release_passed, uma_is_released,
@@ -80,6 +84,8 @@ def _skill_rows(rows):
             # send a player to each skill's page for them (Daptrius, 2026-11-13).
             # Only an uma's evolutions have any; a card's rows never query.
             "conditions": unlock_conditions(skill) if row.source == "evolved" else [],
+            # The page leads with her unique skill and what it does (the redesign).
+            **({"description": skill.shown_description} if row.source == "unique" else {}),
         })
     return found
 
@@ -160,6 +166,7 @@ def build_uma(uma):
         or any(row["title_translated"] for row in [*outfits, *cards]),
         "jp_name": uma.jp_name,
         "jp_title": uma.jp_title,
+        "colours": character_colours.colours_for(character),
         "portrait": _file_url(uma.portrait),
         "image": _file_url(uma.image),
         "rarity": uma.rarity,
@@ -207,6 +214,8 @@ def build_card(card):
         or any(row["title_translated"] for row in [*outfits, *others]),
         "jp_name": card.jp_name,
         "jp_title": card.jp_title,
+        # A group card stands for several characters, so it wears no one's.
+        "colours": None if is_group else character_colours.colours_for(card.character_id),
         "image": _file_url(card.image),
         "image_borderless": _file_url(card.image_borderless),
         "card_type": card.card_type,

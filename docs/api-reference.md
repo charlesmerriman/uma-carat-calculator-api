@@ -927,18 +927,20 @@ key, `skill_types.py`: the icon family, e.g. `velocity`, `recovery`, `scenario`;
 its parent plus a suffix, `stat_speed` ... `stat_several` and `debuff_speed` ...
 `debuff_vision`; `current_speed` for a Speed-family skill that raises its runner's current
 speed; `other` for an unplaced icon), `owners` (the
-outfits a unique, its inherited copy or an evolution belongs to, for search), `pair` (the
+outfits a unique, its inherited copy or an evolution belongs to, for search), `owner_umas`
+(the same outfits as rows a page can draw: `id`, `game_id`, `name`, `portrait`), `pair` (the
 game id of a unique's inherited copy or the copy's unique, else null), and `other_names`
 (`Skill.search_names`: the translation when global's name is shown, every alias including
 GameTora's names, the Japanese name when it isn't the shown one), for search.
 
 `GET /skills/<game_id>` is one skill in full: the list fields (with `pair` as a list row
-instead of an id) plus `description`, `readable`
+instead of an id) plus `colours` (`[main, sub]` when the skill belongs to ONE character, the
+game's pair for her from `character_colours.py`; else null), `description`, `readable`
 (as on a guide), `sources` (every outfit and card: `id`, `name`, `game_id`, `image`,
 `source`, `level` for an outfit, `title`, `image_borderless`, `rarity` and `card_type` for a
 card, `on_global`;
 on-global first), `evolution` (`from` and `into` as list rows, each `into` row with the
-`owners` that evolve it, `conditions` as `[{"text", "uses_translation", "is_japanese"}]`,
+`owners` and `owner_umas` that evolve it, `conditions` as `[{"text", "uses_translation", "is_japanese"}]`,
 `scenario`), and `versions` (its forms on global, as on a guide). 404 for a skill with no
 name at all, or no such id.
 
@@ -950,7 +952,9 @@ generation (`skills_cache.read_page`). **No dates and no banners**: the client r
 from `/calculator-data`, so date prediction stays in one place; `id` (the row's pk) is
 sent so it can find them there and in the Collection. Never `admin_comments`.
 
-- **Both pages:** `title` is the shown one (Global's or an editor's, else UmaTL's), and
+- **Both pages:** `colours` is the character's two colours from the game files, `[main, sub]`
+  as `#RRGGBB` (`character_colours.py`), or null when the files hold none for her (and always
+  null on a group card, which stands for several characters). `title` is the shown one (Global's or an editor's, else UmaTL's), and
   `uses_translation` is true when anything on the page is UmaTL's fan translation (a title,
   a row's title, a unique effect sentence, a race name), so the page credits UmaTL. Each
   `outfits` / `cards` row carries `title_translated`.
@@ -963,7 +967,8 @@ sent so it can find them there and in the Collection. Never `admin_comments`.
   or better in 2 G1 races") with a null `grade` and an empty `need`; career.py) and `objectives_hidden`
   (goals of kinds not decoded yet), `skills` (the `/skills` list row plus `source`, `level`, `cost`,
   `evolves_from` as a game id, and `conditions`, an evolution's unlock conditions in the
-  skill page's shape, empty for any other row; unique, innate, awakening, evolved), `outfits` (the
+  skill page's shape, empty for any other row, and a unique skill's `description`; unique,
+  innate, awakening, evolved), `outfits` (the
   character's other outfits), `cards` (her own cards and every group card listing her; each
   row carries `image_borderless` beside `image`, so the page frames the card itself).
 - **Card** (404 for a placeholder): `id`, `game_id`, `name`, `title`, `jp_name`,
@@ -1006,7 +1011,9 @@ The team builder's catalogue (`views/pvp_catalogue.py`). Public, the same for ev
 **cached** in `pvp_catalogue_cache.py` (key `pvp_catalogue:v4`, TTL 300, dropped by any
 save or delete of an Uma, SupportCard, Skill, SkillAlias, UmaSkill or SupportCardSkill; the same
 one-process caveat as `/calculator-data`). About 540 KB raw, 50 KB gzipped; the client
-fetches it once, when a picker first opens.
+fetches it once, when a picker first opens. Beside `umas`, `support_cards` and `skills` it
+carries `character_colours`: `{"1006": ["#3A7AD2", "#ECE7E7"], ...}`, every character's two
+colours from the game files, looked up by an uma's or a card's `character_id`.
 
 ```json
 { "umas": [{"id": 41, "name": "Maruzensky", "game_id": 100101, "image": "url", "portrait": "url",
