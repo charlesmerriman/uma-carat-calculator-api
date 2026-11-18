@@ -929,7 +929,12 @@ names sort last):
 key, `skill_types.py`: the icon family, e.g. `velocity`, `recovery`, `scenario`; a sub-type as
 its parent plus a suffix, `stat_speed` ... `stat_several` and `debuff_speed` ...
 `debuff_vision`; `current_speed` for a Speed-family skill that raises its runner's current
-speed; `other` for an unplaced icon), `owners` (the
+speed; `other` for an unplaced icon), `tags` (the condition and effect filters' keys,
+`skill_tags.py`, sorted: when `early` ... `final-straight`, `uphill`, `downhill`; the race
+`sprint` ... `long`, `turf`, `dirt`; a strategy the skill asks for, `front-runner` ...
+`end-closer`; what it does, `speed`, `current-speed`, `accel`, `recovery`, `stats`, `vision`,
+`navigation`, `debuff`; read off the parsed condition and the ability types, never the
+English), `owners` (the
 outfits a unique, its inherited copy or an evolution belongs to, for search), `owner_umas`
 (the same outfits as rows a page can draw: `id`, `game_id`, `name`, `portrait`), `pair` (the
 game id of a unique's inherited copy or the copy's unique, else null), and `other_names`

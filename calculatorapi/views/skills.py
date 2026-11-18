@@ -37,6 +37,7 @@ from calculatorapi import character_colours, pvp_guide_editing, skill_text, skil
 from calculatorapi.global_release import released_cards, released_umas
 from calculatorapi.models import Skill, SupportCardSkill, UmaSkill
 from calculatorapi.models.skill import SkillRarity, SkillTier, skill_families
+from calculatorapi.skill_tags import skill_tags
 from calculatorapi.skill_types import skill_type
 from calculatorapi.views.pvp_catalogue import image_url
 
@@ -145,7 +146,9 @@ class Owners:
 def build_list():
     owners = Owners()
     return [
-        {**summary(skill), "other_names": skill.search_names, **owners.fields(skill.game_id)}
+        # `tags`: the condition and effect filters' keys (skill_tags.py).
+        {**summary(skill), "other_names": skill.search_names, "tags": skill_tags(skill),
+         **owners.fields(skill.game_id)}
         for skill in _shown().prefetch_related("aliases").by_shown_name()
     ]
 
