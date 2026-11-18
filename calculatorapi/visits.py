@@ -75,13 +75,12 @@ KNOWN_ROUTES = frozenset({
     "/app/selectors",
     "/app/legend-races",
     "/app/pvp",
+    # The Encyclopedia's three lists, open to everyone since 2026-11-18.
     "/app/skills",
-    # Early access only and not prerendered, like /app/skills.
-    "/app/rankings",
-    # The Encyclopedia's lists: early access only and not prerendered, like
-    # /app/rankings, until it opens to everyone (notes/encyclopedia-plan.md).
     "/app/umas",
     "/app/cards",
+    # Early access only and not prerendered.
+    "/app/rankings",
     # Account only and not prerendered, like /account, but a landing all the same.
     "/app/collection",
     "/account",

@@ -914,10 +914,8 @@ refusal with no field has `""`.
 ### `GET /skills` and `GET /skills/<game_id>`
 
 Every skill a player may read about (`views/skills.py`): the Skills page and the guide
-editor's picker. **Early access only** (supporters and staff first, the Encyclopedia's
-gate, `pvp_guide_editing.sees_skills_preview`): 401 for a guest, 403
-`{"error": "The Encyclopedia is open to supporters first."}` for anyone else, as
-`/rankings/*`. Cached as rendered bytes in the `skills` cache alias
+editor's picker. **Public** since 2026-11-18 (supporters and staff had it first, from
+2026-11-12). Cached as rendered bytes in the `skills` cache alias
 (`skills_cache.py`, a new generation on any write to the skill, alias, condition, junction,
 uma or card tables). Keyed by the game's skill id, the same in every database.
 
@@ -960,7 +958,7 @@ name at all, or no such id.
 ### `GET /encyclopedia/umas/<game_id>` and `GET /encyclopedia/cards/<game_id>`
 
 One outfit's or one support card's Encyclopedia page (`views/encyclopedia.py`), keyed by
-the game's id. The same gate as `/skills` (401 / 403), the same cache alias and
+the game's id. Public, like `/skills`, with the same cache alias and
 generation (`skills_cache.read_page`). **No dates and no banners**: the client reads them
 from `/calculator-data`, so date prediction stays in one place; `id` (the row's pk) is
 sent so it can find them there and in the Collection. Never `admin_comments`.
@@ -1006,7 +1004,7 @@ sent so it can find them there and in the Collection. Never `admin_comments`.
 ### `GET /encyclopedia/card-effects`
 
 Every game card's effects, for the card list's "By effect" sort (notes/card-effect-sort-plan.md).
-Same gate and cache as the pages (401 guest, 403 without early access). `types` lists every effect
+Public, with the same cache as the pages. `types` lists every effect
 type any card has (`type`, `name`, `format`), in type order. `cards` is keyed by the card's pk (the
 list's id from `/pvp-catalogue`): `caps` (the level cap at limit break 0 to 4), `effects` (type to
 its value at each of those caps, `null` before it unlocks; `support_effects.at_caps`) and `unique`
@@ -1017,6 +1015,19 @@ its value at each of those caps, `null` before it unlocks; `support_effects.at_c
 {"types": [{"type": 19, "name": "Specialty Priority", "format": "number"}],
  "cards": {"42": {"caps": [30, 35, 40, 45, 50], "effects": {"19": [20, 25, 30, 35, 35]},
                   "unique": {"level": 30, "values": {"19": 40}, "conditional": false}}}}
+```
+
+### `GET /encyclopedia/index`
+
+The game id of every Encyclopedia page that exists, per kind, in id order. Public, with the
+same cache as the pages, so a new uma, card or skill joins it on the write. The web's build
+reads it to know which documents to write and which URLs go in its sitemap
+(notes/encyclopedia-open-plan.md). It lists exactly what the page routes serve: the same
+querysets (`views/encyclopedia._uma_pages`, `_card_pages`, and `Skill.objects.shown()`), so
+an id here never 404s.
+
+```json
+{"umas": [100101, 100102], "cards": [20001, 30001], "skills": [100011, 200011]}
 ```
 
 ### `GET /pvp-catalogue`

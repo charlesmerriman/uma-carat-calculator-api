@@ -442,5 +442,6 @@ class CardEffectsRouteTests(CalculatorTestCase):
         self.assertEqual(row["unique"], {"level": 30, "values": {"6": 1, "12": 20}, "conditional": False})
         self.assertEqual([entry["type"] for entry in body["types"]], [1, 2, 5, 8, 14, 17, 18, 19])
 
-    def test_supporters_first_like_the_pages(self):
-        self.assertEqual(self.client.get("/encyclopedia/card-effects").status_code, 401)
+    def test_a_guest_reads_it_like_the_pages(self):
+        # Open to everyone since 2026-11-18; self.client is signed out.
+        self.assertEqual(self.client.get("/encyclopedia/card-effects").status_code, 200)
