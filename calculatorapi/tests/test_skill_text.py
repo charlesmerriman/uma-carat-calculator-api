@@ -209,7 +209,7 @@ class ConditionTextTests(CalculatorTestCase):
             "is_other_character_activate_advantage_skill==27": "When a runner uses a speed skill",
             "is_popularity_top_character_activate_advantage_skill==-1": "When the favorite uses a skill",
             "track_id==10201": "At Longchamp Racecourse",
-            "track_id>=10001&track_id<=10010": "At a JRA racecourse",
+            "track_id>=10001&track_id<=10010": "At a central (JRA) racecourse",
             "is_used_skill_id==203061&is_used_skill_id==203071": "After using No Second Thoughts and No Third Chances",
             "is_exist_skill_id==201631": "When a runner in the race has Sympathy",
             "running_style==4": "As an End Closer",
