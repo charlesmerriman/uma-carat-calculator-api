@@ -38,17 +38,18 @@ class GuideRefused(Exception):
 
 def sees_skills_preview(user):
     """
-    Whether `user` sees the skills work and the Encyclopedia: GET /skills, the
-    uma and card pages, JP-only skills on guides, and the readable text and
-    sources the hover card draws.
+    Whether `user` sees the skills work ON A GUIDE: JP-only skills, and the
+    readable text and sources the guide's skill hover card draws.
 
-    Shelved for the guide editors from 2026-10-23; since the Encyclopedia
-    (owner, 2026-11-12: "supporters/staff only first, to be enabled for all
-    later") it is the site's early-access rule, the one Rankings uses: any
-    paid tier, staff, or an account ticked "early access". Everyone else gets
-    guides exactly as before the work (global skills only). Opening it to
-    everyone is this one function: return True (notes/encyclopedia-plan.md,
-    "Opening it to everyone").
+    The site's early-access rule, the one Rankings uses: any paid tier,
+    staff, or an account ticked "early access". Everyone else gets guides
+    exactly as before the work (global skills only).
+
+    GUIDES ONLY since 2026-11-18. The Encyclopedia (GET /skills, the uma,
+    card and skill pages) sat behind this too from 2026-11-12 and is now open
+    to everyone; asked whether the guides open with it, the owner said "Not
+    the guides" (notes/encyclopedia-open-plan.md). Opening them later is this
+    one function: return True.
     """
     return benefits.early_access(user)
 

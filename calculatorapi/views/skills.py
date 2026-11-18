@@ -16,10 +16,9 @@ one skill in full: its text, when it fires and what it does
 (skill_text.describe), every outfit and card that gives it, what it evolves
 from and into, and what unlocks an evolution.
 
-SUPPORTERS AND STAFF FIRST (since 2026-11-12, the Encyclopedia): both sit
-behind pvp_guide_editing.sees_skills_preview, the site's early-access rule.
-A guest gets 401 and anyone else 403, as /rankings/* does. The cached bytes
-are the same for every reader let in and hold nothing about a person.
+OPEN TO EVERYONE (owner, 2026-11-18; supporters and staff had them first,
+from 2026-11-12). Both are AllowAny, like /pvp-catalogue. The cached bytes
+are the same for every reader and hold nothing about a person.
 
 Both are cached as rendered bytes in their own cache alias
 (skills_cache.py). Keyed by the game's skill id, which is the same in every
@@ -31,9 +30,8 @@ import json
 from django.http import Http404, HttpResponse
 from rest_framework import permissions
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.response import Response
 
-from calculatorapi import character_colours, pvp_guide_editing, skill_text, skills_cache
+from calculatorapi import character_colours, skill_text, skills_cache
 from calculatorapi.global_release import released_cards, released_umas
 from calculatorapi.models import Skill, SupportCardSkill, UmaSkill
 from calculatorapi.models.skill import SkillRarity, SkillTier, skill_families
@@ -295,18 +293,6 @@ def build_detail(skill):
     }
 
 
-REFUSED = {"error": "The Encyclopedia is open to supporters first."}
-
-
-def refused(request):
-    """The 403 for a signed-in reader without early access, else None. A guest
-    never gets this far: IsAuthenticated answers 401 first. Shared with
-    views/encyclopedia.py, so the skill and Encyclopedia pages open together."""
-    if pvp_guide_editing.sees_skills_preview(request.user):
-        return None
-    return Response(REFUSED, status=403)
-
-
 def _bytes(payload):
     return json.dumps(payload, separators=(",", ":")).encode()
 
@@ -317,10 +303,8 @@ def _json(body):
 
 
 @api_view(["GET"])
-@permission_classes([permissions.IsAuthenticated])
-def skill_list(request):
-    if (refusal := refused(request)) is not None:
-        return refusal
+@permission_classes([permissions.AllowAny])
+def skill_list(request):  # pylint: disable=unused-argument
     body = skills_cache.read_list()
     if body is None:
         body = _bytes(build_list())
@@ -329,10 +313,8 @@ def skill_list(request):
 
 
 @api_view(["GET"])
-@permission_classes([permissions.IsAuthenticated])
-def skill_detail(request, game_id):
-    if (refusal := refused(request)) is not None:
-        return refusal
+@permission_classes([permissions.AllowAny])
+def skill_detail(request, game_id):  # pylint: disable=unused-argument
     body = skills_cache.read_detail(game_id)
     if body is None:
         skill = _shown().prefetch_related("aliases").filter(game_id=game_id).first()

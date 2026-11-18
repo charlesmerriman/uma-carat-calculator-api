@@ -5,13 +5,14 @@ outfit's or one support card's page in the Encyclopedia
 web draws them from GET /pvp-catalogue, which is public and already loaded.
 The one exception is GET /encyclopedia/card-effects, every card's effects for
 the card list's effect sort, fetched only when that sort is picked
-(notes/card-effect-sort-plan.md).
+(notes/card-effect-sort-plan.md). GET /encyclopedia/index lists the id of
+every page that exists, for the web's build (notes/encyclopedia-open-plan.md).
 
-WHO: the Encyclopedia is supporters and staff first (owner, 2026-11-12), so
-both answer as GET /skills does: a guest 401, anyone without early access 403
-(views/skills.refused). The bytes are the same for every reader let in and
-hold nothing about a person, so one cached copy serves all of them. "You own
-this" is worked out in the browser from the Collection, never here.
+WHO: everyone (owner, 2026-11-18; supporters and staff had it first, from
+2026-11-12). Every route here is AllowAny, as GET /skills is. The bytes are
+the same for every reader and hold nothing about a person, so one cached copy
+serves all of them. "You own this" is worked out in the browser from the
+Collection, never here.
 
 KEYED BY THE GAME'S ID, never the row's pk or a name: names change (a JP-only
 uma takes its Global name on release, and 146 card names are shared) but the
@@ -49,7 +50,7 @@ from calculatorapi.global_release import (
 )
 from calculatorapi.models import Skill, SupportCard, SupportCardSkill, Uma, UmaSkill
 from calculatorapi.views.pvp_catalogue import image_url
-from calculatorapi.views.skills import _bytes, _json, refused, release_order, summary, unlock_conditions
+from calculatorapi.views.skills import _bytes, _json, release_order, summary, unlock_conditions
 
 APTITUDE_KEYS = ("turf", "dirt", "short", "mile", "medium", "long", "front", "pace", "late", "end")
 STAT_KEYS = ("speed", "stamina", "power", "guts", "wit")
@@ -247,10 +248,19 @@ def build_card(card):
     }
 
 
-def _page(request, kind, game_id, find, build):
-    """The shared shape of both endpoints: gate, cache, build on a miss."""
-    if (refusal := refused(request)) is not None:
-        return refusal
+def _uma_pages():
+    """The outfits that have a page. One queryset for the page view and the
+    index, so the index can never list a page the view would 404."""
+    return Uma.trainees().exclude(game_id=None)
+
+
+def _card_pages():
+    """The cards that have a page; see _uma_pages."""
+    return SupportCard.objects.filter(is_placeholder=False).exclude(game_id=None)
+
+
+def _page(kind, game_id, find, build):
+    """The shared shape of both endpoints: cache, build on a miss."""
     body = skills_cache.read_page(kind, game_id)
     if body is None:
         row = find(game_id)
@@ -262,22 +272,52 @@ def _page(request, kind, game_id, find, build):
 
 
 @api_view(["GET"])
-@permission_classes([permissions.IsAuthenticated])
-def encyclopedia_uma(request, game_id):
+@permission_classes([permissions.AllowAny])
+def encyclopedia_uma(request, game_id):  # pylint: disable=unused-argument
     return _page(
-        request, "uma", game_id,
-        lambda game_id: Uma.trainees().filter(game_id=game_id).first(), build_uma,
+        "uma", game_id,
+        lambda game_id: _uma_pages().filter(game_id=game_id).first(), build_uma,
     )
 
 
 @api_view(["GET"])
-@permission_classes([permissions.IsAuthenticated])
-def encyclopedia_card(request, game_id):
+@permission_classes([permissions.AllowAny])
+def encyclopedia_card(request, game_id):  # pylint: disable=unused-argument
     return _page(
-        request, "card", game_id,
-        lambda game_id: SupportCard.objects.filter(game_id=game_id, is_placeholder=False).first(),
-        build_card,
+        "card", game_id,
+        lambda game_id: _card_pages().filter(game_id=game_id).first(), build_card,
     )
+
+
+def build_index():
+    """
+    The game id of every page the Encyclopedia has, per kind, in id order.
+
+    The web's build reads this to know which documents to write and which
+    URLs go in its sitemap (notes/encyclopedia-open-plan.md), so it must list
+    exactly what the page views serve: the same querysets, and for skills the
+    one GET /skills/<game_id> reads (Skill.objects.shown()).
+    """
+    def ids(rows):
+        return list(rows.order_by("game_id").values_list("game_id", flat=True))
+
+    return {
+        "umas": ids(_uma_pages()),
+        "cards": ids(_card_pages()),
+        "skills": ids(Skill.objects.shown().exclude(game_id=None)),
+    }
+
+
+@api_view(["GET"])
+@permission_classes([permissions.AllowAny])
+def encyclopedia_index(request):  # pylint: disable=unused-argument
+    """GET /encyclopedia/index: every page's id. Cached like a page, so a write
+    to an uma, card or skill (a new row included) rebuilds it."""
+    body = skills_cache.read_page("index", 0)
+    if body is None:
+        body = _bytes(build_index())
+        skills_cache.store_page("index", 0, body)
+    return _json(body)
 
 
 def build_card_effects():
@@ -309,12 +349,10 @@ def build_card_effects():
 
 
 @api_view(["GET"])
-@permission_classes([permissions.IsAuthenticated])
-def encyclopedia_card_effects(request):
-    """GET /encyclopedia/card-effects: the card list's effect sort. Same gate and
-    cache as the pages; one entry for everyone let in."""
-    if (refusal := refused(request)) is not None:
-        return refusal
+@permission_classes([permissions.AllowAny])
+def encyclopedia_card_effects(request):  # pylint: disable=unused-argument
+    """GET /encyclopedia/card-effects: the card list's effect sort. Same cache
+    as the pages; one entry for everyone."""
     body = skills_cache.read_page("card-effects", 0)
     if body is None:
         body = _bytes(build_card_effects())
