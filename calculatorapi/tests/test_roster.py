@@ -57,7 +57,8 @@ class EditTests(RosterFixture):
         ).json()
         self.assertEqual(
             body["umas"],
-            [{"uma": self.oguri.id, "stars": 3, "talent_level": None, "source": "manual", "obtained_at": None}],
+            [{"uma": self.oguri.id, "stars": 3, "talent_level": None, "source": "manual", "obtained_at": None,
+              "hint_levels": {}}],
         )
         self.assertEqual(body["support_cards"][0]["limit_break"], 2)
 
@@ -167,6 +168,47 @@ class ImportTests(RosterFixture):
 
 
 @override_settings(STORAGES=PLAIN_TEST_STORAGES)
+class HintLevelTests(RosterFixture):
+    """An imported uma's hint levels reach the player as {skill game id: level},
+    read out of game_data's skill_data_array (Daptrius, board, 2026-11-17)."""
+
+    def import_hints(self, hints):
+        self.run_import(umas=[{"uma": self.oguri.id, "stars": 3, "talent_level": 5,
+                               "game_data": {"card_id": 100601, "viewer_id": 7,
+                                             "skill_data_array": hints}}])
+
+    def hints(self):
+        return self.client.get("/roster").json()["umas"][0]["hint_levels"]
+
+    def test_the_levels_are_sent_by_skill_game_id(self):
+        self.import_hints([{"skill_id": 200432, "level": 1}, {"skill_id": 200552, "level": 3}])
+        self.assertEqual(self.hints(), {"200432": 1, "200552": 3})
+        # Only the two numbers leave: never the rest of game_data.
+        self.assertNotIn("viewer_id", json.dumps(self.client.get("/roster").json()))
+
+    def test_malformed_entries_are_skipped_not_trusted(self):
+        self.import_hints([
+            {"skill_id": 200432, "level": 2},
+            {"skill_id": "200542", "level": 1},  # a string id
+            {"skill_id": 200552, "level": True},  # a bool is not a level
+            {"skill_id": 200712, "level": 0},
+            {"skill_id": -5, "level": 1},
+            "not an entry",
+        ])
+        self.assertEqual(self.hints(), {"200432": 2})
+
+    def test_no_array_or_a_wrong_shape_reads_as_none(self):
+        for raw in (None, "text", {"skill_id": 1}, []):
+            with self.subTest(raw=raw):
+                self.import_hints(raw)
+                self.assertEqual(self.hints(), {})
+
+    def test_a_hand_edit_keeps_the_imported_hints(self):
+        self.import_hints([{"skill_id": 200432, "level": 3}])
+        self.patch(umas=[{"uma": self.oguri.id, "owned": True, "stars": 5}])
+        self.assertEqual(self.hints(), {"200432": 3})
+
+
 class LifecycleTests(RosterFixture):
 
     def test_roster_writes_keep_the_public_payload(self):
