@@ -131,6 +131,14 @@ class SkillListTests(CalculatorTestCase):
         self.assertEqual((nameless["game_id"], nameless["uses_translation"]), (self.nameless.game_id, False))
         self.assertEqual(nameless["other_names"], [])
 
+    def test_each_row_carries_its_condition_and_effect_tags(self):
+        make(200362, name="Straightaway Adept", effects=[
+            {"precondition": "", "condition": "corner==0&distance_type==2", "abilities": [
+                {"type": 27, "value": 1500, "target_type": 1, "target_value": 0}]}])
+        rows = {row["name"]: row for row in self.client.get("/skills").json()}
+        self.assertEqual(rows["Straightaway Adept"]["tags"], ["mile", "speed", "straight"])
+        self.assertEqual(rows["Gourmand"]["tags"], [])
+
     def test_every_other_name_is_there_for_search(self):
         gourmand = next(row for row in self.client.get("/skills").json() if row["name"] == "Gourmand")
         self.assertEqual(gourmand["other_names"], ["Glutton", "Old Gourmand", "食いしん坊"])
@@ -176,6 +184,10 @@ class SkillDetailTests(CalculatorTestCase):
         self.assertEqual(body["readable"]["slots"][0]["when"]["all"][0]["text"],
                          "At a random moment mid-race")
         self.assertTrue(body["readable"]["wit_check"])
+        # The game's own code for each slot, lined up with `readable` (the Detailed view).
+        self.assertEqual(len(body["raw_conditions"]), len(body["readable"]["slots"]))
+        self.assertEqual(body["raw_conditions"][0],
+                         {"after": SPEED[0].get("precondition", ""), "when": SPEED[0]["condition"]})
         self.assertEqual(body["evolution"]["from"]["name"], "Gourmand")
         self.assertEqual(body["evolution"]["conditions"], [
             {"text": "Attain at least 600 Stamina", "uses_translation": False, "is_japanese": False},

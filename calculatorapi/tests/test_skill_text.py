@@ -165,6 +165,59 @@ class ConditionTextTests(CalculatorTestCase):
             with self.subTest(condition=condition):
                 self.assertEqual(texts(when(condition)["all"]), [expected])
 
+    def test_the_wording_pass_phrases(self):
+        # 2026-11-18: each from the game's own text of the skills named in
+        # skill_text.py (Global's description, else the JP client's).
+        context = TextContext(racecourses={**skill_text.OVERSEAS_RACECOURSES, 10006: "Tokyo"},
+                              skill_names={203061: "No Second Thoughts", 203071: "No Third Chances",
+                                           201631: "Sympathy"})
+        cases = {
+            "phase_corner_random==1": "At a random moment on a corner mid-race",
+            "phase_straight_random==2": "At a random moment on a straight late-race",
+            "phase_firsthalf==1": "In the first half of mid-race",
+            "phase_firsthalf==3": "In the first half of the last spurt phase",
+            "phase_laterhalf==0": "In the second half of early-race",
+            "phase_firstquarter==2": "In the first quarter of late-race",
+            "phase_firsthalf_random==3": "At a random moment in the first half of the last spurt phase",
+            "phase_first_half_straight_random==2": "At a random moment on a straight in the first half of late-race",
+            "phase_latter_half_straight_random==1": "At a random moment on a straight in the second half of mid-race",
+            "run_at_full_speed_random==1": "At a random moment while spurting at full strength",
+            "up_slope_random_later_half==1": "At a random moment on an uphill in the second half of the race",
+            "furlong==1": "In the race's 2nd furlong (200 m)",
+            "order_rate_out50_continue==1": "Having stayed behind the front 50% so far",
+            "order_rate_in40_continue==1": "Having stayed in the front 40% so far",
+            "change_order_up_middle>=3": "After passing another runner 3 times mid-race",
+            "distance_diff_rate>=50": "Toward the back of the field",
+            "distance_diff_top_float<=25": "Within 1 length of the lead",
+            "course_distance!=2200": "Not on a 2,200 m course",
+            "corner!=3": "Not on corner 3",
+            "motivation<=4": "Not in great mood",
+            "base_power>=1000&base_power<1200": "Power 1,000 to 1,199",
+            "is_goodstart==1": "After a good start",
+            "is_abroad==1": "At an overseas racecourse",
+            "corner_count==0": "On a course with no corners",
+            "near_infront_count==0": "With no runner close ahead",
+            "is_activate_heal_skill==1": "After recovering endurance with a skill",
+            "is_dirtgrade!=1": "Not in a collaborative graded race",
+            "activate_count_middle==7": "After using exactly 7 skills mid-race",
+            "activate_count_all<=6": "Having used 6 or fewer skills",
+            "activate_count_all_team>=6": "After your team uses 6 or more skills",
+            "fan_count>=146738": "With 146,738 or more fans",
+            "succession_skill_count>=3": "Holding 3 or more inherited skills",
+            "overtake_target_no_order_up_time>=2": "On another runner's heels for 2 s or more without passing",
+            "is_other_character_activate_advantage_skill==31": "When a runner uses an acceleration skill",
+            "is_other_character_activate_advantage_skill==27": "When a runner uses a speed skill",
+            "is_popularity_top_character_activate_advantage_skill==-1": "When the favorite uses a skill",
+            "track_id==10201": "At Longchamp Racecourse",
+            "track_id>=10001&track_id<=10010": "At a central (JRA) racecourse",
+            "is_used_skill_id==203061&is_used_skill_id==203071": "After using No Second Thoughts and No Third Chances",
+            "is_exist_skill_id==201631": "When a runner in the race has Sympathy",
+            "running_style==4": "As an End Closer",
+        }
+        for condition, expected in cases.items():
+            with self.subTest(condition=condition):
+                self.assertEqual(texts(describe_condition(condition, context)["all"]), [expected])
+
     def test_a_precondition_reads_as_only_after(self):
         # V Is for Victory!
         described = describe(skill(effects=[{
@@ -207,6 +260,13 @@ class EffectTextTests(CalculatorTestCase):
         # The other direction was never seen, so it isn't worded: raw.
         effect = describe(skill(effects=[slot([ability(10, -4000)])]), CONTEXT)["slots"][0]["effects"][0]
         self.assertTrue(effect["raw"])
+
+    def test_the_wording_pass_effects(self):
+        self.assertEqual(self.effects(ability(32, 200000)), ["+20 all stats"])
+        self.assertEqual(self.effects(ability(32, -200000)), ["-20 all stats"])
+        self.assertEqual(self.effects(ability(37, 20000)), ["Activates 2 rare skills regardless of their conditions"])
+        self.assertEqual(self.effects(ability(37, 10000)), ["Activates 1 rare skill regardless of their conditions"])
+        self.assertEqual(self.effects(ability(29, 100000)), ["Higher chance of being rushed"])
 
     def test_unknown_kinds_and_targets_stay_raw(self):
         described = describe(skill(effects=[slot([ability(42, 10000), ability(27, 1000, target_type=2)])]),
@@ -289,7 +349,8 @@ class CommittedSkillTextTests(CalculatorTestCase):
         self.assertFalse([item["text"] for item in self.phrases() if "—" in item["text"]])
 
     def test_most_skills_read_in_full(self):
-        # A floor, not a target: 79% on 2026-10-23. A table edit that breaks a
+        # A floor, not a target: 79% on 2026-10-23 (every skill, JP included,
+        # read 98% after the 2026-11-18 wording pass). A table edit that breaks a
         # common variable drops far below it.
         complete = sum(described["complete"] for described in self.described)
         self.assertGreaterEqual(complete / len(self.described), 0.75)
@@ -321,6 +382,8 @@ class SkillAdminTextTests(CalculatorTestCase):
                              tier=2, condition="track_id==10006")
         Uma.objects.create(name="Silence Suzuka (Summer)", game_id=100202)
         context = skill_text.context_from_database()
-        self.assertEqual(context.racecourses, {10006: "Tokyo"})
+        # Global's racecourse skills name the Japanese courses; the overseas
+        # ones, which no Global skill names yet, come from OVERSEAS_RACECOURSES.
+        self.assertEqual(context.racecourses, {**skill_text.OVERSEAS_RACECOURSES, 10006: "Tokyo"})
         self.assertEqual(context.characters[1002], "Silence Suzuka")
         self.assertEqual(context.skill_names[200191], "Tokyo Racecourse ◎")

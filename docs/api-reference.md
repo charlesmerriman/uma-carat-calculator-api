@@ -929,7 +929,12 @@ names sort last):
 key, `skill_types.py`: the icon family, e.g. `velocity`, `recovery`, `scenario`; a sub-type as
 its parent plus a suffix, `stat_speed` ... `stat_several` and `debuff_speed` ...
 `debuff_vision`; `current_speed` for a Speed-family skill that raises its runner's current
-speed; `other` for an unplaced icon), `owners` (the
+speed; `other` for an unplaced icon), `tags` (the condition and effect filters' keys,
+`skill_tags.py`, sorted: when `early` ... `final-straight`, `uphill`, `downhill`; the race
+`sprint` ... `long`, `turf`, `dirt`; a strategy the skill asks for, `front-runner` ...
+`end-closer`; what it does, `speed`, `current-speed`, `accel`, `recovery`, `stats`, `vision`,
+`navigation`, `debuff`; read off the parsed condition and the ability types, never the
+English), `owners` (the
 outfits a unique, its inherited copy or an evolution belongs to, for search), `owner_umas`
 (the same outfits as rows a page can draw: `id`, `game_id`, `name`, `portrait`), `pair` (the
 game id of a unique's inherited copy or the copy's unique, else null), and `other_names`
@@ -939,7 +944,9 @@ GameTora's names, the Japanese name when it isn't the shown one), for search.
 `GET /skills/<game_id>` is one skill in full: the list fields (with `pair` as a list row
 instead of an id) plus `colours` (`[main, sub]` when the skill belongs to ONE character, the
 game's pair for her from `character_colours.py`; else null), `description`, `readable`
-(as on a guide), `sources` (every outfit and card: `id`, `name`, `game_id`, `image`,
+(as on a guide), `raw_conditions` (`[{"after", "when"}]`, the game's own precondition and
+condition strings per slot in `readable.slots`' order, for the page's Detailed view; not on a
+guide), `sources` (every outfit and card: `id`, `name`, `game_id`, `image`,
 `source`, `level` for an outfit, `title`, `image_borderless`, `rarity` and `card_type` for a
 card, `on_global`, and `via`: null, or on a ◎ white the ○'s name when the row gives the ○,
 whose hint counts for the ◎ too;
@@ -1343,9 +1350,12 @@ What a signed-in player owns, for the Collection's Umas and Support cards tabs
 | `POST /roster/import` | `{umas?: [{uma, stars?, talent_level?, game_data?}], support_cards?: [{support_card, limit_break, spare_copies?, game_data?}]}`, plain or gzipped | `{umas?: counts, support_cards?: counts, roster}`, counts `{added, updated, removed}` per list sent |
 | `DELETE /roster/umas`, `DELETE /roster/support-cards` | | the roster, that list emptied (start over) |
 
-`uma` = `{uma, stars, talent_level, source, obtained_at}`; `card` = `{support_card,
+`uma` = `{uma, stars, talent_level, source, obtained_at, hint_levels}`; `card` = `{support_card,
 limit_break, spare_copies, source, obtained_at}`. Stars and potential are 1..5 (null when not
-set), a limit break 0..4 (4 is MLB), `spare_copies` the game's `stock`. **The file is the
+set), a limit break 0..4 (4 is MLB), `spare_copies` the game's `stock`. `hint_levels` is
+`{skill game id: level}` (string keys) read from an imported uma's `skill_data_array`: the
+hint levels the game keeps on each owned outfit for her own innate and awakening skills,
+shown on her Encyclopedia page. `{}` for a hand-ticked uma; malformed entries are skipped. **The file is the
 truth** (owner, 2026-10-26): each list an import sends REPLACES that table, hand edits
 included, and removes every row the file lacks; a list left out of the request is untouched.
 The player edits afterwards. `source` says where a row's values last came from. An imported
