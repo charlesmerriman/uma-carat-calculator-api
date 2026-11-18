@@ -32,6 +32,19 @@
 # module changed. Newest entry first is conventional here but not required — the
 # page sorts by date.
 
+- key: special-themes
+  date: 2026-11-18
+  title: "Special themes: Tracen, Tracen Night and Winning Live"
+  version: "v2.18"
+  changes:
+    - added: "Introducing Special themes! Three new looks that use a lot more than one colour. They have their own group in the theme menu."
+    - added: "Tracen is the light one, done up like the game's own menus, and Tracen Night is the same look with the lights off. Winning Live is the concert after the race: every banner type gets a colour of its own."
+    - changed: "Supporters: the Encyclopedia has learned some manners. Its tooltips wait for a click now. It has not learned to stop growing."
+    - changed: "The course map's accels list stays as tall as the map beside it. Show all opens the whole list."
+    - fixed: "Uma portraits fill their frames again, corners included."
+    - fixed: "On iPhones, no more sliver of portrait showing past the frame."
+    - fixed: "Timeline banner art is centred on tablets."
+
 - key: story-events
   date: 2026-11-17
   title: "Story events on the Timeline"
