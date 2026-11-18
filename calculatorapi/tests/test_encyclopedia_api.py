@@ -1,4 +1,4 @@
-"""GET /encyclopedia/umas/<game_id> and GET /encyclopedia/cards/<game_id>."""
+"""GET /encyclopedia/umas/<game_id>, /encyclopedia/cards/<game_id> and /encyclopedia/index."""
 
 from django.db import connection
 from django.test import override_settings
@@ -8,7 +8,7 @@ from calculatorapi.models import SkillEvolutionCondition, SupportCard, SupportCa
 from calculatorapi.tests.base import CalculatorTestCase, PLAIN_TEST_STORAGES
 from calculatorapi.tests.factories import RELEASED_ON_GLOBAL
 from calculatorapi.tests.test_skills_api import (
-    EXPECTED_STATUS, client_for, early_access_readers, editor_client, make, skill_queries,
+    client_for, early_access_readers, editor_client, make, skill_queries,
 )
 
 SPECIAL_WEEK, SPECIAL_WEEK_SUMMER, SILENCE = 100101, 100102, 100201
@@ -57,11 +57,14 @@ class EncyclopediaFixture(CalculatorTestCase):  # pylint: disable=too-many-insta
 
 
 class GateTests(EncyclopediaFixture):
-    def test_each_reader_gets_its_answer_on_both_pages(self):
+    """Open to everyone since 2026-11-18 (notes/encyclopedia-open-plan.md)."""
+
+    def test_everyone_reads_every_route(self):
         for label, user in early_access_readers().items():
             client = client_for(user)
-            for path in (f"/encyclopedia/umas/{SPECIAL_WEEK}", f"/encyclopedia/cards/{SPE_CARD}"):
-                self.assertEqual(client.get(path).status_code, EXPECTED_STATUS[label], (label, path))
+            for path in (f"/encyclopedia/umas/{SPECIAL_WEEK}", f"/encyclopedia/cards/{SPE_CARD}",
+                         "/encyclopedia/card-effects", "/encyclopedia/index"):
+                self.assertEqual(client.get(path).status_code, 200, (label, path))
 
     def test_an_unknown_or_unshown_id_is_a_404(self):
         uma(800101, "Tazuna Hayakawa")  # an NPC: not a trainee, so no page
@@ -200,6 +203,32 @@ class TranslationCreditTests(EncyclopediaFixture):
         runner = uma(100701, "Gold Ship", career_objectives=[
             {"turn": 40, "kind": 1, "race": "A New Race", "grade": 100, "top": 3, "translated": True}])
         self.assertTrue(self.client.get(f"/encyclopedia/umas/{runner.game_id}").json()["uses_translation"])
+
+
+class IndexTests(EncyclopediaFixture):
+    """The web's build writes a document and a sitemap entry per id listed here."""
+
+    def test_it_lists_exactly_the_pages_that_exist(self):
+        uma(800101, "Tazuna Hayakawa")  # an NPC: not a trainee, so no page
+        body = client_for(None).get("/encyclopedia/index").json()
+        self.assertEqual(body["umas"], [SPECIAL_WEEK, SPECIAL_WEEK_SUMMER, SILENCE])
+        # The placeholder card (31000) is a stand-in, never a page.
+        self.assertEqual(body["cards"], [SPE_SR, SPE_CARD, SIRIUS])
+        # The nameless skill (200999) is one Skill.objects.shown() leaves out.
+        self.assertEqual(body["skills"], [100011, 200011, 100101111])
+
+    def test_every_listed_id_answers_and_no_other_does(self):
+        body = client_for(None).get("/encyclopedia/index").json()
+        for kind, route in (("umas", "/encyclopedia/umas"), ("cards", "/encyclopedia/cards"),
+                            ("skills", "/skills")):
+            for game_id in body[kind]:
+                self.assertEqual(self.client.get(f"{route}/{game_id}").status_code, 200, (kind, game_id))
+        self.assertEqual(self.client.get("/skills/200999").status_code, 404)
+
+    def test_a_new_row_joins_it(self):
+        self.client.get("/encyclopedia/index")
+        uma(100301, "Tokai Teio")
+        self.assertIn(100301, self.client.get("/encyclopedia/index").json()["umas"])
 
 
 class CacheTests(EncyclopediaFixture):

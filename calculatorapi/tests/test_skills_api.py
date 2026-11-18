@@ -33,9 +33,9 @@ def editor_client():
 
 
 def early_access_readers():
-    """{label: user} for the five kinds of reader the Encyclopedia gate tells
-    apart (notes/encyclopedia-plan.md, "Supporters and staff first"). None is
-    the guest."""
+    """{label: user} for the five kinds of reader the early-access rule tells
+    apart: the Encyclopedia was gated by it until 2026-11-18, and a guide's
+    skills preview still is. None is the guest."""
     tier = PatreonTier.objects.create(name="Junior Class", order=10)
     supporter = make_user("supporter")
     PatreonSupporter.objects.create(display_name="Patron", patreon_user_id="7", tier=tier,
@@ -54,13 +54,7 @@ def client_for(user):
     return client
 
 
-# What each reader gets from a gated route: a guest is asked to sign in, an
-# account without early access is refused, and the three ways in read it.
-EXPECTED_STATUS = {"guest": 401, "plain": 403, "supporter": 200, "staff": 200, "granted": 200}
-
-# The tables a page is built from. A cached hit reads none of them; the only
-# query it makes is the early-access check's pledge lookup, worked out on every
-# request by rule (patreon.md: entitlement is never stored).
+# The tables a page is built from. A cached hit reads none of them.
 BUILD_TABLES = ("calculatorapi_skill", "calculatorapi_umaskill", "calculatorapi_supportcardskill",
                 "calculatorapi_uma\"", "calculatorapi_supportcard\"")
 
@@ -72,22 +66,15 @@ def skill_queries(queries):
 
 
 class SkillsGateTests(CalculatorTestCase):
-    """Supporters and staff first (owner, 2026-11-12): the early-access rule."""
+    """The Skills page is open to everyone (owner, 2026-11-18). A guide's
+    skills preview is not: "Not the guides", the same day."""
 
-    def test_each_reader_gets_its_answer(self):
+    def test_everyone_reads_the_list_and_a_page(self):
         make(201351, name="Gourmand")
         for label, user in early_access_readers().items():
             client = client_for(user)
             for path in ("/skills", "/skills/201351"):
-                self.assertEqual(client.get(path).status_code, EXPECTED_STATUS[label], (label, path))
-
-    def test_a_lapsed_pledge_loses_it_on_the_next_request(self):
-        make(201351, name="Gourmand")
-        supporter = early_access_readers()["supporter"]
-        client = client_for(supporter)
-        self.assertEqual(client.get("/skills").status_code, 200)
-        PatreonSupporter.objects.filter(linked_user=supporter).update(is_active=False)
-        self.assertEqual(client.get("/skills").status_code, 403)
+                self.assertEqual(client.get(path).status_code, 200, (label, path))
 
     def test_a_guide_shows_a_player_global_skills_only(self):
         cm = make_champions_meeting()

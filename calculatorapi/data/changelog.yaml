@@ -32,6 +32,20 @@
 # module changed. Newest entry first is conventional here but not required — the
 # page sorts by date.
 
+- key: encyclopedia-open
+  date: 2026-11-18
+  title: "The Encyclopedia is open to everyone"
+  version: "v2.19"
+  changes:
+    - added: "The Encyclopedia is open to everyone! Every uma, support card and skill in the game has a page of its own, global and JP alike. Look for the new tab."
+    - added: "An uma's page has her aptitudes, her stats at every star, her skills, her career objectives, her banners, and her other outfits and support cards. A support card's shows its effects at any level and limit break, its unique effect, the skills it hints and the ones its events give. A skill's says in plain English when it fires and what it does, who teaches it, and what it evolves from or into."
+    - added: "Press Ctrl+K and type a name to jump straight to any of them. The lists search and filter too: find skills by when they fire, the race, the strategy or what they do, and sort support cards by any effect."
+    - added: "Click an uma or support card on the Timeline, in a PvP guide, the gallery, Legend Races or your Collection for a card about it, with a link to its page. Skills in the Encyclopedia do the same."
+    - added: "Your imported Collection shows on the pages: stars, limit breaks, hint levels."
+    - changed: "Story events on the Timeline no longer show the reward claim date. Too easy to mistake for the start date."
+    - fixed: "Selectors and step-up banners offer SSR Sasami Anshinzawa."
+    - fixed: "Free SSR cards from story events can be picked for a Champions Meeting that runs after their event."
+
 - key: special-themes
   date: 2026-11-18
   title: "Special themes: Tracen, Tracen Night and Winning Live"
