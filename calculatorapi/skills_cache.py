@@ -30,7 +30,7 @@ CACHE_ALIAS = "skills"
 GENERATION_KEY = "skills:generation"
 # Bump the suffix when a payload's SHAPE changes.
 LIST_KEY = "skills:list:v3:{generation}"
-DETAIL_KEY = "skills:detail:v5:{generation}:{game_id}"
+DETAIL_KEY = "skills:detail:v6:{generation}:{game_id}"
 # An Encyclopedia page: `kind` is "uma" or "card" (views/encyclopedia.py).
 PAGE_KEY = "skills:page:v10:{generation}:{kind}:{game_id}"
 

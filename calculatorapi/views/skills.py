@@ -277,6 +277,8 @@ def build_detail(skill):
         "pair": summary(pair) if pair else None,
         "description": skill.shown_description,
         "readable": skill_text.describe(skill, skill_text.context_from_database()),
+        # The game's code for each of `readable`'s slots, for the Detailed view.
+        "raw_conditions": skill_text.raw_conditions(skill),
         "sources": sources(skill),
         "evolution": evolution(skill, owners),
         # Its white, gold and evolved forms on global (skill_families): the
