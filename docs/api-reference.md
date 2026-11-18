@@ -1343,9 +1343,12 @@ What a signed-in player owns, for the Collection's Umas and Support cards tabs
 | `POST /roster/import` | `{umas?: [{uma, stars?, talent_level?, game_data?}], support_cards?: [{support_card, limit_break, spare_copies?, game_data?}]}`, plain or gzipped | `{umas?: counts, support_cards?: counts, roster}`, counts `{added, updated, removed}` per list sent |
 | `DELETE /roster/umas`, `DELETE /roster/support-cards` | | the roster, that list emptied (start over) |
 
-`uma` = `{uma, stars, talent_level, source, obtained_at}`; `card` = `{support_card,
+`uma` = `{uma, stars, talent_level, source, obtained_at, hint_levels}`; `card` = `{support_card,
 limit_break, spare_copies, source, obtained_at}`. Stars and potential are 1..5 (null when not
-set), a limit break 0..4 (4 is MLB), `spare_copies` the game's `stock`. **The file is the
+set), a limit break 0..4 (4 is MLB), `spare_copies` the game's `stock`. `hint_levels` is
+`{skill game id: level}` (string keys) read from an imported uma's `skill_data_array`: the
+hint levels the game keeps on each owned outfit for her own innate and awakening skills,
+shown on her Encyclopedia page. `{}` for a hand-ticked uma; malformed entries are skipped. **The file is the
 truth** (owner, 2026-10-26): each list an import sends REPLACES that table, hand edits
 included, and removes every row the file lacks; a list left out of the request is untouched.
 The player edits afterwards. `source` says where a row's values last came from. An imported
