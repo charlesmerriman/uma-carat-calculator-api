@@ -176,6 +176,10 @@ class SkillDetailTests(CalculatorTestCase):
         self.assertEqual(body["readable"]["slots"][0]["when"]["all"][0]["text"],
                          "At a random moment mid-race")
         self.assertTrue(body["readable"]["wit_check"])
+        # The game's own code for each slot, lined up with `readable` (the Detailed view).
+        self.assertEqual(len(body["raw_conditions"]), len(body["readable"]["slots"]))
+        self.assertEqual(body["raw_conditions"][0],
+                         {"after": SPEED[0].get("precondition", ""), "when": SPEED[0]["condition"]})
         self.assertEqual(body["evolution"]["from"]["name"], "Gourmand")
         self.assertEqual(body["evolution"]["conditions"], [
             {"text": "Attain at least 600 Stamina", "uses_translation": False, "is_japanese": False},

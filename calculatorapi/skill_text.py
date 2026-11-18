@@ -680,6 +680,18 @@ def describe(skill, context=None):
     }
 
 
+def raw_conditions(skill):
+    """
+    The game's own condition strings, one {"after", "when"} per effect slot, in
+    the same order as describe()'s `slots`: the skill page's Detailed view
+    shows them beside the reworded clauses (Daptrius's list, item 8). Only
+    the skill page sends them; the guide payload, which also reads describe(),
+    stays as it is.
+    """
+    slots = skill.effects or [{"precondition": skill.precondition, "condition": skill.condition}]
+    return [{"after": slot.get("precondition") or "", "when": slot.get("condition") or ""} for slot in slots]
+
+
 class LazySkillNames:
     """
     {skill game id: shown name}, loaded on the first look-up only. Only a

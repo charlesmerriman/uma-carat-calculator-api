@@ -939,7 +939,9 @@ GameTora's names, the Japanese name when it isn't the shown one), for search.
 `GET /skills/<game_id>` is one skill in full: the list fields (with `pair` as a list row
 instead of an id) plus `colours` (`[main, sub]` when the skill belongs to ONE character, the
 game's pair for her from `character_colours.py`; else null), `description`, `readable`
-(as on a guide), `sources` (every outfit and card: `id`, `name`, `game_id`, `image`,
+(as on a guide), `raw_conditions` (`[{"after", "when"}]`, the game's own precondition and
+condition strings per slot in `readable.slots`' order, for the page's Detailed view; not on a
+guide), `sources` (every outfit and card: `id`, `name`, `game_id`, `image`,
 `source`, `level` for an outfit, `title`, `image_borderless`, `rarity` and `card_type` for a
 card, `on_global`, and `via`: null, or on a ◎ white the ○'s name when the row gives the ○,
 whose hint counts for the ◎ too;
