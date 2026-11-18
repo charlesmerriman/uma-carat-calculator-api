@@ -65,6 +65,10 @@ class EffectTagTests(SimpleTestCase):
     def test_lowering_another_runner_is_a_debuff(self):
         self.assertEqual(effect_tags(ability(22, -1500, target_type=9)), {"debuff"})
         self.assertEqual(effect_tags(ability(9, -100, target_type=4)), {"debuff"})
+        # Rushed runners take longer to calm down: a positive number, still a debuff.
+        self.assertEqual(effect_tags(ability(13, 50000, target_type=21)), {"debuff"})
+        # A boost aimed at a named runner is no debuff.
+        self.assertEqual(effect_tags(ability(3, 400000, target_type=22)), set())
         # Draining herself is no recovery, and nothing else either.
         self.assertEqual(effect_tags(ability(9, -100)), set())
 

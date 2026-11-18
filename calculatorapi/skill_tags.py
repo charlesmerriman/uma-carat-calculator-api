@@ -136,7 +136,9 @@ def effect_tags(ability):
     when it lowers something for other runners."""
     kind, value, target = ability.get("type"), ability.get("value", 0), ability.get("target_type", SELF)
     if target != SELF:
-        return {"debuff"} if value < 0 else set()
+        # Lowering another runner, or (type 13, a positive number) making rushed
+        # runners take longer to calm down: the debuff_rushing family.
+        return {"debuff"} if value < 0 or kind == 13 else set()
     if kind == 9:
         return {"recovery"} if value > 0 else set()
     if kind in EFFECT_TAGS and value > 0:

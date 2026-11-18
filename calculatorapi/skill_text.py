@@ -14,8 +14,12 @@ as code. The skill pass of 2026-11-03 (notes/course-map-skill-pass.md, B5)
 gave the last Global unknowns their phrases (`is_overtake`, `distance_diff_top`
 in metres, `lastspurt==2`, `straight_front_type==2`, a corner's number, the
 `order_rate_*_continue` family, ...), each sourced from Global's descriptions
-and named at its line. Adding one is adding a line here, with the skills that
-confirm it named in the commit.
+and named at its line. The wording pass of 2026-11-18 added the JP-only
+skills' variables the same way, from the JP CLIENT's own descriptions (the
+game's Japanese text, read by Claude; never UmaTL's translation, whose terms
+forbid use with generative models), each named at its line too; those are the
+readings to put to Daptrius if one looks wrong. Adding one is adding a line
+here, with the skills that confirm it named in the commit.
 
 THE SHAPE, per effect slot (a skill has one or two):
 
@@ -424,7 +428,8 @@ def clause_text(variable, clauses, context):  # pylint: disable=too-many-return-
         name = context.racecourses[single[1]]
         return {"==": f"At {name} Racecourse", "!=": f"Not at {name} Racecourse"}.get(single[0])
     if variable == "track_id" and bounds(clauses)[:2] == JRA_TRACKS:
-        return "At a JRA racecourse"
+        # The game's word is 中央, "central": the JRA's own circuit, as against local tracks.
+        return "At a central (JRA) racecourse"
     if variable == "is_dirtgrade" and single == ("!=", 1):
         return "Not in a collaborative graded race"  # 109802211, the other branch of 交流重賞
     if variable == "is_exist_skill_id" and single and single[0] == "==":
