@@ -23,8 +23,9 @@ GENERATION_KEY = "course-zones:generation"
 # v2: the verdict fields (skill_verdicts.py); v3: an accel's `useful`;
 # v4: `paths`, the chain bound and the backstretch (the skill pass);
 # v5: `placing` (course-map-feedback-plan.md, lane A); v6: a speed skill's
-# `speed_kind` and `spurt.speed_useful` (lane B).
-ZONES_KEY = "course-zones:v6:{generation}:{course_id}"
+# `speed_kind` and `spurt.speed_useful` (lane B); v7: `effect_words`, and an
+# accel's part of `useful` stretched by the course's length.
+ZONES_KEY = "course-zones:v7:{generation}:{course_id}"
 CACHE_TTL_SECONDS = 1800
 
 _RELEVANT_MODELS = frozenset({"racecourse", "skill"})
