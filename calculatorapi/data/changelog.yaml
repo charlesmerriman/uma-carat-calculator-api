@@ -32,6 +32,16 @@
 # module changed. Newest entry first is conventional here but not required — the
 # page sorts by date.
 
+- key: layered-portraits
+  date: 2026-11-20
+  title: "Ears over the frame, and skills that show their numbers"
+  version: "v2.20"
+  changes:
+    - added: "Uma portraits got an update: ears and hair now come out over the frame, on every page and in shared pictures and link previews too."
+    - changed: "Skills that scale now say what they scale with, like \"Velocity +0.28 to +0.42, by fan count\". Tap Values on a skill's page to see every step, and a skill that stacks says how often."
+    - changed: "Uma, support card and skill pages open straight away, without waiting for the calculator to load first."
+    - fixed: "Nothing Ventured no longer claims to drain all your endurance."
+
 - key: encyclopedia-open
   date: 2026-11-18
   title: "The Encyclopedia is open to everyone"
