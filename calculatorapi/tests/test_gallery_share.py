@@ -11,7 +11,7 @@ from django.test import override_settings
 from PIL import Image
 
 from calculatorapi import gallery_preview
-from calculatorapi.models import GalleryHiddenReason, GalleryPost
+from calculatorapi.models import GalleryHiddenReason, GalleryPost, Uma
 from calculatorapi.tests.base import PLAIN_TEST_STORAGES
 from calculatorapi.tests.test_gallery import GalleryFixture
 
@@ -101,6 +101,30 @@ class SharePageTests(GalleryFixture):
         red, green, blue = picture.getpixel(middle)
         self.assertGreater(red, 200)
         self.assertLess(green + blue, 80)
+
+    def test_layered_art_is_drawn_with_the_ears_over_the_frame(self):
+        """Base, frame, then the foreground reaching above the portrait: the
+        order FramedUma draws (notes/layered-uma-art-plan.md)."""
+        os.makedirs(os.path.join(MEDIA, "umas_layered"), exist_ok=True)
+        Image.new("RGBA", (360, 360), (255, 0, 0, 255)).save(os.path.join(MEDIA, "umas_layered", "base.png"))
+        # A foreground that is blue in its top 60 rows (the headroom) only.
+        foreground = Image.new("RGBA", (392, 420), (0, 0, 0, 0))
+        foreground.paste((0, 0, 255, 255), (16, 0, 376, 60))
+        foreground.save(os.path.join(MEDIA, "umas_layered", "fg.png"))
+        uma = Uma.objects.get(pk=self.post_row.team_snapshot[0]["uma"])
+        uma.image_layer_base, uma.image_layer_foreground = "umas_layered/base.png", "umas_layered/fg.png"
+        uma.save()
+
+        picture = Image.open(io.BytesIO(gallery_preview.render(self.post_row.team_snapshot))).convert("RGB")
+        centre = gallery_preview.WIDTH // 3 // 2
+        middle = picture.getpixel((centre, gallery_preview.PORTRAIT_TOP + gallery_preview.PORTRAIT // 2))
+        above = picture.getpixel((centre, gallery_preview.PORTRAIT_TOP - gallery_preview.HEADROOM // 2))
+        edge = picture.getpixel((centre, gallery_preview.PORTRAIT_TOP + 2))
+        self.assertGreater(middle[0], 200)  # the base, through the frame's open middle
+        self.assertGreater(above[2], 200)  # the foreground, in the headroom
+        self.assertLess(above[0], 60)
+        # The frame's top band sits over the base, not under it: silver, not red.
+        self.assertLess(abs(edge[0] - edge[2]), 80)
 
     def test_rendered_once_then_served_from_the_cache(self):
         with mock.patch.object(gallery_preview, "render", wraps=gallery_preview.render) as render:

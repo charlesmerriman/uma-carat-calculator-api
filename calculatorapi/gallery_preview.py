@@ -27,10 +27,23 @@ address.
 
 A portrait that cannot be read becomes the grey silhouette rather than an
 error: a crawler that gets a failure caches a card with no picture at all.
+
+EACH UMA AS THE SITE DRAWS HER (LAYOUT 3, 2026-11-20)
+-----------------------------------------------------
+In the site's silver frame, with her layered art when she has it
+(notes/layered-uma-art-plan.md; the owner, 2026-11-18: the link previews get
+it in the same release as the site). Base, then the frame, then the foreground,
+which reaches a sixth of the portrait above it and 16/360 of it each side, the
+way FramedUma draws it. Without layered art she is her portrait inside the
+same frame. The frame is a PNG copy of the site's SVG (images/README.md);
+silver, never the rainbow: a public picture has no viewer whose favorites it
+could mark.
 """
 
 import io
 import logging
+from functools import lru_cache
+from pathlib import Path
 
 from django.core.cache import caches
 from PIL import Image, ImageDraw
@@ -43,14 +56,25 @@ logger = logging.getLogger(__name__)
 
 # Which drawing this is. Part of every picture's URL (image_version), so
 # raising it sends every crawler to the new picture; raise it whenever the
-# drawing changes. 2: the brand strip (2026-10-19).
-LAYOUT = "2"
+# drawing changes. 2: the brand strip (2026-10-19). 3: the frame and the
+# layered art (2026-11-20).
+LAYOUT = "3"
 PORTRAIT = 340
 LABEL_GAP = 22
 LABEL_SIZE = 44
-# The portraits and their labels as one block, centred in the room the brand
-# strip leaves.
-PORTRAIT_TOP = STRIP_HEIGHT + (HEIGHT - STRIP_HEIGHT - (PORTRAIT + LABEL_GAP + LABEL_SIZE)) // 2
+# The layered foreground's canvas, Daptrius's 392x420 scaled to the portrait:
+# the frame's 360 box plus 60 above and 16 each side.
+FOREGROUND_SIZE = (round(PORTRAIT * 392 / 360), round(PORTRAIT * 420 / 360))
+HEADROOM = FOREGROUND_SIZE[1] - PORTRAIT
+SIDE = (FOREGROUND_SIZE[0] - PORTRAIT) // 2
+# The portraits, the foreground's headroom above them and their labels as one
+# block, centred in the room the brand strip leaves. The headroom is kept for
+# every team, layered or not, so a post's picture doesn't shift when the art
+# for one of its umas arrives.
+PORTRAIT_TOP = HEADROOM + STRIP_HEIGHT + (
+    HEIGHT - STRIP_HEIGHT - (HEADROOM + PORTRAIT + LABEL_GAP + LABEL_SIZE)
+) // 2
+FRAME_FILE = Path(__file__).resolve().parent / "images" / "uma-frame.png"
 SILHOUETTE_COLOUR = (75, 85, 99)
 CACHE_SECONDS = 7 * 24 * 60 * 60
 
@@ -79,22 +103,52 @@ def _silhouette():
     return image
 
 
-def _portrait(uma):
-    """The uma's portrait art fitted inside the square, or the silhouette."""
-    if uma is None or not uma.portrait:
-        return _silhouette()
+@lru_cache(maxsize=1)
+def _frame():
+    """The site's silver frame at the portrait's size. Read once per process."""
+    return Image.open(FRAME_FILE).convert("RGBA").resize((PORTRAIT, PORTRAIT), Image.Resampling.LANCZOS)
+
+
+def _read(uma, field_file):
+    """An image file from storage as RGBA, or None if it can't be read."""
     try:
-        with uma.portrait.open("rb") as handle:
+        with field_file.open("rb") as handle:
             art = Image.open(io.BytesIO(handle.read()))
             art.load()
     except Exception as error:  # pylint: disable=broad-exception-caught
         # Any storage or decoding failure: a crawler must never get a 500.
         # One line, not a traceback: the cause is in the message.
-        logger.warning("Preview portrait for uma %s could not be read: %r", uma.pk, error)
-        return _silhouette()
-    art = art.convert("RGBA")
-    art.thumbnail((PORTRAIT, PORTRAIT), Image.Resampling.LANCZOS)
-    return art
+        logger.warning("Preview art for uma %s could not be read: %r", uma.pk, error)
+        return None
+    return art.convert("RGBA")
+
+
+def _portrait(uma):
+    """The uma as the site's framed tile: (square, foreground or None).
+
+    The square is the base (or her portrait, or the silhouette) with the frame
+    over it; the foreground, when she has layered art, is drawn over that by
+    render(), reaching past the square. Half a pair, or a pair that can't be
+    read, falls back to the portrait: the two layers only line up together.
+    """
+    base = foreground = None
+    if uma is not None and uma.portrait_layers:
+        base = _read(uma, uma.image_layer_base)
+        foreground = _read(uma, uma.image_layer_foreground) if base else None
+        if foreground is None:
+            base = None
+    if base is None and uma is not None and uma.portrait:
+        base = _read(uma, uma.portrait)
+    if base is None:
+        square = _silhouette()
+    else:
+        square = Image.new("RGBA", (PORTRAIT, PORTRAIT), (0, 0, 0, 0))
+        base.thumbnail((PORTRAIT, PORTRAIT), Image.Resampling.LANCZOS)
+        square.alpha_composite(base, ((PORTRAIT - base.width) // 2, (PORTRAIT - base.height) // 2))
+    square.alpha_composite(_frame())
+    if foreground is not None:
+        foreground = foreground.resize(FOREGROUND_SIZE, Image.Resampling.LANCZOS)
+    return square, foreground
 
 
 def render(snapshot, event_name=""):  # pylint: disable=too-many-locals
@@ -108,10 +162,11 @@ def render(snapshot, event_name=""):  # pylint: disable=too-many-locals
     column = WIDTH // max(len(members), 1)
     for index, member in enumerate(members):
         centre = column * index + column // 2
-        art = _portrait(umas.get(member["uma"]))
-        left = centre - art.width // 2
-        top = PORTRAIT_TOP + (PORTRAIT - art.height) // 2
-        image.paste(art, (left, top), art)
+        square, foreground = _portrait(umas.get(member["uma"]))
+        left = centre - PORTRAIT // 2
+        image.paste(square, (left, PORTRAIT_TOP), square)
+        if foreground is not None:
+            image.paste(foreground, (left - SIDE, PORTRAIT_TOP - HEADROOM), foreground)
         label = STYLE_LABELS.get(member["style"], member["style"].title())
         width = share_card.text_width(label, LABEL_SIZE)
         share_card.draw_text(

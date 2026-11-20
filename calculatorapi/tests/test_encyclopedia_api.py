@@ -190,8 +190,16 @@ class TranslationCreditTests(EncyclopediaFixture):
         summer = next(row for row in body["outfits"] if row["game_id"] == SPECIAL_WEEK_SUMMER)
         self.assertEqual((summer["title"], summer["title_translated"]), ("[Summer Title]", True))
         self.assertTrue(body["uses_translation"])
+        # ...but its own title is Global's, which the page says apart from the credit.
+        self.assertFalse(body["title_translated"])
         page = self.client.get(f"/encyclopedia/umas/{SPECIAL_WEEK_SUMMER}").json()
         self.assertEqual((page["title"], page["uses_translation"]), ("[Summer Title]", True))
+        self.assertTrue(page["title_translated"])
+
+    def test_a_card_whose_own_title_is_umatls_says_so(self):
+        SupportCard.objects.filter(pk=self.ssr.pk).update(title="", translated_title="[UmaTL Title]")
+        body = self.client.get(f"/encyclopedia/cards/{SPE_CARD}").json()
+        self.assertEqual((body["title"], body["title_translated"]), ("[UmaTL Title]", True))
 
     def test_umatls_unique_sentence_and_race_name_are_credited(self):
         jp = card(30400, "Kitasan Black", rarity=3, card_type="speed", unique_effect={

@@ -142,6 +142,8 @@ def build_catalogue():
             # draws the bordered art; the portrait is there for the drawer's
             # small tiles, where a rarity border reads as a frame in a frame.
             "portrait": _url(uma.portrait.name),
+            # The layered art for every framed tile, or None (Uma.portrait_layers).
+            "portrait_layers": uma.portrait_layers,
             # Global's or an editor's title, else UmaTL's (Uma.shown_title):
             # the Encyclopedia's search matches on it, and its lists credit UmaTL.
             "title": uma.shown_title,
