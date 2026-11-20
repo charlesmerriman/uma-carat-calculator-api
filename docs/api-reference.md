@@ -2160,9 +2160,18 @@ Reward amounts are fields on the event itself (no separate reward model/list).
 
 ### `StoryEvent` (from `story_event_data`)
 
-A story event and the free cards it gives, for the Timeline row under its banner. **Display
-only**: the income ledger never reads it (that is `GameEvent`), and its cards never reach
-selector eligibility. Only events linked to a banner are sent.
+An event and the free rewards it gives, for the Timeline row under its banner: a story
+event, a main story chapter, an anniversary's missions or a special event (`kind`). **Display
+only**: the income ledger never reads it (that is `GameEvent`), and its cards and umas never
+reach selector eligibility. Only events linked to a banner are sent.
+
+- `kind` is `"story"`, `"main_story"`, `"anniversary"` or `"special"`. `game_id` is the game's
+  id within its kind, null on an event an editor made by hand.
+- `end_date` is null on a `main_story` chapter, which never closes. `claim_end_date` is set on
+  `story` events only. A predicted `anniversary` or `special` event runs its JP length from its
+  banner's start.
+- `umas` lists free characters (a main story chapter's), with what a framed uma tile needs
+  (`portrait`, `portrait_layers`) and no selector keys. `cards` stays support cards only.
 
 - `name` is the name a player reads: Global's, else the editors' working name, else `""`
   (the client says "Story event"). The Japanese name is never sent.
@@ -2178,6 +2187,7 @@ selector eligibility. Only events linked to a banner are sent.
 ```json
 {
   "id": 1,
+  "kind": "story",
   "game_id": 1022,
   "name": "Sweet Memories Teatime",
   "image": "url | null",
@@ -2198,9 +2208,18 @@ selector eligibility. Only events linked to a banner are sent.
       "image": "url | null", "rarity": 3, "purpose": "", "game_id": 30133,
       "must_get": false, "note": ""
     }
+  ],
+  "umas": [
+    {
+      "id": 199, "name": "Special Week (Commander)", "title": "[Ruler of Japan]",
+      "image": "url | null", "portrait": "url | null", "portrait_layers": "object | null",
+      "rarity": 3, "purpose": "", "game_id": 100103, "must_get": false, "note": ""
+    }
   ]
 }
 ```
+
+(`umas` is empty on a story event; the example shows a main story chapter's shape.)
 
 ### `IncomeLedgerRow` (from `income_ledger`)
 

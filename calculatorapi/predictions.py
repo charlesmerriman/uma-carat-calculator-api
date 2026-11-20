@@ -442,28 +442,42 @@ STORY_EVENT_CLAIM_DAYS = timedelta(days=3)
 
 def story_event_dates(story_event, banner_timeline_emap):
     """
-    Resolve a StoryEvent's dates: the game's own once Global has run it, its
-    banner's until then.
+    Resolve an event's dates by its kind (StoryEventKind): the game's own once
+    Global has run it, else from the banner it is placed under.
 
     Two sources, in this order:
 
     1. `global_start_at` is set: the import copied the game's own instants
        (Global has scheduled the event). Those are the truth, never predicted.
-       A missing claim deadline is filled the same way a predicted one is.
-    2. Otherwise the linked banner's resolved window from the shared map: the
-       event runs with its banner, so it borrows the banner's start and end,
-       and is_predicted / applied_offset_days with them, which is how an
-       upcoming event picks up the banner's schedule offset for free.
+    2. Otherwise the linked banner's resolved window from the shared map, and
+       is_predicted / applied_offset_days with it, which is how an upcoming
+       event picks up the banner's schedule offset for free.
 
-    `claim_end_date` is the extra key a story event has: the last moment to
-    claim its rewards. An event with neither source resolves to all-None and
-    sorts last, the same as an unlinked GameEvent.
+    What each kind keeps (notes/story-events-plan-2.md, "What each kind's row
+    says"):
+
+      story        start and end with its banner; `claim_end_date`, the last
+                   moment to claim rewards, a few days after
+      main_story   a start only: a chapter never closes, so `end_date` is None
+                   on both paths, the way a Scenario's is
+      anniversary  its own end. Predicted: the banner's start plus the event's
+      special      own length on JP (`jp_end_at - jp_start_at`), since the
+                   missions outlast the banner; with no JP length, the banner's
+                   end. No claim deadline: the missions' rewards are paid as
+                   they are earned.
+
+    An event with neither source resolves to all-None and sorts last, the same
+    as an unlinked GameEvent.
     """
+    kind = story_event.kind
+    claims = kind == "story"
     if story_event.global_start_at is not None:
-        end = story_event.global_end_at
-        claim_end = story_event.global_claim_end_at or (
-            end + STORY_EVENT_CLAIM_DAYS if end is not None else None
-        )
+        end = None if kind == "main_story" else story_event.global_end_at
+        claim_end = None
+        if claims:
+            claim_end = story_event.global_claim_end_at or (
+                end + STORY_EVENT_CLAIM_DAYS if end is not None else None
+            )
         return {
             "start_date": story_event.global_start_at,
             "end_date": end,
@@ -475,11 +489,17 @@ def story_event_dates(story_event, banner_timeline_emap):
     if entry is None or entry["start_date"] is None:
         return {"start_date": None, "end_date": None, "claim_end_date": None,
                 "is_predicted": False, "applied_offset_days": 0}
+    start = entry["start_date"]
     end = entry["end_date"]
+    if kind == "main_story":
+        end = None
+    elif kind in ("anniversary", "special"):
+        if story_event.jp_start_at is not None and story_event.jp_end_at is not None:
+            end = start + (story_event.jp_end_at - story_event.jp_start_at)
     return {
-        "start_date": entry["start_date"],
+        "start_date": start,
         "end_date": end,
-        "claim_end_date": end + STORY_EVENT_CLAIM_DAYS if end is not None else None,
+        "claim_end_date": end + STORY_EVENT_CLAIM_DAYS if claims and end is not None else None,
         "is_predicted": entry["is_predicted"],
         "applied_offset_days": entry["applied_offset_days"],
     }
