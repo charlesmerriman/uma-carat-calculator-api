@@ -22,7 +22,12 @@ Cards run on every deploy (the run command in .do/app.yaml), so a new card's
 art links itself once its file is in the Space. Placeholder cards ("your best
 SSR Speed card") have a made-up id and never have a file, so they are skipped.
 
+`--kind layers` links the layered uma art the same way, from two folders
+(umas_layered/base/ and umas_layered/foreground/, put there by
+scripts/upload_layered_umas.py), setting both fields of a row together.
+
 Usage:
+    python manage.py link_borderless_art --kind layers --dry-run
     python manage.py link_borderless_art --kind cards --dry-run
     python manage.py link_borderless_art --kind cards
     python manage.py link_borderless_umas    # the older name, umas only
@@ -141,15 +146,98 @@ def link(kind_name, dry_run, stdout, style):
     stdout.write(style.SUCCESS(f"Linked {len(planned)} {kind.noun}(s)."))
 
 
+# The layered uma art (notes/layered-uma-art-plan.md): two folders, one file
+# each per uma under the same name, and the two fields set together. A pair is
+# linked only when BOTH files are there and BOTH fields are empty: half a pair
+# never draws (Uma.portrait_layers), and a hand pick of either is never touched.
+LAYER_FOLDERS = {
+    "image_layer_base": "umas_layered/base",
+    "image_layer_foreground": "umas_layered/foreground",
+}
+UMA_GAME_ID = KINDS["umas"].leading_game_id
+
+
+def _layer_files(stdout, style):
+    """{field: {game_id: path}} for both layer folders, or None (and a
+    warning) when either can't be listed."""
+    files = {}
+    for field, folder in LAYER_FOLDERS.items():
+        try:
+            files[field] = files_by_game_id(Kind("uma", folder, UMA_GAME_ID, None))
+        except Exception as error:  # pylint: disable=broad-except
+            # The deploy rule above: a Space that can't be listed skips the link.
+            stdout.write(style.WARNING(f"Link skipped, {folder}/ could not be listed: {error!r}"))
+            return None
+    return files
+
+
+def link_layers(dry_run, stdout, style):
+    """The whole run for --kind layers."""
+    files = _layer_files(stdout, style)
+    if files is None:
+        return
+    base_files, foreground_files = files["image_layer_base"], files["image_layer_foreground"]
+    rows = {row.game_id: row for row in KINDS["umas"].rows()}
+
+    paired = base_files.keys() & foreground_files.keys()
+    planned = [
+        (row, base_files[game_id], foreground_files[game_id])
+        for game_id, row in sorted(rows.items())
+        if game_id in paired and not row.image_layer_base and not row.image_layer_foreground
+    ]
+    _report_layers(stdout, style, dry_run=dry_run, planned=planned, files=files, rows=rows)
+
+    if dry_run or not planned:
+        return
+
+    with transaction.atomic():
+        for row, base, foreground in planned:
+            row.image_layer_base = base
+            row.image_layer_foreground = foreground
+            row.save(update_fields=["image_layer_base", "image_layer_foreground"])
+    pvp_catalogue_cache.invalidate()
+    stdout.write(style.SUCCESS(f"Linked {len(planned)} uma(s)."))
+
+
+def _report_layers(stdout, style, *, dry_run, planned, files, rows):
+    """What --kind layers will do, and each leftover worth chasing."""
+    base_files, foreground_files = files["image_layer_base"], files["image_layer_foreground"]
+    paired = base_files.keys() & foreground_files.keys()
+    half_pairs = sorted((base_files.keys() | foreground_files.keys()) - paired)
+    without_file = [row for game_id, row in sorted(rows.items()) if game_id not in paired]
+    without_row = [base_files[game_id] for game_id in sorted(paired) if game_id not in rows]
+
+    verb = "Would link" if dry_run else "Linking"
+    stdout.write(f"{verb} {len(planned)} uma(s) from {len(paired)} layered pair(s).")
+    if half_pairs:
+        stdout.write(style.WARNING(
+            f"{len(half_pairs)} id(s) have a base or a foreground but not both: "
+            f"{_listed([str(game_id) for game_id in half_pairs])}"
+        ))
+    if without_row:
+        stdout.write(style.WARNING(f"{len(without_row)} pair(s) match no uma: {_listed(without_row)}"))
+    if without_file:
+        stdout.write(style.WARNING(
+            f"{len(without_file)} uma(s) have no layered pair: "
+            f"{_listed([f'{row.name} ({row.game_id})' for row in without_file])}"
+        ))
+
+
 class Command(BaseCommand):
-    help = "Set image_borderless from game_id for every uma or support card that has none yet."
+    help = (
+        "Set image_borderless from game_id for every uma or support card that has none yet, "
+        "or (--kind layers) both layered uma images."
+    )
 
     def add_arguments(self, parser):
-        parser.add_argument("--kind", choices=sorted(KINDS), required=True)
+        parser.add_argument("--kind", choices=sorted([*KINDS, "layers"]), required=True)
         parser.add_argument(
             "--dry-run", action="store_true",
             help="Report what would change without writing anything.",
         )
 
     def handle(self, *args, **options):
-        link(options["kind"], options["dry_run"], self.stdout, self.style)
+        if options["kind"] == "layers":
+            link_layers(options["dry_run"], self.stdout, self.style)
+        else:
+            link(options["kind"], options["dry_run"], self.stdout, self.style)

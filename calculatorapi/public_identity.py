@@ -14,6 +14,8 @@ WHAT A BLOCK HOLDS, AND WHY NOTHING ELSE
     display_name   the name they chose ("" if they have since blanked it;
                    the client shows "Unnamed trainer")
     portrait       their account picture: the first favourite uma with art
+    portrait_layers  the same uma's layered art ({"base", "foreground"}) or
+                   null: the same picture, drawn in layers where it is framed
     tier_name      their Patreon tier's NAME, or null
     gallery_style  the look key (benefits.GALLERY_STYLE_LADDER), or null
 
@@ -53,6 +55,9 @@ def _oshi_row(position, row):
         "id": row.uma.pk,
         "name": row.uma.name,
         "image": row.uma.portrait.url if row.uma.portrait else "",
+        # The same uma's layered art, or None (Uma.portrait_layers): the
+        # favorites card and picker frame her, so they draw it.
+        "layers": row.uma.portrait_layers,
     }
 
 
@@ -72,6 +77,14 @@ def current_avatar_url(oshis, slots):
     return next((row["image"] for row in oshis if row["image"]), None)
 
 
+def current_avatar_layers(oshis, slots):
+    """The account picture's layered art: the row current_avatar_url picked,
+    or None. The same row, so the two can never show different umas."""
+    if slots < 1:
+        return None
+    return next((row["layers"] for row in oshis if row["image"]), None)
+
+
 def favorite_umas(user):
     """The favorites on a person's profile card (views/profile_card.py): every
     one their slots cover, in their order, as {"uma", "label", "image"}. A pick
@@ -79,7 +92,7 @@ def favorite_umas(user):
     greyed-out rows, and an uma with no art is left off.
     """
     return [
-        {"uma": row["id"], "label": row["name"], "image": row["image"]}
+        {"uma": row["id"], "label": row["name"], "image": row["image"], "layers": row["layers"]}
         for row in oshi_rows(user)[:benefits.oshi_slots(user)]
         if row["image"]
     ]
@@ -91,6 +104,7 @@ def _block(user, supporter, oshis):
     return {
         "display_name": user.display_name,
         "portrait": current_avatar_url(oshis, slots),
+        "portrait_layers": current_avatar_layers(oshis, slots),
         "tier_name": supporter.tier.name if shows_badge else None,
         "gallery_style": benefits.gallery_style_for(supporter) if shows_badge else None,
     }

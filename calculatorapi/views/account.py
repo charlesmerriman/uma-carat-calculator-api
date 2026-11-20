@@ -407,6 +407,9 @@ def _account_summary(user):
         # null, not "", when there is no picture: the client draws its own
         # fallback on null and would try to load "" as an image.
         "avatar_url": public_identity.current_avatar_url(oshis, slots),
+        # The same picture's layered art, or null: drawn where the picture is
+        # framed (the favorites card), never in the frameless navbar.
+        "avatar_layers": public_identity.current_avatar_layers(oshis, slots),
         # Every pick, in order, covered or not; and how many the account
         # covers (1 free, more by tier). Top-level and not inside the
         # supporter block because a free account has a count too.

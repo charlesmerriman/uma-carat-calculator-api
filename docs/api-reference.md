@@ -708,7 +708,7 @@ These endpoints return static rank tables. All are public and support `list` and
 | `GET /changelog` | Patch-note entries (newest first) with nested, ordered change lines |
 | `GET /site-content` | The admin-editable pages (About, the Daily Legend Races intro, the PvP guides intro, ...) and the whole FAQ, in one object — **not** an array, see below |
 | `GET /supporters` | Patreon thank-you list — **not** an array, see below |
-| `GET /umas` | The uma catalogue as picker options: `{ id, name, image, is_variant }`, **`Uma.pickable()` only** (with an image, minus the `(All)` placeholder), sorted by name. The same list for everyone; `is_variant` flags costume variants, which only supporters and staff may add (`oshi_variants` on `GET /account`). `image` is the uma's portrait: the borderless art (`Uma.image_borderless`) when the row has it, else the bordered card art; the oshi rows and `avatar_url` on `GET /account` follow the same rule (`Uma.portrait`). Feeds the oshi picker on `/account`, which never loads `/calculator-data`. Nothing else from the uma row (no `admin_comments`, no selector gates). |
+| `GET /umas` | The uma catalogue as picker options: `{ id, name, image, portrait_layers, is_variant }`, **`Uma.pickable()` only** (with an image, minus the `(All)` placeholder), sorted by name. The same list for everyone; `is_variant` flags costume variants, which only supporters and staff may add (`oshi_variants` on `GET /account`). `image` is the uma's portrait: the borderless art (`Uma.image_borderless`) when the row has it, else the bordered card art; the oshi rows and `avatar_url` on `GET /account` follow the same rule (`Uma.portrait`). Feeds the oshi picker on `/account`, which never loads `/calculator-data`. Nothing else from the uma row (no `admin_comments`, no selector gates). |
 
 All list responses return an array of the resource object, **except `/supporters`** (an object — the anonymous count is not derivable from the rows) **and `/site-content`** (an object with two halves; it is a plain view, not a viewset). Retrieve by appending `/<id>`; `/supporters` and `/site-content` have no retrieve action.
 
@@ -2021,6 +2021,16 @@ borderless cut when the row has one, else the same bordered art. The site draws 
 `portrait` inside a frame of its own (frontend `FramedUma`); `image` stays for anything
 that still wants the game's frame. Every uma on `/calculator-data` carries both, the Daily
 Legend Races ones included.
+
+**`portrait_layers`** rides beside `portrait` on every route that sends it: `{"base": url,
+"foreground": url}` or `null` (`Uma.portrait_layers`, notes/layered-uma-art-plan.md). The
+layered art: a square base, the site's frame over it, then a foreground on a canvas a sixth
+taller (above) and 16/360 wider each side, drawn over the frame. Only a full pair is sent;
+a framed uma draws it in place of `portrait`, a frameless one never does. The same key is on
+the PvP catalogue and guide umas, the Daily Legend Races umas, the Encyclopedia's uma page
+and outfit rows, the skill pages' umas, and the gallery `poster`. `GET /umas` rows,
+`GET /account`'s `oshis` (as `layers`) and the profile card's `favorites` (as `layers`)
+carry it too, and `GET /account` sends `avatar_layers` beside `avatar_url`.
 
 `rarity`, `rate_up_picks` and `rate_overrides` are the **inputs to the rate-up rule** the
 client applies (`data-model.md`, "Rate-up rates"). `rarity` is the game's star count, null
