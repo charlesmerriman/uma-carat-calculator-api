@@ -414,12 +414,44 @@ EMPTY_SOURCES = {"umas": [], "uma_count": 0, "cards": [], "card_count": 0}
 SOURCES_SHOWN = 4
 
 
+def _inherited_owners(skill_ids):
+    """{inherited copy's id: [the unique's UmaSkill rows]}, two queries.
+
+    No outfit lists a unique's inherited copy (it is learnt from a parent), so
+    the copy's card named no uma at all while its unique's named its owner:
+    "two types of popup" (Henry, board, 2026-11-19: "inherit should also
+    include source umas"). The copy is paired with its unique by game id
+    (INHERITED_OFFSET), the one link the game has.
+    """
+    copies = dict(
+        Skill.objects.filter(pk__in=skill_ids, game_id__gte=900000, game_id__lt=1000000)
+        .values_list("game_id", "pk")
+    )
+    if not copies:
+        return {}
+    rows = (
+        UmaSkill.objects.filter(
+            skill__game_id__in=[game_id - INHERITED_OFFSET for game_id in copies],
+            source=UmaSkillSource.UNIQUE,
+        )
+        .select_related("uma", "skill")
+        .order_by("uma__name", "uma_id")
+    )
+    owners = {}
+    for row in rows:
+        owners.setdefault(copies[row.skill.game_id + INHERITED_OFFSET], []).append(row)
+    return owners
+
+
 def _sources(skill_ids):
     """
-    {skill id: where a player gets it}, two queries for the whole guide:
-    {"umas": [{"name", "source", "level", "on_global"}], "uma_count",
-     "cards": [{"name", "source", "on_global"}], "card_count"}.
+    {skill id: where a player gets it}, a few queries for the whole guide:
+    {"umas": [{"id", "name", "source", "level", "on_global"}], "uma_count",
+     "cards": [{"id", "name", "source", "on_global"}], "card_count"}.
     Outfits and cards on global come first, so a player sees what they can get.
+    `id` is the outfit's or card's row id, so a name in the card can open its
+    own card (Henry, board, 2026-11-19). A unique's inherited copy lists its
+    unique's owners as `source: "inherited"` (_inherited_owners).
     """
     found = {}
     # Out on Global right now (global_release.py). The sort below is stable,
@@ -436,8 +468,15 @@ def _sources(skill_ids):
         item = entry(row.skill_id)
         item["uma_count"] += 1
         if len(item["umas"]) < SOURCES_SHOWN:
-            item["umas"].append({"name": row.uma.name, "source": row.source, "level": row.level,
-                                 "on_global": row.uma_id in out_umas})
+            item["umas"].append({"id": row.uma_id, "name": row.uma.name, "source": row.source,
+                                 "level": row.level, "on_global": row.uma_id in out_umas})
+    for copy, rows in _inherited_owners(skill_ids).items():
+        item = entry(copy)
+        for row in sorted(rows, key=lambda row: row.uma_id not in out_umas):
+            item["uma_count"] += 1
+            if len(item["umas"]) < SOURCES_SHOWN:
+                item["umas"].append({"id": row.uma_id, "name": row.uma.name, "source": "inherited",
+                                     "level": None, "on_global": row.uma_id in out_umas})
     card_rows = SupportCardSkill.objects.filter(skill_id__in=skill_ids).select_related(
         "support_card",
     ).order_by("source", "support_card__name")
@@ -445,8 +484,8 @@ def _sources(skill_ids):
         item = entry(row.skill_id)
         item["card_count"] += 1
         if len(item["cards"]) < SOURCES_SHOWN:
-            item["cards"].append({"name": row.support_card.name, "source": row.source,
-                                  "on_global": row.support_card_id in out_cards})
+            item["cards"].append({"id": row.support_card_id, "name": row.support_card.name,
+                                  "source": row.source, "on_global": row.support_card_id in out_cards})
     return found
 
 
