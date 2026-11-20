@@ -972,8 +972,10 @@ sent so it can find them there and in the Collection. Never `admin_comments`.
   as `#RRGGBB` (`character_colours.py`), or null when the files hold none for her (and always
   null on a group card, which stands for several characters). `title` is the shown one (Global's or an editor's, else UmaTL's), and
   `uses_translation` is true when anything on the page is UmaTL's fan translation (a title,
-  a row's title, a unique effect sentence, a race name), so the page credits UmaTL. Each
-  `outfits` / `cards` row carries `title_translated`.
+  a row's title, a unique effect sentence, a race name), so the page credits UmaTL.
+  `title_translated` is true when the page's OWN `title` is UmaTL's: the web leaves that
+  title out of the page's search title and description, which can't carry the credit. Each
+  `outfits` / `cards` row carries `title_translated` too.
 - **Uma** (trainees only, `Uma.trainees()`; 404 for a casual outfit or an NPC): `id`,
   `game_id`, `name`, `title`, `uses_translation`, `jp_name`, `jp_title`, `portrait`, `image`, `rarity`,
   `running_style`, `on_global`, `purpose`, `apt` / `base` / `growth` (keyed objects),

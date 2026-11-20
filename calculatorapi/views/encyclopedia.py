@@ -169,6 +169,10 @@ def build_uma(uma):
         "game_id": uma.game_id,
         "name": uma.name,
         "title": uma.shown_title,
+        # This page's own title is UmaTL's: the web leaves it out of the search
+        # snippet, which can't carry the credit (`uses_translation` is wider: any
+        # UmaTL text on the page).
+        "title_translated": uma.uses_translated_title,
         # A JP route's race named by UmaTL is marked by the import (game_data_values.jp_route_goals).
         "uses_translation": uma.uses_translated_title
         or any(goal.get("translated") for goal in uma.career_objectives or [])
@@ -215,6 +219,8 @@ def build_card(card):
         "game_id": card.game_id,
         "name": card.name,
         "title": card.shown_title,
+        # As on an uma's page: its own title is UmaTL's, kept out of search results and previews.
+        "title_translated": card.uses_translated_title,
         "uses_translation": card.uses_translated_title
         or bool(unique and unique["translated"])
         or any(row["title_translated"] for row in [*outfits, *others]),
