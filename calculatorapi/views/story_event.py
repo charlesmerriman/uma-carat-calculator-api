@@ -1,9 +1,16 @@
-"""Story events on /calculator-data (`story_event_data`), for the Timeline.
+"""Free card events on /calculator-data (`story_event_data`), for the Timeline:
+story events, main story chapters, anniversary missions and special events,
+told apart by `kind`.
 
 Display only: the income ledger never reads these (it reads GameEvent), and
-the cards here never reach selector eligibility, which is built from banner
-links alone (eligibility.build_first_jp_date_maps). See
-notes/story-events-plan.md.
+the cards and umas here never reach selector eligibility, which is built from
+banner links alone (eligibility.build_first_jp_date_maps). See
+notes/story-events-plan.md and notes/story-events-plan-2.md.
+
+A reward is a support card (`cards`) or an uma (`umas`), in two lists rather
+than one list with a type: every reader of `cards` written before umas existed
+(the Timeline row, search, the PvP release check) keeps reading support cards
+only, and a reader that wants umas asks for them by name.
 """
 
 from django.db.models import Prefetch
@@ -47,40 +54,75 @@ class StoryEventCardSerializer(serializers.ModelSerializer):
         return None if card.is_placeholder else card.game_id
 
 
+class StoryEventUmaSerializer(serializers.ModelSerializer):
+    """One free uma (Special Week (Commander) from a main story chapter), with
+    what a framed uma tile draws and the editors' mark.
+
+    Not UmaSerializer, for the same reason the card above is not
+    SupportCardSerializer: no `first_jp_date`, no selector gates, no
+    `admin_comments`. `title` is Global's only (no UmaTL, which needs a credit).
+    """
+
+    id = serializers.IntegerField(source="uma.id")
+    name = serializers.CharField(source="uma.name")
+    title = serializers.CharField(source="uma.title")
+    image = serializers.ImageField(source="uma.image")
+    portrait = serializers.ImageField(source="uma.portrait")
+    portrait_layers = serializers.ReadOnlyField(source="uma.portrait_layers")
+    rarity = serializers.IntegerField(source="uma.rarity")
+    purpose = serializers.CharField(source="uma.purpose")
+    game_id = serializers.IntegerField(source="uma.game_id")
+
+    class Meta:
+        model = StoryEventCard
+        fields = ("id", "name", "title", "image", "portrait", "portrait_layers", "rarity",
+                  "purpose", "game_id", "must_get", "note")
+
+
 class StoryEventSerializer(StoryEventDateMixin, serializers.ModelSerializer):
-    """A story event with its resolved dates and its free cards.
+    """An event with its kind, its resolved dates and its free rewards.
 
     `name` is the name a player reads: Global's, else the editors' working
-    name, else "" (the client then says "Story event"). The Japanese name is
-    never sent.
+    name, else "" (the client then says the kind's label, "Story event" or
+    "Main story"). The Japanese name is never sent. `end_date` is null on a
+    main story chapter, which never closes; `claim_end_date` is set on story
+    events only (predictions.story_event_dates).
     """
 
     name = serializers.CharField(source="shown_name")
     cards = serializers.SerializerMethodField()
+    umas = serializers.SerializerMethodField()
 
     class Meta:
         model = StoryEvent
         fields = (
-            "id", "game_id", "name", "image", "banner_timeline",
+            "id", "kind", "game_id", "name", "image", "banner_timeline",
             "start_date", "end_date", "claim_end_date", "is_predicted", "applied_offset_days",
             "carat_amount", "uma_ticket_amount", "support_ticket_amount",
             "ssr_shard_amount", "sr_shard_amount",
-            "cards",
+            "cards", "umas",
         )
 
+    # BARE .all() in both: the view prefetches `cards` with the card and the uma
+    # joined. Any .select_related() or .order_by() here would build a new
+    # queryset and ask once per event (the same trap as
+    # BannerSupportNestedSerializer). The split happens in Python.
     def get_cards(self, obj):
-        # BARE .all(): the view prefetches `cards` with the card joined. Any
-        # .select_related() or .order_by() here would build a new queryset and
-        # ask once per event (the same trap as BannerSupportNestedSerializer).
-        return StoryEventCardSerializer(obj.cards.all(), many=True).data
+        rows = [row for row in obj.cards.all() if row.support_card_id is not None]
+        return StoryEventCardSerializer(rows, many=True).data
+
+    def get_umas(self, obj):
+        rows = [row for row in obj.cards.all() if row.uma_id is not None]
+        return StoryEventUmaSerializer(rows, many=True).data
 
 
 def story_event_queryset():
-    """Every event the Timeline can place (it has a banner), with its cards in
-    their order, the card joined: two queries in all."""
+    """Every event the Timeline can place (it has a banner), with its rewards in
+    their order, the card or uma joined: two queries in all."""
     return StoryEvent.objects.filter(banner_timeline__isnull=False).prefetch_related(
         Prefetch(
             "cards",
-            queryset=StoryEventCard.objects.select_related("support_card").order_by("order", "id"),
+            queryset=StoryEventCard.objects.select_related("support_card", "uma").order_by(
+                "order", "id"),
         )
     )

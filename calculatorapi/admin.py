@@ -264,14 +264,16 @@ class DailyLegendRaceUmaInline(PicturePickersMixin, TabularInline):
 
 
 class StoryEventCardInline(PicturePickersMixin, TabularInline):
-    """The free cards a story event gives, edited on the event's page.
+    """The free rewards an event gives, edited on the event's page: a support
+    card or an uma on each row, never both (a database check).
 
-    The import adds the cards; editors set the mark and the note. No copies
-    column: every event gives five of each card.
+    The import adds the rewards; editors set the mark and the note, and add the
+    rewards of an event made by hand. No copies column: every event gives five
+    of each support card, and an uma is one.
     """
     model = StoryEventCard
-    fields = ("support_card", "must_get", "note", "order")
-    autocomplete_fields = ("support_card",)
+    fields = ("support_card", "uma", "must_get", "note", "order")
+    autocomplete_fields = ("support_card", "uma")
     ordering = ("order", "id")
     extra = 0
 
@@ -924,15 +926,23 @@ STORY_EVENT_GAME_FIELDS = (
 
 @admin.register(StoryEvent)
 class StoryEventAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
-    """A story event and its free cards: the row under a banner on the Timeline.
+    """An event and its free rewards: a row under a banner on the Timeline. A
+    story event, a main story chapter, an anniversary's missions or a special
+    event (`kind`).
 
     Display only, never income: the planner's numbers come from Game events.
-    notes/story-events-plan.md has the why.
+    notes/story-events-plan.md and notes/story-events-plan-2.md have the why.
+
+    The import's columns are read-only on an event it made (one with a game
+    id), so an edit can't be quietly undone by the next deploy. An event an
+    editor makes by hand (a gift or a collaboration the game's files don't
+    describe) has no game id and stays editable throughout.
     """
     list_display = (
-        "__str__", "game_id", "banner_timeline", "global_start_at", "jp_start_at",
+        "__str__", "kind", "game_id", "banner_timeline", "global_start_at", "jp_start_at",
         "carat_amount", "rewards_edited",
     )
+    list_filter = ("kind",)
     list_select_related = ("banner_timeline",)
     search_fields = ("name", "working_name", "jp_name", "=game_id")
     autocomplete_fields = ("banner_timeline",)
@@ -940,7 +950,7 @@ class StoryEventAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
     inlines = (StoryEventCardInline,)
     fieldsets = (
         (None, {"fields": (
-            "game_id", "name", "working_name", "jp_name", "banner_timeline",
+            "kind", "game_id", "name", "working_name", "jp_name", "banner_timeline",
             "image", "image_preview",
         )}),
         ("Dates from the game", {"fields": (
@@ -952,7 +962,9 @@ class StoryEventAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
 
     def get_readonly_fields(self, request, obj=None):
         readonly = ("image_preview",)
-        return readonly + STORY_EVENT_GAME_FIELDS if obj is not None else readonly
+        if obj is None or obj.game_id is None:
+            return readonly
+        return readonly + ("kind",) + STORY_EVENT_GAME_FIELDS
 
     def save_model(self, request, obj, form, change):
         # A reward an editor changes is theirs from now on: the import stops

@@ -33,9 +33,12 @@ already, so the lower id is as good as the other.
 
 import datetime
 
-from calculatorapi.models import BannerTimeline, StoryEvent, StoryEventCard, SupportCard
+from calculatorapi.models import (
+    BannerTimeline, StoryEvent, StoryEventCard, StoryEventKind, SupportCard,
+)
 
 JST = datetime.timezone(datetime.timedelta(hours=9))
+STORY = StoryEventKind.STORY
 
 REWARD_COLUMNS = {
     "carats": "carat_amount",
@@ -107,10 +110,14 @@ class _Planner:  # pylint: disable=too-few-public-methods
     A class only so the lookups built once are shared by every event."""
 
     def __init__(self):
-        self.rows = {row.game_id: row for row in StoryEvent.objects.all()}
+        # Story events only. A game id is unique within its kind, not across the
+        # table (main story part 7 is not story event 7), so every lookup here
+        # names the kind (notes/story-events-plan-2.md).
+        self.rows = {row.game_id: row for row in StoryEvent.objects.filter(kind=STORY)}
         self.card_pks = dict(SupportCard.objects.exclude(game_id=None).values_list("game_id", "pk"))
-        self.linked = set(StoryEventCard.objects.values_list(
-            "story_event__game_id", "support_card__game_id"))
+        self.linked = set(StoryEventCard.objects.filter(
+            story_event__kind=STORY, support_card__isnull=False,
+        ).values_list("story_event__game_id", "support_card__game_id"))
         self.matcher = BannerMatcher()
         self.plan = {
             "label": "story event", "story": True, "changed": [], "created": [],
@@ -130,7 +137,8 @@ class _Planner:  # pylint: disable=too-few-public-methods
                 self.plan["unmatched"].append(game_id)
         if row is None:
             self.plan["created"].append(
-                StoryEvent(game_id=game_id, banner_timeline_id=banner_id, **values, **rewards))
+                StoryEvent(kind=STORY, game_id=game_id, banner_timeline_id=banner_id,
+                           **values, **rewards))
         else:
             diff = {column: value for column, value in values.items()
                     if getattr(row, column) != value}
@@ -191,7 +199,7 @@ def write_story_events(plan):
     for event in plan["created"]:
         event.save()
     if plan["new_cards"]:
-        event_pks = dict(StoryEvent.objects.values_list("game_id", "pk"))
+        event_pks = dict(StoryEvent.objects.filter(kind=STORY).values_list("game_id", "pk"))
         StoryEventCard.objects.bulk_create(
             [StoryEventCard(story_event_id=event_pks[game_id], support_card_id=card_pk, order=order)
              for game_id, card_pk, order in plan["new_cards"]],

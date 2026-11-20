@@ -102,10 +102,11 @@ PvP guide → its sections, one tab per running style), autocomplete pickers, im
 
 - `GameEvent`'s reward amounts are plain fields on its own edit page (a "Rewards"
   fieldset), **not** an inline — a `GameEvent` carries at most one reward package.
-- `StoryEvent` edits its free cards through `StoryEventCardInline` (autocomplete, `must_get`,
-  `note`, `order`). The fields the game-data import writes (`STORY_EVENT_GAME_FIELDS`) are
-  read-only on a saved event, so an edit can't be undone by the next deploy, and editable when
-  adding one. `save_model` ticks `rewards_edited` whenever a reward field changes, which is what
+- `StoryEvent` ("Free card events") edits its rewards through `StoryEventCardInline`
+  (a support card OR an uma per row, autocomplete, `must_get`, `note`, `order`), and filters by
+  `kind`. The fields the game-data import writes (`STORY_EVENT_GAME_FIELDS`, plus `kind`) are
+  read-only on an event the import made (one with a `game_id`), so an edit can't be undone by
+  the next deploy; an event made by hand has no `game_id` and stays editable throughout. `save_model` ticks `rewards_edited` whenever a reward field changes, which is what
   stops the import writing rewards (the team's figures win). Display only: nothing here feeds
   the projection. `notes/story-events-plan.md`.
 - The three M2M join models are edited only via inlines; they are not registered
