@@ -1,0 +1,283 @@
+[
+ {
+  "kind": "main_story",
+  "id": 1,
+  "name": "第1章",
+  "start": null,
+  "end": null,
+  "rewards": [
+   {
+    "type": "card",
+    "id": 30022
+   }
+  ]
+ },
+ {
+  "kind": "main_story",
+  "id": 2,
+  "name": "第2章",
+  "start": null,
+  "end": null,
+  "rewards": [
+   {
+    "type": "card",
+    "id": 30023
+   }
+  ]
+ },
+ {
+  "kind": "main_story",
+  "id": 3,
+  "name": "第3章",
+  "start": "2021-04-26T03:00:00+00:00",
+  "end": null,
+  "rewards": [
+   {
+    "type": "card",
+    "id": 30033
+   }
+  ]
+ },
+ {
+  "kind": "main_story",
+  "id": 4,
+  "name": "第4章",
+  "start": "2021-07-20T03:00:00+00:00",
+  "end": null,
+  "rewards": [
+   {
+    "type": "card",
+    "id": 30044
+   }
+  ]
+ },
+ {
+  "kind": "main_story",
+  "id": 5,
+  "name": "第5章",
+  "start": "2021-12-22T03:00:00+00:00",
+  "end": null,
+  "rewards": [
+   {
+    "type": "card",
+    "id": 30076
+   }
+  ]
+ },
+ {
+  "kind": "main_story",
+  "id": 6,
+  "name": "最終章前編",
+  "start": "2022-03-18T03:00:00+00:00",
+  "end": null,
+  "rewards": [
+   {
+    "type": "card",
+    "id": 30081
+   }
+  ]
+ },
+ {
+  "kind": "main_story",
+  "id": 7,
+  "name": "最終章後編",
+  "start": "2022-07-20T03:00:00+00:00",
+  "end": null,
+  "rewards": [
+   {
+    "type": "card",
+    "id": 30105
+   },
+   {
+    "type": "uma",
+    "id": 100103
+   }
+  ]
+ },
+ {
+  "kind": "main_story",
+  "id": 21,
+  "name": "前 編",
+  "start": "2024-03-21T03:00:00+00:00",
+  "end": null,
+  "rewards": [
+   {
+    "type": "card",
+    "id": 30194
+   }
+  ]
+ },
+ {
+  "kind": "main_story",
+  "id": 22,
+  "name": "中 編",
+  "start": "2024-09-20T03:00:00+00:00",
+  "end": null,
+  "rewards": [
+   {
+    "type": "card",
+    "id": 30217
+   }
+  ]
+ },
+ {
+  "kind": "main_story",
+  "id": 23,
+  "name": "後 編",
+  "start": "2025-07-22T03:00:00+00:00",
+  "end": null,
+  "rewards": [
+   {
+    "type": "card",
+    "id": 30259
+   },
+   {
+    "type": "uma",
+    "id": 110902
+   }
+  ]
+ },
+ {
+  "kind": "anniversary",
+  "id": 101,
+  "name": "Half Anniversary記念ミッション 第2弾",
+  "start": "2021-08-24T03:00:00+00:00",
+  "end": "2021-09-29T19:59:59+00:00",
+  "rewards": [
+   {
+    "type": "card",
+    "id": 30062
+   }
+  ]
+ },
+ {
+  "kind": "anniversary",
+  "id": 138,
+  "name": "1st Anniversary記念ミッション 第2弾",
+  "start": "2022-02-24T03:00:00+00:00",
+  "end": "2022-03-29T19:59:59+00:00",
+  "rewards": [
+   {
+    "type": "card",
+    "id": 30088
+   }
+  ]
+ },
+ {
+  "kind": "anniversary",
+  "id": 218,
+  "name": "1.5th Anniversary 記念ミッション 第2弾",
+  "start": "2022-08-24T03:00:00+00:00",
+  "end": "2022-09-29T19:59:59+00:00",
+  "rewards": [
+   {
+    "type": "card",
+    "id": 30121
+   }
+  ]
+ },
+ {
+  "kind": "anniversary",
+  "id": 302,
+  "name": "2nd Anniversary 記念ミッション 第2弾",
+  "start": "2023-02-24T03:00:00+00:00",
+  "end": "2023-03-29T19:59:59+00:00",
+  "rewards": [
+   {
+    "type": "card",
+    "id": 30136
+   }
+  ]
+ },
+ {
+  "kind": "anniversary",
+  "id": 373,
+  "name": "2.5th Anniversary 記念ミッション 第2弾",
+  "start": "2023-08-24T03:00:00+00:00",
+  "end": "2023-09-29T19:59:59+00:00",
+  "rewards": [
+   {
+    "type": "card",
+    "id": 30162
+   }
+  ]
+ },
+ {
+  "kind": "anniversary",
+  "id": 632,
+  "name": "3rd Anniversary 記念ミッション 第2弾",
+  "start": "2024-02-24T03:00:00+00:00",
+  "end": "2024-03-29T19:59:59+00:00",
+  "rewards": [
+   {
+    "type": "card",
+    "id": 30186
+   }
+  ]
+ },
+ {
+  "kind": "anniversary",
+  "id": 676,
+  "name": "3.5th Anniversary 記念ミッション 第2弾",
+  "start": "2024-08-24T03:00:00+00:00",
+  "end": "2024-09-30T19:59:59+00:00",
+  "rewards": [
+   {
+    "type": "card",
+    "id": 30216
+   }
+  ]
+ },
+ {
+  "kind": "anniversary",
+  "id": 809,
+  "name": "4th Anniversary 記念ミッション 第2弾",
+  "start": "2025-02-24T03:00:00+00:00",
+  "end": "2025-03-31T19:59:59+00:00",
+  "rewards": [
+   {
+    "type": "card",
+    "id": 30243
+   }
+  ]
+ },
+ {
+  "kind": "anniversary",
+  "id": 865,
+  "name": "4.5th Anniversary 記念ミッション 第2弾",
+  "start": "2025-08-24T03:00:00+00:00",
+  "end": "2025-09-29T19:59:59+00:00",
+  "rewards": [
+   {
+    "type": "card",
+    "id": 30266
+   }
+  ]
+ },
+ {
+  "kind": "anniversary",
+  "id": 1007,
+  "name": "5th Anniversary 記念ミッション 第2弾",
+  "start": "2026-02-24T03:00:00+00:00",
+  "end": "2026-03-30T19:59:59+00:00",
+  "rewards": [
+   {
+    "type": "card",
+    "id": 30291
+   }
+  ]
+ },
+ {
+  "kind": "anniversary",
+  "id": 1115,
+  "name": "5.5th Anniversary 記念ミッション 第2弾",
+  "start": "2026-08-24T03:00:00+00:00",
+  "end": "2026-09-30T19:59:59+00:00",
+  "rewards": [
+   {
+    "type": "card",
+    "id": 30313
+   }
+  ]
+ }
+]
