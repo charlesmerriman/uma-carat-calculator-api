@@ -1,3 +1,5 @@
+import re
+
 from django.db import models
 from django.db.models.functions import Coalesce, Lower, NullIf
 
@@ -95,6 +97,15 @@ def shown_q(prefix=""):
     )
 
 
+# `[[Name (inherited)]]` names a unique's inherited copy (Henry, board "Two
+# types of popup window", 2026-11-20: "yes!"): the copy shares the unique's
+# name, so the bare name always meant the unique. Matched ignoring case.
+INHERITED_SUFFIX = " (inherited)"
+_INHERITED_SUFFIX_RE = re.compile(r"\s*\(inherited\)$", re.IGNORECASE)
+# A unique's inherited copy: game id 9xxxxx (Skill.is_inherited_unique).
+_COPY_IDS = {"game_id__gte": 900000, "game_id__lt": 1000000}
+
+
 class SkillQuerySet(models.QuerySet):
     """
     "May a player be shown this skill?", asked of the database.
@@ -142,10 +153,28 @@ class SkillQuerySet(models.QuerySet):
         {lower-case name: Skill} for every name that names a skill in this
         queryset, by global's name first, then the translation, then an old
         name kept as an alias; the lowest game id breaks a tie. Three queries
-        whatever the count. The one place a typed name becomes a skill: the
-        `[[mention]]` check and links, the `[[` suggestions and the sheet.
+        whatever the count (three more for `(inherited)` names). The one place
+        a typed name becomes a skill: the `[[mention]]` check and links, the
+        `[[` suggestions and the sheet.
+
+        A name ending "(inherited)" resolves among unique's inherited copies
+        only, by the rest of the name, and is keyed as written; the bare name
+        keeps meaning the unique (its lower game id wins the tie).
         """
         wanted = {name.strip().lower() for name in names if name and name.strip()}
+        suffixed = {
+            name: _INHERITED_SUFFIX_RE.sub("", name).strip() for name in wanted if _INHERITED_SUFFIX_RE.search(name)
+        }
+        found = self.resolve_plain_names(wanted - suffixed.keys())
+        if suffixed:
+            copies = self.filter(**_COPY_IDS).resolve_plain_names(set(suffixed.values()))
+            for name, base in suffixed.items():
+                if base in copies:
+                    found[name] = copies[base]
+        return found
+
+    def resolve_plain_names(self, wanted):
+        """resolve_names for lower-case names with no "(inherited)" suffix."""
         if not wanted:
             return {}
         found = {}
@@ -167,10 +196,13 @@ class SkillQuerySet(models.QuerySet):
 
     def all_names(self):
         """Every lower-case name the skills here answer to: global's, the
-        translation, and kept aliases. For "does this name exist" checks."""
+        translation, and kept aliases, and each inherited copy's names with
+        " (inherited)". For "does this name exist" checks."""
         names = set()
-        for name, translated in self.values_list("name", "translated_name"):
+        for name, translated, game_id in self.values_list("name", "translated_name", "game_id"):
             names.update(value.lower() for value in (name, translated) if value)
+            if game_id is not None and 900000 <= game_id < 1000000:
+                names.update((value + INHERITED_SUFFIX).lower() for value in (name, translated) if value)
         names.update(
             name.lower()
             for name in self.exclude(aliases__isnull=True).values_list("aliases__name", flat=True)

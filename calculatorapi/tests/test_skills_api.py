@@ -362,3 +362,34 @@ class SkillOwnersAndTypeTests(CalculatorTestCase):
         self.assertEqual(rows[30028]["title"], "[Fire at My Heels]")
         self.assertTrue(rows[30028]["image_borderless"].endswith("support_cards_borderless/30028.webp"))
         self.assertIsNone(rows[30111]["image_borderless"])
+
+
+class InheritedMentionTests(CalculatorTestCase):
+    """`[[Name (inherited)]]` names a unique's inherited copy (Henry, 2026-11-20)."""
+
+    def setUp(self):
+        self.unique = make(100201, name="Angling and Scheming", rarity=5)
+        self.copy = make(900201, name="Angling and Scheming", rarity=1)
+        make(200331, name="Groundwork")
+
+    def test_the_suffix_resolves_to_the_copy_and_the_bare_name_to_the_unique(self):
+        found = Skill.objects.shown().resolve_names(
+            ["Angling and Scheming", "Angling and Scheming (Inherited)", "Groundwork (inherited)"]
+        )
+        self.assertEqual(found["angling and scheming"], self.unique)
+        self.assertEqual(found["angling and scheming (inherited)"], self.copy)
+        # A skill with no inherited copy has no such name.
+        self.assertNotIn("groundwork (inherited)", found)
+
+    def test_the_save_check_knows_the_suffixed_name(self):
+        known = Skill.objects.shown().all_names()
+        self.assertIn("angling and scheming (inherited)", known)
+        self.assertNotIn("groundwork (inherited)", known)
+
+    def test_a_guide_links_the_mention_as_written(self):
+        cm = make_champions_meeting()
+        PvpGuide.objects.create(
+            champions_meeting=cm, visibility="public", meta_analysis="Take [[Angling and Scheming (inherited)]].",
+        )
+        mentions = editor_client().get(url("cm", cm.id)).json()["skill_mentions"]
+        self.assertEqual(mentions["angling and scheming (inherited)"]["id"], self.copy.id)
