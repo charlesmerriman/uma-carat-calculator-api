@@ -17,8 +17,10 @@ from django.core.management import call_command
 from calculatorapi.models import (
     Skill, SkillAlias, SkillEvolutionCondition, SupportCard, SupportCardSkill, Uma, UmaSkill,
 )
+from calculatorapi.global_release import card_is_released, uma_is_released
 from calculatorapi.tests.base import CalculatorTestCase
 from calculatorapi.tests.test_skills import SNAPSHOT_DIR, ahead_skill, snapshot_skill, write_snapshot
+from calculatorapi.tests.test_umas import snapshot_card
 
 GOURMAND, BANQUET, RULER, FAN_SKILL = 201351, 110681, 100101111, 200999
 SPECIAL_WEEK = 100101
@@ -32,6 +34,31 @@ def jp_skill(skill_id, name, rarity, **overrides):
     return snapshot_skill(skill_id, name, **fields)
 
 
+def jp_outfit(card_id, **overrides):
+    """One outfit as the JP snapshot carries it: ★3 Special Week by default,
+    with Japanese names and three star rows (★3 to ★5)."""
+    fields = {
+        "chara_name": "スペシャルウィーク", "name": "[スペシャルドリーマー]スペシャルウィーク",
+        "title": "[スペシャルドリーマー]", "default_rarity": 3, "running_style": "front",
+    }
+    fields.update(overrides)
+    card = snapshot_card(card_id, **fields)
+    card["stars"] = [
+        {**card["stars"][2], "star": star, "stats": {**card["stars"][2]["stats"], "speed": speed}}
+        for star, speed in ((3, 83), (4, 92), (5, 102))
+    ]
+    return card
+
+
+def jp_support_card(card_id, card_type, chara_id=1068, **overrides):
+    """One support card as the JP snapshot carries it, Kitasan Black's by default."""
+    card = {"id": card_id, "chara_id": chara_id, "chara_name": "キタサンブラック",
+            "name": "[新衣装]キタサンブラック", "title": "[新衣装]", "rarity": 3,
+            "card_type": card_type, "skill_set_id": 1, "start_date": 0}
+    card.update(overrides)
+    return card
+
+
 def evolution(skill_id, card_id, rank, condition_ids):
     return {
         "skill_id": skill_id, "card_id": card_id, "rank": rank, "start_date": 0,
@@ -43,7 +70,7 @@ def evolution(skill_id, card_id, rank, condition_ids):
     }
 
 
-class JpImportTests(CalculatorTestCase):  # pylint: disable=too-many-instance-attributes
+class JpImportTests(CalculatorTestCase):  # pylint: disable=too-many-instance-attributes,too-many-public-methods
     def setUp(self):
         tmp = tempfile.TemporaryDirectory()  # pylint: disable=consider-using-with
         self.addCleanup(tmp.cleanup)
@@ -65,7 +92,7 @@ class JpImportTests(CalculatorTestCase):  # pylint: disable=too-many-instance-at
                 jp_skill(RULER, "はらぺこ大将", rarity=6, icon_id=20026, cost=None),
                 jp_skill(FAN_SKILL, "JPスキル", rarity=1),
             ],
-            "cards": [{"id": SPECIAL_WEEK, "chara_id": 1001}],
+            "cards": [jp_outfit(SPECIAL_WEEK)],
             "card_skills": [
                 {"card_id": SPECIAL_WEEK, "skill_id": FAN_SKILL, "source": "innate", "level": None},
                 {"card_id": SPECIAL_WEEK, "skill_id": GOURMAND, "source": "awakening", "level": 3},
@@ -209,12 +236,161 @@ class JpImportTests(CalculatorTestCase):  # pylint: disable=too-many-instance-at
             [(FAN_SKILL, "innate"), (GOURMAND, "awakening"), (RULER, "evolved")],
         )
         self.special_week.refresh_from_db()
-        self.assertFalse(self.special_week.is_on_global)
+        self.assertFalse(uma_is_released(self.special_week))
+
+    def test_a_jp_outfit_takes_its_facts_from_jp_but_never_rarity_or_title(self):
+        Uma.objects.filter(pk=self.special_week.pk).update(rarity=2, title="[Editor's Title]")
+        self.run_import()
+
+        uma = Uma.objects.get(pk=self.special_week.pk)
+        # The facts the Encyclopedia shows, marked there as JP data.
+        self.assertEqual((uma.running_style, uma.apt_turf, uma.apt_pace), (1, 7, 5))
+        self.assertEqual((uma.base_speed, uma.growth_power), (83, 20))
+        self.assertEqual([row["star"] for row in uma.star_stats], [3, 4, 5])
+        self.assertEqual([row["speed"] for row in uma.star_stats], [83, 92, 102])
+        self.assertEqual((uma.jp_name, uma.jp_title), ("スペシャルウィーク", "[スペシャルドリーマー]"))
+        # Rarity feeds selectors and odds, the title is the editors' until global's.
+        self.assertEqual((uma.rarity, uma.title), (2, "[Editor's Title]"))
+        self.assertFalse(uma_is_released(uma))
+
+    def test_a_jp_outfit_with_no_rarity_keeps_it_blank(self):
+        self.run_import()
+        self.special_week.refresh_from_db()
+        self.assertIsNone(self.special_week.rarity)
+        self.assertTrue(self.special_week.is_three_star)
+
+    def test_global_wins_every_fact_and_jp_adds_only_the_japanese_name(self):
+        global_card = snapshot_card(SPECIAL_WEEK, chara_name="Special Week", default_rarity=3,
+                                    running_style="late", title="[Special Dreamer]")
+        global_card["stars"] = [{**star, "star": star["star"] + 2} for star in global_card["stars"]]
+        self.run_import(extra_global={"cards": [global_card]})
+
+        uma = Uma.objects.get(pk=self.special_week.pk)
+        self.assertEqual((uma.running_style, uma.title, uma.rarity), (3, "[Special Dreamer]", 3))
+        # Global's three rows, not JP's speeds.
+        self.assertEqual([row["speed"] for row in uma.star_stats], [87, 93, 98])
+        self.assertEqual(uma.jp_name, "スペシャルウィーク")
+        self.assertTrue(uma_is_released(uma))
+
+    def test_a_global_outfit_takes_only_the_awakening_ranks_global_lacks_from_jp(self):
+        """JP raised some outfits' awakening cap to 7 (Daptrius, 2026-11-17): a
+        global outfit gains JP's ranks 6 and 7, and keeps global's own rows for
+        the ranks global has, whatever JP says about them."""
+        self.jp["card_skills"] = [
+            # Global has rank 3; JP's row for it is ignored.
+            {"card_id": SPECIAL_WEEK, "skill_id": BANQUET, "source": "awakening", "level": 3},
+            {"card_id": SPECIAL_WEEK, "skill_id": FAN_SKILL, "source": "awakening", "level": 6},
+            # Never an innate or a unique: those are global's alone for a global outfit.
+            {"card_id": SPECIAL_WEEK, "skill_id": RULER, "source": "innate", "level": None},
+        ]
+        global_card = snapshot_card(SPECIAL_WEEK, chara_name="Special Week")
+        self.run_import(extra_global={
+            "cards": [global_card],
+            "card_skills": [{"card_id": SPECIAL_WEEK, "skill_id": GOURMAND, "source": "awakening", "level": 3}],
+        })
+        self.assertCountEqual(
+            self.special_week.skills.exclude(source="evolved").values_list("skill__game_id", "source", "level"),
+            [(GOURMAND, "awakening", 3), (FAN_SKILL, "awakening", 6)],
+        )
+
+    def test_a_borrowed_rank_goes_once_global_fills_it_with_another_skill(self):
+        """Once global ships rank 6 with a different skill, the row borrowed from
+        JP is removed (the import's one delete), and an editor's own row stays."""
+        self.jp["card_skills"] = [
+            {"card_id": SPECIAL_WEEK, "skill_id": FAN_SKILL, "source": "awakening", "level": 6},
+        ]
+        global_card = snapshot_card(SPECIAL_WEEK, chara_name="Special Week")
+        ranks_to_5 = [{"card_id": SPECIAL_WEEK, "skill_id": GOURMAND, "source": "awakening", "level": 3}]
+        self.run_import(extra_global={"cards": [global_card], "card_skills": ranks_to_5})
+        self.assertTrue(self.special_week.skills.filter(skill__game_id=FAN_SKILL, level=6).exists())
+        # An editor's hand-added row at the same rank: not JP's, so never removed.
+        editors = Skill.objects.create(game_id=200777, name="Editor's Pick", rarity=1, group_id=20077, tier=1)
+        UmaSkill.objects.create(uma=self.special_week, skill=editors, source="awakening", level=6)
+
+        # Global ships rank 6, with a skill of its own.
+        self.global_skills.append(snapshot_skill(200888, "Global Rank Six", rarity=1, group_id=20088))
+        out = self.run_import(extra_global={"cards": [global_card], "card_skills": ranks_to_5 + [
+            {"card_id": SPECIAL_WEEK, "skill_id": 200888, "source": "awakening", "level": 6},
+        ]})
+        self.assertIn("JP's, global has replaced it", out)
+        self.assertCountEqual(
+            self.special_week.skills.filter(source="awakening").values_list("skill__game_id", "level"),
+            [(GOURMAND, 3), (200888, 6), (200777, 6)],
+        )
+
+    def test_a_borrowed_rank_global_agrees_with_stays(self):
+        self.jp["card_skills"] = [
+            {"card_id": SPECIAL_WEEK, "skill_id": GOURMAND, "source": "awakening", "level": 6},
+        ]
+        global_card = snapshot_card(SPECIAL_WEEK, chara_name="Special Week")
+        self.run_import(extra_global={"cards": [global_card], "card_skills": []})
+        self.run_import(extra_global={"cards": [global_card], "card_skills": [
+            {"card_id": SPECIAL_WEEK, "skill_id": GOURMAND, "source": "awakening", "level": 6},
+        ]})
+        self.assertEqual(list(self.special_week.skills.filter(source="awakening").values_list("level", flat=True)), [6])
+
+    def test_a_distrusted_jp_outfit_takes_nothing(self):
+        # Global names character 1001, so a JP-only outfit of it must be a row
+        # with that name in it; this one names somebody else.
+        wrong = Uma.objects.create(name="Somebody Else", game_id=100102)
+        self.jp["cards"].append(jp_outfit(100102))
+        self.run_import(extra_global={"cards": [snapshot_card(100103, chara_name="Special Week")]})
+
+        wrong.refresh_from_db()
+        self.assertEqual((wrong.apt_turf, wrong.star_stats, wrong.jp_name), (None, [], ""))
+
+    def test_a_jp_card_takes_its_character_and_japanese_name(self):
+        self.jp["support_cards"] = [jp_support_card(30300, "speed")]
+        card = SupportCard.objects.create(name="[New Outfit] Kitasan Black", game_id=30300)
+        self.run_import()
+
+        card.refresh_from_db()
+        self.assertEqual((card.card_type, card.character_id), ("speed", 1068))
+        self.assertEqual((card.jp_name, card.jp_title), ("キタサンブラック", "[新衣装]"))
+
+    def test_umatl_fills_titles_a_unique_sentence_and_a_race_name_each_in_its_own_slot(self):
+        """notes/encyclopedia-jp-fills-plan.md, PR 3: UmaTL's title goes to `translated_title`
+        (never `title`, the editors' until Global's), its unique sentence to the unique effect's
+        `translated_text`, and its race name to a JP route's goal, marked `translated`."""
+        self.jp["support_cards"] = [jp_support_card(30300, "speed")]
+        self.jp["support_effects"] = [{"id": 30300, "effects": [{"type": 3, "levels": {"1": 5}}],
+                                       "unique": {"level": 1, "effects": [
+                                           {"type": 101, "value": 80, "params": [3, 1, 0, 0]}]}}]
+        self.jp["objectives"] = [{"chara_id": SPECIAL_WEEK // 100, "goals": [
+            {"turn": 12, "kind": 1, "race": "ジュニア級メイクデビュー", "grade": 900, "top": 0, "race_instance_id": 1},
+            {"turn": 40, "kind": 1, "race": "新しいレース", "grade": 100, "top": 3, "race_instance_id": 2},
+        ]}]
+        self.umatl.update({
+            "outfit_titles": {str(SPECIAL_WEEK): "[Special Dreamer]"},
+            "card_titles": {"30300": "[New Outfit]"},
+            "unique_effects": {"30300": "Speed Bonus (Friendship 80+)"},
+            "race_names": {"1": "UmaTL Debut", "2": "A New Race"},
+        })
+        card = SupportCard.objects.create(name="Kitasan Black", game_id=30300)
+        self.run_import(extra_global={"race_names": {"1": "Junior Make Debut"}})
+
+        uma = Uma.objects.get(pk=self.special_week.pk)
+        self.assertEqual((uma.title, uma.translated_title, uma.shown_title),
+                         ("", "[Special Dreamer]", "[Special Dreamer]"))
+        self.assertTrue(uma.uses_translated_title)
+        # Global's race name wins; UmaTL names only the race Global has no name for.
+        self.assertEqual([(goal["race"], goal.get("translated", False)) for goal in uma.career_objectives],
+                         [("Junior Make Debut", False), ("A New Race", True)])
+        card.refresh_from_db()
+        self.assertEqual((card.title, card.translated_title), ("", "[New Outfit]"))
+        self.assertEqual(card.unique_effect["translated_text"], "Speed Bonus (Friendship 80+)")
+
+    def test_an_editors_title_beats_umatls(self):
+        self.umatl["outfit_titles"] = {str(SPECIAL_WEEK): "[Special Dreamer]"}
+        Uma.objects.filter(pk=self.special_week.pk).update(title="[Editor's Title]")
+        self.run_import()
+        uma = Uma.objects.get(pk=self.special_week.pk)
+        self.assertEqual((uma.shown_title, uma.uses_translated_title), ("[Editor's Title]", False))
 
     def test_a_jp_card_whose_row_names_someone_else_gets_no_links(self):
         # Global names character 1068 (through its support card), so a JP card
         # of that character must be a row with that name in it.
-        self.jp["support_cards"] = [{"id": 30300, "chara_id": 1068, "card_type": "speed"}]
+        self.jp["support_cards"] = [jp_support_card(30300, "speed")]
         self.jp["support_hints"] = [{"support_card_id": 30300, "skill_id": FAN_SKILL, "hint_group": 1}]
         wrong = SupportCard.objects.create(name="Somebody Else", game_id=30300)
 
@@ -226,11 +402,32 @@ class JpImportTests(CalculatorTestCase):  # pylint: disable=too-many-instance-at
         self.assertFalse(SupportCardSkill.objects.filter(support_card=wrong).exists())
         self.assertIn("JP support card 30300", out)
 
+    def test_a_jp_only_card_takes_its_event_skills_from_jp_and_a_global_card_does_not(self):
+        # The JP server capture lists both cards; only the one global lacks
+        # reads it here (a global card's events come from global's own file).
+        self.jp["support_cards"] = [jp_support_card(30300, "speed"), jp_support_card(30028, "speed")]
+        self.jp["support_events"] = [
+            {"support_card_id": 30300, "skill_id": FAN_SKILL},
+            {"support_card_id": 30028, "skill_id": FAN_SKILL},
+        ]
+        jp_card = SupportCard.objects.create(name="[New Outfit] Kitasan Black", game_id=30300)
+        global_card = SupportCard.objects.create(name="Kitasan Black", game_id=30028)
+
+        self.run_import(extra_global={"support_cards": [{
+            "id": 30028, "chara_id": 1068, "chara_name": "Kitasan Black", "name": "Kitasan Black",
+            "title": "", "rarity": 3, "card_type": "wit", "skill_set_id": 1,
+        }]})
+
+        self.assertEqual(
+            list(jp_card.skills.values_list("skill__game_id", "source")), [(FAN_SKILL, "event")],
+        )
+        self.assertFalse(global_card.skills.exists())
+
     def test_a_jp_card_takes_its_type_from_jp_and_a_global_card_keeps_globals(self):
         self.jp["support_cards"] = [
-            {"id": 30300, "chara_id": 1068, "card_type": "speed"},
+            jp_support_card(30300, "speed"),
             # On global too, where it is a Wit card: global's type wins.
-            {"id": 30028, "chara_id": 1068, "card_type": "speed"},
+            jp_support_card(30028, "speed"),
         ]
         jp_card = SupportCard.objects.create(name="[New Outfit] Kitasan Black", game_id=30300)
         global_card = SupportCard.objects.create(name="Kitasan Black", game_id=30028)
@@ -242,11 +439,11 @@ class JpImportTests(CalculatorTestCase):  # pylint: disable=too-many-instance-at
 
         jp_card.refresh_from_db()
         global_card.refresh_from_db()
-        self.assertEqual((jp_card.card_type, jp_card.is_on_global), ("speed", False))
+        self.assertEqual((jp_card.card_type, card_is_released(jp_card)), ("speed", False))
         self.assertEqual(global_card.card_type, "wit")
 
     def test_a_jp_card_whose_row_names_someone_else_gets_no_type(self):
-        self.jp["support_cards"] = [{"id": 30300, "chara_id": 1068, "card_type": "speed"}]
+        self.jp["support_cards"] = [jp_support_card(30300, "speed")]
         wrong = SupportCard.objects.create(name="Somebody Else", game_id=30300)
 
         self.run_import(extra_global={"support_cards": [{
@@ -305,6 +502,10 @@ class JpImportTests(CalculatorTestCase):  # pylint: disable=too-many-instance-at
         self.assertFalse(Skill.objects.filter(game_id=FAN_SKILL).exists())
         self.assertEqual(self.skill(GOURMAND).jp_name, "")
         self.assertFalse(SkillAlias.objects.exists())
+        # Nor any JP fact on an outfit or a card.
+        self.special_week.refresh_from_db()
+        self.assertEqual((self.special_week.apt_turf, self.special_week.star_stats,
+                          self.special_week.jp_name), (None, [], ""))
 
 
 class CommittedJpSnapshotTests(CalculatorTestCase):

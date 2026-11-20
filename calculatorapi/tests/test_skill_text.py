@@ -9,7 +9,7 @@ from types import SimpleNamespace
 from django.test import override_settings
 from django.urls import reverse
 
-from calculatorapi import skill_text
+from calculatorapi import skill_scaling, skill_text
 from calculatorapi.models import CustomUser, Skill, Uma, UmaSkill
 from calculatorapi.skill_conditions import racecourse_names
 from calculatorapi.skill_text import TextContext, describe, describe_condition
@@ -165,6 +165,59 @@ class ConditionTextTests(CalculatorTestCase):
             with self.subTest(condition=condition):
                 self.assertEqual(texts(when(condition)["all"]), [expected])
 
+    def test_the_wording_pass_phrases(self):
+        # 2026-11-18: each from the game's own text of the skills named in
+        # skill_text.py (Global's description, else the JP client's).
+        context = TextContext(racecourses={**skill_text.OVERSEAS_RACECOURSES, 10006: "Tokyo"},
+                              skill_names={203061: "No Second Thoughts", 203071: "No Third Chances",
+                                           201631: "Sympathy"})
+        cases = {
+            "phase_corner_random==1": "At a random moment on a corner mid-race",
+            "phase_straight_random==2": "At a random moment on a straight late-race",
+            "phase_firsthalf==1": "In the first half of mid-race",
+            "phase_firsthalf==3": "In the first half of the last spurt phase",
+            "phase_laterhalf==0": "In the second half of early-race",
+            "phase_firstquarter==2": "In the first quarter of late-race",
+            "phase_firsthalf_random==3": "At a random moment in the first half of the last spurt phase",
+            "phase_first_half_straight_random==2": "At a random moment on a straight in the first half of late-race",
+            "phase_latter_half_straight_random==1": "At a random moment on a straight in the second half of mid-race",
+            "run_at_full_speed_random==1": "At a random moment while spurting at full strength",
+            "up_slope_random_later_half==1": "At a random moment on an uphill in the second half of the race",
+            "furlong==1": "In the race's 2nd furlong (200 m)",
+            "order_rate_out50_continue==1": "Having stayed behind the front 50% so far",
+            "order_rate_in40_continue==1": "Having stayed in the front 40% so far",
+            "change_order_up_middle>=3": "After passing another runner 3 times mid-race",
+            "distance_diff_rate>=50": "Toward the back of the field",
+            "distance_diff_top_float<=25": "Within 1 length of the lead",
+            "course_distance!=2200": "Not on a 2,200 m course",
+            "corner!=3": "Not on corner 3",
+            "motivation<=4": "Not in great mood",
+            "base_power>=1000&base_power<1200": "Power 1,000 to 1,199",
+            "is_goodstart==1": "After a good start",
+            "is_abroad==1": "At an overseas racecourse",
+            "corner_count==0": "On a course with no corners",
+            "near_infront_count==0": "With no runner close ahead",
+            "is_activate_heal_skill==1": "After recovering endurance with a skill",
+            "is_dirtgrade!=1": "Not in a collaborative graded race",
+            "activate_count_middle==7": "After using exactly 7 skills mid-race",
+            "activate_count_all<=6": "Having used 6 or fewer skills",
+            "activate_count_all_team>=6": "After your team uses 6 or more skills",
+            "fan_count>=146738": "With 146,738 or more fans",
+            "succession_skill_count>=3": "Holding 3 or more inherited skills",
+            "overtake_target_no_order_up_time>=2": "On another runner's heels for 2 s or more without passing",
+            "is_other_character_activate_advantage_skill==31": "When a runner uses an acceleration skill",
+            "is_other_character_activate_advantage_skill==27": "When a runner uses a speed skill",
+            "is_popularity_top_character_activate_advantage_skill==-1": "When the favorite uses a skill",
+            "track_id==10201": "At Longchamp Racecourse",
+            "track_id>=10001&track_id<=10010": "At a central (JRA) racecourse",
+            "is_used_skill_id==203061&is_used_skill_id==203071": "After using No Second Thoughts and No Third Chances",
+            "is_exist_skill_id==201631": "When a runner in the race has Sympathy",
+            "running_style==4": "As an End Closer",
+        }
+        for condition, expected in cases.items():
+            with self.subTest(condition=condition):
+                self.assertEqual(texts(describe_condition(condition, context)["all"]), [expected])
+
     def test_a_precondition_reads_as_only_after(self):
         # V Is for Victory!
         described = describe(skill(effects=[{
@@ -187,8 +240,8 @@ class EffectTextTests(CalculatorTestCase):
             ability(27, 3500), ability(31, 2000), ability(1, 600000), ability(9, 550),
             ability(21, -1500, target_type=18, target_value=1), ability(8, 100000),
         ), [
-            "Velocity +0.35 m/s", "Acceleration +0.2 m/s²", "Speed +60", "Recovers 5.5% endurance",
-            "Current speed -0.15 m/s (Front Runners)", "Field of view +10",
+            "Velocity +0.35", "Acceleration +0.2", "+60 Speed", "Recovers 5.5% endurance",
+            "Current speed -0.15 (Front Runners)", "Field of view +10",
         ])
 
     def test_targets(self):
@@ -198,8 +251,8 @@ class EffectTextTests(CalculatorTestCase):
             ability(21, -500, target_type=9, target_value=1),
             ability(1, 400000, target_type=22, target_value=1002),
         ), [
-            "Drains 0.5% endurance (runners ahead)", "Current speed -0.05 m/s (up to 2 runners behind)",
-            "Current speed -0.05 m/s (the runner ahead)", "Speed +40 (Silence Suzuka)",
+            "Drains 0.5% endurance (runners ahead)", "Current speed -0.05 (up to 2 runners behind)",
+            "Current speed -0.05 (the runner ahead)", "+40 Speed (Silence Suzuka)",
         ])
 
     def test_unconfirmed_units_give_the_direction_only(self):
@@ -208,14 +261,68 @@ class EffectTextTests(CalculatorTestCase):
         effect = describe(skill(effects=[slot([ability(10, -4000)])]), CONTEXT)["slots"][0]["effects"][0]
         self.assertTrue(effect["raw"])
 
+    def test_the_wording_pass_effects(self):
+        self.assertEqual(self.effects(ability(32, 200000)), ["+20 all stats"])
+        self.assertEqual(self.effects(ability(32, -200000)), ["-20 all stats"])
+        self.assertEqual(self.effects(ability(37, 20000)), ["Activates 2 rare skills regardless of their conditions"])
+        self.assertEqual(self.effects(ability(37, 10000)), ["Activates 1 rare skill regardless of their conditions"])
+        self.assertEqual(self.effects(ability(29, 100000)), ["Higher chance of being rushed"])
+
     def test_unknown_kinds_and_targets_stay_raw(self):
         described = describe(skill(effects=[slot([ability(42, 10000), ability(27, 1000, target_type=2)])]),
                              CONTEXT)
         self.assertTrue(all(item["raw"] for item in described["slots"][0]["effects"]))
         self.assertFalse(described["complete"])
 
-    def test_a_scaling_value_says_so(self):
-        self.assertEqual(self.effects(ability(27, 3500, value_usage=3)), ["Velocity +0.35 m/s (varies)"])
+    def test_a_scaling_value_names_its_range_and_basis(self):
+        # Code 12 is fan count, x0.8 to x1.2 of the skill's own base: the
+        # inherited copy (0.15) gets its own range from the same rule.
+        self.assertEqual(self.effects(ability(27, 3500, value_usage=12)),
+                         ["Velocity +0.28 to +0.42, by fan count"])
+        self.assertEqual(self.effects(ability(27, 1500, value_usage=12)),
+                         ["Velocity +0.12 to +0.18, by fan count"])
+        # A flat bonus adds the same amount whatever the base (code 19, +0.1).
+        self.assertEqual(self.effects(ability(27, 500, value_usage=19)),
+                         ["Velocity +0.05 to +0.15, by distance behind the leader"])
+
+    def test_a_scaled_value_carries_its_bands_for_the_table(self):
+        described = describe(skill(effects=[slot([ability(27, 3500, value_usage=12)])]), CONTEXT)
+        table = described["slots"][0]["effects"][0]["scaling"]
+        self.assertEqual(table["heading"], "Fans")
+        self.assertEqual([(row["when"], row["value"]) for row in table["rows"]], [
+            ("Under 20,000", "+0.28"), ("20,000 to 49,999", "+0.315"), ("50,000 to 99,999", "+0.35"),
+            ("100,000 to 159,999", "+0.385"), ("160,000 or more", "+0.42"),
+        ])
+        # A fixed value has no table.
+        fixed = describe(skill(effects=[slot([ability(27, 3500)])]), CONTEXT)
+        self.assertNotIn("scaling", fixed["slots"][0]["effects"][0])
+
+    def test_a_random_drain_reads_as_its_real_share(self):
+        # Nothing Ventured: a -100% base times a random 0, 0.02 or 0.04. It
+        # used to read "Drains 100% endurance".
+        self.assertEqual(self.effects(ability(9, -10000, value_usage=8)),
+                         ["Drains 0% to 4% endurance, at random"])
+
+    def test_an_unexplained_code_still_says_varies(self):
+        self.assertEqual(self.effects(ability(27, 3500, value_usage=40)), ["Velocity +0.35 (varies)"])
+
+    def test_a_repeating_effect_says_when_and_how_often(self):
+        repeat = {**ability(31, 1000), "additional_activate_type": 1}
+        self.assertEqual(self.effects(ability(31, 1000), repeat), [
+            "Acceleration +0.1", "Acceleration +0.1 more on each overtake, up to 3 times",
+        ])
+        flare = {**ability(27, 250), "additional_activate_type": 3}
+        self.assertEqual(self.effects(flare),
+                         ["Velocity +0.025 more each time another skill activates, up to 2 times"])
+
+    def test_every_band_has_a_label_and_moves_the_number(self):
+        # A guard over the whole table: no empty label, and no code whose
+        # bands all give the same number (that would be a typo, not a scale).
+        for table in (skill_scaling.VALUE, skill_scaling.DURATION):
+            for code, scaling in table.items():
+                with self.subTest(code=code):
+                    self.assertTrue(all(band.when for band in scaling.bands))
+                    self.assertGreater(len({band.apply(1.0) for band in scaling.bands}), 1)
 
     def test_duration_cooldown_and_wit_check(self):
         passive = describe(skill(effects=[slot([ability(1, 400000)], duration=-1, cooldown=0)],
@@ -226,9 +333,39 @@ class EffectTextTests(CalculatorTestCase):
         timed = describe(skill(effects=[slot([ability(27, 3500)], duration=24000, cooldown=300000)],
                                activate_lot=1), CONTEXT)
         self.assertEqual((timed["slots"][0]["duration"], timed["slots"][0]["cooldown"]),
-                         ("2.4 s", "30 s"))
+                         ("2.4 s per 1,000 m", "30 s per 1,000 m"))
         self.assertIs(timed["wit_check"], True)
         self.assertIsNone(describe(skill(), CONTEXT)["wit_check"])
+
+    def test_a_scaling_duration_names_its_range_and_basis(self):
+        # Code 3: HP left, x1 to x4 of the base time.
+        scaled = {**slot([ability(27, 1500)], duration=50000), "duration_usage": 3}
+        described = describe(skill(effects=[scaled]), CONTEXT)["slots"][0]
+        self.assertEqual(described["duration"], "5 to 20 s per 1,000 m, by HP left when it fires")
+        self.assertEqual(described["duration_scaling"]["rows"][0], {"when": "Under 2,000", "value": "5 s"})
+        # Code 4 adds a flat second per overtake, the same on an inherited copy.
+        overtakes = {**slot([ability(31, 500)], duration=12000), "duration_usage": 4}
+        self.assertEqual(describe(skill(effects=[overtakes]), CONTEXT)["slots"][0]["duration"],
+                         "1.2 to 4.2 s per 1,000 m, by overtakes while it lasts")
+        # A code nobody has explained keeps the mark, and no table.
+        unknown = {**slot([ability(27, 3500)], duration=24000), "duration_usage": 99}
+        unexplained = describe(skill(effects=[unknown]), CONTEXT)["slots"][0]
+        self.assertEqual(unexplained["duration"], "2.4 s per 1,000 m (varies)")
+        self.assertNotIn("duration_scaling", unexplained)
+
+    def test_two_slots_are_triggers_unless_the_second_waits_for_the_first(self):
+        # The game fires the first slot whose conditions hold: alternatives.
+        either = describe(skill(effects=[slot([ability(27, 3500)], condition="phase==1"),
+                                         slot([ability(27, 1500)], condition="phase==2")]), CONTEXT)
+        self.assertIs(either["chained"], False)
+        # A slot waiting on the other's firing makes them parts, one after the other.
+        chained = describe(skill(effects=[
+            slot([ability(27, 500)], condition="order==1"),
+            slot([ability(21, -500)], condition="phase==3&is_activate_other_skill_detail==1"),
+        ]), CONTEXT)
+        self.assertIs(chained["chained"], True)
+        self.assertIn("After Part 1 fires", texts(chained["slots"][1]["when"]["all"]))
+        self.assertTrue(chained["complete"])
 
     def test_a_skill_without_effects_still_reads_its_condition(self):
         described = describe(skill(condition="phase==1"), CONTEXT)
@@ -270,7 +407,8 @@ class CommittedSkillTextTests(CalculatorTestCase):
         self.assertFalse([item["text"] for item in self.phrases() if "—" in item["text"]])
 
     def test_most_skills_read_in_full(self):
-        # A floor, not a target: 79% on 2026-10-23. A table edit that breaks a
+        # A floor, not a target: 79% on 2026-10-23 (every skill, JP included,
+        # read 98% after the 2026-11-18 wording pass). A table edit that breaks a
         # common variable drops far below it.
         complete = sum(described["complete"] for described in self.described)
         self.assertGreaterEqual(complete / len(self.described), 0.75)
@@ -292,7 +430,7 @@ class SkillAdminTextTests(CalculatorTestCase):
         page = self.client.get(reverse("admin:calculatorapi_skill_change", args=[evolved.pk]))
 
         self.assertContains(page, "At a random moment mid-race")
-        self.assertContains(page, "Recovers 5.5% endurance; Velocity +0.15 m/s")
+        self.assertContains(page, "Recovers 5.5% endurance; Velocity +0.15")
         self.assertContains(page, "Rolls against Wit before it fires.")
         self.assertContains(page, "Special Week</a> (evolved, level 3)")
         self.assertContains(page, "Evolves from Gourmand")
@@ -302,6 +440,8 @@ class SkillAdminTextTests(CalculatorTestCase):
                              tier=2, condition="track_id==10006")
         Uma.objects.create(name="Silence Suzuka (Summer)", game_id=100202)
         context = skill_text.context_from_database()
-        self.assertEqual(context.racecourses, {10006: "Tokyo"})
+        # Global's racecourse skills name the Japanese courses; the overseas
+        # ones, which no Global skill names yet, come from OVERSEAS_RACECOURSES.
+        self.assertEqual(context.racecourses, {**skill_text.OVERSEAS_RACECOURSES, 10006: "Tokyo"})
         self.assertEqual(context.characters[1002], "Silence Suzuka")
         self.assertEqual(context.skill_names[200191], "Tokyo Racecourse ◎")

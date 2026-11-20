@@ -1,6 +1,9 @@
 import re
 
+from django.core.files.storage import default_storage
 from django.db import models
+
+from calculatorapi.webp_upload import as_webp
 
 # The six-digit card id at the front of an uma image filename
 # (`umas/102001-Seiun-Sky.png`). The optional leading `<digit>-` is the star
@@ -8,6 +11,14 @@ from django.db import models
 # of the id. Anchored at the start so a stray six-digit run elsewhere in a name
 # can never be mistaken for the id.
 IMAGE_GAME_ID = re.compile(r"^(?:\d-)?(\d{6})-")
+
+
+def layers_from_names(base_name, foreground_name):
+    """Uma.portrait_layers from the two stored file names, for a query that
+    reads columns rather than rows (views/skills.py). None unless both are set."""
+    if not (base_name and foreground_name):
+        return None
+    return {"base": default_storage.url(base_name), "foreground": default_storage.url(foreground_name)}
 
 
 def game_id_from_image(image_name):
@@ -102,11 +113,19 @@ class Uma(models.Model):
             "digits of the image filename. Editors rarely need to touch this."
         ),
     )
-    is_on_global = models.BooleanField(
-        default=False,
+    # When the outfit comes out on Global, by the game's own data: the first
+    # gacha that offers it or main story chapter that gives it in the global
+    # client (clamped to Global's launch), written by the import only. None
+    # for an outfit nothing in the client gives yet, or one it doesn't hold. May be AHEAD of today: the client ships
+    # outfits before their banners. One half of "on global"; the rule is
+    # calculatorapi/global_release.py, never compared by hand.
+    global_release_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        editable=False,
         help_text=(
-            "In the global client's data today. Set by the game-data import only: "
-            "the team builder reads it for a outfit on no banner."
+            "When the outfit comes out on Global, by the game's own data (may be ahead "
+            "of today). Set by the game-data import only."
         ),
     )
     image = models.ImageField(upload_to="umas/", blank=True, null=True)
@@ -121,6 +140,30 @@ class Uma(models.Model):
         null=True,
         verbose_name="borderless image",
         help_text="The same art without the rarity border. Optional.",
+    )
+    # The layered art (notes/layered-uma-art-plan.md): Daptrius's base portrait,
+    # then the site's own frame, then a foreground holding whatever sticks out
+    # past the frame (ears, hair, hats). Two more assets beside the borderless
+    # one, which stays for the frameless places. The site draws them only as a
+    # pair (`portrait_layers`). The foreground is the 392x420 canvas: the frame's
+    # 360 box plus 60 px of headroom and 16 px each side. Linked from game_id by
+    # `manage.py link_borderless_art --kind layers`; an upload becomes WebP.
+    image_layer_base = models.ImageField(
+        upload_to="umas_layered/base/",
+        blank=True,
+        null=True,
+        verbose_name="layered base",
+        help_text="The layered portrait's square base, drawn under the frame. Optional.",
+    )
+    image_layer_foreground = models.ImageField(
+        upload_to="umas_layered/foreground/",
+        blank=True,
+        null=True,
+        verbose_name="layered foreground",
+        help_text=(
+            "What sticks out past the frame, drawn over it: the 392x420 export from "
+            "the same set as the base. Shown only when both are set."
+        ),
     )
     admin_comments = models.TextField(blank=True, null=True, help_text="Notes for editors.")
 
@@ -193,6 +236,57 @@ class Uma(models.Model):
     growth_power = _game_int("Power growth bonus, percent.")
     growth_guts = _game_int("Guts growth bonus, percent.")
     growth_wit = _game_int("Wit growth bonus, percent.")
+    # Every star level's stats, not only the initial one the base_* columns
+    # hold: the Encyclopedia's uma page switches between them (owner,
+    # 2026-11-12). One JSON list rather than fifteen more columns, because
+    # nothing filters or sorts by it: it is read whole with its outfit.
+    # [{"star": 3, "speed": 83, "stamina": 88, ...}, ...], ascending, one entry
+    # per star level the game lists (★1 outfits have five, ★3 outfits three).
+    # Global's when the outfit is out there, else the JP client's.
+    star_stats = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Stats at every star level, from the game-data import.",
+    )
+    # The JP client's own name and title, shown beside the English ones on the
+    # Encyclopedia page. From the JP snapshot for every outfit it holds, global
+    # ones included. Blank when the import ran without it.
+    jp_name = models.CharField(
+        max_length=100, blank=True, default="", verbose_name="JP name",
+        help_text="The character's name in the JP client, e.g. スペシャルウィーク.",
+    )
+    jp_title = models.CharField(
+        max_length=100, blank=True, default="", verbose_name="JP title",
+        help_text="The outfit's title in the JP client, e.g. [スペシャルドリーマー].",
+    )
+    # UmaTL's English title (scripts/data/umatl/), written by the import for
+    # every id the JP snapshot holds. Shown only while `title` is blank: Global's
+    # title and an editor's both win, and the page credits UmaTL when it shows
+    # (`uses_translated_title`). Never read by an AI feature (UmaTL's terms).
+    translated_title = models.CharField(
+        max_length=100, blank=True, default="",
+        help_text="UmaTL's English title, shown only while title is blank. Import-owned.",
+    )
+    # The character's career goals on the default route, as the game files
+    # state them (scripts/data/master_snapshot/objectives.json). The game keys
+    # them by CHARACTER; with no character row to hold them, the import writes
+    # the same list to each of her outfits. Every kind is kept; the API shows
+    # only the ones it can word (calculatorapi/career.py).
+    career_objectives = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Career goals from the game-data import, in order.",
+    )
+
+    @property
+    def shown_title(self):
+        """The title a reader sees: Global's or an editor's, else UmaTL's."""
+        return self.title or self.translated_title
+
+    @property
+    def uses_translated_title(self):
+        """Does the shown title come from UmaTL (so the page credits it)?"""
+        return not self.title and bool(self.translated_title)
 
     @property
     def character_id(self):
@@ -295,6 +389,25 @@ class Uma(models.Model):
         shows.
         """
         return self.image_borderless or self.image
+
+    @property
+    def portrait_layers(self):
+        """The layered art as {"base": url, "foreground": url}, or None.
+
+        Only when BOTH files are set: a foreground lines up only with the base
+        from the same export, so half a pair never reaches a page (the site
+        then draws `portrait` as before). The URLs are storage URLs, the same
+        ones an ImageField serializer gives without a request in its context.
+        """
+        # str() of a FieldFile is its stored name ("" when unset).
+        return layers_from_names(str(self.image_layer_base or ""), str(self.image_layer_foreground or ""))
+
+    def save(self, *args, **kwargs):
+        # A PNG uploaded to either layer is stored as lossless WebP
+        # (webp_upload.py). Files picked from storage are left alone.
+        as_webp(self.image_layer_base)
+        as_webp(self.image_layer_foreground)
+        super().save(*args, **kwargs)
 
     @property
     def is_three_star(self):

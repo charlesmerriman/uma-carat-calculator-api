@@ -347,6 +347,7 @@ in that module).
   "anniversary_event_data":      [ AnniversaryEvent ],
   "scenario_data":               [ Scenario ],
   "daily_legend_race_data":      [ DailyLegendRaceRelease ],
+  "story_event_data":            [ StoryEvent ],
   "user_planned_purchase_data":  [ UserPlannedPurchase ],
   "user_step_up_selection_data": [ UserStepUpSelection ],
   "income_ledger":               [ IncomeLedgerRow ],
@@ -356,7 +357,7 @@ in that module).
 
 `user_stats_data` is the **active plan's** stats: the account's own, or, when that plan has `separate_income` on, its income profile's. Same shape either way (`Plan.income_profile_id` says which). `user_planned_purchase_data` follows the same rule: the purchases of that same stats block. Step-up selections are the account's whichever plan is open.
 
-`user_planned_banner_data`, `banner_uma_data`, `banner_support_data`, `champions_meeting_data`, `league_of_heroes_event_data`, `events_data`, `anniversary_event_data`, `scenario_data`, `daily_legend_race_data` and `user_planned_purchase_data` are all ordered by each row's **resolved** (confirmed-or-predicted) global start date, sorted server-side in Python since predicted dates aren't a DB column.
+`user_planned_banner_data`, `banner_uma_data`, `banner_support_data`, `champions_meeting_data`, `league_of_heroes_event_data`, `events_data`, `anniversary_event_data`, `scenario_data`, `daily_legend_race_data`, `story_event_data` and `user_planned_purchase_data` are all ordered by each row's **resolved** (confirmed-or-predicted) global start date, sorted server-side in Python since predicted dates aren't a DB column.
 
 ---
 
@@ -707,7 +708,7 @@ These endpoints return static rank tables. All are public and support `list` and
 | `GET /changelog` | Patch-note entries (newest first) with nested, ordered change lines |
 | `GET /site-content` | The admin-editable pages (About, the Daily Legend Races intro, the PvP guides intro, ...) and the whole FAQ, in one object — **not** an array, see below |
 | `GET /supporters` | Patreon thank-you list — **not** an array, see below |
-| `GET /umas` | The uma catalogue as picker options: `{ id, name, image, is_variant }`, **`Uma.pickable()` only** (with an image, minus the `(All)` placeholder), sorted by name. The same list for everyone; `is_variant` flags costume variants, which only supporters and staff may add (`oshi_variants` on `GET /account`). `image` is the uma's portrait: the borderless art (`Uma.image_borderless`) when the row has it, else the bordered card art; the oshi rows and `avatar_url` on `GET /account` follow the same rule (`Uma.portrait`). Feeds the oshi picker on `/account`, which never loads `/calculator-data`. Nothing else from the uma row (no `admin_comments`, no selector gates). |
+| `GET /umas` | The uma catalogue as picker options: `{ id, name, image, portrait_layers, is_variant }`, **`Uma.pickable()` only** (with an image, minus the `(All)` placeholder), sorted by name. The same list for everyone; `is_variant` flags costume variants, which only supporters and staff may add (`oshi_variants` on `GET /account`). `image` is the uma's portrait: the borderless art (`Uma.image_borderless`) when the row has it, else the bordered card art; the oshi rows and `avatar_url` on `GET /account` follow the same rule (`Uma.portrait`). Feeds the oshi picker on `/account`, which never loads `/calculator-data`. Nothing else from the uma row (no `admin_comments`, no selector gates). |
 
 All list responses return an array of the resource object, **except `/supporters`** (an object — the anonymous count is not derivable from the rows) **and `/site-content`** (an object with two halves; it is a plain view, not a viewset). Retrieve by appending `/<id>`; `/supporters` and `/site-content` have no retrieve action.
 
@@ -747,9 +748,18 @@ also carries:
 `availability` (`"global"`, `"announced"`, `"jp"`: the site tags `"jp"` as "JP only");
 `uses_translation` (true when the name or description shown is UmaTL's: the site credits
 UmaTL); `readable` (when it fires and what it does, `skill_text.describe`: `{"wit_check",
-"complete", "slots": [{"after", "when", "effects", "duration", "cooldown"}]}`, each
+"complete", "chained", "slots": [{"after", "when", "effects", "duration", "cooldown"}]}`, where
+`chained` is true when a later slot waits for the first to fire (the page calls the slots Part
+1, 2; otherwise they are alternatives, Trigger 1, 2), and a timed
+`duration` and a repeating `cooldown` are the game's base values per 1,000 m of race
+("2.4 s per 1,000 m": the game scales both by the race's length); each
 condition `{"all": [phrase], "any": [[phrase]]}`, each phrase `{"text", "raw"}` where `raw`
-is the game's own code, not yet translated); and `sources` (`{"umas": [{"name", "source",
+is the game's own code, not yet translated). A number or duration that scales
+(`skill_scaling.py`) reads as a range and what it depends on ("Velocity +0.28 to +0.42, by
+fan count", "5 to 20 s per 1,000 m, by HP left when it fires"), and carries its bands for the
+skill page's table: `scaling` on the effect phrase, `duration_scaling` on the slot, each
+`{"heading", "rows": [{"when", "value"}]}`; a scaling code nobody has explained yet ends
+"(varies)" with no table. And `sources` (`{"umas": [{"name", "source",
 "level", "on_global"}], "uma_count", "cards": [{"name", "source", "on_global"}],
 "card_count"}`, at most 4 of each, on-global first). A `[[mention]]` resolves by global's
 name, the translation, or an old name kept as an alias, keyed by the name as written. **A guide names one version of a skill per row; the other versions ride along.**
@@ -764,8 +774,9 @@ stored. The team builder counts a source that teaches the pick or a HIGHER versi
 that teaches the gold teaches the white too, so a gold on the team covers a white pick and
 a white never covers a gold (owner, 2026-10-14); an evolved pick is covered by its base,
 which is what gets evolved. `style` values: `everyone`, `runaway`, `front`, `pace`, `late`, `end` (never
-`everyone` on an uma). `category`: `acceleration`, `speed`, `green`, `recovery`,
-`debuff`, `other`. Stat values are short TEXT as the guide writes them (`"1100+"`, `"578*"`), `""` where it gives none. Text fields are
+`everyone` on an uma). `category`: `acceleration`, `early_mid` (Early-Race / Mid-Game), `late`
+(Late-Race), `speed`, `green`, `recovery`, `debuff`, `other` (the sheet's ungrouped list, read as
+"Core skills"); every one stays pickable, and the reader hides a group with no skills. Stat values are short TEXT as the guide writes them (`"1100+"`, `"578*"`), `""` where it gives none. Text fields are
 markdown (`short_description`, `meta_analysis`, style note `body`) or one-line notes; both
 may hold `==highlight==` spans the client renders red.
 
@@ -784,8 +795,9 @@ may hold `==highlight==` spans the client renders red.
                                            "front": 8, "pace": 6, "late": 2, "end": 1},
                                    "unique": {"id": 210, "name": "Lead the Pack", "image": "url | null"}}}],
   "skill_recommendations": [{"style": "front", "category": "acceleration", "tier": 0, "order": 0, "note": "",
-      "skill": {"id": 210, "name": "Lead the Pack", "description": "string", "image": "url | null",
+      "skill": {"id": 210, "game_id": 100021, "name": "Lead the Pack", "description": "string", "image": "url | null",
                 "rarity": 5, "unique_of": "Maruzensky", "is_inherited": false, "version": "○ white", "tier": 1, "is_evolved": false,
+                "cost": null, "type": "velocity",
                 "versions": [{"id": 211, "name": "Lead the Pack ◎", "description": "string", "image": "url | null",
                               "rarity": 2, "tier": 2, "version": "◎ gold", "is_evolved": false}]}}],
   "style_notes": [{"style": "front", "body": "markdown"}],
@@ -907,7 +919,8 @@ refusal with no field has `""`.
 ### `GET /skills` and `GET /skills/<game_id>`
 
 Every skill a player may read about (`views/skills.py`): the Skills page and the guide
-editor's picker. Public, cached as rendered bytes in the `skills` cache alias
+editor's picker. **Public** since 2026-11-18 (supporters and staff had it first, from
+2026-11-12). Cached as rendered bytes in the `skills` cache alias
 (`skills_cache.py`, a new generation on any write to the skill, alias, condition, junction,
 uma or card tables). Keyed by the game's skill id, the same in every database.
 
@@ -915,16 +928,114 @@ uma or card tables). Keyed by the game's skill id, the same in every database.
 skill with a name: global's, UmaTL's, or the Japanese one when it has neither; Japanese
 names sort last):
 `id`, `game_id`, `name`, `image`, `rarity`, `tier`, `group_id`, `version`, `is_evolved`,
-`availability`, `uses_translation`, and `other_names` (`Skill.search_names`: the translation
-when global's name is shown, every alias including GameTora's names, the Japanese name when
-it isn't the shown one), for search.
+`availability`, `uses_translation`, `cost` (null for a unique), `type` (the Type filter's
+key, `skill_types.py`: the icon family, e.g. `velocity`, `recovery`, `scenario`; a sub-type as
+its parent plus a suffix, `stat_speed` ... `stat_several` and `debuff_speed` ...
+`debuff_vision`; `current_speed` for a Speed-family skill that raises its runner's current
+speed; `other` for an unplaced icon), `tags` (the condition and effect filters' keys,
+`skill_tags.py`, sorted: when `early` ... `final-straight`, `uphill`, `downhill`; the race
+`sprint` ... `long`, `turf`, `dirt`; a strategy the skill asks for, `front-runner` ...
+`end-closer`; what it does, `speed`, `current-speed`, `accel`, `recovery`, `stats`, `vision`,
+`navigation`, `debuff`; read off the parsed condition and the ability types, never the
+English), `owners` (the
+outfits a unique, its inherited copy or an evolution belongs to, for search), `owner_umas`
+(the same outfits as rows a page can draw: `id`, `game_id`, `name`, `portrait`), `pair` (the
+game id of a unique's inherited copy or the copy's unique, else null), and `other_names`
+(`Skill.search_names`: the translation when global's name is shown, every alias including
+GameTora's names, the Japanese name when it isn't the shown one), for search.
 
-`GET /skills/<game_id>` is one skill in full: the list fields plus `description`, `readable`
-(as on a guide), `sources` (every outfit and card: `id`, `name`, `game_id`, `image`,
-`source`, `level` for an outfit, `on_global`; on-global first), `evolution` (`from` and
-`into` as list rows, `conditions` as `[{"text", "uses_translation", "is_japanese"}]`,
-`scenario`), and `versions` (its forms on global, as on a guide). 404 for a skill with no
+`GET /skills/<game_id>` is one skill in full: the list fields (with `pair` as a list row
+instead of an id) plus `colours` (`[main, sub]` when the skill belongs to ONE character, the
+game's pair for her from `character_colours.py`; else null), `description`, `readable`
+(as on a guide), `raw_conditions` (`[{"after", "when"}]`, the game's own precondition and
+condition strings per slot in `readable.slots`' order, for the page's Detailed view; not on a
+guide), `sources` (every outfit and card: `id`, `name`, `game_id`, `image`,
+`source`, `level` for an outfit, `title`, `image_borderless`, `rarity` and `card_type` for a
+card, `on_global`, and `via`: null, or on a ◎ white the ○'s name when the row gives the ○,
+whose hint counts for the ◎ too;
+on-global first), `evolution` (`from` and `into` as list rows, `into` in release order
+(out on global first, then game id), each `into` row with the
+`owners` and `owner_umas` that evolve it, `conditions` as `[{"text", "uses_translation", "is_japanese"}]`,
+`scenario`), and `versions` (its forms on global, as on a guide, less the `from` and `into`
+rows already shown). 404 for a skill with no
 name at all, or no such id.
+
+### `GET /encyclopedia/umas/<game_id>` and `GET /encyclopedia/cards/<game_id>`
+
+One outfit's or one support card's Encyclopedia page (`views/encyclopedia.py`), keyed by
+the game's id. Public, like `/skills`, with the same cache alias and
+generation (`skills_cache.read_page`). **No dates and no banners**: the client reads them
+from `/calculator-data`, so date prediction stays in one place; `id` (the row's pk) is
+sent so it can find them there and in the Collection. Never `admin_comments`.
+
+- **Both pages:** `colours` is the character's two colours from the game files, `[main, sub]`
+  as `#RRGGBB` (`character_colours.py`), or null when the files hold none for her (and always
+  null on a group card, which stands for several characters). `title` is the shown one (Global's or an editor's, else UmaTL's), and
+  `uses_translation` is true when anything on the page is UmaTL's fan translation (a title,
+  a row's title, a unique effect sentence, a race name), so the page credits UmaTL.
+  `title_translated` is true when the page's OWN `title` is UmaTL's: the web leaves that
+  title out of the page's search title and description, which can't carry the credit. Each
+  `outfits` / `cards` row carries `title_translated` too.
+- **Uma** (trainees only, `Uma.trainees()`; 404 for a casual outfit or an NPC): `id`,
+  `game_id`, `name`, `title`, `uses_translation`, `jp_name`, `jp_title`, `portrait`, `image`, `rarity`,
+  `running_style`, `on_global`, `purpose`, `apt` / `base` / `growth` (keyed objects),
+  `star_stats`, `objectives` (her goals in order: `turn`, `when` "Classic Year, Early Feb", `kind`
+  "race" / "fans" / "placings", `race`, `grade` G1 to OP or null, `need` "Win" / "Top 5" / "Run it";
+  a "fans" or "placings" goal carries its whole sentence in `race` ("Get 3,000 fans", "Place 3rd
+  or better in 2 G1 races") with a null `grade` and an empty `need`; career.py) and `objectives_hidden`
+  (goals of kinds not decoded yet), `skills` (the `/skills` list row plus `source`, `level`, `cost`,
+  `evolves_from` as a game id, and `conditions`, an evolution's unlock conditions in the
+  skill page's shape, empty for any other row, and a unique skill's `description`; unique,
+  innate, awakening by rank (2 to 5, and 6 and 7 where JP has them), then evolutions in release
+  order, out on global first), `outfits` (the
+  character's other outfits), `cards` (her own cards and every group card listing her; each
+  row carries `image_borderless` beside `image`, so the page frames the card itself).
+- **Card** (404 for a placeholder): `id`, `game_id`, `name`, `title`, `jp_name`,
+  `jp_title`, `image`, `image_borderless`, `card_type`, `rarity`, `character_id`,
+  `on_global`, `released_at`, `group_members`, `purpose`, `effects` (its training effects in the
+  order it gains them: `type`, `name`, `help`, `format` "percent" / "number" / "level", `unlock`
+  the first level it has the effect, `values` one per level from 1 to its top cap with `null`
+  before `unlock`), `caps` (its level cap at each limit break, 0 to 4), `unique_effect`
+  (`{"level", "text", "translated", "from_amounts", "amounts", "multiplies"}` or `null`; `text`
+  is the game's sentence, else UmaTL's (`translated` true), else the parts' own lines
+  (`from_amounts` true: the numbers are already in it); `amounts` lists each part as `type`
+  (null for one that isn't an effect type), `name`, `value` (the most it gives), `format`,
+  `condition` ("Friendship Gauge 80+" or null), `line` (the phrase to show, e.g. "Training
+  Effectiveness 1% per 10,000 fans, up to 20%") and `scope` ("card", or "deck" for an effect on
+  other cards), or `null` when a part can't be read yet; `multiplies` names the effects, of
+  Friendship Bonus and Specialty Priority, that it multiplies with the card's own instead of adding
+  to; support_effects.py, notes/unique-effects-plan.md), `skills` (hints, then events),
+  `outfits` (a group card's are its members'), `cards` (the character's other cards; `[]`
+  on a group card).
+
+### `GET /encyclopedia/card-effects`
+
+Every game card's effects, for the card list's "By effect" sort (notes/card-effect-sort-plan.md).
+Public, with the same cache as the pages. `types` lists every effect
+type any card has (`type`, `name`, `format`), in type order. `cards` is keyed by the card's pk (the
+list's id from `/pvp-catalogue`): `caps` (the level cap at limit break 0 to 4), `effects` (type to
+its value at each of those caps, `null` before it unlocks; `support_effects.at_caps`) and `unique`
+(`level`, `values`: type to the most the unique gives the card itself, deck effects left out,
+`conditional`: true when a part no reader can read was left out; null for no unique). A card with no effects is left out.
+
+```json
+{"types": [{"type": 19, "name": "Specialty Priority", "format": "number"}],
+ "cards": {"42": {"caps": [30, 35, 40, 45, 50], "effects": {"19": [20, 25, 30, 35, 35]},
+                  "unique": {"level": 30, "values": {"19": 40}, "conditional": false}}}}
+```
+
+### `GET /encyclopedia/index`
+
+The game id of every Encyclopedia page that exists, per kind, in id order. Public, with the
+same cache as the pages, so a new uma, card or skill joins it on the write. The web's build
+reads it to know which documents to write and which URLs go in its sitemap
+(notes/encyclopedia-open-plan.md). It lists exactly what the page routes serve: the same
+querysets (`views/encyclopedia._uma_pages`, `_card_pages`, and `Skill.objects.shown()`), so
+an id here never 404s.
+
+```json
+{"umas": [100101, 100102], "cards": [20001, 30001], "skills": [100011, 200011]}
+```
 
 ### `GET /pvp-catalogue`
 
@@ -932,7 +1043,11 @@ The team builder's catalogue (`views/pvp_catalogue.py`). Public, the same for ev
 **cached** in `pvp_catalogue_cache.py` (key `pvp_catalogue:v4`, TTL 300, dropped by any
 save or delete of an Uma, SupportCard, Skill, SkillAlias, UmaSkill or SupportCardSkill; the same
 one-process caveat as `/calculator-data`). About 540 KB raw, 50 KB gzipped; the client
-fetches it once, when a picker first opens.
+fetches it once, when a picker first opens. Beside `umas`, `support_cards` and `skills` it
+carries `character_colours`: `{"1006": ["#3A7AD2", "#ECE7E7"], ...}`, every character's two
+colours from the game files, looked up by an uma's or a card's `character_id`, and
+`skill_count`, how many skills `GET /skills` lists (JP-only ones included), for the
+Encyclopedia's Skills tab.
 
 ```json
 { "umas": [{"id": 41, "name": "Maruzensky", "game_id": 100101, "image": "url", "portrait": "url",
@@ -942,7 +1057,8 @@ fetches it once, when a picker first opens.
             "skills": [{"skill": 210, "source": "unique", "level": 1}]}],
   "support_cards": [{"id": 302, "name": "Kitasan Black", "game_id": 30086, "image": "url",
                      "image_borderless": "url | null", "card_type": "speed",
-                     "rarity": 3, "title": "[Fire at My Heels]", "group_members": [], "on_global": true,
+                     "rarity": 3, "title": "[Fire at My Heels]", "character_id": 1068,
+                     "group_members": [], "on_global": true,
                      "released_at": "2026-03-12T00:00:00+00:00",
                      "skills": [{"skill": 88, "source": "hint"}]}],
   "skills": [{"id": 88, "name": "Groundwork", "description": "string", "image": "url | null",
@@ -957,7 +1073,9 @@ are never displayed), and the Japanese name.
 
 `umas` is `Uma.pickable()` (with a picture, no `(All)`); `support_cards` is every card
 with art. `released_at` is `SupportCard.global_release_at`, null for a card not out on Global: the
-Collection's Release date sort reads it, and selectors never do. `skills` holds skills on global only, and a uma's or card's skill link to any
+Collection's and the Encyclopedia's Release date sorts read it, and selectors never do. A card's
+`character_id` is the game's 4-digit character (null when unknown), the same number an uma's
+`game_id` starts with; the Encyclopedia's search matches it. `skills` holds skills on global only, and a uma's or card's skill link to any
 other skill is left out. Aptitudes are 1..8 = G..S, `null` when not imported. A uma's
 `source` is `unique` / `innate` / `awakening` / `evolved` (`level` means different things
 per source, `models/uma_skill.py`); a card's is `hint` / `event`. `on_global`: the card is in the
@@ -1093,7 +1211,7 @@ from 20 races, 2 from 100, 3 from 300.
 
 The Rankings page's Players tab, same gate and cache: the admin analytics among engaged
 accounts, staff out, as shares of them (that total is never sent). `favourites` (uma id,
-share), `ranks` (Team Trials and club rank: the share who set one, and each rank's share of
+`people`: a COUNT, the one list that sends one, by the owner's call of 2026-11-13), `ranks` (Team Trials and club rank: the share who set one, and each rank's share of
 them, no "Not set" row), `income` (the share with each income option on, and `default_on`:
 where a new account starts), `budget` (per Team Trials class, highest first: the MEDIAN
 carats held and pulls planned, a class of one never shown), `selectors` (per campaign
@@ -1103,7 +1221,7 @@ selector: `buyers` of every player, `picked` of the buyers, the top five picks, 
 
 ```json
 { "generated_at": "...",
-  "favourites": [{"uma": 41, "share": 0.06}],
+  "favourites": [{"uma": 41, "people": 12}],
   "ranks": [{"label": "Team Trials", "share": 0.75, "rows": [{"name": "Class 6", "share": 0.38}]}],
   "income": [{"key": "daily_carat", "label": "Daily Carat Pack", "share": 0.42, "default_on": false}],
   "budget": [{"name": "Class 6", "carats": 24000, "pulls": 150}],
@@ -1250,9 +1368,12 @@ What a signed-in player owns, for the Collection's Umas and Support cards tabs
 | `POST /roster/import` | `{umas?: [{uma, stars?, talent_level?, game_data?}], support_cards?: [{support_card, limit_break, spare_copies?, game_data?}]}`, plain or gzipped | `{umas?: counts, support_cards?: counts, roster}`, counts `{added, updated, removed}` per list sent |
 | `DELETE /roster/umas`, `DELETE /roster/support-cards` | | the roster, that list emptied (start over) |
 
-`uma` = `{uma, stars, talent_level, source, obtained_at}`; `card` = `{support_card,
+`uma` = `{uma, stars, talent_level, source, obtained_at, hint_levels}`; `card` = `{support_card,
 limit_break, spare_copies, source, obtained_at}`. Stars and potential are 1..5 (null when not
-set), a limit break 0..4 (4 is MLB), `spare_copies` the game's `stock`. **The file is the
+set), a limit break 0..4 (4 is MLB), `spare_copies` the game's `stock`. `hint_levels` is
+`{skill game id: level}` (string keys) read from an imported uma's `skill_data_array`: the
+hint levels the game keeps on each owned outfit for her own innate and awakening skills,
+shown on her Encyclopedia page. `{}` for a hand-ticked uma; malformed entries are skipped. **The file is the
 truth** (owner, 2026-10-26): each list an import sends REPLACES that table, hand edits
 included, and removes every row the file lacks; a list left out of the request is untouched.
 The player edits afterwards. `source` says where a row's values last came from. An imported
@@ -1807,6 +1928,8 @@ never on which fields happen to be set.
   "max_quantity": 10,
   "jp_cutoff_date": "2024-01-31",
   "jp_cutoff_date_override": null,
+  "opens_with_part": null,
+  "opens_at": "2026-12-01T22:00:00Z",
   "order": 1
 }
 ```
@@ -1817,6 +1940,10 @@ Decimal-as-string, so the client can do arithmetic on them directly.
 `jp_cutoff_date` is already resolved against the campaign's — the client never has to
 reimplement the fallback. `jp_cutoff_date_override` exposes the product's own value and
 is `null` when the cutoff came from the campaign.
+
+`opens_at` is the instant the product's paid carats credit: the start of part
+`opens_with_part` when that part is linked and dated, else the campaign's
+`main_start_date`. `opens_with_part` is the editor's raw value (`null` = the main part).
 
 ### `UserPlannedPurchase` (from `user_planned_purchase_data`)
 
@@ -1883,7 +2010,7 @@ editor narrowing a cutoff cannot 400 a plan its owner never touched.
   "is_recommended": false,
   "admin_comments": "string | null",
   "banner_timeline": { "id": 1, "name": "string", "start_date": "ISO8601", "end_date": "ISO8601", "is_predicted": false, "jp_start_date": "ISO8601 | null", "jp_end_date": "ISO8601 | null", "global_start_date": "ISO8601 | null", "global_end_date": "ISO8601 | null", "image": "url | null" },
-  "umas": [ { "id": 1, "name": "string", "image": "url | null", "portrait": "url | null", "admin_comments": "string | null", "purpose": "string", "first_jp_date": "ISO8601 | null", "is_time_limited": false, "is_three_star": true, "rarity": "1 | 2 | 3 | null" } ],
+  "umas": [ { "id": 1, "name": "string", "image": "url | null", "portrait": "url | null", "admin_comments": "string | null", "purpose": "string", "first_jp_date": "ISO8601 | null", "is_time_limited": false, "is_three_star": true, "rarity": "1 | 2 | 3 | null", "game_id": "int | null" } ],
   "rate_up_picks": "int | null",
   "rate_overrides": { "<uma id>": 0.005 }
 }
@@ -1894,6 +2021,16 @@ borderless cut when the row has one, else the same bordered art. The site draws 
 `portrait` inside a frame of its own (frontend `FramedUma`); `image` stays for anything
 that still wants the game's frame. Every uma on `/calculator-data` carries both, the Daily
 Legend Races ones included.
+
+**`portrait_layers`** rides beside `portrait` on every route that sends it: `{"base": url,
+"foreground": url}` or `null` (`Uma.portrait_layers`, notes/layered-uma-art-plan.md). The
+layered art: a square base, the site's frame over it, then a foreground on a canvas a sixth
+taller (above) and 16/360 wider each side, drawn over the frame. Only a full pair is sent;
+a framed uma draws it in place of `portrait`, a frameless one never does. The same key is on
+the PvP catalogue and guide umas, the Daily Legend Races umas, the Encyclopedia's uma page
+and outfit rows, the skill pages' umas, and the gallery `poster`. `GET /umas` rows,
+`GET /account`'s `oshis` (as `layers`) and the profile card's `favorites` (as `layers`)
+carry it too, and `GET /account` sends `avatar_layers` beside `avatar_url`.
 
 `rarity`, `rate_up_picks` and `rate_overrides` are the **inputs to the rate-up rule** the
 client applies (`data-model.md`, "Rate-up rates"). `rarity` is the game's star count, null
@@ -1911,6 +2048,10 @@ panel its SSR treatment; no projection reads it.
 characters), rendered as the overlay on its Timeline tile. Never `null` — `""` means none.
 Unlike the per-banner `recommendation` on `banner_timeline_data`'s cards, it describes the
 card itself, so it is identical on every banner the card appears on.
+
+`game_id` on a nested uma or support card is the key of its Encyclopedia page
+(`/app/umas/<game_id>`, `/app/cards/<game_id>`), which the Timeline's tiles link to. `null`
+until the card is imported, and always `null` for a placeholder card, which has no page.
 
 `first_jp_date` on a nested uma or support card is the earliest JP banner it appeared
 on, derived server-side (never stored) and the key the **temporal** half of selector
@@ -1934,7 +2075,7 @@ including one with a `null` (unrestricted) cutoff. A client must check both halv
   "is_recommended": false,
   "admin_comments": "string | null",
   "banner_timeline": { ... },
-  "support_cards": [ { "id": 1, "name": "string", "image": "url | null", "admin_comments": "string | null", "purpose": "string", "first_jp_date": "ISO8601 | null", "rarity": "1 | 2 | 3 | null" } ],
+  "support_cards": [ { "id": 1, "name": "string", "image": "url | null", "admin_comments": "string | null", "purpose": "string", "first_jp_date": "ISO8601 | null", "rarity": "1 | 2 | 3 | null", "game_id": "int | null" } ],
   "rate_up_picks": "int | null",
   "rate_overrides": { "<support card id>": 0.005 }
 }
@@ -2012,6 +2153,50 @@ Reward amounts are fields on the event itself (no separate reward model/list).
   "sr_crystal_amount": 0,
   "ssr_shard_amount": 0,
   "ssr_crystal_amount": 0
+}
+```
+
+### `StoryEvent` (from `story_event_data`)
+
+A story event and the free cards it gives, for the Timeline row under its banner. **Display
+only**: the income ledger never reads it (that is `GameEvent`), and its cards never reach
+selector eligibility. Only events linked to a banner are sent.
+
+- `name` is the name a player reads: Global's, else the editors' working name, else `""`
+  (the client says "Story event"). The Japanese name is never sent.
+- Dates are the game's own once Global has run the event (`is_predicted: false`), else the
+  linked banner's resolved window (with its `is_predicted`). `claim_end_date` is the last
+  moment to claim rewards: the game's, else `end_date` + 3 days
+  (`predictions.STORY_EVENT_CLAIM_DAYS`).
+- Rewards are the event's own, not its banner window's income.
+- Each card's `title` is Global's only, never UmaTL's (it would need a credit line); a card
+  Global hasn't titled sends `""`. `game_id` is null for a placeholder. There is no
+  `first_jp_date` on purpose. Every event gives five copies of each card, so no count is sent.
+
+```json
+{
+  "id": 1,
+  "game_id": 1022,
+  "name": "Sweet Memories Teatime",
+  "image": "url | null",
+  "banner_timeline": 72,
+  "start_date": "ISO8601 | null",
+  "end_date": "ISO8601 | null",
+  "claim_end_date": "ISO8601 | null",
+  "is_predicted": false,
+  "applied_offset_days": 0,
+  "carat_amount": 2160,
+  "uma_ticket_amount": 2,
+  "support_ticket_amount": 2,
+  "ssr_shard_amount": 3,
+  "sr_shard_amount": 3,
+  "cards": [
+    {
+      "id": 412, "name": "Hishi Akebono", "title": "[Fondente Smile]",
+      "image": "url | null", "rarity": 3, "purpose": "", "game_id": 30133,
+      "must_get": false, "note": ""
+    }
+  ]
 }
 ```
 

@@ -8,10 +8,14 @@ DELETE /roster/support-cards   the same for cards.
 All IsAuthenticated, account only (the Collection page shows a guest a
 sign-in card). Rules: roster.py; what a row is: models/roster.py.
 
-On the wire (catalogue ids only):
+On the wire (catalogue ids, except one):
 
-    uma:  {uma, stars, talent_level, source, obtained_at}
+    uma:  {uma, stars, talent_level, source, obtained_at, hint_levels}
     card: {support_card, limit_break, spare_copies, source, obtained_at}
+
+`hint_levels` is {skill GAME id: level}, keyed by the game's id because that is
+how the Encyclopedia's skills are keyed; {} for a hand-ticked uma or an export
+without them (roster.hint_levels).
 
 A PATCH change is {uma | support_card, owned: bool, ...the columns to set};
 `owned: false` removes the row. Every change in one request applies or none
@@ -115,7 +119,8 @@ def serialize_roster(user):
     return {
         "umas": [
             {"uma": row.uma_id, "stars": row.stars, "talent_level": row.talent_level,
-             "source": row.source, "obtained_at": row.obtained_at}
+             "source": row.source, "obtained_at": row.obtained_at,
+             "hint_levels": roster.hint_levels(row.skill_hints)}
             for row in roster.owned_umas(user)
         ],
         "support_cards": [

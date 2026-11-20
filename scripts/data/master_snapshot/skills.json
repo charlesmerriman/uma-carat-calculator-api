@@ -2951,6 +2951,56 @@
   ]
  },
  {
+  "id": 100651,
+  "name": "Hands in the Air Like Ya Don't Care!",
+  "description": "Moderately crank the velocity when vibing toward the front sometime upon approaching late-race. If it's like a sprint or mile race or smth, moderately crank the velocity CONTINUOUSLY!",
+  "rarity": 5,
+  "group_id": 10065,
+  "group_rate": 1,
+  "icon_id": 20013,
+  "skill_category": 5,
+  "cost": null,
+  "precondition_1": "",
+  "condition_1": "distance_type==1&phase_laterhalf_random==1&order_rate<=50@distance_type==2&phase_laterhalf_random==1&order_rate<=50",
+  "precondition_2": "",
+  "condition_2": "distance_type==3&phase_laterhalf_random==1&order_rate<=50@distance_type==4&phase_laterhalf_random==1&order_rate<=50",
+  "activate_lot": 0,
+  "effects": [
+   {
+    "duration": 60000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 27,
+      "value": 2500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   },
+   {
+    "duration": 50000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 27,
+      "value": 2500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
   "id": 100671,
   "name": "Eternal Encompassing Shine",
   "description": "If well-positioned at the start of the final straight, her strong willpower to win increases velocity. If positioned near the front, greatly increase velocity instead.",
@@ -4450,6 +4500,65 @@
   ]
  },
  {
+  "id": 110271,
+  "name": "A Warm Cup for You",
+  "description": "Increase velocity for a moderate duration when 2nd or worse and within 4 lengths of the lead on a downhill just before late-race. If the race is medium, also very slightly increase acceleration.",
+  "rarity": 5,
+  "group_id": 11027,
+  "group_rate": 1,
+  "icon_id": 20013,
+  "skill_category": 5,
+  "cost": null,
+  "precondition_1": "",
+  "condition_1": "distance_rate>=60&slope==2&phase==1&order>=2&distance_diff_top<=10&distance_type==3",
+  "precondition_2": "",
+  "condition_2": "distance_rate>=60&slope==2&phase==1&order>=2&distance_diff_top<=10&distance_type!=3",
+  "activate_lot": 0,
+  "effects": [
+   {
+    "duration": 40000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 27,
+      "value": 3500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     },
+     {
+      "type": 31,
+      "value": 1000,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   },
+   {
+    "duration": 40000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 27,
+      "value": 3500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
   "id": 110301,
   "name": "Every Rose Has Its Fangs",
   "description": "Drain endurance from runners in front and moderately increase velocity when well-positioned mid-race.",
@@ -4491,6 +4600,49 @@
      {
       "type": 27,
       "value": 2500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": 110311,
+  "name": "Fresh☆Parlor",
+  "description": "Moderately increase velocity continuously when positioned toward the front in the early part of mid-race. Oh, and have a dollop of moderate endurance recovery too!",
+  "rarity": 5,
+  "group_id": 11031,
+  "group_rate": 1,
+  "icon_id": 20013,
+  "skill_category": 5,
+  "cost": null,
+  "precondition_1": "",
+  "condition_1": "phase_firsthalf_random==1&order_rate<=30",
+  "precondition_2": "",
+  "condition_2": "",
+  "activate_lot": 0,
+  "effects": [
+   {
+    "duration": 60000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 27,
+      "value": 2500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     },
+     {
+      "type": 9,
+      "value": 350,
       "value_usage": 1,
       "value_level_usage": 1,
       "additional_activate_type": 0,
@@ -14464,6 +14616,40 @@
   ]
  },
  {
+  "id": 201253,
+  "name": "Crescent Gale",
+  "description": "Increase velocity on a corner. (Front Runner)",
+  "rarity": 2,
+  "group_id": 20125,
+  "group_rate": 3,
+  "icon_id": 20012,
+  "skill_category": 4,
+  "cost": 150,
+  "precondition_1": "",
+  "condition_1": "running_style==1&all_corner_random==1",
+  "precondition_2": "",
+  "condition_2": "",
+  "activate_lot": 1,
+  "effects": [
+   {
+    "duration": 30000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 27,
+      "value": 3500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
   "id": 201261,
   "name": "Sixth Sense",
   "description": "Avoid becoming surrounded early-race. (Front Runner)",
@@ -15441,6 +15627,40 @@
      {
       "type": 27,
       "value": 1500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": 201393,
+  "name": "Sharp Arc",
+  "description": "Increase velocity on a corner. (Late Surger)",
+  "rarity": 2,
+  "group_id": 20139,
+  "group_rate": 3,
+  "icon_id": 20012,
+  "skill_category": 4,
+  "cost": 150,
+  "precondition_1": "",
+  "condition_1": "running_style==3&all_corner_random==1",
+  "precondition_2": "",
+  "condition_2": "",
+  "activate_lot": 1,
+  "effects": [
+   {
+    "duration": 30000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 27,
+      "value": 3500,
       "value_usage": 1,
       "value_level_usage": 1,
       "additional_activate_type": 0,
@@ -18773,6 +18993,40 @@
   ]
  },
  {
+  "id": 202171,
+  "name": "Master of Declines",
+  "description": "Increase velocity on a downhill.",
+  "rarity": 2,
+  "group_id": 20217,
+  "group_rate": 2,
+  "icon_id": 20012,
+  "skill_category": 4,
+  "cost": 170,
+  "precondition_1": "",
+  "condition_1": "down_slope_random==1",
+  "precondition_2": "",
+  "condition_2": "",
+  "activate_lot": 1,
+  "effects": [
+   {
+    "duration": 24000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 27,
+      "value": 3500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
   "id": 202172,
   "name": "Downhill Speedster",
   "description": "Slightly increase velocity on downhills.",
@@ -21538,6 +21792,40 @@
      {
       "type": 27,
       "value": 1500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": 202511,
+  "name": "Gonna Be Ur #1 FRFR",
+  "description": "Press coverage goes to the skill user's head, moderately increasing chance of rushing.",
+  "rarity": 1,
+  "group_id": 20251,
+  "group_rate": -1,
+  "icon_id": 10054,
+  "skill_category": 0,
+  "cost": 0,
+  "precondition_1": "",
+  "condition_1": "always==1",
+  "precondition_2": "",
+  "condition_2": "",
+  "activate_lot": 0,
+  "effects": [
+   {
+    "duration": -1,
+    "duration_usage": 1,
+    "cooldown": 0,
+    "abilities": [
+     {
+      "type": 29,
+      "value": 100000,
       "value_usage": 1,
       "value_level_usage": 1,
       "additional_activate_type": 0,
@@ -25209,6 +25497,56 @@
   ]
  },
  {
+  "id": 900651,
+  "name": "Hands in the Air Like Ya Don't Care!",
+  "description": "Very slightly increase velocity when positioned toward the front sometime upon approaching late-race. If it's a sprint or mile race, very slightly increase velocity continuously.",
+  "rarity": 1,
+  "group_id": 90065,
+  "group_rate": 2,
+  "icon_id": 20011,
+  "skill_category": 5,
+  "cost": 200,
+  "precondition_1": "",
+  "condition_1": "distance_type==1&phase_laterhalf_random==1&order_rate<=50@distance_type==2&phase_laterhalf_random==1&order_rate<=50",
+  "precondition_2": "",
+  "condition_2": "distance_type==3&phase_laterhalf_random==1&order_rate<=50@distance_type==4&phase_laterhalf_random==1&order_rate<=50",
+  "activate_lot": 1,
+  "effects": [
+   {
+    "duration": 36000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 27,
+      "value": 500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   },
+   {
+    "duration": 30000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 27,
+      "value": 500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
   "id": 900671,
   "name": "Eternal Encompassing Shine",
   "description": "If well-positioned at the start of the final straight, slightly increase velocity. If positioned near the front, moderately increase velocity instead.",
@@ -26658,6 +26996,65 @@
   ]
  },
  {
+  "id": 910271,
+  "name": "A Warm Cup for You",
+  "description": "Slightly increase velocity for a moderate duration when 2nd or worse and within 4 lengths of the lead on a downhill just before late-race. If the race is medium, also very minimally increase acceleration.",
+  "rarity": 1,
+  "group_id": 91027,
+  "group_rate": 2,
+  "icon_id": 20011,
+  "skill_category": 5,
+  "cost": 200,
+  "precondition_1": "",
+  "condition_1": "distance_rate>=60&slope==2&phase==1&order>=2&distance_diff_top<=10&distance_type==3",
+  "precondition_2": "",
+  "condition_2": "distance_rate>=60&slope==2&phase==1&order>=2&distance_diff_top<=10&distance_type!=3",
+  "activate_lot": 1,
+  "effects": [
+   {
+    "duration": 24000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 27,
+      "value": 1500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     },
+     {
+      "type": 31,
+      "value": 500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   },
+   {
+    "duration": 24000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 27,
+      "value": 1500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
   "id": 910301,
   "name": "Every Rose Has Its Fangs",
   "description": "Slightly drain endurance from runners in front and very slightly increase velocity when well-positioned mid-race.",
@@ -26699,6 +27096,49 @@
      {
       "type": 27,
       "value": 500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": 910311,
+  "name": "Fresh☆Parlor",
+  "description": "Very slightly increase velocity continuously and very slightly recover endurance when positioned toward the front in the early part of mid-race.",
+  "rarity": 1,
+  "group_id": 91031,
+  "group_rate": 2,
+  "icon_id": 20011,
+  "skill_category": 5,
+  "cost": 200,
+  "precondition_1": "",
+  "condition_1": "phase_firsthalf_random==1&order_rate<=30",
+  "precondition_2": "",
+  "condition_2": "",
+  "activate_lot": 1,
+  "effects": [
+   {
+    "duration": 36000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 27,
+      "value": 500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     },
+     {
+      "type": 9,
+      "value": 50,
       "value_usage": 1,
       "value_level_usage": 1,
       "additional_activate_type": 0,
@@ -27486,6 +27926,49 @@
  },
  {
   "id": 1000012,
+  "name": "Carnival Bonus",
+  "description": "Increase attributes by +{0}％ in the Racing Carnival. {1}％ chance to also raise runner's mood to Great. This skill will disappear when the event ends.",
+  "rarity": 1,
+  "group_id": 100001,
+  "group_rate": 1,
+  "icon_id": 1010011,
+  "skill_category": 101,
+  "cost": null,
+  "precondition_1": "",
+  "condition_1": "",
+  "precondition_2": "",
+  "condition_2": "",
+  "activate_lot": 0,
+  "effects": [
+   {
+    "duration": -1,
+    "duration_usage": 1,
+    "cooldown": 0,
+    "abilities": [
+     {
+      "type": 502,
+      "value": 10000,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     },
+     {
+      "type": 503,
+      "value": 10000,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": 1000013,
   "name": "Carnival Bonus",
   "description": "Increase attributes by +{0}％ in the Racing Carnival. {1}％ chance to also raise runner's mood to Great. This skill will disappear when the event ends.",
   "rarity": 1,

@@ -62,6 +62,9 @@ CONTENT_MODELS = (
     "PvpDeckSlot",
     "PvpTeamComp",
     "GameEvent",
+    # After the cards and banners they point at.
+    "StoryEvent",
+    "StoryEventCard",
     "Scenario",
     "DailyLegendRaceRelease",
     "DailyLegendRaceUma",

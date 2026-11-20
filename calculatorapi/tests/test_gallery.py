@@ -238,7 +238,7 @@ class PosterBlockTests(GalleryFixture):
 
     def test_exactly_the_public_keys(self):
         block = public_identity.poster_block(self.person(SENIOR, display_name="Mooncake"))
-        self.assertEqual(set(block), {"display_name", "portrait", "tier_name", "gallery_style"})
+        self.assertEqual(set(block), {"display_name", "portrait", "portrait_layers", "tier_name", "gallery_style"})
         self.assertEqual(block["display_name"], "Mooncake")
         self.assertEqual((block["tier_name"], block["gallery_style"]), (SENIOR, "ssr"))
 

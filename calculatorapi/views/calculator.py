@@ -23,6 +23,7 @@ from calculatorapi.predictions import (
     build_effective_date_maps,
     build_game_event_date_map,
     build_scenario_date_map,
+    build_story_event_date_map,
     effective_sort_key,
     planned_effective_start,
 )
@@ -54,6 +55,7 @@ from calculatorapi.views.game_event import GameEventSerializer
 from calculatorapi.views.banner_timeline import BannerTimelineForViewingSerializer
 from calculatorapi.views.anniversary_event import AnniversaryEventSerializer
 from calculatorapi.views.scenario import ScenarioSerializer
+from calculatorapi.views.story_event import StoryEventSerializer, story_event_queryset
 from calculatorapi.views.daily_legend_race import DailyLegendRaceReleaseSerializer
 from calculatorapi.views.ledger import IncomeLedgerRowSerializer
 from calculatorapi.views.calculation_constants import CalculationConstantsSerializer
@@ -541,6 +543,17 @@ class CalculatorViewSet(ViewSet):
             key=lambda rel: effective_sort_key(daily_legend_race_emap.get(rel.id)),
         )
 
+        # Story events: the row under a banner on the Timeline, with the free
+        # card(s) the event gives. Display only, never income (the ledger reads
+        # GameEvent) and never eligibility (story_event.py says why). Only
+        # events with a banner are sent, since the Timeline places them by it.
+        story_event_data = list(story_event_queryset())
+        story_event_emap = build_story_event_date_map(story_event_data, emap)
+        story_event_data = sorted(
+            story_event_data,
+            key=lambda ev: effective_sort_key(story_event_emap.get(ev.id)),
+        )
+
         # Selector eligibility keys off each card's earliest JP banner. Built
         # once here and handed to every serializer that nests a card, because
         # resolving it per card would be an N+1 across the whole catalogue.
@@ -650,6 +663,10 @@ class CalculatorViewSet(ViewSet):
             "daily_legend_race_data": DailyLegendRaceReleaseSerializer(
                 daily_legend_race_data, many=True,
                 context={"effective_dates": daily_legend_race_emap}
+            ).data,
+            "story_event_data": StoryEventSerializer(
+                story_event_data, many=True,
+                context={"effective_dates": story_event_emap}
             ).data,
             "champions_meeting_data": ChampionsMeetingSerializer(
                 champions_meeting_data, many=True, context={"effective_dates": cm_emap}

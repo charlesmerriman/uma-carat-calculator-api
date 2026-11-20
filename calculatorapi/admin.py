@@ -81,6 +81,7 @@ from .admin_patreon_import import (
     apply_patreon_import,
     parse_patreon_csv,
 )
+from .global_release import card_is_released, uma_is_released
 from .predictions import GAME_EVENT_END_DATE_BUFFER
 from .models.uma import CASUAL_IDS, TRAINEE_IDS
 from .models import (
@@ -93,6 +94,7 @@ from .models import (
     ChampionsMeeting,
     SupportsOnSupportBanner, UmasOnUmaBanner,
     GameEvent, LeagueOfHeroes, Scenario,
+    StoryEvent, StoryEventCard,
     DailyLegendRaceRelease, DailyLegendRaceUma,
     ChangelogEntry, ChangelogChange,
     SocialAccount,
@@ -261,12 +263,25 @@ class DailyLegendRaceUmaInline(PicturePickersMixin, TabularInline):
     extra = 1
 
 
+class StoryEventCardInline(PicturePickersMixin, TabularInline):
+    """The free cards a story event gives, edited on the event's page.
+
+    The import adds the cards; editors set the mark and the note. No copies
+    column: every event gives five of each card.
+    """
+    model = StoryEventCard
+    fields = ("support_card", "must_get", "note", "order")
+    autocomplete_fields = ("support_card",)
+    ordering = ("order", "id")
+    extra = 0
+
+
 class AnniversaryEventProductInline(TabularInline):
     """The carat packs and selectors a campaign sells."""
     model = AnniversaryEventProduct
     fields = (
         "order", "product_type", "name", "usd_cost", "paid_carat_amount",
-        "webstore_multiplier", "max_quantity", "jp_cutoff_date",
+        "webstore_multiplier", "max_quantity", "jp_cutoff_date", "opens_with_part",
     )
     ordering = ("order",)
     extra = 1
@@ -573,11 +588,17 @@ class UmaAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
     # required: autocomplete source for banner inlines. `=game_id` is an exact
     # match, so typing an id finds one row rather than every name containing it.
     search_fields = ("name", "=game_id")
-    readonly_fields = ("image_preview", "borderless_preview", "is_on_global")
+    # The Encyclopedia's import-only columns are read-only: nothing an editor
+    # types there would survive the next deploy's import.
+    readonly_fields = ("image_preview", "borderless_preview", "layered_preview", "on_global_now",
+                       "global_release_at", "jp_name", "jp_title", "translated_title", "star_stats",
+                       "career_objectives")
     fieldsets = (
         (None, {"fields": (
             "name", "game_id", "image", "image_preview",
-            "image_borderless", "borderless_preview", "admin_comments",
+            "image_borderless", "borderless_preview",
+            "image_layer_base", "image_layer_foreground", "layered_preview",
+            "admin_comments",
         )}),
         PURPOSE_FIELDSET,
         ("Selector availability", {
@@ -599,16 +620,24 @@ class UmaAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
                 "so edits here do not stick. Fix the source instead."
             ),
             "fields": (
-                "is_on_global", "title", "running_style",
+                ("on_global_now", "global_release_at"), ("title", "translated_title"), ("jp_name", "jp_title"),
+                "running_style",
                 ("apt_turf", "apt_dirt"),
                 ("apt_short", "apt_mile", "apt_medium", "apt_long"),
                 ("apt_front", "apt_pace", "apt_late", "apt_end"),
                 ("base_speed", "base_stamina", "base_power", "base_guts", "base_wit"),
                 ("growth_speed", "growth_stamina", "growth_power", "growth_guts", "growth_wit"),
+                "star_stats", "career_objectives",
             ),
         }),
     )
 
+
+    # The site's "On global" tag as a player sees it now: the game's release
+    # date (beside it) or a started confirmed global banner (global_release.py).
+    @admin.display(description="On global now", boolean=True)
+    def on_global_now(self, obj):
+        return uma_is_released(obj) if obj.pk else None
 
     @admin.display(description="Borderless preview")
     def borderless_preview(self, obj):
@@ -618,6 +647,23 @@ class UmaAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
                 obj.image_borderless.url,
             )
         return "—"
+
+    # The two layers stacked as the site stacks them (the frame goes between
+    # them on the site): the foreground's canvas is the base's 64 px box plus a
+    # sixth above and 16/360 each side. Only a full pair draws, the site's rule.
+    @admin.display(description="Layered preview")
+    def layered_preview(self, obj):
+        layers = obj.portrait_layers
+        if not layers:
+            return "Shown on the site once both layers are set." if (
+                obj.image_layer_base or obj.image_layer_foreground) else "—"
+        return format_html(
+            '<div style="position: relative; width: 64px; height: 64px; margin: 11px 3px 0;">'
+            '<img src="{}" style="position: absolute; inset: 0; width: 64px; height: 64px;" />'
+            '<img src="{}" style="position: absolute; left: -2.84px; top: -10.67px;'
+            ' width: 69.69px; height: 74.67px;" /></div>',
+            layers["base"], layers["foreground"],
+        )
 
 
 def _phrases_html(phrases, joiner):
@@ -827,7 +873,8 @@ class SupportCardAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
     list_filter = ("card_type", "rarity", "is_placeholder", PURPOSE_FILTER)
     ordering = ("name",)
     search_fields = ("name", "=game_id")  # required: autocomplete source for banner inlines
-    readonly_fields = ("image_preview", "borderless_preview", "is_on_global", "global_release_at")
+    readonly_fields = ("image_preview", "borderless_preview", "on_global_now", "global_release_at",
+                       "jp_name", "jp_title", "translated_title", "effects", "unique_effect")
     # Explicit since purpose arrived: Django's every-field default form had
     # nowhere to say that one of these boxes is public.
     fieldsets = (
@@ -841,10 +888,15 @@ class SupportCardAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
                 "Filled by the game-data import and overwritten by the next one, "
                 "so edits here do not stick. Fix the source instead."
             ),
-            "fields": ("is_on_global", "global_release_at", "title", "card_type", "rarity", "character_id",
-                       "group_members"),
+            "fields": (("on_global_now", "global_release_at"), ("title", "translated_title"), ("jp_name", "jp_title"),
+                       "card_type", "rarity", "character_id", "group_members", "effects", "unique_effect"),
         }),
     )
+
+    # The site's "On global" tag now; see UmaAdmin.on_global_now.
+    @admin.display(description="On global now", boolean=True)
+    def on_global_now(self, obj):
+        return card_is_released(obj) if obj.pk else None
 
     @admin.display(description="Borderless preview")
     def borderless_preview(self, obj):
@@ -855,6 +907,60 @@ class SupportCardAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
                 obj.image_borderless.url,
             )
         return "—"
+
+
+STORY_EVENT_REWARD_FIELDS = (
+    "carat_amount", "uma_ticket_amount", "support_ticket_amount",
+    "ssr_shard_amount", "sr_shard_amount",
+)
+# What the game-data import writes. Read-only on a saved event, so an edit can't
+# be quietly undone by the next deploy; editable on a new one, for the rare
+# event an editor adds before the import knows it.
+STORY_EVENT_GAME_FIELDS = (
+    "game_id", "name", "jp_name",
+    "global_start_at", "global_end_at", "global_claim_end_at", "jp_start_at", "jp_end_at",
+)
+
+
+@admin.register(StoryEvent)
+class StoryEventAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
+    """A story event and its free cards: the row under a banner on the Timeline.
+
+    Display only, never income: the planner's numbers come from Game events.
+    notes/story-events-plan.md has the why.
+    """
+    list_display = (
+        "__str__", "game_id", "banner_timeline", "global_start_at", "jp_start_at",
+        "carat_amount", "rewards_edited",
+    )
+    list_select_related = ("banner_timeline",)
+    search_fields = ("name", "working_name", "jp_name", "=game_id")
+    autocomplete_fields = ("banner_timeline",)
+    ordering = ("-game_id",)
+    inlines = (StoryEventCardInline,)
+    fieldsets = (
+        (None, {"fields": (
+            "game_id", "name", "working_name", "jp_name", "banner_timeline",
+            "image", "image_preview",
+        )}),
+        ("Dates from the game", {"fields": (
+            "global_start_at", "global_end_at", "global_claim_end_at",
+            "jp_start_at", "jp_end_at",
+        )}),
+        ("Rewards", {"fields": (*STORY_EVENT_REWARD_FIELDS, "rewards_edited")}),
+    )
+
+    def get_readonly_fields(self, request, obj=None):
+        readonly = ("image_preview",)
+        return readonly + STORY_EVENT_GAME_FIELDS if obj is not None else readonly
+
+    def save_model(self, request, obj, form, change):
+        # A reward an editor changes is theirs from now on: the import stops
+        # writing the rewards until someone unticks the box. The team's own
+        # figures (the Carat Data Sheet) win over the game files'.
+        if change and set(form.changed_data) & set(STORY_EVENT_REWARD_FIELDS):
+            obj.rewards_edited = True
+        super().save_model(request, obj, form, change)
 
 
 @admin.register(GameEvent)

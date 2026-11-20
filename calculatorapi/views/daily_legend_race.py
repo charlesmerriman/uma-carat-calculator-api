@@ -21,10 +21,12 @@ class DailyLegendRaceUmaSerializer(serializers.ModelSerializer):
     # The borderless cut when there is one (Uma.portrait): the tab draws its
     # own frame round the uma. `image` stays the bordered card art.
     portrait = serializers.ImageField(read_only=True)
+    # The layered art drawn in that frame when it is set (Uma.portrait_layers).
+    portrait_layers = serializers.ReadOnlyField()
 
     class Meta:
         model = Uma
-        fields = ("id", "name", "image", "portrait", "rarity")
+        fields = ("id", "name", "image", "portrait", "portrait_layers", "rarity")
 
     def get_rarity(self, obj):
         return obj.rarity or 3

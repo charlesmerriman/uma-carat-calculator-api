@@ -449,6 +449,19 @@ class ValidationTests(CalculatorTestCase):
         paths = {p for p, _ in self.refuse(skill_recommendations=[dict(twice, category="magic")])}
         self.assertIn("skill_recommendations[0].category", paths)
 
+    def test_henrys_groups_save_beside_the_old_ones(self):
+        # Early-Race / Mid-Game and Late-Race join the groups; Speed and the
+        # ungrouped "other" stay valid, so an old guide or revision still saves.
+        skill = self.fixture.skill.id
+        rows = [{"style": "front", "category": category, "tier": None, "skill": skill, "note": ""}
+                for category in ("early_mid", "late", "speed", "other")]
+        res = self.client.put(doc_url(self.guide), put_body(self.document, skill_recommendations=rows), format="json")
+        self.assertEqual(res.status_code, 200, res.content)
+        self.assertEqual(
+            sorted(self.guide.skill_recommendations.values_list("category", flat=True)),
+            ["early_mid", "late", "other", "speed"],
+        )
+
     def test_advice_once_per_style(self):
         notes = [{"style": "front", "body": "a"}, {"style": "front", "body": "b"}]
         errors = self.refuse(style_notes=notes)

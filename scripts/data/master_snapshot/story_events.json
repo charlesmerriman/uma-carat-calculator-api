@@ -1,0 +1,378 @@
+[
+ {
+  "id": 1001,
+  "name": "Dashing towards Your Dreams",
+  "start": "2025-06-26T00:30:00+00:00",
+  "end": "2025-07-09T21:59:59+00:00",
+  "claim_end": "2025-07-12T21:59:59+00:00",
+  "rewards": {
+   "carats": 1040,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 0,
+   "sr_shards": 0
+  },
+  "cards": [
+   30025
+  ]
+ },
+ {
+  "id": 1002,
+  "name": "Brand New Friends",
+  "start": "2025-07-16T22:00:00+00:00",
+  "end": "2025-08-01T21:59:59+00:00",
+  "claim_end": "2025-08-04T21:59:59+00:00",
+  "rewards": {
+   "carats": 890,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 0,
+   "sr_shards": 0
+  },
+  "cards": [
+   30030,
+   20026
+  ]
+ },
+ {
+  "id": 1003,
+  "name": "Racing Hearts Beauty in Bloom",
+  "start": "2025-08-28T22:00:00+00:00",
+  "end": "2025-09-10T21:59:59+00:00",
+  "claim_end": "2025-09-13T21:59:59+00:00",
+  "rewards": {
+   "carats": 1010,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 0,
+   "sr_shards": 0
+  },
+  "cards": [
+   30041
+  ]
+ },
+ {
+  "id": 1004,
+  "name": "Epic Odyssey Uma Quest",
+  "start": "2025-09-21T22:00:00+00:00",
+  "end": "2025-10-04T21:59:59+00:00",
+  "claim_end": "2025-10-07T21:59:59+00:00",
+  "rewards": {
+   "carats": 1260,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 0,
+   "sr_shards": 0
+  },
+  "cards": [
+   30057
+  ]
+ },
+ {
+  "id": 1005,
+  "name": "Beaches, Bathing Suits & Blazing Trails",
+  "start": "2025-10-14T22:00:00+00:00",
+  "end": "2025-10-27T21:59:59+00:00",
+  "claim_end": "2025-10-30T21:59:59+00:00",
+  "rewards": {
+   "carats": 1260,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 0,
+   "sr_shards": 0
+  },
+  "cards": [
+   30047
+  ]
+ },
+ {
+  "id": 1006,
+  "name": "Halloween Makeover!",
+  "start": "2025-11-24T22:00:00+00:00",
+  "end": "2025-12-06T21:59:59+00:00",
+  "claim_end": "2025-12-09T21:59:59+00:00",
+  "rewards": {
+   "carats": 2160,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30066
+  ]
+ },
+ {
+  "id": 1007,
+  "name": "Orchestra in Late Autumn",
+  "start": "2025-12-14T22:00:00+00:00",
+  "end": "2025-12-25T21:59:59+00:00",
+  "claim_end": "2025-12-28T21:59:59+00:00",
+  "rewards": {
+   "carats": 2160,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30070
+  ]
+ },
+ {
+  "id": 1008,
+  "name": "Hungry for a Miracle",
+  "start": "2026-01-05T22:00:00+00:00",
+  "end": "2026-01-20T21:59:59+00:00",
+  "claim_end": "2026-01-23T21:59:59+00:00",
+  "rewards": {
+   "carats": 2160,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30074
+  ]
+ },
+ {
+  "id": 1009,
+  "name": "Blossoming Beginnings! New Year's Karuta Showdown",
+  "start": "2026-01-29T22:00:00+00:00",
+  "end": "2026-02-09T21:59:59+00:00",
+  "claim_end": "2026-02-12T21:59:59+00:00",
+  "rewards": {
+   "carats": 2160,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30079
+  ]
+ },
+ {
+  "id": 1010,
+  "name": "The Peak of Confection",
+  "start": "2026-02-18T22:00:00+00:00",
+  "end": "2026-03-01T21:59:59+00:00",
+  "claim_end": "2026-03-04T21:59:59+00:00",
+  "rewards": {
+   "carats": 2160,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30084
+  ]
+ },
+ {
+  "id": 1011,
+  "name": "Flying Run-Up!",
+  "start": "2026-03-12T22:00:00+00:00",
+  "end": "2026-03-23T21:59:59+00:00",
+  "claim_end": "2026-03-26T21:59:59+00:00",
+  "rewards": {
+   "carats": 2440,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30087,
+   20043
+  ]
+ },
+ {
+  "id": 1012,
+  "name": "Tonight at the Ligne Droite",
+  "start": "2026-04-05T22:00:00+00:00",
+  "end": "2026-04-18T21:59:59+00:00",
+  "claim_end": "2026-04-21T21:59:59+00:00",
+  "rewards": {
+   "carats": 2160,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30092
+  ]
+ },
+ {
+  "id": 1013,
+  "name": "Let Those Cheers Roar! Tracen Cheer Squad",
+  "start": "2026-04-26T22:00:00+00:00",
+  "end": "2026-05-08T21:59:59+00:00",
+  "claim_end": "2026-05-11T21:59:59+00:00",
+  "rewards": {
+   "carats": 2160,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30096
+  ]
+ },
+ {
+  "id": 1014,
+  "name": "The Promised Hour: Silks & Three Riddles",
+  "start": "2026-05-18T22:00:00+00:00",
+  "end": "2026-05-29T21:59:59+00:00",
+  "claim_end": "2026-06-01T21:59:59+00:00",
+  "rewards": {
+   "carats": 2160,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30100
+  ]
+ },
+ {
+  "id": 1015,
+  "name": "Search! Solve! Summer!",
+  "start": "2026-06-11T22:00:00+00:00",
+  "end": "2026-06-22T21:59:59+00:00",
+  "claim_end": "2026-06-25T21:59:59+00:00",
+  "rewards": {
+   "carats": 2160,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30104
+  ]
+ },
+ {
+  "id": 1016,
+  "name": "Make a Splash! Summer Showdown! ☆",
+  "start": "2026-07-02T22:00:00+00:00",
+  "end": "2026-07-14T21:59:59+00:00",
+  "claim_end": "2026-07-17T21:59:59+00:00",
+  "rewards": {
+   "carats": 2160,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30109
+  ]
+ },
+ {
+  "id": 1017,
+  "name": "Wings of Steam and Steel",
+  "start": "2026-07-27T22:00:00+00:00",
+  "end": "2026-08-10T21:59:59+00:00",
+  "claim_end": "2026-08-13T21:59:59+00:00",
+  "rewards": {
+   "carats": 2160,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30113
+  ]
+ },
+ {
+  "id": 1018,
+  "name": "Days Flying By",
+  "start": "2026-08-18T22:00:00+00:00",
+  "end": "2026-08-30T21:59:59+00:00",
+  "claim_end": "2026-09-02T21:59:59+00:00",
+  "rewards": {
+   "carats": 2160,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30117
+  ]
+ },
+ {
+  "id": 1019,
+  "name": "Hark Back, Run Forward",
+  "start": "2026-09-07T22:00:00+00:00",
+  "end": "2026-09-19T21:59:59+00:00",
+  "claim_end": "2026-09-22T21:59:59+00:00",
+  "rewards": {
+   "carats": 2160,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30119
+  ]
+ },
+ {
+  "id": 1020,
+  "name": "Illuminate the Heart",
+  "start": "2026-09-28T22:00:00+00:00",
+  "end": "2026-10-12T21:59:59+00:00",
+  "claim_end": "2026-10-15T21:59:59+00:00",
+  "rewards": {
+   "carats": 2160,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30125
+  ]
+ },
+ {
+  "id": 1021,
+  "name": "Happy New Future! A Sentimental Sunrise",
+  "start": "2026-10-20T22:00:00+00:00",
+  "end": "2026-11-01T21:59:59+00:00",
+  "claim_end": "2026-11-04T21:59:59+00:00",
+  "rewards": {
+   "carats": 2160,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30129
+  ]
+ },
+ {
+  "id": 1022,
+  "name": "Sweet Memories Teatime",
+  "start": "2026-11-09T22:00:00+00:00",
+  "end": "2026-11-23T21:59:59+00:00",
+  "claim_end": "2026-11-26T21:59:59+00:00",
+  "rewards": {
+   "carats": 2160,
+   "uma_tickets": 2,
+   "support_tickets": 2,
+   "ssr_shards": 3,
+   "sr_shards": 3
+  },
+  "cards": [
+   30133
+  ]
+ }
+]

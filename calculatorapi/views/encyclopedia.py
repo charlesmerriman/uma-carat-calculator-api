@@ -1,0 +1,368 @@
+"""
+GET /encyclopedia/umas/<game_id> and GET /encyclopedia/cards/<game_id>: one
+outfit's or one support card's page in the Encyclopedia
+(notes/encyclopedia-plan.md). The lists need no endpoint of their own: the
+web draws them from GET /pvp-catalogue, which is public and already loaded.
+The one exception is GET /encyclopedia/card-effects, every card's effects for
+the card list's effect sort, fetched only when that sort is picked
+(notes/card-effect-sort-plan.md). GET /encyclopedia/index lists the id of
+every page that exists, for the web's build (notes/encyclopedia-open-plan.md).
+
+WHO: everyone (owner, 2026-11-18; supporters and staff had it first, from
+2026-11-12). Every route here is AllowAny, as GET /skills is. The bytes are
+the same for every reader and hold nothing about a person, so one cached copy
+serves all of them. "You own this" is worked out in the browser from the
+Collection, never here.
+
+KEYED BY THE GAME'S ID, never the row's pk or a name: names change (a JP-only
+uma takes its Global name on release, and 146 card names are shared) but the
+game's id is the same in every database and both clients, so a pasted link
+keeps working.
+
+WHAT A PAGE CARRIES, and what it leaves to the client:
+  * The facts the import owns (aptitudes, stats at every star, growth, type,
+    the Japanese name), the editors' `purpose`, and every skill the outfit or
+    card gives, as the Skills page's summary row plus where it comes from.
+  * Its relatives: the character's other outfits and support cards.
+  * `colours`: the character's two colours, [main, sub], from the game files
+    (character_colours.py), or null when they hold none for her. A group
+    card's is null: it stands for several characters. An uma page's unique
+    skills carry their `description`, which the page leads its skills with.
+  * NO DATES and NO BANNERS. The client already has every banner, with its
+    predicted dates, from /calculator-data; reading them there keeps date
+    prediction in one place. The page sends `id` (the row's pk) so the client
+    can find the outfit or card on those banners and in the Collection.
+
+WHAT NEVER APPEARS: admin_comments (editors' notes), a placeholder card (a
+stand-in, not a game card), an uma that can't race (casual outfits and NPCs:
+Uma.trainees()), and any skill Skill.objects.shown() leaves out.
+"""
+
+from django.db.models import Q
+from django.http import Http404
+from rest_framework import permissions
+from rest_framework.decorators import api_view, permission_classes
+
+from calculatorapi import character_colours, skills_cache, support_effects
+from calculatorapi.career import shown_goals
+from calculatorapi.global_release import (
+    annotate_cards, annotate_umas, card_is_released, game_release_passed, uma_is_released,
+)
+from calculatorapi.models import Skill, SupportCard, SupportCardSkill, Uma, UmaSkill
+from calculatorapi.views.pvp_catalogue import image_url
+from calculatorapi.views.skills import _bytes, _json, release_order, summary, unlock_conditions
+
+APTITUDE_KEYS = ("turf", "dirt", "short", "mile", "medium", "long", "front", "pace", "late", "end")
+STAT_KEYS = ("speed", "stamina", "power", "guts", "wit")
+
+# The order a page lists an outfit's skills in, the order the game teaches them.
+UMA_SKILL_ORDER = {"unique": 0, "innate": 1, "awakening": 2, "evolved": 3}
+CARD_SKILL_ORDER = {"hint": 0, "event": 1}
+
+
+def _file_url(field):
+    return image_url(field.name if field else "")
+
+
+def base_name(uma_name):
+    """The character's name from an outfit row's: "Special Week (Summer)" ->
+    "Special Week". A group card names its members this way (group_members)."""
+    return uma_name.split(" (", 1)[0].strip()
+
+
+def _skill_rows(rows):
+    """The page's skill list from UmaSkill or SupportCardSkill rows: the Skills
+    page's summary of each (cost and type included), plus where it comes from."""
+    found = []
+    for row in rows:
+        skill = row.skill
+        found.append({
+            **summary(skill),
+            "source": row.source,
+            "level": getattr(row, "level", None),
+            "evolves_from": skill.evolves_from.game_id if skill.evolves_from_id else None,
+            # An evolution's unlock conditions beside it, so the uma page needn't
+            # send a player to each skill's page for them (Daptrius, 2026-11-13).
+            # Only an uma's evolutions have any; a card's rows never query.
+            "conditions": unlock_conditions(skill) if row.source == "evolved" else [],
+            # The page leads with her unique skill and what it does (the redesign).
+            **({"description": skill.shown_description} if row.source == "unique" else {}),
+        })
+    return found
+
+
+def _uma_skill_order(row):
+    """The order the game teaches them: unique, innate, awakening by rank, then
+    evolutions in the order they came out (views/skills.release_order), never
+    by name. Other skills in one rank keep the name order."""
+    within = release_order(row) if row["source"] == "evolved" else (0, row["name"])
+    return (UMA_SKILL_ORDER.get(row["source"], 9), row["level"] or 0, within)
+
+
+def _shown_skill_ids():
+    return Skill.objects.shown().values("id")
+
+
+# A title, a unique effect sentence or a race name may be UmaTL's fan
+# translation, shown only while Global (or an editor) has none. Each row and
+# page says so (`title_translated`, `uses_translation`), so the page can
+# credit UmaTL, as its terms ask (notes/encyclopedia-jp-fills-plan.md, PR 3).
+
+
+def _outfit_row(uma):
+    return {
+        "id": uma.id, "game_id": uma.game_id, "name": uma.name, "title": uma.shown_title,
+        "title_translated": uma.uses_translated_title,
+        "portrait": _file_url(uma.portrait), "portrait_layers": uma.portrait_layers,
+        "rarity": uma.rarity, "on_global": uma.on_global,
+    }
+
+
+def _card_row(card):
+    return {
+        "id": card.id, "game_id": card.game_id, "name": card.name, "title": card.shown_title,
+        "title_translated": card.uses_translated_title,
+        "image": _file_url(card.image),
+        # The frameless texture, so the page draws the card in the site's own
+        # frame (FramedCard) as the Collection does; None until it is uploaded.
+        "image_borderless": _file_url(card.image_borderless),
+        "card_type": card.card_type, "rarity": card.rarity,
+        "on_global": card.on_global,
+    }
+
+
+def _outfits_of(character_ids, names=()):
+    """The trainee outfits of these characters (by the game id's range), and of
+    these character NAMES for the outfits global hasn't numbered alike."""
+    if not character_ids and not names:
+        return []
+    match = Q()
+    for character in character_ids:
+        match |= Q(game_id__gte=character * 100, game_id__lt=(character + 1) * 100)
+    for name in names:
+        match |= Q(name=name) | Q(name__startswith=f"{name} (")
+    return [_outfit_row(uma) for uma in annotate_umas(Uma.trainees().filter(match)).order_by("game_id")]
+
+
+def _cards_of(character_id, name):
+    """The character's support cards: their own (by character id) and every
+    group card that lists them. A group card is filed under ONE member's
+    character id, so it is matched by its members instead, never by id."""
+    cards = annotate_cards(SupportCard.objects.filter(is_placeholder=False).exclude(game_id=None))
+    own = cards.filter(character_id=character_id).exclude(card_type="group") if character_id else cards.none()
+    groups = [card for card in cards.filter(card_type="group") if name in card.group_members]
+    return [_card_row(card) for card in sorted([*own, *groups], key=lambda card: card.game_id)]
+
+
+def build_uma(uma):
+    skills = (
+        UmaSkill.objects.filter(uma=uma, skill_id__in=_shown_skill_ids())
+        .select_related("skill__evolves_from")
+        .prefetch_related("skill__evolution_conditions")
+    )
+    character = uma.character_id
+    # Race goals worded (career.py); goals of other kinds are counted, never guessed at.
+    objectives, objectives_hidden = shown_goals(uma.career_objectives)
+    outfits = [row for row in _outfits_of([character]) if row["id"] != uma.id]
+    cards = _cards_of(character, base_name(uma.name))
+    return {
+        "id": uma.id,
+        "game_id": uma.game_id,
+        "name": uma.name,
+        "title": uma.shown_title,
+        # This page's own title is UmaTL's: the web leaves it out of the search
+        # snippet, which can't carry the credit (`uses_translation` is wider: any
+        # UmaTL text on the page).
+        "title_translated": uma.uses_translated_title,
+        # A JP route's race named by UmaTL is marked by the import (game_data_values.jp_route_goals).
+        "uses_translation": uma.uses_translated_title
+        or any(goal.get("translated") for goal in uma.career_objectives or [])
+        or any(row["title_translated"] for row in [*outfits, *cards]),
+        "jp_name": uma.jp_name,
+        "jp_title": uma.jp_title,
+        "colours": character_colours.colours_for(character),
+        "portrait": _file_url(uma.portrait),
+        "portrait_layers": uma.portrait_layers,
+        "image": _file_url(uma.image),
+        "rarity": uma.rarity,
+        "running_style": uma.running_style,
+        "on_global": uma_is_released(uma),
+        "purpose": uma.purpose,
+        "apt": {key: getattr(uma, f"apt_{key}") for key in APTITUDE_KEYS},
+        "base": {key: getattr(uma, f"base_{key}") for key in STAT_KEYS},
+        "growth": {key: getattr(uma, f"growth_{key}") for key in STAT_KEYS},
+        "star_stats": uma.star_stats,
+        "objectives": objectives,
+        "objectives_hidden": objectives_hidden,
+        "skills": sorted(_skill_rows(skills), key=_uma_skill_order),
+        "outfits": outfits,
+        "cards": cards,
+    }
+
+
+def build_card(card):
+    skills = (
+        SupportCardSkill.objects.filter(support_card=card, skill_id__in=_shown_skill_ids())
+        .select_related("skill__evolves_from")
+    )
+    is_group = card.card_type == "group"
+    # A group card's people are its members, by name; any other card's is its
+    # own character, by the game id's range.
+    outfits = (
+        _outfits_of([], card.group_members) if is_group
+        else _outfits_of([card.character_id] if card.character_id else [], [card.name])
+    )
+    others = [] if is_group else [
+        row for row in _cards_of(card.character_id, card.name) if row["id"] != card.id
+    ]
+    unique = support_effects.unique_effect(card.unique_effect, card.effects)
+    return {
+        "id": card.id,
+        "game_id": card.game_id,
+        "name": card.name,
+        "title": card.shown_title,
+        # As on an uma's page: its own title is UmaTL's, kept out of search results and previews.
+        "title_translated": card.uses_translated_title,
+        "uses_translation": card.uses_translated_title
+        or bool(unique and unique["translated"])
+        or any(row["title_translated"] for row in [*outfits, *others]),
+        "jp_name": card.jp_name,
+        "jp_title": card.jp_title,
+        # A group card stands for several characters, so it wears no one's.
+        "colours": None if is_group else character_colours.colours_for(card.character_id),
+        "image": _file_url(card.image),
+        "image_borderless": _file_url(card.image_borderless),
+        "card_type": card.card_type,
+        "rarity": card.rarity,
+        "character_id": card.character_id,
+        "on_global": card_is_released(card),
+        # The game's own date, once it has passed (a date ahead may be the
+        # client's 2099 "not released here" mark).
+        "released_at": released.isoformat() if (released := game_release_passed(card.global_release_at)) else None,
+        "group_members": card.group_members,
+        "purpose": card.purpose,
+        # Its training effects at every level, its level cap at each limit break
+        # and its unique effect (support_effects.py has the growth rule and its
+        # check). [] / [] / None for a card the snapshots hold no effects for.
+        "effects": support_effects.table(card.effects, card.rarity),
+        "caps": list(support_effects.caps(card.rarity)) if card.effects else [],
+        "unique_effect": unique,
+        "skills": sorted(
+            _skill_rows(skills),
+            key=lambda row: (CARD_SKILL_ORDER.get(row["source"], 9), row["name"]),
+        ),
+        "outfits": outfits,
+        "cards": others,
+    }
+
+
+def _uma_pages():
+    """The outfits that have a page. One queryset for the page view and the
+    index, so the index can never list a page the view would 404."""
+    return Uma.trainees().exclude(game_id=None)
+
+
+def _card_pages():
+    """The cards that have a page; see _uma_pages."""
+    return SupportCard.objects.filter(is_placeholder=False).exclude(game_id=None)
+
+
+def _page(kind, game_id, find, build):
+    """The shared shape of both endpoints: cache, build on a miss."""
+    body = skills_cache.read_page(kind, game_id)
+    if body is None:
+        row = find(game_id)
+        if row is None:
+            raise Http404(f"No {kind} with that id.")
+        body = _bytes(build(row))
+        skills_cache.store_page(kind, game_id, body)
+    return _json(body)
+
+
+@api_view(["GET"])
+@permission_classes([permissions.AllowAny])
+def encyclopedia_uma(request, game_id):  # pylint: disable=unused-argument
+    return _page(
+        "uma", game_id,
+        lambda game_id: _uma_pages().filter(game_id=game_id).first(), build_uma,
+    )
+
+
+@api_view(["GET"])
+@permission_classes([permissions.AllowAny])
+def encyclopedia_card(request, game_id):  # pylint: disable=unused-argument
+    return _page(
+        "card", game_id,
+        lambda game_id: _card_pages().filter(game_id=game_id).first(), build_card,
+    )
+
+
+def build_index():
+    """
+    The game id of every page the Encyclopedia has, per kind, in id order.
+
+    The web's build reads this to know which documents to write and which
+    URLs go in its sitemap (notes/encyclopedia-open-plan.md), so it must list
+    exactly what the page views serve: the same querysets, and for skills the
+    one GET /skills/<game_id> reads (Skill.objects.shown()).
+    """
+    def ids(rows):
+        return list(rows.order_by("game_id").values_list("game_id", flat=True))
+
+    return {
+        "umas": ids(_uma_pages()),
+        "cards": ids(_card_pages()),
+        "skills": ids(Skill.objects.shown().exclude(game_id=None)),
+    }
+
+
+@api_view(["GET"])
+@permission_classes([permissions.AllowAny])
+def encyclopedia_index(request):  # pylint: disable=unused-argument
+    """GET /encyclopedia/index: every page's id. Cached like a page, so a write
+    to an uma, card or skill (a new row included) rebuilds it."""
+    body = skills_cache.read_page("index", 0)
+    if body is None:
+        body = _bytes(build_index())
+        skills_cache.store_page("index", 0, body)
+    return _json(body)
+
+
+def build_card_effects():
+    """
+    Every game card's effects at its five limit-break caps and its unique
+    effect's plain parts, for sorting the card list by an effect
+    (notes/card-effect-sort-plan.md). Keyed by the card's pk, the id the list
+    already has from /pvp-catalogue. `types` names every effect type any card
+    has, for the sort's picker, in the game's type order.
+    """
+    cards, present = {}, set()
+    for card in SupportCard.objects.filter(is_placeholder=False).exclude(game_id=None).only(
+        "id", "rarity", "effects", "unique_effect",
+    ):
+        effects = support_effects.at_caps(card.effects, card.rarity)
+        if not effects:
+            continue
+        present.update(effects)
+        cards[str(card.id)] = {
+            "caps": list(support_effects.caps(card.rarity)),
+            "effects": {str(kind): values for kind, values in effects.items()},
+            "unique": support_effects.unique_parts(card.unique_effect),
+        }
+    types = [
+        {"type": kind, "name": support_effects.TYPES[kind]["name"], "format": support_effects.TYPES[kind]["format"]}
+        for kind in sorted(present)
+    ]
+    return {"types": types, "cards": cards}
+
+
+@api_view(["GET"])
+@permission_classes([permissions.AllowAny])
+def encyclopedia_card_effects(request):  # pylint: disable=unused-argument
+    """GET /encyclopedia/card-effects: the card list's effect sort. Same cache
+    as the pages; one entry for everyone."""
+    body = skills_cache.read_page("card-effects", 0)
+    if body is None:
+        body = _bytes(build_card_effects())
+        skills_cache.store_page("card-effects", 0, body)
+    return _json(body)

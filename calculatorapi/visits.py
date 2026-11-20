@@ -75,8 +75,11 @@ KNOWN_ROUTES = frozenset({
     "/app/selectors",
     "/app/legend-races",
     "/app/pvp",
+    # The Encyclopedia's three lists, open to everyone since 2026-11-18.
     "/app/skills",
-    # Early access only and not prerendered, like /app/skills.
+    "/app/umas",
+    "/app/cards",
+    # Early access only and not prerendered.
     "/app/rankings",
     # Account only and not prerendered, like /account, but a landing all the same.
     "/app/collection",
@@ -94,6 +97,11 @@ SHARED_PLAN_ROUTE = "/app/<shared>"
 # (calculatorapi/public_ids.py). Checked only once KNOWN_ROUTES has missed,
 # because "/app/timeline" fits it too.
 _SHARED_PLAN_PATH = re.compile(r"^/app/[a-z0-9]{8}$")
+
+# An Encyclopedia page, /app/umas/<game id> and its card and skill twins: one
+# bucket per KIND, "/app/umas/<id>", for the same reason a shared plan gets
+# one. About 2,650 pages would otherwise each be a row.
+_ENCYCLOPEDIA_PAGE = re.compile(r"^/app/(umas|cards|skills)/\d+$")
 
 OTHER = "other"
 # No referrer at all: a bookmark, a typed address, and most chat apps
@@ -127,6 +135,8 @@ def landing_route(path):
         return route
     if _SHARED_PLAN_PATH.match(route):
         return SHARED_PLAN_ROUTE
+    if page := _ENCYCLOPEDIA_PAGE.match(route):
+        return f"/app/{page.group(1)}/<id>"
     return OTHER
 
 

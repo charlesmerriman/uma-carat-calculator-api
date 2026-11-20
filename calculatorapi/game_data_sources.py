@@ -13,7 +13,7 @@ from pathlib import Path
 
 from django.core.management.base import CommandError
 
-from .models import SkillAlias, SupportCard, Uma
+from .models import SkillAlias, SupportCard, SupportCardSkill, Uma, UmaSkill, UmaSkillSource
 from .models.skill import SkillRarity
 
 
@@ -80,6 +80,12 @@ class SecondarySources:
             if not path.is_file():
                 raise CommandError(f"JP snapshot file missing: {path}")
             files[name] = json.loads(path.read_text(encoding="utf-8"))
+        # Optional: a JP snapshot from before 2026-11-12 has no card effects,
+        # one from before 2026-11-14 no career objectives, and one from before
+        # 2026-11-17 no event skills or story events.
+        for name in ("support_effects", "objectives", "support_events", "story_events"):
+            path = directory / f"{name}.json"
+            files[name] = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else []
         return files
 
     @staticmethod
@@ -259,16 +265,99 @@ def plan_evolutions(sources, condition_text):
     return plan
 
 
+def jp_awakening_ahead(global_rows, jp_rows, jp_only_outfits):
+    """
+    Awakening ranks JP has given an outfit that global's files don't have
+    yet, as UmaSkill rows: JP raised the cap to 7 for some outfits (Special
+    Week, Tokai Teio and four more as of the 2026-10-02 export; Daptrius,
+    board "Awakening Level 6 and 7", 2026-11-17).
+
+    A global outfit otherwise takes its skills from global's files only, so
+    these ranks never arrived. Only a RANK global lacks for that outfit is
+    taken, never a rank global already has: global's own rows stay the truth
+    for what is in its game, and when global adds rank 6 its rows simply
+    match these. The skills are JP-only until then, so every page tags them
+    "JP only" and the team builder (global skills only) never offers them.
+    """
+    global_ranks = {}
+    for row in global_rows:
+        if row["source"] == "awakening":
+            global_ranks.setdefault(row["card_id"], set()).add(row["level"])
+    return [
+        (row["card_id"], row["skill_id"], row["source"], row["level"])
+        for row in jp_rows
+        if row["source"] == "awakening"
+        and row["card_id"] in global_ranks  # a global outfit (a JP-only one takes every row already)
+        and row["card_id"] not in jp_only_outfits
+        and row["level"] not in global_ranks[row["card_id"]]
+    ]
+
+
+def jp_awakening_superseded(global_rows, jp_rows):
+    """
+    The JP awakening rows `jp_awakening_ahead` borrowed that global has since
+    replaced, as (outfit game id, skill game id, level): a rank global now has
+    for that outfit, holding a skill global does NOT list for it at all.
+
+    The import never deletes a junction row (an editor's addition must
+    survive), so without this a JP skill would linger beside global's at the
+    same level once global ships the rank with a different skill (or lists the
+    skill for the outfit as anything but awakening). Only a row
+    that matches JP's row exactly is a borrowed one; the caller removes such a
+    row only where its level is still JP's. A rank where JP and global agree
+    keeps its row: global's own data then says the same thing.
+    """
+    global_ranks, global_skills = {}, set()
+    for row in global_rows:
+        if row["source"] == "awakening":
+            global_ranks.setdefault(row["card_id"], set()).add(row["level"])
+            global_skills.add((row["card_id"], row["skill_id"]))
+    return [
+        (row["card_id"], row["skill_id"], row["level"])
+        for row in jp_rows
+        if row["source"] == "awakening"
+        and row["level"] in global_ranks.get(row["card_id"], ())
+        and (row["card_id"], row["skill_id"]) not in global_skills
+    ]
+
+
+def superseded_uma_skills(global_rows, jp_rows):
+    """
+    The UmaSkill rows to remove for jp_awakening_superseded: a row matching a
+    superseded JP row exactly, its level still JP's. The one junction row the
+    import ever deletes, and only one that matches JP's data, so an editor's
+    own row is never touched.
+    """
+    superseded = set(jp_awakening_superseded(global_rows, jp_rows))
+    if not superseded:
+        return []
+    return [
+        row for row in UmaSkill.objects.filter(
+            source=UmaSkillSource.AWAKENING,
+            uma__game_id__in={card for card, _, _ in superseded},
+            skill__game_id__in={skill for _, skill, _ in superseded},
+        ).select_related("uma", "skill")
+        if (row.uma.game_id, row.skill.game_id, row.level) in superseded
+    ]
+
+
 def jp_owner_links(sources, snapshot):
     """
     Skill links for outfits and support cards global doesn't have, from the
     JP snapshot. Outfits and cards ON global keep global's links only: JP's
     lists can differ, and global's are what a player there gets.
 
-    Also `card_types`, {game id: type} for the same JP-only support cards:
-    global's files don't type a card it doesn't have, and a blank type matched
-    no filter in the team builder's card picker (board, 2026-10-26). Global's
-    type always wins, because a card on global is never in this list.
+    Also the facts global's files can't give a row it doesn't have, from the
+    same JP snapshot (global's always win, because a row on global is never in
+    these):
+      `card_facts`  {game id: {"card_type", "character_id"}} for JP-only
+                    support cards. The type first (a blank one matched no
+                    filter in the team builder's card picker, board
+                    2026-10-26), the character id for the Encyclopedia.
+      `uma_cards`   {game id: the JP snapshot's outfit} for JP-only outfits,
+                    which the command turns into aptitudes, stats and growth
+                    (jp_uma_values). The Encyclopedia shows them marked as JP
+                    data (owner, 2026-11-12).
 
     THE NAME CHECK, in English: a JP card's names are Japanese, so its
     character id is looked up in global's data instead, and our row's name
@@ -276,8 +365,8 @@ def jp_owner_links(sources, snapshot):
     character global doesn't have at all can't be checked; its rows are
     trusted and counted as `unchecked` in the report.
     """
-    result = {"uma_rows": [], "card_rows": [], "card_types": {}, "uma_distrusted": set(),
-              "card_distrusted": set(), "lines": [], "unchecked": 0}
+    result = {"uma_rows": [], "card_rows": [], "card_facts": {}, "uma_cards": {},
+              "uma_distrusted": set(), "card_distrusted": set(), "lines": [], "unchecked": 0}
     if sources.jp is None:
         return result
     english = {card["chara_id"]: card["chara_name"] for card in snapshot["cards"]}
@@ -316,15 +405,96 @@ def jp_owner_links(sources, snapshot):
     result["uma_rows"] = [
         (row["card_id"], row["skill_id"], row["source"], row["level"])
         for row in sources.jp["card_skills"] if row["card_id"] in jp_umas
-    ]
+    ] + jp_awakening_ahead(snapshot["card_skills"], sources.jp["card_skills"], jp_umas)
+    # Hints from the JP mdb, event skills from the JP server capture
+    # (scripts/convert_jp_support_events.py); a global card takes both from
+    # global's own files, so only JP-only cards read these.
     result["card_rows"] = [
         (row["support_card_id"], row["skill_id"], "hint", None)
         for row in sources.jp["support_hints"] if row["support_card_id"] in jp_cards
+    ] + [
+        (row["support_card_id"], row["skill_id"], "event", None)
+        for row in sources.jp["support_events"] if row["support_card_id"] in jp_cards
     ]
-    # A distrusted id is no better a key for a type than for skills.
-    result["card_types"] = {
-        card["id"]: card["card_type"] for card in sources.jp["support_cards"]
-        if card["id"] in jp_cards and card["id"] not in result["card_distrusted"]
-        and card.get("card_type")
+    # A distrusted id is no better a key for its facts than for its skills.
+    result["card_facts"] = _jp_card_facts(sources, jp_cards - result["card_distrusted"])
+    result["uma_cards"] = {
+        card["id"]: card for card in sources.jp["cards"]
+        if card["id"] in jp_umas and card["id"] not in result["uma_distrusted"]
     }
     return result
+
+
+def _jp_card_facts(sources, card_ids):
+    """{game id: {"character_id", "card_type"}} for the JP-only cards in `card_ids`;
+    a card the JP snapshot gives no type keeps its type out of the dict."""
+    facts = {}
+    for card in sources.jp["support_cards"]:
+        if card["id"] in card_ids:
+            facts[card["id"]] = {"character_id": card["chara_id"]}
+            if card.get("card_type"):
+                facts[card["id"]]["card_type"] = card["card_type"]
+    return facts
+
+
+def jp_names(sources, uma_distrusted, card_distrusted):
+    """
+    ({outfit id: {"jp_name", "jp_title", "translated_title"}}, {card id:
+    {...}}) from the JP snapshot, for every outfit and card it holds, global
+    ones included: the Japanese name is a fact about the row wherever it is
+    out. `translated_title` is UmaTL's, when the slice is loaded (shown only
+    while `title` is blank). An id either name check rejected (global's or
+    jp_owner_links') is skipped, so a wrong game_id doesn't put another
+    character's name on the row.
+    """
+    if sources.jp is None:
+        return {}, {}
+    umatl = sources.umatl
+    found = []
+    for cards, distrusted, category in (
+        (sources.jp["cards"], uma_distrusted, "outfit_titles"),
+        (sources.jp["support_cards"], card_distrusted, "card_titles"),
+    ):
+        titles = umatl.get(category, {}) if umatl is not None else None
+        rows = {}
+        for card in cards:
+            if card["id"] in distrusted:
+                continue
+            rows[card["id"]] = {"jp_name": card["chara_name"], "jp_title": card["title"]}
+            if titles is not None:
+                rows[card["id"]]["translated_title"] = titles.get(str(card["id"]), "")
+        found.append(rows)
+    return tuple(found)
+
+
+class JunctionSpec:
+    """One skill junction table for import_game_data: who owns the rows and whether they
+    carry a level."""
+
+    def __init__(self, label, owner_model, model, owner_field):
+        self.label = label
+        self.owner_model = owner_model
+        self.model = model
+        self.owner_field = owner_field
+        self.has_level = any(field.name == "level" for field in model._meta.fields)  # pylint: disable=protected-access
+
+    def existing_levels(self):
+        """{(owner game_id, skill game_id, source): level} for every row in the table."""
+        columns = [f"{self.owner_field}__game_id", "skill__game_id", "source"]
+        if self.has_level:
+            columns.append("level")
+        return {
+            tuple(values[:3]): (values[3] if self.has_level else None)
+            for values in self.model.objects.values_list(*columns)
+        }
+
+    def fields(self, owner, skill, source, level=None):
+        """Constructor / filter kwargs for one row."""
+        fields = {self.owner_field: owner, "skill": skill, "source": source}
+        if self.has_level and level is not None:
+            fields["level"] = level
+        return fields
+
+
+UMA_SKILLS = JunctionSpec("uma skill", Uma, UmaSkill, "uma")
+SUPPORT_CARD_SKILLS = JunctionSpec("support card skill", SupportCard, SupportCardSkill, "support_card")

@@ -5,6 +5,7 @@ shape and input validation: views/roster.py.
 """
 
 from django.db import transaction
+from django.db.models.fields.json import KeyTransform
 
 from calculatorapi.models import (
     CustomUser,
@@ -21,9 +22,54 @@ class RosterRefused(Exception):
     """A write the rules refuse. The message is shown to the player as is."""
 
 
+# A ceiling on the hint entries read from one uma's game_data. An outfit has
+# about seven skills a hint can raise (Daptrius's export, 2026-11-17: at most
+# five per uma), so this only stops a crafted import from making a GET slow.
+_HINTS_MAX = 50
+# Nor do we know the game's top hint level (the export holds only 1 and 3), so
+# no rule of the game is assumed here: this too only refuses nonsense.
+_HINT_LEVEL_MAX = 99
+
+
 def owned_umas(user):
-    """The player's umas. `game_data` deferred: only an export would read it."""
-    return OwnedUma.objects.filter(user=user).defer("game_data")
+    """The player's umas. `game_data` deferred: only an export would read it.
+    Its one key the site reads, the hint levels, comes along as `skill_hints`
+    (a JSON key lookup in the database, so the rest of the object stays put)."""
+    return (
+        OwnedUma.objects.filter(user=user)
+        .defer("game_data")
+        .annotate(skill_hints=KeyTransform("skill_data_array", "game_data"))
+    )
+
+
+def _whole(value):
+    # bool is a subclass of int in Python, so True would pass a bare isinstance.
+    return isinstance(value, int) and not isinstance(value, bool)
+
+
+def hint_levels(raw):
+    """
+    {skill game id: level} from an imported uma's `skill_data_array`, the
+    hint levels the game keeps on each owned outfit for her own innate and
+    awakening skills (umadump reads them from the game's `hintLevelDic`).
+
+    The array comes from the player's file, so anything malformed is skipped
+    rather than trusted, and only these two numbers ever leave: never the rest
+    of `game_data`, which holds the player's account id. A hand-ticked uma has
+    no game_data, so no hints; a hand edit keeps an imported uma's.
+
+    Keys are strings, as JSON object keys always are on the wire.
+    """
+    if not isinstance(raw, list):
+        return {}
+    levels = {}
+    for entry in raw[:_HINTS_MAX]:
+        if not isinstance(entry, dict):
+            continue
+        skill_id, level = entry.get("skill_id"), entry.get("level")
+        if _whole(skill_id) and _whole(level) and skill_id > 0 and 1 <= level <= _HINT_LEVEL_MAX:
+            levels[str(skill_id)] = level
+    return levels
 
 
 def owned_cards(user):

@@ -14,9 +14,19 @@ as {category: {index: text}}, the same key the extractor reads:
   47   skill names                  by skill id
   48   skill descriptions           by skill id
   290  evolution condition text     by skill_upgrade_condition id
+  5    outfit titles                by outfit id ("[Special Dreamer]")
+  76   support card titles          by support card id
+  155  unique effect sentences      by support card id
+  28   race names                   by race instance id, for the races on
+                                    the JP snapshot's career routes
+
+The last four fill JP-only Encyclopedia pages (owner, 2026-11-14,
+notes/encyclopedia-jp-fills-plan.md): an outfit's or card's title, a card's
+unique effect, a career goal's race.
 
 WHERE IT RANKS. Global's own English always wins; a translation is shown only
-while a skill has no global text (skills-plan-3.md, "Sources"). The slice keeps
+while a skill (or a title, a unique effect, a race) has no global text
+(skills-plan-3.md, "Sources"). An editor's English title beats it too. The slice keeps
 every JP id anyway, global ones included: an old translated name stays useful
 as an alias after global names the skill, so a guide that wrote it still links.
 
@@ -50,14 +60,25 @@ CATEGORIES = {
     "skill_names": "47",
     "skill_descriptions": "48",
     "evolution_conditions": "290",
+    "outfit_titles": "5",
+    "card_titles": "76",
+    "unique_effects": "155",
+    "race_names": "28",
 }
+
+# UmaTL's sentences carry the client's line breaks ("Skill Pt bonus and
+# initial \nWit increase") and stray double spaces. For these categories the
+# whitespace is collapsed to single spaces; the words are never changed. The
+# skill categories keep their text as it was first sliced.
+COLLAPSED = {"outfit_titles", "card_titles", "unique_effects", "race_names"}
 
 ATTRIBUTION = """\
 # UmaTL translations
 
 The files in this folder are a slice of **UmaTL**'s English translation of the
-Umamusume: Pretty Derby JP client: skill names, skill descriptions and skill
-evolution conditions.
+Umamusume: Pretty Derby JP client: skill names, skill descriptions, skill
+evolution conditions, outfit and support card titles, support card unique
+effects and race names.
 
 - Source: https://github.com/{repo} (`{path}`)
 - Commit: `{commit}` ({committed_at})
@@ -80,6 +101,12 @@ def wanted_ids(snapshot_dir):
     skills = json.loads((snapshot_dir / "skills.json").read_text(encoding="utf-8"))
     evolutions = json.loads((snapshot_dir / "evolutions.json").read_text(encoding="utf-8"))
     skill_ids = {str(skill["id"]) for skill in skills}
+    outfit_ids = {str(card["id"]) for card in read(snapshot_dir, "cards.json")}
+    card_ids = {str(card["id"]) for card in read(snapshot_dir, "support_cards.json")}
+    # Optional: a JP snapshot from before 2026-11-14 has no career routes.
+    routes = read(snapshot_dir, "objectives.json") if (snapshot_dir / "objectives.json").is_file() else []
+    race_ids = {str(goal["race_instance_id"]) for route in routes for goal in route["goals"]
+                if "race_instance_id" in goal}
     condition_ids = {
         str(condition["id"])
         for kind in evolutions.values()
@@ -90,12 +117,21 @@ def wanted_ids(snapshot_dir):
         "skill_names": skill_ids,
         "skill_descriptions": skill_ids,
         "evolution_conditions": condition_ids,
+        "outfit_titles": outfit_ids,
+        "card_titles": card_ids,
+        "unique_effects": card_ids,
+        "race_names": race_ids,
     }
+
+
+def read(snapshot_dir, name):
+    return json.loads((snapshot_dir / name).read_text(encoding="utf-8"))
 
 
 def slice_text(full, wanted):
     """
-    Keep only the wanted ids of the three categories, sorted by id.
+    Keep only the wanted ids of each category, sorted by id, with the
+    whitespace of the COLLAPSED categories collapsed.
 
     Blank entries are dropped: an empty translation is no translation, and
     keeping it would make the import treat the skill as translated.
@@ -104,8 +140,8 @@ def slice_text(full, wanted):
     for key, category in CATEGORIES.items():
         texts = full.get(category, {})
         out[key] = {
-            index: texts[index]
-            for index in sorted(wanted[key] & texts.keys(), key=int)
+            index: " ".join(texts[index].split()) if key in COLLAPSED else texts[index]
+            for index in sorted(wanted.get(key, set()) & texts.keys(), key=int)
             if texts[index].strip()
         }
     return out

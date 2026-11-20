@@ -35,11 +35,30 @@ What comes out, one file per concern (all sorted by id, so re-runs diff cleanly)
   evolution_condition_text.json  global only: the official English text of
                       evolution conditions, keyed by condition id. Like skill
                       names, this text ships before global has the conditions
+  objectives.json     each character's career goals on the default route (see
+                      extract_objectives). A race goal's name is in the
+                      client's language, so the JP file's are Japanese; the
+                      import names those from race_names.json
+  race_names.json     global only: every race instance's English name, by id
+                      (text_data 28), for naming a JP route's races
+  support_effects.json  every support card's effects as the game states them:
+                      each effect's value at the levels the game names, and
+                      the unique effect (see extract_support_effects)
+  support_effect_types.json  global only: each effect type's English name and
+                      help text ("Friendship Bonus", "Increases the
+                      effectiveness of Friendship Training")
   sparks.json         global only: every spark (the game's "factor"), what a
                       veteran's export lists by id: kind, stars and name
   race_links.json     jp only: each CM's and LoH's course id and race
                       conditions, by number, which the admin's "Link courses"
                       reads (see extract_race_links)
+  story_events.json   every story event: name, start, end, claim deadline,
+                      rewards and the free cards it gives (see
+                      extract_story_events). Global's are the events it has
+                      run; JP's the ones still to come
+  characters.json     each character's two UI colours (see extract_characters).
+                      Writing it also rewrites the API's merged copy,
+                      calculatorapi/data/character_colours.json
 
 What the ids encode, because the import asserts on it:
 
@@ -74,9 +93,14 @@ Run from backend/:
     python scripts/extract_master_snapshot.py --region jp --mdb /tmp/jp/master.mdb
 """
 
+# One reader per concern in one file, so the run order and the meta counts live
+# beside every reader; past 1,000 lines since the story events (2026-11-17).
+# pylint: disable=too-many-lines
+
 import argparse
 import datetime
 import json
+import re
 import sqlite3
 from pathlib import Path
 
@@ -101,6 +125,10 @@ TEXT_SUPPORT_TITLE = 76
 TEXT_SUPPORT_CHARA = 77
 TEXT_EVOLUTION_CONDITION = 290  # "Reach 600 Stamina", by skill_upgrade_condition.id
 TEXT_SPARK_NAME = 147       # "Speed", "Oka Sho", by succession_factor.factor_id
+TEXT_RACE_INSTANCE = 28     # "Kisaragi Sho", by race_instance.id
+TEXT_EFFECT_NAME = 151      # "Friendship Bonus", by support_card_effect_table.type
+TEXT_EFFECT_HELP = 154      # "Increases the effectiveness of Friendship Training", by the same type
+TEXT_UNIQUE_EFFECT = 155    # "Guts Bonus and Initial Guts", by support card id
 
 # succession_factor.factor_type -> what the spark is, read from the global
 # client on 2026-10-27: 1 the five stats (blue in the game), 2 the surface,
@@ -130,6 +158,21 @@ STAT_WORDS = {
 SUPPORT_CARD_TYPES = {2: "friend", 3: "group"}
 
 HINT_GAIN_SKILL = 0   # hint_value_1 is a skill id; type 1 rows are stat hints
+
+# Story events (extract_story_events). text_data 189 is a story event's name,
+# by story_event_id. A reward is (item_category, item_id): read off the
+# client's own text_data 23 item names on 2026-11-17 (43 "Carats", 41 "Trainee
+# Scout Ticket", 111 "Support Card Scout Ticket", 149 "Rainbow Crystal Shard",
+# 150 "Gold Crystal Shard"); category 51 is a support card, by its id.
+TEXT_STORY_EVENT_NAME = 189
+STORY_EVENT_REWARDS = {
+    "carats": (90, 43),
+    "uma_tickets": (40, 41),
+    "support_tickets": (40, 111),
+    "ssr_shards": (164, 149),
+    "sr_shards": (164, 150),
+}
+STORY_EVENT_CARD_REWARD = 51
 
 
 # The game's column names for the five stats, in the order this project uses.
@@ -253,7 +296,47 @@ def extract_skill_text_ahead(conn, skills):
     ]
 
 
-def extract_cards(conn):
+# main_story_data.add_reward_category_1 for an outfit (51 is a support card,
+# 90 an item). Every story chapter that gives one also dates it, through its
+# part's start_date.
+MAIN_STORY_OUTFIT_REWARD = 50
+
+
+def first_release_dates(conn):
+    """
+    {outfit id: when it first became obtainable on this region}, the earliest
+    of the gachas that offer it and the main story chapters that give it, or
+    None when the database has neither table set (the JP mdb rebuilt from a
+    CSV export). An outfit is obtainable either way: [Ruler of Japan] Special
+    Week is on no gacha and is the reward of main story Part 7 (2026-06-25;
+    the owner, 2026-11-14: "obtainable right now"). gacha_available.card_type
+    1 is an outfit, 2 a support card. The client dates its "not released here"
+    gachas 2099-01-01, so the minimum is a real gacha whenever there is one.
+    """
+    tables = {name for (name,) in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
+    sources = []
+    if {"gacha_available", "gacha_data"} <= tables:
+        sources.append(("""
+            SELECT a.card_id, g.start_date
+            FROM gacha_available a JOIN gacha_data g ON g.id = a.gacha_id
+            WHERE a.card_type = 1
+        """, ()))
+    if {"main_story_data", "main_story_part"} <= tables:
+        sources.append(("""
+            SELECT d.add_reward_id_1, p.start_date
+            FROM main_story_data d JOIN main_story_part p ON p.id = d.part_id
+            WHERE d.add_reward_category_1 = ?
+        """, (MAIN_STORY_OUTFIT_REWARD,)))
+    if not sources:
+        return None
+    first = {}
+    for query, params in sources:
+        for card_id, start in conn.execute(query, params):
+            first[card_id] = min(start, first.get(card_id, start))
+    return first
+
+
+def extract_cards(conn):  # pylint: disable=too-many-locals
     """Outfits with their per-star rows. Also returns the unique-skill rows."""
     full_names = text_map(conn, TEXT_CARD_FULL)
     titles = text_map(conn, TEXT_CARD_TITLE)
@@ -281,6 +364,8 @@ def extract_cards(conn):
             },
         })
 
+    first_release = first_release_dates(conn)
+
     cards, card_skills = [], []
     for row in conn.execute("SELECT * FROM card_data ORDER BY id"):
         card_id = row["id"]
@@ -297,6 +382,13 @@ def extract_cards(conn):
             "running_style": RUNNING_STYLES.get(row["running_style"], str(row["running_style"])),
             "growth": stat_block(row, "talent_"),
             "stars": stars,
+            # When the outfit first became obtainable on this region (a gacha
+            # or a main story reward), as unix seconds: card_data carries no
+            # date of its own, unlike support_card_data. None for an outfit
+            # nothing in the client gives yet, so it is not out.
+            # import_game_data reads this for Uma.global_release_at. Absent on
+            # a client with neither table set.
+            **({"start_date": first_release.get(card_id)} if first_release is not None else {}),
         })
 
         # Unique skills: one row per distinct skill, at the first star that
@@ -380,7 +472,7 @@ def extract_support_cards(conn, region="global"):
             # When the card comes out on this region, as unix seconds. The
             # global client carries a few JP-only cards dated 2099-01-01, its
             # "not released here" mark, so being in the table is not being
-            # out (import_game_data reads this for is_on_global).
+            # out (import_game_data reads this for global_release_at).
             "start_date": row["start_date"],
         }
         # Group cards only, so the other 260 rows diff the same as before.
@@ -422,6 +514,131 @@ def extract_sparks(conn):
         for row in conn.execute(
             "SELECT factor_id, factor_type, rarity FROM succession_factor ORDER BY factor_id"
         )
+    ]
+
+
+# single_mode_route_race.target_type: 1 is the character's own career goal; 3
+# the scenario's finals (turns 74 to 78), the same for everyone, left out.
+GOAL_TARGET = 1
+# condition_type 1: run a race (condition_id is a single_mode_program id). The
+# other kinds (2, 3, 7, 8, 9: 57 rows on 2026-11-12, kind 3 looks like a fan
+# count) are extracted as they are, undecoded; the site shows none of them
+# until one is confirmed (notes/encyclopedia-plan.md, PR 11).
+RACE_GOAL = 1
+
+
+def extract_objectives(conn):
+    """
+    Each character's career goals on the default route (scenario_id 0), in
+    order: [{"chara_id", "goals": [{"turn", "kind", ...}]}]. A race goal names
+    its race through the career program (text_data 28 by race instance, the
+    client's own words), with the race's grade code and the placing needed
+    (condition_value_1: 1 win, 2/3/5 that place or better, 0 just run it).
+    Keyed by CHARACTER, as the game keys them: every outfit shares them.
+    A race goal also carries its `race_instance_id`, the same id in both
+    clients (1,978 checked against UmaTL's names, 2026-11-14), so a JP route
+    can take Global's English name for the race.
+    """
+    names = text_map(conn, TEXT_RACE_INSTANCE)
+    programs = {
+        row["id"]: row for row in conn.execute(
+            "SELECT p.id, p.race_instance_id, r.grade FROM single_mode_program p "
+            "JOIN race_instance ri ON ri.id = p.race_instance_id JOIN race r ON r.id = ri.race_id"
+        )
+    }
+    routes = conn.execute(
+        "SELECT chara_id, race_set_id FROM single_mode_route WHERE scenario_id = 0 ORDER BY chara_id, priority"
+    ).fetchall()
+    found = []
+    for route in routes:
+        goals = []
+        for row in conn.execute(
+            "SELECT turn, condition_type, condition_id, condition_value_1, condition_value_2 "
+            "FROM single_mode_route_race WHERE race_set_id = ? AND target_type = ? ORDER BY sort_id",
+            (route["race_set_id"], GOAL_TARGET),
+        ):
+            goal = {"turn": row["turn"], "kind": row["condition_type"]}
+            program = programs.get(row["condition_id"]) if row["condition_type"] == RACE_GOAL else None
+            if program is not None:
+                goal.update(race=names.get(program["race_instance_id"], ""), grade=program["grade"],
+                            top=row["condition_value_1"], race_instance_id=program["race_instance_id"])
+            else:
+                goal.update(condition_id=row["condition_id"], value_1=row["condition_value_1"],
+                            value_2=row["condition_value_2"])
+            goals.append(goal)
+        found.append({"chara_id": route["chara_id"], "goals": goals})
+    return found
+
+
+# support_card_effect_table's value columns and the card level each one names.
+# A value of -1 means "the game names no value at this level".
+EFFECT_LEVEL_COLUMNS = (("init", 1),) + tuple((f"limit_lv{level}", level) for level in range(5, 55, 5))
+EFFECT_UNSET = -1
+# A real card's id is five digits; the tutorial's copies sit above nine million.
+TUTORIAL_CARD_IDS_FROM = 9_000_000
+
+
+def extract_support_effects(conn, region="global"):
+    """
+    Each support card's effects, exactly as the game's tables state them:
+
+      [{"id": 30001,
+        "effects": [{"type": 1, "levels": {"1": 10, "25": 15, "30": 15, "45": 20}}, ...],
+        "unique": {"level": 30, "effects": [{"type": 6, "value": 1}, {"type": 12, "value": 20}],
+                   "text": "Guts Bonus and Initial Guts"}}]
+
+    `effects` is support_card_effect_table: one row per card and effect type,
+    with a value at SOME of the levels 1, 5, 10 ... 50. Only those named
+    levels are kept. What the value is between two of them is not in the
+    files: calculatorapi/support_effects.py works it out, by the rule checked
+    against real cards, so the snapshot stays a copy of the game.
+
+    `unique` is support_card_unique_effect: the level that unlocks it and up
+    to two typed effects. A type of 100 or more is a conditional effect whose
+    extra numbers (`params`) nobody here has decoded, so the page words a
+    unique effect with the game's OWN sentence (text_data 155, by card id),
+    which only the global client has in English. Null for a card with none.
+    """
+    if not has_table(conn, "support_card_effect_table"):
+        return []
+    sentences = text_map(conn, TEXT_UNIQUE_EFFECT) if region == "global" else {}
+    uniques = {}
+    for row in conn.execute("SELECT * FROM support_card_unique_effect ORDER BY id"):
+        effects = []
+        for slot in ("0", "1"):
+            if row[f"type_{slot}"]:
+                effect = {"type": row[f"type_{slot}"], "value": row[f"value_{slot}"]}
+                params = [row[f"value_{slot}_{index}"] for index in range(1, 5)]
+                if any(params):
+                    effect["params"] = params
+                effects.append(effect)
+        unique = {"level": row["lv"], "effects": effects}
+        if sentences.get(row["id"], "").strip():
+            unique["text"] = sentences[row["id"]].strip()
+        uniques[row["id"]] = unique
+
+    cards = {}
+    for row in conn.execute(
+        "SELECT * FROM support_card_effect_table WHERE id < ? ORDER BY id, type", (TUTORIAL_CARD_IDS_FROM,)
+    ):
+        levels = {
+            str(level): row[column] for column, level in EFFECT_LEVEL_COLUMNS if row[column] != EFFECT_UNSET
+        }
+        if levels:
+            cards.setdefault(row["id"], []).append({"type": row["type"], "levels": levels})
+    return [
+        {"id": card_id, "effects": effects, "unique": uniques.get(card_id)}
+        for card_id, effects in sorted(cards.items())
+    ]
+
+
+def extract_support_effect_types(conn):
+    """[{"type": 1, "name": "Friendship Bonus", "help": "Increases the ..."}], the game's own English."""
+    helps = text_map(conn, TEXT_EFFECT_HELP)
+    return [
+        {"type": effect_type, "name": name.strip(), "help": helps.get(effect_type, "").strip()}
+        for effect_type, name in sorted(text_map(conn, TEXT_EFFECT_NAME).items())
+        if name.strip()
     ]
 
 
@@ -551,6 +768,173 @@ def extract_evolutions(conn):
     return {"outfit": outfit, "scenario": scenario, "succession": succession}
 
 
+# chara_data's colours are six hex digits with no "#", in either case.
+HEX_COLOUR = re.compile(r"^[0-9A-Fa-f]{6}$")
+# The game leaves a character it never draws a training screen for (a
+# trainer, a reporter) at plain white. That is "unset", not a colour.
+UNSET_COLOUR = "FFFFFF"
+
+
+def extract_characters(conn):
+    """
+    Each character's two UI colours: chara_data.ui_color_main and
+    ui_color_sub, the pair the game paints her training screens in (Oguri
+    Cap: 3A7AD2 blue, ECE7E7 pale grey). The Encyclopedia paints her page
+    with them (notes/encyclopedia-redesign-plan.md).
+
+    Keyed by CHARACTER: every outfit and support card of hers shares them.
+    A row whose main colour is unset is skipped, and a value that is not six
+    hex digits stops the run: these end up in a style attribute, and the JP
+    half comes from a teammate's export.
+    """
+    characters = []
+    for row in conn.execute("SELECT id, ui_color_main, ui_color_sub FROM chara_data ORDER BY id"):
+        primary, sub = (str(row[key] or "").strip() for key in ("ui_color_main", "ui_color_sub"))
+        if not primary or primary.upper() == UNSET_COLOUR:
+            continue
+        for value in (primary, sub):
+            if not HEX_COLOUR.match(value):
+                raise SystemExit(f"chara_data {row['id']}: {value!r} is not a six-digit hex colour")
+        characters.append({"id": row["id"], "colour_main": f"#{primary.upper()}", "colour_sub": f"#{sub.upper()}"})
+    return characters
+
+
+# The API's copy: one {character id: [main, sub]} for both clients, read by
+# calculatorapi/character_colours.py.
+COLOURS_FILE = Path(__file__).resolve().parent.parent / "calculatorapi" / "data" / "character_colours.json"
+
+
+def _iso(unix_seconds):
+    if not unix_seconds:
+        return None
+    return datetime.datetime.fromtimestamp(unix_seconds, datetime.timezone.utc).isoformat()
+
+
+def extract_story_events(conn):
+    """
+    Every story event: its name, its three instants, what it pays and which
+    support cards it gives away. The Timeline draws one under its banner
+    (notes/story-events-plan.md).
+
+    The instants: `start_date`, `ending_date` (the event's last moment, with
+    its banner) and `end_date` (the last moment to claim rewards, three days
+    later on every Global event so far). Written as `start`, `end`, `claim_end`.
+
+    A REWARD TOTAL READS FOUR TABLES, and the first version of this sum read
+    two and came out 360 carats and a copy short (2026-11-17):
+
+      story_event_point_reward     the points ladder
+      story_event_roulette_bingo   one row per roulette SHEET, each pointing at
+        -> story_event_bingo_reward  a reward set. Two sheets can share a set,
+                                   and each sheet pays it, so the join counts
+                                   the set once per sheet. The looping last
+                                   sheet (can_loop = 1) is left out: it repeats
+                                   without end and pays nothing listed here.
+      story_event_story_data       each story chapter's add_reward_* (7 x 30
+                                   carats, and a card copy on the last one)
+      story_event_mission          the event's missions
+
+    Summed this way the files give the team's figure on 48 of the 57 JP events
+    and on 16 of the 22 Global ones (Daptrius's Carat Data Sheet, checked
+    2026-11-17). Where they differ the team's figure wins: the import writes
+    these only as a starting value (see import_game_data).
+
+    `cards` is each support card id the event gives, SSRs first. Every event
+    gives five copies of each (Daptrius), so no count is kept.
+
+    None when the database has no story event tables.
+    """
+    if not has_table(conn, "story_event_data"):
+        return None
+    names = text_map(conn, TEXT_STORY_EVENT_NAME)
+
+    def total(event_id, category, item_id):
+        amount = 0
+        if has_table(conn, "story_event_point_reward"):
+            amount += conn.execute(
+                "SELECT COALESCE(SUM(item_num), 0) FROM story_event_point_reward"
+                " WHERE story_event_id = ? AND item_category = ? AND item_id = ?",
+                (event_id, category, item_id),
+            ).fetchone()[0]
+        if has_table(conn, "story_event_roulette_bingo"):
+            amount += conn.execute(
+                "SELECT COALESCE(SUM(b.item_num), 0) FROM story_event_roulette_bingo r"
+                " JOIN story_event_bingo_reward b ON b.reward_set_id = r.reward_set_id"
+                " WHERE r.story_event_id = ? AND r.can_loop = 0"
+                " AND b.item_category = ? AND b.item_id = ?",
+                (event_id, category, item_id),
+            ).fetchone()[0]
+        if has_table(conn, "story_event_story_data"):
+            for slot in (1, 2):
+                amount += conn.execute(
+                    f"SELECT COALESCE(SUM(add_reward_num_{slot}), 0) FROM story_event_story_data"
+                    f" WHERE story_event_id = ? AND add_reward_category_{slot} = ?"
+                    f" AND add_reward_id_{slot} = ?",
+                    (event_id, category, item_id),
+                ).fetchone()[0]
+        if has_table(conn, "story_event_mission"):
+            amount += conn.execute(
+                "SELECT COALESCE(SUM(item_num), 0) FROM story_event_mission"
+                " WHERE story_event_id = ? AND item_category = ? AND item_id = ?",
+                (event_id, category, item_id),
+            ).fetchone()[0]
+        return amount
+
+    def cards(event_id):
+        found = set()
+        queries = [
+            ("story_event_point_reward",
+             "SELECT item_id FROM story_event_point_reward"
+             " WHERE story_event_id = ? AND item_category = ?"),
+            ("story_event_roulette_bingo",
+             "SELECT b.item_id FROM story_event_roulette_bingo r"
+             " JOIN story_event_bingo_reward b ON b.reward_set_id = r.reward_set_id"
+             " WHERE r.story_event_id = ? AND b.item_category = ?"),
+            ("story_event_story_data",
+             "SELECT add_reward_id_1 FROM story_event_story_data"
+             " WHERE story_event_id = ? AND add_reward_category_1 = ?"),
+        ]
+        for table, query in queries:
+            if has_table(conn, table):
+                found.update(card_id for (card_id,) in
+                             conn.execute(query, (event_id, STORY_EVENT_CARD_REWARD)))
+        # SSRs first (a support id's leading digit is its rarity), then by id.
+        return sorted(found, key=lambda card_id: (-(card_id // 10_000), card_id))
+
+    events = []
+    for row in conn.execute(
+        "SELECT story_event_id, start_date, ending_date, end_date FROM story_event_data"
+        " ORDER BY story_event_id"
+    ):
+        event_id = row["story_event_id"]
+        events.append({
+            "id": event_id,
+            "name": names.get(event_id, "").strip(),
+            "start": _iso(row["start_date"]),
+            "end": _iso(row["ending_date"]),
+            "claim_end": _iso(row["end_date"]),
+            "rewards": {
+                key: total(event_id, category, item_id)
+                for key, (category, item_id) in STORY_EVENT_REWARDS.items()
+            },
+            "cards": cards(event_id),
+        })
+    return events
+
+
+def merged_character_colours(snapshot_dirs):
+    """Both snapshots' characters.json as one map. Global's pair wins where
+    both have a character: it is the client a player here looks at."""
+    merged = {}
+    for directory in snapshot_dirs:  # later directories only fill what is missing
+        path = directory / "characters.json"
+        if not path.is_file():
+            continue
+        for row in json.loads(path.read_text(encoding="utf-8")):
+            merged.setdefault(str(row["id"]), [row["colour_main"], row["colour_sub"]])
+    return dict(sorted(merged.items(), key=lambda item: int(item[0])))
+
+
 def extract(mdb_path, region="global"):
     conn = sqlite3.connect(f"file:{mdb_path}?mode=ro", uri=True)
     conn.row_factory = sqlite3.Row  # columns by name, so no positional unpacking
@@ -559,6 +943,7 @@ def extract(mdb_path, region="global"):
         cards, card_skills = extract_cards(conn)
         support_cards, support_hints = extract_support_cards(conn, region)
         evolutions = extract_evolutions(conn)
+        support_effects = extract_support_effects(conn, region)
         # Text ahead of definitions is a global thing: JP defines what it
         # names, and global's English is the text worth having early. So are
         # the spark names: global's English is what a veteran card shows.
@@ -572,11 +957,24 @@ def extract(mdb_path, region="global"):
                     if text.strip()
                 },
                 "sparks.json": extract_sparks(conn),
+                "race_names.json": {
+                    str(race_id): text
+                    for race_id, text in sorted(text_map(conn, TEXT_RACE_INSTANCE).items())
+                    if text.strip()
+                },
+                "support_effect_types.json": extract_support_effect_types(conn),
             }
         # The course links come from JP's tables: they know every event
         # global will run, while global's stop at the events it has run.
         if region == "jp":
             region_only = {"race_links.json": extract_race_links(conn)}
+        # Both clients: JP's routes cover the characters global doesn't have.
+        region_only["objectives.json"] = extract_objectives(conn)
+        region_only["characters.json"] = extract_characters(conn)
+        # Both clients: global's are the events it has run (with English
+        # names), JP's the ones still to come.
+        if has_table(conn, "story_event_data"):
+            region_only["story_events.json"] = extract_story_events(conn)
     finally:
         conn.close()
 
@@ -590,6 +988,7 @@ def extract(mdb_path, region="global"):
         "evolutions_outfit": len(evolutions["outfit"]),
         "evolutions_scenario": len(evolutions["scenario"]),
         "evolutions_succession": len(evolutions["succession"]),
+        "support_effects": len(support_effects),
     }
     files = {
         "skills.json": skills,
@@ -598,10 +997,15 @@ def extract(mdb_path, region="global"):
         "support_cards.json": support_cards,
         "support_hints.json": support_hints,
         "evolutions.json": evolutions,
+        "support_effects.json": support_effects,
     }
     if region == "jp":
         counts.update({f"race_links_{kind}": len(region_only["race_links.json"][kind])
                        for kind in ("champions", "heroes")})
+        counts["objectives"] = len(region_only["objectives.json"])
+        counts["characters"] = len(region_only["characters.json"])
+        if "story_events.json" in region_only:
+            counts["story_events"] = len(region_only["story_events.json"])
     else:
         counts.update({name.removesuffix(".json"): len(payload) for name, payload in region_only.items()})
     files.update(region_only)
@@ -624,6 +1028,8 @@ def main():
     parser.add_argument("--mdb", type=Path, help="path to master.mdb (required for jp)")
     parser.add_argument("--out", type=Path, help="output directory (default: per region)")
     parser.add_argument("--dry-run", action="store_true", help="print counts, write nothing")
+    parser.add_argument("--only", action="append", metavar="FILE",
+                        help="write only this file (e.g. objectives.json), leaving the rest as committed; repeatable")
     args = parser.parse_args()
 
     if args.mdb is None:
@@ -643,11 +1049,19 @@ def main():
         return
 
     args.out.mkdir(parents=True, exist_ok=True)
+    if args.only:
+        # A new file from a NEWER mdb than the committed snapshot, without
+        # refreshing the rest (a content update is its own change).
+        files = {name: payload for name, payload in files.items() if name in args.only}
     for name, payload in files.items():
         (args.out / name).write_text(
             json.dumps(payload, indent=1, ensure_ascii=False) + "\n", encoding="utf-8",
         )
     print(f"\nWrote {len(files)} file(s) to {args.out}")
+    if "characters.json" in files:
+        colours = merged_character_colours([DEFAULT_OUT["global"], DEFAULT_OUT["jp"]])
+        COLOURS_FILE.write_text(json.dumps(colours, indent=1) + "\n", encoding="utf-8")
+        print(f"Merged {len(colours)} characters' colours into {COLOURS_FILE}")
 
 
 if __name__ == "__main__":

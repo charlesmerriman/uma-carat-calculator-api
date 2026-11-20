@@ -16,8 +16,9 @@ one skill in full: its text, when it fires and what it does
 (skill_text.describe), every outfit and card that gives it, what it evolves
 from and into, and what unlocks an evolution.
 
-SHELVED (2026-10-23): both answer 404 to anyone but a guide editor
-(pvp_guide_editing.sees_skills_preview) until the work is picked up again.
+OPEN TO EVERYONE (owner, 2026-11-18; supporters and staff had them first,
+from 2026-11-12). Both are AllowAny, like /pvp-catalogue. The cached bytes
+are the same for every reader and hold nothing about a person.
 
 Both are cached as rendered bytes in their own cache alias
 (skills_cache.py). Keyed by the game's skill id, which is the same in every
@@ -30,14 +31,41 @@ from django.http import Http404, HttpResponse
 from rest_framework import permissions
 from rest_framework.decorators import api_view, permission_classes
 
-from calculatorapi import pvp_guide_editing, skill_text, skills_cache
-from calculatorapi.models import Skill
-from calculatorapi.models.skill import skill_families
+from calculatorapi import character_colours, skill_text, skills_cache
+from calculatorapi.global_release import released_cards, released_umas
+from calculatorapi.models import Skill, SupportCardSkill, UmaSkill
+from calculatorapi.models.skill import SkillRarity, SkillTier, skill_families
+from calculatorapi.models.uma import layers_from_names
+from calculatorapi.skill_tags import skill_tags
+from calculatorapi.skill_types import skill_type
 from calculatorapi.views.pvp_catalogue import image_url
+
+# A unique's inherited copy is the same id with its leading 1 made a 9:
+# Special Week's Shooting Star is 100011, the copy a parent passes on 900011.
+# Checked 2026-11-12: all 272 uniques with such an id have their copy, and no
+# copy is without its unique. A ★1/★2 outfit's starting unique (five digits)
+# has none.
+UNIQUE_IDS, INHERITED_IDS = range(100000, 200000), range(900000, 1000000)
+INHERITED_OFFSET = 800000
 
 
 def _shown():
     return Skill.objects.shown().select_related("evolves_from")
+
+
+# Out on global, then announced, then JP only.
+AVAILABILITY_ORDER = {"global": 0, "announced": 1, "jp": 2}
+
+
+def release_order(row):
+    """Sort key for evolved skills in the order they came out (Daptrius, board
+    "Umas, Evolved Skill Order", 2026-11-17): what global has before what it
+    doesn't, then the game id. The game numbers an outfit's evolutions of one
+    awakening rank in the order it added them: checked against the JP
+    files' start dates on 2026-11-17, all 550 (outfit, rank) groups agree.
+    The name order this replaced put a JP-only evolution above a global one.
+    `row` is a `summary()` dict."""
+    return (AVAILABILITY_ORDER.get(row["availability"], 9), row["game_id"])
 
 
 def summary(skill):
@@ -54,70 +82,219 @@ def summary(skill):
         "is_evolved": skill.evolves_from_id is not None,
         "availability": skill.availability,
         "uses_translation": skill.uses_translation,
+        # Skill points; null for a unique, which isn't bought.
+        "cost": skill.cost,
+        # The Type filter's key (skill_types.py).
+        "type": skill_type(skill.icon_id, skill.effects),
     }
 
 
+class Owners:
+    """
+    Whose skill a skill is, for a whole build in two queries: the outfits a
+    unique or an evolution belongs to (an inherited copy takes its unique's),
+    and the unique / inherited pairing. Search matches a unique by the uma's
+    name (Daptrius's item 11), and an evolution names its uma instead of
+    reading "(evolved)".
+    """
+
+    def __init__(self):
+        self.names, self.umas = {}, {}
+        rows = (UmaSkill.objects.filter(source__in=("unique", "evolved"))
+                .values_list("skill__game_id", "uma__name", "uma_id", "uma__game_id",
+                             "uma__image_borderless", "uma__image",
+                             "uma__image_layer_base", "uma__image_layer_foreground")
+                .order_by("uma__name"))
+        for game_id, name, uma_id, uma_game_id, borderless, image, layer_base, layer_foreground in rows:
+            # Uma.portrait's rule: the frameless cut, else the bordered art.
+            portrait = borderless or image
+            self.names.setdefault(game_id, []).append(name)
+            # Her face beside the skill (the redesign): the row's pk for the
+            # favorites frame, her game id for the link and her colours.
+            self.umas.setdefault(game_id, {})[uma_id] = {
+                "id": uma_id, "game_id": uma_game_id, "name": name, "portrait": image_url(portrait or ""),
+                # Uma.portrait_layers, from the columns this query already reads.
+                "portrait_layers": layers_from_names(layer_base, layer_foreground),
+            }
+        self.shown_ids = set(Skill.objects.shown().values_list("game_id", flat=True))
+
+    def pair(self, game_id):
+        """The game id of a unique's inherited copy, or of a copy's unique."""
+        if game_id in UNIQUE_IDS:
+            other = game_id + INHERITED_OFFSET
+        elif game_id in INHERITED_IDS:
+            other = game_id - INHERITED_OFFSET
+        else:
+            return None
+        return other if other in self.shown_ids else None
+
+    def of(self, game_id):
+        names = self.names.get(game_id)
+        if names is None and game_id in INHERITED_IDS:
+            names = self.names.get(game_id - INHERITED_OFFSET)
+        return list(dict.fromkeys(names or []))
+
+    def umas_of(self, game_id):
+        """The same outfits as `of`, as rows a page can draw."""
+        found = self.umas.get(game_id)
+        if found is None and game_id in INHERITED_IDS:
+            found = self.umas.get(game_id - INHERITED_OFFSET)
+        return list((found or {}).values())
+
+    def fields(self, game_id):
+        return {"owners": self.of(game_id), "owner_umas": self.umas_of(game_id), "pair": self.pair(game_id)}
+
+
 def build_list():
+    owners = Owners()
     return [
-        {**summary(skill), "other_names": skill.search_names}
+        # `tags`: the condition and effect filters' keys (skill_tags.py).
+        {**summary(skill), "other_names": skill.search_names, "tags": skill_tags(skill),
+         **owners.fields(skill.game_id)}
         for skill in _shown().prefetch_related("aliases").by_shown_name()
     ]
 
 
+def single_circle(skill):
+    """The ○ of a ◎ white, or None. A hint for the ○ is a hint for the ◎ too
+    (Daptrius, board "Double Circle Hint Givers", 2026-11-17), so a ◎ lists
+    the ○'s givers. A ◎ is a white at tier 2 with a tier-1 white in its
+    group (Skill.version_label); a unique's inherited copy is a lone tier-2
+    white, with no ○, so it gets nothing here."""
+    if skill.rarity != SkillRarity.WHITE or skill.tier != SkillTier.GOLD:
+        return None
+    return (Skill.objects.shown()
+            .filter(group_id=skill.group_id, rarity=SkillRarity.WHITE, tier=SkillTier.WHITE)
+            .exclude(pk=skill.pk).order_by("game_id").first())
+
+
 def sources(skill):
-    """Every outfit and card that gives the skill, on-global ones first."""
+    """Every outfit and card that gives the skill, on-global ones first. A ◎
+    adds its ○'s, each marked `via` the ○'s name (single_circle)."""
+    # Out on Global right now (global_release.py). The sorts are stable, so
+    # the out ones move to the front and each half keeps the SQL order.
+    out_umas, out_cards = released_umas(), released_cards()
+    lower = single_circle(skill)
+    givers = [skill, lower] if lower else [skill]
+    uma_rows = _unique_rows(
+        UmaSkill.objects.filter(skill__in=givers).select_related("uma", "skill")
+        .order_by("source", "level", "uma__name"),
+        lambda row: (row.uma_id, row.source), skill,
+    )
     umas = [
         {"id": row.uma_id, "name": row.uma.name, "game_id": row.uma.game_id,
          "image": image_url(row.uma.portrait.name if row.uma.portrait else ""),
-         "source": row.source, "level": row.level, "on_global": row.uma.is_on_global}
-        for row in skill.umas.select_related("uma").order_by(
-            "-uma__is_on_global", "source", "level", "uma__name",
-        )
+         "portrait_layers": row.uma.portrait_layers,
+         "source": row.source, "level": row.level, "on_global": row.uma_id in out_umas,
+         "via": _via(row, skill)}
+        for row in sorted(uma_rows, key=lambda row: row.uma_id not in out_umas)
     ]
+    card_rows = _unique_rows(
+        SupportCardSkill.objects.filter(skill__in=givers).select_related("support_card", "skill")
+        .order_by("source", "support_card__name"),
+        lambda row: (row.support_card_id, row.source), skill,
+    )
     cards = [
         {"id": row.support_card_id, "name": row.support_card.name,
+         # A card's name is its character's, shared by all her cards; the title tells them apart.
+         # Global's or an editor's, else UmaTL's; the page credits UmaTL when one is.
+         "title": row.support_card.shown_title,
+         "title_translated": row.support_card.uses_translated_title,
          "game_id": row.support_card.game_id,
          "image": image_url(row.support_card.image.name if row.support_card.image else ""),
-         "source": row.source, "on_global": row.support_card.is_on_global}
-        for row in skill.support_cards.select_related("support_card").order_by(
-            "-support_card__is_on_global", "source", "support_card__name",
-        )
+         # The frameless texture for FramedCard; None until it is uploaded.
+         "image_borderless": image_url(
+             row.support_card.image_borderless.name if row.support_card.image_borderless else ""
+         ),
+         "source": row.source, "on_global": row.support_card_id in out_cards,
+         # For "Hide R" / "Hide SR" (Daptrius's item 3) and the type icon.
+         "rarity": row.support_card.rarity, "card_type": row.support_card.card_type,
+         "via": _via(row, skill)}
+        for row in sorted(card_rows, key=lambda row: row.support_card_id not in out_cards)
     ]
     return {"umas": umas, "cards": cards}
 
 
-def evolution(skill):
+def _unique_rows(rows, key, skill):
+    """The rows in their order, each owner and source once: a card that hints
+    both the ◎ and its ○ is listed for the ◎'s own row, never twice."""
+    kept = {}
+    for row in rows:
+        found = kept.get(key(row))
+        if found is None or (found.skill_id != skill.pk and row.skill_id == skill.pk):
+            kept[key(row)] = row
+    return list(kept.values())
+
+
+def _via(row, skill):
+    """The ○'s name when the row gives the ○ rather than this skill, else None."""
+    return None if row.skill_id == skill.pk else row.skill.shown_name
+
+
+def evolution(skill, owners):
     """What this skill evolves from and into, and what unlocks it if evolved.
     Only skills a page may show are named (shown_q), which since 2026-11-12
-    includes a step known only by its Japanese name."""
+    includes a step known only by its Japanese name. Each `into` row names
+    the outfit that evolves it (`owners`)."""
     base = skill.evolves_from
     return {
         "from": summary(base) if base and base.is_shown else None,
-        "into": [
-            summary(row) for row in Skill.objects.shown().filter(evolves_from=skill)
-            .select_related("evolves_from").by_shown_name()
-        ],
-        "conditions": [
-            {"text": condition.shown_text or condition.jp_text,
-             "uses_translation": not condition.text and bool(condition.translated_text),
-             "is_japanese": not condition.shown_text}
-            for condition in skill.evolution_conditions.all()
-        ],
+        "into": sorted((
+            {**summary(row), "owners": owners.of(row.game_id), "owner_umas": owners.umas_of(row.game_id)}
+            for row in Skill.objects.shown().filter(evolves_from=skill).select_related("evolves_from")
+        ), key=release_order),
+        "conditions": unlock_conditions(skill),
         "scenario": skill.evolution_scenario,
     }
 
 
+def unlock_conditions(skill):
+    """What unlocks an evolved skill, worded as a player reads it: global's
+    English, else UmaTL's, else the Japanese (flagged). Shared by the skill's
+    page and the uma page, which lists them under each evolution (Daptrius,
+    2026-11-13). Prefetch `evolution_conditions` when calling it in a loop."""
+    return [
+        {"text": condition.shown_text or condition.jp_text,
+         "uses_translation": not condition.text and bool(condition.translated_text),
+         "is_japanese": not condition.shown_text}
+        for condition in skill.evolution_conditions.all()
+    ]
+
+
+def _owner_colours(owner_umas):
+    """The colours of the ONE character a skill belongs to, else None: two
+    outfits of one character share a pair, two characters share nothing."""
+    characters = {uma["game_id"] // 100 for uma in owner_umas if uma["game_id"]}
+    return character_colours.colours_for(characters.pop()) if len(characters) == 1 else None
+
+
 def build_detail(skill):
+    owners = Owners()
+    pair_id = owners.pair(skill.game_id)
+    pair = _shown().filter(game_id=pair_id).first() if pair_id else None
     return {
         **summary(skill),
         "other_names": skill.search_names,
+        "owners": owners.of(skill.game_id),
+        "owner_umas": (owner_umas := owners.umas_of(skill.game_id)),
+        # A skill that is one character's wears her colours on its page.
+        "colours": _owner_colours(owner_umas),
+        # The unique's inherited copy, or the copy's unique, as a list row.
+        "pair": summary(pair) if pair else None,
         "description": skill.shown_description,
         "readable": skill_text.describe(skill, skill_text.context_from_database()),
+        # The game's code for each of `readable`'s slots, for the Detailed view.
+        "raw_conditions": skill_text.raw_conditions(skill),
         "sources": sources(skill),
-        "evolution": evolution(skill),
+        "evolution": evolution(skill, owners),
         # Its white, gold and evolved forms on global (skill_families): the
-        # same "other versions" a guide's skill chip lists.
-        "versions": [summary(row) for row in skill_families([skill]).get(skill.pk, [])],
+        # same "other versions" a guide's skill chip lists, less what the page
+        # already shows as "Evolves from" and "Evolves into" (an evolved
+        # skill listed its gold twice; Daptrius, board, 2026-11-17).
+        "versions": [
+            summary(row) for row in skill_families([skill]).get(skill.pk, [])
+            if row.pk != skill.evolves_from_id and row.evolves_from_id != skill.pk
+        ],
     }
 
 
@@ -132,10 +309,7 @@ def _json(body):
 
 @api_view(["GET"])
 @permission_classes([permissions.AllowAny])
-def skill_list(request):
-    # Shelved: the guide editors only (pvp_guide_editing.sees_skills_preview).
-    if not pvp_guide_editing.sees_skills_preview(request.user):
-        raise Http404("No such page.")
+def skill_list(request):  # pylint: disable=unused-argument
     body = skills_cache.read_list()
     if body is None:
         body = _bytes(build_list())
@@ -145,9 +319,7 @@ def skill_list(request):
 
 @api_view(["GET"])
 @permission_classes([permissions.AllowAny])
-def skill_detail(request, game_id):
-    if not pvp_guide_editing.sees_skills_preview(request.user):
-        raise Http404("No such page.")
+def skill_detail(request, game_id):  # pylint: disable=unused-argument
     body = skills_cache.read_detail(game_id)
     if body is None:
         skill = _shown().prefetch_related("aliases").filter(game_id=game_id).first()

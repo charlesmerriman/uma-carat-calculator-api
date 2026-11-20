@@ -22,7 +22,7 @@ eight guide tables and nothing else.
 
 from django.db import IntegrityError, transaction
 
-from . import public_payload_cache, pvp_guide_document, pvp_guide_revisions, pvp_guides
+from . import benefits, public_payload_cache, pvp_guide_document, pvp_guide_revisions, pvp_guides
 from .models import ChampionsMeeting, LeagueOfHeroes, PvpGuide, PvpGuideRevisionSource, PvpGuideVisibility
 
 # The URL's / body's kind -> the guide's FK to that event (pvp_teams' idiom).
@@ -38,13 +38,20 @@ class GuideRefused(Exception):
 
 def sees_skills_preview(user):
     """
-    Whether `user` sees the SHELVED skills work (owner, 2026-10-23): GET /skills,
-    JP-only skills on guides, and the readable text and sources the hover card
-    draws. The guide editors only, for now; everyone else gets guides exactly
-    as before the work (global skills only). Un-shelving is this one function:
-    return True. See workspace-root skills-plan-4.md.
+    Whether `user` sees the skills work ON A GUIDE: JP-only skills, and the
+    readable text and sources the guide's skill hover card draws.
+
+    The site's early-access rule, the one Rankings uses: any paid tier,
+    staff, or an account ticked "early access". Everyone else gets guides
+    exactly as before the work (global skills only).
+
+    GUIDES ONLY since 2026-11-18. The Encyclopedia (GET /skills, the uma,
+    card and skill pages) sat behind this too from 2026-11-12 and is now open
+    to everyone; asked whether the guides open with it, the owner said "Not
+    the guides" (notes/encyclopedia-open-plan.md). Opening them later is this
+    one function: return True.
     """
-    return can_edit(user)
+    return benefits.early_access(user)
 
 
 def can_edit(user, guide=None):  # pylint: disable=unused-argument

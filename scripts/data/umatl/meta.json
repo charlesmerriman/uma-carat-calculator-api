@@ -3,10 +3,14 @@
  "path": "localized_data/text_data_dict.json",
  "commit": "97b61b6cd05ba3fad232b079f9764e0785e02df8",
  "committed_at": "2026-10-31T08:49:36Z",
- "fetched_at": "2026-11-12T19:45:02+00:00",
+ "fetched_at": "2026-11-14T07:39:44+00:00",
  "counts": {
   "skill_names": 1755,
   "skill_descriptions": 1856,
-  "evolution_conditions": 1848
+  "evolution_conditions": 1848,
+  "outfit_titles": 185,
+  "card_titles": 496,
+  "unique_effects": 408,
+  "race_names": 151
  }
 }

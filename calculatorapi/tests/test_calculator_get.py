@@ -15,9 +15,6 @@ from calculatorapi.predictions import GAME_EVENT_END_DATE_BUFFER
 from calculatorapi.views.calculator import CalculatorViewSet
 from calculatorapi.models import (
     AnalyticsSnapshot,
-    AnniversaryEventBanner,
-    AnniversaryEventProduct,
-    BannerStepUp,
     DailyVisit,
     IncomeProfile,
     LandingPageVisit,
@@ -36,7 +33,6 @@ from calculatorapi.tests.factories import (
     make_league_of_heroes,
     make_game_event,
     make_scenario,
-    make_anniversary_event,
     auth_client,
     _dt,
     _predicted,
@@ -52,6 +48,7 @@ _EXPECTED_GET_KEYS = {
     'user_planned_banner_data', 'champions_meeting_data', 'league_of_heroes_event_data',
     'events_data', 'user_stats_data', 'banner_timeline_data',
     'anniversary_event_data', 'scenario_data', 'daily_legend_race_data',
+    'story_event_data',
     'user_planned_purchase_data',
     'user_step_up_selection_data',
     'user_plans', 'active_plan_id',
@@ -554,130 +551,6 @@ class ScenarioApiTests(CalculatorTestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()['scenario_data']), 1)
-
-
-class AnniversaryEventApiTests(CalculatorTestCase):
-    """The campaign payload and the banner strip it attaches to."""
-
-    def setUp(self):
-        self.user = make_user()
-        self.client, _ = auth_client(self.user)
-        self.timeline = make_timeline(name='3rd Anniv Part 1')
-        self.event = make_anniversary_event(
-            name='3rd Anniversary',
-            jp_cutoff_date=datetime.date(2024, 1, 31),
-            parts=[self.timeline],
-            products=[
-                {'product_type': 'carat_pack', 'name': '7500 Carat Pack',
-                 'usd_cost': 70, 'paid_carat_amount': 7500,
-                 'webstore_multiplier': '1.10', 'max_quantity': 3, 'order': 1},
-                {'product_type': 'uma_selector', 'name': '$21 Uma Selector',
-                 'usd_cost': 21, 'paid_carat_amount': 1500, 'order': 2},
-            ],
-        )
-
-    def test_products_are_serialized_with_numeric_money(self):
-        # Asserted against the RENDERED payload, not res.data: res.data still
-        # holds Decimals and dates, and the point here is the wire format the
-        # browser actually parses.
-        event = self.client.get('/calculator-data').json()['anniversary_event_data'][0]
-        pack = next(p for p in event['products'] if p['product_type'] == 'carat_pack')
-
-        # JSON numbers, not DRF's default Decimal-as-string — the client does
-        # arithmetic on these directly.
-        self.assertEqual(pack['usd_cost'], 70.0)
-        self.assertEqual(pack['webstore_multiplier'], 1.10)
-        self.assertIsInstance(pack['usd_cost'], float)
-        self.assertEqual(pack['paid_carat_amount'], 7500)
-        self.assertEqual(pack['max_quantity'], 3)
-
-    def test_product_inherits_the_campaign_cutoff(self):
-        event = self.client.get('/calculator-data').json()['anniversary_event_data'][0]
-        selector = next(p for p in event['products'] if p['product_type'] == 'uma_selector')
-
-        self.assertEqual(selector['jp_cutoff_date'], '2024-01-31')
-        # The raw override stays null — this cutoff came from the campaign.
-        self.assertIsNone(selector['jp_cutoff_date_override'])
-
-    def test_product_override_beats_the_campaign_cutoff(self):
-        AnniversaryEventProduct.objects.create(
-            anniversary_event=self.event, product_type='support_selector',
-            name='$70 SSR Selector', usd_cost=70, paid_carat_amount=7500,
-            jp_cutoff_date=datetime.date(2023, 1, 1),
-        )
-        event = self.client.get('/calculator-data').json()['anniversary_event_data'][0]
-        selector = next(p for p in event['products'] if p['name'] == '$70 SSR Selector')
-
-        self.assertEqual(selector['jp_cutoff_date'], '2023-01-01')
-
-    def test_campaign_emits_a_main_start_date_alongside_its_window(self):
-        """The wire carries the event's own start, not just the campaign's."""
-        part2 = make_timeline(
-            name='3rd Anniv Part 2',
-            global_start_date=self.timeline.global_end_date,
-            global_end_date=self.timeline.global_end_date + datetime.timedelta(days=20),
-        )
-        AnniversaryEventBanner.objects.create(
-            anniversary_event=self.event, banner_timeline=part2, part_number=2,
-        )
-
-        event = self.client.get('/calculator-data').json()['anniversary_event_data'][0]
-
-        self.assertEqual(event['start_date'], _iso(self.timeline.global_start_date))
-        self.assertEqual(event['main_start_date'], _iso(part2.global_start_date))
-        self.assertEqual(event['end_date'], _iso(part2.global_end_date))
-
-    def test_banner_carries_its_campaign_and_part_number(self):
-        res = self.client.get('/calculator-data')
-        timeline = next(
-            t for t in res.json()['banner_timeline_data'] if t['id'] == self.timeline.id
-        )
-        self.assertEqual(timeline['anniversary_event']['name'], '3rd Anniversary')
-        self.assertEqual(timeline['anniversary_event']['part_number'], 1)
-
-    def test_unattached_banner_reports_no_campaign(self):
-        loose = make_timeline(name='Ordinary banner')
-        res = self.client.get('/calculator-data')
-        timeline = next(
-            t for t in res.json()['banner_timeline_data'] if t['id'] == loose.id
-        )
-        self.assertIsNone(timeline['anniversary_event'])
-
-    def test_banner_carries_its_step_ups_for_the_timeline_chip(self):
-        BannerStepUp.objects.create(
-            banner_timeline=self.timeline, anniversary_event=self.event,
-            name='3rd Anniversary Star-3 Select Step-Up',
-            card_type='uma', banner_count=1,
-        )
-        BannerStepUp.objects.create(
-            banner_timeline=self.timeline, anniversary_event=self.event,
-            name='3rd Anniversary SSR Select Step-Up',
-            card_type='support', banner_count=2,
-        )
-        res = self.client.get('/calculator-data')
-        timeline = next(
-            t for t in res.json()['banner_timeline_data'] if t['id'] == self.timeline.id
-        )
-
-        by_type = {s['card_type']: s for s in timeline['banner_step_ups']}
-        self.assertEqual(by_type['uma']['banner_count'], 1)
-        self.assertEqual(by_type['support']['banner_count'], 2)
-        # A summary, not the full record: nesting banner_timeline here would send
-        # each timeline back inside itself.
-        self.assertNotIn('banner_timeline', by_type['uma'])
-
-    def test_banner_with_no_step_ups_reports_an_empty_list(self):
-        loose = make_timeline(name='Ordinary banner')
-        res = self.client.get('/calculator-data')
-        timeline = next(
-            t for t in res.json()['banner_timeline_data'] if t['id'] == loose.id
-        )
-        self.assertEqual(timeline['banner_step_ups'], [])
-
-    def test_campaigns_are_public(self):
-        res = APIClient().get('/calculator-data')
-        self.assertEqual(res.status_code, 200)
-        self.assertEqual(len(res.json()['anniversary_event_data']), 1)
 
 
 class PublicPayloadCacheTests(CalculatorTestCase):

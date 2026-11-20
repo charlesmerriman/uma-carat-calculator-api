@@ -5,6 +5,10 @@ from .mixins import FirstJpDateMixin
 
 class SupportCardSerializer(FirstJpDateMixin, serializers.ModelSerializer):
     context_key = "support_first_jp_dates"
+    # The key of the card's Encyclopedia page (/app/cards/<game_id>), which the
+    # Timeline's tiles link to. Null for a placeholder: its id is made up and it
+    # has no page.
+    game_id = serializers.SerializerMethodField()
 
     class Meta:
         model = SupportCard
@@ -19,4 +23,8 @@ class SupportCardSerializer(FirstJpDateMixin, serializers.ModelSerializer):
             # The rate-up rule's input (R / SR / SSR as 1 / 2 / 3). Null for a
             # card with no game id, which the client reads as SSR.
             "rarity",
+            "game_id",
         )
+
+    def get_game_id(self, obj):
+        return None if obj.is_placeholder else obj.game_id
