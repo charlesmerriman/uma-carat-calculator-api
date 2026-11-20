@@ -53,6 +53,7 @@ skills").
 
 from dataclasses import dataclass, field
 
+from . import skill_scaling
 from .skill_conditions import CLAUSE
 
 STYLES = {1: "Front Runner", 2: "Pace Chaser", 3: "Late Surger", 4: "End Closer"}
@@ -683,39 +684,78 @@ def target_text(ability, context):  # pylint: disable=too-many-return-statements
     return None
 
 
+# An effect whose phrase states a number: kind -> the words around it. The
+# number reads signed ("+0.35"), and is a range when the effect scales.
+AMOUNTS = {
+    1: "{} Speed", 2: "{} Stamina", 3: "{} Power", 4: "{} Guts", 5: "{} Wit",
+    # 203781 (+20) 全ての基礎能力がわずかに上がる, 203691 (-20) ...わずかに下がる.
+    32: "{} all stats",
+    27: "Velocity {}",
+    21: "Current speed {}", 22: "Current speed {}",
+    31: "Acceleration {}",
+    8: "Field of view {}",
+    28: "Navigation {}",
+}
+
+
+def share(value):
+    """An endurance share: -0.04 -> "4%"."""
+    return f"{number(abs(value) * 100)}%"
+
+
+def span(values, form):
+    """The values as one number, or "low to high" (by size) when they differ."""
+    shown = list(dict.fromkeys(form(value) for value in sorted(values, key=abs)))
+    return shown[0] if len(shown) == 1 else f"{shown[0]} to {shown[-1]}"
+
+
+def scaling_table(scaling, base, form):
+    """The bands behind a scaled number, for the skill page's table."""
+    return {"heading": scaling.heading,
+            "rows": [{"when": band.when, "value": form(band.apply(base))} for band in scaling.bands]}
+
+
 def ability_text(ability, context):  # pylint: disable=too-many-return-statements
     kind, raw_value = ability["type"], ability["value"]
     value = raw_value / 10_000
     target = target_text(ability, context)
-    varies = ability.get("value_usage", 1) != 1
     if target is None:
         return phrase(f"effect {kind}: {signed(value)}, target {ability.get('target_type')}", raw=True)
-    def done(text):
-        text += " (varies)" if varies else ""
-        return phrase(f"{text} ({target})" if target else text)
-    stats = {1: "Speed", 2: "Stamina", 3: "Power", 4: "Guts", 5: "Wit"}
-    if kind in stats:
-        return done(f"{signed(value)} {stats[kind]}")
-    if kind == 32:
-        # 203781 (+20) 全ての基礎能力がわずかに上がる, 203691 (-20) ...わずかに下がる.
-        return done(f"{signed(value)} all stats")
+    usage = ability.get("value_usage", 1)
+    # What the number scales with (skill_scaling.py). A code nobody has
+    # explained yet (usage other than 1, not in the table) keeps "(varies)".
+    scaling = skill_scaling.VALUE.get(usage)
+    values = [band.apply(value) for band in scaling.bands] if scaling else [value]
+
+    def done(text, form=None):
+        table = None
+        if scaling and form:
+            text += f", {scaling.basis}"
+            table = scaling_table(scaling, value, form)
+        elif usage != 1:
+            text += " (varies)"
+        repeat = skill_scaling.REPEATS.get(ability.get("additional_activate_type", 0))
+        if repeat:
+            # An extra effect the skill fires again while it lasts (Red-Hot
+            # Discipline's second acceleration): when, and how often at most.
+            when_again, most = repeat
+            text += f" more {when_again}, up to {most} times"
+        result = phrase(f"{text} ({target})" if target else text)
+        if table:
+            result["scaling"] = table
+        return result
+
+    if kind in AMOUNTS:
+        return done(AMOUNTS[kind].format(span(values, signed)), signed)
+    if kind == 9:
+        # Recovery, or a drain when the base is negative (Nothing Ventured's
+        # -100% times a random 0, 0.02 or 0.04: "Drains 0% to 4% endurance").
+        verb = "Recovers" if value >= 0 else "Drains"
+        return done(f"{verb} {span(values, share)} endurance", share)
     if kind == 37:
         # 110071 "activate 2 [rare skills] regardless of their conditions", 910071 "activate 1 rare skill".
         count = int(value)
         return done(f"Activates {count} rare skill{'' if count == 1 else 's'} regardless of their conditions")
-    if kind == 27:
-        return done(f"Velocity {signed(value)}")
-    if kind in (21, 22):
-        return done(f"Current speed {signed(value)}")
-    if kind == 31:
-        return done(f"Acceleration {signed(value)}")
-    if kind == 9:
-        share = number(abs(value) * 100)
-        return done(f"Recovers {share}% endurance" if value >= 0 else f"Drains {share}% endurance")
-    if kind == 8:
-        return done(f"Field of view {signed(value)}")
-    if kind == 28:
-        return done(f"Navigation {signed(value)}")
     # Types whose number has no confirmed unit: the direction only, worded as
     # global words the skills that use it, and only for that direction.
     labels = {(6, 0): "Becomes a runaway", (10, 1): "Less time lost to a slow start",
@@ -733,24 +773,42 @@ def seconds(raw):
     return f"{number(raw / 10_000)} s"
 
 
-def describe_slot(slot, context):
+def duration_text(slot):
+    """
+    How long a slot lasts, and the bands behind it when the time scales. A
+    time is stated per 1,000 m (the module docstring), so a scaled one reads
+    "5 to 20 s per 1,000 m, by HP left when it fires". A code nobody has
+    explained yet keeps "(varies)".
+    """
     duration = slot.get("duration", 0)
+    if duration < 0:
+        return "Whole race", None
+    if duration == 0:
+        return None, None
+    usage = slot.get("duration_usage", 1)
+    scaling = skill_scaling.DURATION.get(usage)
+    if scaling is None:
+        return f"{seconds(duration)} per 1,000 m" + (" (varies)" if usage != 1 else ""), None
+    base = duration / 10_000
+    low_high = span([band.apply(base) for band in scaling.bands], number)
+    return (f"{low_high} s per 1,000 m, {scaling.basis}",
+            scaling_table(scaling, base, lambda value: f"{number(value)} s"))
+
+
+def describe_slot(slot, context):
     cooldown = slot.get("cooldown", 0)
-    return {
+    duration, duration_table = duration_text(slot)
+    described = {
         "after": describe_condition(slot.get("precondition", ""), context),
         "when": describe_condition(slot.get("condition", ""), context),
         "effects": [ability_text(ability, context) for ability in slot.get("abilities", [])],
-        # A duration that scales (`duration_usage` other than 1) says so, as a
-        # scaling value does: the files give a code per kind of scaling but not
-        # what each means, so the page marks it without guessing (Daptrius,
-        # board "Skill Effect and Duration Scaling", 2026-11-17).
-        "duration": ("Whole race" if duration < 0
-                     else f"{seconds(duration)} per 1,000 m"
-                     + (" (varies)" if slot.get("duration_usage", 1) != 1 else "")
-                     if duration > 0 else None),
+        "duration": duration,
         "cooldown": ("Once per race" if cooldown >= ONCE_PER_RACE
                      else f"{seconds(cooldown)} per 1,000 m" if cooldown > 0 else None),
     }
+    if duration_table:
+        described["duration_scaling"] = duration_table
+    return described
 
 
 CHAIN_VARIABLE = "is_activate_other_skill_detail"

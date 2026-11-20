@@ -750,11 +750,16 @@ also carries:
 UmaTL); `readable` (when it fires and what it does, `skill_text.describe`: `{"wit_check",
 "complete", "chained", "slots": [{"after", "when", "effects", "duration", "cooldown"}]}`, where
 `chained` is true when a later slot waits for the first to fire (the page calls the slots Part
-1, 2; otherwise they are alternatives, Trigger 1, 2), a duration that scales ends "(varies)", and a timed
+1, 2; otherwise they are alternatives, Trigger 1, 2), and a timed
 `duration` and a repeating `cooldown` are the game's base values per 1,000 m of race
 ("2.4 s per 1,000 m": the game scales both by the race's length); each
 condition `{"all": [phrase], "any": [[phrase]]}`, each phrase `{"text", "raw"}` where `raw`
-is the game's own code, not yet translated); and `sources` (`{"umas": [{"name", "source",
+is the game's own code, not yet translated). A number or duration that scales
+(`skill_scaling.py`) reads as a range and what it depends on ("Velocity +0.28 to +0.42, by
+fan count", "5 to 20 s per 1,000 m, by HP left when it fires"), and carries its bands for the
+skill page's table: `scaling` on the effect phrase, `duration_scaling` on the slot, each
+`{"heading", "rows": [{"when", "value"}]}`; a scaling code nobody has explained yet ends
+"(varies)" with no table. And `sources` (`{"umas": [{"name", "source",
 "level", "on_global"}], "uma_count", "cards": [{"name", "source", "on_global"}],
 "card_count"}`, at most 4 of each, on-global first). A `[[mention]]` resolves by global's
 name, the translation, or an old name kept as an alias, keyed by the name as written. **A guide names one version of a skill per row; the other versions ride along.**
