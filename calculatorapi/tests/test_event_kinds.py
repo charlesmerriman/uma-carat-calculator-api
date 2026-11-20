@@ -83,6 +83,9 @@ class EventKindDateTests(CalculatorTestCase):
         self.assertEqual(resolved["claim_end_date"], self.end + 3 * DAY)
 
 
+# Local storage: a picture's URL comes from the default storage, which is the
+# S3 bucket the local .env names and CI has none of.
+@override_settings(STORAGES=PLAIN_TEST_STORAGES)
 class EventKindPayloadTests(CalculatorTestCase):
     """`kind` on the wire, and an uma reward in its own list."""
 
