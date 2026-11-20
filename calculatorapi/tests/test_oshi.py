@@ -204,9 +204,9 @@ class OshiPictureTests(OshiTestCase):
         self.assertEqual(
             body["oshis"],
             [
-                {"position": 0, "id": self.umas[2].id, "name": "Uma 2", "image": self.umas[2].image.url},
-                {"position": 1, "id": self.umas[0].id, "name": "Uma 0", "image": self.umas[0].image.url},
-                {"position": 2, "id": self.umas[1].id, "name": "Uma 1", "image": self.umas[1].image.url},
+                {"position": 0, "id": self.umas[2].id, "name": "Uma 2", "image": self.umas[2].image.url, "layers": None},
+                {"position": 1, "id": self.umas[0].id, "name": "Uma 0", "image": self.umas[0].image.url, "layers": None},
+                {"position": 2, "id": self.umas[1].id, "name": "Uma 1", "image": self.umas[1].image.url, "layers": None},
             ],
         )
 

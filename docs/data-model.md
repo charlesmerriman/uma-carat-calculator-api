@@ -97,6 +97,8 @@ erDiagram
         int game_id "unique, nullable; the game's card id, e.g. 102001 = character 1020 outfit 01. The join key for imported game data; the image filename starts with it"
         string image
         string image_borderless "the same art without the rarity border; umas_borderless/ in the Space; drawn through Uma.portrait"
+        string image_layer_base "layered art, the square base under the frame; umas_layered/base/ (WebP)"
+        string image_layer_foreground "layered art, what sticks out past the frame, drawn over it; 392x420; umas_layered/foreground/ (WebP); sent only with the base, as Uma.portrait_layers"
         string admin_comments
         string purpose "PUBLIC, max 100, never null; the Timeline tile's hover overlay"
         bool is_time_limited

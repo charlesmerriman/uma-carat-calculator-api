@@ -1,6 +1,9 @@
 import re
 
+from django.core.files.storage import default_storage
 from django.db import models
+
+from calculatorapi.webp_upload import as_webp
 
 # The six-digit card id at the front of an uma image filename
 # (`umas/102001-Seiun-Sky.png`). The optional leading `<digit>-` is the star
@@ -8,6 +11,14 @@ from django.db import models
 # of the id. Anchored at the start so a stray six-digit run elsewhere in a name
 # can never be mistaken for the id.
 IMAGE_GAME_ID = re.compile(r"^(?:\d-)?(\d{6})-")
+
+
+def layers_from_names(base_name, foreground_name):
+    """Uma.portrait_layers from the two stored file names, for a query that
+    reads columns rather than rows (views/skills.py). None unless both are set."""
+    if not (base_name and foreground_name):
+        return None
+    return {"base": default_storage.url(base_name), "foreground": default_storage.url(foreground_name)}
 
 
 def game_id_from_image(image_name):
@@ -129,6 +140,30 @@ class Uma(models.Model):
         null=True,
         verbose_name="borderless image",
         help_text="The same art without the rarity border. Optional.",
+    )
+    # The layered art (notes/layered-uma-art-plan.md): Daptrius's base portrait,
+    # then the site's own frame, then a foreground holding whatever sticks out
+    # past the frame (ears, hair, hats). Two more assets beside the borderless
+    # one, which stays for the frameless places. The site draws them only as a
+    # pair (`portrait_layers`). The foreground is the 392x420 canvas: the frame's
+    # 360 box plus 60 px of headroom and 16 px each side. Linked from game_id by
+    # `manage.py link_borderless_art --kind layers`; an upload becomes WebP.
+    image_layer_base = models.ImageField(
+        upload_to="umas_layered/base/",
+        blank=True,
+        null=True,
+        verbose_name="layered base",
+        help_text="The layered portrait's square base, drawn under the frame. Optional.",
+    )
+    image_layer_foreground = models.ImageField(
+        upload_to="umas_layered/foreground/",
+        blank=True,
+        null=True,
+        verbose_name="layered foreground",
+        help_text=(
+            "What sticks out past the frame, drawn over it: the 392x420 export from "
+            "the same set as the base. Shown only when both are set."
+        ),
     )
     admin_comments = models.TextField(blank=True, null=True, help_text="Notes for editors.")
 
@@ -354,6 +389,25 @@ class Uma(models.Model):
         shows.
         """
         return self.image_borderless or self.image
+
+    @property
+    def portrait_layers(self):
+        """The layered art as {"base": url, "foreground": url}, or None.
+
+        Only when BOTH files are set: a foreground lines up only with the base
+        from the same export, so half a pair never reaches a page (the site
+        then draws `portrait` as before). The URLs are storage URLs, the same
+        ones an ImageField serializer gives without a request in its context.
+        """
+        # str() of a FieldFile is its stored name ("" when unset).
+        return layers_from_names(str(self.image_layer_base or ""), str(self.image_layer_foreground or ""))
+
+    def save(self, *args, **kwargs):
+        # A PNG uploaded to either layer is stored as lossless WebP
+        # (webp_upload.py). Files picked from storage are left alone.
+        as_webp(self.image_layer_base)
+        as_webp(self.image_layer_foreground)
+        super().save(*args, **kwargs)
 
     @property
     def is_three_star(self):

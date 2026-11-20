@@ -35,6 +35,7 @@ from calculatorapi import character_colours, skill_text, skills_cache
 from calculatorapi.global_release import released_cards, released_umas
 from calculatorapi.models import Skill, SupportCardSkill, UmaSkill
 from calculatorapi.models.skill import SkillRarity, SkillTier, skill_families
+from calculatorapi.models.uma import layers_from_names
 from calculatorapi.skill_tags import skill_tags
 from calculatorapi.skill_types import skill_type
 from calculatorapi.views.pvp_catalogue import image_url
@@ -101,9 +102,10 @@ class Owners:
         self.names, self.umas = {}, {}
         rows = (UmaSkill.objects.filter(source__in=("unique", "evolved"))
                 .values_list("skill__game_id", "uma__name", "uma_id", "uma__game_id",
-                             "uma__image_borderless", "uma__image")
+                             "uma__image_borderless", "uma__image",
+                             "uma__image_layer_base", "uma__image_layer_foreground")
                 .order_by("uma__name"))
-        for game_id, name, uma_id, uma_game_id, borderless, image in rows:
+        for game_id, name, uma_id, uma_game_id, borderless, image, layer_base, layer_foreground in rows:
             # Uma.portrait's rule: the frameless cut, else the bordered art.
             portrait = borderless or image
             self.names.setdefault(game_id, []).append(name)
@@ -111,6 +113,8 @@ class Owners:
             # favorites frame, her game id for the link and her colours.
             self.umas.setdefault(game_id, {})[uma_id] = {
                 "id": uma_id, "game_id": uma_game_id, "name": name, "portrait": image_url(portrait or ""),
+                # Uma.portrait_layers, from the columns this query already reads.
+                "portrait_layers": layers_from_names(layer_base, layer_foreground),
             }
         self.shown_ids = set(Skill.objects.shown().values_list("game_id", flat=True))
 
@@ -180,6 +184,7 @@ def sources(skill):
     umas = [
         {"id": row.uma_id, "name": row.uma.name, "game_id": row.uma.game_id,
          "image": image_url(row.uma.portrait.name if row.uma.portrait else ""),
+         "portrait_layers": row.uma.portrait_layers,
          "source": row.source, "level": row.level, "on_global": row.uma_id in out_umas,
          "via": _via(row, skill)}
         for row in sorted(uma_rows, key=lambda row: row.uma_id not in out_umas)

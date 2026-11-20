@@ -113,7 +113,8 @@ def _outfit_row(uma):
     return {
         "id": uma.id, "game_id": uma.game_id, "name": uma.name, "title": uma.shown_title,
         "title_translated": uma.uses_translated_title,
-        "portrait": _file_url(uma.portrait), "rarity": uma.rarity, "on_global": uma.on_global,
+        "portrait": _file_url(uma.portrait), "portrait_layers": uma.portrait_layers,
+        "rarity": uma.rarity, "on_global": uma.on_global,
     }
 
 
@@ -177,6 +178,7 @@ def build_uma(uma):
         "jp_title": uma.jp_title,
         "colours": character_colours.colours_for(character),
         "portrait": _file_url(uma.portrait),
+        "portrait_layers": uma.portrait_layers,
         "image": _file_url(uma.image),
         "rarity": uma.rarity,
         "running_style": uma.running_style,

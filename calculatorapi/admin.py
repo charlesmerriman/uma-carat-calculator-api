@@ -590,12 +590,15 @@ class UmaAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
     search_fields = ("name", "=game_id")
     # The Encyclopedia's import-only columns are read-only: nothing an editor
     # types there would survive the next deploy's import.
-    readonly_fields = ("image_preview", "borderless_preview", "on_global_now", "global_release_at",
-                       "jp_name", "jp_title", "translated_title", "star_stats", "career_objectives")
+    readonly_fields = ("image_preview", "borderless_preview", "layered_preview", "on_global_now",
+                       "global_release_at", "jp_name", "jp_title", "translated_title", "star_stats",
+                       "career_objectives")
     fieldsets = (
         (None, {"fields": (
             "name", "game_id", "image", "image_preview",
-            "image_borderless", "borderless_preview", "admin_comments",
+            "image_borderless", "borderless_preview",
+            "image_layer_base", "image_layer_foreground", "layered_preview",
+            "admin_comments",
         )}),
         PURPOSE_FIELDSET,
         ("Selector availability", {
@@ -644,6 +647,23 @@ class UmaAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
                 obj.image_borderless.url,
             )
         return "—"
+
+    # The two layers stacked as the site stacks them (the frame goes between
+    # them on the site): the foreground's canvas is the base's 64 px box plus a
+    # sixth above and 16/360 each side. Only a full pair draws, the site's rule.
+    @admin.display(description="Layered preview")
+    def layered_preview(self, obj):
+        layers = obj.portrait_layers
+        if not layers:
+            return "Shown on the site once both layers are set." if (
+                obj.image_layer_base or obj.image_layer_foreground) else "—"
+        return format_html(
+            '<div style="position: relative; width: 64px; height: 64px; margin: 11px 3px 0;">'
+            '<img src="{}" style="position: absolute; inset: 0; width: 64px; height: 64px;" />'
+            '<img src="{}" style="position: absolute; left: -2.84px; top: -10.67px;'
+            ' width: 69.69px; height: 74.67px;" /></div>',
+            layers["base"], layers["foreground"],
+        )
 
 
 def _phrases_html(phrases, joiner):

@@ -118,6 +118,8 @@ class _UmaSerializer(serializers.ModelSerializer):
     # The borderless cut (Uma.portrait): the site draws every uma inside a
     # frame of its own (frontend FramedUma). `image` stays the bordered art.
     portrait = serializers.ImageField(read_only=True)
+    # The layered art drawn in that frame when it is set (Uma.portrait_layers).
+    portrait_layers = serializers.ReadOnlyField()
     # Her unique skill, or null: read from a dict the view builds in one query
     # (context["unique_skill_of_uma"]), the way `unique_of` is on a skill.
     unique = serializers.SerializerMethodField()
@@ -129,7 +131,7 @@ class _UmaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Uma
-        fields = ("id", "name", "image", "portrait", "apt", "unique")
+        fields = ("id", "name", "image", "portrait", "portrait_layers", "apt", "unique")
 
     def get_apt(self, uma):
         return {key: getattr(uma, f"apt_{key}") for key in APTITUDE_FIELDS}

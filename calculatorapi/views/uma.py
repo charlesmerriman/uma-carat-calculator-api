@@ -13,6 +13,9 @@ class UmaSerializer(FirstJpDateMixin, serializers.ModelSerializer):
     # (Uma.portrait). The calculator and the Timeline draw it inside a frame
     # of their own; `image` stays the bordered card art for everything else.
     portrait = serializers.ImageField(read_only=True)
+    # The layered art, {"base", "foreground"} or null (Uma.portrait_layers):
+    # every framed uma draws it in place of `portrait` when it is set.
+    portrait_layers = serializers.ReadOnlyField()
 
     class Meta:
         model = Uma
@@ -21,6 +24,7 @@ class UmaSerializer(FirstJpDateMixin, serializers.ModelSerializer):
             "name",
             "image",
             "portrait",
+            "portrait_layers",
             "admin_comments",
             # Public and rendered: the Timeline tile's hover overlay.
             "purpose",
@@ -59,10 +63,12 @@ class UmaOptionSerializer(serializers.ModelSerializer):
     # locks these for a free account; adding one is a supporter perk the
     # serializer behind PATCH /account enforces (benefits.oshi_variants).
     is_variant = serializers.BooleanField(source="is_costume_variant", read_only=True)
+    # The picker's tiles are framed, so they draw the layered art when it is set.
+    portrait_layers = serializers.ReadOnlyField()
 
     class Meta:
         model = Uma
-        fields = ("id", "name", "image", "is_variant")
+        fields = ("id", "name", "image", "portrait_layers", "is_variant")
 
 
 class UmaViewSet(viewsets.ReadOnlyModelViewSet):  # pylint: disable=too-many-ancestors

@@ -45,7 +45,7 @@ class AccountPreferencesTests(CalculatorTestCase):  # pylint: disable=too-many-p
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             set(response.json()),
-            {"username", "display_name", "show_supporter_badge", "show_shared_plans_on_card", "avatar_url", "oshis",
+            {"username", "display_name", "show_supporter_badge", "show_shared_plans_on_card", "avatar_url", "avatar_layers", "oshis",
              "oshi_slots", "oshi_uma_ids", "oshi_variants", "ad_free", "early_access", "guide_editor",
              "linked_providers", "supporter"},
         )
@@ -271,7 +271,7 @@ class UmaCatalogueTests(CalculatorTestCase):
         # use for them, and admin_comments is an editors' field that a new
         # public route should not carry.
         row = APIClient().get("/umas").json()[0]
-        self.assertEqual(set(row), {"id", "name", "image", "is_variant"})
+        self.assertEqual(set(row), {"id", "name", "image", "portrait_layers", "is_variant"})
         self.assertTrue(row["image"])
 
     def test_image_is_the_storage_url(self):

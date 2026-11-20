@@ -32,7 +32,7 @@ ROW_KEYS = {
 }
 # `strategy` only in full: the feed's rows never carry the long text.
 FULL_KEYS = ROW_KEYS | {"team", "event", "hidden", "strategy"}
-POSTER_KEYS = {"display_name", "portrait", "tier_name", "gallery_style"}
+POSTER_KEYS = {"display_name", "portrait", "portrait_layers", "tier_name", "gallery_style"}
 # Keys that must never appear anywhere in a gallery payload.
 FORBIDDEN = {"username", "user", "author", "author_id", "name", "notes", "is_focus",
              "weight", "points", "order", "email", "source_team", "voters"}
