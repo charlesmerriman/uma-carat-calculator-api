@@ -9,7 +9,7 @@ from types import SimpleNamespace
 from django.test import override_settings
 from django.urls import reverse
 
-from calculatorapi import skill_text
+from calculatorapi import skill_scaling, skill_text
 from calculatorapi.models import CustomUser, Skill, Uma, UmaSkill
 from calculatorapi.skill_conditions import racecourse_names
 from calculatorapi.skill_text import TextContext, describe, describe_condition
@@ -274,8 +274,55 @@ class EffectTextTests(CalculatorTestCase):
         self.assertTrue(all(item["raw"] for item in described["slots"][0]["effects"]))
         self.assertFalse(described["complete"])
 
-    def test_a_scaling_value_says_so(self):
-        self.assertEqual(self.effects(ability(27, 3500, value_usage=3)), ["Velocity +0.35 (varies)"])
+    def test_a_scaling_value_names_its_range_and_basis(self):
+        # Code 12 is fan count, x0.8 to x1.2 of the skill's own base: the
+        # inherited copy (0.15) gets its own range from the same rule.
+        self.assertEqual(self.effects(ability(27, 3500, value_usage=12)),
+                         ["Velocity +0.28 to +0.42, by fan count"])
+        self.assertEqual(self.effects(ability(27, 1500, value_usage=12)),
+                         ["Velocity +0.12 to +0.18, by fan count"])
+        # A flat bonus adds the same amount whatever the base (code 19, +0.1).
+        self.assertEqual(self.effects(ability(27, 500, value_usage=19)),
+                         ["Velocity +0.05 to +0.15, by distance behind the leader"])
+
+    def test_a_scaled_value_carries_its_bands_for_the_table(self):
+        described = describe(skill(effects=[slot([ability(27, 3500, value_usage=12)])]), CONTEXT)
+        table = described["slots"][0]["effects"][0]["scaling"]
+        self.assertEqual(table["heading"], "Fans")
+        self.assertEqual([(row["when"], row["value"]) for row in table["rows"]], [
+            ("Under 20,000", "+0.28"), ("20,000 to 49,999", "+0.315"), ("50,000 to 99,999", "+0.35"),
+            ("100,000 to 159,999", "+0.385"), ("160,000 or more", "+0.42"),
+        ])
+        # A fixed value has no table.
+        fixed = describe(skill(effects=[slot([ability(27, 3500)])]), CONTEXT)
+        self.assertNotIn("scaling", fixed["slots"][0]["effects"][0])
+
+    def test_a_random_drain_reads_as_its_real_share(self):
+        # Nothing Ventured: a -100% base times a random 0, 0.02 or 0.04. It
+        # used to read "Drains 100% endurance".
+        self.assertEqual(self.effects(ability(9, -10000, value_usage=8)),
+                         ["Drains 0% to 4% endurance, at random"])
+
+    def test_an_unexplained_code_still_says_varies(self):
+        self.assertEqual(self.effects(ability(27, 3500, value_usage=40)), ["Velocity +0.35 (varies)"])
+
+    def test_a_repeating_effect_says_when_and_how_often(self):
+        repeat = {**ability(31, 1000), "additional_activate_type": 1}
+        self.assertEqual(self.effects(ability(31, 1000), repeat), [
+            "Acceleration +0.1", "Acceleration +0.1 more on each overtake, up to 3 times",
+        ])
+        flare = {**ability(27, 250), "additional_activate_type": 3}
+        self.assertEqual(self.effects(flare),
+                         ["Velocity +0.025 more each time another skill activates, up to 2 times"])
+
+    def test_every_band_has_a_label_and_moves_the_number(self):
+        # A guard over the whole table: no empty label, and no code whose
+        # bands all give the same number (that would be a typo, not a scale).
+        for table in (skill_scaling.VALUE, skill_scaling.DURATION):
+            for code, scaling in table.items():
+                with self.subTest(code=code):
+                    self.assertTrue(all(band.when for band in scaling.bands))
+                    self.assertGreater(len({band.apply(1.0) for band in scaling.bands}), 1)
 
     def test_duration_cooldown_and_wit_check(self):
         passive = describe(skill(effects=[slot([ability(1, 400000)], duration=-1, cooldown=0)],
@@ -290,10 +337,21 @@ class EffectTextTests(CalculatorTestCase):
         self.assertIs(timed["wit_check"], True)
         self.assertIsNone(describe(skill(), CONTEXT)["wit_check"])
 
-    def test_a_scaling_duration_says_so(self):
-        scaled = {**slot([ability(27, 3500)], duration=24000), "duration_usage": 3}
-        self.assertEqual(describe(skill(effects=[scaled]), CONTEXT)["slots"][0]["duration"],
-                         "2.4 s per 1,000 m (varies)")
+    def test_a_scaling_duration_names_its_range_and_basis(self):
+        # Code 3: HP left, x1 to x4 of the base time.
+        scaled = {**slot([ability(27, 1500)], duration=50000), "duration_usage": 3}
+        described = describe(skill(effects=[scaled]), CONTEXT)["slots"][0]
+        self.assertEqual(described["duration"], "5 to 20 s per 1,000 m, by HP left when it fires")
+        self.assertEqual(described["duration_scaling"]["rows"][0], {"when": "Under 2,000", "value": "5 s"})
+        # Code 4 adds a flat second per overtake, the same on an inherited copy.
+        overtakes = {**slot([ability(31, 500)], duration=12000), "duration_usage": 4}
+        self.assertEqual(describe(skill(effects=[overtakes]), CONTEXT)["slots"][0]["duration"],
+                         "1.2 to 4.2 s per 1,000 m, by overtakes while it lasts")
+        # A code nobody has explained keeps the mark, and no table.
+        unknown = {**slot([ability(27, 3500)], duration=24000), "duration_usage": 99}
+        unexplained = describe(skill(effects=[unknown]), CONTEXT)["slots"][0]
+        self.assertEqual(unexplained["duration"], "2.4 s per 1,000 m (varies)")
+        self.assertNotIn("duration_scaling", unexplained)
 
     def test_two_slots_are_triggers_unless_the_second_waits_for_the_first(self):
         # The game fires the first slot whose conditions hold: alternatives.
