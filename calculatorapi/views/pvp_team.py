@@ -205,7 +205,8 @@ def _replace(request, team):
         pvp_teams.replace_team(team, members=data["members"], notes=data.get("notes"))
     except (pvp_teams.TeamRefused, trained_umas.VeteranRefused) as refusal:
         return _bad_request(str(refusal))
-    return Response(serialize_team(_fresh(team)))
+    # How many unraced CM Runs tickets took the new lineup, for the client's toast.
+    return Response({**serialize_team(_fresh(team)), "tickets_followed": getattr(team, "tickets_followed", 0)})
 
 
 def _update(request, team):
