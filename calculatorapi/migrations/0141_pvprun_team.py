@@ -1,5 +1,5 @@
 """PvpRun.team: the My team team an unraced ticket follows (models/pvp_run.py,
-notes/runs-follow-team-plan.md). Schema only; 0132 fills it in, in a migration
+notes/runs-follow-team-plan.md). Schema only; 0142 fills it in, in a migration
 of its own (rules: never update rows and ALTER one table in one migration)."""
 
 import django.db.models.deletion
@@ -9,7 +9,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('calculatorapi', '0130_race_course'),
+        ('calculatorapi', '0140_uma_layered_art'),
     ]
 
     operations = [

@@ -1,4 +1,4 @@
-"""A fill-blanks backfill of PvpRun.team (0131): the My team team an unraced
+"""A fill-blanks backfill of PvpRun.team (0141): the My team team an unraced
 ticket follows (models/pvp_run.py, notes/runs-follow-team-plan.md).
 
 The backfill (owner, 2026-11-12) links a ticket only when ALL of these hold,
@@ -12,7 +12,7 @@ so it never guesses:
     player's teams for that event. Two matches, or none, leave it unlinked.
 
 It creates and deletes nothing, and on a database without runs it does
-nothing. Reversing it is a no-op; reversing 0131 drops the links with the column.
+nothing. Reversing it is a no-op; reversing 0141 drops the links with the column.
 """
 
 from django.db import migrations
@@ -63,7 +63,7 @@ def link_unraced_tickets(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('calculatorapi', '0131_pvprun_team'),
+        ('calculatorapi', '0141_pvprun_team'),
     ]
 
     operations = [

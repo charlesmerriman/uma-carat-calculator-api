@@ -117,12 +117,12 @@ class FollowTeamTests(PvpRunFixture):
 
 
 class BackfillTests(PvpRunFixture):
-    """Migration 0132: link only on one exact match, unraced, event not over."""
+    """Migration 0142: link only on one exact match, unraced, event not over."""
 
     def setUp(self):
         super().setUp()
         self.backfill = importlib.import_module(
-            "calculatorapi.migrations.0132_link_unraced_runs_to_teams"
+            "calculatorapi.migrations.0142_link_unraced_runs_to_teams"
         ).link_unraced_tickets
 
     def team(self, *umas, name="Team"):

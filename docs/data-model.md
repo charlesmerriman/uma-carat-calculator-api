@@ -1216,8 +1216,8 @@ plan for linking veterans: `notes/pvp-planner-plan.md` ("R3 CM Runs").
   were never run, so no races = an unused ticket and some = stopped after those. Only the
   player sets it, never the clock ("not logged" on a past day may be slow typing), and a
   `PUT` without it takes it back. Win rates are unchanged by it: an unlisted race was never
-  in a denominator. `team` (nullable FK to `PvpTeam`, `SET_NULL`; `0131`, backfilled by
-  `0132` on exact unique matches): the team an UNRACED ticket follows. A team save rewrites
+  in a denominator. `team` (nullable FK to `PvpTeam`, `SET_NULL`; `0141`, backfilled by
+  `0142` on exact unique matches): the team an UNRACED ticket follows. A team save rewrites
   the runners of its unraced followers (`pvp_teams.sync_followers`); a veteran picked on an
   unraced follower goes back to the team; any other lineup change drops the link. A raced
   ticket keeps its lineup, because `PvpRunRace.winner` is a spot
