@@ -759,9 +759,11 @@ is the game's own code, not yet translated). A number or duration that scales
 fan count", "5 to 20 s per 1,000 m, by HP left when it fires"), and carries its bands for the
 skill page's table: `scaling` on the effect phrase, `duration_scaling` on the slot, each
 `{"heading", "rows": [{"when", "value"}]}`; a scaling code nobody has explained yet ends
-"(varies)" with no table. And `sources` (`{"umas": [{"name", "source",
-"level", "on_global"}], "uma_count", "cards": [{"name", "source", "on_global"}],
-"card_count"}`, at most 4 of each, on-global first). A `[[mention]]` resolves by global's
+"(varies)" with no table. And `sources` (`{"umas": [{"id", "name", "source",
+"level", "on_global"}], "uma_count", "cards": [{"id", "name", "source", "on_global"}],
+"card_count"}`, at most 4 of each, on-global first; `id` is the outfit's or card's row id,
+for its card; a unique's inherited copy lists its unique's owners with `source: "inherited"`
+and `level: null`). A `[[mention]]` resolves by global's
 name, the translation, or an old name kept as an alias, keyed by the name as written. **A guide names one version of a skill per row; the other versions ride along.**
 `version` is the skill's own label (`"○ white"`, `"◎ white"`, `"◎ gold"`, `"evolved"`) and `versions`
 lists its other forms a player may be shown (same `group_id`, plus `evolves_from` both

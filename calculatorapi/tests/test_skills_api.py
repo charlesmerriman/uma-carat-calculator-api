@@ -263,11 +263,27 @@ class GuideSkillFieldsTests(CalculatorTestCase):
         self.assertEqual((skill["availability"], skill["uses_translation"]), ("jp", True))
         self.assertEqual(skill["readable"]["slots"][0]["effects"][0]["text"], "Velocity +0.15")
         self.assertEqual(skill["sources"], {
-            "umas": [{"name": "Special Week (New)", "source": "unique", "level": 3, "on_global": False}],
+            "umas": [{"id": week.id, "name": "Special Week (New)", "source": "unique", "level": 3, "on_global": False}],
             "uma_count": 1, "cards": [], "card_count": 0,
         })
         # A JP outfit's unique is named now that the site labels JP content.
         self.assertEqual(skill["unique_of"], "Special Week (New)")
+
+    def test_an_inherited_copy_names_its_uniques_owner(self):
+        # Henry, board, 2026-11-19: the inherited version's card had no Umas row.
+        cm = make_champions_meeting()
+        guide = PvpGuide.objects.create(champions_meeting=cm, visibility="public")
+        unique = make(100201, name="Angling and Scheming", rarity=5)
+        copy = make(900201, name="Angling and Scheming", rarity=1)
+        sky = Uma.objects.create(name="Seiun Sky", game_id=102001)
+        UmaSkill.objects.create(uma=sky, skill=unique, source="unique", level=3)
+        PvpSkillRecommendation.objects.create(guide=guide, style="front", category="acceleration", skill=copy)
+
+        [row] = editor_client().get(url("cm", cm.id)).json()["skill_recommendations"]
+        self.assertEqual(row["skill"]["sources"], {
+            "umas": [{"id": sky.id, "name": "Seiun Sky", "source": "inherited", "level": None, "on_global": False}],
+            "uma_count": 1, "cards": [], "card_count": 0,
+        })
 
 
 # The pages build image URLs from stored names. CI has no bucket configured, so
