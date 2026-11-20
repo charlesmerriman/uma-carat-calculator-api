@@ -1584,6 +1584,16 @@ anniversary's card off `AnniversaryEvent` (that is the paid campaign, drawn abov
   Special Week (Commander) is a main story chapter's uma. On the wire they come as two lists,
   `cards` and `umas`, so every reader of `cards` stays about support cards. An uma here never
   reaches eligibility either (`test_event_kinds.py`).
+- **The deploy's import creates the other kinds too** (`free_card_event_import.py`, from each
+  snapshot's `free_card_events.json`): main story parts (`main_story_part` + a chapter's
+  `add_reward_*`), anniversary missions (`mission_data` by `event_id`, the story event replay
+  `28` skipped) and fan events (`fan_raid_*`), keyed by kind and id. It writes names, the four
+  instants and missing rewards; never the picture, the working name, a mark, a reward amount or
+  a link already set. Placement adds two steps after the story event matcher's (the Global or JP
+  banner *running* at the start, counting only banners with both ends) and puts a part with no
+  start at all (the client dates parts 1 and 2 to 2017) under the first Global banner. 22 of 22
+  land where the old sheet shows them (2026-11-20). `mission_data`'s dates are text in the
+  client's clock: UTC on Global, Japan time on JP.
 - **Every kind has the picture slot** (`image`, `upload_to="story_events/"`). Best as a
   transparent 2:1 PNG like the story event logos; a batch is named by kind and id
   (`main-story-7.png`, `anniversary-138.png`, `special-1001.png`).

@@ -54,7 +54,10 @@ WHAT IT WRITES, and what it leaves alone:
 
   StoryEvent   every story event in either snapshot, with its free cards,
                CREATED when missing; what editors own is never touched
-               (the rules: calculatorapi/story_event_import.py).
+               (the rules: calculatorapi/story_event_import.py). And the
+               other free card events (main story chapters, anniversary
+               missions, fan events) with their cards and umas, keyed by kind
+               and id (calculatorapi/free_card_event_import.py).
 
   Skill        every column the game owns: name, description, rarity, group,
                tier, icon, cost, conditions, effects, and `availability`
@@ -135,6 +138,10 @@ Run against PRODUCTION with --dry-run first, read it, then --apply. The rows it
 touches are served by /calculator-data, so it drops that cache when done.
 """
 
+# One command per game-data pass, so each pass's plan, report and write sit
+# together; past 1,000 lines since the free card events (2026-11-20).
+# pylint: disable=too-many-lines
+
 import datetime
 import json
 from pathlib import Path
@@ -150,6 +157,9 @@ from calculatorapi.game_data_sources import (
 )
 from calculatorapi.game_data_values import card_values, jp_uma_values, merged, objective_values, uma_values
 from calculatorapi.models.skill import SkillAvailability, SkillRarity, SkillTier
+from calculatorapi.free_card_event_import import (
+    plan_free_card_events, report_lines as free_event_report_lines, write_free_card_events,
+)
 from calculatorapi.story_event_import import (
     plan_story_events, report_lines as story_report_lines, write_story_events,
 )
@@ -175,7 +185,7 @@ def load_snapshot(directory):
     # 2026-10-27 no sparks, and one from before 2026-11-12 no objectives or card effects.
     # Story events arrived 2026-11-17 (notes/story-events-plan.md).
     for name in ("support_events", "skill_text_ahead", "sparks", "objectives", "support_effects",
-                 "story_events"):
+                 "story_events", "free_card_events"):
         path = directory / f"{name}.json"
         files[name] = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else []
     # Every race's English name by race instance id, for a JP route's goals; a
@@ -483,6 +493,10 @@ class Command(BaseCommand):
             self._plan_sparks(snapshot["sparks"]),
             plan_story_events(
                 snapshot["story_events"], sources.jp.get("story_events", []) if sources.jp else [],
+            ),
+            plan_free_card_events(
+                snapshot["free_card_events"],
+                sources.jp.get("free_card_events", []) if sources.jp else [],
             ),
         ]
         if sources.jp is not None:
@@ -866,6 +880,9 @@ class Command(BaseCommand):
                 if plan.get("story"):
                     written += write_story_events(plan)
                     continue
+                if plan.get("free_events"):
+                    written += write_free_card_events(plan)
+                    continue
                 for row, diff in plan["changed"]:
                     for column, value in diff.items():
                         setattr(row, column, value)
@@ -918,8 +935,9 @@ class Command(BaseCommand):
 
     def _report_jp_plan(self, plan, verb, dry_run):
         """Report the JP pass's two plan kinds and the story events; False for any other plan."""
-        if plan.get("story"):
-            for line, warning in story_report_lines(plan, dry_run):
+        if plan.get("story") or plan.get("free_events"):
+            lines = story_report_lines if plan.get("story") else free_event_report_lines
+            for line, warning in lines(plan, dry_run):
                 self.stdout.write(self.style.WARNING(line) if warning else line)
             return True
         if plan.get("notice"):

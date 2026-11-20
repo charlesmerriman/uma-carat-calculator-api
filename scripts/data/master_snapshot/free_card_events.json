@@ -1,0 +1,149 @@
+[
+ {
+  "kind": "main_story",
+  "id": 1,
+  "name": "Main Story Act 1, Chapter 1",
+  "start": null,
+  "end": null,
+  "rewards": [
+   {
+    "type": "card",
+    "id": 30022
+   }
+  ]
+ },
+ {
+  "kind": "main_story",
+  "id": 2,
+  "name": "Main Story Act 1, Chapter 2",
+  "start": null,
+  "end": null,
+  "rewards": [
+   {
+    "type": "card",
+    "id": 30023
+   }
+  ]
+ },
+ {
+  "kind": "main_story",
+  "id": 3,
+  "name": "Main Story Act 1, Chapter 3",
+  "start": "2025-08-03T22:00:00+00:00",
+  "end": null,
+  "rewards": [
+   {
+    "type": "card",
+    "id": 30033
+   }
+  ]
+ },
+ {
+  "kind": "main_story",
+  "id": 4,
+  "name": "Main Story Act 1, Chapter 4",
+  "start": "2025-10-07T22:00:00+00:00",
+  "end": null,
+  "rewards": [
+   {
+    "type": "card",
+    "id": 30044
+   }
+  ]
+ },
+ {
+  "kind": "main_story",
+  "id": 5,
+  "name": "Main Story Act 1, Chapter 5",
+  "start": "2026-01-22T22:00:00+00:00",
+  "end": null,
+  "rewards": [
+   {
+    "type": "card",
+    "id": 30076
+   }
+  ]
+ },
+ {
+  "kind": "main_story",
+  "id": 6,
+  "name": "Main Story Act 1, Finale Part 1",
+  "start": "2026-03-26T22:00:00+00:00",
+  "end": null,
+  "rewards": [
+   {
+    "type": "card",
+    "id": 30081
+   }
+  ]
+ },
+ {
+  "kind": "main_story",
+  "id": 7,
+  "name": "Main Story Act 1, Finale Part 2",
+  "start": "2026-06-25T22:00:00+00:00",
+  "end": null,
+  "rewards": [
+   {
+    "type": "card",
+    "id": 30105
+   },
+   {
+    "type": "uma",
+    "id": 100103
+   }
+  ]
+ },
+ {
+  "kind": "anniversary",
+  "id": 101,
+  "name": "Half Anniversary Celebration Missions Part 2",
+  "start": "2025-11-03T22:00:00+00:00",
+  "end": "2025-12-10T14:59:59+00:00",
+  "rewards": [
+   {
+    "type": "card",
+    "id": 30062
+   }
+  ]
+ },
+ {
+  "kind": "anniversary",
+  "id": 138,
+  "name": "1st Anniversary Celebration Missions Part 2",
+  "start": "2026-03-12T22:00:00+00:00",
+  "end": "2026-04-15T14:59:59+00:00",
+  "rewards": [
+   {
+    "type": "card",
+    "id": 30088
+   }
+  ]
+ },
+ {
+  "kind": "anniversary",
+  "id": 218,
+  "name": "1.5-Year Anniversary Celebration Missions, Part 2",
+  "start": "2026-07-22T22:00:00+00:00",
+  "end": "2026-08-28T14:59:59+00:00",
+  "rewards": [
+   {
+    "type": "card",
+    "id": 30121
+   }
+  ]
+ },
+ {
+  "kind": "special",
+  "id": 1001,
+  "name": "Top Umadol Project",
+  "start": "2026-04-06T22:00:00+00:00",
+  "end": "2026-04-13T21:59:59+00:00",
+  "rewards": [
+   {
+    "type": "card",
+    "id": 20045
+   }
+  ]
+ }
+]
