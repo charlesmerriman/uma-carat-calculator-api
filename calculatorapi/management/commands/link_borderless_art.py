@@ -185,7 +185,9 @@ def link_layers(dry_run, stdout, style):
         for game_id, row in sorted(rows.items())
         if game_id in paired and not row.image_layer_base and not row.image_layer_foreground
     ]
-    _report_layers(stdout, style, dry_run=dry_run, planned=planned, files=files, rows=rows)
+    verb = "Would link" if dry_run else "Linking"
+    stdout.write(f"{verb} {len(planned)} uma(s) from {len(paired)} layered pair(s).")
+    _report_leftovers(stdout, style, files, rows)
 
     if dry_run or not planned:
         return
@@ -199,16 +201,15 @@ def link_layers(dry_run, stdout, style):
     stdout.write(style.SUCCESS(f"Linked {len(planned)} uma(s)."))
 
 
-def _report_layers(stdout, style, *, dry_run, planned, files, rows):
-    """What --kind layers will do, and each leftover worth chasing."""
+def _report_leftovers(stdout, style, files, rows):
+    """Each leftover of --kind layers worth chasing: half pairs, pairs with no
+    uma, umas with no pair."""
     base_files, foreground_files = files["image_layer_base"], files["image_layer_foreground"]
     paired = base_files.keys() & foreground_files.keys()
     half_pairs = sorted((base_files.keys() | foreground_files.keys()) - paired)
     without_file = [row for game_id, row in sorted(rows.items()) if game_id not in paired]
     without_row = [base_files[game_id] for game_id in sorted(paired) if game_id not in rows]
 
-    verb = "Would link" if dry_run else "Linking"
-    stdout.write(f"{verb} {len(planned)} uma(s) from {len(paired)} layered pair(s).")
     if half_pairs:
         stdout.write(style.WARNING(
             f"{len(half_pairs)} id(s) have a base or a foreground but not both: "
