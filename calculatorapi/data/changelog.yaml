@@ -32,6 +32,27 @@
 # module changed. Newest entry first is conventional here but not required — the
 # page sorts by date.
 
+- key: story-chapters-and-skills
+  date: 2026-11-20
+  title: "Story chapters on the Timeline, and Skills on the course map"
+  version: "v2.21"
+  changes:
+    - added: "Main story chapters, anniversary missions and fan events are on the Timeline now, each with the free card or uma it gives you."
+    - added: "Reading a PvP guide? Stick to top keeps a slim strip of the course on screen while you scroll."
+    - changed: "The course map's Accels list is now Skills. Every skill gets its own number on the track, and each entry says what it does."
+    - added: "Debuffers get a red D in team comps."
+    - changed: "An inherited skill's card says whose unique it is, on the course map too. Tap an uma or card named in a skill's card to open theirs."
+    - changed: "On a phone, a guide's All tab starts with General skills, already open."
+    - changed: "CM Runs: a ticket filled from one of your My team teams says which one, and keeps up with that team until you race it."
+    - changed: "Bigger cards and umas in the plan picture. The team picture lost its 1, 2, 3 badges."
+    - changed: "Pictures of long plans are smaller and quicker to make, and iPhones keep drawing until every card is in."
+    - changed: "The button on uma, card and skill cards says Open Encyclopedia."
+    - fixed: "Typing mr cb finds Mr. C.B. Every search ignores punctuation now."
+    - fixed: "On courses of more than one lap, the course map's laps run parallel, and a lit skill stays beside its own lap."
+    - fixed: "A campaign's art lines up with its banner's on the Timeline again."
+    - fixed: "Opening the Skills page from a link no longer leaves the Umas and Cards tabs without their counts."
+    - fixed: "The level slider's handle sits above the limit-break marks."
+
 - key: layered-portraits
   date: 2026-11-20
   title: "Ears over the frame, and skills that show their numbers"
