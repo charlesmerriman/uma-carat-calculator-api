@@ -167,6 +167,24 @@ the rewards and the cards. What's left for you:
 - **Banner:** matched by start date. If an event sits under the wrong banner, change it
   here and it stays changed.
 
+The same page (**Free card events**) holds the other events that give free cards, each with a
+**Kind**: **Main story** (a chapter, which never ends), **Anniversary missions** (an
+anniversary's missions and login bonus) and **Special event**. The filter on the right shows
+one kind at a time. They get a picture the same way, and look best as a transparent picture
+twice as wide as tall, like the story event logos. If you upload a batch, name each file by
+kind and number: `main-story-7.png`, `anniversary-138.png`, `special-1001.png`.
+
+Like story events, the deploy adds main story chapters, anniversary missions and the fan
+event by itself, with their free cards and characters, and leaves your picture, working name,
+marks and banner choice alone. Their reward amounts (carats, tickets) start at zero, because the
+game's files don't list them; fill them in if you want them shown.
+
+**Adding one by hand.** Some free cards come from gifts and collaborations the game's files
+don't describe. Click **Add**, pick the kind (usually **Special event**), leave **Game id**
+blank, type the name in **Working name**, pick the banner it ran with, and add its free card
+(or character) in the rows at the bottom. A reward row is a support card or a character, never
+both. An event you made stays fully editable; one the deploy made locks the fields it owns.
+
 ## Daily legend races
 
 **Events & competitions → Daily legend races** lists the batches of umas that

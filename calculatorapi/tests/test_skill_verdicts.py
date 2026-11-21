@@ -89,36 +89,38 @@ class SpurtVerdictTests(CalculatorTestCase):
     def test_the_cm_21_table(self):
         # Final Push (front, 20.41 m/s): the window opens at 736.7 m, so 51.3
         # of the final corner's 238 m land well; `useful` is that share times
-        # 0.2 m/s² for 3 s, 0.6 m/s.
+        # 0.2 m/s² for 3 s stretched to 3.6 s on Chukyo's 1,200 m, 0.72 m/s.
         final_push = verdict("running_style==1&is_finalcorner_random==1&order==1", ACCEL)
         self.assertEqual(final_push["spread"], [550, 788])
         self.assertEqual(
-            final_push["spurt"], {"from": -250, "to": -12, "odds": 0.22, "useful": 0.129, "accel": 0.129, "carry": 0.0}
+            final_push["spurt"], {"from": -250, "to": -12, "odds": 0.22, "useful": 0.155, "accel": 0.155, "carry": 0.0}
         )
         self.assertEqual(final_push["needs"], ["In the lead"])
 
         nsm = verdict("infront_near_lane_time>=1&is_lastspurt==1&hp_per>=1", ACCEL)
         self.assertEqual(nsm["fires_at"], 800)
-        self.assertEqual(nsm["spurt"], {"from": 0, "to": 0, "odds": 1.0, "useful": 0.6, "accel": 0.6, "carry": 0.0})
+        self.assertEqual(nsm["spurt"], {"from": 0, "to": 0, "odds": 1.0, "useful": 0.72, "accel": 0.72, "carry": 0.0})
 
         # 800 to 900 m, and only the first 50 m land well.
         neck = verdict("running_style==2&phase_firsthalf_random==2&order_rate<=50", ACCEL)
-        self.assertEqual(neck["spurt"], {"from": 0, "to": 100, "odds": 0.5, "useful": 0.3, "accel": 0.3, "carry": 0.0})
+        self.assertEqual(
+            neck["spurt"], {"from": 0, "to": 100, "odds": 0.5, "useful": 0.36, "accel": 0.36, "carry": 0.0}
+        )
 
         # Rule 1: a fixed zone fires at its start, 250 m early here: no use.
         red_shift = verdict("is_finalcorner==1&order<=5&order_rate<=50", ACCEL)
         spurt = red_shift["spurt"]
         self.assertEqual((red_shift["fires_at"], spurt["from"], spurt["odds"]), (550, -250, 0.0))
-        self.assertAlmostEqual(spurt["useful"], 0.228, places=2)  # GatedZoneTests
+        self.assertAlmostEqual(spurt["useful"], 0.274, places=2)  # GatedZoneTests
 
     def test_usefulness_weighs_the_speed_added(self):
         gold = [slot(31, value=4000, duration=30000)]
-        # 0.4 m/s² for 3 s at the spurt start beats 0.2 for 3 s.
-        self.assertEqual(verdict("is_lastspurt==1", gold)["spurt"]["useful"], 1.2)
+        # 0.4 m/s² for 3 s (3.6 s on 1,200 m) at the spurt start beats 0.2 for 3 s.
+        self.assertEqual(verdict("is_lastspurt==1", gold)["spurt"]["useful"], 1.44)
         # A slope first, then a point on it: Chukyo's one downhill runs 100 to
         # 875 m, and 114 of its 775 m land from 736 m on.
         downhill = verdict("down_slope_random==1", gold)["spurt"]
-        self.assertEqual((downhill["odds"], downhill["useful"]), (0.15, 0.177))
+        self.assertEqual((downhill["odds"], downhill["useful"]), (0.15, 0.212))
 
         angling = verdict("phase>=2&corner!=0&order==1", ACCEL)
         self.assertEqual(angling["kind"], "never")
@@ -154,7 +156,7 @@ class GatedZoneTests(CalculatorTestCase):
         # No Stopping Me!: a runner close ahead is unpredictable, but the zone
         # opens at the late-race start, so if it fires it fires perfectly.
         nsm = verdict("infront_near_lane_time>=1&is_lastspurt==1&hp_per>=1", ACCEL)
-        self.assertEqual(nsm["spurt"], {"from": 0, "to": 0, "odds": 1.0, "useful": 0.6, "accel": 0.6, "carry": 0.0})
+        self.assertEqual(nsm["spurt"], {"from": 0, "to": 0, "odds": 1.0, "useful": 0.72, "accel": 0.72, "carry": 0.0})
 
     def test_a_zone_opening_before_the_window_loses_the_early_metres(self):
         # Red Shift from the final corner at 550 m: 114 of the 300 m up to the
@@ -162,7 +164,7 @@ class GatedZoneTests(CalculatorTestCase):
         red_shift = verdict("is_finalcorner==1&order<=5&order_rate<=50", ACCEL)
         self.assertEqual(red_shift["fires_at"], 550)
         self.assertEqual(red_shift["spurt"]["odds"], 0.0)
-        self.assertAlmostEqual(red_shift["spurt"]["useful"], 0.6 * 114.06 / 300, places=2)
+        self.assertAlmostEqual(red_shift["spurt"]["useful"], 0.72 * 114.06 / 300, places=2)
         # A settled clause (a pre-race fact) leaves rule 1 whole: the rank is the odds.
         self.assertEqual(verdict("is_finalcorner==1&popularity>=4", ACCEL)["spurt"]["useful"], 0.0)
 
@@ -180,19 +182,41 @@ class GatedZoneTests(CalculatorTestCase):
         # firing in the first 113 m of the backstretch uses her unique up.
         tamamo = verdict("distance_rate>=50&corner==0&order_rate<=30&order_rate>=20", ACCEL, KYOTO_3200)
         self.assertEqual(tamamo["fires_at"], 1850)
-        self.assertAlmostEqual(tamamo["spurt"]["useful"], 0.6 * 220 / 333.3, places=2)
+        # Her 0.2 m/s² runs those 9.6 s, so the speed it adds is 0.2 x 9.6 = 1.92.
+        self.assertAlmostEqual(tamamo["spurt"]["useful"], 1.92 * 220 / 333.3, places=2)
 
     def test_speed_carried_into_the_late_race_counts_toward_the_rank(self):
         # Tamamo's unique adds 0.2 m/s² and 0.35 m/s for 3 s (the owner: carry-over
         # is prized). On Chukyo it opens 12 m before the late race: the accel
-        # lands (0.6) and the speed carries (0.35), so 0.95; a 6 s one with its
+        # lands (0.72, its 3 s stretched to 3.6 s) and the speed carries (0.35),
+        # so 1.07; a 6 s one with its
         # speed only in the late race scores its acceleration alone.
         both = [{"duration": 30000, "cooldown": 5_000_000, "abilities": [
             {"type": 31, "value": 2000, "target_type": 1}, {"type": 27, "value": 3500, "target_type": 1},
         ]}]
         tamamo = verdict("distance_rate>=50&corner==0&order_rate<=30&order_rate>=20", both)
-        self.assertEqual((tamamo["fires_at"], tamamo["carry"], tamamo["spurt"]["useful"]), (788, 1.0, 0.95))
-        self.assertEqual(verdict("is_lastspurt==1", both)["spurt"]["useful"], 0.6)
+        self.assertEqual((tamamo["fires_at"], tamamo["carry"], tamamo["spurt"]["useful"]), (788, 1.0, 1.07))
+        self.assertEqual(verdict("is_lastspurt==1", both)["spurt"]["useful"], 0.72)
+
+
+class StretchAndWordsTests(CalculatorTestCase):
+    """An accel's part of the rank runs its stretched duration (Daptrius, board,
+    2026-11-20), and the lists show the skill's own words, base value (Henry)."""
+
+    def test_the_same_accel_adds_more_on_a_longer_course(self):
+        gold = [slot(31, value=4000, duration=40000)]
+        short = verdict("is_lastspurt==1", gold)["spurt"]["useful"]
+        long = verdict("is_lastspurt==1", gold, KYOTO_3200)["spurt"]["useful"]
+        # 0.4 m/s² for 4 s: 4.8 s on 1,200 m, 12.8 s on 3,200 m.
+        self.assertAlmostEqual(short, 0.4 * 4.8, places=2)
+        self.assertAlmostEqual(long, 0.4 * 12.8, places=2)
+
+    def test_the_words_are_the_skills_own_base_value(self):
+        unique = verdict("is_lastspurt==1", [slot(31, value=4000, duration=40000)])
+        inherited = verdict("is_lastspurt==1", [slot(31, value=2000, duration=24000)], KYOTO_3200)
+        self.assertEqual(unique["effect_words"], ["Acceleration +0.4"])
+        self.assertEqual(inherited["effect_words"], ["Acceleration +0.2"])
+        self.assertNotIn("effect_words", verdict("is_lastspurt==1", HEAL))
 
 
 class PathTests(CalculatorTestCase):
@@ -210,7 +234,7 @@ class PathTests(CalculatorTestCase):
         self.assertEqual([path["fires_at"] for path in tamamo["paths"]], [788, 788])
         # The summary: the stretch the paths cover, the best path's rank, no odds.
         self.assertEqual(tamamo["spread"], [788, 788])
-        self.assertEqual(tamamo["spurt"], {"from": -12, "to": -12, "useful": 0.6, "accel": 0.6, "carry": 0.0})
+        self.assertEqual(tamamo["spurt"], {"from": -12, "to": -12, "useful": 0.72, "accel": 0.72, "carry": 0.0})
         self.assertNotIn("fires_at", tamamo)
 
     def test_ways_needing_the_same_things_stay_one_verdict(self):
@@ -324,7 +348,7 @@ class CornerPointTests(CalculatorTestCase):
         gold = [slot(31, value=4000, duration=30000, cooldown=300000)]
         connoisseur = verdict("all_corner_random==1", gold)
         self.assertEqual(connoisseur["spurt"]["odds"], 0.36)
-        self.assertAlmostEqual(connoisseur["spurt"]["useful"], 0.363 * 1.2, places=2)
+        self.assertAlmostEqual(connoisseur["spurt"]["useful"], 0.363 * 1.44, places=2)
 
     def test_a_once_a_race_speed_skill_fires_at_its_first_point(self):
         # Sprint Corners: the first of four points is almost never in the last

@@ -27,6 +27,8 @@ from calculatorapi.models import (
     PvpRunRace,
     PvpRunRunner,
     PvpRunStage,
+    PvpTeam,
+    PvpTeamMember,
 )
 
 # Refusals share pvp_teams' exception (the lineup rules raise it), so a view
@@ -76,10 +78,18 @@ puts the events in date order from /calculator-data)."""
     )
 
 
-def write_run(user, kind, event_id, *, day=None, ticket=None, data):  # pylint: disable=too-many-arguments
+def write_run(user, kind, event_id, *, day=None, ticket=None, data):  # pylint: disable=too-many-arguments,too-many-locals
     """Write one slot whole, creating the row on the first save. `data` is the
     view's validated body: runners, races, finals_group, placement, note,
-    skipped.
+    skipped, and `team` when the client names the team it filled the ticket
+    from (left out: the link stays as it is, so an older client's race saves
+    never drop it; null: no team).
+
+    The link lasts while the ticket holds that team's lineup (models/pvp_run.py).
+    A veteran picked on an unraced ticket that otherwise holds its team goes
+    back to the team, and from there to its other unraced tickets (Daptrius,
+    2026-11-05: "a change made in Runs should affect that Team"). Any other
+    difference means the ticket no longer holds the team, so the link goes.
 
     Delete-then-create for the runners and races, in one transaction, like
     pvp_teams.replace_team: the client sends the ticket as it should be. A
@@ -112,9 +122,12 @@ def write_run(user, kind, event_id, *, day=None, ticket=None, data):  # pylint: 
         raise RunRefused("Only a day's ticket can be skipped.")
     if skipped and len(races) >= PVP_RUN_RACES:
         raise RunRefused(f"All {PVP_RUN_RACES} races are logged, so none were skipped.")
+    named_team = _named_team(user, event, data)
 
     with transaction.atomic():
         run = _get_or_create(_slot_filter(user, event, day, ticket))
+        if named_team is not _KEEP:
+            run.team = named_team
         run.runners.all().delete()
         run.races.all().delete()
         PvpRunRunner.objects.bulk_create(
@@ -134,9 +147,50 @@ def write_run(user, kind, event_id, *, day=None, ticket=None, data):  # pylint: 
         run.placement = placement
         run.note = data.get("note", "")
         run.skipped = skipped
+        unraced = not races and not skipped and placement is None and not run.finals_group
+        _follow_or_unlink(run, runners, unraced)
         # Saved even with no column changed, so updated_at says "edited now".
-        run.save(update_fields=["finals_group", "placement", "note", "skipped", "updated_at"])
+        run.save(update_fields=["finals_group", "placement", "note", "skipped", "team", "updated_at"])
     return run
+
+
+# `team` left out of a PUT: the link stays as it is.
+_KEEP = object()
+
+
+def _named_team(user, event, data):
+    """The PvpTeam a PUT names, None for an explicit null, or _KEEP when the
+    key is left out. Refused unless it is the player's own team for this event."""
+    if "team" not in data:
+        return _KEEP
+    if data["team"] is None:
+        return None
+    team = PvpTeam.objects.filter(id=data["team"], user=user, **event).first()
+    if team is None:
+        raise RunRefused("That team isn't one of yours for this event.")
+    return team
+
+
+def _follow_or_unlink(run, runners, unraced):
+    """Keep `run.team` only while the ticket holds the team's lineup. On an
+    unraced ticket that differs from it ONLY in its veterans, the veterans go
+    to the team and its other unraced tickets instead (the ticket was edited
+    in Runs, where only a veteran can be picked)."""
+    if run.team_id is None:
+        return
+    team = run.team
+    mine = sorted((r["position"], r["uma"], r["style"], r.get("trained_uma")) for r in runners)
+    theirs = pvp_teams.team_lineup(team)
+    if mine == theirs:
+        return
+    same_but_veterans = [entry[:3] for entry in mine] == [entry[:3] for entry in theirs]
+    if not (unraced and same_but_veterans):
+        run.team = None
+        return
+    for position, _uma, _style, veteran in mine:
+        PvpTeamMember.objects.filter(team=team, position=position).update(trained_uma_id=veteran)
+    team.save(update_fields=["updated_at"])
+    pvp_teams.sync_followers(team, exclude_run=run)
 
 
 def _get_or_create(lookup):

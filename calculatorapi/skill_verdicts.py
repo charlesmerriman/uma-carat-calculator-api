@@ -19,9 +19,12 @@ THE FIELDS, each present only when it says something:
                   skill's trigger in metres from the late-race start (negative
                   is before); `odds`, an accel's share landing well (rule 5);
                   `useful`, an accel's ranking score: that share times the
-                  speed its acceleration adds, plus the share its speed carries
+                  speed its acceleration adds over its stretched duration, plus the share its speed carries
                   into the late race times that speed (m/s both), with the two
                   parts as `accel` and `carry`
+    effect_words  ["Acceleration +0.4"]: what an accel or speed skill does to
+                  its own runner, in its card's words (skill_text.ability_text),
+                  the base value: the accels and speed lists show it
     speed_kind    "target" (raises the speed cap, most of them) or "current"
                   (raises the speed itself), for a speed skill (rule 9)
     speed_rank    {"useful", "speed", "carry"[, "accelerating"]}: a speed
@@ -98,7 +101,7 @@ import math
 import re
 
 from .skill_conditions import parse_condition
-from .skill_text import ONCE_PER_RACE, SKILL_COUNTS, bounds, describe_condition
+from .skill_text import ONCE_PER_RACE, SKILL_COUNTS, ability_text, bounds, describe_condition
 from .skill_zones import PHASE_STARTS, CourseFacts, classify, zones_for
 
 # ── Daptrius's answers (2026-11-03, messages 1567150957861671044,
@@ -516,15 +519,44 @@ def _seconds(effects, kind):
     return None
 
 
-def accel_strength(effects):
-    """The speed an accel adds over its run, m/s: its acceleration (m/s²) times
-    its base duration (s). 0.4 for 3 s is 1.2; a weaker or shorter one less."""
-    seconds = _seconds(effects, "accel") or 0
+def accel_strength(effects, distance):
+    """The speed an accel adds over its run on a course, m/s: its acceleration
+    (m/s²) times its duration there, the base stretched by distance / 1000 as
+    the game does (rule 5). 0.4 for 4 s on 2,500 m is 0.4 x 10 = 4.0.
+
+    The base duration alone made every accel's part of `useful` wrong by the
+    course's stretch while the carry part (a speed, no duration) wasn't, so
+    the two parts were weighed against each other wrongly on every course but
+    1,000 m (Daptrius, board "Accels -> Skills", 2026-11-20: "it is not taking
+    into account course length")."""
+    seconds = (_seconds(effects, "accel") or 0) * stretch(distance)
     for slot in effects or []:
         for ability in slot.get("abilities", []):
             if ability.get("type") == ACCELERATION and ability.get("target_type", SELF) == SELF:
                 return ability.get("value", 0) / TENTHS_OF_A_MS * seconds
     return 0.0
+
+
+# The ability types a skill's own words are shown for in the accels and speed
+# lists: its acceleration and its speed, on its own runner.
+_OWN_WORDS = (ACCELERATION, VELOCITY, CURRENT_SPEED_UP)
+
+
+def effect_words(effects, context):
+    """What the skill does to its own runner's speed, in its card's words
+    ("Acceleration +0.4"): the base value, never stretched or ranked (Henry,
+    board "Accels -> Skills", 2026-11-20: "just show that it has 0.4 increase
+    acceleration for base and 0.2 increase acceleration for inherit"). Words
+    the card shows as game code (`raw`) are left out."""
+    words = []
+    for slot in effects or []:
+        for ability in slot.get("abilities", []):
+            if ability.get("type") not in _OWN_WORDS or ability.get("target_type", SELF) != SELF:
+                continue
+            said = ability_text(ability, context)
+            if not said.get("raw") and said["text"] not in words:
+                words.append(said["text"])
+    return words
 
 
 def speed_added(effects):
@@ -633,6 +665,10 @@ def verdict_for(condition, effects, course, entry, context):
         out["effects"] = kinds
     if "speed" in kinds:
         out["speed_kind"] = speed_kind(effects)
+    if "accel" in kinds or "speed" in kinds:
+        words = effect_words(effects, context)
+        if words:
+            out["effect_words"] = words
     parsed = parse_condition(condition) if condition else None
     if not parsed:
         return out
@@ -787,7 +823,7 @@ def _timing(parsed, kinds, effects, course, entry):  # pylint: disable=too-many-
             # well times the speed its acceleration adds, plus the share its
             # speed carries into the late race times that speed (the owner,
             # 2026-11-03: carry-over is prized, Tamamo's unique does both).
-            accel_part = (landing_share(window) or 0) * accel_strength(effects)
+            accel_part = (landing_share(window) or 0) * accel_strength(effects, course.distance)
             carry_part = carry_rank * speed_added(effects)
             out["spurt"]["useful"] = round(accel_part + carry_part, 3)
             # The two parts, shown as chips on the accels column (owner, 2026-11-04).

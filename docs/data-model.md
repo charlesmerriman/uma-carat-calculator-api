@@ -244,7 +244,8 @@ erDiagram
 
     StoryEvent {
         int id PK
-        int game_id UK
+        string kind "story | main_story | anniversary | special"
+        int game_id "nullable, unique with kind"
         string name "Global's"
         string working_name
         string jp_name
@@ -266,7 +267,8 @@ erDiagram
     StoryEventCard {
         int id PK
         int story_event_id FK
-        int support_card_id FK
+        int support_card_id FK "nullable"
+        int uma_id FK "nullable, exactly one of the two"
         bool must_get
         string note
         int order
@@ -389,7 +391,8 @@ erDiagram
     GameEvent }o--o| BannerTimeline : "banner_timeline"
     StoryEvent }o--o| BannerTimeline : "banner_timeline"
     StoryEventCard }o--|| StoryEvent : "story_event"
-    StoryEventCard }o--|| SupportCard : "support_card"
+    StoryEventCard }o--o| SupportCard : "support_card"
+    StoryEventCard }o--o| Uma : "uma"
     Scenario }o--o| BannerTimeline : "banner_timeline"
     DailyLegendRaceRelease }o--o| BannerTimeline : "banner_timeline"
     DailyLegendRaceUma }o--|| DailyLegendRaceRelease : "release"
@@ -1216,11 +1219,16 @@ plan for linking veterans: `notes/pvp-planner-plan.md` ("R3 CM Runs").
   were never run, so no races = an unused ticket and some = stopped after those. Only the
   player sets it, never the clock ("not logged" on a past day may be slow typing), and a
   `PUT` without it takes it back. Win rates are unchanged by it: an unlisted race was never
-  in a denominator.
+  in a denominator. `team` (nullable FK to `PvpTeam`, `SET_NULL`; `0141`, backfilled by
+  `0142` on exact unique matches): the team an UNRACED ticket follows. A team save rewrites
+  the runners of its unraced followers (`pvp_teams.sync_followers`); a veteran picked on an
+  unraced follower goes back to the team; any other lineup change drops the link. A raced
+  ticket keeps its lineup, because `PvpRunRace.winner` is a spot
+  (`notes/runs-follow-team-plan.md`).
 - **`PvpRunRunner`**: `position` 0..2, `uma`, `style` (never `everyone`), unique per run on
-  position and uma. A **copy** of the lineup when the ticket was logged, never a pointer at
-  a `PvpTeam`: editing or deleting a team must not rewrite results, and results belong to
-  the account and the event. `trained_uma` (nullable, SET_NULL) is a LINK to the veteran
+  position and uma. A **copy** of the lineup, rewritten from its team only while the ticket
+  is unraced (`PvpRun.team` above): editing or deleting a team must not rewrite results,
+  and results belong to the account and the event. `trained_uma` (nullable, SET_NULL) is a LINK to the veteran
   that ran, the same column `PvpTeamMember` has (stats live only on the veteran).
 - **`PvpRunRace`**: `race` 1..5 and `winner`, the spot of the player's uma that won, NULL
   for a loss. **No row = not raced yet**, which a win rate leaves out of its denominator.
@@ -1557,6 +1565,38 @@ Global event so far has had).
 **Its cards never look like catalogue cards.** `StoryEventCardSerializer` sends no
 `first_jp_date`, and eligibility is built from banner links alone, so a welfare card stays out
 of selectors (owner, 2026-10-30; pinned in `test_story_events.py`).
+
+**Four kinds in one table** (`StoryEvent.kind`, migration `0143`, `notes/story-events-plan-2.md`).
+The same row under a banner serves every event that gives free cards: `story` (story events,
+all 57 imported rows), `main_story` (a main story chapter, which arrives with a banner and never
+closes), `anniversary` (an anniversary's Part 2 missions and login bonus, which outlast the
+banner) and `special` (a fan event, or a gift or collaboration an editor adds by hand). The
+game numbers each kind on its own, so `game_id` is unique *with* `kind`
+(`one_story_event_per_kind_and_game_id`) and is blank on an event made by hand. Rejected: a
+table per kind (four admin pages, four payload keys, four strips for one row), and hanging an
+anniversary's card off `AnniversaryEvent` (that is the paid campaign, drawn above the banner).
+
+- **Dates by kind**, in `story_event_dates()`: a `main_story` chapter has a start and
+  `end_date: None` on both paths (the `Scenario` rule); `anniversary` and `special` keep their
+  own end, and a predicted one runs its JP length (`jp_end_at - jp_start_at`) from the banner's
+  start, falling back to the banner's end; only `story` has a `claim_end_date`.
+- **A reward is a support card or an uma**, never both (`story_event_reward_is_a_card_or_an_uma`).
+  Special Week (Commander) is a main story chapter's uma. On the wire they come as two lists,
+  `cards` and `umas`, so every reader of `cards` stays about support cards. An uma here never
+  reaches eligibility either (`test_event_kinds.py`).
+- **The deploy's import creates the other kinds too** (`free_card_event_import.py`, from each
+  snapshot's `free_card_events.json`): main story parts (`main_story_part` + a chapter's
+  `add_reward_*`), anniversary missions (`mission_data` by `event_id`, the story event replay
+  `28` skipped) and fan events (`fan_raid_*`), keyed by kind and id. It writes names, the four
+  instants and missing rewards; never the picture, the working name, a mark, a reward amount or
+  a link already set. Placement adds two steps after the story event matcher's (the Global or JP
+  banner *running* at the start, counting only banners with both ends) and puts a part with no
+  start at all (the client dates parts 1 and 2 to 2017) under the first Global banner. 22 of 22
+  land where the old sheet shows them (2026-11-20). `mission_data`'s dates are text in the
+  client's clock: UTC on Global, Japan time on JP.
+- **Every kind has the picture slot** (`image`, `upload_to="story_events/"`). Best as a
+  transparent 2:1 PNG like the story event logos; a batch is named by kind and id
+  (`main-story-7.png`, `anniversary-138.png`, `special-1001.png`).
 
 ### `Scenario` borrows a start and never has an end — the fourth date shape
 

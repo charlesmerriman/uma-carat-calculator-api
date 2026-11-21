@@ -759,9 +759,11 @@ is the game's own code, not yet translated). A number or duration that scales
 fan count", "5 to 20 s per 1,000 m, by HP left when it fires"), and carries its bands for the
 skill page's table: `scaling` on the effect phrase, `duration_scaling` on the slot, each
 `{"heading", "rows": [{"when", "value"}]}`; a scaling code nobody has explained yet ends
-"(varies)" with no table. And `sources` (`{"umas": [{"name", "source",
-"level", "on_global"}], "uma_count", "cards": [{"name", "source", "on_global"}],
-"card_count"}`, at most 4 of each, on-global first). A `[[mention]]` resolves by global's
+"(varies)" with no table. And `sources` (`{"umas": [{"id", "name", "source",
+"level", "on_global"}], "uma_count", "cards": [{"id", "name", "source", "on_global"}],
+"card_count"}`, at most 4 of each, on-global first; `id` is the outfit's or card's row id,
+for its card; a unique's inherited copy lists its unique's owners with `source: "inherited"`
+and `level: null`). A `[[mention]]` resolves by global's
 name, the translation, or an old name kept as an alias, keyed by the name as written. **A guide names one version of a skill per row; the other versions ride along.**
 `version` is the skill's own label (`"○ white"`, `"◎ white"`, `"◎ gold"`, `"evolved"`) and `versions`
 lists its other forms a player may be shown (same `group_id`, plus `evolves_from` both
@@ -1241,7 +1243,7 @@ the same as one that does not exist.
 | `GET /pvp-teams` | | every team, every event, oldest first |
 | `POST /pvp-teams` | `{kind, event, name?, members?, notes?}` | `201` the team |
 | `GET /pvp-teams/<id>` | | the team |
-| `PUT /pvp-teams/<id>` | `{members, notes?}` | the team. Replaces every member and card in one transaction; `notes` left out = unchanged |
+| `PUT /pvp-teams/<id>` | `{members, notes?}` | the team, plus `tickets_followed` (how many unraced CM Runs tickets took the new lineup). Replaces every member and card in one transaction; `notes` left out = unchanged |
 | `PATCH /pvp-teams/<id>` | `{name?, is_focus?}` | the team. `is_focus: true` moves the account's one pin here; `false` clears it |
 | `DELETE /pvp-teams/<id>` | | `204` |
 
@@ -1281,7 +1283,7 @@ auto-save is idempotent; every query is scoped to the caller.
 |---|---|---|
 | `GET /pvp-runs` | | every run the caller logged in every event, grouped by event (the Collection's CM history); each run names its `kind` and `event` |
 | `GET /pvp-runs/<kind>/<event_id>` | | every run the caller logged for the event, days first, then the final |
-| `PUT /pvp-runs/<kind>/<event_id>/day/<d>/ticket/<t>` | `{runners?, races?, note?, skipped?}` | the run. Creates it on the first save; replaces its runners and races after |
+| `PUT /pvp-runs/<kind>/<event_id>/day/<d>/ticket/<t>` | `{runners?, races?, note?, skipped?, team?}` | the run. Creates it on the first save; replaces its runners and races after. `team`: the caller's team it was filled from; left out keeps the link, `null` drops it |
 | `PUT /pvp-runs/<kind>/<event_id>/final` | `{runners?, races?, finals_group?, placement?, note?}` | the run. On LoH this is the Top 96: `{runners?, placement?, note?}`, no races |
 | `DELETE` either path | | `204`, also when nothing was logged there |
 
@@ -1289,7 +1291,7 @@ A run, out (a `PUT` body is the part the URL does not already say):
 
 ```json
 { "kind": "cm", "event": 21, "stage": "day", "day": 1, "ticket": 2,
-  "finals_group": "", "placement": null, "note": "", "skipped": false,
+  "finals_group": "", "placement": null, "note": "", "skipped": false, "team": 7,
   "runners": [{"position": 0, "uma": 41, "style": "front", "trained_uma": null}],
   "races": [{"race": 1, "winner": 0}, {"race": 2, "winner": null}],
   "updated_at": "ISO8601" }
@@ -2158,9 +2160,18 @@ Reward amounts are fields on the event itself (no separate reward model/list).
 
 ### `StoryEvent` (from `story_event_data`)
 
-A story event and the free cards it gives, for the Timeline row under its banner. **Display
-only**: the income ledger never reads it (that is `GameEvent`), and its cards never reach
-selector eligibility. Only events linked to a banner are sent.
+An event and the free rewards it gives, for the Timeline row under its banner: a story
+event, a main story chapter, an anniversary's missions or a special event (`kind`). **Display
+only**: the income ledger never reads it (that is `GameEvent`), and its cards and umas never
+reach selector eligibility. Only events linked to a banner are sent.
+
+- `kind` is `"story"`, `"main_story"`, `"anniversary"` or `"special"`. `game_id` is the game's
+  id within its kind, null on an event an editor made by hand.
+- `end_date` is null on a `main_story` chapter, which never closes. `claim_end_date` is set on
+  `story` events only. A predicted `anniversary` or `special` event runs its JP length from its
+  banner's start.
+- `umas` lists free characters (a main story chapter's), with what a framed uma tile needs
+  (`portrait`, `portrait_layers`) and no selector keys. `cards` stays support cards only.
 
 - `name` is the name a player reads: Global's, else the editors' working name, else `""`
   (the client says "Story event"). The Japanese name is never sent.
@@ -2176,6 +2187,7 @@ selector eligibility. Only events linked to a banner are sent.
 ```json
 {
   "id": 1,
+  "kind": "story",
   "game_id": 1022,
   "name": "Sweet Memories Teatime",
   "image": "url | null",
@@ -2196,9 +2208,18 @@ selector eligibility. Only events linked to a banner are sent.
       "image": "url | null", "rarity": 3, "purpose": "", "game_id": 30133,
       "must_get": false, "note": ""
     }
+  ],
+  "umas": [
+    {
+      "id": 199, "name": "Special Week (Commander)", "title": "[Ruler of Japan]",
+      "image": "url | null", "portrait": "url | null", "portrait_layers": "object | null",
+      "rarity": 3, "purpose": "", "game_id": 100103, "must_get": false, "note": ""
+    }
   ]
 }
 ```
+
+(`umas` is empty on a story event; the example shows a main story chapter's shape.)
 
 ### `IncomeLedgerRow` (from `income_ledger`)
 
@@ -2459,9 +2480,9 @@ Each entry also carries its verdict (`skill_verdicts.py`; notes/course-map-plan-
 field only when it says something: `effects` (`accel`, `speed`, `heal` for the runner,
 `debuff` for others), `fires_at` (a fixed zone's first metre), `spread` (`[first, last]` metre
 of a random trigger), `spurt` (`{"from", "to"}` metres from the late-race start, negative
-before it, plus for an accel `odds`, the share landing well: still running 0.5 s into the late race, at most 50 m after its start, and `useful`, a ranking score: that share times the speed its acceleration adds, plus the share its speed carries into the late race times that speed, the two parts also given as `accel` and `carry` for the accels column's chips; a fixed zone gated by a clause the map can't predict, a placing or an event, counts the zone's metres before the window as chances to fire early, so its share is the window's share of the zone clipped to [zone start, window end]), `before_spurt` (a heal's share
+before it, plus for an accel `odds`, the share landing well: still running 0.5 s into the late race, at most 50 m after its start, and `useful`, a ranking score: that share times the speed its acceleration adds over its duration on this course (the base stretched by distance / 1000), plus the share its speed carries into the late race times that speed, the two parts also given as `accel` and `carry` for the accels column's chips; a fixed zone gated by a clause the map can't predict, a placing or an event, counts the zone's metres before the window as chances to fire early, so its share is the window's share of the zone clipped to [zone start, window end]), `before_spurt` (a heal's share
 landing before the late-race start), `carry` (a speed skill's share that carries its speed into the late race; a target-speed-only one must fire early enough to reach its speed first; absent when no part of the trigger lies before the late-race start) and `carry_window` (the metres it must fire in for that; absent too when the whole trigger is in the late race, so the map draws no band), with `carry_speed` (the target speed it adds, m/s) and `carry_seconds` (how long it runs on this course) whenever the window exists,
-`speed_kind` (a speed skill's `"target"`, raising the speed cap, or `"current"`, raising the speed itself), `speed_rank` (a speed skill's ranking score for the course map's Speed list: `{"useful", "speed", "carry"[, "accelerating"]}`, the speed added times its repeats, cut by `accelerating`, the share of a target-speed trigger landing while the runner is still speeding up (the late race's first metres, and the race start for a front-runner-only skill), plus the accel's carry part, uncut; a skill with no place on the course ranks at its full strength; rule 9 in `skill_verdicts.py`),
+`effect_words` (an accel or speed skill's effect on its own runner in its skill card's words, the base value: `["Acceleration +0.4"]`; the course map's Skills list shows it), `speed_kind` (a speed skill's `"target"`, raising the speed cap, or `"current"`, raising the speed itself), `speed_rank` (a speed skill's ranking score for the course map's Speed list: `{"useful", "speed", "carry"[, "accelerating"]}`, the speed added times its repeats, cut by `accelerating`, the share of a target-speed trigger landing while the runner is still speeding up (the late race's first metres, and the race start for a front-runner-only skill), plus the accel's carry part, uncut; a skill with no place on the course ranks at its full strength; rule 9 in `skill_verdicts.py`),
 `repeats` (how many times a short-cooldown skill can fire here), `needs` (what else must hold,
 in words), `placing` (where in the field it must be, one band per way it can fire here:
 `{"order": [first, last]}` in places, `last` null when open since the field size is the

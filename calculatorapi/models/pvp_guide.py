@@ -46,7 +46,7 @@ from django.db import models
 from .champions_meeting import ChampionsMeeting
 from .league_of_heroes import LeagueOfHeroes
 from .scenario import Scenario
-from .skill import Skill, shown_q
+from .skill import INHERITED_SUFFIX, Skill, shown_q
 from .support_card import SupportCard
 from .uma import Uma
 
@@ -83,7 +83,12 @@ def unknown_skill_mentions(names):
 
 def _suggest(name):
     """Up to three skill names close to a mistyped one: names a player reads."""
-    names = [skill.shown_name for skill in Skill.objects.shown().only("name", "translated_name", "jp_name")]
+    names = []
+    for skill in Skill.objects.shown().only("name", "translated_name", "jp_name", "game_id"):
+        names.append(skill.shown_name)
+        # A copy is offered by its written form, so a typo of one suggests it.
+        if skill.game_id is not None and 900000 <= skill.game_id < 1000000:
+            names.append(skill.shown_name + INHERITED_SUFFIX)
     by_key = {candidate.casefold(): candidate for candidate in names}
     close = difflib.get_close_matches(name.casefold(), list(by_key), n=3, cutoff=0.6)
     return [by_key[key] for key in close]

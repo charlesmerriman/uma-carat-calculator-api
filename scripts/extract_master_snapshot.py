@@ -56,6 +56,10 @@ What comes out, one file per concern (all sorted by id, so re-runs diff cleanly)
                       rewards and the free cards it gives (see
                       extract_story_events). Global's are the events it has
                       run; JP's the ones still to come
+  free_card_events.json  the other events that give free cards: main story
+                      chapters, anniversary missions and fan events, with
+                      their dates and the cards and umas they give (see
+                      extract_free_card_events)
   characters.json     each character's two UI colours (see extract_characters).
                       Writing it also rewrites the API's merged copy,
                       calculatorapi/data/character_colours.json
@@ -173,6 +177,28 @@ STORY_EVENT_REWARDS = {
     "sr_shards": (164, 150),
 }
 STORY_EVENT_CARD_REWARD = 51
+
+# The other free card events (extract_free_card_events). An item category of 51
+# is a support card and 50 an uma, both by id. text_data 93 names a main story
+# chapter by its part id ("Chapter 3", "Finale Part 2"), 187 a mission event by
+# its event_id ("1st Anniversary Celebration Missions\nPart 2"), 248 a fan
+# event by its id ("Top Umadol Project"); all three read off the Global client
+# on 2026-11-20. Mission event 28 is the permanent replay of old story events,
+# whose cards belong to those events, so it is skipped.
+FREE_REWARD_TYPES = {51: "card", 50: "uma"}
+TEXT_MAIN_STORY_CHAPTER = 93
+TEXT_MISSION_EVENT = 187
+TEXT_FAN_EVENT = 248
+STORY_EVENT_REPLAY_MISSIONS = 28
+# A main story part dated before this was in the game at launch (the client
+# dates parts 1 and 2 to 2017), so it carries no start of its own.
+LAUNCH_CUTOFF = datetime.datetime(2020, 1, 1, tzinfo=datetime.timezone.utc)
+# mission_data's dates are text in the client's own clock: Global's starts read
+# 22:00:00, the UTC reset, and JP's read 12:00:00, noon in Japan.
+MISSION_TEXT_ZONE = {
+    "global": datetime.timezone.utc,
+    "jp": datetime.timezone(datetime.timedelta(hours=9)),
+}
 
 
 # The game's column names for the five stats, in the order this project uses.
@@ -810,6 +836,154 @@ def _iso(unix_seconds):
     return datetime.datetime.fromtimestamp(unix_seconds, datetime.timezone.utc).isoformat()
 
 
+def _unix(value):
+    """An instant from the client's unix seconds, as ISO 8601 UTC; None for 0/blank."""
+    if not value:
+        return None
+    return datetime.datetime.fromtimestamp(int(value), datetime.timezone.utc)
+
+
+def _mission_text_instant(text, zone):
+    """mission_data's "2025/11/03 22:00:00" (or "2021/9/30 4:59:59") in `zone`, as UTC."""
+    match = re.match(r"\s*(\d{4})/(\d{1,2})/(\d{1,2})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?", str(text or ""))
+    if not match:
+        return None
+    year, month, day, hour, minute, second = (int(part or 0) for part in match.groups())
+    local = datetime.datetime(year, month, day, hour, minute, second, tzinfo=zone)
+    return local.astimezone(datetime.timezone.utc)
+
+
+def _columns(conn, table):
+    return {row[1] for row in conn.execute(f"PRAGMA table_info({table})")}
+
+
+def _rewards(pairs):
+    """[{"type", "id"}] from (category, id) pairs, cards before umas, each once."""
+    seen = []
+    for category, item_id in pairs:
+        kind = FREE_REWARD_TYPES.get(int(category))
+        if kind and {"type": kind, "id": int(item_id)} not in seen:
+            seen.append({"type": kind, "id": int(item_id)})
+    return sorted(seen, key=lambda reward: (reward["type"] != "card", reward["id"]))
+
+
+def extract_free_card_events(conn, region):
+    """
+    The events that give free cards and are NOT story events, for the rows
+    under their banners on the Timeline (notes/story-events-plan-2.md):
+
+      main_story   one per main story part (`main_story_part`): its start, and
+                   the card or uma a chapter's `add_reward_*` gives. Never ends.
+      anniversary  one per mission event (`mission_data.event_id`) whose
+                   missions give a card: an anniversary's Part 2 missions. Its
+                   window is its missions' earliest start and latest end.
+      special      one per fan event (`fan_raid_data`), with its personal and
+                   shared goal rewards. The JP export carries no fan events.
+
+    Each: {"kind", "id", "name", "start", "end", "rewards": [{"type", "id"}]}.
+    `id` is the game's id within its kind. `name` is the client's own (English
+    on Global, Japanese on JP; the import keeps JP's out of sight). `start` is
+    None for a main story part the game has had since launch, and `end` is None
+    for every main story part. Copies are not counted: five of each card on
+    every event, one of each uma.
+
+    Returns [] when the database has none of the tables.
+    """
+    return (_main_story_events(conn, region) + _mission_events(conn, region)
+            + _fan_events(conn))
+
+
+def _main_story_events(conn, region):
+    """One per main story part whose chapters give a card or an uma."""
+    if not (has_table(conn, "main_story_part") and has_table(conn, "main_story_data")):
+        return []
+    names = text_map(conn, TEXT_MAIN_STORY_CHAPTER)
+    columns = _columns(conn, "main_story_data")
+    slots = [slot for slot in (1, 2, 3) if f"add_reward_category_{slot}" in columns]
+    has_section = "section_id" in _columns(conn, "main_story_part")
+    events = []
+    for row in conn.execute("SELECT * FROM main_story_part ORDER BY id"):
+        row = dict(row)
+        part_id = int(row["id"])
+        pairs = []
+        for slot in slots:
+            pairs += conn.execute(
+                f"SELECT add_reward_category_{slot}, add_reward_id_{slot} FROM main_story_data"
+                f" WHERE part_id = ? AND add_reward_category_{slot} IN (50, 51)", (part_id,),
+            ).fetchall()
+        rewards = _rewards(pairs)
+        if not rewards:
+            continue
+        start = _unix(row.get("start_date"))
+        # The act: JP's parts carry their section; Global's (Act 1 only so
+        # far) don't, and the game numbers Act 2's parts from 21.
+        act = int(row["section_id"]) if has_section else (1 if part_id < 20 else 2)
+        chapter = names.get(part_id, "")
+        events.append({
+            "kind": "main_story", "id": part_id,
+            "name": f"Main Story Act {act}, {chapter}" if chapter and region == "global" else chapter,
+            "start": start.isoformat() if start and start >= LAUNCH_CUTOFF else None,
+            "end": None, "rewards": rewards,
+        })
+    return events
+
+
+def _mission_events(conn, region):
+    """One per mission event (not the story event replay) whose missions give a card."""
+    if not has_table(conn, "mission_data"):
+        return []
+    names = text_map(conn, TEXT_MISSION_EVENT)
+    zone = MISSION_TEXT_ZONE[region]
+    events = []
+    for (event_id,) in conn.execute(
+        "SELECT DISTINCT event_id FROM mission_data WHERE item_category IN (50, 51)"
+        " AND event_id NOT IN (0, ?) ORDER BY event_id", (STORY_EVENT_REPLAY_MISSIONS,),
+    ).fetchall():
+        rows = conn.execute(
+            "SELECT item_category, item_id, start_date, end_date FROM mission_data"
+            " WHERE event_id = ?", (event_id,),
+        ).fetchall()
+        starts = [i for i in (_mission_text_instant(r[2], zone) for r in rows) if i]
+        ends = [i for i in (_mission_text_instant(r[3], zone) for r in rows) if i]
+        name = str(names.get(event_id, "")).replace("\\n", " ").replace("\n", " ")
+        events.append({
+            "kind": "anniversary", "id": int(event_id), "name": " ".join(name.split()),
+            "start": min(starts).isoformat() if starts else None,
+            "end": max(ends).isoformat() if ends else None,
+            "rewards": _rewards((r[0], r[1]) for r in rows if int(r[0]) in FREE_REWARD_TYPES),
+        })
+    return events
+
+
+def _fan_events(conn):
+    """One per fan event whose personal or shared goals give a card or an uma."""
+    if not has_table(conn, "fan_raid_data"):
+        return []
+    names = text_map(conn, TEXT_FAN_EVENT)
+    tables = [t for t in ("fan_raid_individual_reward", "fan_raid_all_reward") if has_table(conn, t)]
+    events = []
+    for row in conn.execute("SELECT * FROM fan_raid_data ORDER BY fan_raid_id"):
+        row = dict(row)
+        fan_id = int(row["fan_raid_id"])
+        pairs = []
+        for table in tables:
+            pairs += conn.execute(
+                f"SELECT item_category, item_id FROM {table}"
+                " WHERE fan_raid_id = ? AND item_category IN (50, 51)", (fan_id,),
+            ).fetchall()
+        rewards = _rewards(pairs)
+        if not rewards:
+            continue
+        start, end = _unix(row.get("start_date")), _unix(row.get("end_date"))
+        events.append({
+            "kind": "special", "id": fan_id, "name": names.get(fan_id, ""),
+            "start": start.isoformat() if start else None,
+            "end": end.isoformat() if end else None,
+            "rewards": rewards,
+        })
+    return events
+
+
 def extract_story_events(conn):
     """
     Every story event: its name, its three instants, what it pays and which
@@ -975,6 +1149,9 @@ def extract(mdb_path, region="global"):
         # names), JP's the ones still to come.
         if has_table(conn, "story_event_data"):
             region_only["story_events.json"] = extract_story_events(conn)
+        # Both clients, the same way: the main story chapters, anniversary
+        # missions and fan events that give free cards.
+        region_only["free_card_events.json"] = extract_free_card_events(conn, region)
     finally:
         conn.close()
 
@@ -1006,6 +1183,7 @@ def extract(mdb_path, region="global"):
         counts["characters"] = len(region_only["characters.json"])
         if "story_events.json" in region_only:
             counts["story_events"] = len(region_only["story_events.json"])
+        counts["free_card_events"] = len(region_only["free_card_events.json"])
     else:
         counts.update({name.removesuffix(".json"): len(payload) for name, payload in region_only.items()})
     files.update(region_only)

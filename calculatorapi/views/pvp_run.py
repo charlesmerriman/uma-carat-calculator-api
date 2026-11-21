@@ -15,7 +15,7 @@ A run on the wire (catalogue ids only; the client draws them from
 GET /pvp-catalogue):
 
     {kind: "cm" | "loh", event, stage: "day" | "final", day, ticket,
-     finals_group: "" | "A" | "B", placement: null | 1..3, note, skipped,
+     finals_group: "" | "A" | "B", placement: null | 1..3, note, skipped, team,
      runners: [{position, uma, style, trained_uma}], races: [{race, winner}], updated_at}
 
 A PUT body is the same minus kind, event, stage, day, ticket and updated_at
@@ -70,6 +70,9 @@ class _RunInput(serializers.Serializer):  # pylint: disable=abstract-method
     )
     # Left out = not skipped, so an older client's PUT un-skips, never skips.
     skipped = serializers.BooleanField(required=False, default=False)
+    # The My team team the ticket was filled from. Left out = the link stays
+    # (no default, so the key is absent); null = no team (pvp_runs.write_run).
+    team = serializers.IntegerField(allow_null=True, required=False)
 
     def validate_runners(self, runners):
         if len(runners) > PVP_TEAM_SIZE:
@@ -94,6 +97,8 @@ def serialize_run(run):
         "placement": run.placement,
         "note": run.note,
         "skipped": run.skipped,
+        # The team it follows while unraced (models/pvp_run.py), or null.
+        "team": run.team_id,
         "runners": [
             {
                 "position": runner.position,
