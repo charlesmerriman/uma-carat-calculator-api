@@ -32,6 +32,17 @@
 # module changed. Newest entry first is conventional here but not required — the
 # page sorts by date.
 
+- key: card-frames-and-community-plans
+  date: 2026-11-23
+  title: "Cards in their frames, and Community plans for supporters"
+  version: "v2.22"
+  changes:
+    - added: "New for Patreon supporters: Community plans! It's on the Calculator: press Community plans on the Plans bar to browse, or Post this plan in the plan menu (the ... button) to share yours. Everyone else gets it after some closed testing and further tinkering."
+    - added: "Browse plans by budget and play style, vote and comment, and copy one whole or a banner at a time."
+    - changed: "Support cards look the way the game draws them everywhere now, frame and type icon included: the Timeline, the Calculator, the Selectors page, Rankings and the PvP gallery."
+    - added: "Tickets, crystals and shards in Current Resources get −1 and +1 buttons. Tap the box."
+    - changed: "The Privacy Policy now covers posted plans."
+
 - key: story-chapters-and-skills
   date: 2026-11-20
   title: "Story chapters on the Timeline, and Skills on the course map"
