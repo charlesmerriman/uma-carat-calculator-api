@@ -1,10 +1,13 @@
 """GET /skills and GET /skills/<game_id>, and the skill fields a guide now sends."""
 
+from unittest import mock
+
 from django.db import connection
 from django.test import override_settings
 from django.test.utils import CaptureQueriesContext
 from rest_framework.test import APIClient
 
+from calculatorapi import skills_cache
 from calculatorapi.models import (
     PatreonSupporter, PatreonTier, PvpGuide, PvpSkillRecommendation, Skill, SkillAlias,
     SkillEvolutionCondition, SupportCard, SupportCardSkill, Uma, UmaSkill,
@@ -63,6 +66,23 @@ def skill_queries(queries):
     """The captured queries that touched a table a page is built from."""
     return [query["sql"] for query in queries.captured_queries
             if any(table in query["sql"] for table in BUILD_TABLES)]
+
+
+# One mark each for four of the queries SharedLookups runs, ones no skill's
+# own part of a page matches: the owners, the racecourse names, and the
+# outfits and cards out on Global.
+SHARED_QUERY_MARKERS = (
+    "IN ('unique', 'evolved')",
+    "LIKE '%Racecourse%'",
+    '"calculatorapi_uma"."global_release_at" <=',
+    '"calculatorapi_supportcard"."global_release_at" <=',
+)
+
+
+def shared_queries_seen(queries):
+    """Which of SHARED_QUERY_MARKERS the captured queries ran."""
+    return {marker for marker in SHARED_QUERY_MARKERS
+            if any(marker in query["sql"] for query in queries.captured_queries)}
 
 
 class SkillsGateTests(CalculatorTestCase):
@@ -243,6 +263,58 @@ class SkillDetailTests(CalculatorTestCase):
         SupportCard.objects.filter(name="Kitasan Black").first().delete()
         body = self.client.get(f"/skills/{self.gourmand.game_id}").json()
         self.assertEqual(body["sources"]["cards"], [])
+
+    def test_a_second_page_reuses_what_every_page_shares(self):
+        """The shared lookups (views/skills.SharedLookups) are built for the
+        first page and read back for the next, so the queries that are the same
+        for every skill run once, not once per page."""
+        with CaptureQueriesContext(connection) as first:
+            self.client.get(f"/skills/{self.gourmand.game_id}")
+        with CaptureQueriesContext(connection) as second:
+            body = self.client.get(f"/skills/{self.ruler.game_id}").json()
+        self.assertEqual(shared_queries_seen(first), set(SHARED_QUERY_MARKERS))
+        self.assertEqual(shared_queries_seen(second), set())
+        # Built from the kept copy, the page reads the same as a fresh one.
+        self.assertEqual(body["owners"], ["Special Week"])
+        self.assertEqual(body["evolution"]["from"]["name"], "Gourmand")
+
+    def test_an_edit_reaches_the_next_page_built(self):
+        """The shared lookups sit under the pages' generation, so an edit drops
+        them with the pages: a renamed outfit is the owner on the next one."""
+        self.client.get(f"/skills/{self.gourmand.game_id}")
+        week = Uma.objects.get(game_id=100101)
+        week.name = "Special Week (Renamed)"
+        week.save()
+        body = self.client.get(f"/skills/{self.ruler.game_id}").json()
+        self.assertEqual(body["owners"], ["Special Week (Renamed)"])
+
+    def test_a_page_expires_with_the_lookups_it_was_built_from(self):
+        """A page built 200 s after the shared lookups is kept for the 100 s
+        they have left, not a full TTL. "Out on Global" reads the clock
+        (global_release.py), so a page kept past them would let the tag lag a
+        release by up to twice the TTL."""
+        start = 1_900_000_000.0
+        ttl = skills_cache.CACHE_TTL_SECONDS
+        with mock.patch("time.time", return_value=start):
+            self.client.get(f"/skills/{self.gourmand.game_id}")
+        with mock.patch("time.time", return_value=start + 200):
+            self.client.get(f"/skills/{self.ruler.game_id}")
+        with mock.patch("time.time", return_value=start + ttl - 1):
+            self.assertIsNotNone(skills_cache.read_detail(self.ruler.game_id))
+        with mock.patch("time.time", return_value=start + ttl + 1):
+            self.assertIsNone(skills_cache.read_detail(self.ruler.game_id))
+            self.assertIsNone(skills_cache.read_shared())
+
+    def test_a_skill_named_in_the_text_still_resolves_from_the_kept_lookups(self):
+        """The text context's skill names are lazy (skill_text.LazySkillNames)
+        and are kept before anything reads them: a page whose condition names
+        another skill still finds the name when it is built from the copy."""
+        make(202051, name="Professor of Curvature", rarity=2, tier=2, group_id=20205)
+        named = [{**SPEED[0], "condition": "is_used_skill_id==202051"}]
+        make(202061, name="Follows the Professor", group_id=20206, effects=named, activate_lot=1)
+        self.client.get(f"/skills/{self.gourmand.game_id}")
+        page = self.client.get("/skills/202061")
+        self.assertContains(page, "After using Professor of Curvature")
 
 
 class GuideSkillFieldsTests(CalculatorTestCase):

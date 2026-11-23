@@ -22,10 +22,12 @@ are the same for every reader and hold nothing about a person.
 
 Both are cached as rendered bytes in their own cache alias
 (skills_cache.py). Keyed by the game's skill id, which is the same in every
-database and in both game clients, so a page's URL never changes.
+database and in both game clients, so a page's URL never changes. What every
+detail page shares is built once and kept beside them (SharedLookups).
 """
 
 import json
+import time
 
 from django.http import Http404, HttpResponse
 from rest_framework import permissions
@@ -145,6 +147,45 @@ class Owners:
         return {"owners": self.of(game_id), "owner_umas": self.umas_of(game_id), "pair": self.pair(game_id)}
 
 
+class SharedLookups:  # pylint: disable=too-few-public-methods
+    """
+    What a skill's page reads that is the same for every skill: whose skill
+    each one is (Owners), the names its readable text needs
+    (skill_text.TextContext) and which outfits and cards are out on Global.
+    Six queries and about 3,850 rows, against a handful for the skill itself.
+
+    Built once per generation and kept in the skills cache (shared_lookups),
+    so the web build's 2,223 skill pages read them once, not 2,223 times.
+    (On 2026-11-23 the build's Encyclopedia step was 321 s of a 7-minute
+    deploy, and a cold skill page on prod took 110 to 460 ms.)
+
+    `built_at` is taken FIRST, before the "out on Global" sets read the
+    clock, and a page built from these expires with them
+    (skills_cache.store_detail): the tag never lags a release by more than
+    the TTL, as global_release.py promises.
+
+    Kept by pickling, like every cache value: plain data only. The text
+    context's skill names are lazy (skill_text.LazySkillNames) and are stored
+    before anything reads them, so each page still loads them only when its
+    text names another skill.
+    """
+
+    def __init__(self):
+        self.built_at = time.time()
+        self.owners = Owners()
+        self.text = skill_text.context_from_database()
+        self.out_umas, self.out_cards = released_umas(), released_cards()
+
+
+def shared_lookups():
+    """This generation's SharedLookups, built and kept on a miss."""
+    shared = skills_cache.read_shared()
+    if shared is None:
+        shared = SharedLookups()
+        skills_cache.store_shared(shared)
+    return shared
+
+
 def build_list():
     owners = Owners()
     return [
@@ -168,12 +209,12 @@ def single_circle(skill):
             .exclude(pk=skill.pk).order_by("game_id").first())
 
 
-def sources(skill):
+def sources(skill, shared):
     """Every outfit and card that gives the skill, on-global ones first. A ◎
     adds its ○'s, each marked `via` the ○'s name (single_circle)."""
-    # Out on Global right now (global_release.py). The sorts are stable, so
-    # the out ones move to the front and each half keeps the SQL order.
-    out_umas, out_cards = released_umas(), released_cards()
+    # Out on Global as of `shared.built_at` (global_release.py). The sorts are
+    # stable, so the out ones move to the front and each half keeps the SQL order.
+    out_umas, out_cards = shared.out_umas, shared.out_cards
     lower = single_circle(skill)
     givers = [skill, lower] if lower else [skill]
     uma_rows = _unique_rows(
@@ -268,8 +309,9 @@ def _owner_colours(owner_umas):
     return character_colours.colours_for(characters.pop()) if len(characters) == 1 else None
 
 
-def build_detail(skill):
-    owners = Owners()
+def build_detail(skill, shared):
+    """One skill's page. `shared` is a SharedLookups (shared_lookups())."""
+    owners = shared.owners
     pair_id = owners.pair(skill.game_id)
     pair = _shown().filter(game_id=pair_id).first() if pair_id else None
     return {
@@ -282,10 +324,10 @@ def build_detail(skill):
         # The unique's inherited copy, or the copy's unique, as a list row.
         "pair": summary(pair) if pair else None,
         "description": skill.shown_description,
-        "readable": skill_text.describe(skill, skill_text.context_from_database()),
+        "readable": skill_text.describe(skill, shared.text),
         # The game's code for each of `readable`'s slots, for the Detailed view.
         "raw_conditions": skill_text.raw_conditions(skill),
-        "sources": sources(skill),
+        "sources": sources(skill, shared),
         "evolution": evolution(skill, owners),
         # Its white, gold and evolved forms on global (skill_families): the
         # same "other versions" a guide's skill chip lists, less what the page
@@ -325,6 +367,8 @@ def skill_detail(request, game_id):  # pylint: disable=unused-argument
         skill = _shown().prefetch_related("aliases").filter(game_id=game_id).first()
         if skill is None:
             raise Http404("No skill with that id.")
-        body = _bytes(build_detail(skill))
-        skills_cache.store_detail(game_id, body)
+        shared = shared_lookups()
+        body = _bytes(build_detail(skill, shared))
+        # Expires with `shared`, never a full TTL after it (skills_cache.py).
+        skills_cache.store_detail(game_id, body, built_at=shared.built_at)
     return _json(body)
