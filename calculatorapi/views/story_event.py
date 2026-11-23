@@ -38,6 +38,9 @@ class StoryEventCardSerializer(serializers.ModelSerializer):
     name = serializers.CharField(source="support_card.name")
     title = serializers.CharField(source="support_card.title")
     image = serializers.ImageField(source="support_card.image")
+    # FramedCard's inputs, as on a banner's cards (SupportCardSerializer).
+    image_borderless = serializers.ImageField(source="support_card.image_borderless")
+    card_type = serializers.CharField(source="support_card.card_type")
     rarity = serializers.IntegerField(source="support_card.rarity")
     purpose = serializers.CharField(source="support_card.purpose")
     # The key of the card's Encyclopedia page, as on a banner's cards. Null for
@@ -46,7 +49,7 @@ class StoryEventCardSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = StoryEventCard
-        fields = ("id", "name", "title", "image", "rarity", "purpose", "game_id",
+        fields = ("id", "name", "title", "image", "image_borderless", "card_type", "rarity", "purpose", "game_id",
                   "must_get", "note")
 
     def get_game_id(self, obj):

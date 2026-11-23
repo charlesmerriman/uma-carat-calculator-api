@@ -2100,14 +2100,16 @@ including one with a `null` (unrestricted) cutoff. A client must check both halv
   "is_recommended": false,
   "admin_comments": "string | null",
   "banner_timeline": { ... },
-  "support_cards": [ { "id": 1, "name": "string", "image": "url | null", "admin_comments": "string | null", "purpose": "string", "first_jp_date": "ISO8601 | null", "rarity": "1 | 2 | 3 | null", "game_id": "int | null" } ],
+  "support_cards": [ { "id": 1, "name": "string", "image": "url | null", "admin_comments": "string | null", "purpose": "string", "first_jp_date": "ISO8601 | null", "rarity": "1 | 2 | 3 | null", "game_id": "int | null", "image_borderless": "url | null", "card_type": "speed | stamina | power | guts | wit | friend | group | ''" } ],
   "rate_up_picks": "int | null",
   "rate_overrides": { "<support card id>": 0.005 }
 }
 ```
 
 The rate-up inputs mean what they do on `BannerUma`; a support card's `rarity` is R / SR /
-SSR as 1 / 2 / 3.
+SSR as 1 / 2 / 3. `image_borderless` and `card_type` are what the client's card frame
+(`FramedCard`) builds a card from, as the PvP catalogue sends them; the art is null until
+uploaded, and the card then keeps its bordered `image`. A story event's cards carry the same two.
 
 ### `BannerStepUp` (from `banner_step_up_data`)
 ```json

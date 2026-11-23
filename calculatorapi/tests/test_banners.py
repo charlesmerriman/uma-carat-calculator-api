@@ -297,6 +297,21 @@ class EncyclopediaLinkIdTests(CalculatorTestCase):
         # A placeholder's id is made up and it has no page, so it sends none.
         self.assertEqual(ids, {'Kitasan Black': 30028, 'Any SSR': None})
 
+    def test_cards_carry_what_the_card_frame_draws(self):
+        SupportCard.objects.filter(name='Kitasan Black').update(
+            card_type='speed', image_borderless='support_cards/borderless/kitasan.png')
+        for key in ('banner_timeline_data', 'banner_support_data'):
+            payload = self.client.get('/calculator-data').json()[key]
+            cards = [card for entry in payload
+                     for card in (entry['banner_supports'][0]['support_cards'] if key == 'banner_timeline_data'
+                                  else entry['support_cards'])
+                     if entry.get('banner_supports') or entry.get('support_cards')]
+            kitasan = next(card for card in cards if card['name'] == 'Kitasan Black')
+            self.assertEqual(kitasan['card_type'], 'speed')
+            self.assertTrue(kitasan['image_borderless'].endswith('support_cards/borderless/kitasan.png'))
+            # Not uploaded yet: null, and the client keeps the bordered picture.
+            self.assertIsNone(next(card for card in cards if card['name'] == 'Any SSR')['image_borderless'])
+
 
 class RateUpInputTests(CalculatorTestCase):
     """What the client's rate-up rule reads: card rarity, picks, and overrides.

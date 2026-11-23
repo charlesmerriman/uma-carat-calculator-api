@@ -297,7 +297,7 @@ class StoryEventPayloadTests(CalculatorTestCase):
     def setUp(self):
         self.banner = make_timeline(name="Rice Shower (Halloween)")
         self.bourbon = _card("Mihono Bourbon", 30066, title="[The Ghost Finds Halloween Magic]",
-                             purpose="A wit card for long races.")
+                             purpose="A wit card for long races.", card_type="wit")
         self.event = _event(
             game_id=1006, banner=self.banner, name="Halloween Makeover!", jp_name="ハロウィン",
             carat_amount=2160, uma_ticket_amount=2, support_ticket_amount=2,
@@ -321,7 +321,9 @@ class StoryEventPayloadTests(CalculatorTestCase):
         self.assertEqual(entry["claim_end_date"], _iso(self.banner.global_end_date + 3 * DAY))
         self.assertEqual(entry["cards"], [{
             "id": self.bourbon.id, "name": "Mihono Bourbon",
-            "title": "[The Ghost Finds Halloween Magic]", "image": None, "rarity": 3,
+            "title": "[The Ghost Finds Halloween Magic]", "image": None,
+            # What FramedCard draws a card from; no borderless art uploaded here.
+            "image_borderless": None, "card_type": "wit", "rarity": 3,
             "purpose": "A wit card for long races.", "game_id": 30066,
             "must_get": True, "note": "Worth the grind",
         }])

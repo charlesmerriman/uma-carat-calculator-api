@@ -24,6 +24,12 @@ class SupportCardSerializer(FirstJpDateMixin, serializers.ModelSerializer):
             # card with no game id, which the client reads as SSR.
             "rarity",
             "game_id",
+            # What the client's FramedCard builds a card from (the game's art
+            # in Daptrius's frame, with its type icon), as the PvP catalogue
+            # sends it. The borderless art is null until it is uploaded, and
+            # the card then keeps its bordered `image`.
+            "image_borderless",
+            "card_type",
         )
 
     def get_game_id(self, obj):
