@@ -59,7 +59,7 @@ def _plan_list(user):
     # get_active_plan first, so an account that has never opened the calculator
     # is answered with its Main plan rather than an empty list.
     plans.get_active_plan(user)
-    return PlanSerializer(Plan.objects.filter(user=user), many=True).data
+    return PlanSerializer(Plan.objects.filter(user=user).prefetch_related("gallery_posts"), many=True).data
 
 
 def plan_with_rows(plan):

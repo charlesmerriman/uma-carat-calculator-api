@@ -29,9 +29,14 @@ class PlanSerializer(serializers.ModelSerializer):
     draws a fresh unused id); `copy_count` is read-only because only a copy
     may move it. This serializer is the OWNER'S view and never answers a
     public route: views/plan_public.py has its own, which carries none of this.
+
+    `post_public_id`: the plan's Community plans post, or null, so the plan
+    menu can say "Posted" and open it. Read from `gallery_posts`, which the
+    list routes prefetch (one query for every plan, not one each).
     """
 
     income_profile_id = serializers.IntegerField(read_only=True, allow_null=True)
+    post_public_id = serializers.SerializerMethodField()
 
     class Meta:
         model = Plan
@@ -45,11 +50,18 @@ class PlanSerializer(serializers.ModelSerializer):
             "share_stats",
             "share_notes",
             "copy_count",
+            "post_public_id",
             "updated_at",
         )
         read_only_fields = (
-            "id", "public_id", "is_active", "copy_count", "updated_at",
+            "id", "public_id", "is_active", "copy_count", "post_public_id", "updated_at",
         )
+
+    def get_post_public_id(self, plan):
+        # .all() rather than .first(): the list routes prefetch gallery_posts,
+        # and .first() would run its own query per plan regardless.
+        posts = list(plan.gallery_posts.all())
+        return posts[0].public_id if posts else None
 
     def validate_name(self, value):
         # CharField already trims the ends and rejects blank. This collapses

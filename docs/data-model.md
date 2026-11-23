@@ -1311,11 +1311,14 @@ reports, erasure), `gallery_ranking.py` (Hot / Top / New), `gallery_moderation.p
 filters, auto-hide, the moderator's decisions, the Discord alert) and `public_identity.py`
 (the one place a person is shown beside public content).
 
-**One generic parent.** Today the only kind is a PvP team; the community plan gallery is
-meant to be a second kind of the same post. So votes, comments and reports point at
-`GalleryPost` by a real FK, and the kind-specific columns are nullable and tied to their kind
-by `gallery_post_event_matches_kind` (the `PvpTeam` XOR idiom). A `GenericForeignKey` would
-lose FK integrity and cascades; tables per gallery would write this twice.
+**One generic parent, two kinds.** A post is a PvP team (`pvp_team`) or a pull plan (`plan`,
+Community plans, `0144`). Votes, comments and reports point at `GalleryPost` by a real FK,
+and the kind-specific columns are tied to their kind by check constraints on SCALAR columns
+only: `gallery_post_event_matches_kind` (the `PvpTeam` XOR idiom: a team has one event, a
+plan none) and `gallery_post_plan_matches_kind` (the plan columns are blank on a team). A
+`GenericForeignKey` would lose FK integrity and cascades; tables per gallery would write this
+twice. Code that reads a post's content asks `post.is_plan` first; code that works on any
+post (votes, comments, reports, moderation, erasure) never needs to.
 
 - **`GalleryPost`**: `public_id` (8 characters, the permanent link `/post/<public_id>`, kept
   through re-posts), `author` (CASCADE), `kind`, `caption` (140, the line on the feed's row;
@@ -1328,7 +1331,23 @@ lose FK integrity and cascades; tables per gallery would write this twice.
   `league_of_heroes` pair, `team_snapshot` (JSON, the same member shape as a team), the
   `preview_version` hash (umas and styles; part of the preview image URL) and `source_team`
   (SET_NULL, never serialized). **One post per person per event** in the database
-  (`one_gallery_post_per_author_cm` / `_loh`).
+  (`one_gallery_post_per_author_cm` / `_loh`). Plan columns (`0144`): `plan_snapshot` (JSON,
+  the plan as posted: `{"rows": [...]}` plus `"income"` when the author chose to show it),
+  the sidebar's filter values `plan_spending` / `plan_sweat` (`PlanSpending`, `PlanSweat`,
+  blank for "not said"), `plan_strategies` (`PLAN_STRATEGIES` keys joined by commas, a
+  scalar so it can sit in the check constraint), `plan_range` (the `Scenario` the plan runs
+  up to, worked out at posting, SET_NULL) and `source_plan` (SET_NULL, never serialized;
+  `one_gallery_post_per_source_plan`, partial). `caption` is a plan's title and `strategy`
+  its "About this plan". The rules are `plan_gallery.py`: posting (`publish_plan`, at most
+  `PLAN_POST_CAP` = 5 plan posts per person), the income whitelist (`POSTED_INCOME_FIELDS`,
+  what the Average Monthly Income tiles read, never a balance), the range (`range_for`: the
+  newest scenario started by the plan's last banner's end), and the feed. **Two copy counts,
+  never mixed**: `Plan.copy_count` is copies through a share link, `GalleryPost.copy_count`
+  copies of the post (`plans.plan_from_snapshot`, which never brings the author's income).
+  **The feed's order is remembered** for 60 seconds per sort in the `gallery` cache (ids with
+  their four filter values, filtered in memory per request); it decides order only, since every
+  page is fetched through `gallery.visible_posts()`, and publishing forgets it. See
+  `notes/pull-plan-database-plan.md`.
 - **A post is a FROZEN COPY.** Posting again for the same event replaces the copy, keeps the
   `public_id`, the comments (older ones read "On an earlier version") and **the votes**
   (Henry, 2026-10-26; until `0123` a team change cleared them). The post reads "Edited" once

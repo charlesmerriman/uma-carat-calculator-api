@@ -72,12 +72,17 @@ SORTS = (SORT_HOT, SORT_TOP, SORT_NEW)
 _COUNTED_VOTE = Q(votes__isnull=False, votes__user__publishing_blocked=False)
 
 
-def with_points(posts):
+def with_points(posts, since=None):
     """Annotate a GalleryPost queryset with `ups` and `downs`, the counted
-    votes each way. `points` is their difference, read through points()."""
+    votes each way. `points` is their difference, read through points().
+
+    `since` counts only votes cast from then on: Community plans' Top for
+    Today, This week and This month (plan_gallery.py). A vote switched later
+    keeps the time it was first cast, as its row does."""
+    counted = _COUNTED_VOTE & Q(votes__created_at__gte=since) if since is not None else _COUNTED_VOTE
     return posts.annotate(
-        ups=Count("votes", filter=_COUNTED_VOTE & Q(votes__value=VoteValue.UP)),
-        downs=Count("votes", filter=_COUNTED_VOTE & Q(votes__value=VoteValue.DOWN)),
+        ups=Count("votes", filter=counted & Q(votes__value=VoteValue.UP)),
+        downs=Count("votes", filter=counted & Q(votes__value=VoteValue.DOWN)),
     )
 
 

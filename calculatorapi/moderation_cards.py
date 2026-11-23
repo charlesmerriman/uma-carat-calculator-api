@@ -57,7 +57,17 @@ def card_key(kind, item_id):
 
 
 def _kind(item):
+    """"post" or "comment": the card's KEY and the bot's routes use it, so it
+    never says which kind of post. _what() is the word a moderator reads."""
     return "post" if isinstance(item, GalleryPost) else "comment"
+
+
+def _what(item):
+    """The item as a card's title names it: "Post" for a team (as it always
+    has), "Plan" for a pull plan post, "Comment"."""
+    if isinstance(item, GalleryPost) and item.is_plan:
+        return "Plan"
+    return _kind(item).capitalize()
 
 
 def item_ref(item):
@@ -145,13 +155,27 @@ def _site_date(moment):
 
 
 def item_text(item):
-    """The reported text as written: caption and strategy, or the comment."""
+    """The reported text as written: a team's caption and strategy, a plan's
+    title and description, or the comment."""
     if isinstance(item, GalleryPost):
+        # The same two columns hold both kinds' text; only their names differ.
+        first, second, what = (
+            ("Title", "About this plan", "a plan with no title or description")
+            if item.is_plan
+            else ("Caption", "Strategy", "a team with no caption or strategy")
+        )
         parts = [
-            f"Caption: {item.caption}" if item.caption else "",
-            f"Strategy: {item.strategy}" if item.strategy else "",
+            f"{first}: {item.caption}" if item.caption else "",
+            f"{second}: {item.strategy}" if item.strategy else "",
         ]
-        return "\n\n".join(part for part in parts if part) or "(a team with no caption or strategy)"
+        if item.is_plan:
+            # Notes are public text when the author posted them. Never the
+            # income: it is numbers, not words, and nothing to moderate.
+            rows = (item.plan_snapshot or {}).get("rows", [])
+            notes = [row["note"].strip() for row in rows if row.get("note", "").strip()]
+            if notes:
+                parts.append("Notes: " + " / ".join(notes))
+        return "\n\n".join(part for part in parts if part) or f"({what})"
     if item.is_deleted:
         return "(deleted by its author)"
     return item.body
@@ -176,7 +200,6 @@ def _links(item):
 
 
 def _open_card(item, open_reports):
-    kind = _kind(item)
     lines = []
     for report in open_reports:
         line = f"**{report.get_reason_display()}**, by {_person(report.reporter)}"
@@ -186,7 +209,7 @@ def _open_card(item, open_reports):
     reports = discord_messages.cut_lines(lines, FIELD_LIMIT, lambda hidden: f"…and {hidden} more in the admin")
     count = len(open_reports)
     return {
-        "title": f"{kind.capitalize()} reported",
+        "title": f"{_what(item)} reported",
         "color": OPEN_COLOUR,
         "description": _quoted(item_text(item)),
         "fields": [
@@ -209,7 +232,7 @@ def _decided_card(item, reports):
         outcome = "removed"
     times = f"{len(reports)} time{'' if len(reports) == 1 else 's'}"
     return {
-        "title": f"{_kind(item).capitalize()} reported {times}: {outcome} by {who} on {_site_date(last.resolved_at)}",
+        "title": f"{_what(item)} reported {times}: {outcome} by {who} on {_site_date(last.resolved_at)}",
         "color": DONE_COLOUR,
     }
 

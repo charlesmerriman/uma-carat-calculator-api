@@ -1,11 +1,16 @@
 """
 The gallery: posts other players can see, upvote, comment on, copy and report.
 
-Today the one kind of post is a PvP team (the PvP page's Gallery view). The
-community pull-plan gallery planned after it is meant to be a second KIND of
-the same post, so everything that is not about the team itself is generic:
-votes, comments, reports, views and copies all hang off GalleryPost by a real
-foreign key.
+Two KINDS of post share it: a PvP team (the PvP page's Gallery view) and a pull
+plan (Community plans, notes/pull-plan-database-plan.md). Everything that is
+not about the team or the plan itself is generic: votes, comments, reports,
+views and copies all hang off GalleryPost by a real foreign key, so the second
+kind reuses them instead of copying them.
+
+Code that draws or reads a post's CONTENT asks its kind first
+(`post.kind == GalleryPostKind.PLAN`): a plan post has no event and no team, so
+`post.event` is None and `team_snapshot` is empty. Code that works on any post
+(votes, comments, reports, moderation, erasing an account) never needs to.
 
 WHY ONE GENERIC PARENT
 ----------------------
@@ -47,7 +52,10 @@ from calculatorapi.text_folding import normalise
 from .champions_meeting import ChampionsMeeting
 from .custom_user import CustomUser
 from .league_of_heroes import LeagueOfHeroes
+from .plan import Plan
+from .pvp_guide import PvpStyle
 from .pvp_team import PvpTeam
+from .scenario import Scenario
 
 # The one line of public text a post carries. The team's own name stays
 # private: a post never shows it.
@@ -63,6 +71,34 @@ GALLERY_REPORT_NOTE_MAX_LENGTH = 200
 
 class GalleryPostKind(models.TextChoices):
     PVP_TEAM = "pvp_team", "PvP team"
+    PLAN = "plan", "Pull plan"
+
+
+class PlanSpending(models.TextChoices):
+    """How much a plan's author spends, as they describe it (Henry's list,
+    2026-11-20). A label the author picks when posting, never read from their
+    purchases: a post never shows what an account holds or buys."""
+
+    F2P = "f2p", "F2P"
+    MINNOW = "minnow", "Minnow"
+    DOLPHIN = "dolphin", "Dolphin"
+    ORCA = "orca", "Orca"
+    WHALE = "whale", "Whale"
+
+
+class PlanSweat(models.TextChoices):
+    """How hard the author plays, as they describe it (Henry's list)."""
+
+    CASUAL = "casual", "Casual"
+    SEMI_COMP = "semi_comp", "Semi-Comp"
+    COMP = "comp", "Comp"
+    NO_LIFE = "no_life", "No-Life"
+
+
+# The running styles a plan can be tagged with, in the order they are stored
+# and shown: the guide's own style keys, without runaway and everyone (Henry's
+# list), so "front" means the same on a plan as in a guide.
+PLAN_STRATEGIES = (PvpStyle.FRONT.value, PvpStyle.PACE.value, PvpStyle.LATE.value, PvpStyle.END.value)
 
 
 class GalleryHiddenReason(models.TextChoices):
@@ -191,6 +227,47 @@ class GalleryPost(models.Model):
         related_name="gallery_posts",
     )
 
+    # ── Pull plan posts ─────────────────────────────────────────────────
+    # The plan as it was posted: {"rows": [...]} plus "income" when the author
+    # chose to show it (notes/pull-plan-database-plan.md, Design 1). A copy on
+    # the post rather than a hidden Plan row, so nothing that lists a person's
+    # plans has to learn to skip it. Empty on a team post.
+    plan_snapshot = models.JSONField(default=dict, blank=True)
+    # The four things the Community plans sidebar filters on. Three the author
+    # picks, all optional; blank means "not said", and such a post shows only
+    # under "Any" for that filter.
+    plan_spending = models.CharField(
+        max_length=12, choices=PlanSpending.choices, blank=True, default=""
+    )
+    plan_sweat = models.CharField(
+        max_length=12, choices=PlanSweat.choices, blank=True, default=""
+    )
+    # PLAN_STRATEGIES keys in their fixed order, joined by commas ("front,end").
+    # A plain string rather than JSON or a child table: it is filtered in
+    # memory from the remembered feed, never in SQL, and a scalar column can
+    # sit in a check constraint the same way on SQLite and PostgreSQL.
+    plan_strategies = models.CharField(max_length=24, blank=True, default="")
+    # The scenario the plan runs up to, worked out from its last banner when
+    # it is posted, never typed. SET_NULL: a scenario taken out of the
+    # catalogue leaves the post, with no range.
+    plan_range = models.ForeignKey(
+        Scenario,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    # The plan it was posted from, so posting the same plan again updates its
+    # post. Never serialized, like source_team: it is the author's own plan.
+    # SET_NULL: deleting the plan leaves the post up.
+    source_plan = models.ForeignKey(
+        Plan,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="gallery_posts",
+    )
+
     class Meta:
         ordering = ("-published_at", "-id")
         constraints = [
@@ -225,10 +302,40 @@ class GalleryPost(models.Model):
                 condition=_hidden_is_explained(),
                 name="gallery_post_hidden_has_reason",
             ),
+            # The plan columns belong to plan posts. Scalar columns only: a
+            # JSON comparison inside a constraint behaves differently on
+            # SQLite (every test) and PostgreSQL (prod), and a difference like
+            # that only shows on deploy (backend-models.md). That a team
+            # post's plan_snapshot stays empty is the service's job and a
+            # test's.
+            models.CheckConstraint(
+                condition=Q(kind=GalleryPostKind.PLAN)
+                | Q(
+                    plan_spending="",
+                    plan_sweat="",
+                    plan_strategies="",
+                    plan_range__isnull=True,
+                    source_plan__isnull=True,
+                ),
+                name="gallery_post_plan_matches_kind",
+            ),
+            # One post per plan, so "Post this plan" on a posted plan updates
+            # its post instead of making a second. Partial: a post whose plan
+            # was deleted has none, and several of those may exist.
+            models.UniqueConstraint(
+                fields=["source_plan"],
+                condition=Q(source_plan__isnull=False),
+                name="one_gallery_post_per_source_plan",
+            ),
         ]
 
     def __str__(self):
         return f"{self.public_id} by {self.author.username}"
+
+    @property
+    def is_plan(self):
+        """A pull plan post rather than a PvP team."""
+        return self.kind == GalleryPostKind.PLAN
 
     @property
     def event(self):

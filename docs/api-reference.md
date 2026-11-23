@@ -526,6 +526,7 @@ identical to one that does not exist.
 ### `GET /plans`
 
 The caller's plans, oldest first. Never empty: an account with none is given its "Main plan".
+Each plan carries `post_public_id`: its Community plans post, or null.
 
 **Response `200`** `[ Plan ]`
 
@@ -1399,16 +1400,27 @@ written for the player: `400` for something they can fix, `403` for something th
 do. A hidden post, a blocked author's post and an unknown id are the same `404`, except to
 the post's own author.
 
+Every row and post says its `kind`: `"pvp_team"` or `"plan"` (a Community plans post,
+`notes/pull-plan-database-plan.md`). The common keys are the same for both. A team adds
+`umas` (and `team`, `event` in full). A plan adds `plan: {row_count, pull_count, step_count,
+lead: [{banner_uma, banner_support, banner_step_up}], has_notes, has_income}`, `spending`,
+`sweat` (a value or null), `strategies` (a list), `range` (`{id, label}` of the scenario it
+runs up to, or null) and `stats.copies` on the row too (the list has a Copies column); in full also `rows` (the share link's row shape, with `note` only when
+the author posted notes) and `income` (the eleven income settings in `user_stats_data`'s shape,
+or null; never a balance). `lead` is the first four banners still ahead, else the first four.
+Reading a plan post is `403` without early access. The team copy route below answers `404`
+for a plan post.
+
 | Route | Who | Returns |
 |---|---|---|
 | `POST /pvp-teams/<id>/publish` `{confirm_public_identity: true, caption?, strategy?}` | owner | `201` a new post, `200` a re-post (link, comments and votes kept, see below). Needs the flag literally `true`, a display name, three umas, eighteen cards, no repeated character, a caption (140) and strategy (2,000) that pass the filters. A refusal about one of the two texts carries `"field": "caption"` or `"strategy"` beside `error` |
 | `GET /pvp-gallery/<kind>/<event_id>?sort=hot\|top\|new&uma=<id>&limit=N` | anyone | `{count, sort, limit, has_more, results: [row], umas: [{uma, count}]}`: the top `limit` rows (20 by default, at most 200) |
-| `GET /gallery/posts/<public_id>` | anyone | the full post |
+| `GET /gallery/posts/<public_id>` | anyone (a plan post: early access, else `403`) | the full post. Every other route on a plan post (vote, view, comments, reports, its profile card) answers a viewer without early access as a missing post; the author always reaches their own |
 | `DELETE /gallery/posts/<public_id>` | author | `204`, the post with its votes, comments and reports |
 | `PUT` / `DELETE /gallery/posts/<public_id>/vote` | signed in | PUT takes `{value: "up" \| "down"}` (no body = up; a second PUT switches); answers `{score, my_vote}`, plus `split` for staff; `400` on another value, `403` on your own post |
 | `POST /gallery/posts/<public_id>/view` | anyone | always `204`; counted once per viewer per day |
-| `POST /gallery/posts/<public_id>/copy` | anyone | `{kind, event, members}`; the client adds the team through its own path |
-| `GET /gallery/my-posts` | signed in | the caller's posts, hidden ones too (`"hidden": true`) |
+| `POST /gallery/posts/<public_id>/copy` | anyone | a team post: `{kind, event, members}` (here `kind` is the event's, `cm` or `loh`); the client adds the team through its own path. `404` for a plan post |
+| `GET /gallery/my-posts` | signed in | the caller's team posts, hidden ones too (`"hidden": true`) |
 | `GET /gallery/posts/<public_id>/comments?page=N` | anyone | `{count, page, has_more, results: [comment]}`, 50 top comments per page |
 | `POST /gallery/posts/<public_id>/comments` `{body, parent?}` | signed in, display name | `201` the comment |
 | `PATCH` / `DELETE /gallery/comments/<id>` `{body}` | its author | the comment / `204` |
@@ -1416,6 +1428,9 @@ the post's own author.
 | `GET /pvp-guides/<kind>/<event_id>/comments?section=<style>&page=N` | anyone who can read the guide | a guide section's thread, the same shape as a post's; no `section` = the whole guide |
 | `POST /pvp-guides/<kind>/<event_id>/comments` `{body, parent?, section}` | signed in, display name | `201` the comment; `400` for a section that isn't `""` or a running style |
 | `POST /gallery/reports` `{post: public_id}` or `{comment: id}`, `reason`, `note?` | signed in | `201`, no body; `409` on a repeat |
+| `POST /plans/<id>/publish` `{caption, strategy?, spending?, sweat?, strategies?: [style], include_notes?, include_income?, confirm_public_identity: true}` | the plan's owner, early access | `201` a new post, `200` an update (link, comments, votes kept). `caption` is the title and required; `strategy` is "About this plan"; the two include flags and the agree flag count only when literally `true`. Refusals name a `field` (`caption`, `strategy`, `spending`, `sweat`, `strategies`, `notes`); a note refusal names its banner. At most 5 plan posts per person |
+| `GET /plan-gallery?sort=top\|new&window=day\|week\|month\|all&range=<scenario id>&strategy=front,pace&spending=<v>&sweat=<v>&limit=N` | early access | `{count, sort, window, limit, has_more, results: [row], filters}`. Top counts points received inside a rolling window (default `week`); `window` is null for `new`. `strategy` matches ANY listed style; `range` matches plans running up to that scenario or an earlier one. Unknown values are ignored. `filters` lists every choice with its `label` (a spending level also its `meaning`) and the scenarios some visible plan reaches |
+| `POST /plan-gallery/posts/<public_id>/copy` `{name}` | early access | signed in: `201` `PlanWithRows` of a new, inactive plan with the posted rows (and notes, if posted), never an income profile; `400` at the plan cap. A guest (once open): `{user_planned_banner_data, user_stats_data: null, user_planned_purchase_data: null}`. Counts a copy unless it is the author's own; `404` for a team post |
 | `GET /post/<public_id>` | anyone | HTML: link-preview tags, then on to the post in the app. **Not under `/api`** |
 | `GET /post/<public_id>/preview.jpg?v=<version>` | anyone | the 1200x630 preview JPEG: the brand strip with the event's name, then the three umas (`gallery_preview.py`). The version is the team's hash plus the drawing's `LAYOUT`; an old one redirects |
 
@@ -2085,14 +2100,16 @@ including one with a `null` (unrestricted) cutoff. A client must check both halv
   "is_recommended": false,
   "admin_comments": "string | null",
   "banner_timeline": { ... },
-  "support_cards": [ { "id": 1, "name": "string", "image": "url | null", "admin_comments": "string | null", "purpose": "string", "first_jp_date": "ISO8601 | null", "rarity": "1 | 2 | 3 | null", "game_id": "int | null" } ],
+  "support_cards": [ { "id": 1, "name": "string", "image": "url | null", "admin_comments": "string | null", "purpose": "string", "first_jp_date": "ISO8601 | null", "rarity": "1 | 2 | 3 | null", "game_id": "int | null", "image_borderless": "url | null", "card_type": "speed | stamina | power | guts | wit | friend | group | ''" } ],
   "rate_up_picks": "int | null",
   "rate_overrides": { "<support card id>": 0.005 }
 }
 ```
 
 The rate-up inputs mean what they do on `BannerUma`; a support card's `rarity` is R / SR /
-SSR as 1 / 2 / 3.
+SSR as 1 / 2 / 3. `image_borderless` and `card_type` are what the client's card frame
+(`FramedCard`) builds a card from, as the PvP catalogue sends them; the art is null until
+uploaded, and the card then keeps its bordered `image`. A story event's cards carry the same two.
 
 ### `BannerStepUp` (from `banner_step_up_data`)
 ```json

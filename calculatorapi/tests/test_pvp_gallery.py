@@ -27,7 +27,7 @@ from calculatorapi.views.gallery import GalleryCopyThrottle, GalleryReadThrottle
 from calculatorapi.views.pvp_gallery import GALLERY_LIMIT_MAX, GALLERY_PAGE_SIZE, GalleryPublishThrottle
 
 ROW_KEYS = {
-    "public_id", "caption", "published_at", "content_updated_at", "is_mine", "umas",
+    "public_id", "kind", "caption", "published_at", "content_updated_at", "is_mine", "umas",
     "stats", "my_vote", "poster",
 }
 # `strategy` only in full: the feed's rows never carry the long text.
@@ -133,6 +133,7 @@ class FeedTests(RouteFixture):
         self.assertEqual(set(response.data), {"count", "sort", "limit", "has_more", "results", "umas"})
         row = response.data["results"][0]
         self.assertEqual(set(row), ROW_KEYS)
+        self.assertEqual(row["kind"], "pvp_team")
         self.assertEqual(set(row["poster"]), POSTER_KEYS)
         self.assertEqual(row["poster"]["gallery_style"], "sr")
         self.assertEqual(set(row["stats"]), {"views", "score", "comments"})
