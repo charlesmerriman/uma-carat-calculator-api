@@ -258,7 +258,7 @@ person can show beside their name, and posting it is its own opt-in: none of a p
 share links posts anything, and a share link's `share_notes` / `share_stats` never tick a
 post's boxes. A post always shows the plan's banners and pulls, the title and words its author
 wrote, and `poster_block`. Two more things show **only when the author ticks them, every
-time they post**: their row notes (through the gallery's text filters, 300 characters each),
+time they post**: their row notes (through the gallery's text filters, 1,000 characters each),
 and their **income** (`POSTED_INCOME_FIELDS`: ranks and income settings, which the page turns
 into "average a month"). **Never a balance**: carats, tickets, selector tickets, shards and
 crystals stay on the account (the owner, 2026-11-20). Never the plan's name, its id,

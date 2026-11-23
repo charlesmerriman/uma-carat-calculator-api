@@ -30,6 +30,7 @@ from calculatorapi.tests.factories import make_scenario, make_support_banner, ma
 from calculatorapi.tests.test_gallery_plan_posts import make_plan_post
 from calculatorapi.tests.test_pvp_gallery import FORBIDDEN, RouteFixture, all_keys
 from calculatorapi.views.plan_public import SharedPlannedBannerSerializer
+from calculatorapi.views.user_planned_banner import NOTE_MAX_LENGTH
 from calculatorapi.views.user import GameStatsSerializer
 
 # Every stat that may NOT go on a post, whatever is ticked: balances (what a
@@ -149,9 +150,17 @@ class SnapshotTests(PlanGalleryFixture):
         post.refresh_from_db()
         self.assertNotEqual(post.plan_snapshot["income"]["daily_carat"], user.daily_carat)
 
+    def test_a_note_as_long_as_the_calculator_allows_can_be_posted(self):
+        """The posting limit is the Calculator's: a note you could save, you
+        can post (both 1,000 since 2026-11-23)."""
+        self.assertEqual(plan_gallery.PLAN_NOTE_MAX_LENGTH, NOTE_MAX_LENGTH)
+        user = self.member()
+        post = self.publish(user, self.plan(user, notes={0: "x" * NOTE_MAX_LENGTH}), include_notes=True)
+        self.assertEqual(post.plan_snapshot["rows"][0]["note"], "x" * NOTE_MAX_LENGTH)
+
     def test_a_note_that_may_not_be_posted_names_its_banner(self):
         user = self.member()
-        for note, words in (("see https://example.com", "Links"), ("x" * 301, "300 characters")):
+        for note, words in (("see https://example.com", "Links"), ("x" * 1001, "1,000 characters")):
             with self.subTest(words=words):
                 plan = self.plan(user, notes={1: note}, name=words)
                 with self.assertRaises(gallery.GalleryRefused) as refused:

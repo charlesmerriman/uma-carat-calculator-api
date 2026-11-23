@@ -98,9 +98,11 @@ REFUSED_TEXT = "Community plans are open to supporters first."
 # post is limited to one per event; a plan has no event, so without a count
 # one person could fill the feed.
 PLAN_POST_CAP = 5
-# A note is shown beside a name once posted, so it is held to a comment's
-# kind of length and goes through the same filters.
-PLAN_NOTE_MAX_LENGTH = 300
+# A note is shown beside a name once posted, so it goes through the gallery's
+# text filters. Its length matches what the Calculator lets you write
+# (views/user_planned_banner.NOTE_MAX_LENGTH), 1,000 since 2026-11-23 (was
+# 300, which players found too short), so a note you could save you can post.
+PLAN_NOTE_MAX_LENGTH = 1000
 # How many banners a feed row draws, and the link preview's picture.
 LEAD_ROWS = 4
 PREVIEW_ROWS = 5
@@ -185,7 +187,7 @@ def _check_notes(rows):
             continue
         if len(note) > PLAN_NOTE_MAX_LENGTH:
             raise gallery.GalleryRefused(
-                f"Keep the note on {_banner_name(row)} to {PLAN_NOTE_MAX_LENGTH} characters.", field="notes"
+                f"Keep the note on {_banner_name(row)} to {PLAN_NOTE_MAX_LENGTH:,} characters.", field="notes"
             )
         try:
             gallery_moderation.check_text(note)

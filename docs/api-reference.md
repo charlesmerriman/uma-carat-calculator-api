@@ -474,7 +474,7 @@ Rank fields accept the integer primary key of the corresponding rank row. Exactl
 SSR crystal rather than by pulling. Only the count is stored — which resource pays is
 derived client-side per render from the projected balances and JP eligibility.
 
-`note` is an optional free-text reminder on the row, at most 500 characters (longer is a
+`note` is an optional free-text reminder on the row, at most 1,000 characters (longer is a
 400), trimmed, `""` when unset. Omitting it on a row that carries an `id` keeps the stored
 note; send `""` to clear it.
 

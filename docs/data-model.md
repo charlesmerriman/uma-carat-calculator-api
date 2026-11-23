@@ -572,7 +572,7 @@ someone holds or spends. **Do not add a field to `Plan` that describes the perso
 pays for each copy is derived on render from the viewer's own balances.
 
 `note` is the one row column that does NOT pass it: it is the owner's private free text
-(capped at 500 characters by the serializer, `NOTE_MAX_LENGTH`). It lives on the row
+(capped at 1,000 characters by the serializer, `NOTE_MAX_LENGTH`; 500 until 2026-11-23). It lives on the row
 because it is about the choice and should differ per plan, and `copy_plan()` keeps the
 portability rule true by blanking every note when the copy changes owner, exactly as it
 drops `income_profile`. The one override is the owner's own: a shared plan with
