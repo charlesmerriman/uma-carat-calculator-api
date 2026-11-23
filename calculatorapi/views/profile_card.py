@@ -15,7 +15,8 @@ and these routes reach only what the post and comment threads already show.
 WHAT IT HOLDS, AND WHY NOTHING ELSE
 -----------------------------------
     favorites  every favorite uma their tier covers (public_identity)
-    posts      their visible gallery posts, newest POSTS_SHOWN
+    posts      their visible gallery TEAM posts, newest POSTS_SHOWN (plan posts
+               join once the card can draw one: pull-plan-database-plan.md)
     plans      their shared plans' totals, only if they turned that on
 
 The name, picture and tier aren't here: the card opens from a post or comment
@@ -35,7 +36,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 
 from calculatorapi import gallery, gallery_ranking, public_identity
-from calculatorapi.models import GalleryComment, GalleryPost, Plan, UserPlannedBanner
+from calculatorapi.models import GalleryComment, GalleryPost, GalleryPostKind, Plan, UserPlannedBanner
 from calculatorapi.views.gallery import vote_fields
 from calculatorapi.views.plan_public import plan_totals
 
@@ -51,7 +52,9 @@ class ProfileCardThrottle(UserRateThrottle):
 
 
 def _posts(user):
-    posts = gallery_ranking.with_points(gallery.visible_posts().filter(author=user))
+    posts = gallery_ranking.with_points(
+        gallery.visible_posts().filter(author=user, kind=GalleryPostKind.PVP_TEAM)
+    )
     return [
         {
             "public_id": post.public_id,

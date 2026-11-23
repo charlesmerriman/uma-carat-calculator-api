@@ -28,6 +28,11 @@ A hidden, blocked, taken-down or unknown post gets the site's own tags and is
 sent to the gallery, where the app says the team isn't available. A 200 rather
 than a 404, so an old link still unfurls as the site.
 
+A PULL PLAN POST gets the site's own tags and no picture for now: what its
+preview says and draws arrives with the Community plans feed
+(notes/pull-plan-database-plan.md, PR 2). Everything below that reads a post's
+event or team is a team post's.
+
 `/post` must never be disallowed in robots.txt: X's crawler obeys it. The
 `noindex` tag is what keeps these pages out of search results.
 """
@@ -99,6 +104,8 @@ def _uma_names(post):
 
 def share_context(post):
     """The tags for one available post. Generated text only (see above)."""
+    if post.is_plan:
+        return _default_context(post.public_id)
     names = _uma_names(post)
     if not names:
         return _default_context(post.public_id)
@@ -141,7 +148,8 @@ def share_preview(request, public_id):
     if _throttled(request):
         return HttpResponse("Too many requests", status=429, content_type="text/plain")
     post = _available(public_id)
-    if post is None:
+    # A plan post has no picture yet (see above): the same answer as no post.
+    if post is None or post.is_plan:
         return HttpResponse("Not found", status=404, content_type="text/plain")
     asked = request.GET.get("v")
     current = gallery_preview.image_version(post)
