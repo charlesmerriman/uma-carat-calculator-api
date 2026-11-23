@@ -20,8 +20,20 @@ WHAT IS DIFFERENT
   and LocMem cannot delete by prefix, so every key carries the current
   generation and a write moves to a new one. Old entries are never read again
   and age out with the TTL or the bound.
+* The SHARED LOOKUPS (since 2026-11-23): the part of a skill page that is the
+  same for every skill (views/skills.SharedLookups: whose skill each one is,
+  the names its text needs, what is out on Global) is one more entry here,
+  under the same generation, so an edit drops it with the pages. Before, each
+  page built its own: about 3,850 rows to show a handful, and the web build's
+  2,223 skill pages read over 8 million of them on every deploy.
+  A page built from them EXPIRES WITH THEM (`store_detail`'s `built_at`), never
+  a full TTL after. "Out on Global" depends on the clock, not only on writes
+  (global_release.py), and a page kept 5 minutes past lookups that were
+  already 5 minutes old would let the tag lag a release by 10.
 """
 
+import math
+import time
 import uuid
 
 from django.core.cache import caches
@@ -33,6 +45,8 @@ LIST_KEY = "skills:list:v4:{generation}"
 DETAIL_KEY = "skills:detail:v6:{generation}:{game_id}"
 # An Encyclopedia page: `kind` is "uma" or "card" (views/encyclopedia.py).
 PAGE_KEY = "skills:page:v10:{generation}:{kind}:{game_id}"
+# The lookups every skill page shares (views/skills.SharedLookups), one entry.
+SHARED_KEY = "skills:shared:v1:{generation}"
 
 # Backstop only, as in pvp_catalogue_cache.py.
 CACHE_TTL_SECONDS = 300
@@ -74,10 +88,27 @@ def read_detail(game_id):
     return _cache().get(DETAIL_KEY.format(generation=_generation(), game_id=game_id))
 
 
-def store_detail(game_id, json_bytes):
-    _cache().set(
-        DETAIL_KEY.format(generation=_generation(), game_id=game_id), json_bytes, CACHE_TTL_SECONDS,
-    )
+def store_detail(game_id, json_bytes, built_at=None):
+    """Keep a skill page. `built_at` is when the shared lookups it was built
+    from were (SharedLookups.built_at): the page expires with them."""
+    timeout = CACHE_TTL_SECONDS if built_at is None else seconds_left(built_at)
+    _cache().set(DETAIL_KEY.format(generation=_generation(), game_id=game_id), json_bytes, timeout)
+
+
+def seconds_left(built_at):
+    """What remains of the TTL of something built at `built_at` (a time.time()).
+    0 once it has run out, which the cache takes as "don't keep this"."""
+    return max(0, math.ceil(built_at + CACHE_TTL_SECONDS - time.time()))
+
+
+def read_shared():
+    """The shared lookups for this generation, or None on a miss."""
+    return _cache().get(SHARED_KEY.format(generation=_generation()))
+
+
+def store_shared(shared):
+    """Keep the shared lookups, for the TTL from their `built_at`."""
+    _cache().set(SHARED_KEY.format(generation=_generation()), shared, seconds_left(shared.built_at))
 
 
 def read_page(kind, game_id):

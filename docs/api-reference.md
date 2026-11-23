@@ -474,7 +474,7 @@ Rank fields accept the integer primary key of the corresponding rank row. Exactl
 SSR crystal rather than by pulling. Only the count is stored — which resource pays is
 derived client-side per render from the projected balances and JP eligibility.
 
-`note` is an optional free-text reminder on the row, at most 500 characters (longer is a
+`note` is an optional free-text reminder on the row, at most 1,000 characters (longer is a
 400), trimmed, `""` when unset. Omitting it on a row that carries an `id` keeps the stored
 note; send `""` to clear it.
 
@@ -933,7 +933,10 @@ Every skill a player may read about (`views/skills.py`): the Skills page and the
 editor's picker. **Public** since 2026-11-18 (supporters and staff had it first, from
 2026-11-12). Cached as rendered bytes in the `skills` cache alias
 (`skills_cache.py`, a new generation on any write to the skill, alias, condition, junction,
-uma or card tables). Keyed by the game's skill id, the same in every database.
+uma or card tables). Keyed by the game's skill id, the same in every database. What every
+detail page shares (whose skill each one is, the names its text needs, what is out on
+Global) is built once per generation and kept beside the pages (`views/skills.SharedLookups`),
+and a page expires with it, so the on-Global tag still lags a release by at most the TTL.
 
 `GET /skills` is a list, ordered by shown name, of every `Skill.objects.shown()` row (any
 skill with a name: global's, UmaTL's, or the Japanese one when it has neither; Japanese
