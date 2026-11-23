@@ -15,6 +15,14 @@ Authorization: Token <token>
 
 Read-only reference endpoints (rank tables, events, League of Heroes) and `GET /calculator-data` are public. Note that a request carrying an *invalid* token still returns `401` even on public endpoints — DRF authenticates the token before checking permissions. Clients should drop a rejected token and retry without one.
 
+**Any route may answer `429`** with `{"detail": "Too many requests. Try again in a few minutes."}`
+and a `Retry-After` header (seconds). That's the per-visitor request limit
+(`calculatorapi/rate_limit.py`): more than 300 requests in a minute, or 1,200 in ten minutes,
+from one account blocks it for ten minutes. The same rule per address only logs what it would
+refuse until `RATE_LIMIT_ADDRESS_MODE` is `enforce` (notes/rate-limit-plan.md, in the private
+notes repo). It runs before authentication, so a refused request never reaches the view. The routes with their own, lower limits (the share
+links, the gallery, account linking) are listed with them below.
+
 Not part of the public API: `/admin/analytics/` is a staff-only aggregate analytics page served inside the Django admin (session auth, not token auth) — see [analytics.md](analytics.md). `/admin/image-library/` is likewise staff-only — it lists the media bucket as JSON for the admin's image picker (`?prefix=umas/`, `?refresh=1`), and only accepts folders that back an actual `ImageField`.
 
 ---
