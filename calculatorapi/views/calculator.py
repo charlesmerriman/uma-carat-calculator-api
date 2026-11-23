@@ -315,7 +315,7 @@ def _build_user_payload(user, *, emap, anniversary_emap, card_context):
     return {
         # Read AFTER get_active_plan so a first plan it just created is listed.
         "user_plans": PlanSerializer(
-            Plan.objects.filter(user=user), many=True
+            Plan.objects.filter(user=user).prefetch_related("gallery_posts"), many=True
         ).data,
         "active_plan_id": active_plan.id,
         "user_planned_banner_data": serialize_planned_banners(

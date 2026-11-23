@@ -81,6 +81,8 @@ KNOWN_ROUTES = frozenset({
     "/app/cards",
     # Early access only and not prerendered.
     "/app/rankings",
+    # Community plans: early access first, so not prerendered yet either.
+    "/app/plans",
     # Account only and not prerendered, like /account, but a landing all the same.
     "/app/collection",
     "/account",

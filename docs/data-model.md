@@ -1338,7 +1338,16 @@ post (votes, comments, reports, moderation, erasure) never needs to.
   scalar so it can sit in the check constraint), `plan_range` (the `Scenario` the plan runs
   up to, worked out at posting, SET_NULL) and `source_plan` (SET_NULL, never serialized;
   `one_gallery_post_per_source_plan`, partial). `caption` is a plan's title and `strategy`
-  its "About this plan". See `notes/pull-plan-database-plan.md`.
+  its "About this plan". The rules are `plan_gallery.py`: posting (`publish_plan`, at most
+  `PLAN_POST_CAP` = 5 plan posts per person), the income whitelist (`POSTED_INCOME_FIELDS`,
+  what the Average Monthly Income tiles read, never a balance), the range (`range_for`: the
+  newest scenario started by the plan's last banner's end), and the feed. **Two copy counts,
+  never mixed**: `Plan.copy_count` is copies through a share link, `GalleryPost.copy_count`
+  copies of the post (`plans.plan_from_snapshot`, which never brings the author's income).
+  **The feed's order is remembered** for 60 seconds per sort in the `gallery` cache (ids with
+  their four filter values, filtered in memory per request); it decides order only, since every
+  page is fetched through `gallery.visible_posts()`, and publishing forgets it. See
+  `notes/pull-plan-database-plan.md`.
 - **A post is a FROZEN COPY.** Posting again for the same event replaces the copy, keeps the
   `public_id`, the comments (older ones read "On an earlier version") and **the votes**
   (Henry, 2026-10-26; until `0123` a team change cleared them). The post reads "Edited" once

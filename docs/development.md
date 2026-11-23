@@ -79,6 +79,7 @@ result depends on which tests ran before it.
 | `seed_anniversary_campaigns` | Creates or refreshes the anniversary campaigns from the source sheet. Idempotent |
 | `sync_patreon_supporters` | Syncs supporters from the Patreon API; the daily Action reaches the same reconcile over HTTP |
 | `set_patreon_tier_order` | Sets supporter tier order from `NAME=ORDER` pairs |
+| `seed_plan_gallery_demo` | Local only (refuses anything but SQLite). Ten fake accounts post plans to Community plans, with votes and comments; `--clear` removes them. Needs upcoming banners, so run it after `pull_prod_content` |
 | `prune_visitor_hashes` | Deletes visitor de-duplication hashes older than the retention window (90 days, never below 45). Runs on every deploy |
 | `snapshot_analytics` | Keeps today's copy of the admin analytics report unless one exists (the admin also keeps one on its first rebuild each day). Runs on every deploy; never fails it |
 | `purge_user_pii` | Blanks email, name and password on every non-staff account. **Irreversible**, so run it with `--dry-run` first |

@@ -26,7 +26,9 @@ built once in serialize_posts(); what only one kind has comes from that
 kind's function in _KIND_FIELDS: a team's umas, team and event, a plan's own
 fields. A new kind adds a function there, never a branch in the common part.
 The copy route below is the team's "Copy to my teams" and answers 404 for any
-other kind; a plan is copied through its own route.
+other kind; a plan is copied through its own route (views/plan_gallery.py).
+Reading a plan post asks plan_gallery.can_use() first: Community plans open to
+supporters first.
 
 WHAT A POST SENDS, AND WHAT IT NEVER DOES
 -----------------------------------------
@@ -57,7 +59,7 @@ from rest_framework.decorators import api_view, permission_classes, throttle_cla
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 
-from calculatorapi import gallery, gallery_ranking, guide_access, public_identity
+from calculatorapi import gallery, gallery_ranking, guide_access, plan_gallery, public_identity
 from calculatorapi.models import (
     GalleryComment, GalleryPost, GalleryPostKind, GalleryVote, PvpGuide, SupportCard, Uma, VoteValue,
 )
@@ -205,10 +207,10 @@ def vote_value(request):
 
 def _team_fields(post, full, known):
     """A team post's own fields: its umas on a feed row, and the whole team
-    and its event once the post is opened. `known` is _known_ids' pair, so an
-    uma or card that left the catalogue is dropped (snapshot_for_display's
-    rule)."""
-    umas, cards = known
+    and its event once the post is opened. `known["team"]` is _known_ids'
+    pair, so an uma or card that left the catalogue is dropped
+    (snapshot_for_display's rule)."""
+    umas, cards = known["team"]
     team = [
         {**member, "cards": [card for card in member["cards"] if card["support_card"] in cards]}
         for member in post.team_snapshot
@@ -229,12 +231,35 @@ def _team_fields(post, full, known):
     return fields
 
 
-def _plan_fields(post, full, known):  # pylint: disable=unused-argument
-    """A plan post's own fields. None yet: what a plan row shows (its totals,
-    its banners, its filter values) arrives with the Community plans feed
-    (notes/pull-plan-database-plan.md, PR 2). Until then a plan post is
-    served safely with the common fields only."""
-    return {}
+def _plan_fields(post, full, known):
+    """A plan post's own fields. A feed row carries enough to draw the whole
+    row: its totals, the banners it leads with, whether it has notes or
+    income, and its four filter values. Opened, the post adds every row (each
+    with its note, when the author posted notes) and the income block, or
+    null. `known["plan"]` is plan_gallery.known_banners' answer, so a banner
+    taken out of the catalogue is dropped as a team's uma is. "label", never
+    "name", for the range: every gallery test forbids a "name" key."""
+    snapshot = post.plan_snapshot or {}
+    rows = plan_gallery.rows_for_display(snapshot, known["plan"])
+    row_count, pulls, steps = plan_gallery.summary(rows)
+    fields = {
+        "plan": {
+            "row_count": row_count,
+            "pull_count": pulls,
+            "step_count": steps,
+            "lead": plan_gallery.lead_rows(snapshot, known["plan"]),
+            "has_notes": any(row.get("note") for row in rows),
+            "has_income": "income" in snapshot,
+        },
+        "spending": post.plan_spending or None,
+        "sweat": post.plan_sweat or None,
+        "strategies": plan_gallery.strategies_of(post),
+        "range": {"id": post.plan_range_id, "label": post.plan_range.name} if post.plan_range_id else None,
+    }
+    if full:
+        fields["rows"] = rows
+        fields["income"] = snapshot.get("income")
+    return fields
 
 
 # Each kind's own fields, by kind. A kind missing here is a KeyError on the
@@ -256,7 +281,10 @@ def serialize_posts(posts, viewer, *, full=False):
     ) if signed_in else {}
     blocks = public_identity.poster_blocks([post.author for post in posts])
     comments = _comment_counts(posts)
-    known = _known_ids([post for post in posts if not post.is_plan])
+    known = {
+        "team": _known_ids([post for post in posts if not post.is_plan]),
+        "plan": plan_gallery.known_banners([post.plan_snapshot for post in posts if post.is_plan]),
+    }
     rows = []
     for post in posts:
         votes = vote_fields(post.ups, post.downs, voted.get(post.pk), viewer)
@@ -299,7 +327,7 @@ def _post_or_404(public_id, viewer):
 def post_payload(post, viewer):
     """One post in full, with fresh counts."""
     annotated = gallery_ranking.with_points(GalleryPost.objects.filter(pk=post.pk)).select_related(
-        "author", "champions_meeting", "league_of_heroes"
+        "author", "champions_meeting", "league_of_heroes", "plan_range"
     )
     return serialize_posts(list(annotated), viewer, full=True)[0]
 
@@ -311,6 +339,8 @@ def gallery_post_detail(request, public_id):
     post = _post_or_404(public_id, request.user)
     if post is None:
         return Response(NOT_FOUND, status=status.HTTP_404_NOT_FOUND)
+    if post.is_plan and request.method == "GET" and not plan_gallery.can_use(request.user):
+        return Response({"error": plan_gallery.REFUSED_TEXT}, status=status.HTTP_403_FORBIDDEN)
     if request.method == "DELETE":
         if not request.user.is_authenticated or request.user.pk != post.author_id:
             # Somebody else's post reads as no post at all.
@@ -376,14 +406,11 @@ def gallery_post_copy(request, public_id):
 @permission_classes([permissions.IsAuthenticated])
 def gallery_my_posts(request):
     """GET /gallery/my-posts: the caller's own posts, hidden ones included,
-    newest first, for the account page's "Your posts".
-
-    Team posts only for now: the account page draws every row as a team, with
-    its event. Plan posts join once it can draw them
-    (notes/pull-plan-database-plan.md, PR 2 and PR 3)."""
+    newest first, for the account page's "Your posts": teams and plans,
+    each saying its `kind`."""
     posts = gallery_ranking.with_points(
-        GalleryPost.objects.filter(author=request.user, kind=GalleryPostKind.PVP_TEAM).select_related(
-            "author", "champions_meeting", "league_of_heroes"
+        GalleryPost.objects.filter(author=request.user).select_related(
+            "author", "champions_meeting", "league_of_heroes", "plan_range"
         )
     ).order_by("-content_updated_at", "-id")
     return Response(serialize_posts(list(posts), request.user, full=True))

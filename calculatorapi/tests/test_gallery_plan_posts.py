@@ -33,9 +33,10 @@ from calculatorapi.tests.test_moderation_cards import CHANNEL, ok
 from calculatorapi.tests.test_pvp_gallery import FORBIDDEN, ROW_KEYS, RouteFixture, all_keys
 from calculatorapi.views.gallery_share import SITE_NAME
 
-# What a plan post's open payload carries in PR 1: the common fields only.
-# The plan's own fields arrive with the plan feed (PR 2).
-PLAN_FULL_KEYS = (ROW_KEYS - {"umas"}) | {"strategy", "hidden"}
+# A plan post's row: the common fields and the plan's own (test_plan_gallery.py
+# pins what each holds). Opened, it adds the rows and the income block.
+PLAN_ROW_KEYS = (ROW_KEYS - {"umas"}) | {"plan", "spending", "sweat", "strategies", "range"}
+PLAN_FULL_KEYS = PLAN_ROW_KEYS | {"strategy", "hidden", "rows", "income"}
 
 
 def make_plan_post(user, **fields):
@@ -117,8 +118,13 @@ class PlanPostRouteTests(RouteFixture):
         self.post_row = make_plan_post(self.author)
         self.url = f"/gallery/posts/{self.post_row.public_id}"
 
-    def test_detail_sends_the_common_fields_and_says_its_kind(self):
-        response = APIClient().get(self.url)
+    def test_detail_is_early_access_and_says_its_kind(self):
+        self.assertEqual(APIClient().get(self.url).status_code, 403)
+        self.assertEqual(self.client_for(self.person()).get(self.url).status_code, 403)
+        reader = self.person()
+        reader.early_access = True
+        reader.save()
+        response = self.client_for(reader).get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(set(response.data), PLAN_FULL_KEYS)
         self.assertEqual(response.data["kind"], "plan")
@@ -171,30 +177,41 @@ class PlanPostRouteTests(RouteFixture):
         self.post_row.refresh_from_db()
         self.assertEqual(self.post_row.copy_count, 0)
 
-    def test_my_posts_lists_team_posts_only_for_now(self):
+    def test_my_posts_lists_both_kinds(self):
         team_post = self.post(self.author)
         response = self.client_for(self.author).get("/gallery/my-posts")
-        self.assertEqual([row["public_id"] for row in response.data], [team_post.public_id])
+        self.assertEqual(
+            {(row["public_id"], row["kind"]) for row in response.data},
+            {(team_post.public_id, "pvp_team"), (self.post_row.public_id, "plan")},
+        )
 
     def test_never_in_an_event_feed(self):
         self.post(self.person())
         rows = self.feed().data["results"]
         self.assertNotIn(self.post_row.public_id, [row["public_id"] for row in rows])
 
-    def test_share_page_uses_the_sites_tags_and_draws_no_picture(self):
+    def test_share_page_names_a_plan_and_nothing_its_author_wrote(self):
         page = APIClient().get(f"/post/{self.post_row.public_id}")
         self.assertEqual(page.status_code, 200)
         html = page.content.decode()
-        self.assertIn(f"<title>{SITE_NAME}</title>", html)
+        self.assertIn("<title>Community plan</title>", html)
+        self.assertNotIn(SITE_NAME + "</title>", html)
         self.assertNotIn(self.post_row.caption, html)
+        self.assertNotIn(self.post_row.strategy, html)
+        self.assertIn(f"/app/plans?post={self.post_row.public_id}", html)
         picture = APIClient().get(f"/post/{self.post_row.public_id}/preview.jpg")
-        self.assertEqual(picture.status_code, 404)
+        self.assertEqual(picture.status_code, 200)
+        self.assertEqual(picture["Content-Type"], "image/jpeg")
 
-    def test_profile_card_opens_and_lists_team_posts_only(self):
+    def test_profile_card_lists_plans_with_their_totals(self):
         team_post = self.post(self.author)
         response = APIClient().get(f"/profile-cards/post/{self.post_row.public_id}")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual([row["public_id"] for row in response.data["posts"]], [team_post.public_id])
+        rows = {row["public_id"]: row for row in response.data["posts"]}
+        self.assertEqual(set(rows), {team_post.public_id, self.post_row.public_id})
+        self.assertEqual(rows[self.post_row.public_id]["kind"], "plan")
+        self.assertEqual(rows[self.post_row.public_id]["totals"], {"row_count": 0, "pull_count": 0, "step_count": 0})
+        self.assertIn("event", rows[team_post.public_id])
 
     def test_erasing_the_author_takes_it_away(self):
         gallery.erase_users([self.author])

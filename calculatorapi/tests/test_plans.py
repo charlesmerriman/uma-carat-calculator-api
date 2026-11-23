@@ -231,7 +231,7 @@ class PlanRouteTests(CalculatorTestCase):
         self.assertEqual(
             set(res.data[0].keys()),
             {"id", "public_id", "name", "is_active", "income_profile_id",
-             "is_shared", "share_stats", "share_notes", "copy_count", "updated_at"},
+             "is_shared", "share_stats", "share_notes", "copy_count", "post_public_id", "updated_at"},
         )
 
     def test_create_blank(self):

@@ -144,7 +144,7 @@ def preview_version_for(snapshot):
     return hashlib.sha1(drawn.encode("utf-8")).hexdigest()[:12]
 
 
-def _clean_text(text, *, field, label, limit):
+def clean_text(text, *, field, label, limit):
     """A post's public text, trimmed and through the filters, or
     GalleryRefused naming `field`. `label` is what the form calls the box."""
     text = (text or "").strip()
@@ -187,8 +187,8 @@ def publish_team(user, team, *, caption="", strategy="", confirm_public_identity
         # The view resolves the team through pvp_teams.get_owned_team; this is
         # the backstop for any other caller.
         raise GalleryRefused("That team isn't yours.", status=403)
-    caption = _clean_text(caption, field="caption", label="caption", limit=GALLERY_CAPTION_MAX_LENGTH)
-    strategy = _clean_text(strategy, field="strategy", label="strategy", limit=GALLERY_STRATEGY_MAX_LENGTH)
+    caption = clean_text(caption, field="caption", label="caption", limit=GALLERY_CAPTION_MAX_LENGTH)
+    strategy = clean_text(strategy, field="strategy", label="strategy", limit=GALLERY_STRATEGY_MAX_LENGTH)
     snapshot = snapshot_from_team(team)
     event = (
         {"champions_meeting_id": team.champions_meeting_id}
@@ -417,10 +417,17 @@ def copy_snapshot(request, post):
     backstop for any other caller, before anything is counted."""
     if post.is_plan:
         raise GalleryRefused("Only a team can be copied to My team.", status=404)
+    count_post_copy(request, post)
+    return snapshot_for_display(post.team_snapshot)
+
+
+def count_post_copy(request, post):
+    """One more copy of `post` was taken, unless by its own author: the number
+    says how many OTHER people took it. An F() update, so two copies at once
+    both count. Shared by a team's copy and a plan's (views/plan_gallery.py)."""
     user = getattr(request, "user", None)
     if not (user is not None and user.is_authenticated and user.pk == post.author_id):
         GalleryPost.objects.filter(pk=post.pk).update(copy_count=F("copy_count") + 1)
-    return snapshot_for_display(post.team_snapshot)
 
 
 # ── Comments ────────────────────────────────────────────────────────────────

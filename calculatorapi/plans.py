@@ -434,6 +434,50 @@ def copy_shared_plan(source, *, owner, name):
     return new_plan
 
 
+# The row fields a Community plans post freezes (plan_public's
+# SharedPlannedBannerSerializer whitelist) that a copy writes back as they
+# are: catalogue ids and the row's own choices. A row column added later picks
+# a side here, in copy_plan and in that serializer (backend-models.md).
+_SNAPSHOT_ROW_FIELDS = (
+    "number_of_pulls", "reserved_copies", "primary_card", "second_card", "primary_target",
+    "tickets_to_use", "paid_carat_use", "excluded_from_projection",
+)
+
+
+def plan_from_snapshot(snapshot, *, owner, name, known):
+    """A NEW plan in `owner`'s account from a Community plans post's frozen
+    copy (plan_gallery.py). Raises PlanCapReached at the cap, like
+    create_plan(); created inactive, the client activates it.
+
+    `known` is plan_gallery.known_banners' answer: a row whose banner has left
+    the catalogue is skipped, as the post itself stops showing it. A note
+    comes along only when the author posted it. The snapshot's `income` never
+    does: a copy is a plain plan on the copier's own stats, with no income
+    profile (the owner's reading, 2026-11-20: the author's income is context
+    on the post, not something a copy takes).
+    """
+    get_active_plan(owner)
+    with transaction.atomic():
+        _refuse_at_cap(owner)
+        plan = Plan.objects.create(user=owner, name=name, public_id=generate_unique_public_id())
+        UserPlannedBanner.objects.bulk_create([
+            UserPlannedBanner(
+                plan=plan,
+                # TRANSITIONAL: `user` is still NOT NULL until release 2 drops it.
+                user=owner,
+                banner_uma_id=row.get("banner_uma"),
+                banner_support_id=row.get("banner_support"),
+                banner_step_up_id=row.get("banner_step_up"),
+                note=row.get("note", ""),
+                **{field: row[field] for field in _SNAPSHOT_ROW_FIELDS if field in row},
+            )
+            for row in snapshot.get("rows", [])
+            if any(row.get(key) in known[key] for key in ("banner_uma", "banner_support", "banner_step_up")
+                   if row.get(key))
+        ])
+    return plan
+
+
 def count_copy(source):
     """One more copy of `source` was taken through its share link.
 

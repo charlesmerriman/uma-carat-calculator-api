@@ -196,6 +196,27 @@ def cover(art, blur):
     return picture.crop((left, top, left + WIDTH, top + HEIGHT)).filter(ImageFilter.GaussianBlur(blur))
 
 
+def tile(art, width, height):
+    """An uploaded picture (a FieldFile) scaled to cover a width x height box
+    and cropped to its centre, unblurred; None when it can't be read. A
+    Community plan's preview draws its first banners as a row of these
+    (plan_preview.py)."""
+    try:
+        with art.open("rb") as handle:
+            picture = Image.open(io.BytesIO(handle.read()))
+            picture.load()
+    except Exception as error:  # pylint: disable=broad-exception-caught
+        # As cover(): a crawler must never get a 500 for one unreadable file.
+        logger.warning("Preview art %s could not be read: %r", getattr(art, "name", art), error)
+        return None
+    picture = picture.convert("RGB")
+    scale = max(width / picture.width, height / picture.height)
+    size = (round(picture.width * scale), round(picture.height * scale))
+    picture = picture.resize(size, Image.Resampling.LANCZOS)
+    left, top = (size[0] - width) // 2, (size[1] - height) // 2
+    return picture.crop((left, top, left + width, top + height))
+
+
 def shade(image, colour, left, right):
     """Darken a backdrop left to right, from alpha `left` to `right`, so white
     words stay readable on any of it."""
