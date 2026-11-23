@@ -32,6 +32,13 @@
 # module changed. Newest entry first is conventional here but not required — the
 # page sorts by date.
 
+- key: longer-notes
+  date: 2026-11-23
+  title: "Longer notes"
+  version: "v2.23"
+  changes:
+    - changed: "Banner notes hold up to 1,000 characters now, in the Calculator and on plans you post."
+
 - key: card-frames-and-community-plans
   date: 2026-11-23
   title: "Cards in their frames, and Community plans for supporters"
