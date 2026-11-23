@@ -308,16 +308,18 @@ def _alert_if_sunk(post):
     climbs back and sinks again doesn't page anyone twice. The message holds
     the link, the event and the split, never the caption or a name: Discord
     keeps what it is sent (moderation_cards.py, "Why so little stays").
+    A plan post has no event, so it is named as a pull plan and nothing more.
     """
     ups, downs = tally(post.votes)
     if ups - downs > DOWNVOTE_ALERT_SCORE:
         return
     site = settings.FRONTEND_URL.rstrip("/")
+    what = "A pull plan" if post.is_plan else f"A team on {post.event}"
     discord_messages.send(
         f"downvoted:post:{post.pk}",
         settings.DISCORD_MOD_QUEUE_CHANNEL_ID,
         content=(
-            f"A team on {post.event} is down to {ups - downs} ({ups} up, {downs} down): "
+            f"{what} is down to {ups - downs} ({ups} up, {downs} down): "
             f"[View the post]({site}/post/{post.public_id})"
         ),
     )
@@ -409,7 +411,12 @@ def copy_snapshot(request, post):
     """The team a "Copy to my teams" adds, counting the copy unless it is the
     author's own. The client adds the team through its ordinary path
     (POST /pvp-teams, or a guest's device store), so the rules every path into
-    a team applies, the card release rule included, apply here too."""
+    a team applies, the card release rule included, apply here too.
+
+    Teams only. The view answers 404 for a plan post first; this is the
+    backstop for any other caller, before anything is counted."""
+    if post.is_plan:
+        raise GalleryRefused("Only a team can be copied to My team.", status=404)
     user = getattr(request, "user", None)
     if not (user is not None and user.is_authenticated and user.pk == post.author_id):
         GalleryPost.objects.filter(pk=post.pk).update(copy_count=F("copy_count") + 1)

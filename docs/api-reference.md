@@ -1399,6 +1399,12 @@ written for the player: `400` for something they can fix, `403` for something th
 do. A hidden post, a blocked author's post and an unknown id are the same `404`, except to
 the post's own author.
 
+Every row and post says its `kind`: `"pvp_team"` or `"plan"` (a Community plans post,
+`notes/pull-plan-database-plan.md`). The common keys are the same for both; a team adds
+`umas` (and `team`, `event` in full). A plan post's own keys arrive with the plan feed; until
+then it carries the common keys only, its share page uses the site's tags, its picture is a
+`404`, and the team copy route below answers `404` for it.
+
 | Route | Who | Returns |
 |---|---|---|
 | `POST /pvp-teams/<id>/publish` `{confirm_public_identity: true, caption?, strategy?}` | owner | `201` a new post, `200` a re-post (link, comments and votes kept, see below). Needs the flag literally `true`, a display name, three umas, eighteen cards, no repeated character, a caption (140) and strategy (2,000) that pass the filters. A refusal about one of the two texts carries `"field": "caption"` or `"strategy"` beside `error` |
@@ -1407,8 +1413,8 @@ the post's own author.
 | `DELETE /gallery/posts/<public_id>` | author | `204`, the post with its votes, comments and reports |
 | `PUT` / `DELETE /gallery/posts/<public_id>/vote` | signed in | PUT takes `{value: "up" \| "down"}` (no body = up; a second PUT switches); answers `{score, my_vote}`, plus `split` for staff; `400` on another value, `403` on your own post |
 | `POST /gallery/posts/<public_id>/view` | anyone | always `204`; counted once per viewer per day |
-| `POST /gallery/posts/<public_id>/copy` | anyone | `{kind, event, members}`; the client adds the team through its own path |
-| `GET /gallery/my-posts` | signed in | the caller's posts, hidden ones too (`"hidden": true`) |
+| `POST /gallery/posts/<public_id>/copy` | anyone | a team post: `{kind, event, members}` (here `kind` is the event's, `cm` or `loh`); the client adds the team through its own path. `404` for a plan post |
+| `GET /gallery/my-posts` | signed in | the caller's team posts, hidden ones too (`"hidden": true`) |
 | `GET /gallery/posts/<public_id>/comments?page=N` | anyone | `{count, page, has_more, results: [comment]}`, 50 top comments per page |
 | `POST /gallery/posts/<public_id>/comments` `{body, parent?}` | signed in, display name | `201` the comment |
 | `PATCH` / `DELETE /gallery/comments/<id>` `{body}` | its author | the comment / `204` |
