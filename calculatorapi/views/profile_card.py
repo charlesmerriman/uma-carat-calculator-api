@@ -25,7 +25,10 @@ leave (the same rule as views/plan_public.py). "label", never "name": every
 gallery test forbids a "name" key, so a team's private name can't slip through.
 
 A hidden post, a blocked author, a deleted or hidden comment and an unknown id
-all answer one 404 body.
+all answer one 404 body. So does a Community plans post, or a comment on one,
+for a viewer plan_gallery.can_open refuses, and their card lists no plan posts:
+nothing links to a page they can't open (early access first, Design 8 of
+notes/pull-plan-database-plan.md).
 """
 
 from collections import defaultdict
@@ -36,7 +39,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 
 from calculatorapi import gallery, gallery_ranking, plan_gallery, public_identity
-from calculatorapi.models import GalleryComment, GalleryPost, Plan, UserPlannedBanner
+from calculatorapi.models import GalleryComment, GalleryPost, GalleryPostKind, Plan, UserPlannedBanner
 from calculatorapi.views.gallery import vote_fields
 from calculatorapi.views.plan_public import plan_totals
 
@@ -73,9 +76,12 @@ def _post_row(post, known):
     return row
 
 
-def _posts(user):
+def _posts(user, viewer):
+    visible = gallery.visible_posts().filter(author=user)
+    if not (plan_gallery.can_use(viewer) or (viewer.is_authenticated and viewer.pk == user.pk)):
+        visible = visible.exclude(kind=GalleryPostKind.PLAN)
     posts = list(
-        gallery_ranking.with_points(gallery.visible_posts().filter(author=user))
+        gallery_ranking.with_points(visible)
         .select_related("champions_meeting", "league_of_heroes")
         .order_by("-published_at", "-id")[:POSTS_SHOWN]
     )
@@ -104,24 +110,26 @@ def _plans(user):
     return cards
 
 
-def _card(user):
+def _card(user, viewer):
     return Response({
         "favorites": public_identity.favorite_umas(user),
-        "posts": _posts(user),
+        "posts": _posts(user, viewer),
         "plans": _plans(user),
     })
 
 
-def _comment_author(comment_id):
-    """Who wrote this comment, or None if a reader couldn't see it."""
+def _comment_author(comment_id, viewer):
+    """Who wrote this comment, or None if this reader couldn't see it."""
     comment = (
-        GalleryComment.objects.select_related("author", "guide")
+        GalleryComment.objects.select_related("author", "guide", "post")
         .filter(pk=comment_id, is_deleted=False, is_hidden=False)
         .first()
     )
     if comment is None or comment.author is None or comment.author.publishing_blocked:
         return None
     if comment.post_id and not gallery.visible_posts().filter(pk=comment.post_id).exists():
+        return None
+    if comment.post_id and not plan_gallery.can_open(comment.post, viewer):
         return None
     if comment.guide_id and not comment.guide.is_out_of_draft:
         return None
@@ -131,16 +139,19 @@ def _comment_author(comment_id):
 @api_view(["GET"])
 @permission_classes([permissions.AllowAny])
 @throttle_classes([ProfileCardThrottle])
-def profile_card_for_post(request, public_id):  # pylint: disable=unused-argument
+def profile_card_for_post(request, public_id):
     try:
-        return _card(gallery.get_post(public_id).author)
+        post = gallery.get_post(public_id)
     except GalleryPost.DoesNotExist:
         return Response(_NOT_FOUND, status=404)
+    if not plan_gallery.can_open(post, request.user):
+        return Response(_NOT_FOUND, status=404)
+    return _card(post.author, request.user)
 
 
 @api_view(["GET"])
 @permission_classes([permissions.AllowAny])
 @throttle_classes([ProfileCardThrottle])
-def profile_card_for_comment(request, comment_id):  # pylint: disable=unused-argument
-    author = _comment_author(comment_id)
-    return Response(_NOT_FOUND, status=404) if author is None else _card(author)
+def profile_card_for_comment(request, comment_id):
+    author = _comment_author(comment_id, request.user)
+    return Response(_NOT_FOUND, status=404) if author is None else _card(author, request.user)

@@ -110,13 +110,20 @@ class PlanPostConstraintTests(RouteFixture):
         self.assertIsNone(post.plan_range)
 
 
-class PlanPostRouteTests(RouteFixture):
+class PlanPostRouteTests(RouteFixture):  # pylint: disable=too-many-public-methods
 
     def setUp(self):
         super().setUp()
         self.author = self.person()
         self.post_row = make_plan_post(self.author)
         self.url = f"/gallery/posts/{self.post_row.public_id}"
+
+    def reader(self):
+        """An account with early access: Community plans is theirs first."""
+        user = self.person()
+        user.early_access = True
+        user.save()
+        return user
 
     def test_detail_is_early_access_and_says_its_kind(self):
         self.assertEqual(APIClient().get(self.url).status_code, 403)
@@ -137,7 +144,7 @@ class PlanPostRouteTests(RouteFixture):
         self.assertEqual(response.data["kind"], "pvp_team")
 
     def test_votes_both_ways_and_the_score_never_reads_below_zero(self):
-        up, down, down_too = self.person(), self.person(), self.person()
+        up, down, down_too = self.reader(), self.reader(), self.reader()
         self.assertEqual(self.client_for(up).put(f"{self.url}/vote", {"value": "up"}, format="json").status_code, 200)
         self.client_for(down).put(f"{self.url}/vote", {"value": "down"}, format="json")
         response = self.client_for(down_too).put(f"{self.url}/vote", {"value": "down"}, format="json")
@@ -145,20 +152,58 @@ class PlanPostRouteTests(RouteFixture):
         self.assertEqual(gallery.tally(self.post_row.votes), (1, 2))
 
     def test_a_view_is_counted(self):
-        self.assertEqual(APIClient().post(f"{self.url}/view").status_code, 204)
+        self.assertEqual(self.client_for(self.reader()).post(f"{self.url}/view").status_code, 204)
         self.post_row.refresh_from_db()
         self.assertEqual(self.post_row.view_count, 1)
 
     def test_comments(self):
-        reader = self.person()
+        reader = self.reader()
         created = self.client_for(reader).post(f"{self.url}/comments", {"body": "Nice plan"}, format="json")
         self.assertEqual(created.status_code, 201)
-        thread = APIClient().get(f"{self.url}/comments")
+        thread = self.client_for(self.reader()).get(f"{self.url}/comments")
         self.assertEqual(thread.status_code, 200)
         self.assertIn("Nice plan", str(thread.data))
 
+    def test_every_route_is_early_access_first(self):
+        """Votes, comments, reports, views and cards ask the same gate as the
+        detail, so nobody without access reaches a plan post another way."""
+        comment = gallery.add_comment(self.reader(), self.post_row, "Nice plan")
+        outsider = self.client_for(self.person())
+        for client in (APIClient(), outsider):
+            self.assertEqual(client.get(f"{self.url}/comments").status_code, 404)
+            self.assertEqual(client.post(f"{self.url}/view").status_code, 204)
+            self.assertEqual(client.get(f"/profile-cards/post/{self.post_row.public_id}").status_code, 404)
+            self.assertEqual(client.get(f"/profile-cards/comment/{comment.pk}").status_code, 404)
+        self.assertEqual(outsider.put(f"{self.url}/vote", {"value": "up"}, format="json").status_code, 404)
+        self.assertEqual(outsider.post(f"{self.url}/comments", {"body": "Hi"}, format="json").status_code, 404)
+        self.assertEqual(outsider.post("/gallery/reports", {"post": self.post_row.public_id, "reason": "spam"},
+                                       format="json").status_code, 404)
+        self.assertEqual(outsider.post("/gallery/reports", {"comment": comment.pk, "reason": "spam"},
+                                       format="json").status_code, 404)
+        self.post_row.refresh_from_db()
+        self.assertEqual(self.post_row.view_count, 0)
+        self.assertEqual(gallery.tally(self.post_row.votes), (0, 0))
+
+    def test_a_card_lists_plan_posts_only_to_whoever_can_open_them(self):
+        team_post = self.post(self.author)
+        card = f"/profile-cards/post/{team_post.public_id}"
+
+        def listed(client):
+            return {row["kind"] for row in client.get(card).data["posts"]}
+
+        self.assertEqual(listed(APIClient()), {"pvp_team"})
+        self.assertEqual(listed(self.client_for(self.person())), {"pvp_team"})
+        self.assertEqual(listed(self.client_for(self.reader())), {"pvp_team", "plan"})
+        # The author sees their own, early access or not.
+        self.assertEqual(listed(self.client_for(self.author)), {"pvp_team", "plan"})
+
+    def test_the_author_reaches_their_own_post_without_early_access(self):
+        response = self.client_for(self.author).get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.client_for(self.author).get(f"{self.url}/comments").status_code, 200)
+
     def test_report(self):
-        response = self.client_for(self.person()).post(
+        response = self.client_for(self.reader()).post(
             "/gallery/reports", {"post": self.post_row.public_id, "reason": "spam"}, format="json"
         )
         self.assertEqual(response.status_code, 201)
@@ -205,7 +250,7 @@ class PlanPostRouteTests(RouteFixture):
 
     def test_profile_card_lists_plans_with_their_totals(self):
         team_post = self.post(self.author)
-        response = APIClient().get(f"/profile-cards/post/{self.post_row.public_id}")
+        response = self.client_for(self.reader()).get(f"/profile-cards/post/{self.post_row.public_id}")
         self.assertEqual(response.status_code, 200)
         rows = {row["public_id"]: row for row in response.data["posts"]}
         self.assertEqual(set(rows), {team_post.public_id, self.post_row.public_id})

@@ -1415,7 +1415,7 @@ for a plan post.
 |---|---|---|
 | `POST /pvp-teams/<id>/publish` `{confirm_public_identity: true, caption?, strategy?}` | owner | `201` a new post, `200` a re-post (link, comments and votes kept, see below). Needs the flag literally `true`, a display name, three umas, eighteen cards, no repeated character, a caption (140) and strategy (2,000) that pass the filters. A refusal about one of the two texts carries `"field": "caption"` or `"strategy"` beside `error` |
 | `GET /pvp-gallery/<kind>/<event_id>?sort=hot\|top\|new&uma=<id>&limit=N` | anyone | `{count, sort, limit, has_more, results: [row], umas: [{uma, count}]}`: the top `limit` rows (20 by default, at most 200) |
-| `GET /gallery/posts/<public_id>` | anyone | the full post |
+| `GET /gallery/posts/<public_id>` | anyone (a plan post: early access, else `403`) | the full post. Every other route on a plan post (vote, view, comments, reports, its profile card) answers a viewer without early access as a missing post; the author always reaches their own |
 | `DELETE /gallery/posts/<public_id>` | author | `204`, the post with its votes, comments and reports |
 | `PUT` / `DELETE /gallery/posts/<public_id>/vote` | signed in | PUT takes `{value: "up" \| "down"}` (no body = up; a second PUT switches); answers `{score, my_vote}`, plus `split` for staff; `400` on another value, `403` on your own post |
 | `POST /gallery/posts/<public_id>/view` | anyone | always `204`; counted once per viewer per day |
