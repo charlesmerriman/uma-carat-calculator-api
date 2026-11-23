@@ -35,6 +35,15 @@ two places because of how --parallel starts its workers:
 `test_the_suite_runs_on_the_fast_hasher` (tests/test_admin_security.py)
 fails if either path stops working, so a silent return to the slow hasher
 shows up as a red test rather than as a slow suite.
+
+THE RATE LIMIT RIDES THE SAME TWO PATHS
+---------------------------------------
+The per-visitor request limit (calculatorapi/rate_limit.py) is off for the
+run, the same way: the override below for this process and forked workers,
+settings.py's CALCULATOR_TEST_RUN branch for spawned ones. Otherwise a test
+that makes a few hundred requests with one token would trip it.
+tests/test_rate_limit.py turns it on per class with override_settings, and
+`test_a_test_run_starts_with_the_limit_off` there guards this path.
 """
 
 import os
@@ -60,7 +69,11 @@ class FastHashRunner(DiscoverRunner):
         # override_settings rather than assigning to settings: enable() sends
         # setting_changed, which empties django.contrib.auth.hashers' cache of
         # the hasher list, so a hash computed before this point is not reused.
-        self._fast_hashers = override_settings(PASSWORD_HASHERS=FAST_PASSWORD_HASHERS)
+        self._fast_hashers = override_settings(
+            PASSWORD_HASHERS=FAST_PASSWORD_HASHERS,
+            RATE_LIMIT_ACCOUNT_MODE="off",
+            RATE_LIMIT_ADDRESS_MODE="off",
+        )
         self._fast_hashers.enable()
         os.environ[TESTING_ENV] = "1"
 
