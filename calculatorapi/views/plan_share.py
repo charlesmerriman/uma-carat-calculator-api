@@ -44,8 +44,6 @@ from calculatorapi.views.gallery import GalleryThrottle
 from calculatorapi.views.gallery_share import IMMUTABLE, SITE_DESCRIPTION, SITE_NAME
 from calculatorapi.views.plan_public import plan_totals, rows_in_order
 
-# How many banner names the description lists before "and N more".
-NAMES_SHOWN = 3
 # The notes' share of the description. Discord shows roughly 350 characters
 # of a description; the totals and names take the first hundred or so.
 NOTES_MAX_CHARS = 200
@@ -65,10 +63,6 @@ def _site(path=""):
     return f"{settings.FRONTEND_URL}{path}"
 
 
-def _plural(count, one, many):
-    return f"{count:,} {one if count == 1 else many}"
-
-
 def _default_context(public_id):
     return {
         "title": SITE_NAME,
@@ -85,43 +79,14 @@ def _default_context(public_id):
     }
 
 
-def _counts(rows, pulls, steps):
-    """'230 pulls on 4 banners', with the steps when there are any. A step is
-    not converted to pulls (plan_totals says why)."""
-    counts = [_plural(pulls, "pull", "pulls")] if pulls or not steps else []
-    if steps:
-        counts.append(_plural(steps, "step-up step", "step-up steps"))
-    return f"{' and '.join(counts)} on {_plural(len(rows), 'banner', 'banners')}"
-
-
 def _title(rows, pulls, steps):
     """'Shared pull plan: 230 pulls on 4 banners'."""
-    return f"Shared pull plan: {_counts(rows, pulls, steps)}" if rows else "Shared pull plan"
-
-
-def _banner_list(rows):
-    """'T.M. Opera, Oguri Cap (support), Mihono Bourbon and 2 more' (no full
-    stop: the picture prints it as a line). Support banners are named after
-    their card, which is often an uma's name too."""
-    names = []
-    for row in rows:
-        banner = row.banner_target
-        if banner is None:
-            continue
-        names.append(f"{banner.name} (support)" if row.banner_support_id else banner.name)
-    if not names:
-        return ""
-    shown, rest = names[:NAMES_SHOWN], len(names) - NAMES_SHOWN
-    if rest > 0:
-        return f"{', '.join(shown)} and {rest} more"
-    if len(shown) == 1:
-        return shown[0]
-    return f"{', '.join(shown[:-1])} and {shown[-1]}"
+    return f"Shared pull plan: {plan_preview.plan_counts(rows, pulls, steps)}" if rows else "Shared pull plan"
 
 
 def _banner_names(rows):
-    """The description's sentence: _banner_list with its full stop."""
-    names = _banner_list(rows)
+    """The description's sentence: banner_list with its full stop."""
+    names = plan_preview.banner_list(rows)
     return f"{names}." if names else ""
 
 
@@ -154,8 +119,8 @@ def card(rows, pulls, steps):
     """What the plan's picture says (plan_preview.py): the tags' facts, never
     the notes."""
     return plan_preview.Card(
-        headline=_counts(rows, pulls, steps) if rows else "No banners in it yet",
-        names=_banner_list(rows),
+        headline=plan_preview.plan_counts(rows, pulls, steps) if rows else "No banners in it yet",
+        names=plan_preview.banner_list(rows),
         art=_art(rows),
     )
 

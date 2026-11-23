@@ -251,6 +251,21 @@ shows totals only, never its name or id. `gallery.visible_posts` is the read fil
 `publishing_blocked` and a hidden post close the card, and `gallery.erase_users` removes it with
 the account. The Privacy Policy and the post dialog both mention the card.
 
+### A Community plans post: a plan beside a name, the author's choices only
+
+A plan post (`plan_gallery.py`, `notes/pull-plan-database-plan.md`) is the second thing a
+person can show beside their name, and posting it is its own opt-in: none of a person's
+share links posts anything, and a share link's `share_notes` / `share_stats` never tick a
+post's boxes. A post always shows the plan's banners and pulls, the title and words its author
+wrote, and `poster_block`. Two more things show **only when the author ticks them, every
+time they post**: their row notes (through the gallery's text filters, 300 characters each),
+and their **income** (`POSTED_INCOME_FIELDS`: ranks and income settings, which the page turns
+into "average a month"). **Never a balance**: carats, tickets, selector tickets, shards and
+crystals stay on the account (the owner, 2026-11-20). Never the plan's name, its id,
+`pulls_already_made` or the source plan. A copy of a post is a plain plan on the copier's own
+stats. The link preview (`/post/<id>`) carries only counts and catalogue names, as a shared
+plan's does. Early access first, through one gate (`plan_gallery.can_use`).
+
 ### Reports reach moderators in a private Discord channel, and leave it again
 
 Since 2026-10-20 a reported post or comment gets a card in `#calc-mod-queue`

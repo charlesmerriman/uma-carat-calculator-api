@@ -134,20 +134,21 @@ class SharedPlannedPurchaseSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-def rows_in_order(plan):
+def rows_in_order(plan, emap=None):
     """The plan's rows in the order its owner sees them (see
     planned_banners_in_order). The banner FKs are joined because both sort
     keys read them, and their timelines because the link preview
     (views/plan_share.py) looks for art on them; one join is cheaper than a
-    query per row there."""
+    query per row there. `emap` is the BannerTimeline date map, for a caller
+    that already built one (plan_gallery.py reads it again for each row's end)."""
     rows = UserPlannedBanner.objects.filter(plan=plan).select_related(
         "banner_uma__banner_timeline",
         "banner_support__banner_timeline",
         "banner_step_up__banner_timeline",
     )
-    return planned_banners_in_order(
-        rows, emap=build_effective_date_maps()[BannerTimeline]
-    )
+    if emap is None:
+        emap = build_effective_date_maps()[BannerTimeline]
+    return planned_banners_in_order(rows, emap=emap)
 
 
 def plan_totals(rows):

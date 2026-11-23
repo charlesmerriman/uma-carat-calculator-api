@@ -168,6 +168,13 @@ def item_text(item):
             f"{first}: {item.caption}" if item.caption else "",
             f"{second}: {item.strategy}" if item.strategy else "",
         ]
+        if item.is_plan:
+            # Notes are public text when the author posted them. Never the
+            # income: it is numbers, not words, and nothing to moderate.
+            rows = (item.plan_snapshot or {}).get("rows", [])
+            notes = [row["note"].strip() for row in rows if row.get("note", "").strip()]
+            if notes:
+                parts.append("Notes: " + " / ".join(notes))
         return "\n\n".join(part for part in parts if part) or f"({what})"
     if item.is_deleted:
         return "(deleted by its author)"

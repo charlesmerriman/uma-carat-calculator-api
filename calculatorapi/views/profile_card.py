@@ -15,8 +15,8 @@ and these routes reach only what the post and comment threads already show.
 WHAT IT HOLDS, AND WHY NOTHING ELSE
 -----------------------------------
     favorites  every favorite uma their tier covers (public_identity)
-    posts      their visible gallery TEAM posts, newest POSTS_SHOWN (plan posts
-               join once the card can draw one: pull-plan-database-plan.md)
+    posts      their visible gallery posts, teams and Community plans, newest
+               POSTS_SHOWN; a team says its event, a plan its totals
     plans      their shared plans' totals, only if they turned that on
 
 The name, picture and tier aren't here: the card opens from a post or comment
@@ -35,8 +35,8 @@ from rest_framework.decorators import api_view, permission_classes, throttle_cla
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 
-from calculatorapi import gallery, gallery_ranking, public_identity
-from calculatorapi.models import GalleryComment, GalleryPost, GalleryPostKind, Plan, UserPlannedBanner
+from calculatorapi import gallery, gallery_ranking, plan_gallery, public_identity
+from calculatorapi.models import GalleryComment, GalleryPost, Plan, UserPlannedBanner
 from calculatorapi.views.gallery import vote_fields
 from calculatorapi.views.plan_public import plan_totals
 
@@ -51,24 +51,36 @@ class ProfileCardThrottle(UserRateThrottle):
     scope = "profile_card"
 
 
-def _posts(user):
-    posts = gallery_ranking.with_points(
-        gallery.visible_posts().filter(author=user, kind=GalleryPostKind.PVP_TEAM)
-    )
-    return [
-        {
-            "public_id": post.public_id,
-            "caption": post.caption,
-            "score": vote_fields(post.ups, post.downs, None, None)["score"],
-            "event": {
-                "kind": post.event_kind,
-                "id": post.champions_meeting_id or post.league_of_heroes_id,
-                "label": post.event.name,
-            },
+def _post_row(post, known):
+    """One post on the card: what it is, and a team's event or a plan's totals."""
+    row = {
+        "public_id": post.public_id,
+        "kind": post.kind,
+        "caption": post.caption,
+        "score": vote_fields(post.ups, post.downs, None, None)["score"],
+    }
+    if post.is_plan:
+        row_count, pulls, steps = plan_gallery.summary(plan_gallery.rows_for_display(post.plan_snapshot, known))
+        # "totals", not "plan": the card's tests forbid a "plan" key, which is
+        # what a plan's id is called everywhere else.
+        row["totals"] = {"row_count": row_count, "pull_count": pulls, "step_count": steps}
+    else:
+        row["event"] = {
+            "kind": post.event_kind,
+            "id": post.champions_meeting_id or post.league_of_heroes_id,
+            "label": post.event.name,
         }
-        for post in posts.select_related("champions_meeting", "league_of_heroes")
+    return row
+
+
+def _posts(user):
+    posts = list(
+        gallery_ranking.with_points(gallery.visible_posts().filter(author=user))
+        .select_related("champions_meeting", "league_of_heroes")
         .order_by("-published_at", "-id")[:POSTS_SHOWN]
-    ]
+    )
+    known = plan_gallery.known_banners([post.plan_snapshot for post in posts if post.is_plan])
+    return [_post_row(post, known) for post in posts]
 
 
 def _plans(user):

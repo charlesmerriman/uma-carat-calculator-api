@@ -66,7 +66,7 @@ class ProfileCardTests(CalculatorTestCase):  # pylint: disable=too-many-public-m
         self.favorite(0, "Oguri Cap")
         body = self.card().json()
         self.assertEqual(set(body), {"favorites", "posts", "plans"})
-        self.assertEqual(set(body["posts"][0]), {"public_id", "caption", "score", "event"})
+        self.assertEqual(set(body["posts"][0]), {"public_id", "kind", "caption", "score", "event"})
         raw = self.card().content.decode()
         self.assertNotIn("user_author1", raw)
         self.assertNotIn("a@example", raw)
