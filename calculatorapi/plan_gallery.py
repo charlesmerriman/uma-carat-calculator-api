@@ -149,6 +149,18 @@ def can_use(user):
     return benefits.early_access(user)
 
 
+def can_open(post, viewer):
+    """Whether `viewer` may reach this post through any route: read it, vote,
+    comment, report, count a view, or open its author's card. Every post
+    route asks this (views/gallery.py, views/profile_card.py), so a plan post
+    is early access first everywhere, not only on its detail. A team post is
+    anyone's; a plan's author always reaches their own (a lapsed supporter can
+    still read and take down what they posted)."""
+    if not post.is_plan or can_use(viewer):
+        return True
+    return bool(viewer and viewer.is_authenticated and viewer.pk == post.author_id)
+
+
 # ── Posting ──────────────────────────────────────────────────────────────────
 
 

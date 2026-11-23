@@ -264,7 +264,10 @@ into "average a month"). **Never a balance**: carats, tickets, selector tickets,
 crystals stay on the account (the owner, 2026-11-20). Never the plan's name, its id,
 `pulls_already_made` or the source plan. A copy of a post is a plain plan on the copier's own
 stats. The link preview (`/post/<id>`) carries only counts and catalogue names, as a shared
-plan's does. Early access first, through one gate (`plan_gallery.can_use`).
+plan's does. Early access first, through one gate (`plan_gallery.can_use`), which every
+route that reaches a plan post asks through `plan_gallery.can_open`: the detail (a 403), and
+votes, comments, reports, views and the profile cards (the same 404 as a missing post; a card
+lists no plan posts to a viewer who can't open them). The author always reaches their own.
 
 ### Reports reach moderators in a private Discord channel, and leave it again
 

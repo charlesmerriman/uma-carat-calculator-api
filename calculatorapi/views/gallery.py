@@ -320,11 +320,15 @@ def serialize_posts(posts, viewer, *, full=False):
     return rows
 
 
-def _post_or_404(public_id, viewer):
+def _post_or_404(public_id, viewer, *, gated=True):
+    """The post if `viewer` may reach it, else None. `gated` adds
+    plan_gallery.can_open: a plan post is early access first on every route.
+    Only the detail turns it off, to answer that case with its own 403."""
     try:
-        return gallery.get_post(public_id, viewer)
+        post = gallery.get_post(public_id, viewer)
     except GalleryPost.DoesNotExist:
         return None
+    return post if not gated or plan_gallery.can_open(post, viewer) else None
 
 
 def post_payload(post, viewer):
@@ -339,10 +343,10 @@ def post_payload(post, viewer):
 @permission_classes([permissions.AllowAny])
 @throttle_classes([GalleryReadThrottle])
 def gallery_post_detail(request, public_id):
-    post = _post_or_404(public_id, request.user)
+    post = _post_or_404(public_id, request.user, gated=False)
     if post is None:
         return Response(NOT_FOUND, status=status.HTTP_404_NOT_FOUND)
-    if post.is_plan and request.method == "GET" and not plan_gallery.can_use(request.user):
+    if request.method == "GET" and not plan_gallery.can_open(post, request.user):
         return Response({"error": plan_gallery.REFUSED_TEXT}, status=status.HTTP_403_FORBIDDEN)
     if request.method == "DELETE":
         if not request.user.is_authenticated or request.user.pk != post.author_id:
