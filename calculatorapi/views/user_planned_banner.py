@@ -12,7 +12,9 @@ from .banner_step_up import BannerStepUpSerializer
 # list is re-sent on every auto-save -- an uncapped note would ride along in
 # every one of those bodies. The client mirrors this number for its counter
 # (NOTE_MAX_LENGTH in the frontend's BannerNote); change both together.
-NOTE_MAX_LENGTH = 500
+# 1,000 since 2026-11-23 (was 500): players found it too short for the notes
+# they post with a plan, and a posted note's limit (plan_gallery) matches it.
+NOTE_MAX_LENGTH = 1000
 
 # Copies of a card: the card itself plus four limit breaks. The most a
 # two-card target can ask for (the client's MAX_COPIES).
