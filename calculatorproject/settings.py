@@ -708,6 +708,10 @@ MIDDLEWARE = [
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
+    # The per-visitor request limit (calculatorapi/rate_limit.py): after CORS
+    # (a 429 keeps its CORS headers) and WhiteNoise (static files don't count),
+    # before authentication and every view (a refusal costs almost nothing).
+    "calculatorapi.rate_limit.RateLimitMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -930,7 +934,30 @@ CACHES = {
         "LOCATION": "course-zones",
         "OPTIONS": {"MAX_ENTRIES": 200},
     },
+    # The per-visitor request counters (calculatorapi/rate_limit.py), two or
+    # three tiny keys per active visitor. Its own alias, like "gallery", so they
+    # never push the /calculator-data payload out of "default".
+    "ratelimit": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "ratelimit",
+        "OPTIONS": {"MAX_ENTRIES": 20000},
+    },
 }
+
+# The per-visitor request limit: calculatorapi/rate_limit.py and
+# notes/rate-limit-plan.md. Each window is (seconds, most requests in it);
+# crossing either blocks the account or address for the block time.
+RATE_LIMIT_WINDOWS = ((60, 300), (600, 1200))
+RATE_LIMIT_BLOCK_SECONDS = 600
+# "enforce", "observe" or "off" (checked when the middleware loads). The
+# address half observes until the release's checks. A test run forces both
+# off (here for spawned workers; calculatorproject/test_runner.py for the rest).
+_TEST_RUN = os.environ.get("CALCULATOR_TEST_RUN") == "1"
+RATE_LIMIT_ACCOUNT_MODE = "off" if _TEST_RUN else os.getenv("RATE_LIMIT_ACCOUNT_MODE", "enforce").strip().lower()
+RATE_LIMIT_ADDRESS_MODE = "off" if _TEST_RUN else os.getenv("RATE_LIMIT_ADDRESS_MODE", "observe").strip().lower()
+# A request whose X-Build-Key matches skips the limit: the web build fetches
+# ~3,080 pages. Blank: no exemption. Same value as the site's PRERENDER_API_KEY.
+RATE_LIMIT_BUILD_KEY = os.getenv("RATE_LIMIT_BUILD_KEY", "")
 
 # Log all Django errors to stdout so DigitalOcean runtime logs capture tracebacks.
 # Without this, Django silently swallows 500 errors when DEBUG=False.

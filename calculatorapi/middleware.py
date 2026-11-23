@@ -57,6 +57,9 @@ WINDOW_MINUTES = 10
 # file, a redirect from CommonMiddleware) has no route pattern.
 NO_ROUTE = "(no route)"
 
+# A request the rate limit refused before it reached a view.
+RATE_LIMITED = "(rate limited)"
+
 
 class QueryTally:
     """An execute wrapper (Django's hook for instrumenting queries) that counts
@@ -159,7 +162,12 @@ ROUTE_STATS = RouteStats()
 
 def route_label(request):
     """"PATCH calculator-data": the method and the matched URL PATTERN, never
-    the path itself, so ids and query strings never reach the totals."""
+    the path itself, so ids and query strings never reach the totals. A request
+    the rate limit refused (calculatorapi/rate_limit.py) never reached URL
+    resolution; it gets one label of its own, so a blocked flood reads as one
+    line in the bot's alert instead of thousands of "(no route)"."""
+    if getattr(request, "rate_limited", False):
+        return f"{request.method} {RATE_LIMITED}"
     match = getattr(request, "resolver_match", None)
     return f"{request.method} {match.route if match else NO_ROUTE}"
 

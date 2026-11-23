@@ -130,3 +130,5 @@ this file, which would overwrite every secret with an empty string.
 | `PATREON_CLIENT_*`, `PATREON_SYNC_SECRET` | The creator app and the shared secret behind the supporters sync |
 | `DO_SPACES_*` | Media storage |
 | `API_PUBLIC_PREFIX` | The path the API is served under (`/api` in production), so the docs page's "Try it out" calls the API |
+| `RATE_LIMIT_ACCOUNT_MODE`, `RATE_LIMIT_ADDRESS_MODE` | The per-visitor request limit (`calculatorapi/rate_limit.py`): `enforce`, `observe` (log only) or `off`. Defaults `enforce` and `observe`; anything else fails the boot |
+| `RATE_LIMIT_BUILD_KEY` | Requests with a matching `X-Build-Key` skip the limit: the web build's prerender, which fetches every Encyclopedia page. Same value as the static site's `PRERENDER_API_KEY` |
