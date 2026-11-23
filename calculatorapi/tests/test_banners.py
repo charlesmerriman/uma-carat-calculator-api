@@ -10,6 +10,7 @@ from django.apps import apps as django_apps
 from django.core.exceptions import ValidationError
 from django.core.management import call_command
 from django.db import connection
+from django.test import override_settings
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 from rest_framework.test import APIClient
@@ -21,7 +22,7 @@ from calculatorapi.models import (
     UmasOnUmaBanner, SupportsOnSupportBanner,
     BannerCategory, UserPlannedBanner,
 )
-from calculatorapi.tests.base import CalculatorTestCase
+from calculatorapi.tests.base import PLAIN_TEST_STORAGES, CalculatorTestCase
 from calculatorapi.tests.factories import auth_client, make_user
 
 
@@ -297,6 +298,9 @@ class EncyclopediaLinkIdTests(CalculatorTestCase):
         # A placeholder's id is made up and it has no page, so it sends none.
         self.assertEqual(ids, {'Kitasan Black': 30028, 'Any SSR': None})
 
+    # Plain storage: an image path becomes a URL through the default storage,
+    # S3 here, and CI has no bucket for it.
+    @override_settings(STORAGES=PLAIN_TEST_STORAGES)
     def test_cards_carry_what_the_card_frame_draws(self):
         SupportCard.objects.filter(name='Kitasan Black').update(
             card_type='speed', image_borderless='support_cards/borderless/kitasan.png')
