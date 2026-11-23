@@ -1404,8 +1404,8 @@ Every row and post says its `kind`: `"pvp_team"` or `"plan"` (a Community plans 
 `notes/pull-plan-database-plan.md`). The common keys are the same for both. A team adds
 `umas` (and `team`, `event` in full). A plan adds `plan: {row_count, pull_count, step_count,
 lead: [{banner_uma, banner_support, banner_step_up}], has_notes, has_income}`, `spending`,
-`sweat` (a value or null), `strategies` (a list) and `range` (`{id, label}` of the scenario it
-runs up to, or null); in full also `rows` (the share link's row shape, with `note` only when
+`sweat` (a value or null), `strategies` (a list), `range` (`{id, label}` of the scenario it
+runs up to, or null) and `stats.copies` on the row too (the list has a Copies column); in full also `rows` (the share link's row shape, with `note` only when
 the author posted notes) and `income` (the eleven income settings in `user_stats_data`'s shape,
 or null; never a balance). `lead` is the first four banners still ahead, else the first four.
 Reading a plan post is `403` without early access. The team copy route below answers `404`
