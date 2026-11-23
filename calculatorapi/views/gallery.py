@@ -306,11 +306,14 @@ def serialize_posts(posts, viewer, *, full=False):
             "my_vote": votes["my_vote"],
             "poster": blocks[post.author_id],
         }
+        if full or post.is_plan:
+            # Community plans' list has a Copies column, so a plan's row
+            # carries the count; a team's feed has no use for it.
+            row["stats"]["copies"] = post.copy_count
         if full:
             # The long text is the open post's alone: a feed of rows each
             # carrying up to 2,000 characters nobody sees there is waste.
             row["strategy"] = post.strategy
-            row["stats"]["copies"] = post.copy_count
             row["hidden"] = post.is_hidden or post.author.publishing_blocked
         row.update(_KIND_FIELDS[post.kind](post, full, known))
         rows.append(row)

@@ -306,6 +306,8 @@ class FeedTests(PlanGalleryFixture):
         self.assertTrue(row["plan"]["has_income"])
         self.assertEqual(len(row["plan"]["lead"]), 3)
         self.assertEqual(row["spending"], "f2p")
+        # The list's Copies column: a plan row carries the count.
+        self.assertEqual(row["stats"]["copies"], 0)
         self.assertNotIn("rows", row)
         self.assertNotIn("income", row)
         self.assertFalse(all_keys(response.data) & (FORBIDDEN | NEVER_POSTED | {"source_plan", "plan_snapshot"}))
