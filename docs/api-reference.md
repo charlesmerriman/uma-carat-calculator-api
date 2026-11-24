@@ -526,7 +526,7 @@ identical to one that does not exist.
 ### `GET /plans`
 
 The caller's plans, oldest first. Never empty: an account with none is given its "Main plan".
-Each plan carries `post_public_id`: its Community plans post, or null.
+Each plan carries `post_public_id`: its newest Community plans post (a plan may have several), or null.
 
 **Response `200`** `[ Plan ]`
 
@@ -1431,7 +1431,7 @@ for a plan post.
 | `GET /pvp-guides/<kind>/<event_id>/comments?section=<style>&page=N` | anyone who can read the guide | a guide section's thread, the same shape as a post's; no `section` = the whole guide |
 | `POST /pvp-guides/<kind>/<event_id>/comments` `{body, parent?, section}` | signed in, display name | `201` the comment; `400` for a section that isn't `""` or a running style |
 | `POST /gallery/reports` `{post: public_id}` or `{comment: id}`, `reason`, `note?` | signed in | `201`, no body; `409` on a repeat |
-| `POST /plans/<id>/publish` `{caption, strategy?, spending?, sweat?, strategies?: [style], include_notes?, include_income?, confirm_public_identity: true}` | the plan's owner, early access | `201` a new post, `200` an update (link, comments, votes kept). `caption` is the title and required; `strategy` is "About this plan"; the two include flags and the agree flag count only when literally `true`. Refusals name a `field` (`caption`, `strategy`, `spending`, `sweat`, `strategies`, `notes`); a note refusal names its banner. At most 5 plan posts per person |
+| `POST /plans/<id>/publish` `{caption, strategy?, spending?, sweat?, strategies?: [style], include_notes?, include_income?, confirm_public_identity: true, as_new?}` | the plan's owner, early access | `201` a new post, `200` an update of the plan's NEWEST post (link, comments, votes kept). `as_new: true` always makes a new post (a plan may have several since 2026-11-24); left out, a plan with posts updates its newest. `caption` is the title and required; `strategy` is "About this plan"; the two include flags and the agree flag count only when literally `true`. Refusals name a `field` (`caption`, `strategy`, `spending`, `sweat`, `strategies`, `notes`); a note refusal names its banner. At most 5 plan posts per person |
 | `GET /plan-gallery?sort=top\|new&window=day\|week\|month\|all&range=<scenario id>&strategy=front,pace&spending=<v>&sweat=<v>&limit=N` | early access | `{count, sort, window, limit, has_more, results: [row], filters}`. Top counts points received inside a rolling window (default `week`); `window` is null for `new`. `strategy` matches ANY listed style; `range` matches plans running up to that scenario or an earlier one. Unknown values are ignored. `filters` lists every choice with its `label` (a spending level also its `meaning`) and the scenarios some visible plan reaches |
 | `POST /plan-gallery/posts/<public_id>/copy` `{name}` | early access | signed in: `201` `PlanWithRows` of a new, inactive plan with the posted rows (and notes, if posted), never an income profile; `400` at the plan cap. A guest (once open): `{user_planned_banner_data, user_stats_data: null, user_planned_purchase_data: null}`. Counts a copy unless it is the author's own; `404` for a team post |
 | `GET /post/<public_id>` | anyone | HTML: link-preview tags, then on to the post in the app. **Not under `/api`** |

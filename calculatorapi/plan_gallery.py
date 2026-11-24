@@ -272,8 +272,14 @@ def _preview_version(snapshot):
 
 
 def publish_plan(user, plan, *, caption="", strategy="", spending="", sweat="", strategies=None,  # pylint: disable=too-many-arguments,too-many-locals
-                 include_notes=False, include_income=False, confirm_public_identity=False):
+                 include_notes=False, include_income=False, confirm_public_identity=False, as_new=False):
     """Post `plan` to Community plans, or update its post. Returns (post, created).
+
+    A plan may have several posts (owner, 2026-11-24). `as_new=True` always
+    makes a new one, within PLAN_POST_CAP. Otherwise a plan that has posts
+    updates its NEWEST one (what "Update my post" means, and what an older
+    client that sends no flag has always meant), and a plan with none is
+    posted for the first time.
 
     The title (`caption`) is required; the description (`strategy`, the
     gallery's column name) and the three filter picks are optional. Notes and
@@ -320,7 +326,12 @@ def publish_plan(user, plan, *, caption="", strategy="", spending="", sweat="", 
         # Locks the author's row, so two quick posts cannot both pass the cap
         # (the idiom plans._refuse_at_cap uses).
         CustomUser.objects.select_for_update().get(pk=user.pk)
-        post = GalleryPost.objects.select_for_update().filter(author=user, source_plan=plan).first()
+        post = None if as_new is True else (
+            GalleryPost.objects.select_for_update()
+            .filter(author=user, source_plan=plan)
+            .order_by("-published_at", "-pk")
+            .first()
+        )
         if post is None:
             posted = GalleryPost.objects.filter(author=user, kind=GalleryPostKind.PLAN).count()
             if posted >= PLAN_POST_CAP:
@@ -352,9 +363,13 @@ def publish_plan(user, plan, *, caption="", strategy="", spending="", sweat="", 
 
 
 def posted_plan_ids(user):
-    """{plan id: post public id} for `user`'s posted plans, for the plan menu."""
+    """{plan id: post public id} for `user`'s posted plans, for the plan menu.
+    A plan with several posts names its NEWEST: the one "Update my post"
+    changes (publish_plan). Oldest first, so the newest overwrites in the dict."""
     return dict(
-        GalleryPost.objects.filter(author=user, source_plan__isnull=False).values_list("source_plan_id", "public_id")
+        GalleryPost.objects.filter(author=user, source_plan__isnull=False)
+        .order_by("published_at", "pk")
+        .values_list("source_plan_id", "public_id")
     )
 
 
