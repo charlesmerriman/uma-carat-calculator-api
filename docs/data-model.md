@@ -1339,7 +1339,7 @@ post (votes, comments, reports, moderation, erasure) never needs to.
   blank for "not said"), `plan_strategies` (`PLAN_STRATEGIES` keys joined by commas, a
   scalar so it can sit in the check constraint), `plan_range` (the `Scenario` the plan runs
   up to, worked out at posting, SET_NULL) and `source_plan` (SET_NULL, never serialized;
-  `one_gallery_post_per_source_plan`, partial). `caption` is a plan's title and `strategy`
+  a plan may have several posts since `0145`, 2026-11-24). `caption` is a plan's title and `strategy`
   its "About this plan". The rules are `plan_gallery.py`: posting (`publish_plan`, at most
   `PLAN_POST_CAP` = 5 plan posts per person), the income whitelist (`POSTED_INCOME_FIELDS`,
   what the Average Monthly Income tiles read, never a balance), the range (`range_for`: the
