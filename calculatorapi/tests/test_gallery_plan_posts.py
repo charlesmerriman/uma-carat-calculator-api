@@ -239,7 +239,7 @@ class PlanPostRouteTests(RouteFixture):  # pylint: disable=too-many-public-metho
         page = APIClient().get(f"/post/{self.post_row.public_id}")
         self.assertEqual(page.status_code, 200)
         html = page.content.decode()
-        self.assertIn("<title>Community plan</title>", html)
+        self.assertIn("<title>Pull Plan Library</title>", html)
         self.assertNotIn(SITE_NAME + "</title>", html)
         self.assertNotIn(self.post_row.caption, html)
         self.assertNotIn(self.post_row.strategy, html)

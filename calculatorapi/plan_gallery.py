@@ -92,7 +92,7 @@ from calculatorapi.predictions import build_effective_date_maps, planned_effecti
 from calculatorapi.views.income_profile import stats_serializer
 from calculatorapi.views.plan_public import SharedPlannedBannerSerializer, rows_in_order
 
-REFUSED_TEXT = "Community plans are open to supporters first."
+REFUSED_TEXT = "The Pull Plan Library is open to supporters first."
 
 # Live plan posts one person may have at once: the plan cap's number. A team
 # post is limited to one per event; a plan has no event, so without a count
