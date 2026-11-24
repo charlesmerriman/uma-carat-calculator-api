@@ -514,6 +514,9 @@ class ValidationTests(CalculatorTestCase):
         res = self.client.put(doc_url(self.guide), body, format="json")
         self.assertEqual(res.status_code, 200, res.content)
 
+    # The saved guide's answer carries her portrait's URL: plain storage, as
+    # CI's media bucket is blank.
+    @override_settings(STORAGES=PLAIN_TEST_STORAGES)
     def test_uma_mentions_name_a_trainee_outfit(self):
         # Henry's ((Uma)) (board 1572760259066601513): an outfit's exact name,
         # its own brackets included, in the style ranking or any text.
@@ -525,7 +528,11 @@ class ValidationTests(CalculatorTestCase):
         self.assertIn("did you mean Oguri Cap (Christmas)", message)
         # A nickname is not a name.
         self.assertEqual({p for p, _ in self.refuse(meta_analysis="Run ((Oguri)) here")}, {"meta_analysis"})
-        body = put_body(self.document, style_ranking="((oguri cap (christmas))) >> Pace", meta_analysis="Run ((Oguri Cap (Christmas))).")
+        body = put_body(
+            self.document,
+            style_ranking="((oguri cap (christmas))) >> Pace",
+            meta_analysis="Run ((Oguri Cap (Christmas))).",
+        )
         res = self.client.put(doc_url(self.guide), body, format="json")
         self.assertEqual(res.status_code, 200, res.content)
         self.assertIn("oguri cap (christmas)", res.json()["guide"]["uma_mentions"])
