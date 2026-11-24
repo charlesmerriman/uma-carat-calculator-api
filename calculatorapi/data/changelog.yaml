@@ -32,6 +32,30 @@
 # module changed. Newest entry first is conventional here but not required — the
 # page sorts by date.
 
+- key: pvp-guide-polish-and-top-bar
+  date: 2026-11-25
+  title: "A tidier PvP guide, and a simpler top bar"
+  version: "v2.24"
+  changes:
+    - added: "Guides can show an uma's picture right in the text and in the style ranking. Tap her for her card."
+    - changed: "The course map folds to its one-line answer on My team, CM Runs and the Gallery, and on phones. Show the map opens it, and it remembers your choice."
+    - changed: "The bar with Previous and Next scrolls away as you read, so the guide gets more of the screen."
+    - changed: "Team comps sit under the Meta analysis now."
+    - changed: "The guide's picks in My team and the pickers have a coloured edge instead of a red star. Pickers can also show Recommended only."
+    - added: "Stuck to the top, the course map can show the strip, the track or both. Lighting a skill in the guide lights it on the map."
+    - fixed: "The course strip's labels no longer run into each other on narrower screens."
+    - fixed: "On a phone, a guide's text stops on a whole line before Read more."
+    - added: "Signed out? The course map's Layers menu has a Sign in link."
+    - changed: "The PvP page's Rankings tab is gone. Its numbers live on the Rankings page."
+    - changed: "The top bar is simpler. Theme, About, FAQ, Changelog and Feedback share one menu, signed in or not, and every place in the bar shows its name, phones included."
+    - changed: "Legend Races sits beside the Timeline, and the Calculator, Selectors and the Pull Plan Library share one bar."
+    - changed: "Projection settings moved into Income & Resources on the Calculator."
+    - changed: "On a phone, the row with the logo scrolls away and comes back when you scroll up."
+    - changed: "Dark has been redrawn. The other single-colour themes got sturdier buttons and tabs."
+    - added: "The Timeline has a heading for each month."
+    - changed: "Community plans is now the Pull Plan Library. Spending levels say what they mean, and a plan can be posted more than once."
+    - fixed: "Clearing a Timeline search keeps your place, and links into the Timeline land below its bar."
+
 - key: longer-notes
   date: 2026-11-23
   title: "Longer notes"
