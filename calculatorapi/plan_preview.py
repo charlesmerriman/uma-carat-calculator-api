@@ -28,7 +28,7 @@ crawler that gets a failure caches a card with no picture at all.
 A COMMUNITY PLAN POST (views/gallery_share.py) uses the same card with
 `tiles`: its first banners' art in a row under the words (Henry, 2026-11-20:
 "a preview image showcasing the first 5 banners"), on the plain background,
-and "Community plan" over the headline. Still only the counts and catalogue
+and "Pull Plan Library" over the headline. Still only the counts and catalogue
 names: never the post's title, its words, or its author.
 """
 

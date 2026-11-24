@@ -488,7 +488,7 @@ class PlanPostAroundTheSiteTests(PlanGalleryFixture):
     def test_the_link_preview_draws_the_first_banners(self):
         post = self.publish(self.member())
         page = APIClient().get(f"/post/{post.public_id}").content.decode()
-        self.assertIn("Community plan: 600 pulls on 3 banners", page)
+        self.assertIn("Pull Plan Library: 600 pulls on 3 banners", page)
         self.assertIn("Uma 0, Uma 1 and Uma 2", page)
         self.assertNotIn(post.caption, page)
 

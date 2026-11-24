@@ -1312,7 +1312,9 @@ filters, auto-hide, the moderator's decisions, the Discord alert) and `public_id
 (the one place a person is shown beside public content).
 
 **One generic parent, two kinds.** A post is a PvP team (`pvp_team`) or a pull plan (`plan`,
-Community plans, `0144`). Votes, comments and reports point at `GalleryPost` by a real FK,
+Community plans, `0144`). Players see the plans page as the **Pull Plan Library** (renamed
+2026-11-24, `notes/pull-plan-database-plan-2.md`); the code, these docs and `/app/plans` keep
+"Community plans" as the internal name. Votes, comments and reports point at `GalleryPost` by a real FK,
 and the kind-specific columns are tied to their kind by check constraints on SCALAR columns
 only: `gallery_post_event_matches_kind` (the `PvpTeam` XOR idiom: a team has one event, a
 plan none) and `gallery_post_plan_matches_kind` (the plan columns are blank on a team). A
