@@ -819,7 +819,9 @@ may hold `==highlight==` spans the client renders red.
                 {"slot": 1, "order": 1, "is_borrow": false, "note": "or any speed", "limit_break": null, "support_card": null}]}],
   "skill_mentions": {"groundwork": {"id": 88, "name": "Groundwork", "description": "string", "image": "url | null",
                                      "rarity": 2, "unique_of": null, "version": "◎ gold", "tier": 2,
-                                     "is_evolved": false, "versions": []}} }
+                                     "is_evolved": false, "versions": []}},
+  "uma_mentions": {"oguri cap (christmas)": {"id": 61, "name": "Oguri Cap (Christmas)",
+                                             "portrait": "url | null", "portrait_layers": "object | null"}} }
 ```
 
 Each guide uma carries `apt`, its ten aptitudes as `/pvp-catalogue` sends them (1..8 for
@@ -831,6 +833,13 @@ name: skill object}` (the same shape as `skill` above), skills on global only, m
 ignoring case. The client renders a mention it finds here as a skill chip and any other as
 its plain name. The admin refuses to save a mention that matches no global skill, so a
 missing key means the skill went stale since.
+
+`uma_mentions` does the same for every `((Uma name))` in the guide's text, the style
+ranking included: `{lower-case name: {id, name, portrait, portrait_layers}}`, matched
+ignoring case against the trainee outfits' exact names (`Uma.trainees()`, what
+`/pvp-catalogue` offers; a nickname never matches). An outfit's own brackets sit inside:
+`((Oguri Cap (Christmas)))`. The client draws a mention it finds here as her framed
+picture, which opens her card, and any other as its plain name.
 
 A deck slot's `order` 0 is the card and 1+ are alternatives for the same slot; a slot row
 always has a card, a note, or both. Whether an event HAS a published guide is `has_guide`

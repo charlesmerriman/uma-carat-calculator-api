@@ -514,6 +514,22 @@ class ValidationTests(CalculatorTestCase):
         res = self.client.put(doc_url(self.guide), body, format="json")
         self.assertEqual(res.status_code, 200, res.content)
 
+    def test_uma_mentions_name_a_trainee_outfit(self):
+        # Henry's ((Uma)) (board 1572760259066601513): an outfit's exact name,
+        # its own brackets included, in the style ranking or any text.
+        Uma.objects.create(name="Oguri Cap (Christmas)", image="umas/oguri-xmas.png")
+        errors = self.refuse(style_ranking="((Oguri Cap (Xmas))) >> Pace")
+        path, message = next(iter(errors))
+        self.assertEqual(path, "style_ranking")
+        self.assertIn("No uma has this name: ((Oguri Cap (Xmas)))", message)
+        self.assertIn("did you mean Oguri Cap (Christmas)", message)
+        # A nickname is not a name.
+        self.assertEqual({p for p, _ in self.refuse(meta_analysis="Run ((Oguri)) here")}, {"meta_analysis"})
+        body = put_body(self.document, style_ranking="((oguri cap (christmas))) >> Pace", meta_analysis="Run ((Oguri Cap (Christmas))).")
+        res = self.client.put(doc_url(self.guide), body, format="json")
+        self.assertEqual(res.status_code, 200, res.content)
+        self.assertIn("oguri cap (christmas)", res.json()["guide"]["uma_mentions"])
+
     def test_lengths_and_the_scenario(self):
         paths = {p for p, _ in self.refuse(style_ranking="x" * 121)}
         self.assertIn("style_ranking", paths)
