@@ -708,6 +708,8 @@ class SkillMentionTests(CalculatorTestCase):
         self.assertEqual(body["skill_mentions"]["final push"]["name"], "Final Push")
         self.assertEqual(body["skill_mentions"]["groundwork"]["description"], "Does a thing.")
 
+    # Her portrait's URL is built: plain storage, as CI's media bucket is blank.
+    @override_settings(STORAGES=PLAIN_TEST_STORAGES)
     def test_the_api_sends_each_mentioned_uma_with_her_picture(self):
         oguri = Uma.objects.create(name="Oguri Cap (Christmas)", image="umas/oguri-xmas.png")
         Uma.objects.create(name="Copano Rickey", image="umas/rickey.png")
