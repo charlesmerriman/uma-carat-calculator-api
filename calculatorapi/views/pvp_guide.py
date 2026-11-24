@@ -53,7 +53,7 @@ from calculatorapi.models import (
     UmaSkill,
     UmaSkillSource,
 )
-from calculatorapi.models.pvp_guide import STYLE_RANK, find_skill_mentions
+from calculatorapi.models.pvp_guide import STYLE_RANK, find_skill_mentions, find_uma_mentions
 from calculatorapi.models.skill import skill_families
 from calculatorapi.skill_types import skill_type
 from calculatorapi.views.pvp_catalogue import APTITUDE_FIELDS
@@ -375,7 +375,8 @@ def _unique_skill_of_uma(uma_ids):
 
 
 def _guide_texts(guide):
-    """Every editor-written text in the guide: where [[skill]] mentions live."""
+    """Every editor-written text in the guide: where [[skill]] and ((uma)) mentions live."""
+    yield guide.style_ranking
     yield guide.short_description
     yield guide.meta_analysis
     for row in guide.stat_configs.all():
@@ -406,6 +407,33 @@ def _mentioned_skills(guide, skills=None):
     names = {name for text in _guide_texts(guide) for name in find_skill_mentions(text)}
     skills = Skill.objects.shown() if skills is None else skills
     return skills.select_related("evolves_from").resolve_names(names)
+
+
+class _UmaMentionSerializer(serializers.ModelSerializer):
+    """An uma a guide's text names as ((Name)): enough to draw her framed picture."""
+
+    portrait = serializers.ImageField(read_only=True)
+    portrait_layers = serializers.ReadOnlyField()
+
+    class Meta:
+        model = Uma
+        fields = ("id", "name", "portrait", "portrait_layers")
+
+
+def _mentioned_umas(guide, context):
+    """{lower-case name: uma} for every ((Name)) in the guide's text, matched
+    the way the save check matches (a trainee outfit's exact name, ignoring
+    case). One that has since gone (an outfit renamed) drops out and the
+    page shows the plain name."""
+    names = {name.casefold() for text in _guide_texts(guide) for name in find_uma_mentions(text)}
+    if not names:
+        return {}
+    found = {}
+    for uma in Uma.trainees().order_by("id"):
+        key = uma.name.casefold()
+        if key in names and key not in found:
+            found[key] = _UmaMentionSerializer(uma, context=context).data
+    return found
 
 
 # A skill with no outfit or card: what `sources` holds for it.
@@ -555,6 +583,8 @@ def serialize_guide(guide, request=None):
         "decks": many(_DeckSerializer, sorted(guide.decks.all(), key=_ordered_key)),
         # {lower-case name: skill} for every [[name]] in the guide's text.
         "skill_mentions": mentions,
+        # {lower-case name: uma} for every ((name)) in it, the style ranking included.
+        "uma_mentions": _mentioned_umas(guide, context),
         # {section: visible comments}, "" for the whole guide, so the tabs can
         # show counts without fetching every thread (views/gallery.py).
         "comment_counts": _comment_counts(guide),

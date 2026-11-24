@@ -1101,7 +1101,10 @@ erDiagram
   - `PvpTeamComp`: free text ("2 Front + 1 Pace") and a note.
 - **`[[Skill name]]` mentions** may appear in any guide text field. `SkillMentionsMixin`
   (`MENTION_FIELDS` per model) refuses a save whose mention matches no skill on global,
-  ignoring case, with suggestions; the API resolves them into `skill_mentions`.
+  ignoring case, with suggestions; the API resolves them into `skill_mentions`. The same
+  check refuses a **`((Uma name))`** that names no trainee outfit (`find_uma_mentions`,
+  `uma_mention_error`; Henry's ask, 2026-11-18), and the API resolves those into
+  `uma_mentions`. The style ranking is checked for both.
 - **There is no proxy model any more.** `PvpGuideSkills` (migration `0086`) gave the
   skills a page of their own; `0088` deleted it once the admin became one page per guide
   with a tab per style (`admin_pvp.py`, `admin.md` "PvP guides"). `0089` keeps the

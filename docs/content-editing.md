@@ -442,7 +442,10 @@ so you can tell two of the same name apart.
 equals signs to show them in red, like the sheet's must-haves: `==Must have==`.
 Put a skill's name in double square brackets to link it: `Take [[Groundwork]]
 first`. Typing `[[` offers the matching skill names; the name must be a skill
-already on global, and saving tells you if it is not. The long text boxes have
+already on global, and saving tells you if it is not. Put an uma's name in double
+round brackets to show her picture, which opens her card: `((Copano Rickey))`, or
+`((Oguri Cap (Christmas)))` for an outfit. Typing `((` offers the matching names. In
+the style ranking, `((Copano Rickey)) > Pace` puts her picture on rank 1. The long text boxes have
 a **Preview** button that shows the text as the site will.
 
 **Saving.** Everything on every tab is one form: one **Save** at the bottom
@@ -554,8 +557,8 @@ holds; a red number is how many problems the last check found there.
 - **Stats.** Add as many rows as the guide needs: one per style, or a variant with a
   label ("+ 1 GOLD", "Monster"), each with its own footnote. A single row for everyone
   with no label or footnote is drawn as five big tiles; more rows as a table.
-- **Text.** In any note or text box, `==words==` shows red and `[[Skill name]]` becomes a
-  skill chip. Typing `[[` offers the matching skill names. The long boxes have a toolbar
+- **Text.** In any note or text box, `==words==` shows red, `[[Skill name]]` becomes a
+  skill chip and `((Uma name))` her picture. Typing `[[` or `((` offers the matching names. The long boxes have a toolbar
   (bold, italic, red, skill, link) and an eye button that previews the text as the site
   will show it.
 
