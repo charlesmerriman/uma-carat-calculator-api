@@ -33,6 +33,9 @@ SMALL = 0.001
 # Races for a win rate's third confidence mark (the second is RANKED_RACES,
 # the first the payload's `min_races`).
 SOLID_RACES = 300
+# Named losses an uma needs to be a row of "What beats players"; the list
+# itself waits for `min_races` named losses (notes/cm-runs-plan-2.md, decision 11).
+BEATEN_BY_MIN = 5
 
 
 def share(part, whole):
@@ -97,22 +100,50 @@ def run_shares(runs):
     def marks(races):
         return 3 if races >= SOLID_RACES else 2 if races >= RANKED_RACES else 1
 
+    def placed(row):
+        """`avg_place` (to one decimal) and `top3` (a rate) over the races she
+        has a place in, from the same floor as a win rate (min_races placed
+        races), else null for both. An average and a rate, never the count."""
+        enough = row.get("placed", 0) >= max(runs["min_races"], 1)
+        return {
+            "avg_place": round(row["place_total"] / row["placed"], 1) if enough else None,
+            "top3": share(row["top3"], row["placed"]) if enough else None,
+        }
+
     return [
         {
             "uma": row["uma"], "style": row["style"], "rate": share(row["wins"], row["races"]),
-            "marks": marks(row["races"]), "ranked": row["races"] >= RANKED_RACES,
+            "marks": marks(row["races"]), "ranked": row["races"] >= RANKED_RACES, **placed(row),
         }
         for row in ranked + rest
     ]
 
 
+def beaten_by_shares(runs):
+    """What beats players (notes/cm-runs-plan-2.md, decision 11): each uma's
+    share of the event's named losses (a loss that says which uma won it),
+    most first. Nothing until the event has `min_races` named losses, and a
+    row only from BEATEN_BY_MIN of them, so a small list can't be read back
+    into counts. Shares only: neither the losses nor their total is sent."""
+    named = runs.get("named_losses", 0)
+    if named < max(runs["min_races"], 1):
+        return []
+    return [
+        {"uma": row["uma"], "share": share(row["losses"], named)}
+        for row in runs.get("beaten_by", [])
+        if row["losses"] >= BEATEN_BY_MIN
+    ]
+
+
 def pvp_shares(payload):
     """The Rankings page's PvP tab: what players build, as shares of every
-    saved team, and what wins, as rates."""
+    saved team, what wins, as rates (with average place where enough races
+    have one), and what beats players, as shares of named losses."""
     return {
         "generated_at": payload["generated_at"],
         "built": team_shares(payload["built"]),
         "runs": run_shares(payload["runs"]),
+        "beaten_by": beaten_by_shares(payload["runs"]),
         "previous": payload["previous"],
     }
 
