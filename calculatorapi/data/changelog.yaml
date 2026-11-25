@@ -34,9 +34,11 @@
 
 - key: pvp-guide-polish-and-top-bar
   date: 2026-11-25
-  title: "A tidier PvP guide, and a simpler top bar"
+  title: "Places in CM Runs, a tidier PvP guide, and a simpler top bar"
   version: "v2.24"
   changes:
+    - added: "CM Runs can log where each of your umas finished. Turn on Log places and every race gets a 1st to 9th for each of them."
+    - added: "Every loss can say which uma beat you. Your totals now show each uma's average place, how often she makes the top 3, and who beats you most."
     - added: "Guides can show an uma's picture right in the text and in the style ranking. Tap her for her card."
     - changed: "The course map folds to its one-line answer on My team, CM Runs and the Gallery, and on phones. Show the map opens it, and it remembers your choice."
     - changed: "The bar with Previous and Next scrolls away as you read, so the guide gets more of the screen."
@@ -44,6 +46,7 @@
     - changed: "The guide's picks in My team and the pickers have a coloured edge instead of a red star. Pickers can also show Recommended only."
     - added: "Stuck to the top, the course map can show the strip, the track or both. Lighting a skill in the guide lights it on the map."
     - fixed: "The course strip's labels no longer run into each other on narrower screens."
+    - fixed: "On the Track view, a lit skill runs down the middle of the track, clear of the hill markers."
     - fixed: "On a phone, a guide's text stops on a whole line before Read more."
     - added: "Signed out? The course map's Layers menu has a Sign in link."
     - changed: "The PvP page's Rankings tab is gone. Its numbers live on the Rankings page."
