@@ -100,6 +100,7 @@ PRIVATE_MODELS = (
     "PvpRun",
     "PvpRunRunner",
     "PvpRunRace",
+    "PvpRunRacePlace",
     # The Rankings page's start-of-week copy of each payload, for rank movement.
     "RankingsSnapshot",
     # A player's veterans (the Collection page).

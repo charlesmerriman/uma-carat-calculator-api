@@ -25,10 +25,12 @@ from calculatorapi.models import (
     PVP_RUN_TICKETS,
     PvpRun,
     PvpRunRace,
+    PvpRunRacePlace,
     PvpRunRunner,
     PvpRunStage,
     PvpTeam,
     PvpTeamMember,
+    Uma,
 )
 
 # Refusals share pvp_teams' exception (the lineup rules raise it), so a view
@@ -63,7 +65,7 @@ def runs_for_event(user, kind, event_id):
     """Every run `user` logged for the event, with runners and races, in two
     prefetches. TeamRefused for an event that does not exist."""
     event = pvp_teams.resolve_event(kind, event_id)
-    return PvpRun.objects.filter(user=user, **event).prefetch_related("runners", "races")
+    return PvpRun.objects.filter(user=user, **event).prefetch_related("runners", "races__places")
 
 
 def all_runs(user):
@@ -73,7 +75,7 @@ def all_runs(user):
 puts the events in date order from /calculator-data)."""
     return (
         PvpRun.objects.filter(user=user)
-        .prefetch_related("runners", "races")
+        .prefetch_related("runners", "races__places")
         .order_by("champions_meeting_id", "league_of_heroes_id", "stage", "day", "ticket")
     )
 
@@ -100,7 +102,10 @@ def write_run(user, kind, event_id, *, day=None, ticket=None, data):  # pylint: 
     is_final = day is None
     runners, races = data["runners"], data["races"]
 
-    _check_races(races, is_final, {runner["position"] for runner in runners})
+    positions = {runner["position"] for runner in runners}
+    _check_races(races, is_final, positions)
+    _check_places(races, positions, kind)
+    lost_to = _lost_to_umas(races)
     umas = pvp_teams.check_lineup([runner["uma"] for runner in runners])
     veterans = trained_umas.check_links(user, runners)
     if not is_final and (data.get("finals_group") or data.get("placement") is not None):
@@ -128,6 +133,7 @@ def write_run(user, kind, event_id, *, day=None, ticket=None, data):  # pylint: 
         run = _get_or_create(_slot_filter(user, event, day, ticket))
         if named_team is not _KEEP:
             run.team = named_team
+        stored = {race.race: race for race in run.races.prefetch_related("places")}
         run.runners.all().delete()
         run.races.all().delete()
         PvpRunRunner.objects.bulk_create(
@@ -140,9 +146,7 @@ def write_run(user, kind, event_id, *, day=None, ticket=None, data):  # pylint: 
             )
             for runner in runners
         )
-        PvpRunRace.objects.bulk_create(
-            PvpRunRace(run=run, race=race["race"], winner=race["winner"]) for race in races
-        )
+        _write_races(run, races, stored, lost_to, positions)
         run.finals_group = data.get("finals_group", "")
         run.placement = placement
         run.note = data.get("note", "")
@@ -206,6 +210,88 @@ def _get_or_create(lookup):
     except IntegrityError:
         run = PvpRun.objects.get(**lookup)
     return run
+
+
+def _check_places(races, positions, kind):
+    """The place rules (notes/cm-runs-plan-2.md), for the places a PUT sends:
+    each names a spot with a runner, no two share a place, the winner is 1st
+    when placed, a loss has nobody of yours 1st, and only a loss has a Won by."""
+    for race in races:
+        places = race.get("places") or []
+        if places and kind == "loh":
+            raise RunRefused("Places for League of Heroes come later.")
+        spots = [entry["position"] for entry in places]
+        numbers = [entry["place"] for entry in places]
+        if any(spot not in positions for spot in spots) or len(set(spots)) != len(spots):
+            raise RunRefused("A place was given to an empty spot. Pick the uma first.")
+        if len(set(numbers)) != len(numbers):
+            raise RunRefused("Two of your umas can't finish in the same place.")
+        winner = race["winner"]
+        firsts = [entry["position"] for entry in places if entry["place"] == 1]
+        if winner is not None and (firsts not in ([], [winner]) or any(
+            entry["position"] == winner and entry["place"] != 1 for entry in places
+        )):
+            raise RunRefused("The uma that won finished 1st.")
+        if winner is None and firsts:
+            raise RunRefused("On a loss, none of yours finished 1st.")
+        if winner is not None and (race.get("lost_to") or race.get("lost_to_style")):
+            raise RunRefused("Only a loss has a winner from another team.")
+
+
+def _lost_to_umas(races):
+    """{uma id: Uma} for every Won by a PUT names, in one query. An unknown id is refused."""
+    wanted = {race["lost_to"] for race in races if race.get("lost_to")}
+    found = {uma.id: uma for uma in Uma.objects.filter(id__in=wanted)}
+    if len(found) != len(wanted):
+        raise RunRefused("That uma isn't in the catalogue.")
+    return found
+
+
+def _kept_places(race, stored, positions):
+    """The places a race keeps from the stored row when the PUT left them out
+    (an older client), and only while they still agree with the race as sent:
+    a changed winner, or a spot that's gone, drops them."""
+    old = stored.get(race["race"])
+    if old is None:
+        return []
+    places = [{"position": p.position, "place": p.place, "loss_reason": p.loss_reason} for p in old.places.all()]
+    winner = race["winner"]
+    firsts = [entry["position"] for entry in places if entry["place"] == 1]
+    agrees = all(entry["position"] in positions for entry in places) and (
+        (winner is None and not firsts)
+        or (
+            winner is not None
+            and firsts in ([], [winner])
+            and all(entry["place"] == 1 for entry in places if entry["position"] == winner)
+        )
+    )
+    return places if agrees else []
+
+
+def _write_races(run, races, stored, lost_to, positions):
+    """The races with their Won by and places, keeping what a PUT left out
+    (views/pvp_run.py says why)."""
+    rows, places = [], []
+    for race in races:
+        old = stored.get(race["race"])
+        loss = race["winner"] is None
+        if "lost_to" in race:
+            uma = lost_to.get(race["lost_to"]) if race["lost_to"] else None
+        else:
+            uma = old.lost_to_uma if loss and old is not None and old.winner is None else None
+        style = race.get("lost_to_style", old.lost_to_style if loss and old is not None and old.winner is None else "")
+        rows.append(PvpRunRace(
+            run=run, race=race["race"], winner=race["winner"], lost_to_uma=uma, lost_to_style=style if loss else "",
+        ))
+        places.append(race["places"] if "places" in race else _kept_places(race, stored, positions))
+    created = PvpRunRace.objects.bulk_create(rows)
+    PvpRunRacePlace.objects.bulk_create(
+        PvpRunRacePlace(
+            race=row, position=entry["position"], place=entry["place"], loss_reason=entry.get("loss_reason", ""),
+        )
+        for row, entries in zip(created, places)
+        for entry in entries
+    )
 
 
 def _check_races(races, is_final, positions):
