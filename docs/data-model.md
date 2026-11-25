@@ -1236,8 +1236,10 @@ plan for linking veterans: `notes/pvp-planner-plan.md` ("R3 CM Runs").
   that ran, the same column `PvpTeamMember` has (stats live only on the veteran).
 - **`PvpRunRace`**: `race` 1..5 and `winner`, the spot of the player's uma that won, NULL
   for a loss. **No row = not raced yet**, which a win rate leaves out of its denominator.
-- **`PvpRunRacePlace`** (`0146`, notes/cm-runs-plan-2.md): where one of the player's umas
-  finished a CM race, 1st to 9th (`PVP_CM_RACE_RUNNERS`), one row per runner per race, unique
+- **`PvpRunRacePlace`** (`0146`, notes/cm-runs-plan-2.md; LoH `0148`, notes/loh-places-plan.md):
+  where one of the player's umas finished a race, 1st to 9th in a CM and 1st to 12th in a LoH
+  (`PVP_RACE_RUNNERS`; the CHECK holds the largest, `pvp_runs._check_places` each kind's own; a
+  LoH's points are the client's, from the places, never stored), one row per runner per race, unique
   on (race, position) and (race, place); `loss_reason` holds the game's code from a replay
   (`PvpLossReason`), blank until the import exists. Optional detail: `winner` stays the one
   fact win rates read. `PvpRunRace.lost_to_uma` / `lost_to_style` name the uma that won a

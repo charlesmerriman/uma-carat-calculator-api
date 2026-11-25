@@ -114,7 +114,8 @@ from .pvp_run import (
     PVP_FINAL_PLACEMENTS,
     PVP_LOH_MAX_PLACEMENT,
     PVP_RUN_NOTE_MAX_LENGTH,
-    PVP_CM_RACE_RUNNERS,
+    PVP_MAX_RACE_RUNNERS,
+    PVP_RACE_RUNNERS,
 )
 from .gallery import (
     BlockedTerm,

@@ -25,8 +25,9 @@ A PUT body is the same minus kind, event, stage, day, ticket and updated_at
 that won, or null for a loss; a race not in the list has not been run yet,
 unless `skipped` says it never will be (a day's ticket only).
 
-`places` (CM only) are where the player's umas finished, 1st to 9th, each
-optional; `lost_to` is the uma that won a loss, or null. A race in a PUT that
+`places` are where the player's umas finished, each optional: 1st to 9th in
+a CM, 1st to 12th in a LoH (PVP_RACE_RUNNERS; a LoH's points come from them,
+on the client); `lost_to` is the uma that won a loss, or null. A race in a PUT that
 leaves either key out KEEPS what is stored for it, so a tab still on an older
 build never wipes places another device logged (notes/cm-runs-plan-2.md, "Ship
 between events": this is what lets them ship during an event).
@@ -41,7 +42,7 @@ from rest_framework.response import Response
 
 from calculatorapi import pvp_runs, pvp_teams, trained_umas
 from calculatorapi.models import (
-    PVP_CM_RACE_RUNNERS,
+    PVP_MAX_RACE_RUNNERS,
     PVP_RUN_NOTE_MAX_LENGTH,
     PvpLossReason,
     PVP_RUN_RACES,
@@ -65,7 +66,8 @@ class _RunnerInput(serializers.Serializer):  # pylint: disable=abstract-method
 
 class _PlaceInput(serializers.Serializer):  # pylint: disable=abstract-method
     position = serializers.IntegerField(min_value=0, max_value=PVP_TEAM_SIZE - 1)
-    place = serializers.IntegerField(min_value=1, max_value=PVP_CM_RACE_RUNNERS)
+    # Each kind's own bound (9 for a CM, 12 for a LoH) is pvp_runs._check_places's.
+    place = serializers.IntegerField(min_value=1, max_value=PVP_MAX_RACE_RUNNERS)
     loss_reason = serializers.ChoiceField(
         choices=PvpLossReason.choices, allow_blank=True, required=False, default=""
     )
