@@ -20,6 +20,7 @@ from calculatorapi.models import (
     PVP_FINAL_PLACEMENTS,
     PVP_FINAL_RACES,
     PVP_LOH_MAX_PLACEMENT,
+    PVP_RACE_RUNNERS,
     PVP_RUN_DAYS,
     PVP_RUN_RACES,
     PVP_RUN_TICKETS,
@@ -214,12 +215,19 @@ def _get_or_create(lookup):
 
 def _check_places(races, positions, kind):
     """The place rules (notes/cm-runs-plan-2.md), for the places a PUT sends:
-    each names a spot with a runner, no two share a place, the winner is 1st
-    when placed, a loss has nobody of yours 1st, and only a loss has a Won by."""
+    each is within the kind's field (1st to 9th in a CM, 1st to 12th in a
+    LoH), names a spot with a runner, no two share a place, the winner is 1st
+    when placed, a loss has nobody of yours 1st, and only a loss has a Won by.
+
+    The same rules hold for a LoH (notes/loh-places-plan.md): `winner` keeps its
+    meaning there, "one of yours finished 1st", even though a LoH race is
+    scored by points (the client adds them up from the places)."""
+    runners = PVP_RACE_RUNNERS[kind]
     for race in races:
         places = race.get("places") or []
-        if places and kind == "loh":
-            raise RunRefused("Places for League of Heroes come later.")
+        if any(entry["place"] > runners for entry in places):
+            field = "A League of Heroes race" if kind == "loh" else "A Champions Meeting race"
+            raise RunRefused(f"{field} has {runners} runners, so a place is 1st to {runners}th.")
         spots = [entry["position"] for entry in places]
         numbers = [entry["place"] for entry in places]
         if any(spot not in positions for spot in spots) or len(set(spots)) != len(spots):

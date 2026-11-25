@@ -1378,8 +1378,9 @@ A run, out (a `PUT` body is the part the URL does not already say):
 ```
 
 A runner's `trained_uma` is the veteran that ran, under the same rule as a team member's.
-`places` (CM only; League of Heroes refuses them) are where the player's umas finished, 1st
-to 9th, each optional: no two share a place, the winner is 1st when placed, and a loss has
+`places` are where the player's umas finished, 1st to 9th in a CM and 1st to 12th in a
+League of Heroes (`PVP_RACE_RUNNERS`; the client adds a LoH's points up from them), each
+optional: no two share a place, the winner is 1st when placed, and a loss has
 none of them 1st. `lost_to` is the uma that won a loss (catalogue id), or null; only a loss
 has one. `lost_to_style` and `loss_reason` are written by a replay import later and are
 blank until then. **A race whose PUT leaves `places` or `lost_to` out keeps what is stored**

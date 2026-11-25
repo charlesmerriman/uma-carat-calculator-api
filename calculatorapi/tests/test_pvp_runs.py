@@ -360,8 +360,26 @@ class PlacesTests(PvpRunFixture):
         for races, message in cases:
             res = self.put(self.ticket_url(), races=races)
             self.assertEqual((res.status_code, res.json()["error"]), (400, message), races)
-        res = self.put(self.ticket_url(kind="loh"), races=self.placed(0, (0, 1)))
-        self.assertEqual(res.json()["error"], "Places for League of Heroes come later.")
+        res = self.put(self.ticket_url(), races=self.placed(None, (0, 10)))
+        self.assertEqual(
+            (res.status_code, res.json()["error"]),
+            (400, "A Champions Meeting race has 9 runners, so a place is 1st to 9th."),
+        )
+
+    def test_a_loh_race_takes_places_1st_to_12th(self):
+        # Your three, the opponent's three and six NPCs (notes/loh-places-plan.md).
+        # `winner` keeps its meaning, one of yours 1st, so the CM rules hold.
+        url = self.ticket_url(kind="loh")
+        res = self.put(url, races=self.placed(1, (0, 4), (1, 1), (2, 12)))
+        self.assertEqual(res.status_code, 200, res.content)
+        places = res.json()["races"][0]["places"]
+        self.assertEqual([(p["position"], p["place"]) for p in places], [(0, 4), (1, 1), (2, 12)])
+        res = self.put(url, races=self.placed(None, (0, 13)))
+        self.assertEqual(res.status_code, 400)
+        res = self.put(url, races=self.placed(None, (0, 11), (1, 11)))
+        self.assertEqual(res.json()["error"], "Two of your umas can't finish in the same place.")
+        res = self.put(url, races=self.placed(None, (2, 1)))
+        self.assertEqual(res.json()["error"], "On a loss, none of yours finished 1st.")
 
     def test_a_put_without_places_keeps_them(self):
         # A tab on an older build sends races without places or a Won by:

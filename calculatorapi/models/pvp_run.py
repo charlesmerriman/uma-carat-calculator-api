@@ -47,9 +47,13 @@ from .uma import Uma
 PVP_RUN_RACES = 5
 PVP_FINAL_RACES = 1
 
-# Runners in a CM race: three trainers with three umas each, so a place is
-# 1st to 9th (notes/cm-runs-plan-2.md).
-PVP_CM_RACE_RUNNERS = 9
+# Runners in one race, per event kind, so a place is 1st to this. CM: three
+# trainers with three umas each (notes/cm-runs-plan-2.md). LoH: your three, the
+# opponent's three and six NPCs (Daptrius, 2026-11-25; notes/loh-places-plan.md).
+# The database checks only the largest (PvpRunRacePlace can't see its run's
+# kind); pvp_runs._check_places holds each kind to its own.
+PVP_RACE_RUNNERS = {"cm": 9, "loh": 12}
+PVP_MAX_RACE_RUNNERS = max(PVP_RACE_RUNNERS.values())
 
 # The highest day and ticket number per event kind ("cm" / "loh"), checked by
 # pvp_runs.py rather than the database so a game change is one line here.
@@ -322,7 +326,7 @@ class PvpRunRacePlace(models.Model):
         validators=[MaxValueValidator(PVP_TEAM_SIZE - 1)]
     )
     place = models.PositiveSmallIntegerField(
-        validators=[MinValueValidator(1), MaxValueValidator(PVP_CM_RACE_RUNNERS)]
+        validators=[MinValueValidator(1), MaxValueValidator(PVP_MAX_RACE_RUNNERS)]
     )
     loss_reason = models.CharField(max_length=40, blank=True, choices=PvpLossReason.choices)
 
@@ -335,7 +339,7 @@ class PvpRunRacePlace(models.Model):
                 condition=Q(position__lte=PVP_TEAM_SIZE - 1), name="pvp_run_place_position_in_range"
             ),
             models.CheckConstraint(
-                condition=Q(place__gte=1, place__lte=PVP_CM_RACE_RUNNERS), name="pvp_run_place_in_range"
+                condition=Q(place__gte=1, place__lte=PVP_MAX_RACE_RUNNERS), name="pvp_run_place_in_range"
             ),
         ]
 
