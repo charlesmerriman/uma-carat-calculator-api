@@ -113,7 +113,7 @@ def write_run(user, kind, event_id, *, day=None, ticket=None, data):  # pylint: 
     placement = data.get("placement")
     if is_final and kind == "loh":
         if races or data.get("finals_group"):
-            raise RunRefused("The Top 96 keeps your team, your placement and a note.")
+            raise RunRefused("A League of Heroes placement keeps your team, the placement and a note.")
         if placement is not None and not 1 <= placement <= PVP_LOH_MAX_PLACEMENT:
             raise RunRefused(f"A League of Heroes placement is 1st to {PVP_LOH_MAX_PLACEMENT:,}th.")
     elif placement is not None and not 1 <= placement <= PVP_FINAL_PLACEMENTS:
