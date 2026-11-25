@@ -16,7 +16,9 @@ from html import unescape
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import override_settings
 
-from calculatorapi.models import BannerTimeline, FaqCategory, FaqItem, SupportCard, SupportsOnSupportBanner
+from calculatorapi.models import (
+    BannerTimeline, FaqCategory, FaqItem, SupportCard, SupportsOnSupportBanner, Uma, UmasOnUmaBanner,
+)
 from calculatorapi.tests.base import PLAIN_TEST_STORAGES, CalculatorTestCase
 from calculatorapi.tests.factories import make_support_banner, make_timeline, make_uma_banner
 from calculatorapi.views.faq_share import excerpt, plain_text
@@ -49,21 +51,23 @@ class BannerSharePageTests(CalculatorTestCase):
         super().tearDownClass()
 
     def setUp(self):
+        # The row's name is an editor's label ("(Rerun)"); the preview never shows it.
         self.banner = make_timeline(
-            name="Taiki Shuttle (Camping) + Yamanin Zephyr",
+            name="Taiki Shuttle (Camping) + Yamanin Zephyr (Rerun)",
             global_start_date=at(2026, 6, 11), global_end_date=at(2026, 6, 20, 21),
         )
         self.banner.image = SimpleUploadedFile("taiki.png", b"\x89PNG fake", content_type="image/png")
         self.banner.save()
-        make_uma_banner(self.banner, name="Taiki Shuttle (Camping) + Yamanin Zephyr")
-        support = make_support_banner(self.banner, name="Kitasan Black + Super Creek")
-        for name in ("Kitasan Black", "Super Creek"):
-            SupportsOnSupportBanner.objects.create(
-                banner_support=support, support_card=SupportCard.objects.create(name=name),
-            )
+        uma_banner = make_uma_banner(self.banner, name="Taiki Shuttle (Camping) + Yamanin Zephyr")
+        for name in ("Taiki Shuttle (Camping)", "Yamanin Zephyr"):
+            UmasOnUmaBanner.objects.create(banner_uma=uma_banner, uma=Uma.objects.create(name=name))
+        self.support = make_support_banner(self.banner, name="TM Opera O")
+        SupportsOnSupportBanner.objects.create(
+            banner_support=self.support, support_card=SupportCard.objects.create(name="TM Opera O"),
+        )
         # A stand-in card is never named.
         SupportsOnSupportBanner.objects.create(
-            banner_support=support,
+            banner_support=self.support,
             support_card=SupportCard.objects.create(name="Any SSR Speed", is_placeholder=True),
         )
 
@@ -72,14 +76,15 @@ class BannerSharePageTests(CalculatorTestCase):
         self.assertEqual(response.status_code, status)
         return response.content.decode()
 
-    def test_a_banner_says_its_name_dates_and_cards_over_its_own_art(self):
+    def test_a_banner_says_who_it_features_and_its_dates_over_its_own_art(self):
         html = self.page(f"/banner/{self.banner.id}")
 
-        self.assertEqual(meta(html, "property", "og:title"), "Taiki Shuttle (Camping) + Yamanin Zephyr")
+        # The Timeline card's own title (featuredTitle), not the row's name.
         self.assertEqual(
-            meta(html, "property", "og:description"),
-            "2026/6/11 through 2026/6/20. Support cards: Kitasan Black and Super Creek.",
+            meta(html, "property", "og:title"), "Taiki Shuttle (Camping), Yamanin Zephyr and TM Opera O",
         )
+        self.assertNotIn("Rerun", html)
+        self.assertEqual(meta(html, "property", "og:description"), "2026/6/11 through 2026/6/20.")
         self.assertEqual(meta(html, "property", "og:url"), f"https://site.example/banner/{self.banner.id}")
         # The art as uploaded, absolute so a crawler can follow it, shown large.
         self.assertRegex(meta(html, "property", "og:image"), r"^http://testserver/.*banner_timelines/taiki")
@@ -107,9 +112,10 @@ class BannerSharePageTests(CalculatorTestCase):
         self.assertIn(" through ", description)
         self.assertIn("estimated from the JP schedule.", description)
 
-    def test_a_banner_with_no_art_or_dates_keeps_the_site_card(self):
+    def test_a_banner_with_nobody_art_or_dates_yet_keeps_the_site_card(self):
         bare = BannerTimeline.objects.create(name="Mystery banner")
         html = self.page(f"/banner/{bare.id}")
+        # Nobody announced: the row's name is all there is.
         self.assertEqual(meta(html, "property", "og:title"), "Mystery banner")
         self.assertEqual(meta(html, "property", "og:image"), "https://site.example/social-card.png")
         self.assertEqual(meta(html, "name", "twitter:card"), "summary")
@@ -128,14 +134,20 @@ class BannerSharePageTests(CalculatorTestCase):
         self.page(f"/banner/{self.banner.id}")
         self.assertEqual((BannerTimeline.objects.count(), SupportCard.objects.count()), before)
 
-    def test_the_card_list_is_cut_past_five(self):
-        support = make_support_banner(self.banner, name="Another support banner")
-        for index in range(5):
+    def test_a_long_list_is_cut_in_the_title_and_given_whole_below(self):
+        """As the card does for a Golden Week revival: two names and a count,
+        then everyone in the description. A card sharing an uma's name once."""
+        for name in ("Kitasan Black", "Taiki Shuttle (Camping)"):
             SupportsOnSupportBanner.objects.create(
-                banner_support=support, support_card=SupportCard.objects.create(name=f"Card {index}"),
+                banner_support=self.support, support_card=SupportCard.objects.create(name=name),
             )
-        description = meta(self.page(f"/banner/{self.banner.id}"), "property", "og:description")
-        self.assertIn("Support cards: Kitasan Black, Super Creek, Card 0, Card 1, Card 2 and 2 more.", description)
+        html = self.page(f"/banner/{self.banner.id}")
+        self.assertEqual(meta(html, "property", "og:title"), "Taiki Shuttle (Camping), Yamanin Zephyr and 2 more")
+        self.assertEqual(
+            meta(html, "property", "og:description"),
+            "2026/6/11 through 2026/6/20. "
+            "Featuring Taiki Shuttle (Camping), Yamanin Zephyr, TM Opera O and Kitasan Black.",
+        )
 
 
 @override_settings(FRONTEND_URL="https://site.example")

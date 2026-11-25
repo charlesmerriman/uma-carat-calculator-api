@@ -884,9 +884,12 @@ link-preview tags on the site's host, through the `/banner` ingress rule in `.do
 like `/guide`; a browser lands on `/app/timeline?focus=banner-73`. Code:
 `views/banner_share.py`, template `share/link_preview.html`.
 
-- **Title:** the window's name. **Description:** its effective dates ("2026/6/11 through
-  2026/6/20", ", estimated from the JP schedule" when predicted) and its support cards'
-  catalogue names (placeholders out, five at most, then "and N more").
+- **Title:** who it features, worded as the Timeline card's title (frontend `featuredTitle`):
+  umas then support cards, each name once, "A, B and C", past three "A, B and 3 more". The
+  row's own `name` (an editor's label) only when nobody is on it yet. **Description:** its
+  effective dates ("2026/6/11 through 2026/6/20", ", estimated from the JP schedule" when
+  predicted) and, when the title cut its list, "Featuring" everyone (twelve, then "and N
+  more"). Catalogue names only; placeholder cards left out.
 - **Picture:** the banner's own uploaded art, untouched, as a large card; no size tags, since
   the size isn't known without reading the file. No art: the site card.
 - **An id naming no banner:** the site's own tags with a **404**, still sending a browser to
