@@ -69,7 +69,8 @@ from calculatorapi.analytics.income_settings import income_settings, rank_distri
 from calculatorapi.analytics.people import engaged_subset, non_staff_users
 from calculatorapi.models import (
     PUBLISHED_VISIBILITIES, PVP_DECK_SIZE, PVP_TEAM_SIZE, BannerTimeline, PvpDeckSlot, PvpGuide, PvpRunRace,
-    PvpRunRunner, PvpTeamCard, PvpTeamMember, PvpUmaRecommendation, Scenario, SupportCard, UserPlannedPurchase,
+    PvpRunRacePlace, PvpRunRunner, PvpTeamCard, PvpTeamMember, PvpUmaRecommendation, Scenario, SupportCard,
+    UserPlannedPurchase,
 )
 from calculatorapi.predictions import build_effective_date_maps
 from calculatorapi.rankings_cache import cached_payload
@@ -406,21 +407,33 @@ def saved_teams(event):
 
 def run_results(event):
     """CM Runs, totalled per uma and strategy: {"players", "races", "rows":
-    [{"uma", "style", "races", "wins"}]}, most races first.
+    [{"uma", "style", "races", "wins", "placed", "place_total", "top3"}],
+    "named_losses", "beaten_by": [{"uma", "losses"}]}, rows most races first.
 
     A runner RAN every race of her ticket that has a result (a race with no
     row isn't raced yet), and WON the ones whose winner is her spot. So a
     ticket's three runners share its races, and their wins add up to the
     ticket's wins. Skipped tickets never count; staff never do. `min_races`
-    is the floor under which the client shows no rate. Two queries.
+    is the floor under which the client shows no rate.
+
+    Places are optional (notes/cm-runs-plan-2.md), so a row's places count
+    only the races she has one in: `placed` of them, their sum for the
+    average, and how many were 1st to 3rd. A race logged without places
+    still counts in `races` exactly as before. Worked: Oguri placed 1, 2, 3, 2
+    over four of her five races is placed 4, place_total 8 (average 2.0),
+    top3 4.
+
+    What beats players: a loss that names the uma that won it (`lost_to_uma`)
+    counts once for that uma, and `named_losses` is how many losses named
+    one. Shares and floors are rankings_shares.py's. Three queries.
     """
     lookup = {f"run__{field}": value for field, value in event.items()}
     base = {"run__user__is_staff": False, "run__skipped": False, **lookup}
-    races = defaultdict(list)
-    for run_id, winner in PvpRunRace.objects.filter(**base).values_list("run_id", "winner"):
-        races[run_id].append(winner)
-    totals = defaultdict(lambda: {"races": 0, "wins": 0})
+    races, beaten_by = _race_results(base)
+    totals =defaultdict(lambda: {"races": 0, "wins": 0, "placed": 0, "place_total": 0, "top3": 0})
     players = set()
+    # (run, spot) -> the row its runner counts in, for the places below.
+    spots = {}
     for run_id, user_id, position, uma_id, style in (
         PvpRunRunner.objects.filter(**base).values_list("run_id", "run__user_id", "position", "uma_id", "style")
     ):
@@ -430,6 +443,8 @@ def run_results(event):
         row = totals[(uma_id, style)]
         row["races"] += len(races[run_id])
         row["wins"] += sum(1 for winner in races[run_id] if winner == position)
+        spots[(run_id, position)] = row
+    _add_places(base, spots)
     rows = [{"uma": uma, "style": style, **counts} for (uma, style), counts in totals.items()]
     rows.sort(key=lambda row: (-row["races"], row["uma"], row["style"]))
     return {
@@ -437,7 +452,41 @@ def run_results(event):
         "races": sum(len(results) for results in races.values()),
         "min_races": MIN_RACES,
         "rows": rows,
+        "named_losses": sum(beaten_by.values()),
+        "beaten_by": [
+            {"uma": uma, "losses": losses}
+            for uma, losses in sorted(beaten_by.items(), key=lambda item: (-item[1], item[0]))
+        ],
     }
+
+
+def _race_results(base):
+    """({run id: [winner per race]}, Counter of the umas named as winning a
+    loss) for run_results' race filter. One query."""
+    races = defaultdict(list)
+    beaten_by = Counter()
+    for run_id, winner, lost_to in PvpRunRace.objects.filter(**base).values_list("run_id", "winner", "lost_to_uma_id"):
+        races[run_id].append(winner)
+        if winner is None and lost_to is not None:
+            beaten_by[lost_to] += 1
+    return races, beaten_by
+
+
+def _add_places(base, spots):
+    """Add each place to the row of the runner who finished there, joined on
+    (run, spot): `spots` maps (run id, position) to its (uma, style) row, and
+    `base` is run_results' race filter, applied one level down. A place whose
+    runner isn't counted (no such spot) is skipped. One query."""
+    place_filter = {f"race__{key}": value for key, value in base.items()}
+    for run_id, position, place in PvpRunRacePlace.objects.filter(**place_filter).values_list(
+        "race__run_id", "position", "place",
+    ):
+        row = spots.get((run_id, position))
+        if row is None:
+            continue
+        row["placed"] += 1
+        row["place_total"] += place
+        row["top3"] += place <= 3
 
 
 def pvp_payload(event):
