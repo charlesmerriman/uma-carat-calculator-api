@@ -34,17 +34,22 @@
 
 - key: pvp-guide-polish-and-top-bar
   date: 2026-11-25
-  title: "Places in CM Runs, a tidier PvP guide, and a simpler top bar"
+  title: "Places and replays in CM Runs, a tidier PvP guide, and a simpler top bar"
   version: "v2.24"
   changes:
-    - added: "CM Runs can log where each of your umas finished. Turn on Log places and every race gets a 1st to 9th for each of them."
-    - added: "Every loss can say which uma beat you. Your totals now show each uma's average place, how often she makes the top 3, and who beats you most."
+    - added: "Using umadump? CM Runs can now fill itself in from its race replays."
+    - added: "Drop the files or the whole folder and check where each race goes before you save, or let Chrome and Edge watch the folder and save each race as it lands. It fills in places, who won and why your umas lost, and never changes a result you tapped. Only your own umas' results leave your computer."
+    - added: "CM Runs can log where each of your umas finished. Turn on Log places, tap 1 to 9 for each of them, and the next race opens by itself. The Finals have places too."
+    - added: "Every loss can say which uma beat you, with the ones that beat you most a tap away. Your totals now show each uma's average place, how often she makes the top 3, and who beats you most."
+    - added: "Rankings shows which umas beat players most in CM Runs, and each uma's average place under What wins."
     - added: "Guides can show an uma's picture right in the text and in the style ranking. Tap her for her card."
     - changed: "The course map folds to its one-line answer on My team, CM Runs and the Gallery, and on phones. Show the map opens it, and it remembers your choice."
     - changed: "The bar with Previous and Next scrolls away as you read, so the guide gets more of the screen."
     - changed: "Team comps sit under the Meta analysis now."
     - changed: "The guide's picks in My team and the pickers have a coloured edge instead of a red star. Pickers can also show Recommended only."
+    - fixed: "A recommended uma keeps her ears and hat in front of that edge."
     - added: "Stuck to the top, the course map can show the strip, the track or both. Lighting a skill in the guide lights it on the map."
+    - changed: "Hovering a skill with the map stuck to the top just lights it up, with no extra card beside it."
     - fixed: "The course strip's labels no longer run into each other on narrower screens."
     - fixed: "On the Track view, a lit skill runs down the middle of the track, clear of the hill markers."
     - fixed: "On a phone, a guide's text stops on a whole line before Read more."
@@ -56,6 +61,7 @@
     - changed: "On a phone, the row with the logo scrolls away and comes back when you scroll up."
     - changed: "Dark has been redrawn. The other single-colour themes got sturdier buttons and tabs."
     - added: "The Timeline has a heading for each month."
+    - added: "The Encyclopedia's uma, card and skill lists have headings and a jump list for every sort, filtered or not."
     - changed: "Community plans is now the Pull Plan Library. Spending levels say what they mean, and a plan can be posted more than once."
     - fixed: "Clearing a Timeline search keeps your place, and links into the Timeline land below its bar."
 
