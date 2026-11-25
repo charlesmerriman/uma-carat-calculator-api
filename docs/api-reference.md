@@ -890,20 +890,28 @@ like `/guide`; a browser lands on `/app/timeline?focus=banner-73`. Code:
   effective dates ("2026/6/11 through 2026/6/20", ", estimated from the JP schedule" when
   predicted) and, when the title cut its list, "Featuring" everyone (twelve, then "and N
   more"). Catalogue names only; placeholder cards left out.
-- **Picture:** the banner's own uploaded art, untouched, as a large card; no size tags, since
-  the size isn't known without reading the file. No art: the site card.
-- **An id naming no banner:** the site's own tags with a **404**, still sending a browser to
-  `/app/timeline`. (The other share pages answer 200 here.)
+- **Picture:** the branded card below.
+- **An address naming no banner** (unknown or not a number): the site's own tags, a **200**,
+  still sending a browser to `/app/timeline`.
 
 Opening it creates and counts nothing. Throttled per address at `banner_share` (600/hour),
 counted in the `gallery` cache. The old `/app/timeline?focus=banner-…` address keeps working,
 with the plain preview.
 
-### `GET /question/<slug>` (not under `/api`)
+### `GET /banner/<timeline_id>/preview.jpg?v=<version>` (not under `/api`)
 
-A FAQ question's link, `/question/how-do-step-up-banners-work` (the `FaqItem` slug, the
+A 1200x630 JPEG drawn by `banner_preview.py` (owner, 2026-11-25): the brand strip with
+"Banner Timeline", then "Timeline banner", the page's title and dates (and "Estimated from the
+JP schedule" when predicted) at the left, over the banner's art blurred and shaded, with the
+art itself sharp at the right (16:9, as banner art is). No art, or art that can't be read:
+the plain background and no box. Versioned, redirected and cached exactly as the guide's
+picture. **`404`** for an address naming no banner.
+
+### `GET /help/<slug>` (not under `/api`)
+
+A FAQ question's link, `/help/how-do-step-up-banners-work` (the `FaqItem` slug, the
 question's `#anchor` on `/faq`): what each question's "Copy link" copies. A `#fragment` never
-reaches a server, so `/faq#slug` can only ever unfurl as the FAQ page. Through the `/question`
+reaches a server, so `/faq#slug` can only ever unfurl as the FAQ page. Through the `/help`
 ingress rule; **never `/faq/<slug>`**, because ingress matches prefixes only and a `/faq` rule
 would take the static FAQ page too. A browser lands on `/faq#<slug>`. Code:
 `views/faq_share.py`.
@@ -911,8 +919,8 @@ would take the static FAQ page too. A browser lands on `/faq#<slug>`. Code:
 - **Title:** the question. **Description:** the answer as plain text (markdown taken out), cut
   at a word near 300 characters. The team's words, as written in the admin.
 - **Picture:** the site card.
-- **A slug naming no question:** the FAQ page's own tags with a **404**, still sending a
-  browser to `/faq`.
+- **A slug naming no question:** the FAQ page's own tags, a **200**, still sending a browser
+  to `/faq`.
 
 Throttled at `faq_share` (600/hour), in the `gallery` cache. Creates and counts nothing.
 

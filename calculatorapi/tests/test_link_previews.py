@@ -1,17 +1,20 @@
-"""A Timeline banner's link (/banner/<id>) and a FAQ question's (/question/<slug>).
+"""A Timeline banner's link (/banner/<id>) and a FAQ question's (/help/<slug>).
 
 Pins what each preview says, because Discord and X keep their own copy of it:
-catalogue facts for a banner (its name, dates, cards and art), the question and
-the start of its answer for a FAQ link. Pins too that a person is sent on to
-the page the link names, and that an unknown id or slug is a 404 that still
-sends them somewhere useful.
+catalogue facts for a banner (who it features, its dates, and a branded card
+over its art), the question and the start of its answer for a FAQ link. Pins
+too that a person is sent on to the page the link names, and that an unknown
+id or slug gets the site's own tags with a 200, like /post, /plan and /guide.
 """
 
 import datetime
+import io
 import re
 import shutil
 import tempfile
 from html import unescape
+
+from PIL import Image
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import override_settings
@@ -38,6 +41,13 @@ def redirect_target(html):
     return match.group(1).encode().decode("unicode_escape") if match else None
 
 
+def png(width=64, height=36):
+    """A real (tiny) 16:9 PNG, so the picture has art to draw."""
+    out = io.BytesIO()
+    Image.new("RGB", (width, height), (200, 120, 60)).save(out, format="PNG")
+    return out.getvalue()
+
+
 def at(year, month, day, hour=22):
     return datetime.datetime(year, month, day, hour, tzinfo=datetime.timezone.utc)
 
@@ -56,7 +66,7 @@ class BannerSharePageTests(CalculatorTestCase):
             name="Taiki Shuttle (Camping) + Yamanin Zephyr (Rerun)",
             global_start_date=at(2026, 6, 11), global_end_date=at(2026, 6, 20, 21),
         )
-        self.banner.image = SimpleUploadedFile("taiki.png", b"\x89PNG fake", content_type="image/png")
+        self.banner.image = SimpleUploadedFile("taiki.png", png(), content_type="image/png")
         self.banner.save()
         uma_banner = make_uma_banner(self.banner, name="Taiki Shuttle (Camping) + Yamanin Zephyr")
         for name in ("Taiki Shuttle (Camping)", "Yamanin Zephyr"):
@@ -76,7 +86,7 @@ class BannerSharePageTests(CalculatorTestCase):
         self.assertEqual(response.status_code, status)
         return response.content.decode()
 
-    def test_a_banner_says_who_it_features_and_its_dates_over_its_own_art(self):
+    def test_a_banner_says_who_it_features_and_its_dates_on_its_own_picture(self):
         html = self.page(f"/banner/{self.banner.id}")
 
         # The Timeline card's own title (featuredTitle), not the row's name.
@@ -86,11 +96,13 @@ class BannerSharePageTests(CalculatorTestCase):
         self.assertNotIn("Rerun", html)
         self.assertEqual(meta(html, "property", "og:description"), "2026/6/11 through 2026/6/20.")
         self.assertEqual(meta(html, "property", "og:url"), f"https://site.example/banner/{self.banner.id}")
-        # The art as uploaded, absolute so a crawler can follow it, shown large.
-        self.assertRegex(meta(html, "property", "og:image"), r"^http://testserver/.*banner_timelines/taiki")
+        # The branded card (banner_preview.py), versioned, shown large.
+        self.assertRegex(
+            meta(html, "property", "og:image"),
+            rf"^https://site\.example/banner/{self.banner.id}/preview\.jpg\?v=\w+$",
+        )
+        self.assertEqual(meta(html, "property", "og:image:width"), "1200")
         self.assertEqual(meta(html, "name", "twitter:card"), "summary_large_image")
-        # Its size isn't known, so no size tags (the template leaves them out).
-        self.assertIsNone(meta(html, "property", "og:image:width"))
         self.assertNotIn("Any SSR Speed", html)
 
     def test_people_are_sent_on_to_the_card_on_the_timeline(self):
@@ -112,26 +124,58 @@ class BannerSharePageTests(CalculatorTestCase):
         self.assertIn(" through ", description)
         self.assertIn("estimated from the JP schedule.", description)
 
-    def test_a_banner_with_nobody_art_or_dates_yet_keeps_the_site_card(self):
+    def test_a_banner_with_nobody_art_or_dates_yet_still_gets_its_card(self):
         bare = BannerTimeline.objects.create(name="Mystery banner")
         html = self.page(f"/banner/{bare.id}")
         # Nobody announced: the row's name is all there is.
         self.assertEqual(meta(html, "property", "og:title"), "Mystery banner")
-        self.assertEqual(meta(html, "property", "og:image"), "https://site.example/social-card.png")
-        self.assertEqual(meta(html, "name", "twitter:card"), "summary")
         # Nothing to say about it: the site's own description, never an empty one.
         self.assertTrue(meta(html, "property", "og:description"))
+        # The card on the plain background.
+        picture = self.client.get(f"/banner/{bare.id}/preview.jpg")
+        self.assertEqual(picture.status_code, 200)
+        self.assertEqual(picture["Content-Type"], "image/jpeg")
 
-    def test_an_unknown_banner_is_a_404_that_still_opens_the_timeline(self):
-        html = self.page("/banner/999999", status=404)
-        self.assertEqual(meta(html, "property", "og:title"), "Uma Musume Carat Calculator")
-        self.assertEqual(redirect_target(html), "https://site.example/app/timeline")
-        # Not a number: no route at all.
-        self.assertEqual(self.client.get("/banner/taiki").status_code, 404)
+    def test_an_address_naming_no_banner_gets_the_site_tags_and_opens_the_timeline(self):
+        """A 200, like /post, /plan and /guide: an old link still unfurls as
+        the site (owner, 2026-11-25)."""
+        for path in ("/banner/999999", "/banner/taiki", "/banner/0", "/banner/12x"):
+            html = self.page(path)
+            self.assertEqual(meta(html, "property", "og:title"), "Uma Musume Carat Calculator", path)
+            self.assertEqual(meta(html, "property", "og:image"), "https://site.example/social-card.png")
+            self.assertEqual(redirect_target(html), "https://site.example/app/timeline")
+
+    def test_the_picture_is_a_versioned_branded_card(self):
+        image = meta(self.page(f"/banner/{self.banner.id}"), "property", "og:image")
+        path = image.removeprefix("https://site.example")
+        response = self.client.get(path)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "image/jpeg")
+        self.assertIn("immutable", response["Cache-Control"])
+        picture = Image.open(io.BytesIO(response.content))
+        self.assertEqual(picture.size, (1200, 630))
+
+        # Who it features changed: a new address, and the old one redirects to it.
+        UmasOnUmaBanner.objects.create(
+            banner_uma=self.banner.uma_banners.first(), uma=Uma.objects.create(name="Kitasan Black"),
+        )
+        stale = self.client.get(path)
+        self.assertEqual(stale.status_code, 302)
+        self.assertNotEqual(stale["Location"], path)
+
+        self.assertEqual(self.client.get("/banner/999999/preview.jpg").status_code, 404)
+
+    def test_art_that_cannot_be_read_leaves_the_plain_card(self):
+        self.banner.image = SimpleUploadedFile("broken.png", b"not a picture", content_type="image/png")
+        self.banner.save()
+        with self.assertLogs("calculatorapi", level="WARNING"):
+            response = self.client.get(f"/banner/{self.banner.id}/preview.jpg")
+        self.assertEqual(response.status_code, 200)
 
     def test_opening_it_writes_nothing(self):
         before = BannerTimeline.objects.count(), SupportCard.objects.count()
         self.page(f"/banner/{self.banner.id}")
+        self.client.get(f"/banner/{self.banner.id}/preview.jpg")
         self.assertEqual((BannerTimeline.objects.count(), SupportCard.objects.count()), before)
 
     def test_a_long_list_is_cut_in_the_title_and_given_whole_below(self):
@@ -171,23 +215,23 @@ class FaqSharePageTests(CalculatorTestCase):
         return response.content.decode()
 
     def test_a_question_says_its_question_and_the_start_of_its_answer(self):
-        html = self.page(f"/question/{self.item.slug}")
+        html = self.page(f"/help/{self.item.slug}")
         self.assertEqual(meta(html, "property", "og:title"), "How do step-up banners work?")
         self.assertEqual(
             meta(html, "property", "og:description"),
             "Step-up banners are paid-only banners. See the Timeline. Step 1 costs 750 paid carats "
             "Step 5 is guaranteed",
         )
-        self.assertEqual(meta(html, "property", "og:url"), f"https://site.example/question/{self.item.slug}")
+        self.assertEqual(meta(html, "property", "og:url"), f"https://site.example/help/{self.item.slug}")
         self.assertEqual(meta(html, "property", "og:image"), "https://site.example/social-card.png")
 
     def test_people_are_sent_on_to_the_question_on_the_faq(self):
-        html = self.page(f"/question/{self.item.slug}")
+        html = self.page(f"/help/{self.item.slug}")
         self.assertEqual(redirect_target(html), f"https://site.example/faq#{self.item.slug}")
         self.assertIn('<meta name="robots" content="noindex">', html)
 
-    def test_an_unknown_question_is_a_404_that_still_opens_the_faq(self):
-        html = self.page("/question/no-such-question", status=404)
+    def test_an_unknown_question_gets_the_faq_tags_and_opens_the_faq(self):
+        html = self.page("/help/no-such-question")
         self.assertEqual(meta(html, "property", "og:title"), "FAQ | Uma Musume Carat Calculator")
         self.assertEqual(redirect_target(html), "https://site.example/faq")
 
@@ -207,5 +251,5 @@ class FaqSharePageTests(CalculatorTestCase):
 
     def test_opening_it_writes_nothing(self):
         before = FaqItem.objects.count()
-        self.page(f"/question/{self.item.slug}")
+        self.page(f"/help/{self.item.slug}")
         self.assertEqual(FaqItem.objects.count(), before)

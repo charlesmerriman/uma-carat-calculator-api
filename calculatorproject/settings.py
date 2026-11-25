@@ -527,7 +527,7 @@ REST_FRAMEWORK = {
         "plan_share": "600/hour",
         # The /guide/<kind>-<id> share page (views/guide_share.py), likewise.
         "guide_share": "600/hour",
-        # The /banner/<id> and /question/<slug> share pages
+        # The /banner/<id> and /help/<slug> share pages
         # (views/banner_share.py, views/faq_share.py), likewise.
         "banner_share": "600/hour",
         "faq_share": "600/hour",
@@ -888,7 +888,7 @@ CACHES = {
     # The gallery's own small keys, kept OUT of "default" on purpose: one
     # "already counted" key per viewer per post per day (gallery.record_view)
     # and every gallery throttle counter (views/gallery.py GalleryThrottle),
-    # plus the /plan/<id>, /guide/<ref>, /banner/<id> and /question/<slug>
+    # plus the /plan/<id>, /guide/<ref>, /banner/<id> and /help/<slug>
     # share pages' (PlanShareThrottle, GuideShareThrottle, BannerShareThrottle,
     # FaqShareThrottle in views/plan_share.py, guide_share.py, banner_share.py
     # and faq_share.py).

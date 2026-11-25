@@ -1,5 +1,5 @@
 """
-A FAQ question's link: GET /question/<slug>, a tiny HTML page of link-preview
+A FAQ question's link: GET /help/<slug>, a tiny HTML page of link-preview
 tags that sends people on to /faq#<slug>.
 
 WHY A PAGE OF ITS OWN
@@ -9,13 +9,13 @@ browser: Discord's and X's crawlers fetch /faq and get the one page's tags,
 the same generic blurb for every question (Daptrius's request, board post
 1574926713618432050). Only a path can name the question to a server.
 
-WHY /question AND NOT /faq/<slug>
----------------------------------
+WHY /help AND NOT /faq/<slug>
+-----------------------------
 App Platform's ingress matches path PREFIXES only, and /faq itself is a
 prerendered page on the static site (dist/faq.html). A /faq rule sending
 /faq/<slug> here would take the FAQ page with it. An ingress rule in
-backend/.do/app.yaml sends /question to this app; the site has no route of
-its own under it. Each question's "Copy link" on the FAQ page copies this
+backend/.do/app.yaml sends /help to this app; the site has no route of
+its own under it (checked 2026-11-25). Each question's "Copy link" on the FAQ page copies this
 address; an older /faq#<slug> link still works, with the plain preview.
 
 WHAT THE PREVIEW SAYS
@@ -25,8 +25,9 @@ the markdown taken out and cut at a word. Both are the team's own words from
 the admin (Site content -> FAQ), already public on /faq, passed through
 as written. The picture is the site's card.
 
-A slug that names no question gets the site's own tags with a 404 status,
-and a person is still sent on to the FAQ (see share_page).
+A slug that names no question gets the FAQ page's own tags, a 200 like
+/post, /plan and /guide (owner, 2026-11-25), and a person is still sent on
+to the FAQ.
 
 Opening this page creates and counts nothing: crawlers fetch it on every paste.
 """
@@ -117,19 +118,17 @@ def share_context(item):
     context.update(
         title=item.question,
         description=excerpt(plain_text(item.answer)) or FAQ_DESCRIPTION,
-        share_url=_site(f"/question/{item.slug}"),
+        share_url=_site(f"/help/{item.slug}"),
         app_url=_site(f"/faq#{item.slug}"),
     )
     return context
 
 
 def share_page(request, slug):
-    """The tags, or for a slug naming no question the FAQ's own tags with a
-    404 status: no preview of a question that is gone, but a person who
-    follows an old link still lands on the FAQ."""
+    """The tags, or for a slug naming no question the FAQ's own (a 200, so
+    an old link still unfurls as the FAQ and still opens it)."""
     if not FaqShareThrottle().allow_request(request, None):
         return HttpResponse("Too many requests", status=429, content_type="text/plain")
     item = FaqItem.objects.filter(slug=slug).first()
-    if item is None:
-        return render(request, "share/link_preview.html", _default_context(), status=404)
-    return render(request, "share/link_preview.html", share_context(item))
+    context = share_context(item) if item is not None else _default_context()
+    return render(request, "share/link_preview.html", context)

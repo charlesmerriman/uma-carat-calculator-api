@@ -196,24 +196,25 @@ ingress:
     match:
       path:
         prefix: /guide
-  # A Timeline banner's link (/banner/73), the same way (views/banner_share.py),
-  # then on to /app/timeline?focus=banner-73. The site has no route under /banner.
+  # A Timeline banner's link (/banner/73) and its picture, the same way
+  # (views/banner_share.py), then on to /app/timeline?focus=banner-73. The
+  # site has no route under /banner.
   - component:
       name: calculatorproject
       preserve_path_prefix: true
     match:
       path:
         prefix: /banner
-  # A FAQ question's link (/question/<slug>), the same way (views/faq_share.py),
+  # A FAQ question's link (/help/<slug>), the same way (views/faq_share.py),
   # then on to /faq#<slug>. Its own prefix, never /faq: prefixes are all an
   # ingress rule can match, and a /faq rule would take the static FAQ page
-  # (dist/faq.html) to Django too. The site has no route under /question.
+  # (dist/faq.html) to Django too. The site has no route under /help.
   - component:
       name: calculatorproject
       preserve_path_prefix: true
     match:
       path:
-        prefix: /question
+        prefix: /help
 name: umamusme-calculator
 region: nyc
 services:
