@@ -372,7 +372,8 @@ class PlacesTests(PvpRunFixture):
         url = self.ticket_url(kind="loh")
         res = self.put(url, races=self.placed(1, (0, 4), (1, 1), (2, 12)))
         self.assertEqual(res.status_code, 200, res.content)
-        self.assertEqual([(p["position"], p["place"]) for p in res.json()["races"][0]["places"]], [(0, 4), (1, 1), (2, 12)])
+        places = res.json()["races"][0]["places"]
+        self.assertEqual([(p["position"], p["place"]) for p in places], [(0, 4), (1, 1), (2, 12)])
         res = self.put(url, races=self.placed(None, (0, 13)))
         self.assertEqual(res.status_code, 400)
         res = self.put(url, races=self.placed(None, (0, 11), (1, 11)))
