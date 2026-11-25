@@ -262,6 +262,56 @@ class PublishTests(PlanGalleryFixture):
         self.assertGreater(changed.content_updated_at, first_edit)
         self.assertEqual(GalleryPost.objects.filter(author=user).count(), 1)
 
+    def test_as_new_posts_the_same_plan_again(self):
+        # Several posts per plan (owner, 2026-11-24): Henry, with one plan,
+        # could only ever update the one post.
+        user = self.member()
+        plan = self.plan(user)
+        first = self.publish(user, plan)
+        second = self.publish(user, plan, caption="Second take", as_new=True)
+        self.assertNotEqual(first.public_id, second.public_id)
+        self.assertEqual(GalleryPost.objects.filter(author=user, source_plan=plan).count(), 2)
+        first.refresh_from_db()
+        self.assertEqual(first.caption, "F2P road to the anniversary")
+
+    def test_an_update_goes_to_the_plans_newest_post(self):
+        user = self.member()
+        plan = self.plan(user)
+        first = self.publish(user, plan)
+        second = self.publish(user, plan, caption="Second take", as_new=True)
+        updated = self.publish(user, plan, caption="Second take, edited")
+        self.assertEqual(updated.pk, second.pk)
+        first.refresh_from_db()
+        self.assertEqual(first.caption, "F2P road to the anniversary")
+        listed = {row["id"]: row for row in self.client_for(user).get("/plans").data}
+        self.assertEqual(listed[plan.id]["post_public_id"], second.public_id)
+
+    def test_as_new_still_counts_against_the_cap(self):
+        user = self.member()
+        plan = self.plan(user)
+        for _ in range(plan_gallery.PLAN_POST_CAP):
+            self.publish(user, plan, as_new=True)
+        with self.assertRaises(gallery.GalleryRefused) as refused:
+            self.publish(user, plan, as_new=True)
+        self.assertIn("up to 5 plans posted", refused.exception.message)
+        # An update of a posted plan is not a new post, so it still goes through.
+        self.assertIsNotNone(self.publish(user, plan, caption="Edited"))
+
+    def test_the_route_takes_as_new(self):
+        user = self.member()
+        plan = self.plan(user)
+        client = self.client_for(user)
+        body = {"caption": "Hi", "confirm_public_identity": True}
+        self.assertEqual(client.post(f"/plans/{plan.id}/publish", body, format="json").status_code, 201)
+        self.assertEqual(client.post(f"/plans/{plan.id}/publish", body, format="json").status_code, 200)
+        again = client.post(f"/plans/{plan.id}/publish", {**body, "as_new": True}, format="json")
+        self.assertEqual(again.status_code, 201)
+        # Only a real true counts: a string is not a yes.
+        self.assertEqual(
+            client.post(f"/plans/{plan.id}/publish", {**body, "as_new": "yes"}, format="json").status_code, 200
+        )
+        self.assertEqual(GalleryPost.objects.filter(author=user, source_plan=plan).count(), 2)
+
     def test_deleting_the_plan_leaves_the_post(self):
         user = self.member()
         plan = self.plan(user, name="Spare")
@@ -488,7 +538,7 @@ class PlanPostAroundTheSiteTests(PlanGalleryFixture):
     def test_the_link_preview_draws_the_first_banners(self):
         post = self.publish(self.member())
         page = APIClient().get(f"/post/{post.public_id}").content.decode()
-        self.assertIn("Community plan: 600 pulls on 3 banners", page)
+        self.assertIn("Pull Plan Library: 600 pulls on 3 banners", page)
         self.assertIn("Uma 0, Uma 1 and Uma 2", page)
         self.assertNotIn(post.caption, page)
 

@@ -79,6 +79,9 @@ def plan_publish(request, plan_id):
             include_notes=body.get("include_notes", False),
             include_income=body.get("include_income", False),
             confirm_public_identity=body.get("confirm_public_identity", False),
+            # True: a new post even when this plan has one (several per plan
+            # since 2026-11-24). Left out: update the plan's newest post.
+            as_new=body.get("as_new", False) is True,
         )
     except gallery.GalleryRefused as refusal:
         return refused(refusal)

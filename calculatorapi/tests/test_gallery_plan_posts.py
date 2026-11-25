@@ -88,12 +88,14 @@ class PlanPostConstraintTests(RouteFixture):
         self.assertTrue(post.is_plan)
         self.assertIsNone(post.event)
 
-    def test_one_post_per_plan(self):
+    def test_a_plan_may_have_several_posts(self):
+        # The one-post-per-plan constraint went in 0145 (owner, 2026-11-24);
+        # the cap on a person is plan_gallery's, tested in test_plan_gallery.
         user = self.person()
         plan = Plan.objects.create(user=user, name="Main")
         make_plan_post(user, source_plan=plan)
-        with self.assertRaises(IntegrityError), transaction.atomic():
-            make_plan_post(user, source_plan=plan)
+        make_plan_post(user, source_plan=plan)
+        self.assertEqual(GalleryPost.objects.filter(source_plan=plan).count(), 2)
         # Posts whose plans were deleted have none, and may be several.
         make_plan_post(user)
         make_plan_post(user)
@@ -239,7 +241,7 @@ class PlanPostRouteTests(RouteFixture):  # pylint: disable=too-many-public-metho
         page = APIClient().get(f"/post/{self.post_row.public_id}")
         self.assertEqual(page.status_code, 200)
         html = page.content.decode()
-        self.assertIn("<title>Community plan</title>", html)
+        self.assertIn("<title>Pull Plan Library</title>", html)
         self.assertNotIn(SITE_NAME + "</title>", html)
         self.assertNotIn(self.post_row.caption, html)
         self.assertNotIn(self.post_row.strategy, html)

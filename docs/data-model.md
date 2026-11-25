@@ -1101,7 +1101,10 @@ erDiagram
   - `PvpTeamComp`: free text ("2 Front + 1 Pace") and a note.
 - **`[[Skill name]]` mentions** may appear in any guide text field. `SkillMentionsMixin`
   (`MENTION_FIELDS` per model) refuses a save whose mention matches no skill on global,
-  ignoring case, with suggestions; the API resolves them into `skill_mentions`.
+  ignoring case, with suggestions; the API resolves them into `skill_mentions`. The same
+  check refuses a **`((Uma name))`** that names no trainee outfit (`find_uma_mentions`,
+  `uma_mention_error`; Henry's ask, 2026-11-18), and the API resolves those into
+  `uma_mentions`. The style ranking is checked for both.
 - **There is no proxy model any more.** `PvpGuideSkills` (migration `0086`) gave the
   skills a page of their own; `0088` deleted it once the admin became one page per guide
   with a tab per style (`admin_pvp.py`, `admin.md` "PvP guides"). `0089` keeps the
@@ -1232,6 +1235,12 @@ plan for linking veterans: `notes/pvp-planner-plan.md` ("R3 CM Runs").
   that ran, the same column `PvpTeamMember` has (stats live only on the veteran).
 - **`PvpRunRace`**: `race` 1..5 and `winner`, the spot of the player's uma that won, NULL
   for a loss. **No row = not raced yet**, which a win rate leaves out of its denominator.
+- **`PvpRunRacePlace`** (`0146`, notes/cm-runs-plan-2.md): where one of the player's umas
+  finished a CM race, 1st to 9th (`PVP_CM_RACE_RUNNERS`), one row per runner per race, unique
+  on (race, position) and (race, place); `loss_reason` holds the game's code from a replay
+  (`PvpLossReason`), blank until the import exists. Optional detail: `winner` stays the one
+  fact win rates read. `PvpRunRace.lost_to_uma` / `lost_to_style` name the uma that won a
+  loss (`pvp_run_lost_to_only_on_loss`); never another player's name, account or build.
 - Day and ticket limits per kind are constants (`PVP_RUN_DAYS`, `PVP_RUN_TICKETS`), checked
   in `pvp_runs.py`, not the database. The lineup obeys the team rules through
   `pvp_teams.check_lineup`.
@@ -1312,7 +1321,9 @@ filters, auto-hide, the moderator's decisions, the Discord alert) and `public_id
 (the one place a person is shown beside public content).
 
 **One generic parent, two kinds.** A post is a PvP team (`pvp_team`) or a pull plan (`plan`,
-Community plans, `0144`). Votes, comments and reports point at `GalleryPost` by a real FK,
+Community plans, `0144`). Players see the plans page as the **Pull Plan Library** (renamed
+2026-11-24, `notes/pull-plan-database-plan-2.md`); the code, these docs and `/app/plans` keep
+"Community plans" as the internal name. Votes, comments and reports point at `GalleryPost` by a real FK,
 and the kind-specific columns are tied to their kind by check constraints on SCALAR columns
 only: `gallery_post_event_matches_kind` (the `PvpTeam` XOR idiom: a team has one event, a
 plan none) and `gallery_post_plan_matches_kind` (the plan columns are blank on a team). A
@@ -1337,7 +1348,7 @@ post (votes, comments, reports, moderation, erasure) never needs to.
   blank for "not said"), `plan_strategies` (`PLAN_STRATEGIES` keys joined by commas, a
   scalar so it can sit in the check constraint), `plan_range` (the `Scenario` the plan runs
   up to, worked out at posting, SET_NULL) and `source_plan` (SET_NULL, never serialized;
-  `one_gallery_post_per_source_plan`, partial). `caption` is a plan's title and `strategy`
+  a plan may have several posts since `0145`, 2026-11-24). `caption` is a plan's title and `strategy`
   its "About this plan". The rules are `plan_gallery.py`: posting (`publish_plan`, at most
   `PLAN_POST_CAP` = 5 plan posts per person), the income whitelist (`POSTED_INCOME_FIELDS`,
   what the Average Monthly Income tiles read, never a balance), the range (`range_for`: the

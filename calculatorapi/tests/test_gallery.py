@@ -550,6 +550,17 @@ class TextFilterTests(CalculatorTestCase):
             with self.subTest(text=text):
                 self.assertIsNone(self.refused(text))
 
+    def test_bare_shortener_links_are_refused(self):
+        # Spam that drops the https:// (pull-plan-database-plan-2.md, Design D).
+        for text in ("join t.me/freecarats", "BIT.LY/abc", "tinyurl.com/x", "linktr.ee/me",
+                     "cutt.ly/a", "is.gd/a", "goo.gl/a"):
+            with self.subTest(text=text):
+                self.assertEqual(self.refused(text), gallery_moderation.LINKS_REFUSED)
+        # Only the named hosts, and only with their slash.
+        for text in ("bit.lyrics", "at.me/you", "t.media is fine", "bit.ly", "Mr.Taiki"):
+            with self.subTest(text=text):
+                self.assertIsNone(self.refused(text))
+
     def test_blocked_terms_whole_word_by_default(self):
         BlockedTerm.objects.create(term="Ass")
         self.assertEqual(self.refused("what an ASS"), gallery_moderation.TERMS_REFUSED)

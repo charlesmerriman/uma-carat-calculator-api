@@ -116,7 +116,7 @@ def plan_card(post):
     return plan_preview.Card(
         headline=plan_preview.plan_counts(shaped, pulls, steps) if rows else "No banners in it",
         names=plan_preview.banner_list(shaped),
-        kicker="Community plan",
+        kicker="Pull Plan Library",
         tiles=tiles,
     ), shaped, pulls, steps
 
@@ -125,7 +125,7 @@ def _plan_context(post):
     """The tags for a Community plan post: counts and catalogue names only."""
     card, shaped, pulls, steps = plan_card(post)
     names = plan_preview.banner_list(shaped)
-    title = f"Community plan: {plan_preview.plan_counts(shaped, pulls, steps)}" if shaped else "Community plan"
+    title = f"Pull Plan Library: {plan_preview.plan_counts(shaped, pulls, steps)}" if shaped else "Pull Plan Library"
     context = _default_context(post.public_id)
     context.update(
         title=title,

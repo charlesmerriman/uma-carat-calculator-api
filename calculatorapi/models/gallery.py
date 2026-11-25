@@ -319,14 +319,12 @@ class GalleryPost(models.Model):
                 ),
                 name="gallery_post_plan_matches_kind",
             ),
-            # One post per plan, so "Post this plan" on a posted plan updates
-            # its post instead of making a second. Partial: a post whose plan
-            # was deleted has none, and several of those may exist.
-            models.UniqueConstraint(
-                fields=["source_plan"],
-                condition=Q(source_plan__isnull=False),
-                name="one_gallery_post_per_source_plan",
-            ),
+            # No one-post-per-plan rule since 2026-11-24 (the owner: "users
+            # will now be able to post more than one pull plan", after Henry
+            # hit it with a single plan). A plan may have several posts, each
+            # a snapshot from when it was posted; PLAN_POST_CAP still limits
+            # the person (plan_gallery.publish_plan). Migration 0145 dropped
+            # the old `one_gallery_post_per_source_plan` constraint.
         ]
 
     def __str__(self):

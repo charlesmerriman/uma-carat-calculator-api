@@ -526,7 +526,7 @@ identical to one that does not exist.
 ### `GET /plans`
 
 The caller's plans, oldest first. Never empty: an account with none is given its "Main plan".
-Each plan carries `post_public_id`: its Community plans post, or null.
+Each plan carries `post_public_id`: its newest Community plans post (a plan may have several), or null.
 
 **Response `200`** `[ Plan ]`
 
@@ -819,7 +819,9 @@ may hold `==highlight==` spans the client renders red.
                 {"slot": 1, "order": 1, "is_borrow": false, "note": "or any speed", "limit_break": null, "support_card": null}]}],
   "skill_mentions": {"groundwork": {"id": 88, "name": "Groundwork", "description": "string", "image": "url | null",
                                      "rarity": 2, "unique_of": null, "version": "◎ gold", "tier": 2,
-                                     "is_evolved": false, "versions": []}} }
+                                     "is_evolved": false, "versions": []}},
+  "uma_mentions": {"oguri cap (christmas)": {"id": 61, "name": "Oguri Cap (Christmas)",
+                                             "portrait": "url | null", "portrait_layers": "object | null"}} }
 ```
 
 Each guide uma carries `apt`, its ten aptitudes as `/pvp-catalogue` sends them (1..8 for
@@ -831,6 +833,13 @@ name: skill object}` (the same shape as `skill` above), skills on global only, m
 ignoring case. The client renders a mention it finds here as a skill chip and any other as
 its plain name. The admin refuses to save a mention that matches no global skill, so a
 missing key means the skill went stale since.
+
+`uma_mentions` does the same for every `((Uma name))` in the guide's text, the style
+ranking included: `{lower-case name: {id, name, portrait, portrait_layers}}`, matched
+ignoring case against the trainee outfits' exact names (`Uma.trainees()`, what
+`/pvp-catalogue` offers; a nickname never matches). An outfit's own brackets sit inside:
+`((Oguri Cap (Christmas)))`. The client draws a mention it finds here as her framed
+picture, which opens her card, and any other as its plain name.
 
 A deck slot's `order` 0 is the card and 1+ are alternatives for the same slot; a slot row
 always has a card, a note, or both. Whether an event HAS a published guide is `has_guide`
@@ -1305,11 +1314,19 @@ A run, out (a `PUT` body is the part the URL does not already say):
 { "kind": "cm", "event": 21, "stage": "day", "day": 1, "ticket": 2,
   "finals_group": "", "placement": null, "note": "", "skipped": false, "team": 7,
   "runners": [{"position": 0, "uma": 41, "style": "front", "trained_uma": null}],
-  "races": [{"race": 1, "winner": 0}, {"race": 2, "winner": null}],
+  "races": [{"race": 1, "winner": 0, "places": [{"position": 0, "place": 1, "loss_reason": ""}], "lost_to": null, "lost_to_style": ""},
+            {"race": 2, "winner": null, "places": [], "lost_to": 61, "lost_to_style": ""}],
   "updated_at": "ISO8601" }
 ```
 
 A runner's `trained_uma` is the veteran that ran, under the same rule as a team member's.
+`places` (CM only; League of Heroes refuses them) are where the player's umas finished, 1st
+to 9th, each optional: no two share a place, the winner is 1st when placed, and a loss has
+none of them 1st. `lost_to` is the uma that won a loss (catalogue id), or null; only a loss
+has one. `lost_to_style` and `loss_reason` are written by a replay import later and are
+blank until then. **A race whose PUT leaves `places` or `lost_to` out keeps what is stored**
+(while it still agrees with the race as sent), so a tab on an older build never wipes them.
+
 `winner` is the `position` of the player's uma that won, `null` for a loss; a race that is
 not in the list has not been run. `skipped: true` (a day's ticket only) is the player saying
 the races not in the list never will be: with none listed the ticket went unused, with some
@@ -1431,7 +1448,7 @@ for a plan post.
 | `GET /pvp-guides/<kind>/<event_id>/comments?section=<style>&page=N` | anyone who can read the guide | a guide section's thread, the same shape as a post's; no `section` = the whole guide |
 | `POST /pvp-guides/<kind>/<event_id>/comments` `{body, parent?, section}` | signed in, display name | `201` the comment; `400` for a section that isn't `""` or a running style |
 | `POST /gallery/reports` `{post: public_id}` or `{comment: id}`, `reason`, `note?` | signed in | `201`, no body; `409` on a repeat |
-| `POST /plans/<id>/publish` `{caption, strategy?, spending?, sweat?, strategies?: [style], include_notes?, include_income?, confirm_public_identity: true}` | the plan's owner, early access | `201` a new post, `200` an update (link, comments, votes kept). `caption` is the title and required; `strategy` is "About this plan"; the two include flags and the agree flag count only when literally `true`. Refusals name a `field` (`caption`, `strategy`, `spending`, `sweat`, `strategies`, `notes`); a note refusal names its banner. At most 5 plan posts per person |
+| `POST /plans/<id>/publish` `{caption, strategy?, spending?, sweat?, strategies?: [style], include_notes?, include_income?, confirm_public_identity: true, as_new?}` | the plan's owner, early access | `201` a new post, `200` an update of the plan's NEWEST post (link, comments, votes kept). `as_new: true` always makes a new post (a plan may have several since 2026-11-24); left out, a plan with posts updates its newest. `caption` is the title and required; `strategy` is "About this plan"; the two include flags and the agree flag count only when literally `true`. Refusals name a `field` (`caption`, `strategy`, `spending`, `sweat`, `strategies`, `notes`); a note refusal names its banner. At most 5 plan posts per person |
 | `GET /plan-gallery?sort=top\|new&window=day\|week\|month\|all&range=<scenario id>&strategy=front,pace&spending=<v>&sweat=<v>&limit=N` | early access | `{count, sort, window, limit, has_more, results: [row], filters}`. Top counts points received inside a rolling window (default `week`); `window` is null for `new`. `strategy` matches ANY listed style; `range` matches plans running up to that scenario or an earlier one. Unknown values are ignored. `filters` lists every choice with its `label` (a spending level also its `meaning`) and the scenarios some visible plan reaches |
 | `POST /plan-gallery/posts/<public_id>/copy` `{name}` | early access | signed in: `201` `PlanWithRows` of a new, inactive plan with the posted rows (and notes, if posted), never an income profile; `400` at the plan cap. A guest (once open): `{user_planned_banner_data, user_stats_data: null, user_planned_purchase_data: null}`. Counts a copy unless it is the author's own; `404` for a team post |
 | `GET /post/<public_id>` | anyone | HTML: link-preview tags, then on to the post in the app. **Not under `/api`** |

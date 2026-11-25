@@ -185,6 +185,7 @@ _IRRELEVANT_MODELS = frozenset({
     "pvprun",
     "pvprunrunner",
     "pvprunrace",
+    "pvprunraceplace",
     # A player's veterans: edited on the Collection page, written in bulk by
     # an import. Served by /trained-umas, never here.
     "traineduma",

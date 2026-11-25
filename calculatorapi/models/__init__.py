@@ -103,6 +103,8 @@ from .pvp_run import (
     PvpRun,
     PvpRunRunner,
     PvpRunRace,
+    PvpRunRacePlace,
+    PvpLossReason,
     PvpRunStage,
     PvpFinalsGroup,
     PVP_RUN_RACES,
@@ -112,6 +114,7 @@ from .pvp_run import (
     PVP_FINAL_PLACEMENTS,
     PVP_LOH_TOP_PLACEMENTS,
     PVP_RUN_NOTE_MAX_LENGTH,
+    PVP_CM_RACE_RUNNERS,
 )
 from .gallery import (
     BlockedTerm,

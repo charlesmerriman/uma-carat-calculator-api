@@ -230,7 +230,7 @@ class GuideEndpointTests(CalculatorTestCase):
             "style_ranking",
             "short_description", "meta_analysis", "under_construction", "team_comps",
             "stat_configs", "uma_recommendations", "skill_recommendations", "style_notes",
-            "decks", "skill_mentions", "comment_counts",
+            "decks", "skill_mentions", "uma_mentions", "comment_counts",
         })
         self.assertNotIn("admin_comments", body)
         self.assertEqual(body["event_type"], "champions_meeting")
@@ -707,6 +707,23 @@ class SkillMentionTests(CalculatorTestCase):
         self.assertEqual(set(body["skill_mentions"]), {"groundwork", "final push"})
         self.assertEqual(body["skill_mentions"]["final push"]["name"], "Final Push")
         self.assertEqual(body["skill_mentions"]["groundwork"]["description"], "Does a thing.")
+
+    # Her portrait's URL is built: plain storage, as CI's media bucket is blank.
+    @override_settings(STORAGES=PLAIN_TEST_STORAGES)
+    def test_the_api_sends_each_mentioned_uma_with_her_picture(self):
+        oguri = Uma.objects.create(name="Oguri Cap (Christmas)", image="umas/oguri-xmas.png")
+        Uma.objects.create(name="Copano Rickey", image="umas/rickey.png")
+        guide = PvpGuide.objects.create(
+            champions_meeting=self.cm, visibility="public",
+            style_ranking="((Copano Rickey)) > Pace", short_description="Watch ((oguri cap (christmas))).",
+        )
+        PvpStyleNote.objects.create(guide=guide, style="front", body="And ((Nobody Here)).")
+        body = APIClient().get(url("cm", self.cm.id)).json()
+        self.assertEqual(set(body["uma_mentions"]), {"copano rickey", "oguri cap (christmas)"})
+        mention = body["uma_mentions"]["oguri cap (christmas)"]
+        self.assertEqual((mention["id"], mention["name"]), (oguri.id, "Oguri Cap (Christmas)"))
+        self.assertIn("portrait", mention)
+        self.assertIn("portrait_layers", mention)
 
     def test_a_mention_that_went_stale_is_left_out(self):
         guide = PvpGuide.objects.create(champions_meeting=self.cm, visibility="public",

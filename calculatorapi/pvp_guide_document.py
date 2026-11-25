@@ -66,7 +66,14 @@ from .models import (
     SupportCard,
     Uma,
 )
-from .models.pvp_guide import find_skill_mentions, mention_error, unknown_skill_mentions
+from .models.pvp_guide import (
+    find_skill_mentions,
+    find_uma_mentions,
+    mention_error,
+    uma_mention_error,
+    unknown_skill_mentions,
+    unknown_uma_mentions,
+)
 
 # The sections, in the document's order. Keys are the related names on
 # PvpGuide, which is also what pvp_guides.SECTIONS and copy_guide use.
@@ -298,21 +305,29 @@ def errors(data):  # pylint: disable=too-many-locals
 
     _deck_errors(data["decks"], add)
 
-    # [[mentions]]: one query for every name in the document, then each
-    # text's own unknown names in its own message (the admin's wording).
-    mentions = {path: find_skill_mentions(text) for path, text in _texts(data)}
-    unknown = {
-        name.casefold()
-        for name in unknown_skill_mentions({n for names in mentions.values() for n in names})
-    }
-    if unknown:
-        for path, names in mentions.items():
-            bad = [name for name in names if name.casefold() in unknown]
-            if bad:
-                add(path, mention_error(list(dict.fromkeys(bad))))
+    _mention_errors(data, add)
 
     return found
 
+
+
+def _mention_errors(data, add):
+    """[[skill]] and ((uma)) mentions: one query per kind for every name in
+    the document, then each text's own unknown names in its own message (the
+    admin's wording)."""
+    checks = (
+        (find_skill_mentions, unknown_skill_mentions, mention_error),
+        (find_uma_mentions, unknown_uma_mentions, uma_mention_error),
+    )
+    for find, unknown_of, message in checks:
+        mentions = {path: find(text) for path, text in _texts(data)}
+        unknown = {name.casefold() for name in unknown_of({n for names in mentions.values() for n in names})}
+        if not unknown:
+            continue
+        for path, names in mentions.items():
+            bad = [name for name in names if name.casefold() in unknown]
+            if bad:
+                add(path, message(list(dict.fromkeys(bad))))
 
 def _deck_errors(decks, add):
     """The deck rules: a known card, a card or a note, a limit break only on a

@@ -16,12 +16,20 @@ GET /pvp-catalogue):
 
     {kind: "cm" | "loh", event, stage: "day" | "final", day, ticket,
      finals_group: "" | "A" | "B", placement: null | 1..3, note, skipped, team,
-     runners: [{position, uma, style, trained_uma}], races: [{race, winner}], updated_at}
+     runners: [{position, uma, style, trained_uma}],
+     races: [{race, winner, places: [{position, place, loss_reason}], lost_to, lost_to_style}],
+     updated_at}
 
 A PUT body is the same minus kind, event, stage, day, ticket and updated_at
 (the URL says those). `winner` is the spot (a runner's position) of the uma
 that won, or null for a loss; a race not in the list has not been run yet,
 unless `skipped` says it never will be (a day's ticket only).
+
+`places` (CM only) are where the player's umas finished, 1st to 9th, each
+optional; `lost_to` is the uma that won a loss, or null. A race in a PUT that
+leaves either key out KEEPS what is stored for it, so a tab still on an older
+build never wipes places another device logged (notes/cm-runs-plan-2.md, "Ship
+between events": this is what lets them ship during an event).
 
 An unknown kind, event, day or ticket is a 404; a refused write is a 400 with
 {"error": "<one sentence for the player>"}, shown as a toast.
@@ -33,7 +41,9 @@ from rest_framework.response import Response
 
 from calculatorapi import pvp_runs, pvp_teams, trained_umas
 from calculatorapi.models import (
+    PVP_CM_RACE_RUNNERS,
     PVP_RUN_NOTE_MAX_LENGTH,
+    PvpLossReason,
     PVP_RUN_RACES,
     PVP_TEAM_SIZE,
     PvpFinalsGroup,
@@ -53,9 +63,21 @@ class _RunnerInput(serializers.Serializer):  # pylint: disable=abstract-method
     trained_uma = serializers.IntegerField(min_value=1, allow_null=True, required=False, default=None)
 
 
+class _PlaceInput(serializers.Serializer):  # pylint: disable=abstract-method
+    position = serializers.IntegerField(min_value=0, max_value=PVP_TEAM_SIZE - 1)
+    place = serializers.IntegerField(min_value=1, max_value=PVP_CM_RACE_RUNNERS)
+    loss_reason = serializers.ChoiceField(
+        choices=PvpLossReason.choices, allow_blank=True, required=False, default=""
+    )
+
+
 class _RaceInput(serializers.Serializer):  # pylint: disable=abstract-method
     race = serializers.IntegerField(min_value=1, max_value=PVP_RUN_RACES)
     winner = serializers.IntegerField(min_value=0, max_value=PVP_TEAM_SIZE - 1, allow_null=True)
+    # Left out = kept as stored (no defaults, so the keys stay absent).
+    places = _PlaceInput(many=True, required=False)
+    lost_to = serializers.IntegerField(min_value=1, allow_null=True, required=False)
+    lost_to_style = serializers.ChoiceField(choices=_MEMBER_STYLES, allow_blank=True, required=False)
 
 
 class _RunInput(serializers.Serializer):  # pylint: disable=abstract-method
@@ -108,7 +130,19 @@ def serialize_run(run):
             }
             for runner in run.runners.all()
         ],
-        "races": [{"race": race.race, "winner": race.winner} for race in run.races.all()],
+        "races": [
+            {
+                "race": race.race,
+                "winner": race.winner,
+                "places": [
+                    {"position": place.position, "place": place.place, "loss_reason": place.loss_reason}
+                    for place in race.places.all()
+                ],
+                "lost_to": race.lost_to_uma_id,
+                "lost_to_style": race.lost_to_style,
+            }
+            for race in run.races.all()
+        ],
         "updated_at": run.updated_at,
     }
 

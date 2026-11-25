@@ -19,7 +19,9 @@ WHAT IS REFUSED, AND WHY EACH
   after normalise() on both sides, so "ＢＡＤ", "bad" and "b\u200bad" are one
   word. The message names the rule, never the word: telling a spammer which
   word tripped the filter is teaching them to misspell it.
-* A link, in captions and comments. Ads and invite spam need a link to work, so
+* A link, in captions and comments (and a posted plan's notes). A scheme, www.,
+  a Discord invite, or a known shortener's bare host (_SHORT_LINK_HOSTS).
+  Ads and invite spam need a link to work, so
   refusing them makes the box useless to a spammer at almost no cost to anyone
   else (a team needs no URL). Nothing is ever turned into a link on screen
   either. Display names are exempt: they are short, unique, and checked by
@@ -46,9 +48,17 @@ LINKS_REFUSED = "Links can't be posted in the gallery."
 
 # What counts as a link. Deliberately the patterns spam uses rather than a
 # full URL grammar, which would also catch innocent text like "v1.12" or
-# "Mr.Taiki". A scheme, a www. host, or a Discord invite.
+# "Mr.Taiki". A scheme, a www. host, a Discord invite, or one of a short,
+# named list of hosts spam pastes bare (no https://): link shorteners, link
+# pages and Telegram. Each needs its trailing slash, so "bit.lyrics" or
+# "t.media" still post. A general "anything.com/" rule was turned down
+# (notes/pull-plan-database-plan-2.md, Design D): card names, versions and
+# typos with dots would trip it. Add a host here when spam shows one.
+_SHORT_LINK_HOSTS = ("t.me", "bit.ly", "tinyurl.com", "linktr.ee", "cutt.ly", "is.gd", "goo.gl")
 _LINK = re.compile(
-    r"(?:\bhttps?://|\bwww\.|\bdiscord(?:app)?\.(?:gg|com/invite)/|\bdsc\.gg/)",
+    r"(?:\bhttps?://|\bwww\.|\bdiscord(?:app)?\.(?:gg|com/invite)/|\bdsc\.gg/"
+    + "".join(rf"|\b{re.escape(host)}/" for host in _SHORT_LINK_HOSTS)
+    + ")",
     re.IGNORECASE,
 )
 

@@ -98,7 +98,11 @@ class WriteTests(PvpRunFixture):
         )
         self.assertEqual([runner["uma"] for runner in body["runners"]],
                          [self.maruzensky.id, self.oguri.id, self.gold_ship.id])
-        self.assertEqual(body["races"], self.races(0, None, 1))
+        # A race sent without places or a Won by has none (PlacesTests).
+        self.assertEqual(
+            body["races"],
+            [{**race, "places": [], "lost_to": None, "lost_to_style": ""} for race in self.races(0, None, 1)],
+        )
 
     def test_a_second_put_replaces_the_same_row(self):
         self.put(self.ticket_url(), races=self.races(0))
@@ -316,3 +320,66 @@ class LifecycleTests(PvpRunFixture):
         self.assertEqual(self.client.delete("/account").status_code, 204)
         self.assertFalse(PvpRun.objects.exists())
         self.assertFalse(PvpRunRace.objects.exists())
+
+
+class PlacesTests(PvpRunFixture):
+    """Places and Won by on a race (notes/cm-runs-plan-2.md, PR 1)."""
+
+    def placed(self, winner, *places, **extra):
+        race = {"race": 1, "winner": winner, "places": [{"position": p, "place": n} for p, n in places]}
+        race.update(extra)
+        return [race]
+
+    def test_places_and_won_by_round_trip(self):
+        res = self.put(self.ticket_url(), races=[
+            {"race": 1, "winner": 0, "places": [{"position": 0, "place": 1}, {"position": 1, "place": 4}]},
+            {"race": 2, "winner": None, "places": [{"position": 0, "place": 2}], "lost_to": self.oguri_xmas.id},
+        ])
+        self.assertEqual(res.status_code, 200, res.content)
+        races = res.json()["races"]
+        self.assertEqual([(p["position"], p["place"]) for p in races[0]["places"]], [(0, 1), (1, 4)])
+        self.assertEqual(races[1]["lost_to"], self.oguri_xmas.id)
+        self.assertEqual(races[1]["lost_to_style"], "")
+        listed = self.client.get(f"/pvp-runs/cm/{self.cm.id}").json()[0]["races"]
+        self.assertEqual(listed, races)
+
+    def test_the_place_rules(self):
+        cases = [
+            (self.placed(0, (0, 1), (1, 1)), "Two of your umas can't finish in the same place."),
+            (self.placed(0, (0, 3)), "The uma that won finished 1st."),
+            (self.placed(0, (1, 1)), "The uma that won finished 1st."),
+            (self.placed(None, (2, 1)), "On a loss, none of yours finished 1st."),
+            (self.placed(0, (0, 1), lost_to=self.oguri_xmas.id), "Only a loss has a winner from another team."),
+            (self.placed(None, lost_to=999999), "That uma isn't in the catalogue."),
+        ]
+        for races, message in cases:
+            res = self.put(self.ticket_url(), races=races)
+            self.assertEqual((res.status_code, res.json()["error"]), (400, message), races)
+        res = self.put(self.ticket_url(kind="loh"), races=self.placed(0, (0, 1)))
+        self.assertEqual(res.json()["error"], "Places for League of Heroes come later.")
+
+    def test_a_put_without_places_keeps_them(self):
+        # A tab on an older build sends races without places or a Won by:
+        # what another device logged stays.
+        self.put(self.ticket_url(), races=[
+            {"race": 1, "winner": None, "places": [{"position": 0, "place": 2}], "lost_to": self.oguri_xmas.id},
+            {"race": 2, "winner": 1, "places": [{"position": 1, "place": 1}]},
+        ])
+        res = self.put(self.ticket_url(), races=self.races(None, 1, 0))
+        races = res.json()["races"]
+        self.assertEqual([(p["position"], p["place"]) for p in races[0]["places"]], [(0, 2)])
+        self.assertEqual(races[0]["lost_to"], self.oguri_xmas.id)
+        self.assertEqual([(p["position"], p["place"]) for p in races[1]["places"]], [(1, 1)])
+        # A changed winner drops places that no longer agree, and a win drops the Won by.
+        res = self.put(self.ticket_url(), races=self.races(0, 1))
+        races = res.json()["races"]
+        self.assertEqual((races[0]["places"], races[0]["lost_to"]), ([], None))
+        # Sent empty, they are cleared.
+        res = self.put(self.ticket_url(), races=[{"race": 1, "winner": None, "places": [], "lost_to": None}])
+        self.assertEqual((res.json()["races"][0]["places"], res.json()["races"][0]["lost_to"]), ([], None))
+
+    def test_win_rates_read_the_winner_alone(self):
+        self.put(self.ticket_url(), races=[{"race": 1, "winner": None, "places": [{"position": 0, "place": 2}]}])
+        race = PvpRunRace.objects.get()
+        self.assertIsNone(race.winner)
+        self.assertEqual(race.places.get().place, 2)

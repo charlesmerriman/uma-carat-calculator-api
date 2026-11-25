@@ -56,7 +56,8 @@ from .uma import Uma
 HIGHLIGHT_HELP = (
     "Wrap words in two equals signs to show them in red: ==Must have==. "
     "Put a skill's name in double square brackets to link it: [[Groundwork]]. "
-    "Both work in every note and text box here."
+    "Put an uma's name in double round brackets to show her picture: ((Oguri Cap (Christmas))). "
+    "All three work in every note and text box here."
 )
 
 # [[Skill name]]: a mention of a skill, linked on the site to the Skill row of
@@ -79,6 +80,47 @@ def unknown_skill_mentions(names):
         return []
     known = Skill.objects.shown().all_names()
     return [name for key, name in wanted.items() if key not in known]
+
+
+# ((Uma name)): a mention of an uma, drawn on the site as her framed picture,
+# which opens her card (Henry, board "Allow us to use (( )) on the guide to add
+# uma picture anywhere", 2026-11-18; first used in the style ranking). Matched
+# ignoring case against the trainee outfits' exact names (Uma.trainees, what
+# /pvp-catalogue offers), never a nickname: "Rickey" stays a word. An outfit's
+# name carries its own brackets ("Oguri Cap (Christmas)"), so one bracketed
+# group is allowed inside: ((Oguri Cap (Christmas))).
+UMA_MENTION = re.compile(r"\(\(((?:[^()\n]|\([^()\n]*\))+?)\)\)")
+
+
+def find_uma_mentions(text):
+    """The names inside ((...)) in one text, stripped, in order."""
+    return [match.strip() for match in UMA_MENTION.findall(text or "")]
+
+
+def _trainee_names():
+    """{casefolded name: name} for every outfit a mention may name."""
+    return {name.casefold(): name for name in Uma.trainees().values_list("name", flat=True)}
+
+
+def unknown_uma_mentions(names):
+    """The names that match no trainee outfit, ignoring case."""
+    wanted = {name.casefold(): name for name in names if name}
+    if not wanted:
+        return []
+    known = _trainee_names()
+    return [name for key, name in wanted.items() if key not in known]
+
+
+def uma_mention_error(unknown):
+    """The sentence for a text that mentions umas the catalogue doesn't have,
+    with up to three close names each, worded like mention_error."""
+    by_key = _trainee_names()
+    parts = []
+    for name in unknown:
+        close = difflib.get_close_matches(name.casefold(), list(by_key), n=3, cutoff=0.6)
+        hint = f" (did you mean {', '.join(by_key[key] for key in close)}?)" if close else ""
+        parts.append(f"(({name})){hint}")
+    return "No uma has this name: " + "; ".join(parts)
 
 
 def _suggest(name):
@@ -108,7 +150,7 @@ def mention_error(unknown):
 
 
 class SkillMentionsMixin:  # pylint: disable=too-few-public-methods
-    """Refuses a save whose text mentions a skill that does not exist.
+    """Refuses a save whose text mentions a skill, or an uma, that does not exist.
 
     `MENTION_FIELDS` names the text fields to check. The error lands on the
     field, with suggestions, so an editor fixes a typo instead of publishing a
@@ -120,9 +162,12 @@ class SkillMentionsMixin:  # pylint: disable=too-few-public-methods
     def clean(self):
         errors = {}
         for field in self.MENTION_FIELDS:
-            unknown = unknown_skill_mentions(find_skill_mentions(getattr(self, field, "")))
-            if unknown:
-                errors[field] = mention_error(unknown)
+            text = getattr(self, field, "")
+            unknown = unknown_skill_mentions(find_skill_mentions(text))
+            umas = unknown_uma_mentions(find_uma_mentions(text))
+            messages = ([mention_error(unknown)] if unknown else []) + ([uma_mention_error(umas)] if umas else [])
+            if messages:
+                errors[field] = " ".join(messages)
         if errors:
             raise ValidationError(errors)
         super().clean()

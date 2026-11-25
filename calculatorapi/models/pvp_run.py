@@ -47,6 +47,10 @@ from .uma import Uma
 PVP_RUN_RACES = 5
 PVP_FINAL_RACES = 1
 
+# Runners in a CM race: three trainers with three umas each, so a place is
+# 1st to 9th (notes/cm-runs-plan-2.md).
+PVP_CM_RACE_RUNNERS = 9
+
 # The highest day and ticket number per event kind ("cm" / "loh"), checked by
 # pvp_runs.py rather than the database so a game change is one line here.
 # CM: Round 1 is days 1-2 and Round 2 days 3-4, four attempts a day (GameTora,
@@ -249,6 +253,12 @@ class PvpRunRace(models.Model):
         blank=True,
         validators=[MaxValueValidator(PVP_TEAM_SIZE - 1)],
     )
+    # On a loss, the uma that won it, or NULL (skippable; a catalogue delete
+    # leaves the loss standing). Its style only from a replay: a guessed style
+    # would muddy the stats (notes/cm-runs-plan-2.md, "Won by"). Never another
+    # player's name, account or build.
+    lost_to_uma = models.ForeignKey(Uma, on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
+    lost_to_style = models.CharField(max_length=10, blank=True, choices=PvpStyle.choices)
 
     class Meta:
         ordering = ("race",)
@@ -262,7 +272,68 @@ class PvpRunRace(models.Model):
                 condition=Q(winner__isnull=True) | Q(winner__lte=PVP_TEAM_SIZE - 1),
                 name="pvp_run_winner_in_range",
             ),
+            models.CheckConstraint(
+                condition=Q(winner__isnull=True) | (Q(lost_to_uma__isnull=True) & Q(lost_to_style="")),
+                name="pvp_run_lost_to_only_on_loss",
+            ),
+            models.CheckConstraint(
+                condition=~Q(lost_to_style=PvpStyle.EVERYONE), name="pvp_run_lost_to_one_style"
+            ),
         ]
 
     def __str__(self):
         return f"race {self.race}: {'lost' if self.winner is None else f'spot {self.winner}'}"
+
+
+class PvpLossReason(models.TextChoices):
+    """The game's own reason a runner lost (umadump's DefeatType), stored by
+    its code so a relabel needs no migration. Only a replay import writes it
+    (notes/cm-runs-plan-2.md, PR 5); nothing does yet."""
+
+    WIN = "Win"
+    LOSE = "Lose"
+    RUNNING_STYLE_MANY = "RunningStyleMany"
+    TEMPTAION = "Temptaion"  # sic, the game's spelling
+    GUTS_ORDER = "GutsOrder"
+    STAMINA = "Stamina"
+    LAST_SPURT_FALSE = "LastSpurtFalse"
+    LAST_SPURT_TARGET_SPEED_DEC = "LastSpurtTargetSpeedDec"
+    PASSIVE_SKILL_NUM = "PassiveSkillNum"
+    BLOCK_FRONT_TIME = "BlockFrontTime"
+    SPEED = "Speed"
+    PROPER_DISTANCE = "ProperDistance"
+    PROPER_GROUND = "ProperGround"
+    MOTIVATION = "Motivation"
+
+
+class PvpRunRacePlace(models.Model):
+    """Where one of the player's umas finished a race, 1st to 9th: optional
+    detail beside the race's `winner`, which stays the one fact a win rate
+    reads (notes/cm-runs-plan-2.md, "Places"). A row per runner per race,
+    joined to the runner on (run, position), so "no two of yours share a
+    place" is one unique constraint."""
+
+    race = models.ForeignKey(PvpRunRace, on_delete=models.CASCADE, related_name="places")
+    position = models.PositiveSmallIntegerField(
+        validators=[MaxValueValidator(PVP_TEAM_SIZE - 1)]
+    )
+    place = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(PVP_CM_RACE_RUNNERS)]
+    )
+    loss_reason = models.CharField(max_length=40, blank=True, choices=PvpLossReason.choices)
+
+    class Meta:
+        ordering = ("position",)
+        constraints = [
+            models.UniqueConstraint(fields=["race", "position"], name="unique_pvp_run_place_position"),
+            models.UniqueConstraint(fields=["race", "place"], name="unique_pvp_run_place_place"),
+            models.CheckConstraint(
+                condition=Q(position__lte=PVP_TEAM_SIZE - 1), name="pvp_run_place_position_in_range"
+            ),
+            models.CheckConstraint(
+                condition=Q(place__gte=1, place__lte=PVP_CM_RACE_RUNNERS), name="pvp_run_place_in_range"
+            ),
+        ]
+
+    def __str__(self):
+        return f"spot {self.position}: {self.place}"
