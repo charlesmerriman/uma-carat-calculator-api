@@ -527,8 +527,7 @@ REST_FRAMEWORK = {
         "plan_share": "600/hour",
         # The /guide/<kind>-<id> share page (views/guide_share.py), likewise.
         "guide_share": "600/hour",
-        # The /banner/<id> and /help/<slug> share pages
-        # (views/banner_share.py, views/faq_share.py), likewise.
+        # /banner/<id> and /help/<slug> (views/banner_share.py, faq_share.py), likewise.
         "banner_share": "600/hour",
         "faq_share": "600/hour",
     },
@@ -888,10 +887,8 @@ CACHES = {
     # The gallery's own small keys, kept OUT of "default" on purpose: one
     # "already counted" key per viewer per post per day (gallery.record_view)
     # and every gallery throttle counter (views/gallery.py GalleryThrottle),
-    # plus the /plan/<id>, /guide/<ref>, /banner/<id> and /help/<slug>
-    # share pages' (PlanShareThrottle, GuideShareThrottle, BannerShareThrottle,
-    # FaqShareThrottle in views/plan_share.py, guide_share.py, banner_share.py
-    # and faq_share.py).
+    # plus the share pages' (/plan, /guide, /banner, /help: the *ShareThrottle
+    # classes in views/plan_share.py, guide_share.py, banner_share.py, faq_share.py).
     # In "default" they would crowd its 40 slots and push the /calculator-data
     # payload out, and every visitor after that would pay the ~2s rebuild (the
     # 2026-09-23 outage). Values are a few bytes each, so the bound is high.
