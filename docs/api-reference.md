@@ -876,6 +876,43 @@ ranking in the style colours ("»" for a clear gap, "›" ahead, "=" level: the 
 have no "≫") and the stats, a held-back one the dates. Versioned, redirected and cached
 exactly as the plan's picture. **`404`** for an address naming no event.
 
+### `GET /banner/<timeline_id>` (not under `/api`)
+
+A Timeline banner's link, `/banner/73` (the `BannerTimeline` id, as the Timeline's own
+`?focus=banner-73` names it): what a banner card's "Copy link" copies. An HTML page of
+link-preview tags on the site's host, through the `/banner` ingress rule in `.do/app.yaml`,
+like `/guide`; a browser lands on `/app/timeline?focus=banner-73`. Code:
+`views/banner_share.py`, template `share/link_preview.html`.
+
+- **Title:** the window's name. **Description:** its effective dates ("2026/6/11 through
+  2026/6/20", ", estimated from the JP schedule" when predicted) and its support cards'
+  catalogue names (placeholders out, five at most, then "and N more").
+- **Picture:** the banner's own uploaded art, untouched, as a large card; no size tags, since
+  the size isn't known without reading the file. No art: the site card.
+- **An id naming no banner:** the site's own tags with a **404**, still sending a browser to
+  `/app/timeline`. (The other share pages answer 200 here.)
+
+Opening it creates and counts nothing. Throttled per address at `banner_share` (600/hour),
+counted in the `gallery` cache. The old `/app/timeline?focus=banner-…` address keeps working,
+with the plain preview.
+
+### `GET /question/<slug>` (not under `/api`)
+
+A FAQ question's link, `/question/how-do-step-up-banners-work` (the `FaqItem` slug, the
+question's `#anchor` on `/faq`): what each question's "Copy link" copies. A `#fragment` never
+reaches a server, so `/faq#slug` can only ever unfurl as the FAQ page. Through the `/question`
+ingress rule; **never `/faq/<slug>`**, because ingress matches prefixes only and a `/faq` rule
+would take the static FAQ page too. A browser lands on `/faq#<slug>`. Code:
+`views/faq_share.py`.
+
+- **Title:** the question. **Description:** the answer as plain text (markdown taken out), cut
+  at a word near 300 characters. The team's words, as written in the admin.
+- **Picture:** the site card.
+- **A slug naming no question:** the FAQ page's own tags with a **404**, still sending a
+  browser to `/faq`.
+
+Throttled at `faq_share` (600/hour), in the `gallery` cache. Creates and counts nothing.
+
 ### PvP guide editor
 
 The site's guide editor (`views/pvp_guide_editor.py`, 2026-10-21): a guide read and
