@@ -1314,11 +1314,19 @@ A run, out (a `PUT` body is the part the URL does not already say):
 { "kind": "cm", "event": 21, "stage": "day", "day": 1, "ticket": 2,
   "finals_group": "", "placement": null, "note": "", "skipped": false, "team": 7,
   "runners": [{"position": 0, "uma": 41, "style": "front", "trained_uma": null}],
-  "races": [{"race": 1, "winner": 0}, {"race": 2, "winner": null}],
+  "races": [{"race": 1, "winner": 0, "places": [{"position": 0, "place": 1, "loss_reason": ""}], "lost_to": null, "lost_to_style": ""},
+            {"race": 2, "winner": null, "places": [], "lost_to": 61, "lost_to_style": ""}],
   "updated_at": "ISO8601" }
 ```
 
 A runner's `trained_uma` is the veteran that ran, under the same rule as a team member's.
+`places` (CM only; League of Heroes refuses them) are where the player's umas finished, 1st
+to 9th, each optional: no two share a place, the winner is 1st when placed, and a loss has
+none of them 1st. `lost_to` is the uma that won a loss (catalogue id), or null; only a loss
+has one. `lost_to_style` and `loss_reason` are written by a replay import later and are
+blank until then. **A race whose PUT leaves `places` or `lost_to` out keeps what is stored**
+(while it still agrees with the race as sent), so a tab on an older build never wipes them.
+
 `winner` is the `position` of the player's uma that won, `null` for a loss; a race that is
 not in the list has not been run. `skipped: true` (a day's ticket only) is the player saying
 the races not in the list never will be: with none listed the ticket went unused, with some
