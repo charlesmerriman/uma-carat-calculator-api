@@ -1397,7 +1397,7 @@ sentence>"}`** for: more than 3 runners or two in one spot, the team rules on th
 (the same uma twice, two outfits of one character, an unknown uma; shared through
 `pvp_teams.check_lineup`), more than 5 races (1 in a final) or the same race twice, a
 winner in a spot with no runner, a group or placement on a day's ticket, a placement
-outside 1..3, a note over 120 characters, `skipped` on the final or on a ticket with all 5
+outside 1..3 (a LoH Top 96: 1..1,000,000, since every player is ranked), a note over 120 characters, `skipped` on the final or on a ticket with all 5
 races listed. A refused `PUT` leaves the slot as it was.
 
 ### `/trained-umas`

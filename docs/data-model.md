@@ -1213,7 +1213,8 @@ PvP page's CM Runs view through `/pvp-runs`; account only (no guest copy). Desig
 plan for linking veterans: `notes/pvp-planner-plan.md` ("R3 CM Runs").
 
 - **`PvpRun`**: one ticket of one day (`stage` `day`, `day`, `ticket`) or the final
-  (`stage` `final`, both NULL, plus `finals_group` `A` / `B` and `placement` 1..3), for one
+  (`stage` `final`, both NULL, plus `finals_group` `A` / `B` and `placement` 1..3, or on a LoH 1..1,000,000 since every
+  player is ranked: a `PositiveIntegerField`, `0147`), for one
   event through the `PvpTeam` FK pair and XOR (`exactly_one_pvp_run_event`). The shape is
   `pvp_run_stage_shape`; it spells out `isnull=False` because a CHECK passes on NULL.
   One row per slot is a PAIR of partial unique constraints per rule (one per event FK),

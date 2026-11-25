@@ -136,7 +136,12 @@ class WriteTests(PvpRunFixture):
         response = self.put(url, placement=42)
         self.assertEqual(response.status_code, 200, response.content)
         self.assertEqual(len(response.json()["runners"]), 3)
-        self.assertEqual(self.client.put(url, {"placement": 97}, format="json").status_code, 400)
+        # Every LoH player is ranked, Top 96 or not (Daptrius, 2026-11-25).
+        response = self.client.put(url, {"placement": 1_000_000}, format="json")
+        self.assertEqual((response.status_code, response.json()["placement"]), (200, 1_000_000))
+        response = self.client.put(url, {"placement": 1_000_001}, format="json")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["error"], "A League of Heroes placement is 1st to 1,000,000th.")
         self.assertEqual(
             self.client.put(url, {"placement": 1, "finals_group": "A"}, format="json").status_code, 400
         )

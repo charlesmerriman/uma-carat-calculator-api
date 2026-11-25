@@ -19,7 +19,7 @@ from calculatorapi import pvp_teams, trained_umas
 from calculatorapi.models import (
     PVP_FINAL_PLACEMENTS,
     PVP_FINAL_RACES,
-    PVP_LOH_TOP_PLACEMENTS,
+    PVP_LOH_MAX_PLACEMENT,
     PVP_RUN_DAYS,
     PVP_RUN_RACES,
     PVP_RUN_TICKETS,
@@ -113,9 +113,9 @@ def write_run(user, kind, event_id, *, day=None, ticket=None, data):  # pylint: 
     placement = data.get("placement")
     if is_final and kind == "loh":
         if races or data.get("finals_group"):
-            raise RunRefused("The Top 96 keeps your team, your placement and a note.")
-        if placement is not None and not 1 <= placement <= PVP_LOH_TOP_PLACEMENTS:
-            raise RunRefused(f"The Top 96 places you 1st to {PVP_LOH_TOP_PLACEMENTS}th.")
+            raise RunRefused("A League of Heroes placement keeps your team, the placement and a note.")
+        if placement is not None and not 1 <= placement <= PVP_LOH_MAX_PLACEMENT:
+            raise RunRefused(f"A League of Heroes placement is 1st to {PVP_LOH_MAX_PLACEMENT:,}th.")
     elif placement is not None and not 1 <= placement <= PVP_FINAL_PLACEMENTS:
         raise RunRefused("A final places you 1st, 2nd or 3rd.")
     # Skipped means "the races not listed were never run" (models/pvp_run.py),
