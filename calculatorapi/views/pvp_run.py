@@ -15,7 +15,7 @@ A run on the wire (catalogue ids only; the client draws them from
 GET /pvp-catalogue):
 
     {kind: "cm" | "loh", event, stage: "day" | "final", day, ticket,
-     finals_group: "" | "A" | "B", placement: null | 1..3, note, skipped, team,
+     finals_group: "" | "A" | "B", placement: null | 1..3 (LoH: 1..1,000,000), note, skipped, team,
      runners: [{position, uma, style, trained_uma}],
      races: [{race, winner, places: [{position, place, loss_reason}], lost_to, lost_to_style}],
      updated_at}

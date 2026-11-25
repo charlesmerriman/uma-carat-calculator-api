@@ -876,6 +876,54 @@ ranking in the style colours ("»" for a clear gap, "›" ahead, "=" level: the 
 have no "≫") and the stats, a held-back one the dates. Versioned, redirected and cached
 exactly as the plan's picture. **`404`** for an address naming no event.
 
+### `GET /banner/<timeline_id>` (not under `/api`)
+
+A Timeline banner's link, `/banner/73` (the `BannerTimeline` id, as the Timeline's own
+`?focus=banner-73` names it): what a banner card's "Copy link" copies. An HTML page of
+link-preview tags on the site's host, through the `/banner` ingress rule in `.do/app.yaml`,
+like `/guide`; a browser lands on `/app/timeline?focus=banner-73`. Code:
+`views/banner_share.py`, template `share/link_preview.html`.
+
+- **Title:** who it features, worded as the Timeline card's title (frontend `featuredTitle`):
+  umas then support cards, each name once, "A, B and C", past three "A, B and 3 more". The
+  row's own `name` (an editor's label) only when nobody is on it yet. **Description:** its
+  effective dates ("2026/6/11 through 2026/6/20", ", estimated from the JP schedule" when
+  predicted) and, when the title cut its list, "Featuring" everyone (twelve, then "and N
+  more"). Catalogue names only; placeholder cards left out.
+- **Picture:** the branded card below.
+- **An address naming no banner** (unknown or not a number): the site's own tags, a **200**,
+  still sending a browser to `/app/timeline`.
+
+Opening it creates and counts nothing. Throttled per address at `banner_share` (600/hour),
+counted in the `gallery` cache. The old `/app/timeline?focus=banner-…` address keeps working,
+with the plain preview.
+
+### `GET /banner/<timeline_id>/preview.jpg?v=<version>` (not under `/api`)
+
+A 1200x630 JPEG drawn by `banner_preview.py` (owner, 2026-11-25): the brand strip with
+"Banner Timeline", then "Timeline banner", the page's title and dates (and "Estimated from the
+JP schedule" when predicted) at the left, over the banner's art blurred and shaded, with the
+art itself sharp at the right (16:9, as banner art is). No art, or art that can't be read:
+the plain background and no box. Versioned, redirected and cached exactly as the guide's
+picture. **`404`** for an address naming no banner.
+
+### `GET /help/<slug>` (not under `/api`)
+
+A FAQ question's link, `/help/how-do-step-up-banners-work` (the `FaqItem` slug, the
+question's `#anchor` on `/faq`): what each question's "Copy link" copies. A `#fragment` never
+reaches a server, so `/faq#slug` can only ever unfurl as the FAQ page. Through the `/help`
+ingress rule; **never `/faq/<slug>`**, because ingress matches prefixes only and a `/faq` rule
+would take the static FAQ page too. A browser lands on `/faq#<slug>`. Code:
+`views/faq_share.py`.
+
+- **Title:** the question. **Description:** the answer as plain text (markdown taken out), cut
+  at a word near 300 characters. The team's words, as written in the admin.
+- **Picture:** the site card.
+- **A slug naming no question:** the FAQ page's own tags, a **200**, still sending a browser
+  to `/faq`.
+
+Throttled at `faq_share` (600/hour), in the `gallery` cache. Creates and counts nothing.
+
 ### PvP guide editor
 
 The site's guide editor (`views/pvp_guide_editor.py`, 2026-10-21): a guide read and
@@ -1349,7 +1397,7 @@ sentence>"}`** for: more than 3 runners or two in one spot, the team rules on th
 (the same uma twice, two outfits of one character, an unknown uma; shared through
 `pvp_teams.check_lineup`), more than 5 races (1 in a final) or the same race twice, a
 winner in a spot with no runner, a group or placement on a day's ticket, a placement
-outside 1..3, a note over 120 characters, `skipped` on the final or on a ticket with all 5
+outside 1..3 (a LoH Top 96: 1..1,000,000, since every player is ranked), a note over 120 characters, `skipped` on the final or on a ticket with all 5
 races listed. A refused `PUT` leaves the slot as it was.
 
 ### `/trained-umas`

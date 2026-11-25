@@ -178,8 +178,8 @@ def brand_strip(image, right=""):
 def cover(art, blur):
     """An uploaded picture (a FieldFile) scaled to cover the card, cropped to
     its centre and blurred by `blur`, for a backdrop; None when it can't be
-    read. Used by plan_preview.py (a banner's art) and guide_preview.py (an
-    event's)."""
+    read. Used by plan_preview.py (a banner's art), guide_preview.py (an
+    event's) and banner_preview.py (the banner's own)."""
     try:
         with art.open("rb") as handle:
             picture = Image.open(io.BytesIO(handle.read()))
@@ -200,7 +200,8 @@ def tile(art, width, height):
     """An uploaded picture (a FieldFile) scaled to cover a width x height box
     and cropped to its centre, unblurred; None when it can't be read. A
     Community plan's preview draws its first banners as a row of these
-    (plan_preview.py)."""
+    (plan_preview.py), and a banner's preview its art beside the words
+    (banner_preview.py)."""
     try:
         with art.open("rb") as handle:
             picture = Image.open(io.BytesIO(handle.read()))

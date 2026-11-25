@@ -196,6 +196,25 @@ ingress:
     match:
       path:
         prefix: /guide
+  # A Timeline banner's link (/banner/73) and its picture, the same way
+  # (views/banner_share.py), then on to /app/timeline?focus=banner-73. The
+  # site has no route under /banner.
+  - component:
+      name: calculatorproject
+      preserve_path_prefix: true
+    match:
+      path:
+        prefix: /banner
+  # A FAQ question's link (/help/<slug>), the same way (views/faq_share.py),
+  # then on to /faq#<slug>. Its own prefix, never /faq: prefixes are all an
+  # ingress rule can match, and a /faq rule would take the static FAQ page
+  # (dist/faq.html) to Django too. The site has no route under /help.
+  - component:
+      name: calculatorproject
+      preserve_path_prefix: true
+    match:
+      path:
+        prefix: /help
 name: umamusme-calculator
 region: nyc
 services:
@@ -321,11 +340,16 @@ services:
   http_port: 8080
   instance_count: 1
   # Dedicated since 2026-10-29: the daily 15:00 UTC peak outgrew the $5 shared
-  # vCPU (CPU, not memory: memory peaked at 57% of 512 MB, so the 1 GB size
-  # buys nothing while this runs one process). Dedicated is also the first size
-  # that can autoscale, once the cache is shared (gunicorn.conf.py says why
-  # that comes first).
-  instance_size_slug: apps-d-1vcpu-0.5gb
+  # vCPU. Dedicated is also the first size that can autoscale, once the cache
+  # is shared (gunicorn.conf.py says why that comes first).
+  #
+  # 1 GB ($34, was 0.5 GB at $29) since the release after 2026-11-25: memory
+  # ratcheted toward the 80% alert after every deploy even with the rebuild
+  # lock and MALLOC_ARENA_MAX=2 (peaks of 83-87% of 512 MB on 11-22, 11-23 and
+  # 11-25, no restarts yet), with December expected to be the busiest month.
+  # The same ~445 MB is ~44% of 1 GB. This buys memory headroom only; a CPU
+  # peak still needs the shared cache, then more workers.
+  instance_size_slug: apps-d-1vcpu-1gb
   name: calculatorproject
   # Resource trouble reaches #calc-dev-log before anyone notices it on the
   # site (the 2026-10-14 outage was 512 MB running out). Any restart is a crash.
