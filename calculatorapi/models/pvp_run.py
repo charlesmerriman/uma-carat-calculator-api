@@ -63,9 +63,11 @@ PVP_RUN_TICKETS = {"cm": 4, "loh": 5}
 # A Champions Meeting final is three trainers, placed 1st to 3rd. LoH ends in
 # the Top 96: two 48-player brackets. The player picks one of the teams they
 # registered on days 1-6, then only watches (Daptrius, 2026-10-30), so its
-# "final" row holds a lineup, a placement and a note, no race.
+# "final" row holds a lineup, a placement and a note, no race. Every player is
+# ranked, not only the Top 96, so the placement goes up to a ceiling no ranking
+# will reach (Daptrius, 2026-11-25), which also keeps a typo out.
 PVP_FINAL_PLACEMENTS = 3
-PVP_LOH_TOP_PLACEMENTS = 96
+PVP_LOH_MAX_PLACEMENT = 1_000_000
 
 PVP_RUN_NOTE_MAX_LENGTH = 120
 
@@ -109,7 +111,9 @@ class PvpRun(models.Model):
     finals_group = models.CharField(
         max_length=1, choices=PvpFinalsGroup.choices, blank=True, default=""
     )
-    placement = models.PositiveSmallIntegerField(null=True, blank=True)
+    # 1..3 on a CM final, 1..PVP_LOH_MAX_PLACEMENT on a LoH one: past a small
+    # integer's 32,767, so a PositiveIntegerField.
+    placement = models.PositiveIntegerField(null=True, blank=True)
     note = models.CharField(max_length=PVP_RUN_NOTE_MAX_LENGTH, blank=True, default="")
     # The player's word that the races this ticket does not list were never
     # run: with none listed the ticket went unused, with some they stopped
