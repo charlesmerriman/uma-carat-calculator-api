@@ -1216,19 +1216,29 @@ The Rankings page's PvP tab for one event, same gate and half-day cache as every
 (`PvpTeam`, posted or not, staff out) by the gallery route's rule and shares (`count_teams`,
 `team_shares`), without the gallery's `posts` and `decks`. `runs` is CM Runs per uma and
 strategy: a runner ran every race of her ticket that has a result and won those whose
-winner is her spot; skipped tickets and staff never count. Four queries on a miss.
+winner is her spot; skipped tickets and staff never count. Five queries on a miss.
 
 ```json
 { "generated_at": "...",
   "built": {"umas": [{"uma": 41, "share": 0.29, "styles": {"pace": 0.17}}],
             "cards": [{"card": 12, "share": 0.22, "borrowed": 0.03}], "trios": [...]},
-  "runs": [{"uma": 41, "style": "pace", "rate": 0.32, "marks": 3, "ranked": true}] }
+  "runs": [{"uma": 41, "style": "pace", "rate": 0.32, "marks": 3, "ranked": true,
+            "avg_place": 2.4, "top3": 0.8}],
+  "beaten_by": [{"uma": 77, "share": 0.43}] }
 ```
 
 `runs` holds a win `rate`, never races or wins (`rankings_shares.run_shares`): only rows
 from 20 races (`MIN_RACES`), `ranked` from 100, in order (ranked best rate first, more races
 breaking a tie, then the rest most races first). `marks` is how much to trust the rate: 1
-from 20 races, 2 from 100, 3 from 300.
+from 20 races, 2 from 100, 3 from 300. `avg_place` (one decimal) and `top3` (the rate of
+1st to 3rd finishes) count only the races she has a place in (places are optional), and
+are null under 20 such races.
+
+`beaten_by` ("What beats players", `rankings_shares.beaten_by_shares`) is each uma's share
+of the event's NAMED losses (a loss whose `lost_to_uma` is set), most first: empty until
+the event has 20 named losses, and a row only from 5 (`BEATEN_BY_MIN`). Neither the losses
+nor their total is sent. A payload cached before this field existed lacks it; the client
+reads a missing `beaten_by` as empty.
 
 ### `GET /rankings/players`
 

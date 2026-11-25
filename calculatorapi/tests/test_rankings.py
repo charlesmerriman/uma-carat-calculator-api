@@ -9,9 +9,9 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from calculatorapi.models import (
-    GalleryPost, GalleryPostKind, PvpDeck, PvpDeckSlot, PvpGuide, PvpRun, PvpRunRace, PvpRunRunner, PvpTeam,
-    PvpTeamCard, PvpTeamMember, PvpUmaRecommendation, RankingsSnapshot, SupportCard, TeamTrialsRank, Uma, UserOshi,
-    UserPlannedBanner, UserPlannedPurchase,
+    GalleryPost, GalleryPostKind, PvpDeck, PvpDeckSlot, PvpGuide, PvpRun, PvpRunRace, PvpRunRacePlace, PvpRunRunner,
+    PvpTeam, PvpTeamCard, PvpTeamMember, PvpUmaRecommendation, RankingsSnapshot, SupportCard, TeamTrialsRank, Uma,
+    UserOshi, UserPlannedBanner, UserPlannedPurchase,
 )
 from calculatorapi.rankings_shares import SMALL, run_shares, share
 from calculatorapi.tests.base import CalculatorTestCase
@@ -453,14 +453,68 @@ class PvpRankingsTests(CalculatorTestCase):  # pylint: disable=too-many-instance
         runs = self.client.get(self.url).json()["runs"]
         # Rates and how much to trust them, never races, wins or players. Under
         # RANKED_RACES, so unranked, with one mark.
+        # No places logged, so no average place either.
+        unplaced = {"marks": 1, "ranked": False, "avg_place": None, "top3": None}
         self.assertEqual(runs, [
-            {"uma": self.oguri.id, "style": "pace", "rate": 0.4, "marks": 1, "ranked": False},
-            {"uma": self.maru.id, "style": "front", "rate": 0.2, "marks": 1, "ranked": False},
+            {"uma": self.oguri.id, "style": "pace", "rate": 0.4, **unplaced},
+            {"uma": self.maru.id, "style": "front", "rate": 0.2, **unplaced},
         ])
 
     def test_a_win_rate_under_the_floor_is_never_sent(self):
         self.log_run(self.player, [0, None, 1])
         self.assertEqual(self.client.get(self.url).json()["runs"], [])
+
+    def log_placed(self, user, slot, races, skipped=False):
+        """One ticket of `races`, each (winner, Oguri's place, Maruzensky's place,
+        the uma that won a loss). `slot` 0..15 picks the day and ticket."""
+        run = PvpRun.objects.create(
+            user=user, champions_meeting=self.cm, stage="day", day=slot // 4 + 1, ticket=slot % 4 + 1, skipped=skipped,
+        )
+        PvpRunRunner.objects.create(run=run, position=0, uma=self.oguri, style="pace")
+        PvpRunRunner.objects.create(run=run, position=1, uma=self.maru, style="front")
+        for number, (winner, oguri, maru, lost_to) in enumerate(races, start=1):
+            race = PvpRunRace.objects.create(run=run, race=number, winner=winner, lost_to_uma=lost_to)
+            for position, place in ((0, oguri), (1, maru)):
+                if place:
+                    PvpRunRacePlace.objects.create(race=race, position=position, place=place)
+
+    def test_average_place_and_top_three_from_twenty_placed_races(self):
+        # Four tickets: Oguri places 1, 2, 3, 4, 2 each (average 2.4, top 3 in
+        # 4 of 5); Maruzensky goes unplaced in race 5, so 16 placed races,
+        # under the floor of 20, and her row sends no average.
+        ticket = [(0, 1, 5, None), (None, 2, 6, None), (None, 3, 7, None), (None, 4, 8, None), (1, 2, None, None)]
+        for slot in range(4):
+            self.log_placed(self.player, slot, ticket)
+        # A staff member's and a skipped ticket's 9ths would drag Oguri down: neither counts.
+        last = [(None, 9, 8, None)] * 5
+        self.log_placed(make_user("staffer2", is_staff=True), 0, last)
+        self.log_placed(make_user("skipper"), 0, last, skipped=True)
+        runs = self.client.get(self.url).json()["runs"]
+        self.assertEqual(
+            [(row["uma"], row["avg_place"], row["top3"]) for row in runs],
+            [(self.oguri.id, 2.4, 0.8), (self.maru.id, None, None)],
+        )
+
+    def test_what_beats_players_as_shares_from_twenty_named_losses(self):
+        kitasan = Uma.objects.create(name="Kitasan Black")
+        rice = Uma.objects.create(name="Rice Shower")
+        # 20 named losses: Kitasan 12, Rice 6, Haru 2 (under the row floor of
+        # 5), plus losses that name nobody, which count nowhere.
+        losses = [kitasan] * 12 + [rice] * 6 + [self.haru] * 2
+        for slot in range(4):
+            self.log_placed(self.player, slot, [(None, None, None, uma) for uma in losses[slot * 5:slot * 5 + 5]])
+        self.log_placed(self.player, 4, [(None, None, None, None)] * 5)
+        # Staff never count.
+        self.log_placed(make_user("staffer2", is_staff=True), 0, [(None, None, None, self.haru)] * 5)
+        body = self.client.get(self.url).json()
+        self.assertEqual(body["beaten_by"], [{"uma": kitasan.id, "share": 0.6}, {"uma": rice.id, "share": 0.3}])
+
+    def test_what_beats_players_waits_for_twenty_named_losses(self):
+        kitasan = Uma.objects.create(name="Kitasan Black")
+        # 19 named losses: Kitasan has plenty for a row, but the list waits.
+        for slot in range(4):
+            self.log_placed(self.player, slot, [(None, None, None, kitasan)] * (5 if slot < 3 else 4))
+        self.assertEqual(self.client.get(self.url).json()["beaten_by"], [])
 
     def test_early_access_only_and_a_real_event(self):
         plain, _ = auth_client(make_user("plain"))
