@@ -1476,9 +1476,11 @@ the banner with the same day and the same SSRs; it never removes a link or touch
 an editor's choices). The API sends a support banner's SSRs as `support_cards` and its SRs and
 Rs as `other_rate_ups`, each with `display`, its look on the Timeline:
 `SupportsOnSupportBanner.timeline_display`, resolved in `calculatorapi/banner_rate_ups.py`.
-`auto` (the default): an R is `named` (listed under the banner card); an SR is a `picture`
-when it is the banner's only SR beside one SSR, else `named`. An editor's `named`, `picture`
-(SR only) or `hidden` wins. It changes the Timeline only: the odds, release dates and the
+`auto` (the default): an R is `named` (listed under the banner card); on a banner with one
+SSR its first SR is a `picture` and the rest `named`; beside two SSRs every SR is `named`. **A
+banner draws at most one SR picture, and none beside two SSRs** (the panel is laid out for two
+tiles, owner 2026-11-27): an editor's `picture` puts its SR first in line, and one the cap
+leaves out reads as `named`. An editor's `named` and `hidden` always win. It changes the Timeline only: the odds, release dates and the
 Encyclopedia use every card.
 
 Two inputs bend it, both set per banner in the admin:

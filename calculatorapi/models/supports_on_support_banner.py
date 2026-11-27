@@ -39,9 +39,11 @@ class SupportsOnSupportBanner(models.Model):
         default=TimelineDisplay.AUTO,
         help_text=(
             "SR and R cards only; an SSR is always drawn. Automatic: an R is listed under "
-            "the banner card, and an SR gets its picture when it is the banner's only SR "
-            "beside a single SSR, and is listed otherwise. Hidden only leaves the card off "
-            "the Timeline: the odds and the Encyclopedia still use it."
+            "the banner card; on a banner with one SSR, its first SR gets a picture and the "
+            "others are listed; with two SSRs or more every SR is listed. Picture puts this "
+            "SR first in line, but a banner never shows more than one SR picture, and none "
+            "beside two SSRs. Hidden only leaves the card off the Timeline: the odds and "
+            "the Encyclopedia still use it."
         ),
     )
 

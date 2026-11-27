@@ -62,11 +62,25 @@ class AutomaticDisplayTests(CalculatorTestCase):
         link(self.banner, card(20001))
         self.assertEqual(displays(self.banner), {20001: "named"})
 
-    def test_several_srs_are_all_listed(self):
+    def test_one_ssr_with_several_srs_pictures_only_the_first(self):
+        # The owner, 2026-11-27: "only one SR card should show"; the panel is
+        # laid out for two tiles.
         link(self.banner, card(30001))
         for game_id in (20001, 20002, 20003):
             link(self.banner, card(game_id))
-        self.assertEqual(set(displays(self.banner).values()), {"named"})
+        self.assertEqual(displays(self.banner), {20001: "picture", 20002: "named", 20003: "named"})
+
+    def test_an_editors_picture_takes_the_one_slot(self):
+        link(self.banner, card(30001))
+        link(self.banner, card(20001))
+        link(self.banner, card(20002), TimelineDisplay.PICTURE)
+        self.assertEqual(displays(self.banner), {20001: "named", 20002: "picture"})
+
+    def test_two_pictures_still_draw_one(self):
+        link(self.banner, card(30001))
+        link(self.banner, card(20001), TimelineDisplay.PICTURE)
+        link(self.banner, card(20002), TimelineDisplay.PICTURE)
+        self.assertEqual(displays(self.banner), {20001: "picture", 20002: "named"})
 
     def test_an_ssr_added_later_changes_the_answer(self):
         link(self.banner, card(30001))
@@ -75,12 +89,18 @@ class AutomaticDisplayTests(CalculatorTestCase):
         link(self.banner, card(30002))
         self.assertEqual(displays(self.banner), {20001: "named"})
 
-    def test_an_editors_choice_wins(self):
+    def test_an_editors_named_and_hidden_win(self):
+        link(self.banner, card(30001))
+        link(self.banner, card(20001), TimelineDisplay.NAMED)
+        link(self.banner, card(20002), TimelineDisplay.HIDDEN)
+        link(self.banner, card(10001), TimelineDisplay.HIDDEN)
+        self.assertEqual(displays(self.banner), {20001: "named", 20002: "hidden", 10001: "hidden"})
+
+    def test_no_picture_beside_two_ssrs_even_when_set(self):
         link(self.banner, card(30001))
         link(self.banner, card(30002))
         link(self.banner, card(20001), TimelineDisplay.PICTURE)
-        link(self.banner, card(10001), TimelineDisplay.HIDDEN)
-        self.assertEqual(displays(self.banner), {20001: "picture", 10001: "hidden"})
+        self.assertEqual(displays(self.banner), {20001: "named"})
 
     def test_a_stray_picture_on_an_r_reads_as_listed(self):
         link(self.banner, card(10001), TimelineDisplay.PICTURE)

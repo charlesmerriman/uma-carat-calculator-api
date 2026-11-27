@@ -10,22 +10,29 @@ draws, and every reader written later, sees only SSRs unless it asks for more;
 the readers that want every card (the odds, a card's release date, search) ask
 the client's `allRateUps()`.
 
-THE ONE PLACE `auto` IS RESOLVED. `SupportsOnSupportBanner.timeline_display`
+THE ONE PLACE `display` IS RESOLVED. `SupportsOnSupportBanner.timeline_display`
 is stored as the editor's choice, `auto` unless they changed it, and answered
 here each time the payload is built, never written back. So an SSR an editor
-adds to a banner later changes what its SRs do, with nothing to re-run:
+adds to a banner later changes what its SRs do, with nothing to re-run.
 
-    an R                                    named   (an R is never drawn)
-    the banner's only SR, beside one SSR     picture (Daptrius, 2026-11-20: "only 1
-      (or none)                                      SSR rate up and only 1 SR rate up")
-    an SR, the banner has two SSRs or more   named   ("treated as a R card and
-                                                     listed below", owner 2026-11-27)
-    an SR among several on the banner        named   (Narita Top Road, 1 SSR + 3 SRs:
-                                                     three pictures would crowd one SSR)
+AT MOST ONE SR PICTURE, AND ONLY BESIDE ONE SSR (owner, 2026-11-27: "If
+there's 1 SSR and multiple SRs, then only one SR card should show. More than
+two will typically break the CSS"). The support panel is laid out for two
+tiles, so this is a cap, not a default: an editor's `picture` can't break it.
 
-An editor's `named`, `picture` or `hidden` wins, except `picture` on an R
-(the admin refuses it; a stray one reads as `named`). `display` only changes
-the Timeline: the odds, the Encyclopedia and the PvP tools use every card.
+    an R                                     named   (an R is never drawn)
+    an SR, the banner has two SSRs or more    named   ("treated as a R card and
+                                                      listed below", owner 2026-11-27)
+    on a banner with one SSR (or none):
+      the SR an editor set to `picture`       picture (the first such one)
+      else the banner's first `auto` SR       picture (Daptrius, 2026-11-20; the
+                                                      first in the game's rate-up order)
+      every other SR                          named
+
+An editor's `named` and `hidden` always win. A `picture` that the cap leaves
+out (a second one, or on a two-SSR banner, or on an R) reads as `named`.
+`display` only changes the Timeline: the odds, the Encyclopedia and the PvP
+tools use every card.
 
 A card's rarity: the game's value, 1 R, 2 SR, 3 SSR. An unknown one (a card
 with no game id) counts as an SSR, as the odds have always read it.
@@ -41,17 +48,16 @@ def is_ssr(card):
     return card.rarity not in (SupportCardRarity.SR, SupportCardRarity.R)
 
 
-def resolve_display(link, ssr_count, sr_count):
-    """What an SR or R link does on the Timeline: named, picture or hidden."""
-    chosen = link.timeline_display
-    is_r = link.support_card.rarity == SupportCardRarity.R
-    if chosen == TimelineDisplay.AUTO:
-        if is_r or ssr_count >= 2 or sr_count != 1:
-            return TimelineDisplay.NAMED
-        return TimelineDisplay.PICTURE
-    if chosen == TimelineDisplay.PICTURE and is_r:
-        return TimelineDisplay.NAMED
-    return chosen
+def _pictured(others, ssr_count):
+    """The one SR link drawn as a picture, or None. See the module docstring."""
+    if ssr_count >= 2:
+        return None
+    srs = [link for link in others if link.support_card.rarity == SupportCardRarity.SR]
+    for wanted in (TimelineDisplay.PICTURE, TimelineDisplay.AUTO):
+        for link in srs:
+            if link.timeline_display == wanted:
+                return link
+    return None
 
 
 def split_rate_ups(links):
@@ -66,5 +72,13 @@ def split_rate_ups(links):
         (link for link in links if not is_ssr(link.support_card)),
         key=lambda link: _ORDER[link.support_card.rarity],  # stable: banner order within a rarity
     )
-    sr_count = sum(1 for link in others if link.support_card.rarity == SupportCardRarity.SR)
-    return ssrs, [(link, resolve_display(link, len(ssrs), sr_count)) for link in others]
+    pictured = _pictured(others, len(ssrs))
+
+    def display(link):
+        if link is pictured:
+            return TimelineDisplay.PICTURE
+        if link.timeline_display == TimelineDisplay.HIDDEN:
+            return TimelineDisplay.HIDDEN
+        return TimelineDisplay.NAMED
+
+    return ssrs, [(link, display(link)) for link in others]

@@ -109,11 +109,13 @@ Each release adds the SR and R cards on rate-up to their support banner by itsel
 game files. You don't need to add them. On the banner's page each card has **On the
 Timeline**:
 
-- **Automatic** (what new cards get): an R is listed under the banner card with its rate; an
-  SR gets its picture beside the SSR when it is the banner's only SR and there is only one
-  SSR, and is listed otherwise.
+- **Automatic** (what new cards get): an R is listed under the banner card with its rate. On
+  a banner with one SSR, the first SR gets its picture beside it and any other SRs are
+  listed; with two SSRs, every SR is listed.
 - **Listed under the card**, **Picture** (SRs only) or **Hidden** overrides that for one card.
-  Hidden only takes the card off the Timeline: the odds and the Encyclopedia still use it.
+  A banner never shows more than one SR picture, and none next to two SSRs: Picture picks
+  which SR gets the one spot. Hidden only takes the card off the Timeline: the odds and the
+  Encyclopedia still use it.
 
 ### Marking a banner as Recommended
 
