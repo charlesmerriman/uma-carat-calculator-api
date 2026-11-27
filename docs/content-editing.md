@@ -102,6 +102,19 @@ The Uma banner and Support card banner lists have a **Planned by** column —
 how many players currently have that banner in their pull plan. Click the
 column header to sort by it.
 
+
+### SR and R cards on a support banner
+
+Each release adds the SR and R cards on rate-up to their support banner by itself, from the
+game files. You don't need to add them. On the banner's page each card has **On the
+Timeline**:
+
+- **Automatic** (what new cards get): an R is listed under the banner card with its rate; an
+  SR gets its picture beside the SSR when it is the banner's only SR and there is only one
+  SSR, and is listed otherwise.
+- **Listed under the card**, **Picture** (SRs only) or **Hidden** overrides that for one card.
+  Hidden only takes the card off the Timeline: the odds and the Encyclopedia still use it.
+
 ### Marking a banner as Recommended
 
 Tick **Recommended** on an uma or support card banner when it is exceptionally

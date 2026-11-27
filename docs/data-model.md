@@ -180,6 +180,7 @@ erDiagram
         int banner_support_id FK
         int support_card_id FK
         string recommendation
+        string timeline_display "auto | named | picture | hidden: an SR or R's look on the Timeline only"
     }
 
     Plan {
@@ -1462,6 +1463,23 @@ rate = min(rate_up_rate_N, rate_up_pool_N / rate-up cards of rarity N on the ban
 | ★3 / SSR | 0.75% | 3% | 1-2 cards 0.75% each; 9 umas 0.333%; 20 supports 0.15% |
 | ★2 / SR | 2.25% | 3% | one ★2 uma 2.25%; three SRs 1% each |
 | ★1 / R | 3.75% | 5% | one 3.75%; two 2.5% each; three 1.67% each |
+
+**SR and R support cards have their own pair** (`support_rate_up_rate_2/_pool_2`,
+`support_rate_up_rate_1/_pool_1`, defaults 2.25% / 3% and 3.75% / 5%), because the game rates
+them differently from ★2 and ★1 umas (a ★1 uma rate-up is 10%) and the live ★2/★1 values are
+set for umas. The six above serve umas, and SSRs of both kinds. A select banner's
+`rate_up_picks` splits the SSR pool only.
+
+**Every SR and R rate-up is linked** (notes/banner-sr-r-plan.md): the deploy's
+`import_game_data` adds them from `support_gachas.json` (`calculatorapi/rate_up_import.py`:
+the banner with the same day and the same SSRs; it never removes a link or touches an SSR or
+an editor's choices). The API sends a support banner's SSRs as `support_cards` and its SRs and
+Rs as `other_rate_ups`, each with `display`, its look on the Timeline:
+`SupportsOnSupportBanner.timeline_display`, resolved in `calculatorapi/banner_rate_ups.py`.
+`auto` (the default): an R is `named` (listed under the banner card); an SR is a `picture`
+when it is the banner's only SR beside one SSR, else `named`. An editor's `named`, `picture`
+(SR only) or `hidden` wins. It changes the Timeline only: the odds, release dates and the
+Encyclopedia use every card.
 
 Two inputs bend it, both set per banner in the admin:
 

@@ -35,6 +35,7 @@ from datetime import timedelta
 from django.conf import settings
 from django.utils import timezone
 
+from calculatorapi.banner_rate_ups import is_ssr
 from calculatorapi.models import (
     AnniversaryEvent,
     BannerTimeline,
@@ -107,8 +108,11 @@ def _banner_moments(request, emap):
             name=timeline.name,
             ends_at=entry["end_date"],
             umas=sorted({uma.name for banner in timeline.uma_banners.all() for uma in banner.umas.all()}),
+            # SSRs only: a banner's SR and R rate-ups (notes/banner-sr-r-plan.md)
+            # would bury the cards the post is about.
             cards=sorted({
                 card.name for banner in timeline.support_banners.all() for card in banner.support_cards.all()
+                if is_ssr(card)
             }),
             image=_image(request, timeline.image),
             url=_timeline_url(),

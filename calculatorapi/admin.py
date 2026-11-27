@@ -1763,6 +1763,19 @@ class CalculationConstantsAdmin(ModelAdmin):
                 "rate_up_pool_1",
             ),
         }),
+        ("SR and R support card rate-ups", {
+            "description": (
+                "The same rule for SR and R support cards on a support banner, which the "
+                "game rates differently from 2-star and 1-star umas. The six above keep "
+                "serving umas, and SSRs of both kinds."
+            ),
+            "fields": (
+                "support_rate_up_rate_2",
+                "support_rate_up_pool_2",
+                "support_rate_up_rate_1",
+                "support_rate_up_pool_1",
+            ),
+        }),
         ("Event carat decay curve", {
             "description": (
                 "Governs how an event's 'carats throughout' pool is front-loaded "
