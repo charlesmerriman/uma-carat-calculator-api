@@ -32,6 +32,22 @@
 # module changed. Newest entry first is conventional here but not required — the
 # page sorts by date.
 
+- key: sr-r-rate-ups-and-one-header
+  date: 2026-11-27
+  title: "SR and R rate-ups, one header for every page, and tidier course maps"
+  version: "v2.26"
+  changes:
+    - added: "Support banners on the Timeline now list their SR and R cards on rate-up. Tap a name for the card."
+    - added: "The planner's odds work for those SR and R cards too."
+    - changed: "The Calculator, Timeline, Encyclopedia and Rankings share one header now. On a phone it's a single row of tabs that stays with you as you scroll. On a computer it's the page's name with its tabs beside it, shrinking to a slim bar once you scroll."
+    - changed: "Course map labels sit in the order you pass them. Their lines never cross, and no label covers another or the track."
+    - changed: "On longer courses, Goal and some corners sit inside the loop, right next to where they point."
+    - changed: "A short list in the Encyclopedia is one plain grid, no letter headings."
+    - fixed: "An empty League of Heroes run starts at 4,000 points, what you hold before your first ticket."
+    - changed: "Log places starts switched on in League of Heroes Runs."
+    - fixed: "Tapping an uma's picture in a PvP guide opens her card on a phone."
+    - fixed: "On a computer, a veteran's Delete button is always in view."
+
 - key: skills-plates-and-link-previews
   date: 2026-11-25
   title: "A new Skills list, link previews for Discord, and a pile of fixes"

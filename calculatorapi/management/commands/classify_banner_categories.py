@@ -75,7 +75,11 @@ class Command(BaseCommand):
         # this one query instead of one per timeline.
         timelines = BannerTimeline.objects.annotate(
             uma_count=Count("uma_banners__umasonumabanner", distinct=True),
-            support_count=Count("support_banners__supportsonsupportbanner", distinct=True),
+            # SSRs only: SR and R rate-ups ride along on banners of every kind.
+            support_count=Count(
+                "support_banners__supportsonsupportbanner", distinct=True,
+                filter=~Q(support_banners__supportsonsupportbanner__support_card__rarity__in=(1, 2)),
+            ),
         )
 
         revivals = timelines.filter(uma_count__gt=2, support_count=0)

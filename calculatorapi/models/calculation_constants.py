@@ -321,6 +321,32 @@ class CalculationConstants(models.Model):
         validators=[MinValueValidator(0), MaxValueValidator(1)],
         help_text="The most the ★1 / R rate-ups can share between them (0.05 = 5%).",
     )
+    # The same rule for SR and R SUPPORT cards, which the game rates
+    # differently from ★2 and ★1 umas (a ★1 uma rate-up is 10%, an R card
+    # 3.75%), so one set of numbers can't serve both. The six above keep
+    # serving umas, and SSRs of both kinds. The game's tables, both clients:
+    # 1 SR 2.25%, 2 SRs 1.5% each, 4 SRs 0.75%; 1 R 3.75%, 2 Rs 2.5%, 3 Rs 1.667%.
+    # notes/banner-sr-r-plan.md.
+    support_rate_up_rate_2 = models.DecimalField(
+        max_digits=7, decimal_places=6, default="0.022500",
+        validators=[MinValueValidator(0), MaxValueValidator(1)],
+        help_text="Per-pull chance of one SR support card rate-up (0.0225 = 2.25%).",
+    )
+    support_rate_up_pool_2 = models.DecimalField(
+        max_digits=7, decimal_places=6, default="0.030000",
+        validators=[MinValueValidator(0), MaxValueValidator(1)],
+        help_text="The most the SR support card rate-ups can share between them (0.03 = 3%: two SRs are 1.5% each).",
+    )
+    support_rate_up_rate_1 = models.DecimalField(
+        max_digits=7, decimal_places=6, default="0.037500",
+        validators=[MinValueValidator(0), MaxValueValidator(1)],
+        help_text="Per-pull chance of one R support card rate-up (0.0375 = 3.75%).",
+    )
+    support_rate_up_pool_1 = models.DecimalField(
+        max_digits=7, decimal_places=6, default="0.050000",
+        validators=[MinValueValidator(0), MaxValueValidator(1)],
+        help_text="The most the R support card rate-ups can share between them (0.05 = 5%: two Rs are 2.5% each).",
+    )
 
     # ── Throughout-carat decay curve ─────────────────────────────────────────
     throughout_end_offset_days = models.IntegerField(

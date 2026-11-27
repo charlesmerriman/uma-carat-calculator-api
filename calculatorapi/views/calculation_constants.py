@@ -31,6 +31,10 @@ class CalculationConstantsSerializer(serializers.ModelSerializer):
     rate_up_pool_2 = serializers.FloatField()
     rate_up_rate_1 = serializers.FloatField()
     rate_up_pool_1 = serializers.FloatField()
+    support_rate_up_rate_2 = serializers.FloatField()
+    support_rate_up_pool_2 = serializers.FloatField()
+    support_rate_up_rate_1 = serializers.FloatField()
+    support_rate_up_pool_1 = serializers.FloatField()
 
     class Meta:
         model = CalculationConstants

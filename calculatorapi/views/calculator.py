@@ -64,6 +64,11 @@ from calculatorapi.views.user_step_up_selection import UserStepUpSelectionSerial
 from calculatorapi.views.plan import PlanSerializer
 from calculatorapi.views.user_rows import replace_user_rows
 
+# A support banner's links with their cards, in the order they were added: what
+# serialize_rate_ups (views/banner_timeline.py) reads to split a banner's SSRs
+# from its SR and R rate-ups, so every support banner Prefetch uses it.
+SUPPORT_LINKS = SupportsOnSupportBanner.objects.select_related("support_card").order_by("id")
+
 
 def _planned_banner_kind_rank(planned_banner):
     """Tie-break for two planned rows sharing a start date.
@@ -239,8 +244,12 @@ def serialize_planned_banners(plan, *, emap, card_context):
         ).prefetch_related(
             "banner_uma__umas",
             "banner_uma__umasonumabanner_set",
-            "banner_support__support_cards",
-            "banner_support__supportsonsupportbanner_set",
+            # The card rides on the link (serialize_rate_ups splits SSRs from
+            # SRs and Rs by it); one query, never one per row.
+            Prefetch(
+                "banner_support__supportsonsupportbanner_set",
+                queryset=SUPPORT_LINKS,
+            ),
         ),
         emap=emap,
     )
@@ -473,7 +482,7 @@ class CalculatorViewSet(ViewSet):
         )
         banner_support_data = sorted(
             BannerSupport.objects.select_related("banner_timeline").prefetch_related(
-                "support_cards", "supportsonsupportbanner_set"
+                Prefetch("supportsonsupportbanner_set", queryset=SUPPORT_LINKS)
             ),
             key=lambda b: effective_sort_key(emap.get(b.banner_timeline_id)),
         )
@@ -598,9 +607,7 @@ class CalculatorViewSet(ViewSet):
                 ),
                 Prefetch(
                     "support_banners__supportsonsupportbanner_set",
-                    queryset=SupportsOnSupportBanner.objects.select_related(
-                        "support_card"
-                    ),
+                    queryset=SUPPORT_LINKS,
                 ),
                 # Prefetched so the attached-campaign strip costs no extra query
                 # per banner (195 rows would otherwise be 195 lookups).

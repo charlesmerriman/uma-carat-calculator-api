@@ -44,7 +44,8 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 
 from calculatorapi import banner_preview
-from calculatorapi.models import BannerTimeline, SupportsOnSupportBanner, UmasOnUmaBanner
+from calculatorapi.banner_rate_ups import split_rate_ups
+from calculatorapi.models import BannerTimeline, SupportsOnSupportBanner, TimelineDisplay, UmasOnUmaBanner
 from calculatorapi.predictions import build_effective_date_maps
 from calculatorapi.share_card import HEIGHT, WIDTH
 from calculatorapi.views.gallery import GalleryThrottle
@@ -125,11 +126,11 @@ def featured_names(banner):
     for uma_banner in banner.uma_banners.all():
         names.extend(link.uma.name for link in uma_banner.umasonumabanner_set.all())
     for support_banner in banner.support_banners.all():
-        names.extend(
-            link.support_card.name
-            for link in support_banner.supportsonsupportbanner_set.all()
-            if not link.support_card.is_placeholder
-        )
+        # The SSRs and any SR drawn as a picture, as the Timeline card draws
+        # them; the SR and R rate-ups listed under it stay out of the preview.
+        ssrs, others = split_rate_ups(support_banner.supportsonsupportbanner_set.all())
+        drawn = ssrs + [link for link, display in others if display == TimelineDisplay.PICTURE]
+        names.extend(link.support_card.name for link in drawn if not link.support_card.is_placeholder)
     return list(dict.fromkeys(names))
 
 

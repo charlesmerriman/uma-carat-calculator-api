@@ -2136,6 +2136,11 @@ and outfit rows, the skill pages' umas, and the gallery `poster`. `GET /umas` ro
 `GET /account`'s `oshis` (as `layers`) and the profile card's `favorites` (as `layers`)
 carry it too, and `GET /account` sends `avatar_layers` beside `avatar_url`.
 
+`support_cards` are the banner's SSRs (rarity 3 or null), the cards a planner row draws;
+`other_rate_ups` its SR and R rate-ups, SRs first, each with `display`, how the Timeline
+shows it (`data-model.md`, "Rate-up rates"). A Timeline row's `banner_supports` carry both lists
+too, with each card's `recommendation`. The odds read both.
+
 `rarity`, `rate_up_picks` and `rate_overrides` are the **inputs to the rate-up rule** the
 client applies (`data-model.md`, "Rate-up rates"). `rarity` is the game's star count, null
 until imported (read it as 3). `rate_up_picks` is set only on select banners: how many of
@@ -2180,6 +2185,7 @@ including one with a `null` (unrestricted) cutoff. A client must check both halv
   "admin_comments": "string | null",
   "banner_timeline": { ... },
   "support_cards": [ { "id": 1, "name": "string", "image": "url | null", "admin_comments": "string | null", "purpose": "string", "first_jp_date": "ISO8601 | null", "rarity": "1 | 2 | 3 | null", "game_id": "int | null", "image_borderless": "url | null", "card_type": "speed | stamina | power | guts | wit | friend | group | ''" } ],
+  "other_rate_ups": [ { "...": "a support card, as above", "display": "named | picture | hidden" } ],
   "rate_up_picks": "int | null",
   "rate_overrides": { "<support card id>": 0.005 }
 }
@@ -2377,7 +2383,8 @@ Two things to know:
   client feeds them straight into arithmetic, and `"0.664" * 2` is a silent `NaN`
   in JavaScript rather than an error. Affects `prediction_factor`,
   `throughout_decay_k`, `throughout_decay_linear_slope`, `step_up_target_rate` and the
-  six rate-up constants (`rate_up_rate_1..3`, `rate_up_pool_1..3`).
+  ten rate-up constants (`rate_up_rate_1..3`, `rate_up_pool_1..3`, and the support
+  cards' `support_rate_up_rate_1..2`, `support_rate_up_pool_1..2`).
   **Every `DecimalField` added here needs the same coercion**, and a test walks the
   model to enforce that — a missed one is not a type error anywhere, just a `NaN`
   deep in the odds.

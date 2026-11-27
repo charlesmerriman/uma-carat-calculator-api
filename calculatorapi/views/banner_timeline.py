@@ -8,6 +8,7 @@ from calculatorapi.models import (
 from .uma import UmaSerializer
 from .support_card import SupportCardSerializer
 from .mixins import EffectiveDateMixin, EventTypeMixin
+from ..banner_rate_ups import split_rate_ups
 
 
 class BannerTimelineSerializer(EffectiveDateMixin, serializers.ModelSerializer):
@@ -22,32 +23,58 @@ class BannerTimelineSerializer(EffectiveDateMixin, serializers.ModelSerializer):
         )
 
 
+def serialize_rate_ups(banner, context, with_recommendation=False):
+    """(support_cards, other_rate_ups) for one support banner: the SSRs, and its
+    SR and R rate-ups with their resolved `display` (calculatorapi/banner_rate_ups.py).
+
+    BARE .all() ON PURPOSE -- do not "optimise" this to
+    .select_related('support_card'). Calling select_related() on a related
+    manager builds a NEW queryset, which bypasses the prefetch cache the view
+    filled and re-queries once per banner (an N+1). The join lives in the
+    Prefetch() in views/calculator.py instead; the two must stay paired.
+    """
+    ssrs, others = split_rate_ups(banner.supportsonsupportbanner_set.all())
+
+    def card(link):
+        # Context is forwarded so the nested card can resolve first_jp_date
+        # from the request-wide map; a plain call doesn't inherit it the way a
+        # declared nested field would.
+        data = SupportCardSerializer(link.support_card, context=context).data
+        if with_recommendation:
+            data["recommendation"] = link.recommendation
+        return data
+
+    support_cards = [card(link) for link in ssrs]
+    other_rate_ups = [{**card(link), "display": display} for link, display in others]
+    return support_cards, other_rate_ups
+
+
+def cached_rate_ups(banner, context, with_recommendation=False):
+    """serialize_rate_ups, once per banner object, for the two fields that read it."""
+    cached = getattr(banner, "_rate_up_split", None)
+    if cached is None:
+        cached = serialize_rate_ups(banner, context, with_recommendation)
+        banner._rate_up_split = cached  # pylint: disable=protected-access
+    return cached
+
+
 class BannerSupportNestedSerializer(serializers.ModelSerializer):
+    # The SSRs, drawn as tiles; the SR and R rate-ups beside them, each with
+    # how the Timeline shows it (named in the row, a picture, or hidden).
     support_cards = serializers.SerializerMethodField()
+    other_rate_ups = serializers.SerializerMethodField()
 
     class Meta:
         model = BannerSupport
         # is_recommended gives this panel its SSR treatment on the Timeline.
         fields = ("id", "name", "free_pulls", "is_recommended", "admin_comments",
-                  "support_cards")
+                  "support_cards", "other_rate_ups")
 
     def get_support_cards(self, obj):
-        result = []
-        # BARE .all() ON PURPOSE -- do not "optimise" this back to
-        # .select_related('support_card'). Calling select_related() on a related
-        # manager builds a NEW queryset, which bypasses the prefetch cache the
-        # view filled and re-queries once per banner (an N+1). The join lives in
-        # the Prefetch() in views/calculator.py instead; the two must stay paired.
-        for junction in obj.supportsonsupportbanner_set.all():
-            # Context is forwarded so the nested card can resolve first_jp_date
-            # from the request-wide map; a SerializerMethodField doesn't inherit
-            # it the way a declared nested field would.
-            card_data = SupportCardSerializer(
-                junction.support_card, context=self.context
-            ).data
-            card_data['recommendation'] = junction.recommendation
-            result.append(card_data)
-        return result
+        return cached_rate_ups(obj, self.context, with_recommendation=True)[0]
+
+    def get_other_rate_ups(self, obj):
+        return cached_rate_ups(obj, self.context, with_recommendation=True)[1]
 
 
 class BannerUmaNestedSerializer(serializers.ModelSerializer):
@@ -60,10 +87,10 @@ class BannerUmaNestedSerializer(serializers.ModelSerializer):
 
     def get_umas(self, obj):
         result = []
-        # Bare .all() for the same reason as get_support_cards above: the
+        # Bare .all() for the same reason as serialize_rate_ups above: the
         # select_related belongs in the view's Prefetch(), not here.
         for junction in obj.umasonumabanner_set.all():
-            # See get_support_cards above on why context is forwarded here.
+            # See serialize_rate_ups above on why context is forwarded here.
             uma_data = UmaSerializer(junction.uma, context=self.context).data
             uma_data['recommendation'] = junction.recommendation
             result.append(uma_data)
