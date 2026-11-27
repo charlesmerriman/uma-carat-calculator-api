@@ -220,6 +220,22 @@ class RateUpImportTests(CalculatorTestCase):
         self.assertEqual(self.linked(), {30037})
         self.assertIn("no banner with the same day and SSRs for 1 gacha(s): 30161", out)
 
+    def test_a_banner_merging_two_gachas_takes_each_ones_rate_ups(self):
+        # The site's banner holds two SSRs; JP ran them as two gachas, and the
+        # one with the SR names only its own SSR (Mejiro Ramonu, 2026-12-01).
+        link(self.banner, card(30137, "Progenitors & Guides"))
+        self.write(jp_gachas=[gacha(30161, "2023-04-19T03:00:00+00:00", [30037, 20061])])
+        self.run_import()
+        self.assertEqual(self.linked(), {30037, 30137, 20061})
+
+    def test_two_banners_that_both_hold_the_ssrs_are_left_alone(self):
+        other = make_support_banner(self.timeline, "Rerun")
+        link(other, self.ssr)
+        self.write(jp_gachas=[gacha(30161, "2023-04-19T03:00:00+00:00", [30037, 20061])])
+        out = self.run_import()
+        self.assertEqual(self.linked(), {30037})
+        self.assertIn("for 1 gacha(s): 30161", out)
+
     def test_a_card_with_no_row_is_reported_not_created(self):
         self.write(jp_gachas=[gacha(30161, "2023-04-19T03:00:00+00:00", [30037, 20099])])
         out = self.run_import()

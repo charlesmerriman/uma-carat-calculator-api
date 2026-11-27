@@ -27,10 +27,16 @@ THE BANNER MATCH, in two steps:
      at 22:00 UTC, so the gacha's instant is read in Japan time). The launch
      gacha opened at 00:30 and its banners at 22:00, so a minute that finds
      nothing falls back to the JP day.
-  2. The banner on it whose SSRs are exactly the gacha's SSR rate-ups. Two
-     support banners can share a day; their SSRs tell them apart. A banner
-     whose SSRs an editor hasn't entered yet doesn't match, and a select
-     banner's file lists placeholders: both are reported, never guessed.
+  2. The ONE banner on it that holds every SSR the gacha rates up. Two
+     support banners can share a day; their SSRs tell them apart. "Holds",
+     not "equals": the site sometimes merges two JP gachas into one banner
+     (Mejiro Ramonu + Progenitors & Guides, Global 2026-12-01, is two gachas
+     on JP), and the gacha with the SRs names only its own SSR (checked
+     against the live payload 2026-11-27: 95 of 99 placed either way, and
+     only this rule places that one). A banner whose SSRs an editor hasn't
+     entered yet doesn't match, nor does a day with two banners that both
+     hold them, and a select banner's file lists placeholders: all reported,
+     never guessed.
 
 A card the site has no row for is reported too (the card half of the import
 creates cards from support_cards.json, so this is rare).
@@ -85,8 +91,9 @@ class _Banners:  # pylint: disable=too-few-public-methods
             self.on_timeline.setdefault(timeline_id, []).append((banner_id, frozenset(ssrs.get(banner_id, ()))))
 
     def _with_ssrs(self, timeline_ids, wanted):
+        """The banners on these timelines that hold every one of the `wanted` SSRs."""
         return sorted({banner_id for timeline_id in timeline_ids
-                       for banner_id, ssrs in self.on_timeline.get(timeline_id, ()) if ssrs == wanted})
+                       for banner_id, ssrs in self.on_timeline.get(timeline_id, ()) if wanted <= ssrs})
 
     def match(self, gacha):
         """The one banner this gacha ran as, or None."""
