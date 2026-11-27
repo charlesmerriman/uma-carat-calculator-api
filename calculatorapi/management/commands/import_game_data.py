@@ -59,6 +59,11 @@ WHAT IT WRITES, and what it leaves alone:
                missions, fan events) with their cards and umas, keyed by kind
                and id (calculatorapi/free_card_event_import.py).
 
+  SupportsOnSupportBanner  each support gacha's SR and R rate-ups, ADDED
+               to the site's banner with the same day and SSRs; never removes
+               a link or touches an SSR or an editor's choices
+               (calculatorapi/rate_up_import.py)
+
   Skill        every column the game owns: name, description, rarity, group,
                tier, icon, cost, conditions, effects, and `availability`
                ("global" here, "announced" below). Matched on `game_id`, and CREATED
@@ -160,6 +165,9 @@ from calculatorapi.models.skill import SkillAvailability, SkillRarity, SkillTier
 from calculatorapi.free_card_event_import import (
     plan_free_card_events, report_lines as free_event_report_lines, write_free_card_events,
 )
+from calculatorapi.rate_up_import import (
+    plan_rate_ups, report_lines as rate_up_report_lines, write_rate_ups,
+)
 from calculatorapi.story_event_import import (
     plan_story_events, report_lines as story_report_lines, write_story_events,
 )
@@ -184,8 +192,9 @@ def load_snapshot(directory):
     # from before 2026-10-16 has no text-ahead file, and one from before
     # 2026-10-27 no sparks, and one from before 2026-11-12 no objectives or card effects.
     # Story events arrived 2026-11-17 (notes/story-events-plan.md).
+    # Support gachas (each one's SR and R rate-ups) arrived 2026-11-27.
     for name in ("support_events", "skill_text_ahead", "sparks", "objectives", "support_effects",
-                 "story_events", "free_card_events"):
+                 "story_events", "free_card_events", "support_gachas"):
         path = directory / f"{name}.json"
         files[name] = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else []
     # Every race's English name by race instance id, for a JP route's goals; a
@@ -497,6 +506,10 @@ class Command(BaseCommand):
             plan_free_card_events(
                 snapshot["free_card_events"],
                 sources.jp.get("free_card_events", []) if sources.jp else [],
+            ),
+            plan_rate_ups(
+                snapshot["support_gachas"],
+                sources.jp.get("support_gachas", []) if sources.jp else [],
             ),
         ]
         if sources.jp is not None:
@@ -883,6 +896,9 @@ class Command(BaseCommand):
                 if plan.get("free_events"):
                     written += write_free_card_events(plan)
                     continue
+                if plan.get("rate_ups"):
+                    written += write_rate_ups(plan)
+                    continue
                 for row, diff in plan["changed"]:
                     for column, value in diff.items():
                         setattr(row, column, value)
@@ -935,8 +951,10 @@ class Command(BaseCommand):
 
     def _report_jp_plan(self, plan, verb, dry_run):
         """Report the JP pass's two plan kinds and the story events; False for any other plan."""
-        if plan.get("story") or plan.get("free_events"):
-            lines = story_report_lines if plan.get("story") else free_event_report_lines
+        if plan.get("story") or plan.get("free_events") or plan.get("rate_ups"):
+            lines = (story_report_lines if plan.get("story")
+                     else free_event_report_lines if plan.get("free_events")
+                     else rate_up_report_lines)
             for line, warning in lines(plan, dry_run):
                 self.stdout.write(self.style.WARNING(line) if warning else line)
             return True

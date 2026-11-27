@@ -84,7 +84,7 @@ class SecondarySources:
         # one from before 2026-11-14 no career objectives, and one from before
         # 2026-11-17 no event skills or story events.
         for name in ("support_effects", "objectives", "support_events", "story_events",
-                     "free_card_events"):
+                     "free_card_events", "support_gachas"):
             path = directory / f"{name}.json"
             files[name] = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else []
         return files

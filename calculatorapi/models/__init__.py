@@ -22,7 +22,7 @@ from .banner_uma import BannerUma
 from .banner_support import BannerSupport
 from .banner_step_up import BannerStepUp
 from .umas_on_uma_banner import UmasOnUmaBanner
-from .supports_on_support_banner import SupportsOnSupportBanner
+from .supports_on_support_banner import SupportsOnSupportBanner, TimelineDisplay
 from .game_event import GameEvent
 from .story_event import StoryEvent, StoryEventCard, StoryEventKind
 from .scenario import Scenario

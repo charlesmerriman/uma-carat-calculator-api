@@ -60,6 +60,10 @@ What comes out, one file per concern (all sorted by id, so re-runs diff cleanly)
                       chapters, anniversary missions and fan events, with
                       their dates and the cards and umas they give (see
                       extract_free_card_events)
+  support_gachas.json every support gacha with an SR or R rate-up: id, start,
+                      end and each rate-up card with its rarity and odds (see
+                      extract_support_gachas). The import adds the SRs and Rs
+                      to the site's banner with the same day and SSRs
   characters.json     each character's two UI colours (see extract_characters).
                       Writing it also rewrites the API's merged copy,
                       calculatorapi/data/character_colours.json
@@ -1096,6 +1100,45 @@ def extract_story_events(conn):
     return events
 
 
+def extract_support_gachas(conn):
+    """
+    Every support card gacha with an SR or R rate-up: its id, start, end and
+    every rate-up card (SSRs included, which is how the import finds the site's
+    banner: the same day and the same SSRs). notes/banner-sr-r-plan.md.
+
+    A rate-up is a gacha_available row with recommend_order above 0; `odds` is
+    the card's own chance out of 1,000,000 (7500 = 0.75%). Kept for checking a
+    rate against the rule, which the site applies itself. Gachas with only SSR
+    rate-ups are left out: the import has nothing to add to them.
+    """
+    if not {"gacha_data", "gacha_available"} <= {
+        row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")
+    }:
+        return []
+    rate_ups = {}
+    for row in conn.execute(
+        """SELECT a.gacha_id, a.card_id, a.rarity, a.odds, a.recommend_order
+             FROM gacha_available a JOIN gacha_data g ON g.id = a.gacha_id
+            WHERE g.card_type = 2 AND a.recommend_order > 0
+            ORDER BY a.gacha_id, a.recommend_order DESC, a.card_id"""
+    ):
+        rate_ups.setdefault(int(row["gacha_id"]), []).append({
+            "card": int(row["card_id"]), "rarity": int(row["rarity"]), "odds": int(row["odds"]),
+        })
+    gachas = []
+    for row in conn.execute("SELECT id, start_date, end_date FROM gacha_data WHERE card_type = 2 ORDER BY id"):
+        cards = rate_ups.get(int(row["id"]), [])
+        if not any(card["rarity"] < 3 for card in cards):
+            continue
+        gachas.append({
+            "id": int(row["id"]),
+            "start": _iso(int(row["start_date"] or 0)),
+            "end": _iso(int(row["end_date"] or 0)),
+            "rate_ups": cards,
+        })
+    return gachas
+
+
 def merged_character_colours(snapshot_dirs):
     """Both snapshots' characters.json as one map. Global's pair wins where
     both have a character: it is the client a player here looks at."""
@@ -1152,6 +1195,10 @@ def extract(mdb_path, region="global"):
         # Both clients, the same way: the main story chapters, anniversary
         # missions and fan events that give free cards.
         region_only["free_card_events.json"] = extract_free_card_events(conn, region)
+        # Both clients: each support gacha's SR and R rate-ups, for the
+        # import's rate-up half (global's are the gachas it has run, JP's the
+        # rest).
+        region_only["support_gachas.json"] = extract_support_gachas(conn)
     finally:
         conn.close()
 
@@ -1184,6 +1231,7 @@ def extract(mdb_path, region="global"):
         if "story_events.json" in region_only:
             counts["story_events"] = len(region_only["story_events.json"])
         counts["free_card_events"] = len(region_only["free_card_events.json"])
+        counts["support_gachas"] = len(region_only["support_gachas.json"])
     else:
         counts.update({name.removesuffix(".json"): len(payload) for name, payload in region_only.items()})
     files.update(region_only)
