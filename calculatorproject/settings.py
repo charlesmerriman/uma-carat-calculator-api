@@ -1,3 +1,6 @@
+# One settings module, commented setting by setting (each env var says why it
+# exists), so it outgrew pylint's 1,000-line cap on 2026-11-28.
+# pylint: disable=too-many-lines
 from datetime import timedelta
 from pathlib import Path
 import os
