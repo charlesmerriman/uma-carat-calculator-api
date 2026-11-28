@@ -44,7 +44,9 @@ from django.db.models.signals import post_delete
 from django.urls import reverse
 
 from calculatorapi import discord_messages
-from calculatorapi.models import GalleryComment, GalleryHiddenReason, GalleryPost, GalleryReportResolution
+from calculatorapi.models import (
+    GalleryComment, GalleryHiddenReason, GalleryPost, GalleryPostKind, GalleryReportResolution,
+)
 
 CONTENT_LIMIT = 1000
 FIELD_LIMIT = 1024
@@ -64,9 +66,12 @@ def _kind(item):
 
 def _what(item):
     """The item as a card's title names it: "Post" for a team (as it always
-    has), "Plan" for a pull plan post, "Comment"."""
+    has), "Plan" for a pull plan post, "Guide" for a community guide,
+    "Comment"."""
     if isinstance(item, GalleryPost) and item.is_plan:
         return "Plan"
+    if isinstance(item, GalleryPost) and item.is_guide:
+        return "Guide"
     return _kind(item).capitalize()
 
 
@@ -158,12 +163,12 @@ def item_text(item):
     """The reported text as written: a team's caption and strategy, a plan's
     title and description, or the comment."""
     if isinstance(item, GalleryPost):
-        # The same two columns hold both kinds' text; only their names differ.
-        first, second, what = (
-            ("Title", "About this plan", "a plan with no title or description")
-            if item.is_plan
-            else ("Caption", "Strategy", "a team with no caption or strategy")
-        )
+        # The same two columns hold every kind's text; only their names differ.
+        first, second, what = {
+            GalleryPostKind.PVP_TEAM: ("Caption", "Strategy", "a team with no caption or strategy"),
+            GalleryPostKind.PLAN: ("Title", "About this plan", "a plan with no title or description"),
+            GalleryPostKind.PVP_GUIDE: ("Title", "About this guide", "a guide with no title"),
+        }[item.kind]
         parts = [
             f"{first}: {item.caption}" if item.caption else "",
             f"{second}: {item.strategy}" if item.strategy else "",

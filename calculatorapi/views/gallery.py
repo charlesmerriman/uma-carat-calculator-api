@@ -18,17 +18,17 @@ The feed that lists posts is per gallery (views/pvp_gallery.py); these routes
 are shared, so a pull plan post (Community plans) is read, voted on, viewed,
 commented on, reported and taken down through them exactly as a team is.
 
-TWO KINDS OF POST
------------------
-Every row says which it is (`kind`: "pvp_team" or "plan"). What is common to
-both (the poster, the counts, the votes, the caption and the long text) is
-built once in serialize_posts(); what only one kind has comes from that
-kind's function in _KIND_FIELDS: a team's umas, team and event, a plan's own
-fields. A new kind adds a function there, never a branch in the common part.
-The copy route below is the team's "Copy to my teams" and answers 404 for any
-other kind; a plan is copied through its own route (views/plan_gallery.py).
-Reading a plan post asks plan_gallery.can_use() first: Community plans open to
-supporters first.
+THREE KINDS OF POST
+-------------------
+Every row says which it is (`kind`: "pvp_team", "plan" or "pvp_guide"). What
+is common to all (the poster, the counts, the votes, the caption and the long
+text) is built once in serialize_posts(); what only one kind has comes from
+that kind's function in _KIND_FIELDS: a team's umas, team and event, a plan's
+own fields, a community guide's event and guide. A new kind adds a function
+there, never a branch in the common part. The copy route below is the team's
+"Copy to my teams" and answers 404 for any other kind; a plan is copied
+through its own route (views/plan_gallery.py). Every route here asks
+gallery_access.can_open first: plans and guides open to supporters first.
 
 WHAT A POST SENDS, AND WHAT IT NEVER DOES
 -----------------------------------------
@@ -59,7 +59,7 @@ from rest_framework.decorators import api_view, permission_classes, throttle_cla
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 
-from calculatorapi import gallery, gallery_ranking, guide_access, plan_gallery, public_identity
+from calculatorapi import gallery, gallery_access, gallery_ranking, guide_access, plan_gallery, public_identity
 from calculatorapi.models import (
     GalleryComment, GalleryPost, GalleryPostKind, GalleryVote, PvpGuide, SupportCard, Uma, VoteValue,
 )
@@ -219,15 +219,7 @@ def _team_fields(post, full, known):
     fields = {"umas": [{"uma": member["uma"], "style": member["style"]} for member in team]}
     if full:
         fields["team"] = team
-        fields["event"] = {
-            "kind": post.event_kind,
-            "id": post.champions_meeting_id or post.league_of_heroes_id,
-            # The event's name, for the account page's "Your posts", which
-            # has no event list. "label", not "name": every gallery test
-            # forbids a "name" key anywhere, so a team's private name can
-            # never slip into a payload unnoticed.
-            "label": post.event.name,
-        }
+        fields["event"] = _event_field(post)
     return fields
 
 
@@ -262,11 +254,30 @@ def _plan_fields(post, full, known):
     return fields
 
 
+def _event_field(post):
+    """A team's or guide's event, for an open post and the account page's
+    "Your posts", which has no event list. "label", not "name": every gallery
+    test forbids a "name" key anywhere, so a team's private name can never
+    slip into a payload unnoticed."""
+    return {
+        "kind": post.event_kind,
+        "id": post.champions_meeting_id or post.league_of_heroes_id,
+        "label": post.event.name,
+    }
+
+
+def _guide_fields(post, full, known):  # pylint: disable=unused-argument
+    """A community guide post's own fields: its event, always, since a guide
+    is read on its event's page."""
+    return {"event": _event_field(post)}
+
+
 # Each kind's own fields, by kind. A kind missing here is a KeyError on the
 # first post of it, loudly, rather than a post served without its content.
 _KIND_FIELDS = {
     GalleryPostKind.PVP_TEAM: _team_fields,
     GalleryPostKind.PLAN: _plan_fields,
+    GalleryPostKind.PVP_GUIDE: _guide_fields,
 }
 
 
@@ -282,7 +293,7 @@ def serialize_posts(posts, viewer, *, full=False):
     blocks = public_identity.poster_blocks([post.author for post in posts])
     comments = _comment_counts(posts)
     known = {
-        "team": _known_ids([post for post in posts if not post.is_plan]),
+        "team": _known_ids([post for post in posts if post.is_team]),
         "plan": plan_gallery.known_banners([post.plan_snapshot for post in posts if post.is_plan]),
     }
     rows = []
@@ -322,13 +333,14 @@ def serialize_posts(posts, viewer, *, full=False):
 
 def _post_or_404(public_id, viewer, *, gated=True):
     """The post if `viewer` may reach it, else None. `gated` adds
-    plan_gallery.can_open: a plan post is early access first on every route.
-    Only the detail turns it off, to answer that case with its own 403."""
+    gallery_access.can_open: a plan or guide post is early access first on
+    every route. Only the detail turns it off, to answer that case with its
+    own 403."""
     try:
         post = gallery.get_post(public_id, viewer)
     except GalleryPost.DoesNotExist:
         return None
-    return post if not gated or plan_gallery.can_open(post, viewer) else None
+    return post if not gated or gallery_access.can_open(post, viewer) else None
 
 
 def post_payload(post, viewer):
@@ -346,8 +358,8 @@ def gallery_post_detail(request, public_id):
     post = _post_or_404(public_id, request.user, gated=False)
     if post is None:
         return Response(NOT_FOUND, status=status.HTTP_404_NOT_FOUND)
-    if request.method == "GET" and not plan_gallery.can_open(post, request.user):
-        return Response({"error": plan_gallery.REFUSED_TEXT}, status=status.HTTP_403_FORBIDDEN)
+    if request.method == "GET" and not gallery_access.can_open(post, request.user):
+        return Response({"error": gallery_access.refused_text(post)}, status=status.HTTP_403_FORBIDDEN)
     if request.method == "DELETE":
         if not request.user.is_authenticated or request.user.pk != post.author_id:
             # Somebody else's post reads as no post at all.
@@ -397,10 +409,11 @@ def gallery_post_copy(request, public_id):
     the client adds the team through its own path (see gallery.copy_snapshot),
     so this is safe for a guest and changes only the count.
 
-    A team's route: a plan post answers the same 404 as a missing post, and is
-    copied through its own route, which makes a plan rather than a team."""
+    A team's route: any other kind answers the same 404 as a missing post. A
+    plan is copied through its own route, which makes a plan rather than a
+    team."""
     post = _post_or_404(public_id, request.user)
-    if post is None or post.is_plan:
+    if post is None or not post.is_team:
         return Response(NOT_FOUND, status=status.HTTP_404_NOT_FOUND)
     return Response({
         "kind": post.event_kind,

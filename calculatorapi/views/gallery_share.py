@@ -75,6 +75,10 @@ def _site(path=""):
 def _app_url(public_id, post=None):
     if post is not None and post.is_plan:
         return _site(f"/app/plans?{urlencode({'post': public_id})}")
+    if post is not None and post.is_guide:
+        # The guide's own event page, on Community guides with it open.
+        params = {"event": f"{post.event_kind}-{post.event.pk}", "guides": "community", "guide": public_id}
+        return _site(f"/app/pvp?{urlencode(params)}")
     params = {"view": "gallery", "post": public_id}
     if post is not None:
         params = {"event": f"{post.event_kind}-{post.event.pk}", **params}
@@ -174,6 +178,8 @@ def share_context(post):
     """The tags for one available post. Generated text only (see above)."""
     if post.is_plan:
         return _plan_context(post)
+    if post.is_guide:
+        return _guide_context(post)
     names = _uma_names(post)
     if not names:
         return _default_context(post.public_id)
@@ -194,6 +200,20 @@ def share_context(post):
         "image_alt": team,
         "twitter_card": "summary_large_image",
         "open_label": "Open this team on Uma Musume Carat Calculator",
+    }
+
+
+def _guide_context(post):
+    """A community guide's link preview: the site and the event, catalogue
+    text only. No title, no author and nothing from the guide, so a preview
+    never shows more than someone without early access could read
+    (notes/community-guides-plan.md, Design 4), and the site's own picture."""
+    return {
+        **_default_context(post.public_id),
+        "title": f"A community guide for {post.event.name}",
+        "description": "A player's own PvP guide on Uma Musume Carat Calculator.",
+        "app_url": _app_url(post.public_id, post),
+        "open_label": "Open this guide on Uma Musume Carat Calculator",
     }
 
 
@@ -220,6 +240,10 @@ def share_preview(request, public_id):
         return HttpResponse("Not found", status=404, content_type="text/plain")
     if post.is_plan:
         return _plan_preview(request, post)
+    if not post.is_team:
+        # A guide's preview uses the site's own picture (_guide_context);
+        # nothing is drawn for it.
+        return HttpResponse("Not found", status=404, content_type="text/plain")
     asked = request.GET.get("v")
     current = gallery_preview.image_version(post)
     if asked and asked != current:

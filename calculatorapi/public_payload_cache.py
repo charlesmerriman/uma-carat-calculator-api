@@ -197,6 +197,7 @@ _IRRELEVANT_MODELS = frozenset({
     # The gallery. A vote, a view or a comment is a write on every click, so
     # the same lesson applies; none of it is on /calculator-data.
     "gallerypost",
+    "pvpcommunityguide",
     "galleryvote",
     "gallerycomment",
     "gallerycommentvote",

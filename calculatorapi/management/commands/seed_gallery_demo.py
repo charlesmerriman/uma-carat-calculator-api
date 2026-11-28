@@ -429,7 +429,7 @@ class Seeder:  # pylint: disable=too-few-public-methods
     def _orders(self, event):
         """The first three of each sort, so the run says what to expect."""
         _, fields = event_fields(event)
-        posts = gallery.visible_posts().filter(**fields)
+        posts = gallery.visible_teams().filter(**fields)
         names = {user.pk: name for name, user in self.users.items()}
         lines = []
         for sort in gallery_ranking.SORTS:

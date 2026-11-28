@@ -56,7 +56,9 @@ from django.db import transaction
 from rest_framework.authtoken.models import Token
 
 from calculatorapi import gallery
-from calculatorapi.models import CustomUser, GalleryComment, GalleryPost, GalleryVote, PatreonSupporter
+from calculatorapi.models import (
+    CustomUser, GalleryComment, GalleryPost, GalleryVote, PatreonSupporter, PvpCommunityGuide,
+)
 
 CONFIRM_PHRASE = "purge"
 
@@ -113,6 +115,7 @@ class Command(BaseCommand):
         gallery_posts = GalleryPost.objects.filter(author__in=targets).count()
         gallery_comments = GalleryComment.objects.filter(author__in=targets).count()
         gallery_votes = GalleryVote.objects.filter(user__in=targets).count()
+        community_guides = PvpCommunityGuide.objects.filter(author__in=targets).count()
 
         self.stdout.write(f"Non-staff accounts:        {total}")
         self.stdout.write(f"  holding email/name:      {with_pii}")
@@ -124,7 +127,8 @@ class Command(BaseCommand):
         self.stdout.write(f"  Patreon links to clear:  {linked_supporters}")
         self.stdout.write(
             f"  Gallery to erase:        {gallery_posts} posts, "
-            f"{gallery_comments} comments, {gallery_votes} votes"
+            f"{gallery_comments} comments, {gallery_votes} votes, "
+            f"{community_guides} guide drafts"
         )
         self.stdout.write(
             self.style.WARNING(

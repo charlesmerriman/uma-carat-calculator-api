@@ -138,6 +138,7 @@ from .gallery import (
     GALLERY_COMMENT_MAX_LENGTH,
     GALLERY_REPORT_NOTE_MAX_LENGTH,
 )
+from .pvp_community_guide import PvpCommunityGuide, COMMUNITY_GUIDE_TITLE_MAX_LENGTH
 from .discord_message import DiscordMessage
 from .game_data_version import GameDataRegion, GameDataStatus, GameDataVersion
 from .team_queue import TeamQueueEntry

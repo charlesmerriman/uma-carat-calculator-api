@@ -252,7 +252,7 @@ def gallery_payload(event):
     its `teams`. COUNTED HERE, unlike the guides: the tab has no filters, so
     the client needs totals, and a few hundred posts' snapshots stay on the
     server. Two queries."""
-    counted = count_teams(gallery.visible_posts().filter(**event).values_list("team_snapshot", flat=True))
+    counted = count_teams(gallery.visible_teams().filter(**event).values_list("team_snapshot", flat=True))
     counted["posts"] = counted.pop("teams")
     counted["copied"] = most_copied(event)
     return counted
@@ -266,7 +266,7 @@ def most_copied(event):
     return [
         {"public_id": public_id, "caption": caption, "copies": copies, "umas": [member["uma"] for member in snapshot]}
         for public_id, caption, copies, snapshot in (
-            gallery.visible_posts().filter(copy_count__gt=0, **event)
+            gallery.visible_teams().filter(copy_count__gt=0, **event)
             .order_by("-copy_count", "id")
             .values_list("public_id", "caption", "copy_count", "team_snapshot")[:TOP_COPIED]
         )
