@@ -44,6 +44,7 @@ from django.db.models.signals import post_delete
 from django.urls import reverse
 
 from calculatorapi import discord_messages
+from calculatorapi import community_guide_document
 from calculatorapi.models import (
     GalleryComment, GalleryHiddenReason, GalleryPost, GalleryPostKind, GalleryReportResolution,
 )
@@ -173,6 +174,11 @@ def item_text(item):
             f"{first}: {item.caption}" if item.caption else "",
             f"{second}: {item.strategy}" if item.strategy else "",
         ]
+        if item.is_guide:
+            # Every word of the guide, in section order, cut to the card.
+            words = community_guide_document.card_text(item)
+            if words:
+                parts.append(f"Guide: {words}")
         if item.is_plan:
             # Notes are public text when the author posted them. Never the
             # income: it is numbers, not words, and nothing to moderate.

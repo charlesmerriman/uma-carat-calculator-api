@@ -59,7 +59,9 @@ from rest_framework.decorators import api_view, permission_classes, throttle_cla
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 
-from calculatorapi import gallery, gallery_access, gallery_ranking, guide_access, plan_gallery, public_identity
+from calculatorapi import (
+    gallery, gallery_access, gallery_ranking, guide_access, guide_gallery, plan_gallery, public_identity,
+)
 from calculatorapi.models import (
     GalleryComment, GalleryPost, GalleryPostKind, GalleryVote, PvpGuide, SupportCard, Uma, VoteValue,
 )
@@ -268,8 +270,14 @@ def _event_field(post):
 
 def _guide_fields(post, full, known):  # pylint: disable=unused-argument
     """A community guide post's own fields: its event, always, since a guide
-    is read on its event's page."""
-    return {"event": _event_field(post)}
+    is read on its event's page, and the umas its list row draws (most stars
+    first, `known["guide"]` dropping any that left the catalogue). The guide
+    itself, drawn for the reader, is the detail route's alone
+    (guide_gallery.render_post): a list or "Your posts" never carries it."""
+    return {
+        "event": _event_field(post),
+        "umas": [{"uma": uma} for uma in guide_gallery.lead_umas(post.guide_snapshot, known["guide"])],
+    }
 
 
 # Each kind's own fields, by kind. A kind missing here is a KeyError on the
@@ -295,6 +303,7 @@ def serialize_posts(posts, viewer, *, full=False):
     known = {
         "team": _known_ids([post for post in posts if post.is_team]),
         "plan": plan_gallery.known_banners([post.plan_snapshot for post in posts if post.is_plan]),
+        "guide": guide_gallery.known_umas([post.guide_snapshot for post in posts if post.is_guide]),
     }
     rows = []
     for post in posts:
@@ -366,7 +375,12 @@ def gallery_post_detail(request, public_id):
             return Response(NOT_FOUND, status=status.HTTP_404_NOT_FOUND)
         gallery.take_down(post)
         return Response(status=status.HTTP_204_NO_CONTENT)
-    return Response(post_payload(post, request.user))
+    payload = post_payload(post, request.user)
+    if post.is_guide:
+        # The guide itself, in the reader's own shape, drawn for this reader
+        # (JP-only skills and skill text follow sees_skills_preview).
+        payload["guide"] = guide_gallery.render_post(post, request)
+    return Response(payload)
 
 
 @api_view(["PUT", "DELETE"])
@@ -409,10 +423,14 @@ def gallery_post_copy(request, public_id):
     the client adds the team through its own path (see gallery.copy_snapshot),
     so this is safe for a guest and changes only the count.
 
-    A team's route: any other kind answers the same 404 as a missing post. A
-    plan is copied through its own route, which makes a plan rather than a
-    team."""
+    A team's route. A community guide's "Use this deck" counts here too (the
+    client already has the deck, so it answers 204 with nothing to copy).
+    Any other kind answers the same 404 as a missing post; a plan is copied
+    through its own route, which makes a plan rather than a team."""
     post = _post_or_404(public_id, request.user)
+    if post is not None and post.is_guide:
+        gallery.count_post_copy(request, post)
+        return Response(status=status.HTTP_204_NO_CONTENT)
     if post is None or not post.is_team:
         return Response(NOT_FOUND, status=status.HTTP_404_NOT_FOUND)
     return Response({

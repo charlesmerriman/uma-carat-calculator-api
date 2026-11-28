@@ -517,8 +517,14 @@ def _sources(skill_ids):
     return found
 
 
-def serialize_guide(guide, request=None):
-    """The response body for one guide. `request` makes image URLs absolute."""
+def serialize_guide(guide, request=None, *, comment_counts=True):
+    """The response body for one guide. `request` makes image URLs absolute.
+
+    `guide` is a PvpGuide from guide_queryset(), or anything that reads like
+    one: a player's posted guide is drawn through here from an in-memory
+    stand-in (guide_gallery._standin), so it reads exactly as the site's guide
+    does. `comment_counts=False` leaves the per-section counts out (a guide
+    post has one thread, the post's)."""
     # The shelved skills work (pvp_guide_editing.sees_skills_preview): anyone
     # but a guide editor gets the guide as before it, global skills only, so a
     # JP-only skill an editor has added never reaches a player yet.
@@ -587,7 +593,7 @@ def serialize_guide(guide, request=None):
         "uma_mentions": _mentioned_umas(guide, context),
         # {section: visible comments}, "" for the whole guide, so the tabs can
         # show counts without fetching every thread (views/gallery.py).
-        "comment_counts": _comment_counts(guide),
+        "comment_counts": _comment_counts(guide) if comment_counts else {},
     }
 
 
