@@ -4,13 +4,14 @@ version is live. Imported by admin.py so it registers.
 
 Rows come only from the check (POST /game-data/versions), so there is no Add
 button and every column is read-only. A person changes a status through the
-two actions, which go through the model's own mark_live() / mark_ignored() so
-"one live version per region" is kept in one place.
+two actions, through game_data_versions.mark_live() (which also releases the
+skills that version defined) and the model's mark_ignored().
 """
 
 from django.contrib import admin, messages
 from unfold.admin import ModelAdmin
 
+from calculatorapi import game_data_versions
 from calculatorapi.models import GameDataVersion
 
 
@@ -55,7 +56,7 @@ class GameDataVersionAdmin(ModelAdmin):
         if len(rows) != 1:
             self.message_user(request, "Select exactly one version to mark live.", messages.ERROR)
             return
-        released, held = rows[0].mark_live(by=_who(request))
+        released, held = game_data_versions.mark_live(rows[0], by=_who(request))
         skills = f" {released} skill(s) now on Global." if released else ""
         skills += f" {held} skill(s) from newer versions held back." if held else ""
         self.message_user(request, f"{rows[0]} is now the live version.{skills}", messages.SUCCESS)

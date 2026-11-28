@@ -86,7 +86,8 @@ class GameDataVersion(models.Model):
     def mark_live(self, by=""):
         """Make this THE live version of its region. The previous live one, and
         any undecided version below this one, become old (the game moved past
-        them). Ignored rows stay ignored."""
+        them). Ignored rows stay ignored. Statuses only: callers go through
+        game_data_versions.mark_live(), which also releases the skills."""
         now = timezone.now()
         with transaction.atomic():
             GameDataVersion.objects.filter(region=self.region).exclude(pk=self.pk).filter(
@@ -97,10 +98,6 @@ class GameDataVersion(models.Model):
             self.status_changed_at = now
             self.status_changed_by = by
             self.save(update_fields=["status", "status_changed_at", "status_changed_by"])
-            # The skills this version first defined turn global now (owner,
-            # 2026-11-28). Imported here: the service imports this model.
-            from calculatorapi.game_data_versions import apply_live_version  # pylint: disable=import-outside-toplevel
-            return apply_live_version(self.region, self.version)
 
     def mark_ignored(self, by=""):
         """Set aside: the check stops re-reading it and no PR is ever made from it."""

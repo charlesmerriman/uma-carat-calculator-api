@@ -13,6 +13,7 @@ revision once, and a re-run of the check (or two racing) posts nothing new.
 """
 
 from django.conf import settings
+from django.db import transaction
 from django.urls import reverse
 from django.utils import timezone
 
@@ -123,3 +124,13 @@ def apply_live_version(region, version):
         pvp_catalogue_cache.invalidate()
         skills_cache.invalidate()
     return released, held
+
+
+def mark_live(row, by=""):
+    """THE way a version is marked live (the admin action, later a Discord
+    button): the status, then the skills it first defined. Returns the
+    (released, held) skill counts. One transaction, so a failed flip leaves
+    the old live version in place."""
+    with transaction.atomic():
+        row.mark_live(by=by)
+        return apply_live_version(row.region, row.version)

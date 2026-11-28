@@ -13,6 +13,7 @@ from django.test import override_settings
 from django.urls import reverse
 
 from calculatorapi.management.commands.import_game_data import takes_ahead
+from calculatorapi import game_data_versions
 from calculatorapi.models import (
     CustomUser, GameDataStatus, GameDataVersion, Skill, SupportCard, SupportCardSkill, Uma, UmaSkill,
 )
@@ -721,12 +722,12 @@ class SkillVersionGateTests(CalculatorTestCase):
         # Announced and not evolved: guides may still name it, tagged "Coming to global".
         self.assertTrue(Skill.objects.on_global().filter(game_id=200012).exists())
         staged = GameDataVersion.objects.create(version=10008800, master_size=1, master_hash="1" * 32)
-        self.assertEqual(staged.mark_live(), (1, 0))
+        self.assertEqual(game_data_versions.mark_live(staged), (1, 0))
         self.assertEqual(Skill.objects.get(game_id=200012).availability, "global")
         # A re-import agrees with the flip, and rolling back holds it again.
         self.snapshot(10008800, [snapshot_skill()])
         self.assertEqual(Skill.objects.get(game_id=200012).availability, "global")
-        self.assertEqual(GameDataVersion.objects.get(version=10008795).mark_live(), (0, 1))
+        self.assertEqual(game_data_versions.mark_live(GameDataVersion.objects.get(version=10008795)), (0, 1))
         self.assertEqual(Skill.objects.get(game_id=200012).availability, "announced")
 
     def test_a_held_evolved_skill_is_not_on_global(self):
