@@ -1943,6 +1943,18 @@ Placeholders teach no skills and stay out of any ranking or team analytics. Guid
 them: a guide's "Any Wit" slot already says that. An NPC uma placeholder is still to come
 (no row or art yet).
 
+### `GameDataVersion`: which game data version is live
+
+One row per version the daily masterdata check has seen on the game's CDN
+(`models/game_data_version.py`, migration `0150`). The CDN can't say which version the game
+runs, and staged versions sit there days early, so **live is a person's choice**, made with
+the admin's "Mark live" action. The check (`scripts/masterdata_check.py`) makes a snapshot
+PR only from the live version. `master_size` / `master_hash` are the CDN manifest's, and
+change on a revision (`revised_at`). Constraints: unique (`region`, `version`); at most one
+`live` row per region. `mark_live()` also moves the previous live row, and any `new` row
+below it, to `old`. Ops state, not content: PRIVATE in `content_snapshot`, ignored by the
+payload cache.
+
 ## The game's master database (`master.mdb`) and the committed snapshot
 
 The skills work imports from the global game client's own database rather than a fan
@@ -1953,6 +1965,14 @@ slice this project needs to `scripts/data/master_snapshot/*.json`, which **is co
 the mdb never is. `manage.py import_game_data` reads the JSON, so an import is reviewable
 as a diff and reproducible on a machine without the game. `meta.json` records the mdb's
 size and modification time and every file's row count.
+
+The same file is on the game's public CDN, so no install is needed:
+`extract_master_snapshot.py --cdn-version N` downloads version N's mdb
+(`scripts/cdn_masterdata.py`, which also documents the manifest format) and records
+`cdn_version`, `cdn_master_size` and `cdn_master_hash` in `meta.json` in place of the
+modification time. The size and hash are the CDN manifest's own, so a later check can tell
+a revised mdb from the committed one without downloading it. The CDN has no listing and
+doesn't say which version the game runs: a version number is always a person's choice.
 
 The tables the extractor reads, and the two places the schema is not what it looks like:
 

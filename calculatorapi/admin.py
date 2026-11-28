@@ -74,6 +74,7 @@ from .admin_pvp import PVP_GUIDE_FIELDSET, PicturePickersMixin, PvpGuideLinkMixi
 # Importing admin_gallery registers the gallery's moderation pages.
 from . import admin_gallery  # noqa: F401  pylint: disable=unused-import
 from . import admin_race_course  # noqa: F401  pylint: disable=unused-import
+from . import admin_game_data  # noqa: F401  pylint: disable=unused-import
 from . import digitalocean_api, patreon_api, skill_text
 from .admin_patreon_import import (
     PatreonCsvImportForm,

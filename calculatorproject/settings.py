@@ -1,3 +1,6 @@
+# One settings module, commented setting by setting (each env var says why it
+# exists), so it outgrew pylint's 1,000-line cap on 2026-11-28.
+# pylint: disable=too-many-lines
 from datetime import timedelta
 from pathlib import Path
 import os
@@ -331,6 +334,15 @@ UNFOLD = {
                         "icon": "workspace_premium",
                         "link": reverse_lazy("admin:calculatorapi_patreontier_changelist"),
                     },
+                    {
+                        # Which game data version is live (admin_game_data.py).
+                        # Staff only: not in CONTENT_MODELS, so editors lack the
+                        # permission and unfold hides the item.
+                        "title": _("Game data versions"),
+                        "icon": "cloud_sync",
+                        "link": reverse_lazy("admin:calculatorapi_gamedataversion_changelist"),
+                        "permission": _requires_perm("calculatorapi.change_gamedataversion"),
+                    },
                 ],
             },
             {
@@ -467,6 +479,9 @@ REST_FRAMEWORK = {
         # workflow_dispatch runs and retries while still capping what a leaked
         # key could do -- each accepted request spends Patreon API quota.
         "patreon_sync": "12/hour",
+        # The daily masterdata check: one GET and one POST a run, plus manual
+        # re-runs (views/game_data_versions.py).
+        "game_data_sync": "30/hour",
         # The bot worker (views/bot_api.py): every moderator click and /mod
         # command is one call, all from the worker's one address. 600/hour is
         # far past a busy moderation hour and still caps what a leaked key does.
@@ -588,6 +603,11 @@ PATREON_CLIENT_SECRET = os.getenv("PATREON_CLIENT_SECRET", "")
 # but accepts anything.
 PATREON_SYNC_SECRET = os.getenv("PATREON_SYNC_SECRET", "")
 
+# Shared secret for GET/POST /game-data/versions, which the daily masterdata
+# check (a GitHub Action, scripts/masterdata_check.py) calls. Same contract as
+# PATREON_SYNC_SECRET: empty means the route 404s and the check is off.
+GAME_DATA_SYNC_SECRET = os.getenv("GAME_DATA_SYNC_SECRET", "")
+
 # The admin's "Rebuild website" button (calculatorapi/digitalocean_api.py). A
 # personal access token scoped to apps, and this app's id. Both blank locally;
 # the button then says it is not configured instead of calling anything.
@@ -615,6 +635,9 @@ DISCORD_MOD_QUEUE_CHANNEL_ID = os.getenv("DISCORD_MOD_QUEUE_CHANNEL_ID", "")
 # (calculatorapi/rankings_snapshots.py): the three biggest climbers of the
 # lists worth pinning, once a week. Blank: nothing is posted.
 DISCORD_RANKINGS_CHANNEL_ID = os.getenv("DISCORD_RANKINGS_CHANNEL_ID", "")
+# #calc-ops: the daily masterdata check's reports (calculatorapi/game_data_versions.py):
+# a new game data version on the CDN, or a revision of one. Blank: nothing is posted.
+DISCORD_OPS_CHANNEL_ID = os.getenv("DISCORD_OPS_CHANNEL_ID", "")
 # The bot worker's key to the bot API (views/bot_api.py), sent as X-Bot-Key.
 # Blank: every bot route 404s AND the cards carry no buttons, so a card never
 # offers a click nothing is listening for. Set it together with the worker.

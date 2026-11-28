@@ -48,6 +48,7 @@ from calculatorapi.views.bot_api import (
     bot_upcoming,
 )
 from calculatorapi.views.patreon_supporters import patreon_sync
+from calculatorapi.views.game_data_versions import game_data_versions_view
 from calculatorapi.views.site_content import site_content
 from calculatorapi.views.pvp_guide import pvp_guide_detail
 from calculatorapi.views.pvp_guide_editor import (
@@ -174,6 +175,10 @@ urlpatterns = [
     # Authorised by a shared secret header, and 404s entirely while
     # PATREON_SYNC_SECRET is unset. Cannot publish a name — see the view.
     path("patreon/sync", patreon_sync, name="patreon-sync"),
+    # The daily masterdata check (a GitHub Action): which game data versions
+    # exist on the CDN and which is live. Shared secret header, 404 while
+    # GAME_DATA_SYNC_SECRET is unset. Touches no game content.
+    path("game-data/versions", game_data_versions_view, name="game-data-versions"),
     # The Discord bot worker's routes: moderators' clicks on report cards and
     # their /mod commands. Shared secret header (X-Bot-Key), 404 while
     # BOT_API_SECRET is unset. A Discord moderator is recorded by name and

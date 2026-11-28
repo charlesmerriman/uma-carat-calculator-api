@@ -1,22 +1,29 @@
 {
  "region": "global",
- "extracted_at": "2026-11-14T07:26:30+00:00",
- "mdb_size_bytes": 17575936,
- "mdb_modified_at": "2026-11-06T20:55:29+00:00",
+ "extracted_at": "2026-11-28T06:28:09+00:00",
+ "mdb_size_bytes": 17711104,
  "counts": {
-  "skills": 752,
-  "cards": 115,
-  "card_skills": 937,
+  "skills": 754,
+  "cards": 116,
+  "card_skills": 945,
   "support_cards": 271,
   "support_hints": 1668,
   "evolutions_outfit": 0,
   "evolutions_scenario": 0,
   "evolutions_succession": 0,
   "support_effects": 271,
-  "skill_text_ahead": 370,
+  "skill_text_ahead": 368,
   "evolution_condition_text": 781,
-  "sparks": 1215,
-  "objectives": 71,
-  "support_effect_types": 31
- }
+  "sparks": 1218,
+  "race_names": 2060,
+  "support_effect_types": 31,
+  "objectives": 72,
+  "characters": 93,
+  "story_events": 23,
+  "free_card_events": 11,
+  "support_gachas": 37
+ },
+ "cdn_version": 10008795,
+ "cdn_master_size": 5738552,
+ "cdn_master_hash": "826100974b3ed4970000000000000000"
 }

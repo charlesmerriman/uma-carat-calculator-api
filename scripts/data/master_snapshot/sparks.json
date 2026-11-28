@@ -6570,6 +6570,24 @@
   "name": "I'm Possible!"
  },
  {
+  "id": 10430101,
+  "kind": "unique",
+  "stars": 1,
+  "name": "Ding Dong, Boo!"
+ },
+ {
+  "id": 10430102,
+  "kind": "unique",
+  "stars": 2,
+  "name": "Ding Dong, Boo!"
+ },
+ {
+  "id": 10430103,
+  "kind": "unique",
+  "stars": 3,
+  "name": "Ding Dong, Boo!"
+ },
+ {
   "id": 10440101,
   "kind": "unique",
   "stars": 1,

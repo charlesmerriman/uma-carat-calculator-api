@@ -5,11 +5,6 @@
   "description": "Very slightly increase velocity continuously for an extremely long duration when leading by a fair margin halfway through mid-race, but very slightly lose steam at the end of late-race."
  },
  {
-  "id": 100431,
-  "name": "Ding Dong, Boo!",
-  "description": "Moderately increase velocity when dueling. If it's a dirt race, chomp on fiercely to also increase acceleration."
- },
- {
   "id": 100551,
   "name": "Magical☆Marvelous★World",
   "description": "Increase velocity when close to another runner midpack around halfway through the race. Increase this skill's effectiveness if at least 4 runners are in view."
@@ -328,11 +323,6 @@
   "id": 210282,
   "name": "Earth's Blessing",
   "description": "Slightly increase velocity around halfway through late-race. Increase this skill's effectiveness based on the number of skills the user has learned."
- },
- {
-  "id": 900431,
-  "name": "Ding Dong, Boo!",
-  "description": "Very slightly increase velocity when dueling. If it's a dirt race, also slightly increase acceleration."
  },
  {
   "id": 900551,

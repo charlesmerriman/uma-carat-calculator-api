@@ -100,6 +100,35 @@ never a deploy step:
   courses"). It reads the zips directly (the unzipped folders miss files), takes English
   racecourse names from the Global client's `master.mdb`, and prints what it cleaned up; run
   `--report-only` first. `--out` must be outside the workspace.
+**Refreshing the Global snapshot needs no game install.** The game's CDN serves the same
+`master.mdb` the client downloads. `pip install -r requirements-dev.txt` (it carries `lz4`),
+then, from `backend/`:
+
+```bash
+python scripts/cdn_masterdata.py scan 10008790 20       # which version numbers exist
+python scripts/cdn_masterdata.py check 10008795         # one version's mdb size and hash
+python scripts/extract_master_snapshot.py --cdn-version 10008795 --dry-run   # counts first
+python scripts/extract_master_snapshot.py --cdn-version 10008795
+python manage.py import_game_data --dry-run              # what the deploy would change
+```
+
+**Use the version the game is running, never a staged one.** Upcoming versions sit on the
+CDN days before release (10008800 went up about a week before 2026-12-01), and a snapshot
+from one marks its skills as on Global early. The CDN can't say which is live; whoever runs
+this decides. Writing `characters.json` also refreshes `calculatorapi/data/character_colours.json`,
+which belongs in the same commit.
+
+**The daily masterdata check does this by itself** (`.github/workflows/masterdata-check.yml`,
+06:47 UTC, `scripts/masterdata_check.py`). It reads the CDN, posts what it saw to
+`/game-data/versions` (new versions and revisions go to #calc-ops), and when the version
+marked **live** in the admin (Site content → Game data versions) differs from the committed
+snapshot, opens a PR into `develop` on `data/global-masterdata-<version>-<hash8>`. Staged
+versions are only reported. To move to a new version: once the game runs it, Mark live in
+the admin, then wait for the next run or press "Run workflow" on the Actions tab. Review
+the PR with `import_game_data --dry-run` on its branch; it ships with the next release. A
+red run means the CDN refused the runner, a known version disappeared, or the API is
+unreachable; the log's `::error::` line says which.
+
 - `scripts/extract_master_snapshot.py --region jp` also writes `jp_snapshot/race_links.json`
   (each CM's and LoH's course), which "Link courses" reads. A JP snapshot refresh is what
   brings a new event's course.

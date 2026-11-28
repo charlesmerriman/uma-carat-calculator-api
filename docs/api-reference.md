@@ -1672,6 +1672,23 @@ Patreon quota.
 
 ---
 
+### `GET` / `POST /game-data/versions`
+
+The daily masterdata check's state, called by `.github/workflows/masterdata-check.yml`
+(`scripts/masterdata_check.py`). Same lock as `/patreon/sync`: `X-Game-Data-Sync-Key`
+against `GAME_DATA_SYNC_SECRET`, `404` while it is unset, a generic `403` on a wrong key.
+Touches no game content: game data still arrives only as a committed snapshot.
+
+- `GET` returns `{"versions": [...]}`, every known version, newest first per region.
+- `POST {"findings": [{"region", "version", "master_size", "master_hash"}]}` (at most 50;
+  the hash is 32 hex characters) records what one run saw on the CDN and returns
+  `{"changes": [{"region", "version", "change": "new" | "revised" | "unchanged"}], "versions": [...]}`.
+  A new version or a revision posts one line to #calc-ops (`DISCORD_OPS_CHANNEL_ID`), once per
+  `game-data:<region>:<version>:<hash>`. A post never changes a status; only the admin does.
+
+A version row: `region`, `version`, `master_size`, `master_hash`, `status`
+(`new` / `live` / `old` / `ignored`), `first_seen_at`, `revised_at`.
+
 ### The bot API: `/bot/*`
 
 What the Discord bot worker calls when a moderator clicks a report card's button
