@@ -2287,6 +2287,65 @@
   ]
  },
  {
+  "id": 100431,
+  "name": "Ding Dong, Boo!",
+  "description": "Moderately increase velocity when dueling. If it's a dirt race, chomp on fiercely to also increase acceleration.",
+  "rarity": 5,
+  "group_id": 10043,
+  "group_rate": 1,
+  "icon_id": 20013,
+  "skill_category": 5,
+  "cost": null,
+  "precondition_1": "",
+  "condition_1": "compete_fight_count>0&ground_type==2",
+  "precondition_2": "",
+  "condition_2": "compete_fight_count>0",
+  "activate_lot": 0,
+  "effects": [
+   {
+    "duration": 50000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 27,
+      "value": 2500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     },
+     {
+      "type": 31,
+      "value": 4000,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   },
+   {
+    "duration": 50000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 27,
+      "value": 2500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
   "id": 100441,
   "name": "Victory belongs to me—Strelitzia! ☆",
   "description": "If positioned toward the back and racing calmly until the start of the final corner, when there are 300m remaining, cast a magic spell to increase velocity continuously.",
@@ -24822,6 +24881,65 @@
      {
       "type": 27,
       "value": 1500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": 900431,
+  "name": "Ding Dong, Boo!",
+  "description": "Very slightly increase velocity when dueling. If it's a dirt race, also slightly increase acceleration.",
+  "rarity": 1,
+  "group_id": 90043,
+  "group_rate": 2,
+  "icon_id": 20011,
+  "skill_category": 5,
+  "cost": 200,
+  "precondition_1": "",
+  "condition_1": "compete_fight_count>0&ground_type==2",
+  "precondition_2": "",
+  "condition_2": "compete_fight_count>0",
+  "activate_lot": 1,
+  "effects": [
+   {
+    "duration": 30000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 27,
+      "value": 500,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     },
+     {
+      "type": 31,
+      "value": 2000,
+      "value_usage": 1,
+      "value_level_usage": 1,
+      "additional_activate_type": 0,
+      "target_type": 1,
+      "target_value": 0
+     }
+    ]
+   },
+   {
+    "duration": 30000,
+    "duration_usage": 1,
+    "cooldown": 5000000,
+    "abilities": [
+     {
+      "type": 27,
+      "value": 500,
       "value_usage": 1,
       "value_level_usage": 1,
       "additional_activate_type": 0,

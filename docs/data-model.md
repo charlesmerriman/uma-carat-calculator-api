@@ -1954,6 +1954,14 @@ the mdb never is. `manage.py import_game_data` reads the JSON, so an import is r
 as a diff and reproducible on a machine without the game. `meta.json` records the mdb's
 size and modification time and every file's row count.
 
+The same file is on the game's public CDN, so no install is needed:
+`extract_master_snapshot.py --cdn-version N` downloads version N's mdb
+(`scripts/cdn_masterdata.py`, which also documents the manifest format) and records
+`cdn_version`, `cdn_master_size` and `cdn_master_hash` in `meta.json` in place of the
+modification time. The size and hash are the CDN manifest's own, so a later check can tell
+a revised mdb from the committed one without downloading it. The CDN has no listing and
+doesn't say which version the game runs: a version number is always a person's choice.
+
 The tables the extractor reads, and the two places the schema is not what it looks like:
 
 | Need | Table | Notes |
