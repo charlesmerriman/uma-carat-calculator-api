@@ -16,8 +16,9 @@ from django.conf import settings
 from django.urls import reverse
 from django.utils import timezone
 
-from calculatorapi import discord_messages
-from calculatorapi.models import GameDataStatus, GameDataVersion
+from calculatorapi import discord_messages, public_payload_cache, pvp_catalogue_cache, skills_cache
+from calculatorapi.models import GameDataRegion, GameDataStatus, GameDataVersion, Skill
+from calculatorapi.models.skill import SkillAvailability
 
 
 def message_key(region, version, master_hash):
@@ -97,3 +98,28 @@ def record_findings(findings):
             change = "unchanged"
         changes.append({"region": row.region, "version": row.version, "change": change})
     return changes
+
+
+def apply_live_version(region, version):
+    """
+    A version was just marked live: every skill it (or an older version)
+    first defined is on Global now, and every skill a NEWER version first
+    defined is not (marking an older version live rolls back). Only skills
+    the import stamped move (`global_since_version` set); text-ahead skills
+    (announced, never stamped) and JP-only skills are left alone.
+    Returns (released, held) counts. Global only: JP has no versions yet.
+    """
+    if region != GameDataRegion.GLOBAL:
+        return 0, 0
+    stamped = Skill.objects.filter(global_since_version__isnull=False)
+    released = stamped.filter(availability=SkillAvailability.ANNOUNCED,
+                              global_since_version__lte=version).update(availability=SkillAvailability.GLOBAL)
+    held = stamped.filter(availability=SkillAvailability.GLOBAL,
+                          global_since_version__gt=version).update(availability=SkillAvailability.ANNOUNCED)
+    if released or held:
+        # update() fires no signals; a bulk writer drops the caches itself
+        # (CLAUDE.md invariant), as import_game_data does.
+        public_payload_cache.invalidate()
+        pvp_catalogue_cache.invalidate()
+        skills_cache.invalidate()
+    return released, held

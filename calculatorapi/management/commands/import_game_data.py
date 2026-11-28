@@ -23,7 +23,9 @@ THE SOURCES, in order of authority (since 2026-10-23):
 
 PER SKILL (matched on game_id), the first path that applies:
 
-  in global's skill table   availability "global"; every game column from
+  in global's skill table   availability "global" (or "announced" while the
+                            version that first defined it isn't live yet:
+                            release_values); every game column from
                             global, name and description included
   announced (text ahead)    availability "announced"; global's name and text,
                             JP's exact structure every run (a guess only when
@@ -155,6 +157,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from calculatorapi import course_zones_cache, public_payload_cache, pvp_catalogue_cache, skills_cache
+from calculatorapi.models import GameDataRegion, GameDataStatus, GameDataVersion
 from calculatorapi.models import Skill, SkillAlias, SkillEvolutionCondition, Spark, SparkKind, SupportCard, Uma
 from calculatorapi.game_data_sources import (
     SUPPORT_CARD_SKILLS, UMA_SKILLS, SecondarySources, jp_names, jp_owner_links, name_matches,
@@ -199,6 +202,10 @@ def load_snapshot(directory):
         files[name] = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else []
     # Every race's English name by race instance id, for a JP route's goals; a
     # snapshot from before 2026-11-14 has none.
+    # Which CDN version the snapshot is (cdn_version, since 2026-11-28): what a
+    # newly defined skill is stamped with (release_values).
+    path = directory / "meta.json"
+    files["meta"] = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
     path = directory / "race_names.json"
     files["race_names"] = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
     # Global's English for evolution conditions, keyed by condition id; a
@@ -345,6 +352,32 @@ def skill_values(skill, detailed):
     return values
 
 
+def live_global_version():
+    """The Global game data version marked live in the admin, or None."""
+    return (GameDataVersion.objects.filter(region=GameDataRegion.GLOBAL, status=GameDataStatus.LIVE)
+            .values_list("version", flat=True).first())
+
+
+def release_values(row, snapshot_version, live_version):
+    """
+    `global_since_version` and `availability` for a skill in global's skill
+    table (owner, 2026-11-28). The version is stamped once: when the skill is
+    new, or turns global from announced or JP only, and the snapshot names its
+    version. A skill already global before versions were recorded keeps None,
+    which is never held. Held = stamped with a version newer than the live one:
+    a staged snapshot's skill reads "announced" until that version goes live.
+    """
+    since = row.global_since_version if row is not None else None
+    already_global = row is not None and row.availability == SkillAvailability.GLOBAL
+    if since is None and snapshot_version is not None and not already_global:
+        since = snapshot_version
+    held = since is not None and live_version is not None and since > live_version
+    return {
+        "global_since_version": since,
+        "availability": SkillAvailability.ANNOUNCED if held else SkillAvailability.GLOBAL,
+    }
+
+
 def support_values(card):
     """The SupportCard column values one snapshot support card implies."""
     return {
@@ -474,6 +507,7 @@ class Command(BaseCommand):
         plans = [
             self._plan_skills(
                 snapshot["skills"], detailed, snapshot["skill_text_ahead"], sources, evolutions,
+                release=(snapshot["meta"].get("cdn_version"), live_global_version()),
             ),
             uma_plan,
             support_plan,
@@ -610,7 +644,7 @@ class Command(BaseCommand):
                 plan["unchanged"] -= 1
 
     @staticmethod
-    def _plan_skills(skills, detailed, ahead=(), sources=None, evolutions=None):  # pylint: disable=too-many-locals
+    def _plan_skills(skills, detailed, ahead=(), sources=None, evolutions=None, release=(None, None)):  # pylint: disable=too-many-locals,too-many-arguments,too-many-positional-arguments
         """
         Like _plan, but a skill with no row is CREATED rather than reported:
         `created` holds unsaved Skill instances, `changed` (row, diff) pairs.
@@ -623,6 +657,8 @@ class Command(BaseCommand):
              else a guessed one written once;
           3. JP only: JP's structure; global's name and text if the client
              shipped them, else the editor's are left alone.
+        `release` is (the snapshot's CDN version, the live one): path 1 stores
+        a skill newer than the live version as announced (release_values).
         Every path also takes the JP and UmaTL text slots, and a name the
         import replaces is kept as an alias (`aliases`), and so is a new
         GameTora name (`gametora_aliases`, plan_gametora_aliases).
@@ -654,7 +690,9 @@ class Command(BaseCommand):
                 unchanged += 1
 
         for skill in skills:
-            plan_row(skill["id"], skill_values(skill, detailed), {})
+            values = skill_values(skill, detailed)
+            values.update(release_values(by_game_id.get(skill["id"]), *release))
+            plan_row(skill["id"], values, {})
 
         defined = {skill["id"] for skill in skills}
         ahead_by_id = {skill["id"]: skill for skill in ahead}

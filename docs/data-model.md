@@ -1888,6 +1888,18 @@ admin (column and filter). It used to be derived from the text (an English descr
 meant on global); it became a column when the JP snapshot came in, because a JP-only skill
 can carry English too (a translation, or a name an editor filled in early).
 
+**A defined skill waits for its version (owner, 2026-11-28).** The CDN holds upcoming game
+data days before release, so a snapshot can define skills that aren't out yet (10008800
+defines 253, 236 of them evolved). `Skill.global_since_version` (migration `0152`) is the
+Global version whose snapshot first defined the skill, stamped once by the import from
+`meta.json`'s `cdn_version`; null for every skill defined before 2026-11-28. While it is
+newer than the version marked live in `GameDataVersion`, the import stores the skill as
+`announced`, so it reads "Coming to global" and an evolved one stays out of `on_global_q()`.
+"Mark live" flips them in one update (`game_data_versions.apply_live_version`; marking an
+older version rolls back). With no live version recorded, nothing is held. A release-date
+rule like the cards' was measured first and rejected: released outfits already teach 232 of
+those 253 through the JP evolution links, and 156 Global skills have nothing teaching them.
+
 **What a player may be shown is ONE rule, `on_global_q()`** in `models/skill.py`: on
 global; or announced and not evolved. `Skill.objects.on_global()` / `.not_on_global()`, the
 `Skill.is_on_global` property, the guide's skill prefetch and the recommendation FK's
@@ -1982,7 +1994,8 @@ the admin's "Mark live" action. The check (`scripts/masterdata_check.py`) makes 
 PR only from the live version. `master_size` / `master_hash` are the CDN manifest's, and
 change on a revision (`revised_at`). Constraints: unique (`region`, `version`); at most one
 `live` row per region. `mark_live()` also moves the previous live row, and any `new` row
-below it, to `old`. Ops state, not content: PRIVATE in `content_snapshot`, ignored by the
+below it, to `old`, and releases (or, going back, holds) the skills that version first
+defined (`Skill.global_since_version`, below). Ops state, not content: PRIVATE in `content_snapshot`, ignored by the
 payload cache.
 
 ## The game's master database (`master.mdb`) and the committed snapshot

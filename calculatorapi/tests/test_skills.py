@@ -13,7 +13,9 @@ from django.test import override_settings
 from django.urls import reverse
 
 from calculatorapi.management.commands.import_game_data import takes_ahead
-from calculatorapi.models import CustomUser, Skill, SupportCard, SupportCardSkill, Uma, UmaSkill
+from calculatorapi.models import (
+    CustomUser, GameDataStatus, GameDataVersion, Skill, SupportCard, SupportCardSkill, Uma, UmaSkill,
+)
 from calculatorapi.tests.base import CalculatorTestCase, PLAIN_TEST_STORAGES
 
 SNAPSHOT_DIR = Path(__file__).resolve().parents[2] / "scripts" / "data" / "master_snapshot"
@@ -687,3 +689,60 @@ class InheritedUniqueTests(CalculatorTestCase):
                 game_id=game_id, name=f"Skill {game_id}", rarity=rarity, group_id=game_id // 10, tier=1,
             )
             self.assertFalse(skill.is_inherited_unique, game_id)
+
+
+class SkillVersionGateTests(CalculatorTestCase):
+    """A staged snapshot's skills wait for their version to be marked live
+    (owner, 2026-11-28; import_game_data.release_values)."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()  # pylint: disable=consider-using-with
+        self.addCleanup(self.tmp.cleanup)
+
+    def snapshot(self, version, skills):
+        write_snapshot(self.tmp.name, skills)
+        (Path(self.tmp.name) / "meta.json").write_text(json.dumps({"cdn_version": version}), encoding="utf-8")
+        return import_game_data(self.tmp.name, "--global-only")
+
+    @staticmethod
+    def live(version):
+        GameDataVersion.objects.update_or_create(
+            version=version, defaults={"master_size": 1, "master_hash": "0" * 32, "status": GameDataStatus.LIVE})
+
+    def test_with_no_live_version_nothing_is_held_and_new_skills_are_stamped(self):
+        self.snapshot(10008800, [snapshot_skill()])
+        skill = Skill.objects.get(game_id=200012)
+        self.assertEqual((skill.availability, skill.global_since_version), ("global", 10008800))
+
+    def test_a_skill_newer_than_the_live_version_reads_announced_until_mark_live(self):
+        self.live(10008795)
+        self.snapshot(10008800, [snapshot_skill()])
+        self.assertEqual(Skill.objects.get(game_id=200012).availability, "announced")
+        # Announced and not evolved: guides may still name it, tagged "Coming to global".
+        self.assertTrue(Skill.objects.on_global().filter(game_id=200012).exists())
+        staged = GameDataVersion.objects.create(version=10008800, master_size=1, master_hash="1" * 32)
+        self.assertEqual(staged.mark_live(), (1, 0))
+        self.assertEqual(Skill.objects.get(game_id=200012).availability, "global")
+        # A re-import agrees with the flip, and rolling back holds it again.
+        self.snapshot(10008800, [snapshot_skill()])
+        self.assertEqual(Skill.objects.get(game_id=200012).availability, "global")
+        self.assertEqual(GameDataVersion.objects.get(version=10008795).mark_live(), (0, 1))
+        self.assertEqual(Skill.objects.get(game_id=200012).availability, "announced")
+
+    def test_a_held_evolved_skill_is_not_on_global(self):
+        self.live(10008795)
+        self.snapshot(10008800, [snapshot_skill(110011, "Evolved One", rarity=6)])
+        self.assertFalse(Skill.objects.on_global().filter(game_id=110011).exists())
+
+    def test_a_skill_global_before_versions_keeps_no_stamp_and_is_never_held(self):
+        write_snapshot(self.tmp.name, [snapshot_skill()])
+        import_game_data(self.tmp.name, "--global-only")  # no meta.json: a Steam-era snapshot
+        self.live(10008795)
+        self.snapshot(10008800, [snapshot_skill()])
+        skill = Skill.objects.get(game_id=200012)
+        self.assertEqual((skill.availability, skill.global_since_version), ("global", None))
+
+    def test_the_stamp_is_written_once(self):
+        self.snapshot(10008800, [snapshot_skill()])
+        self.snapshot(10008805, [snapshot_skill()])
+        self.assertEqual(Skill.objects.get(game_id=200012).global_since_version, 10008800)

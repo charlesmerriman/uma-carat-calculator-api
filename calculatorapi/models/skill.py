@@ -43,7 +43,8 @@ class SkillAvailability(models.TextChoices):
     client's skill table, `announced` when the global client only has its
     official English text, `jp` for everything else (a JP-only skill, from
     the JP snapshot). A skill moves global-ward by itself on the import after
-    the client that has it.
+    the client that has it, except that one defined by a version not yet
+    marked live stays `announced` until "Mark live" (`global_since_version`).
     """
     GLOBAL = "global", "On global"
     ANNOUNCED = "announced", "Announced for global"
@@ -119,7 +120,8 @@ class SkillQuerySet(models.QuerySet):
     description meant on global). It became a stored column when the JP
     snapshot came in: a JP-only skill can carry English text too (a
     translation, or a name an editor filled in early), so text no longer says
-    where a skill is. The import is the only writer.
+    where a skill is. The import is the writer, and Mark live on a game data
+    version releases the skills that version defined (global_since_version).
 
     Anything that shows skills to a player (the CM planner, a skill page) must
     go through `on_global()`. A skill that is not there yet may sit in the
@@ -282,7 +284,22 @@ class Skill(models.Model):
         max_length=10,
         choices=SkillAvailability.choices,
         default=SkillAvailability.GLOBAL,
-        help_text="Where the game has this skill. Set by the import only.",
+        help_text="Where the game has this skill. Set by the import, and by Mark live on a game data version.",
+    )
+    # The Global game data version (the CDN's number, 10008800) whose snapshot
+    # first defined this skill: written once, the import that turns it
+    # `global`. Null for every skill defined before versions were recorded
+    # (2026-11-28), and for one imported from a snapshot with no version.
+    #
+    # It keeps a staged snapshot from labelling skills early (owner,
+    # 2026-11-28; notes/masterdata-cdn-plan.md, add-on B). While this is newer
+    # than the version marked live in Game data versions, the import stores
+    # the skill as `announced`, not `global`; Mark live flips it
+    # (game_data_versions.apply_live_version). With no live version recorded,
+    # nothing is held. `availability` stays the one column every reader reads.
+    global_since_version = models.PositiveIntegerField(
+        null=True, blank=True,
+        help_text="The Global game data version that first defined it. Set by the import.",
     )
     description_detailed = models.TextField(
         blank=True,
