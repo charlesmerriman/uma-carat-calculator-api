@@ -10,6 +10,7 @@ route to a post asks, and that no team read ever counts a guide post.
 # pylint: disable=too-many-ancestors
 
 from django.db import IntegrityError, connection, transaction
+from django.test import override_settings
 from django.test.utils import CaptureQueriesContext
 from rest_framework.test import APIClient
 
@@ -25,6 +26,7 @@ from calculatorapi.models import (
     PvpUmaRecommendation,
 )
 from calculatorapi.models.skill import SkillAvailability
+from calculatorapi.tests.base import PLAIN_TEST_STORAGES
 from calculatorapi.tests.factories import make_league_of_heroes
 from calculatorapi.tests.test_gallery import SENIOR
 from calculatorapi.tests.test_pvp_gallery import RouteFixture, all_keys
@@ -53,7 +55,11 @@ def make_guide_post(user, event, *, source=None, **fields):
     )
 
 
+@override_settings(STORAGES=PLAIN_TEST_STORAGES)
 class GuideFixture(RouteFixture):
+    """The storage swap: a saved or posted guide is answered in the reader's
+    shape, which carries uma and card picture URLs, and CI has no bucket to
+    build them from (default storage is S3)."""
 
     def member(self, **kwargs):
         """An account with early access, which community guides need."""
