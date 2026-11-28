@@ -1,0 +1,67 @@
+name: Masterdata check
+
+# Once a day: which Global game data versions are on the game's CDN, reported
+# to #calc-ops through the API, and a snapshot PR into develop when the version
+# marked LIVE in the admin differs from the committed snapshot. A staged version
+# is only ever reported. All of it in scripts/masterdata_check.py; the plan is
+# notes/masterdata-cdn-plan.md in the notes repo.
+#
+# Runs here, not on App Platform: the download and extract need memory the web
+# container doesn't have to spare, and a GitHub Action costs nothing.
+#
+# Needs:
+#   GAME_DATA_SYNC_SECRET  repo secret, equal to the API's GAME_DATA_SYNC_SECRET
+#   Settings -> Actions -> General -> "Allow GitHub Actions to create and approve
+#   pull requests", or step 4 fails at `gh pr create`.
+on:
+  schedule:
+    # 06:47 UTC. Off the hour (scheduled runs queue at :00 across GitHub) and far
+    # from the site's 15:00 UTC peak.
+    - cron: "47 6 * * *"
+  workflow_dispatch:
+    inputs:
+      report_only:
+        description: "Record and report only; never open a PR"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+# Two runs at once (the schedule and a manual one) could both open a PR.
+concurrency:
+  group: masterdata-check
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: develop
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version-file: .python-version
+
+      # Only what the scripts import (both are standard library otherwise); not
+      # the app's requirements, which this job never runs.
+      - name: Install dependencies
+        run: pip install requests==2.32.5 lz4==4.4.5
+
+      - name: Check the CDN
+        env:
+          # UPDATE ON A DOMAIN MOVE. Written here rather than kept in a secret so
+          # a search for the old domain finds it (see patreon-sync.yml for the
+          # week that cost once).
+          GAME_DATA_URL: https://umacaratcalculator.com/api/game-data/versions
+          GAME_DATA_SYNC_SECRET: ${{ secrets.GAME_DATA_SYNC_SECRET }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ inputs.report_only }}" = "true" ]; then
+            python scripts/masterdata_check.py --report-only
+          else
+            python scripts/masterdata_check.py
+          fi
