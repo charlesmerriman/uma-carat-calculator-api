@@ -134,6 +134,8 @@ PRIVATE_MODELS = (
     "DiscordMessage",
     # The team board's order (Discord thread ids): production's board only.
     "TeamQueueEntry",
+    # Which game data version production has marked live: ops state, not content.
+    "GameDataVersion",
 )
 
 

@@ -217,6 +217,8 @@ _IRRELEVANT_MODELS = frozenset({
     "discordmessage",
     # The team board's queue, read only by the bot API.
     "teamqueueentry",
+    # The masterdata check's version rows, written daily by /game-data/versions.
+    "gamedataversion",
     # The Rankings page's start-of-week snapshots, written on a rankings rebuild
     # (rankings_snapshots.py). Read only by /rankings/*, never here.
     "rankingssnapshot",
