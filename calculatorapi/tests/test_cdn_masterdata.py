@@ -1,6 +1,7 @@
 """
 scripts/cdn_masterdata.py: the game CDN's manifest format and the walk from a
-version number to its master.mdb.
+version number to its master.mdb. And scripts/masterdata_check.py's decisions:
+what it reads, when it fails, when it opens a snapshot PR.
 
 No test touches the network. The manifests are built here in the layout the
 live CDN serves (checked byte by byte against version 10008795 on 2026-11-28),
@@ -10,6 +11,7 @@ and a fake session answers each URL. Cygames' own files are not committed.
 import sqlite3
 import tempfile
 from pathlib import Path
+from unittest import mock
 
 import lz4.frame
 
@@ -182,3 +184,89 @@ class CdnWalkTests(CalculatorTestCase):
         session = FakeSession({cdn.root_manifest_url(1): (500, b"")})
         with self.assertRaises(RuntimeError):
             cdn.master_entry(1, session)
+
+
+check = load_script("masterdata_check")
+
+
+class FakeCdn:  # pylint: disable=too-few-public-methods
+    """Stands in for cdn_masterdata: `entries` maps version -> hash; absent is missing."""
+
+    CdnError = cdn.CdnError
+
+    def __init__(self, entries):
+        self.entries = entries
+        self.read = []
+
+    def master_entry(self, version, session=None):  # pylint: disable=unused-argument
+        self.read.append(version)
+        digest = self.entries.get(version)
+        return None if digest is None else {"version": version, "size": 5, "hash": digest}
+
+    def scan(self, start, count, session=None):  # pylint: disable=unused-argument
+        return [v for v in range(start, start + count) if v in self.entries]
+
+
+def known(version, status, digest="aa" * 16):
+    return {"region": "global", "version": version, "status": status, "master_hash": digest}
+
+
+class DailyCheckTests(CalculatorTestCase):
+    META = {"cdn_version": 10008795, "cdn_master_hash": "aa" * 16, "counts": {"skills": 754}}
+
+    def test_a_fresh_table_starts_from_the_committed_snapshot(self):
+        fake = FakeCdn({10008795: "aa" * 16, 10008800: "bb" * 16})
+        findings = check.collect([], self.META, fake)
+        self.assertEqual([(f["version"], f["master_hash"]) for f in findings],
+                         [(10008795, "aa" * 16), (10008800, "bb" * 16)])
+        self.assertEqual(fake.read[0], 10008795)
+
+    def test_the_live_version_is_read_first_and_old_ones_not_at_all(self):
+        fake = FakeCdn({10008790: "11" * 16, 10008795: "aa" * 16, 10008800: "bb" * 16})
+        versions = [known(10008790, "old"), known(10008795, "live"), known(10008800, "new")]
+        findings = check.collect(versions, self.META, fake)
+        self.assertEqual(fake.read[0], 10008795)
+        self.assertNotIn(10008790, fake.read)
+        self.assertEqual([f["version"] for f in findings], [10008795, 10008800])
+
+    def test_a_refused_anchor_fails_the_run_instead_of_reading_as_nothing_new(self):
+        with self.assertRaises(check.CheckError):
+            check.collect([known(10008795, "live")], self.META, FakeCdn({}))
+
+    def test_a_known_version_that_stops_answering_fails_the_run(self):
+        versions = [known(10008795, "live"), known(10008800, "new")]
+        with self.assertRaises(check.CheckError):
+            check.collect(versions, self.META, FakeCdn({10008795: "aa" * 16}))
+
+    def test_no_anchor_at_all_says_what_to_do(self):
+        with self.assertRaisesRegex(check.CheckError, "mark one live"):
+            check.collect([], {"counts": {}}, FakeCdn({}))
+
+    def test_the_scan_starts_above_the_newest_known_version(self):
+        fake = FakeCdn({10008795: "aa" * 16, 10008800: "bb" * 16, 10008841: "cc" * 16})
+        versions = [known(10008795, "live"), known(10008800, "ignored")]
+        findings = check.collect(versions, self.META, fake)
+        # 10008800 is ignored, so not re-read; the scan covers 10008801..10008840.
+        self.assertEqual([f["version"] for f in findings], [10008795])
+
+    def test_only_a_live_version_that_differs_needs_a_snapshot(self):
+        self.assertIsNone(check.snapshot_needed([known(10008800, "new", "bb" * 16)], self.META))
+        self.assertIsNone(check.snapshot_needed([known(10008795, "live")], self.META))
+        revised = known(10008795, "live", "cc" * 16)
+        self.assertEqual(check.snapshot_needed([revised], self.META), revised)
+        moved = known(10008800, "live", "bb" * 16)
+        self.assertEqual(check.snapshot_needed([moved], self.META), moved)
+        self.assertEqual(check.branch_name(moved), "data/global-masterdata-10008800-bbbbbbbb")
+
+    def test_an_open_pr_branch_means_nothing_to_do(self):
+        with mock.patch.object(check, "run") as run:
+            run.return_value = mock.Mock(returncode=0)
+            self.assertIsNone(check.open_snapshot_pr(known(10008800, "live", "bb" * 16), self.META))
+        self.assertEqual(run.call_count, 1)
+        self.assertEqual(run.call_args.args[:3], ("git", "ls-remote", "--exit-code"))
+
+    def test_the_pr_body_lists_the_counts_that_moved(self):
+        table = check.count_changes(self.META, {"counts": {"skills": 1009, "cards": 118}})
+        self.assertIn("| skills | 754 | 1009 |", table)
+        self.assertIn("| cards | 0 | 118 |", table)
+        self.assertIn("No row counts changed", check.count_changes(self.META, self.META))

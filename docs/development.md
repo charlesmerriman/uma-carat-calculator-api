@@ -118,6 +118,17 @@ from one marks its skills as on Global early. The CDN can't say which is live; w
 this decides. Writing `characters.json` also refreshes `calculatorapi/data/character_colours.json`,
 which belongs in the same commit.
 
+**The daily masterdata check does this by itself** (`.github/workflows/masterdata-check.yml`,
+06:47 UTC, `scripts/masterdata_check.py`). It reads the CDN, posts what it saw to
+`/game-data/versions` (new versions and revisions go to #calc-ops), and when the version
+marked **live** in the admin (Site content → Game data versions) differs from the committed
+snapshot, opens a PR into `develop` on `data/global-masterdata-<version>-<hash8>`. Staged
+versions are only reported. To move to a new version: once the game runs it, Mark live in
+the admin, then wait for the next run or press "Run workflow" on the Actions tab. Review
+the PR with `import_game_data --dry-run` on its branch; it ships with the next release. A
+red run means the CDN refused the runner, a known version disappeared, or the API is
+unreachable; the log's `::error::` line says which.
+
 - `scripts/extract_master_snapshot.py --region jp` also writes `jp_snapshot/race_links.json`
   (each CM's and LoH's course), which "Link courses" reads. A JP snapshot refresh is what
   brings a new event's course.
