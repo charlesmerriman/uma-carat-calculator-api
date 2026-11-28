@@ -8625,6 +8625,115 @@
   "start_date": 1786572000
  },
  {
+  "id": 104301,
+  "chara_id": 1043,
+  "chara_name": "Shinko Windy",
+  "name": "[Wicked Punk] Shinko Windy",
+  "title": "[Wicked Punk]",
+  "default_rarity": 3,
+  "running_style": "pace",
+  "growth": {
+   "speed": 10,
+   "stamina": 0,
+   "power": 10,
+   "guts": 10,
+   "wit": 0
+  },
+  "stars": [
+   {
+    "star": 3,
+    "unique_skill_id": 100431,
+    "stats": {
+     "speed": 99,
+     "stamina": 76,
+     "power": 107,
+     "guts": 81,
+     "wit": 87
+    },
+    "max_stats": {
+     "speed": 1200,
+     "stamina": 1200,
+     "power": 1200,
+     "guts": 1200,
+     "wit": 1200
+    },
+    "aptitude": {
+     "turf": 2,
+     "dirt": 7,
+     "short": 5,
+     "mile": 7,
+     "medium": 6,
+     "long": 1,
+     "front": 1,
+     "pace": 7,
+     "late": 6,
+     "end": 2
+    }
+   },
+   {
+    "star": 4,
+    "unique_skill_id": 100431,
+    "stats": {
+     "speed": 110,
+     "stamina": 85,
+     "power": 119,
+     "guts": 90,
+     "wit": 96
+    },
+    "max_stats": {
+     "speed": 1200,
+     "stamina": 1200,
+     "power": 1200,
+     "guts": 1200,
+     "wit": 1200
+    },
+    "aptitude": {
+     "turf": 2,
+     "dirt": 7,
+     "short": 5,
+     "mile": 7,
+     "medium": 6,
+     "long": 1,
+     "front": 1,
+     "pace": 7,
+     "late": 6,
+     "end": 2
+    }
+   },
+   {
+    "star": 5,
+    "unique_skill_id": 100431,
+    "stats": {
+     "speed": 121,
+     "stamina": 93,
+     "power": 131,
+     "guts": 98,
+     "wit": 107
+    },
+    "max_stats": {
+     "speed": 1200,
+     "stamina": 1200,
+     "power": 1200,
+     "guts": 1200,
+     "wit": 1200
+    },
+    "aptitude": {
+     "turf": 2,
+     "dirt": 7,
+     "short": 5,
+     "mile": 7,
+     "medium": 6,
+     "long": 1,
+     "front": 1,
+     "pace": 7,
+     "late": 6,
+     "end": 2
+    }
+   }
+  ],
+  "start_date": 1795298400
+ },
+ {
   "id": 104401,
   "chara_id": 1044,
   "chara_name": "Sweep Tosho",

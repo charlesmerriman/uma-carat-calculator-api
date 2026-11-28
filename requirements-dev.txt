@@ -5,6 +5,9 @@ astroid==3.3.11
 autopep8==2.3.2
 dill==0.4.0
 isort==6.1.0
+# Unpacks the game CDN's files (scripts/cdn_masterdata.py). Dev and CI only:
+# the CDN is read on a developer's machine or a GitHub runner, never by the app.
+lz4==4.4.5
 mccabe==0.7.0
 platformdirs==4.5.1
 pycodestyle==2.14.0

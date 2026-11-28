@@ -100,6 +100,24 @@ never a deploy step:
   courses"). It reads the zips directly (the unzipped folders miss files), takes English
   racecourse names from the Global client's `master.mdb`, and prints what it cleaned up; run
   `--report-only` first. `--out` must be outside the workspace.
+**Refreshing the Global snapshot needs no game install.** The game's CDN serves the same
+`master.mdb` the client downloads. `pip install -r requirements-dev.txt` (it carries `lz4`),
+then, from `backend/`:
+
+```bash
+python scripts/cdn_masterdata.py scan 10008790 20       # which version numbers exist
+python scripts/cdn_masterdata.py check 10008795         # one version's mdb size and hash
+python scripts/extract_master_snapshot.py --cdn-version 10008795 --dry-run   # counts first
+python scripts/extract_master_snapshot.py --cdn-version 10008795
+python manage.py import_game_data --dry-run              # what the deploy would change
+```
+
+**Use the version the game is running, never a staged one.** Upcoming versions sit on the
+CDN days before release (10008800 went up about a week before 2026-12-01), and a snapshot
+from one marks its skills as on Global early. The CDN can't say which is live; whoever runs
+this decides. Writing `characters.json` also refreshes `calculatorapi/data/character_colours.json`,
+which belongs in the same commit.
+
 - `scripts/extract_master_snapshot.py --region jp` also writes `jp_snapshot/race_links.json`
   (each CM's and LoH's course), which "Link courses" reads. A JP snapshot refresh is what
   brings a new event's course.

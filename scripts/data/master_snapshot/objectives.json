@@ -3329,6 +3329,74 @@
   ]
  },
  {
+  "chara_id": 1043,
+  "goals": [
+   {
+    "turn": 12,
+    "kind": 1,
+    "race": "Junior Make Debut",
+    "grade": 900,
+    "top": 0,
+    "race_instance_id": 902790
+   },
+   {
+    "turn": 25,
+    "kind": 3,
+    "condition_id": 0,
+    "value_1": 3000,
+    "value_2": 0
+   },
+   {
+    "turn": 36,
+    "kind": 1,
+    "race": "Unicorn Stakes",
+    "grade": 300,
+    "top": 5,
+    "race_instance_id": 303301
+   },
+   {
+    "turn": 37,
+    "kind": 1,
+    "race": "Japan Dirt Derby",
+    "grade": 100,
+    "top": 5,
+    "race_instance_id": 110201
+   },
+   {
+    "turn": 50,
+    "kind": 1,
+    "race": "Tokai Stakes",
+    "grade": 200,
+    "top": 3,
+    "race_instance_id": 200201
+   },
+   {
+    "turn": 52,
+    "kind": 1,
+    "race": "February Stakes",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 100101
+   },
+   {
+    "turn": 60,
+    "kind": 1,
+    "race": "Teio Sho",
+    "grade": 100,
+    "top": 3,
+    "race_instance_id": 110101
+   },
+   {
+    "turn": 71,
+    "kind": 1,
+    "race": "Champions Cup",
+    "grade": 100,
+    "top": 1,
+    "race_instance_id": 102001
+   }
+  ]
+ },
+ {
   "chara_id": 1044,
   "goals": [
    {

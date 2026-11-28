@@ -49,7 +49,7 @@ def category_manifest(entries):
     return body
 
 
-class FakeResponse:
+class FakeResponse:  # pylint: disable=too-few-public-methods
     def __init__(self, status, content=b""):
         self.status_code = status
         self.content = content
@@ -59,7 +59,7 @@ class FakeResponse:
             raise RuntimeError(f"HTTP {self.status_code}")
 
 
-class FakeSession:
+class FakeSession:  # pylint: disable=too-few-public-methods
     """Answers the URLs it was given; everything else is a 403, like the CDN."""
 
     def __init__(self, routes):
