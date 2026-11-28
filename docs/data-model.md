@@ -1943,6 +1943,18 @@ Placeholders teach no skills and stay out of any ranking or team analytics. Guid
 them: a guide's "Any Wit" slot already says that. An NPC uma placeholder is still to come
 (no row or art yet).
 
+### `GameDataVersion`: which game data version is live
+
+One row per version the daily masterdata check has seen on the game's CDN
+(`models/game_data_version.py`, migration `0150`). The CDN can't say which version the game
+runs, and staged versions sit there days early, so **live is a person's choice**, made with
+the admin's "Mark live" action. The check (`scripts/masterdata_check.py`) makes a snapshot
+PR only from the live version. `master_size` / `master_hash` are the CDN manifest's, and
+change on a revision (`revised_at`). Constraints: unique (`region`, `version`); at most one
+`live` row per region. `mark_live()` also moves the previous live row, and any `new` row
+below it, to `old`. Ops state, not content: PRIVATE in `content_snapshot`, ignored by the
+payload cache.
+
 ## The game's master database (`master.mdb`) and the committed snapshot
 
 The skills work imports from the global game client's own database rather than a fan
