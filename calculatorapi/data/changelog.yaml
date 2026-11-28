@@ -32,6 +32,15 @@
 # module changed. Newest entry first is conventional here but not required — the
 # page sorts by date.
 
+- key: shinko-windy-and-phone-skills
+  date: 2026-11-28
+  title: "Shinko Windy's full details, and General skills up top on a phone"
+  version: "v2.27"
+  changes:
+    - changed: "[Wicked Punk] Shinko Windy now has her full Global details, unique skill included."
+    - changed: "On a phone, a guide's General skills now sit above the running style tabs, so you see them on every tab."
+    - fixed: "Supporters stopped getting the odd ad that slipped through."
+
 - key: sr-r-rate-ups-and-one-header
   date: 2026-11-27
   title: "SR and R rate-ups, one header for every page, and tidier course maps"
