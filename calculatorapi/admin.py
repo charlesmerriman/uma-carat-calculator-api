@@ -725,7 +725,7 @@ class SkillAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
         "name", "translated_name", "jp_name", "aliases__name", "=game_id", "=group_id",
     )
     readonly_fields = (
-        "image_preview", "versions", "on_global", "availability",
+        "image_preview", "versions", "on_global", "availability", "global_since_version",
         "translated_name", "translated_description", "jp_name", "jp_description",
         "effects", "evolution_scenario", "readable", "sources",
     )
@@ -739,10 +739,12 @@ class SkillAdmin(ImagePreviewMixin, SpacesImagePickerMixin, ModelAdmin):
                 "\"availability\", set by the import: a skill only announced for "
                 "global (no icon id yet) may be used by guides already, and its "
                 "rarity and tier below are guesses you may correct until it "
-                "releases. A JP-only skill stays here in the admin and is never "
+                "releases. A skill the game data defines reads as announced until "
+                "the version that first defined it is marked live (Game data "
+                "versions). A JP-only skill stays here in the admin and is never "
                 "shown to players."
             ),
-            "fields": ("description", "description_detailed", "availability", "on_global"),
+            "fields": ("description", "description_detailed", "availability", "global_since_version", "on_global"),
         }),
         ("In plain English", {
             "description": (

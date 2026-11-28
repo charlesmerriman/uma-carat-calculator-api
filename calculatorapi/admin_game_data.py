@@ -55,8 +55,10 @@ class GameDataVersionAdmin(ModelAdmin):
         if len(rows) != 1:
             self.message_user(request, "Select exactly one version to mark live.", messages.ERROR)
             return
-        rows[0].mark_live(by=_who(request))
-        self.message_user(request, f"{rows[0]} is now the live version.", messages.SUCCESS)
+        released, held = rows[0].mark_live(by=_who(request))
+        skills = f" {released} skill(s) now on Global." if released else ""
+        skills += f" {held} skill(s) from newer versions held back." if held else ""
+        self.message_user(request, f"{rows[0]} is now the live version.{skills}", messages.SUCCESS)
 
     @admin.action(description="Ignore", permissions=["change"])
     def mark_ignored(self, request, queryset):

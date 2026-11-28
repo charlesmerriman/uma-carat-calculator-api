@@ -112,10 +112,11 @@ python scripts/extract_master_snapshot.py --cdn-version 10008795
 python manage.py import_game_data --dry-run              # what the deploy would change
 ```
 
-**Use the version the game is running, never a staged one.** Upcoming versions sit on the
-CDN days before release (10008800 went up about a week before 2026-12-01), and a snapshot
-from one marks its skills as on Global early. The CDN can't say which is live; whoever runs
-this decides. Writing `characters.json` also refreshes `calculatorapi/data/character_colours.json`,
+**Prefer the version the game is running.** Upcoming versions sit on the CDN days before
+release (10008800 went up about a week before 2026-12-01). A staged snapshot is safe to
+ship since 2026-11-28: its new skills read "Coming to global" until that version is marked
+live in the admin, and outfits and cards already wait for their release dates. The CDN
+can't say which version is live; whoever marks it decides. Writing `characters.json` also refreshes `calculatorapi/data/character_colours.json`,
 which belongs in the same commit.
 
 **The daily masterdata check does this by itself** (`.github/workflows/masterdata-check.yml`,

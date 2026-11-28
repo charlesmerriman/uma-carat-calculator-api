@@ -600,7 +600,8 @@ page as production data.
 Staff only. One row per game data version the daily check has seen on the CDN; rows
 can't be added by hand. **Mark live** (exactly one row) once the game is running a
 version: from then on the check makes a snapshot PR from it whenever it changes, and
-never from a staged version. **Ignore** sets a version aside. The check posts new
+never from a staged version, and the skills it first defined turn from "Coming to global" to
+on Global (the message says how many). **Ignore** sets a version aside. The check posts new
 versions and revisions to #calc-ops with a link here.
 
 ## Local gotcha
