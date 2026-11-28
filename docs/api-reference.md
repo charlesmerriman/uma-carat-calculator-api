@@ -165,6 +165,10 @@ meaning anything instead of rendering a signed-in shell around nothing.
   editor: `true` for a staff account and nobody else (`pvp_guide_editing.can_edit`;
   the content-editor permission alone does not count). The client draws the Edit
   tab on it; every write under "PvP guide editor" is checked again server side.
+- **`community_guides`** is whether the PvP page offers this account community guides
+  (players' own guides, `guide_gallery.can_use`: early access for now). The client draws
+  the "Site guide / Community guides" switch on it; every route under "Community guides"
+  checks again.
 - **`avatar_url`** (top level) is the picture to show in the navbar: the first
   oshi's `image` **while `oshi_slots >= 1`** (skipping any whose picture was
   cleared), else **`null`** — null rather than `""`, so a client draws its
@@ -924,12 +928,44 @@ would take the static FAQ page too. A browser lands on `/faq#<slug>`. Code:
 
 Throttled at `faq_share` (600/hour), in the `gallery` cache. Creates and counts nothing.
 
+### Community guides
+
+Players' own PvP guides (`views/guide_gallery.py`, `guide_gallery.py`, 2026-11-28,
+`notes/community-guides-plan.md`). A **working copy** is the writer's private draft in the
+site editor's document shape (below, "PvP guide editor"), content keys only, plus `title`,
+`kind`, `post` (the post's `public_id` or null) and `changed_since_posted`. Posting freezes
+it onto a gallery post of kind `pvp_guide`, read, voted on, commented on, reported and taken
+down through the shared `/gallery/posts/<public_id>` routes. Early access first: every route
+asks `guide_gallery.can_use` (writes also `can_write`); a reader without it gets
+`403 {"error": "Community guides are open to supporters first."}`. Someone else's working
+copy answers the same `404` as one that does not exist. Refusals answer the editor's shape,
+`{error, errors: [{path, message}]}`.
+
+| Route | Body | Answer |
+|---|---|---|
+| `GET /community-guides?kind=cm&event=<id>` | | `{guides: [{id, kind, event, title, version, updated_at, post, changed_since_posted}], cap: 5, can_write}` (all events when `kind` is left out) |
+| `POST /community-guides` | `{kind, event, title?, start: "empty" \| "official" \| <one of my guide ids for this event>}` | `201` the document; `400` at 5 for the event (`"You can have 5 guides for one event. Delete one to write another."`), or `"official"` with no site guide this reader can read |
+| `GET /community-guides/<id>/document` | | `{document, guide}` (`guide`: the reader's shape, for the preview) |
+| `PUT /community-guides/<id>/document` | `{version, title?, ...content}` | `{document, guide}`; `400` with every problem's path (the site editor's checks plus the caps: 60 umas, 250 skills, 30 decks of up to 24 rows, 15 team comps, 15 stat rows, 6,000 / 500 / 4,000 characters of meta analysis / short description / an advice box, 100 KB in all); `409 {error, current}` on a stale `version` |
+| `POST /community-guides/<id>/start-over` | `{version, start: "official" \| <another of my guides>}` | `{document, guide}` |
+| `DELETE /community-guides/<id>` | | `204`; `400 "Take the post down first."` while posted |
+| `POST /community-guides/<id>/publish` | `{confirm_public_identity: true}` | the post (`201` new, `200` updated); `400` naming the field (`title`, or a document path such as `decks[0].label`) for a missing title or a refused word or link |
+| `GET /pvp-guide-gallery/<kind>/<event_id>?sort=top\|new` | | `{count, sort, has_more, results}`: post rows with `event` and `umas` (the three lead umas, most stars first) |
+
+A guide post's `GET /gallery/posts/<public_id>` adds `guide`: the posted guide in exactly the
+shape `GET /pvp-guides/<kind>/<event_id>` sends, drawn for the reader, with `comment_counts`
+empty (a guide post has one thread, the post's). `POST /gallery/posts/<public_id>/copy` on a
+guide counts a "Use this deck" and answers `204`. Its `/post/<public_id>` link preview names
+the site and the event only. Throttles: `community_guide_save` (1200/hour) on saves and the
+list, `community_guide_action` (60/hour) on starting and starting over, `gallery_publish` on
+posting.
+
 ### PvP guide editor
 
 The site's guide editor (`views/pvp_guide_editor.py`, 2026-10-21): a guide read and
 written as **one document**, the tables' content with catalogue ids where the public
 route embeds objects. All `IsAuthenticated`, then `pvp_guide_editing.can_edit` (staff
-accounts only; supporters' own guides are a later, separate gallery feature); a guide
+accounts only; players' own guides are "Community guides" above); a guide
 the caller may not edit answers the public route's `404 {"error": "Guide not found"}`,
 and the list and create routes answer `403 {"error": "Only guide editors can do that."}`
 to a signed-in non-staff account. Every write

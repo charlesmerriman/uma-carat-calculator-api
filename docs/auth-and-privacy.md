@@ -323,9 +323,32 @@ must match, is three conditions:
 3. **The route touches its own tables and nothing else**: the eight guide tables, no
    account, no PII, no other content.
 
-Supporters writing guides of their own (planned, not built) is a separate gallery
-feature with its own rules; it does not widen this function. The revision list shows
-authors by handle, never by display name.
+Supporters writing guides of their own is a separate gallery feature with its own rules
+(next section); it does not widen this function. The revision list shows authors by
+handle, never by display name.
+
+### A player's own guide is that player's data, not content (community guides)
+
+Community guides (2026-11-28, `guide_gallery.py`, `views/guide_gallery.py`,
+`notes/community-guides-plan.md`) let a person with early access write a PvP guide of
+their own and post it. Its write routes are on the token too, but they are **not** a
+content write route: a working copy (`PvpCommunityGuide`) is the person's own private
+draft, like a team or a plan, kept as JSON in a PRIVATE table and never in the site's
+guide tables. So the three conditions above do not apply to it; the gallery's do:
+
+- **One gate, `guide_gallery.can_use`** (early access for now), asked on every route to a
+  guide post through `gallery_access.can_open`; writing also needs `can_write` (not
+  `publishing_blocked`). `pvp_guide_editing.can_edit` is untouched: it still decides who
+  edits the SITE's guides and nobody else.
+- **Posting is the opt-in.** Only a post is public, beside `public_identity.poster_block`
+  (the one place a name shows), after `confirm_public_identity: true` and a display name.
+- **Every word is filtered when posting**: the title and every text field of the guide,
+  links refused, a refusal naming its field. A community guide's text draws no remote
+  pictures on the site.
+- **What never leaves**: a working copy, the site guide's editor notes (a guide started
+  from the site's guide copies its content without them), who voted. The `/post/<id>`
+  preview names the site and the event only, never the title, the author or the guide.
+- **Erasure**: `gallery.erase_users` removes a person's guide posts and working copies.
 
 ### Redirect URI must match byte-for-byte
 

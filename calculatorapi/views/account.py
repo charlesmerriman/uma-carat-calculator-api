@@ -122,7 +122,7 @@ from rest_framework import permissions, serializers, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
-from calculatorapi import benefits, gallery, gallery_moderation, public_identity, pvp_guide_editing
+from calculatorapi import benefits, gallery, gallery_moderation, guide_gallery, public_identity, pvp_guide_editing
 from calculatorapi.models import (
     OSHI_SLOT_CAP,
     CustomUser,
@@ -439,6 +439,10 @@ def _account_summary(user):
         # every write is checked again server side, so a spoofed flag opens
         # nothing.
         "guide_editor": pvp_guide_editing.can_edit(user),
+        # Whether the PvP page offers community guides (players' own guides:
+        # guide_gallery.can_use, early access for now). The client draws the
+        # switch on it; every route checks again server side.
+        "community_guides": guide_gallery.can_use(user),
         "linked_providers": LinkedProviderSerializer(linked, many=True).data,
         "supporter": _supporter_block(supporter),
     }

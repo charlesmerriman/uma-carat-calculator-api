@@ -1332,8 +1332,37 @@ and the kind-specific columns are tied to their kind by check constraints on SCA
 only: `gallery_post_event_matches_kind` (the `PvpTeam` XOR idiom: a team has one event, a
 plan none) and `gallery_post_plan_matches_kind` (the plan columns are blank on a team). A
 `GenericForeignKey` would lose FK integrity and cascades; tables per gallery would write this
-twice. Code that reads a post's content asks `post.is_plan` first; code that works on any
-post (votes, comments, reports, moderation, erasure) never needs to.
+twice. Code that reads a post's content asks its kind by name first (`post.is_team`,
+`is_plan`, `is_guide`), never "not a plan"; code that works on any post (votes, comments,
+reports, moderation, erasure) never needs to.
+
+**The third kind: a player's own PvP guide** (`pvp_guide`, migration `0151`, 2026-11-28,
+`notes/community-guides-plan.md`). It has an event like a team (the event constraint now
+reads "a team or a guide has one event, a plan none"), so every read of an event's TEAMS
+goes through `gallery.visible_teams()` (the PvP Gallery's feed, Rankings), and one post per
+person per event is a TEAM rule only (`one_gallery_post_per_author_cm` / `_loh` carry
+`kind = pvp_team`). Its columns: `guide_snapshot` (JSON, the guide's content as posted) and
+`source_guide` (the working copy, SET_NULL, never serialized; `one_gallery_post_per_source_guide`
+makes posting again an update; `gallery_post_guide_matches_kind`). `caption` is the guide's
+title; `strategy` stays blank. Every route to a post asks ONE gate, `gallery_access.can_open`
+(teams anyone's, plans `plan_gallery.can_use`, guides `guide_gallery.can_use`, an author
+always their own).
+
+- **`PvpCommunityGuide`** (PRIVATE, `_IRRELEVANT_MODELS`, not in the admin): the working
+  copy a writer's editor autosaves. `author` (CASCADE), the CM / LoH pair (exactly one,
+  `exactly_one_community_guide_event`), `title` (140), `document` (JSON: the CONTENT keys of
+  the site editor's document, `community_guide_document.CONTENT_KEYS`; never editor notes or
+  the banner), `version` (the save's concurrency token), timestamps. Up to
+  `guide_gallery.COMMUNITY_GUIDE_CAP` = 5 per person per event, a count taken under a lock on
+  the person's row, not a constraint. Kept as JSON rather than in the site's guide tables on
+  purpose: those are CONTENT (`pull_prod_content` copies them) and Rankings, previews and the
+  Timeline read them, so a player's guide in them would need a filter everywhere. A saved
+  document is checked as a site guide is (`pvp_guide_document.DocumentInput` and `errors()`)
+  plus `guide_gallery.cap_errors`; posting runs every word through the gallery's filters.
+- **Drawn by the site guide's own serializer.** A posted guide is sent in the reader's shape by
+  `views/pvp_guide.serialize_guide`, fed an in-memory stand-in (`guide_gallery._standin`), so
+  skill versions, owners, JP-only tags, readable text, sources and the UmaTL flag come out
+  exactly as on the site's guide. A row whose uma, skill or card left the catalogue drops out.
 
 - **`GalleryPost`**: `public_id` (8 characters, the permanent link `/post/<public_id>`, kept
   through re-posts), `author` (CASCADE), `kind`, `caption` (140, the line on the feed's row;
@@ -1412,7 +1441,8 @@ post (votes, comments, reports, moderation, erasure) never needs to.
   cannot evict the `/calculator-data` payload from its 40 slots.
 - **Erasure**: `gallery.erase_users()` is the one function `DELETE /account` (before the row
   goes) and `purge_user_pii` both call: posts, votes and comments go (a comment others
-  replied to becomes "[deleted]"), reports keep their record with the reporter cleared.
+  replied to becomes "[deleted]"), community guides' working copies go, reports keep their
+  record with the reporter cleared.
 - **Demo data** for local work: `manage.py seed_gallery_demo` (SQLite only; `--clear`).
 
 ### Through tables carry recommendation text

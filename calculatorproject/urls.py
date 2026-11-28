@@ -90,6 +90,14 @@ from calculatorapi.views.gallery import (
 from calculatorapi.views.profile_card import profile_card_for_comment, profile_card_for_post
 from calculatorapi.views.plan_gallery import plan_gallery_feed, plan_post_copy, plan_publish
 from calculatorapi.views.pvp_gallery import pvp_gallery_feed, pvp_team_publish
+from calculatorapi.views.guide_gallery import (
+    community_guide_detail,
+    community_guide_document,
+    community_guide_publish,
+    community_guide_start_over,
+    community_guides,
+    pvp_guide_gallery_feed,
+)
 from calculatorapi.views.gallery_share import share_page, share_preview
 from calculatorapi.views.plan_share import share_page as plan_share_page
 from calculatorapi.views.plan_share import share_preview as plan_share_preview
@@ -287,6 +295,14 @@ urlpatterns = [
     path("plans/<int:plan_id>/publish", plan_publish, name="plan-publish"),
     path("plan-gallery", plan_gallery_feed, name="plan-gallery-feed"),
     path("plan-gallery/posts/<str:public_id>/copy", plan_post_copy, name="plan-post-copy"),
+    # Community guides: players' own PvP guides, written, posted and listed by
+    # event. Early access first. → views/guide_gallery.py
+    path("community-guides", community_guides, name="community-guides"),
+    path("community-guides/<int:guide_id>", community_guide_detail, name="community-guide-detail"),
+    path("community-guides/<int:guide_id>/document", community_guide_document, name="community-guide-document"),
+    path("community-guides/<int:guide_id>/start-over", community_guide_start_over, name="community-guide-start-over"),
+    path("community-guides/<int:guide_id>/publish", community_guide_publish, name="community-guide-publish"),
+    path("pvp-guide-gallery/<str:kind>/<int:event_id>", pvp_guide_gallery_feed, name="pvp-guide-gallery-feed"),
     # One gallery post, whatever gallery it is in: read, take down, vote,
     # count a view, copy. → views/gallery.py
     path("gallery/my-posts", gallery_my_posts, name="gallery-my-posts"),

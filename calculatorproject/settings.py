@@ -538,6 +538,10 @@ REST_FRAMEWORK = {
         # Copy from a guide, load from the sheet, fill track greens: a
         # preview-then-apply loop, a handful per guide.
         "guide_editor_action": "60/hour",
+        # A player's own guide (views/guide_gallery.py): the editor's autosave
+        # rate, and starting a guide or starting over, a handful an hour.
+        "community_guide_save": "1200/hour",
+        "community_guide_action": "60/hour",
         # The /plan/<id> share page (views/plan_share.py), for the same reason.
         "plan_share": "600/hour",
         # The /guide/<kind>-<id> share page (views/guide_share.py), likewise.
