@@ -1,0 +1,14 @@
+# TEMPORARY (feat/cdn-masterdata-fetch): does the game CDN answer GitHub's runners?
+# Deleted before the PR merges.
+on:
+  push:
+    branches: [feat/cdn-masterdata-fetch]
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: pip install requests lz4
+      - run: python scripts/cdn_masterdata.py check 10008795
+      - run: python scripts/cdn_masterdata.py scan 10008794 8
+      - run: python scripts/cdn_masterdata.py fetch 10008795 /tmp/mdb

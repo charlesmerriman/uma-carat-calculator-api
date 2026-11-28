@@ -17,7 +17,9 @@ The two share ids: every global skill exists in JP under the same id (checked
 
 What comes out, one file per concern (all sorted by id, so re-runs diff cleanly):
 
-  meta.json           region, when, from which mdb (size, mtime), and row counts
+  meta.json           region, when, from which mdb (size, mtime), and row counts;
+                      from the CDN, the version and the master entry's size and
+                      hash instead of the mtime (what the daily check compares)
   skills.json         every skill: name, description, rarity, white/gold group,
                       icon, skill point cost, activation conditions, and the
                       raw `effects` (see effect_slots)
@@ -98,6 +100,7 @@ Run from backend/:
     python scripts/extract_master_snapshot.py --dry-run     # counts only
     python scripts/extract_master_snapshot.py               # write the JSON
     python scripts/extract_master_snapshot.py --mdb /path/to/master.mdb
+    python scripts/extract_master_snapshot.py --cdn-version 10008795   # no install needed
     python scripts/extract_master_snapshot.py --region jp --mdb /tmp/jp/master.mdb
 """
 
@@ -110,6 +113,7 @@ import datetime
 import json
 import re
 import sqlite3
+import tempfile
 from pathlib import Path
 
 DEFAULT_MDB = Path("/mnt/c/Users/Zac82/AppData/LocalLow/Cygames/Umamusume/master/master.mdb")
@@ -1252,12 +1256,46 @@ def main():
     parser.add_argument("--region", choices=sorted(DEFAULT_OUT), default="global",
                         help="which client the mdb is from (default: global)")
     parser.add_argument("--mdb", type=Path, help="path to master.mdb (required for jp)")
+    parser.add_argument("--cdn-version", type=int, metavar="N",
+                        help="global only: download version N's master.mdb from the game's CDN "
+                             "instead of reading a local file (scripts/cdn_masterdata.py)")
     parser.add_argument("--out", type=Path, help="output directory (default: per region)")
     parser.add_argument("--dry-run", action="store_true", help="print counts, write nothing")
     parser.add_argument("--only", action="append", metavar="FILE",
                         help="write only this file (e.g. objectives.json), leaving the rest as committed; repeatable")
     args = parser.parse_args()
 
+    if args.cdn_version is not None:
+        if args.region != "global" or args.mdb is not None:
+            raise SystemExit("--cdn-version is global only, and replaces --mdb")
+        # The temp folder lives until the extract is written; the 17.7 MB mdb
+        # is never kept, only the JSON (the point of the snapshot).
+        with tempfile.TemporaryDirectory() as tmp:
+            run(args, cdn_download(args.cdn_version, Path(tmp)))
+        return
+    run(args, None)
+
+
+def cdn_download(version, folder):
+    """Fetch `version`'s master.mdb into `folder`: (path, the meta fields it adds)."""
+    # A sibling script, not a package: importable because `python scripts/...`
+    # puts scripts/ on sys.path. Imported here so the tests, which load this
+    # file by path, never need the network module.
+    import cdn_masterdata  # pylint: disable=import-outside-toplevel,import-error
+    path = folder / "master.mdb"
+    entry = cdn_masterdata.download_mdb(version, path)
+    print(f"Downloaded {version}'s master.mdb from the CDN ({path.stat().st_size} bytes)")
+    return path, {
+        "cdn_version": entry["version"],
+        "cdn_master_size": entry["size"],
+        "cdn_master_hash": entry["hash"],
+    }
+
+
+def run(args, cdn):
+    """Extract and write. `cdn` is (mdb path, meta fields) for a CDN download."""
+    if cdn is not None:
+        args.mdb = cdn[0]
     if args.mdb is None:
         if args.region != "global":
             raise SystemExit("--region jp needs --mdb (rebuild one with scripts/jp_export_to_mdb.py)")
@@ -1267,6 +1305,11 @@ def main():
         raise SystemExit(f"master.mdb not found at {args.mdb}")
 
     files = extract(args.mdb, args.region)
+    if cdn is not None:
+        # A downloaded file's mtime is the moment of the download, which says
+        # nothing about the game data; the version and hash say everything.
+        files["meta.json"].pop("mdb_modified_at")
+        files["meta.json"].update(cdn[1])
     for name, count in files["meta.json"]["counts"].items():
         print(f"{name:<24} {count:>6}")
 
