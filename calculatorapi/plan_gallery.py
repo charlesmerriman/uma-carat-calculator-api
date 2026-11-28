@@ -10,7 +10,8 @@ WHO, FOR NOW: EARLY ACCESS
 --------------------------
 can_use() is the one gate (the owner, 2026-11-20: supporters first, everyone in
 a later release). The feed, posting, copying and reading a plan post all ask
-it and refuse on the server; the page never decides alone. Opening it to
+it and refuse on the server (every route to a post through
+gallery_access.can_open); the page never decides alone. Opening it to
 everyone is this one function.
 
 WHAT A POST FREEZES
@@ -149,18 +150,6 @@ _BANNER_MODELS = {"banner_uma": BannerUma, "banner_support": BannerSupport, "ban
 def can_use(user):
     """Whether `user` may read, post or copy Community plans right now."""
     return benefits.early_access(user)
-
-
-def can_open(post, viewer):
-    """Whether `viewer` may reach this post through any route: read it, vote,
-    comment, report, count a view, or open its author's card. Every post
-    route asks this (views/gallery.py, views/profile_card.py), so a plan post
-    is early access first everywhere, not only on its detail. A team post is
-    anyone's; a plan's author always reaches their own (a lapsed supporter can
-    still read and take down what they posted)."""
-    if not post.is_plan or can_use(viewer):
-        return True
-    return bool(viewer and viewer.is_authenticated and viewer.pk == post.author_id)
 
 
 # ── Posting ──────────────────────────────────────────────────────────────────

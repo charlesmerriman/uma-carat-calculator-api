@@ -87,12 +87,14 @@ class GalleryPostAdmin(_ModerationActions, ModelAdmin):  # pylint: disable=too-m
     search_fields = ("public_id", "caption", "strategy", "author__display_name", "author__username")
     ordering = ("-content_updated_at",)
     # A team post shows its event and team, a plan post its frozen plan and
-    # filter values; the other kind's fields are just empty. `event` is a
-    # property that is None for a plan post, which the list shows as "-".
+    # filter values, a guide post its event and frozen guide; the other kinds'
+    # fields are just empty. `event` is a property that is None for a plan
+    # post, which the list shows as "-".
     readonly_fields = (
         "public_id", "author", "kind", "caption", "strategy", "published_at", "content_updated_at",
         "champions_meeting", "league_of_heroes", "team_snapshot", "preview_version", "source_team",
         "plan_snapshot", "plan_spending", "plan_sweat", "plan_strategies", "plan_range", "source_plan",
+        "guide_snapshot", "source_guide",
         "view_count", "copy_count", "is_hidden", "hidden_reason", "hidden_at",
     )
     fields = readonly_fields

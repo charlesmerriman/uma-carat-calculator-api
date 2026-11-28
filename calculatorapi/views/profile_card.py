@@ -25,10 +25,10 @@ leave (the same rule as views/plan_public.py). "label", never "name": every
 gallery test forbids a "name" key, so a team's private name can't slip through.
 
 A hidden post, a blocked author, a deleted or hidden comment and an unknown id
-all answer one 404 body. So does a Community plans post, or a comment on one,
-for a viewer plan_gallery.can_open refuses, and their card lists no plan posts:
-nothing links to a page they can't open (early access first, Design 8 of
-notes/pull-plan-database-plan.md).
+all answer one 404 body. So does a Community plans or community guide post, or
+a comment on one, for a viewer gallery_access.can_open refuses, and their card
+lists no posts of that kind: nothing links to a page they can't open (early
+access first, Design 8 of notes/pull-plan-database-plan.md).
 """
 
 from collections import defaultdict
@@ -38,7 +38,7 @@ from rest_framework.decorators import api_view, permission_classes, throttle_cla
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 
-from calculatorapi import gallery, gallery_ranking, plan_gallery, public_identity
+from calculatorapi import gallery, gallery_access, gallery_ranking, plan_gallery, public_identity
 from calculatorapi.models import GalleryComment, GalleryPost, GalleryPostKind, Plan, UserPlannedBanner
 from calculatorapi.views.gallery import vote_fields
 from calculatorapi.views.plan_public import plan_totals
@@ -55,7 +55,8 @@ class ProfileCardThrottle(UserRateThrottle):
 
 
 def _post_row(post, known):
-    """One post on the card: what it is, and a team's event or a plan's totals."""
+    """One post on the card: what it is, and a team's or guide's event or a
+    plan's totals."""
     row = {
         "public_id": post.public_id,
         "kind": post.kind,
@@ -78,8 +79,10 @@ def _post_row(post, known):
 
 def _posts(user, viewer):
     visible = gallery.visible_posts().filter(author=user)
-    if not (plan_gallery.can_use(viewer) or (viewer.is_authenticated and viewer.pk == user.pk)):
-        visible = visible.exclude(kind=GalleryPostKind.PLAN)
+    if not (viewer.is_authenticated and viewer.pk == user.pk):
+        # Only the kinds this reader may open: nothing links to a page they can't.
+        hidden = [kind for kind in GalleryPostKind.values if not gallery_access.can_list(kind, viewer)]
+        visible = visible.exclude(kind__in=hidden)
     posts = list(
         gallery_ranking.with_points(visible)
         .select_related("champions_meeting", "league_of_heroes")
@@ -129,7 +132,7 @@ def _comment_author(comment_id, viewer):
         return None
     if comment.post_id and not gallery.visible_posts().filter(pk=comment.post_id).exists():
         return None
-    if comment.post_id and not plan_gallery.can_open(comment.post, viewer):
+    if comment.post_id and not gallery_access.can_open(comment.post, viewer):
         return None
     if comment.guide_id and not comment.guide.is_out_of_draft:
         return None
@@ -144,7 +147,7 @@ def profile_card_for_post(request, public_id):
         post = gallery.get_post(public_id)
     except GalleryPost.DoesNotExist:
         return Response(_NOT_FOUND, status=404)
-    if not plan_gallery.can_open(post, request.user):
+    if not gallery_access.can_open(post, request.user):
         return Response(_NOT_FOUND, status=404)
     return _card(post.author, request.user)
 

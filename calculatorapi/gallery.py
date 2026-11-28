@@ -36,6 +36,7 @@ from calculatorapi.models import (
     GALLERY_REPORT_NOTE_MAX_LENGTH,
     PVP_DECK_SIZE,
     PVP_TEAM_SIZE,
+    PvpCommunityGuide,
     SupportCard,
     Uma,
 )
@@ -75,6 +76,14 @@ def visible_posts():
     changing the posts, which is what lets unblocking restore them.
     """
     return GalleryPost.objects.filter(is_hidden=False, author__publishing_blocked=False)
+
+
+def visible_teams():
+    """The visible TEAM posts. What every per-event team read starts from (the
+    PvP Gallery's feed, Rankings' gallery counts): a community guide posted for
+    the same event is a post of that event too, and must not be counted or
+    listed as a team (notes/community-guides-plan.md)."""
+    return visible_posts().filter(kind=GalleryPostKind.PVP_TEAM)
 
 
 def get_post(public_id, viewer=None):
@@ -205,9 +214,10 @@ def publish_team(user, team, *, caption="", strategy="", confirm_public_identity
         "content_updated_at": now,
     }
     with transaction.atomic():
+        # kind: the same person may have guide posts for this event too.
         post = (
             GalleryPost.objects.select_for_update()
-            .filter(author=user, **event)
+            .filter(author=user, kind=GalleryPostKind.PVP_TEAM, **event)
             .first()
         )
         if post is None:
@@ -314,7 +324,11 @@ def _alert_if_sunk(post):
     if ups - downs > DOWNVOTE_ALERT_SCORE:
         return
     site = settings.FRONTEND_URL.rstrip("/")
-    what = "A pull plan" if post.is_plan else f"A team on {post.event}"
+    what = {
+        GalleryPostKind.PVP_TEAM: f"A team on {post.event}",
+        GalleryPostKind.PLAN: "A pull plan",
+        GalleryPostKind.PVP_GUIDE: f"A community guide on {post.event}",
+    }[post.kind]
     discord_messages.send(
         f"downvoted:post:{post.pk}",
         settings.DISCORD_MOD_QUEUE_CHANNEL_ID,
@@ -413,9 +427,9 @@ def copy_snapshot(request, post):
     (POST /pvp-teams, or a guest's device store), so the rules every path into
     a team applies, the card release rule included, apply here too.
 
-    Teams only. The view answers 404 for a plan post first; this is the
+    Teams only. The view answers 404 for any other kind first; this is the
     backstop for any other caller, before anything is counted."""
-    if post.is_plan:
+    if not post.is_team:
         raise GalleryRefused("Only a team can be copied to My team.", status=404)
     count_post_copy(request, post)
     return snapshot_for_display(post.team_snapshot)
@@ -607,6 +621,7 @@ def erase_users(users):
     DELETE /account (before the account row goes) and purge_user_pii.
 
       * their posts, with every vote, comment and report on them;
+      * their community guides' working copies;
       * their votes;
       * their comments: removed when nobody replied, otherwise "[deleted]"
         with the author and the text cleared, so replies keep their place;
@@ -618,6 +633,9 @@ def erase_users(users):
     """
     ids = [user.pk for user in users]
     GalleryPost.objects.filter(author_id__in=ids).delete()
+    # Their community guides' working copies: private drafts, never shown,
+    # but theirs (the purge keeps the account row, so CASCADE would not).
+    PvpCommunityGuide.objects.filter(author_id__in=ids).delete()
     GalleryVote.objects.filter(user_id__in=ids).delete()
     GalleryCommentVote.objects.filter(user_id__in=ids).delete()
     comments = GalleryComment.objects.filter(author_id__in=ids)

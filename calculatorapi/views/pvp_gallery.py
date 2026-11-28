@@ -102,7 +102,8 @@ def pvp_gallery_feed(request, kind, event_id):
     # empty feed, which the client words as such.
     uma = _int_param(request, "uma", None)
 
-    posts = gallery.visible_posts().filter(**event).select_related("author")
+    # Teams only: community guides on the same event have their own list.
+    posts = gallery.visible_teams().filter(**event).select_related("author")
     ranked = gallery_ranking.ranked(posts, sort)
     tally = uma_tally(ranked)
     if uma is not None:

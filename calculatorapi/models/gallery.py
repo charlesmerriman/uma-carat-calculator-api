@@ -1,16 +1,18 @@
 """
 The gallery: posts other players can see, upvote, comment on, copy and report.
 
-Two KINDS of post share it: a PvP team (the PvP page's Gallery view) and a pull
-plan (Community plans, notes/pull-plan-database-plan.md). Everything that is
-not about the team or the plan itself is generic: votes, comments, reports,
-views and copies all hang off GalleryPost by a real foreign key, so the second
-kind reuses them instead of copying them.
+THREE KINDS of post share it: a PvP team (the PvP page's Gallery view), a pull
+plan (Community plans, notes/pull-plan-database-plan.md) and a player's own PvP
+guide (community guides, notes/community-guides-plan.md). Everything that is
+not about the content itself is generic: votes, comments, reports, views and
+copies all hang off GalleryPost by a real foreign key, so each kind reuses
+them instead of copying them.
 
-Code that draws or reads a post's CONTENT asks its kind first
-(`post.kind == GalleryPostKind.PLAN`): a plan post has no event and no team, so
-`post.event` is None and `team_snapshot` is empty. Code that works on any post
-(votes, comments, reports, moderation, erasing an account) never needs to.
+Code that draws or reads a post's CONTENT asks its kind first, by name
+(`post.is_team`, `post.is_plan`, `post.is_guide`), never by "not a plan": a
+plan post has no event, a guide post has an event but no team, and only a
+team post has a `team_snapshot`. Code that works on any post (votes,
+comments, reports, moderation, erasing an account) never needs to.
 
 WHY ONE GENERIC PARENT
 ----------------------
@@ -53,6 +55,7 @@ from .champions_meeting import ChampionsMeeting
 from .custom_user import CustomUser
 from .league_of_heroes import LeagueOfHeroes
 from .plan import Plan
+from .pvp_community_guide import PvpCommunityGuide
 from .pvp_guide import PvpStyle
 from .pvp_team import PvpTeam
 from .scenario import Scenario
@@ -72,6 +75,11 @@ GALLERY_REPORT_NOTE_MAX_LENGTH = 200
 class GalleryPostKind(models.TextChoices):
     PVP_TEAM = "pvp_team", "PvP team"
     PLAN = "plan", "Pull plan"
+    PVP_GUIDE = "pvp_guide", "PvP guide"
+
+
+# The kinds that belong to one CM or LoH event.
+EVENT_KINDS = (GalleryPostKind.PVP_TEAM, GalleryPostKind.PVP_GUIDE)
 
 
 class PlanSpending(models.TextChoices):
@@ -268,35 +276,65 @@ class GalleryPost(models.Model):
         related_name="gallery_posts",
     )
 
+    # ── PvP guide posts ─────────────────────────────────────────────────
+    # The guide as it was posted: the working copy's document, frozen, minus
+    # anything private (guide_gallery.snapshot_of). Readers see this, never
+    # the working copy. Empty on the other kinds.
+    guide_snapshot = models.JSONField(default=dict, blank=True)
+    # The working copy it was posted from: posting it again updates this
+    # post. Never serialized. SET_NULL for safety only: deleting a working
+    # copy is refused while its post is up (guide_gallery.delete_guide).
+    source_guide = models.ForeignKey(
+        PvpCommunityGuide,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="gallery_posts",
+    )
+
     class Meta:
         ordering = ("-published_at", "-id")
         constraints = [
-            # A PvP post has exactly one event; any other kind has none.
+            # A team or guide post has exactly one event; a plan has none.
             models.CheckConstraint(
                 condition=(
-                    Q(kind=GalleryPostKind.PVP_TEAM)
+                    Q(kind__in=EVENT_KINDS)
                     & (
                         Q(champions_meeting__isnull=False, league_of_heroes__isnull=True)
                         | Q(champions_meeting__isnull=True, league_of_heroes__isnull=False)
                     )
                 )
                 | (
-                    ~Q(kind=GalleryPostKind.PVP_TEAM)
+                    ~Q(kind__in=EVENT_KINDS)
                     & Q(champions_meeting__isnull=True, league_of_heroes__isnull=True)
                 ),
                 name="gallery_post_event_matches_kind",
             ),
-            # One post per person per event, enforced here and not only in
-            # the view, so two quick clicks cannot make two.
+            # One TEAM post per person per event, enforced here and not only
+            # in the view, so two quick clicks cannot make two. Guides are
+            # not limited this way: a person may post several for one event
+            # (the owner, 2026-11-27), capped by guide_gallery.
             models.UniqueConstraint(
                 fields=["author", "champions_meeting"],
-                condition=Q(champions_meeting__isnull=False),
+                condition=Q(champions_meeting__isnull=False, kind=GalleryPostKind.PVP_TEAM),
                 name="one_gallery_post_per_author_cm",
             ),
             models.UniqueConstraint(
                 fields=["author", "league_of_heroes"],
-                condition=Q(league_of_heroes__isnull=False),
+                condition=Q(league_of_heroes__isnull=False, kind=GalleryPostKind.PVP_TEAM),
                 name="one_gallery_post_per_author_loh",
+            ),
+            # A working copy has at most one post: posting again updates it.
+            models.UniqueConstraint(
+                fields=["source_guide"],
+                condition=Q(source_guide__isnull=False),
+                name="one_gallery_post_per_source_guide",
+            ),
+            # The guide columns belong to guide posts (scalar columns only,
+            # for the reason given on the plan constraint below).
+            models.CheckConstraint(
+                condition=Q(kind=GalleryPostKind.PVP_GUIDE) | Q(source_guide__isnull=True),
+                name="gallery_post_guide_matches_kind",
             ),
             models.CheckConstraint(
                 condition=_hidden_is_explained(),
@@ -331,9 +369,19 @@ class GalleryPost(models.Model):
         return f"{self.public_id} by {self.author.username}"
 
     @property
+    def is_team(self):
+        """A PvP team post (the PvP page's Gallery)."""
+        return self.kind == GalleryPostKind.PVP_TEAM
+
+    @property
     def is_plan(self):
-        """A pull plan post rather than a PvP team."""
+        """A pull plan post (the Pull Plan Library)."""
         return self.kind == GalleryPostKind.PLAN
+
+    @property
+    def is_guide(self):
+        """A player's own PvP guide (community guides)."""
+        return self.kind == GalleryPostKind.PVP_GUIDE
 
     @property
     def event(self):
